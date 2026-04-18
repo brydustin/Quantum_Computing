@@ -2343,18 +2343,40 @@ proof -
     by simp
 
   have trT: "Tr T = sum_list ?eigs"
-    sorry
-
+  proof -
+    have "sum_list ?eigs = (\<Sum>i<n. T $$ (i,i))"
+      by (simp add: interv_sum_list_conv_sum_set_nat lessThan_atLeast0)
+    also have "\<dots> = Tr T"
+      using Tc by (simp add: Tr_def)
+    finally show ?thesis by simp
+  qed
 
   have trA: "Tr A = Tr T"
     using sq Uc UU schur Tr_unitary_conjugation by auto
 
-
   have cpT: "char_poly T = (\<Prod>e \<leftarrow> ?eigs. [:-e, 1:])"
-    sorry
+  proof -
+    have "diag_mat T = ?eigs"
+      using Tc unfolding diag_mat_def by simp
+    then show ?thesis
+      using char_poly_upper_triangular[OF Tc UT] by simp
+  qed
 
   have cpA: "char_poly A = char_poly T"
-    sorry
+  proof -
+    have Udag: "U\<^sup>\<dagger> \<in> carrier_mat n n"
+      using Uc by (metis carrier_matD carrier_matI dim_col_of_dagger dim_row_of_dagger)
+    have udag_u: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n"
+      using UU Uc unfolding unitary_def by auto
+    have u_udag: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
+      using UU Uc unfolding unitary_def by auto
+    have setc: "{T, A, U\<^sup>\<dagger>, U} \<subseteq> carrier_mat n n"
+      using Tc sq Udag Uc by simp
+    have T_eq: "T = (U\<^sup>\<dagger>) * A * U" using schur by simp
+    have "similar_mat T A"
+      by (rule similar_matI[OF setc udag_u u_udag T_eq])
+    then show ?thesis using char_poly_similar by metis
+  qed
 
 
   have "Tr A = sum_list ?eigs"
