@@ -1,0 +1,33 @@
+# Editor / session backups
+*~
+*.bak
+.Rhistory
+.codex
+
+# Isabelle build artifacts
+Basic_Math_session/
+*_session/
+
+# LaTeX build artifacts (regenerated on compile)
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+QC_Notes_overleaf.pdf
+
+# Vendored AFP / Isabelle dependencies (installed separately via AFP)
+Abstract-Rewriting/
+Containers/
+Isabelle2025-2/
+Isabelle_Marries_Dirac/
+Jordan_Normal_Form/
+Matrix/
+Matrix_Tensor/
+Polynomial_Factorization/
+Polynomial_Interpolation/
+Quantum_Fourier_Transform/
+Regular-Sets/
+VectorSpace/
