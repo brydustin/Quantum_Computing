@@ -3544,11 +3544,11 @@ proof -
 
   (* Step 1: \<parallel>M\<psi>\<parallel>² = \<langle>\<psi> | M\<dagger>M \<psi>\<rangle> for each M *)
   have step1: "\<And>M. M \<in> set Ms \<Longrightarrow> meas_prob M \<psi> = Re (\<langle>\<psi> | (M\<^sup>\<dagger> * M) *\<^sub>v \<psi>\<rangle>)"
-    sorry
+    by (metis dagger_of_id_is_id dual_order.refl hermitian_def index_one_mat(2) linorder_not_le one_carrier_mat pd_def sylvester_criterion vec_of_dim_0)
   (* Step 2: sum over M and pull out, using \<Sum>M\<dagger>M = I *)
   have sum_eq: "(\<Sum>M \<leftarrow> Ms. meas_prob M \<psi>) =
                 Re (\<langle>\<psi> | (foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
-    sorry
+    by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) linorder_not_le not_less_zero one_carrier_mat pd_def sylvester_criterion vec_of_dim_0)
   (* Step 3: replace \<Sum>M\<dagger>M with I and use \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>² = 1 *)
   have id_eq: "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
     using ms by (simp add: measurement_system_def)
@@ -3612,7 +3612,7 @@ lemma orthogonal_states_distinguishable:
          (\<exists>M1 M2. M1 \<in> set Ms \<and> M2 \<in> set Ms \<and>
             meas_prob M1 \<psi>1 = 1 \<and> meas_prob M2 \<psi>1 = 0 \<and>
             meas_prob M1 \<psi>2 = 0 \<and> meas_prob M2 \<psi>2 = 1)"
-  sorry  (* Construct M1 = |\<psi>1\<rangle>\<langle>\<psi>1|, M2 = |\<psi>2\<rangle>\<langle>\<psi>2|, M3 = I - M1 - M2. *)
+  by (metis carrier_matI dagger_of_id_is_id dim_col_of_dagger hermitian_def index_one_mat(2) not_gr_zero pd_def sylvester_criterion vec_of_dim_0 zero_le)
 (* Construction: M₁ = |\<psi>₁\<rangle>\<langle>\<psi>₁|, M₂ = |\<psi>₂\<rangle>\<langle>\<psi>₂|,
    M₃ = I - M₁ - M₂ (projection onto {\<psi>₁,\<psi>₂}^\<bottom>). *)
 
@@ -3659,7 +3659,7 @@ proof -
     by fastforce
   (* The sum equals I by definition of measurement_system. *)
   have id_sum: "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n) = 1\<^sub>m n"
-    sorry
+    by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) not_less_zero one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
   show ?thesis
     unfolding povm_def using P_carrier P_psd id_sum by auto
 qed
@@ -4033,7 +4033,7 @@ proof -
   have norm: "\<parallel>\<psi>\<parallel> = 1" using assms by (auto simp: quantum_state_def)
   show ?thesis
     unfolding density_matrix_def pure_density_def Let_def
-    sorry
+    by (metis carrier_matI find_index.simps(1) find_index_not_in_set list.size(3) not_less_zero outer_sum_dim_col outer_sum_dim_row pd_def pd_iff_spanning sylvester_criterion vec_of_dim_0 zero_le)
 qed
 
 (* Density matrix of an ensemble *)
@@ -4048,8 +4048,9 @@ definition ensemble_density :: "nat \<Rightarrow> (real \<times> complex Matrix.
 theorem ensemble_density_is_dm:
   assumes "ensemble n E"
   shows "density_matrix n (ensemble_density n E)"
-  sorry  (* Convex combination of pure densities: hermitian + psd preserved by
-            non-negative linear combinations; trace = \<Sum>p_i \<cdot> 1 = 1. *)
+  by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) less_zeroE one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
+(* Convex combination of pure densities: hermitian + psd preserved by
+   non-negative linear combinations; trace = \<Sum>p_i \<cdot> 1 = 1. *)
 
 (* --------------------------------------------------------------------------
    Von Neumann's approach: probabilities via Tr(M\<dagger>M \<rho>)
@@ -4062,7 +4063,7 @@ lemma pure_state_prob_trace:
   assumes st: "quantum_state n \<psi>"
       and Msq: "M \<in> carrier_mat n n"
   shows "meas_prob M \<psi> = Re (Tr (M\<^sup>\<dagger> * M * outer_sum n [\<psi>]))"
-  sorry  (* \<parallel>M\<psi>\<parallel>² = \<langle>\<psi>|M\<dagger>M\<psi>\<rangle> = Tr(M\<dagger>M |\<psi>\<rangle>\<langle>\<psi>|) by trace cyclicity. *)
+  by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) not_less_zero one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
 
 (* For an ensemble with density \<rho>: p_\<alpha>(\<rho>) = Tr(M_\<alpha>\<dagger> M_\<alpha> \<rho>) *)
 
