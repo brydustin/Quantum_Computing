@@ -3157,13 +3157,41 @@ proof -
     using hermitian_spectral_decomp[OF sq herm] by blast
   (* All entries of D are \<ge> 0 because P is psd. *)
   have D_nonneg: "\<forall>i < n. D ! i \<ge> 0"
-    sorry
+  proof (intro allI impI)
+    fix i assume iltn: "i < n"
+    (* Strategy: (D!i) appears as the i-th diagonal of the real diagonal matrix
+       diag_mat_of_real D = U\<^sup>\<dagger> * P * U.  Apply the psd form at x = U * e_i;
+       then \<langle>x | P x\<rangle> = \<langle>e_i | U\<^sup>\<dagger> P U e_i\<rangle> = (diag_mat_of_real D) $$ (i,i) = D ! i.
+       Psd of P gives Re \<langle>x|Px\<rangle> \<ge> 0, so D ! i \<ge> 0.  *)
+    let ?x = "U *\<^sub>v unit_vec n i"
+    have ei_dim: "dim_vec (unit_vec n i :: complex Matrix.vec) = n" by simp
+    have x_dim: "dim_vec ?x = n" using Uc by simp
+    have x_inner_P: "\<langle>?x | P *\<^sub>v ?x\<rangle> = complex_of_real (D ! i)"
+      sorry
+    have nonneg: "Re (\<langle>?x | P *\<^sub>v ?x\<rangle>) \<ge> 0"
+      using pos x_dim sq unfolding psd_def by (metis carrier_matD(1))
+    have "Re (complex_of_real (D ! i)) \<ge> 0"
+      using nonneg x_inner_P by simp
+    thus "D ! i \<ge> 0" by simp
+  qed
   (* Construct vᵢ = \<surd>(Dᵢ) \<cdot> col i of U *)
   let ?vs = "map (\<lambda>i. complex_of_real (sqrt (D ! i)) \<cdot>\<^sub>v Matrix.col U i) [0..<n]"
   have vs_dim: "\<forall>v \<in> set ?vs. dim_vec v = n"
     using Uc by auto
   have decomp: "outer_sum n ?vs = P"
-    sorry
+  proof -
+    (* Step A: outer_sum n ?vs = U * diag_mat_of_real D * U\<^sup>\<dagger>
+       because each vᵢ vᵢ\<dagger> = (D!i) \<cdot> (col U i)(col U i)\<dagger>,
+       and \<Sum>_{i<n} (D!i) \<cdot> (col U i)(col U i)\<dagger> = U D U\<dagger>. *)
+    have stepA: "outer_sum n ?vs = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+      sorry
+    (* Step B: U * diag_mat_of_real D * U\<^sup>\<dagger> = P
+       follows from spec (U\<^sup>\<dagger> * P * U = diag_mat_of_real D)
+       by multiplying on left by U and right by U\<^sup>\<dagger> and using U U\<^sup>\<dagger> = 1\<^sub>m n. *)
+    have stepB: "U * diag_mat_of_real D * (U\<^sup>\<dagger>) = P"
+      sorry
+    from stepA stepB show ?thesis by simp
+  qed
   show ?thesis using vs_dim decomp by blast
 qed
 (* Proof: By spectral theorem, P = U D U\<dagger> with D diagonal, real, non-negative entries.
