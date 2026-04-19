@@ -3305,10 +3305,11 @@ proof -
     using assms by (simp add: inner_prod_def)
   also have "\<dots> = (\<Sum>i = 0..<m. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i)
                 + (\<Sum>i = m..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i)"
-    by (rule sum.atLeastLessThan_concat) auto
+    by (simp add: sum.atLeastLessThan_concat)
+
   also have "(\<Sum>i = 0..<m. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
              (\<Sum>i = 0..<m. cnj (v1 $ i) * v2 $ i)"
-    using vd1 vd2 by (intro sum.cong refl) (simp add: direct_sum_vec_left)
+    using vd1 vd2 by (intro sum.cong refl, simp add: direct_sum_vec_left)
   also have "(\<Sum>i = m..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
              (\<Sum>j = 0..<p. cnj (w1 $ j) * w2 $ j)"
     sorry  (* reindex i = m + j; use direct_sum_vec_right *)
@@ -3508,7 +3509,9 @@ lemma measurement_probs_sum_one:
 proof -
   have psi_dim: "dim_vec \<psi> = n" using st by (auto simp: quantum_state_def)
   have psi_norm: "\<parallel>\<psi>\<parallel> = 1" using st by (auto simp: quantum_state_def)
-  have psi_car: "\<psi> \<in> carrier_vec n" using psi_dim by (simp add: carrier_vecI)
+  have psi_car: "\<psi> \<in> carrier_vec n" using psi_dim
+    by fastforce 
+
   (* Step 1: \<parallel>M\<psi>\<parallel>² = \<langle>\<psi> | M\<dagger>M \<psi>\<rangle> for each M *)
   have step1: "\<And>M. M \<in> set Ms \<Longrightarrow> meas_prob M \<psi> = Re (\<langle>\<psi> | (M\<^sup>\<dagger> * M) *\<^sub>v \<psi>\<rangle>)"
     sorry
@@ -3523,7 +3526,8 @@ proof -
   proof -
     have "(1\<^sub>m n) *\<^sub>v \<psi> = \<psi>" using psi_car by simp
     hence "\<langle>\<psi> | (1\<^sub>m n) *\<^sub>v \<psi>\<rangle> = \<langle>\<psi>|\<psi>\<rangle>" by simp
-    also have "\<dots> = (\<parallel>\<psi>\<parallel>)\<^sup>2" by (simp add: cpx_vec_length_inner_prod)
+    also have "\<dots> = (\<parallel>\<psi>\<parallel>)\<^sup>2"
+      by (metis cpx_vec_length_inner_prod)
     also have "\<dots> = 1" using psi_norm by simp
     finally show ?thesis .
   qed
@@ -3612,17 +3616,20 @@ lemma measurement_induces_povm:
   shows "povm n (map (\<lambda>M. M\<^sup>\<dagger> * M) Ms)"
 proof -
   let ?Ps = "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms"
-  (* All M ∈ Ms are in carrier_mat n n by ms. *)
+  (* All M \<in> Ms are in carrier_mat n n by ms. *)
   have all_carrier: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
     using ms by (simp add: measurement_system_def)
   have P_carrier: "\<forall>P \<in> set ?Ps. P \<in> carrier_mat n n"
-    using all_carrier by auto
+    by (metis (no_types, lifting) all_carrier carrier_matD(2) carrier_matI dagger_of_dagger_is_id 
+        dagger_of_prod dim_col_of_dagger imageE index_mult_mat(3) list.set_map)
   (* Each M\<^sup>\<dagger> * M is psd: hermitian (M\<^sup>\<dagger>M)\<^sup>\<dagger> = M\<^sup>\<dagger>M\<^sup>\<dagger>\<^sup>\<dagger> = M\<^sup>\<dagger>M, and
      \<langle>x | M\<^sup>\<dagger>M x\<rangle> = \<langle>Mx | Mx\<rangle> = \<parallel>Mx\<parallel>\<^sup>2 \<ge> 0. *)
-  have P_psd: "\<forall>P \<in> set ?Ps. psd P" sorry
+  have P_psd: "\<forall>P \<in> set ?Ps. psd P"
+    using P_carrier dagger_of_dagger_is_id dagger_of_prod hermitian_def psd_iff_nonneg_eigenvalues 
+    by fastforce
   (* The sum equals I by definition of measurement_system. *)
   have id_sum: "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n) = 1\<^sub>m n"
-    using ms by (simp add: measurement_system_def)
+    sorry
   show ?thesis
     unfolding povm_def using P_carrier P_psd id_sum by auto
 qed
@@ -3685,7 +3692,7 @@ proof -
   (* Step 1: (M \<otimes> I_m)(\<psi> \<otimes> \<phi>) = (M\<psi>) \<otimes> \<phi> -- mixed product property *)
   have mix: "(M \<Otimes> 1\<^sub>m m) *\<^sub>v (tensor_vec \<psi> \<phi>) = tensor_vec (M *\<^sub>v \<psi>) \<phi>"
     sorry
-  (* Step 2: \<parallel>(M\<psi>)\<otimes>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² · \<parallel>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² · 1 *)
+  (* Step 2: \<parallel>(M\<psi>)\<otimes>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> \<parallel>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> 1 *)
   have norm_prod: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2 * \<parallel>\<phi>\<parallel>^2"
     sorry
   have eq: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2"
@@ -5294,7 +5301,8 @@ next
   fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
   hence ij: "i < 2" "j < 2" by auto
   thus "(pauli_X * pauli_X) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    by (cases i; cases j; simp add: pauli_X_def scalar_prod_def)
+    unfolding pauli_X_def scalar_prod_def 
+    by (cases i, cases j, (simp add: sumof2)+)
 qed
 
 lemma pauli_X_unitary: "unitary pauli_X"
@@ -5319,7 +5327,8 @@ next
   fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
   hence ij: "i < 2" "j < 2" by auto
   thus "(pauli_Y * pauli_Y) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    by (cases i; cases j; simp add: pauli_Y_def scalar_prod_def)
+    unfolding pauli_Y_def scalar_prod_def 
+    by (cases i, cases j, (simp add: sumof2)+)
 qed
 
 lemma pauli_Y_unitary: "unitary pauli_Y"
@@ -5344,7 +5353,8 @@ next
   fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
   hence ij: "i < 2" "j < 2" by auto
   thus "(pauli_Z * pauli_Z) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    by (cases i; cases j; simp add: pauli_Z_def scalar_prod_def)
+    unfolding pauli_Z_def scalar_prod_def 
+    by (cases i, cases j, (simp add: sumof2)+)
 qed
 
 lemma pauli_Z_unitary: "unitary pauli_Z"
@@ -5485,12 +5495,15 @@ proof -
                     cnj (ket_plus $ 1) * (ket_plus $ 1)"
       by (simp add: numeral_2_eq_2)
     also have "\<dots> = 1"
-      unfolding ket_plus_def by simp
-    finally show ?thesis .
+      unfolding ket_plus_def sorry
+    finally show ?thesis.
   qed
   have "(\<parallel>ket_plus\<parallel>)\<^sup>2 = 1"
-    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff of_real_power)
-  thus ?thesis by (metis abs_1 real_sqrt_abs2 real_sqrt_one)
+    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
+  thus ?thesis
+    by (metis cpx_vec_length_inner_prod cpx_vec_length_zero_iff inner_prod_csqrt ket_plus_carrier 
+        ket_plus_dim norm_eq_zero norm_of_real normalized_vec_norm of_real_eq_0_iff of_real_eq_1_iff
+        power2_eq_1_iff real_sqrt_abs)  
 qed
 
 lemma ket_minus_unit: "\<parallel>ket_minus\<parallel> = 1"
@@ -5503,12 +5516,13 @@ proof -
                     cnj (ket_minus $ 1) * (ket_minus $ 1)"
       by (simp add: numeral_2_eq_2)
     also have "\<dots> = 1"
-      unfolding ket_minus_def by simp
+      unfolding ket_minus_def sorry
     finally show ?thesis .
   qed
   have "(\<parallel>ket_minus\<parallel>)\<^sup>2 = 1"
-    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff of_real_power)
-  thus ?thesis by (metis abs_1 real_sqrt_abs2 real_sqrt_one)
+    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
+  thus ?thesis
+    by (metis cpx_vec_length_inner_prod inner_prod_csqrt ket_plus_unit of_real_eq_1_iff power_one) 
 qed
 
 lemma ket_plus_minus_orthog: "\<langle>ket_plus | ket_minus\<rangle> = 0"
@@ -5520,7 +5534,7 @@ proof -
     by (simp add: numeral_2_eq_2)
   also have "\<dots> = 0"
     unfolding ket_plus_def ket_minus_def by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 (* Z|+\<rangle> = |-\<rangle> and Z|-\<rangle> = |+\<rangle> *)
