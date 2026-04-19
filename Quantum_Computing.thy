@@ -3109,7 +3109,7 @@ proof
   assume "psd P"
   thus "hermitian P \<and> (\<forall>mu. \<exists>v. v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and>
                                   P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0)"
-    sorry  (* Eigenvalue mu \<ge> 0 from \<langle>v|Pv\<rangle> = mu \<langle>v|v\<rangle> \<ge> 0 *)
+    by (metis psd_hermitian)
 next
   assume rhs: "hermitian P \<and> (\<forall>mu. \<exists>v. v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and>
                                           P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0)"
@@ -3134,7 +3134,7 @@ proof -
      \<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | M M\<^sup>\<dagger> x\<rangle> = \<langle>M\<^sup>\<dagger> x | M\<^sup>\<dagger> x\<rangle> = \<parallel>y\<parallel>\<^sup>2 \<ge> 0. *)
   have nonneg: "\<forall>x. dim_vec x = dim_row (outer_sum n vs) \<longrightarrow>
                 Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0"
-    sorry
+    by (smt (verit) carrier_mat_triv dr herm outer_sum_dim_col psd_def psd_iff_nonneg_eigenvalues)
   show ?thesis
     unfolding psd_def using herm nonneg by simp
 qed
@@ -3586,7 +3586,7 @@ proof -
     using d1 d2 by (rule tensor_vec_dim)
   (* From tensor_inner_prod: \<langle>\<psi>1\<otimes>\<psi>2 | \<psi>1\<otimes>\<psi>2\<rangle> = \<langle>\<psi>1|\<psi>1\<rangle>\<sqdot>\<langle>\<psi>2|\<psi>2\<rangle> = 1\<sqdot>1 = 1. *)
   have norm_tensor: "\<parallel>tensor_vec \<psi>1 \<psi>2\<parallel> = 1"
-    sorry  (* via tensor_inner_prod and cpx_vec_length_inner_prod *)
+    by (smt (verit) cpx_vec_length_inner_prod inner_prod_csqrt norm1 norm2 of_real_eq_1_iff one_power2 power2_eq_square tensor_inner_prod)
   show ?thesis
     unfolding quantum_state_def using dim norm_tensor by simp
 qed
@@ -3724,7 +3724,7 @@ proof -
     sorry
   (* Step 2: \<parallel>(M\<psi>)\<otimes>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> \<parallel>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> 1 *)
   have norm_prod: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2 * \<parallel>\<phi>\<parallel>^2"
-    sorry
+    by (smt (verit) Re_complex_of_real cpx_vec_length_inner_prod of_real_mult tensor_inner_prod)
   have eq: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2"
     using norm_prod phi_norm by simp
   show ?thesis
@@ -3764,10 +3764,14 @@ proof -
     using dim_sum unfolding bell_state_def by simp
   (* Step 2: \<langle>?u | ?u\<rangle> = 1, \<langle>?v | ?v\<rangle> = 1, and \<langle>?u | ?v\<rangle> = 0
      (using tensor_inner_prod and unit_vec orthonormality). *)
-  have inner_uu: "\<langle>?u | ?u\<rangle> = 1" sorry
-  have inner_vv: "\<langle>?v | ?v\<rangle> = 1" sorry
-  have inner_uv: "\<langle>?u | ?v\<rangle> = 0" sorry
-  have inner_vu: "\<langle>?v | ?u\<rangle> = 0" sorry
+  have inner_uu: "\<langle>?u | ?u\<rangle> = 1"
+    by (smt (verit) cpx_vec_length_inner_prod numeral_2_eq_2 of_real_1 power2_eq_square power_one tensor_inner_prod unit_cpx_vec_length zero_less_Suc)
+  have inner_vv: "\<langle>?v | ?v\<rangle> = 1"
+    by (smt (verit) Suc_1 cpx_vec_length_inner_prod lessI of_real_1 power2_eq_square power_one tensor_inner_prod unit_cpx_vec_length)
+  have inner_uv: "\<langle>?u | ?v\<rangle> = 0"
+    by (smt (verit) One_nat_def index_unit_vec(3) lessI mult_zero_right numeral_2_eq_2 one_neq_zero orthogonal_unit_vec tensor_inner_prod zero_less_Suc)
+  have inner_vu: "\<langle>?v | ?u\<rangle> = 0"
+    by (metis One_nat_def cpx_vec_length_inner_prod dim_sum du dv index_unit_vec(3) inner_uu inner_uv inner_vv lessI numeral_2_eq_2 numeral_eq_iff numeral_eq_one_iff of_real_1 one_eq_numeral_iff orthogonal_unit_vec power2_eq_square power_one semiring_norm(11,83,85) tensor_inner_prod tensor_vec_dim vec_normalize_dim zero_less_Suc zero_neq_numeral)
   (* Step 3: \<parallel>(1/\<surd>2)(?u + ?v)\<parallel>\<^sup>2 = (1/2)(\<langle>?u+?v|?u+?v\<rangle>) = (1/2)(1+0+0+1) = 1 *)
   have norm_bell: "\<parallel>bell_state\<parallel> = 1" sorry
   show ?thesis
@@ -4075,7 +4079,8 @@ proof -
   have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
   (* M\<^sup>\<dagger>M is psd (\<langle>x|M\<^sup>\<dagger>Mx\<rangle> = \<langle>Mx|Mx\<rangle> \<ge> 0).
      For psd A, B: Tr(AB) = Tr(\<surd>A \<sqdot> B \<sqdot> \<surd>A) \<ge> 0 since \<surd>A B \<surd>A is psd. *)
-  have MdM_psd: "psd (M\<^sup>\<dagger> * M)" sorry
+  have MdM_psd: "psd (M\<^sup>\<dagger> * M)"
+    by (metis M_carr Min One_nat_def ab_semigroup_mult_class.mult_ac(1) assoc_mult_mat carrier_matD(1,2) carrier_matI class_cring.factors_equal dagger_four_block_mat_complex dagger_of_dagger_is_id dagger_of_prod dim_col_of_dagger dim_row_of_dagger dm hermitian_def hermitian_spectral_decomp householder_hermitian index_mult_mat(2,3) measurement_system_def ms mult.commute mult.left_commute mult.right_neutral mult_carrier_mat psd_def psd_hermitian psd_iff_nonneg_eigenvalues psd_sqrt_exists rho_psd schur_induct semigroup_mult_class.mult.assoc zero_carrier_mat)
   show ?thesis
     using MdM_psd rho_psd sorry
 qed
@@ -4441,11 +4446,11 @@ proof -
       sorry
     also have "... =
         ((((1/2) :: complex) \<cdot>\<^sub>m (((X) + (X\<^sup>\<dagger>)) + ((X) - (X\<^sup>\<dagger>)))))"
-      sorry
+      by (smt (verit) Hi_carrier Hr_carrier add_smult_distrib_left_mat carrier_matD(1,2) carrier_mat_triv index_smult_mat(2,3))
     also have "... = ((((1/2) :: complex) \<cdot>\<^sub>m ((2 :: complex) \<cdot>\<^sub>m X)))"
       sorry
     also have "... = X"
-      sorry
+      by auto
     finally show ?thesis
       sorry
   qed
