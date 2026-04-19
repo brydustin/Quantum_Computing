@@ -2909,6 +2909,28 @@ qed
    This follows from Schur's theorem: U\<dagger>HU is upper triangular T; T\<dagger> = T so T diagonal;
    T diagonal and self-adjoint \<Longrightarrow> real diagonal entries. *)
 
+(* The complex diagonal matrix with real diagonal entries D. *)
+definition diag_mat_of_real :: "real list \<Rightarrow> complex Matrix.mat" where
+  "diag_mat_of_real D =
+     Matrix.mat (length D) (length D)
+       (\<lambda>(i,j). if i = j then complex_of_real (D ! i) else 0)"
+
+lemma dim_row_diag_mat_of_real[simp]: "dim_row (diag_mat_of_real D) = length D"
+  unfolding diag_mat_of_real_def by simp
+
+lemma dim_col_diag_mat_of_real[simp]: "dim_col (diag_mat_of_real D) = length D"
+  unfolding diag_mat_of_real_def by simp
+
+lemma diag_mat_of_real_carrier[simp]:
+  "diag_mat_of_real D \<in> carrier_mat (length D) (length D)"
+  by (rule carrier_matI) auto
+
+lemma diag_mat_of_real_index[simp]:
+  assumes "i < length D" and "j < length D"
+  shows "diag_mat_of_real D $$ (i, j) =
+         (if i = j then complex_of_real (D ! i) else 0)"
+  using assms unfolding diag_mat_of_real_def by simp
+
 theorem hermitian_spectral_decomp:
   fixes H :: "complex Matrix.mat"
   assumes sq: "H \<in> carrier_mat n n"
@@ -2918,11 +2940,104 @@ theorem hermitian_spectral_decomp:
          unitary U \<and>
          length D = n \<and>
          U\<^sup>\<dagger> * H * U = diag_mat_of_real D"
-  sorry
-(* Proof: By Schur, \<exists> U unitary, T = U\<dagger>HU upper triangular.
-   T\<dagger> = (U\<dagger>HU)\<dagger> = U\<dagger>H\<dagger>U\<dagger>\<dagger> = U\<dagger>HU = T (since H is Hermitian).
-   T upper triangular and T\<dagger> = T implies T is diagonal.
-   T diagonal and T = T\<dagger> implies diagonal entries are real. *)
+proof -
+  (* Step 1: Schur gives U unitary, T = U\<dagger>HU upper triangular. *)
+  obtain U T where Uc: "U \<in> carrier_mat n n" and Tc: "T \<in> carrier_mat n n"
+    and UU: "unitary U" and UT: "upper_triangular T"
+    and schur: "U\<^sup>\<dagger> * H * U = T"
+    using schur_theorem[OF sq] by blast
+  have Udagcar: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by auto
+  have Hdag: "H\<^sup>\<dagger> = H" using herm by (simp add: hermitian_def)
+
+  (* Step 2: T\<dagger> = T using H Hermitian and (AB)\<dagger> = B\<dagger>A\<dagger>. *)
+  have Tdag: "T\<^sup>\<dagger> = T"
+  proof -
+    have HUcar: "H * U \<in> carrier_mat n n" using sq Uc by auto
+    have UdagHcar: "U\<^sup>\<dagger> * H \<in> carrier_mat n n" using Udagcar sq by auto
+    let ?Ud = "U\<^sup>\<dagger>"
+    let ?A = "?Ud * H"
+    have dcA: "dim_col ?A = dim_row U" using UdagHcar Uc by auto
+    have dcUd: "dim_col ?Ud = dim_row H" using Udagcar sq by auto
+    have step1: "dagger (?A * U) = dagger U * dagger ?A"
+      by (rule dagger_of_prod[OF dcA])
+    have step2: "dagger ?A = H\<^sup>\<dagger> * dagger ?Ud"
+      by (rule dagger_of_prod[OF dcUd])
+    have step3: "dagger ?Ud = U" using Uc by (simp add: dagger_of_dagger_is_id)
+    have "T\<^sup>\<dagger> = dagger (?A * U)" using schur by simp
+    also have "\<dots> = dagger U * dagger ?A" using step1 .
+    also have "\<dots> = dagger U * (H\<^sup>\<dagger> * dagger ?Ud)" using step2 by simp
+    also have "\<dots> = dagger U * (H * U)" using step3 Hdag by simp
+    also have "\<dots> = ?Ud * H * U"
+      using Udagcar sq Uc by (simp add: assoc_mult_mat)
+    also have "\<dots> = T" using schur by simp
+    finally show ?thesis .
+  qed
+
+  (* Step 3: T upper triangular + T\<dagger> = T \<Longrightarrow> T diagonal. *)
+  have T_off_diag: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> i \<noteq> j \<Longrightarrow> T $$ (i, j) = 0"
+  proof -
+    fix i j assume i: "i < n" and j: "j < n" and ij: "i \<noteq> j"
+    show "T $$ (i, j) = 0"
+    proof (cases "i > j")
+      case True
+      then show ?thesis using upper_triangularD[OF UT True] i Tc by simp
+    next
+      case False
+      then have ji: "j > i" using ij by auto
+      have Tji0: "T $$ (j, i) = 0"
+        using upper_triangularD[OF UT ji] j Tc by simp
+      have "T $$ (i, j) = (T\<^sup>\<dagger>) $$ (i, j)" using Tdag by simp
+      also have "\<dots> = cnj (T $$ (j, i))"
+        using i j Tc by (simp add: dagger_def)
+      also have "\<dots> = 0" using Tji0 by simp
+      finally show ?thesis .
+    qed
+  qed
+
+  (* Step 4: diagonal entries are real. *)
+  have T_diag_real: "\<And>i. i < n \<Longrightarrow> T $$ (i, i) \<in> \<real>"
+  proof -
+    fix i assume i: "i < n"
+    have "cnj (T $$ (i, i)) = (T\<^sup>\<dagger>) $$ (i, i)"
+      using i Tc by (simp add: dagger_def)
+    also have "\<dots> = T $$ (i, i)" using Tdag by simp
+    finally have "cnj (T $$ (i, i)) = T $$ (i, i)" .
+    then show "T $$ (i, i) \<in> \<real>" using Reals_cnj_iff by metis
+  qed
+
+  (* Step 5: extract the real diagonal as a list and show T = diag_mat_of_real D. *)
+  let ?D = "map (\<lambda>i. Re (T $$ (i, i))) [0..<n]"
+  have D_len: "length ?D = n" by simp
+  have D_idx: "\<And>i. i < n \<Longrightarrow> ?D ! i = Re (T $$ (i, i))" by simp
+
+  have T_eq_diag: "T = diag_mat_of_real ?D"
+  proof (rule eq_matI)
+    show "dim_row T = dim_row (diag_mat_of_real ?D)" using Tc by auto
+    show "dim_col T = dim_col (diag_mat_of_real ?D)" using Tc by auto
+  next
+    fix i j
+    assume "i < dim_row (diag_mat_of_real ?D)" "j < dim_col (diag_mat_of_real ?D)"
+    then have inb: "i < n" "j < n" by auto
+    show "T $$ (i, j) = diag_mat_of_real ?D $$ (i, j)"
+    proof (cases "i = j")
+      case True
+      have "T $$ (i, i) = complex_of_real (Re (T $$ (i, i)))"
+        using T_diag_real[OF inb(1)]
+        by (metis Reals_cases Re_complex_of_real)
+      then show ?thesis
+        using True inb D_len D_idx[OF inb(1)] by simp
+    next
+      case False
+      have "T $$ (i, j) = 0" using T_off_diag[OF inb(1) inb(2) False] .
+      moreover have "diag_mat_of_real ?D $$ (i, j) = 0"
+        using False inb D_len by simp
+      ultimately show ?thesis by simp
+    qed
+  qed
+
+  show ?thesis
+    using Uc UU D_len schur T_eq_diag by metis
+qed
 
 (* Corollary: Hermitian matrices have real eigenvalues *)
 
