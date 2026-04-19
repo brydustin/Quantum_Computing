@@ -3520,7 +3520,13 @@ proof -
   have id_eq: "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
     using ms by (simp add: measurement_system_def)
   have inner_one: "\<langle>\<psi> | (1\<^sub>m n) *\<^sub>v \<psi>\<rangle> = 1"
-    sorry
+  proof -
+    have "(1\<^sub>m n) *\<^sub>v \<psi> = \<psi>" using psi_car by simp
+    hence "\<langle>\<psi> | (1\<^sub>m n) *\<^sub>v \<psi>\<rangle> = \<langle>\<psi>|\<psi>\<rangle>" by simp
+    also have "\<dots> = (\<parallel>\<psi>\<parallel>)\<^sup>2" by (simp add: cpx_vec_length_inner_prod)
+    also have "\<dots> = 1" using psi_norm by simp
+    finally show ?thesis .
+  qed
   show ?thesis
     using sum_eq id_eq inner_one by simp
 qed
@@ -5348,14 +5354,36 @@ proposition pauli_orthogonal:
     and "\<langle>\<langle>pauli_X | pauli_Y\<rangle>\<rangle> = 0"
     and "\<langle>\<langle>pauli_X | pauli_Z\<rangle>\<rangle> = 0"
     and "\<langle>\<langle>pauli_Y | pauli_Z\<rangle>\<rangle> = 0"
-  sorry  (* Direct entry-by-entry computation of Hilbert-Schmidt inner product. *)
+proof -
+  show "\<langle>\<langle>1\<^sub>m 2 | pauli_X\<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle>1\<^sub>m 2 | pauli_Y\<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle>1\<^sub>m 2 | pauli_Z\<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle>pauli_X | pauli_Y\<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_X_def pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle>pauli_X | pauli_Z\<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_X_def pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle>pauli_Y | pauli_Z\<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_Y_def pauli_Z_def numeral_2_eq_2)
+qed
 
 proposition pauli_norm:
   shows "\<langle>\<langle>1\<^sub>m 2 | 1\<^sub>m 2\<rangle>\<rangle> = 2"
     and "\<langle>\<langle>pauli_X | pauli_X\<rangle>\<rangle> = 2"
     and "\<langle>\<langle>pauli_Y | pauli_Y\<rangle>\<rangle> = 2"
     and "\<langle>\<langle>pauli_Z | pauli_Z\<rangle>\<rangle> = 2"
-  sorry  (* Each Pauli has 2 nonzero entries of magnitude 1; HS norm² = 2. *)
+proof -
+  show "\<langle>\<langle>1\<^sub>m 2 | 1\<^sub>m 2\<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def numeral_2_eq_2)
+  show "\<langle>\<langle>pauli_X | pauli_X\<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle>pauli_Y | pauli_Y\<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle>pauli_Z | pauli_Z\<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def pauli_Z_def numeral_2_eq_2)
+qed
 
 (* Proposition: If U \<in> M_2 is unitary and U = a₀I + a₁X + a₂Y + a₃Z,
    then |a₀|² + |a₁|² + |a₂|² + |a₃|² = 1. *)
@@ -5429,6 +5457,18 @@ definition ket_plus :: "complex Matrix.vec" where
 definition ket_minus :: "complex Matrix.vec" where
   "ket_minus \<equiv> (1/sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 - unit_vec 2 1)"
 
+lemma ket_plus_carrier[simp]: "ket_plus \<in> carrier_vec 2"
+  unfolding ket_plus_def by simp
+
+lemma ket_minus_carrier[simp]: "ket_minus \<in> carrier_vec 2"
+  unfolding ket_minus_def by simp
+
+lemma ket_plus_dim[simp]: "dim_vec ket_plus = 2"
+  unfolding ket_plus_def by simp
+
+lemma ket_minus_dim[simp]: "dim_vec ket_minus = 2"
+  unfolding ket_minus_def by simp
+
 lemma ket_plus_unit: "\<parallel>ket_plus\<parallel> = 1"
 proof -
   (* \<parallel>(1/\<surd>2)(e\<^sub>0+e\<^sub>1)\<parallel>\<^sup>2 = (1/2)\<langle>e\<^sub>0+e\<^sub>1 | e\<^sub>0+e\<^sub>1\<rangle> = (1/2)(1+0+0+1) = 1. *)
@@ -5469,9 +5509,10 @@ proof -
   (* pauli_Z\<^sup>2 = I, so pauli_Z|-\<rangle> = pauli_Z\<sqdot>pauli_Z|+\<rangle> = |+\<rangle>. *)
   have "pauli_Z *\<^sub>v ket_minus = pauli_Z *\<^sub>v (pauli_Z *\<^sub>v ket_plus)"
     using pauli_Z_ket_plus by simp
-  also have "\<dots> = (pauli_Z * pauli_Z) *\<^sub>v ket_plus" sorry
+  also have "\<dots> = (pauli_Z * pauli_Z) *\<^sub>v ket_plus"
+    by (metis assoc_mult_mat_vec pauli_Z_carrier ket_plus_carrier)
   also have "\<dots> = (1\<^sub>m 2) *\<^sub>v ket_plus" using pauli_Z_squared by simp
-  also have "\<dots> = ket_plus" sorry  (* dim_vec ket_plus = 2 *)
+  also have "\<dots> = ket_plus" by simp
   finally show ?thesis .
 qed
 
