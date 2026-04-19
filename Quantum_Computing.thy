@@ -3207,18 +3207,25 @@ theorem psd_sqrt_exists:
   shows "\<exists>Q :: complex Matrix.mat.
          Q \<in> carrier_mat n n \<and> psd Q \<and> Q * Q = P"
 proof -
-  (* Spectral decomposition: P = U D U\<dagger> with D diagonal, real, \<ge> 0.
-     Set Q = U \<surd>D U\<dagger>. *)
   have herm: "hermitian P" using pos by (rule psd_hermitian)
   obtain U D where Uc: "U \<in> carrier_mat n n" and UU: "unitary U"
     and Dlen: "length D = n" and spec: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
     using hermitian_spectral_decomp[OF sq herm] by blast
+  have Udagcar: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by auto
   let ?sqrtD = "map sqrt D"
+  have sqrtD_len: "length ?sqrtD = n" using Dlen by simp
   let ?Q = "U * diag_mat_of_real ?sqrtD * (U\<^sup>\<dagger>)"
-  have Qcar: "?Q \<in> carrier_mat n n" sorry
-  have Qpsd: "psd ?Q" sorry
-  have QQ: "?Q * ?Q = P" sorry
-  show ?thesis using Qcar Qpsd QQ by blast
+  (* Q \<in> carrier_mat n n by mult_carrier_mat. *)
+  have Qcar: "?Q \<in> carrier_mat n n"
+    using Uc Udagcar sqrtD_len by auto
+  (* Q is hermitian: Q\<^sup>\<dagger> = U \<sqdot> \<surd>D\<^sup>\<dagger> \<sqdot> U\<^sup>\<dagger> = Q (since \<surd>D real-diagonal). *)
+  have Q_herm: "hermitian ?Q" sorry
+  (* PSD: \<langle>x | Q x\<rangle> = \<langle>U\<^sup>\<dagger>x | \<surd>D U\<^sup>\<dagger>x\<rangle> \<ge> 0 since \<surd>D entries \<ge> 0. *)
+  have Q_psd: "psd ?Q"
+    unfolding psd_def using Q_herm Qcar sorry
+  (* Q\<^sup>2 = U \<sqdot> \<surd>D \<sqdot> (U\<^sup>\<dagger>U) \<sqdot> \<surd>D \<sqdot> U\<^sup>\<dagger> = U \<sqdot> D \<sqdot> U\<^sup>\<dagger> = P. *)
+  have QQ_eq: "?Q * ?Q = P" sorry
+  show ?thesis using Qcar Q_psd QQ_eq by blast
 qed
 (* Proof: From spectral decomp P = U diag(\<lambda>₁,...,\<lambda>ₙ) U\<dagger>,
    set Q = U diag(\<surd>\<lambda>₁,...,\<surd>\<lambda>ₙ) U\<dagger>.  Since \<lambda>ᵢ \<ge> 0, Q is well-defined,
