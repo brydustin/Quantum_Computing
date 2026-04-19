@@ -4321,8 +4321,14 @@ proof -
   let ?Dneg = "map (\<lambda>x. max (- x) 0) D"
   let ?P1 = "U * diag_mat_of_real ?Dpos * (U\<^sup>\<dagger>)"
   let ?P2 = "U * diag_mat_of_real ?Dneg * (U\<^sup>\<dagger>)"
-  have c1: "?P1 \<in> carrier_mat n n" sorry
-  have c2: "?P2 \<in> carrier_mat n n" sorry
+  have Udag: "U\<^sup>\<dagger> \<in> carrier_mat n n"
+    using Uc by (metis carrier_matD carrier_matI dim_col_of_dagger dim_row_of_dagger)
+  have Dpos_len: "length ?Dpos = n" using Dlen by simp
+  have Dneg_len: "length ?Dneg = n" using Dlen by simp
+  have c1: "?P1 \<in> carrier_mat n n"
+    using Uc Udag Dpos_len by auto
+  have c2: "?P2 \<in> carrier_mat n n"
+    using Uc Udag Dneg_len by auto
   have p1: "psd ?P1" sorry
   have p2: "psd ?P2" sorry
   have eq: "H = ?P1 - ?P2" sorry
