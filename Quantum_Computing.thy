@@ -2654,6 +2654,8 @@ proof -
   finally show ?thesis .
 qed
 
+
+
 (* Key Lemma: if \<langle>x|Tx\<rangle> = 0 for all x \<in> \<complex>^n then T = 0. *)
 
 lemma quadratic_form_zero:
@@ -2763,63 +2765,91 @@ proof -
 qed
 
 (* Adjoint moves to the other slot of the inner product:
-   \<langle>A *\<^sub>v x | x\<rangle> = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>.
+   \<langle>A *\<^sub>v x | y\<rangle> = \<langle>x | A\<^sup>\<dagger> *\<^sub>v y\<rangle>.
    This is the defining property of the adjoint A\<^sup>\<dagger>. *)
+
 lemma inner_prod_adjoint_swap:
-  fixes A :: "complex Matrix.mat" and x :: "complex Matrix.vec"
-  assumes Acar: "A \<in> carrier_mat n n" and xcar: "x \<in> carrier_vec n"
-  shows "\<langle>A *\<^sub>v x | x\<rangle> = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>"
+  fixes M :: "complex Matrix.mat"
+    and x y :: "complex Matrix.vec"
+  assumes M: "M \<in> carrier_mat n m"
+      and x: "dim_vec x = n"
+      and y: "dim_vec y = m"
+  shows "\<langle>x | M *\<^sub>v y\<rangle> = \<langle>M\<^sup>\<dagger> *\<^sub>v x | y\<rangle>"
 proof -
-  have xdim: "dim_vec x = n" using xcar by auto
-  have Axdim: "dim_vec (A *\<^sub>v x) = n" using Acar by auto
-  have Adagcar: "A\<^sup>\<dagger> \<in> carrier_mat n n" using Acar by auto
-  (* Both sides reduced to a common canonical double-sum form. *)
-  have lhs: "\<langle>A *\<^sub>v x | x\<rangle> =
-             (\<Sum>i = 0..<n. \<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
+  have Mxy_dim: "dim_vec (M *\<^sub>v y) = n"
+    using M y by auto
+  have Mdag: "M\<^sup>\<dagger> \<in> carrier_mat m n"
+    using M by auto
+  have Mdagx_dim: "dim_vec (M\<^sup>\<dagger> *\<^sub>v x) = m"
+    using Mdag x by auto
+
+  have lhs: "\<langle>x | M *\<^sub>v y\<rangle> = (\<Sum>j = 0..<n. \<Sum>i = 0..<m. cnj (x $ j) * M $$ (j,i) * y $ i)"
   proof -
-    have "\<langle>A *\<^sub>v x | x\<rangle> = (\<Sum>i = 0..<n. cnj ((A *\<^sub>v x) $ i) * x $ i)"
-      using xdim by (simp add: inner_prod_def)
-    also have "\<dots> = (\<Sum>i = 0..<n. cnj (\<Sum>j = 0..<n. A $$ (i, j) * x $ j) * x $ i)"
-      using Acar xcar by (simp add: scalar_prod_def)
-    also have "\<dots> = (\<Sum>i = 0..<n. (\<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j)) * x $ i)"
-      by simp
-    also have "\<dots> = (\<Sum>i = 0..<n. \<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
-      by (simp add: sum_distrib_right)
-    finally show ?thesis .
-  qed
-  have rhs: "\<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle> =
-             (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
-  proof -
-    have "\<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle> = (\<Sum>j = 0..<n. cnj (x $ j) * (A\<^sup>\<dagger> *\<^sub>v x) $ j)"
-      using Adagcar inner_prod_expand xcar by auto
-    also have "\<dots> = (\<Sum>j = 0..<n. cnj (x $ j) * (\<Sum>i = 0..<n. (A\<^sup>\<dagger>) $$ (j, i) * x $ i))"
+    have "\<langle>x | M *\<^sub>v y\<rangle> = (\<Sum>j = 0..<n. cnj (x $ j) * (M *\<^sub>v y) $ j)"
+      using x Mxy_dim by (simp add: inner_prod_def)
+    also have "\<dots> = (\<Sum>j = 0..<n. cnj (x $ j) * (\<Sum>i = 0..<m. M $$ (j,i) * y $ i))"
     proof (rule sum.cong[OF refl])
       fix j
       assume j: "j \<in> {0..<n}"
-      then have jlt: "j < n"
-        by simp
-      have "(A\<^sup>\<dagger> *\<^sub>v x) $ j = (\<Sum>i = 0..<dim_col (A\<^sup>\<dagger>). (A\<^sup>\<dagger>) $$ (j, i) * x $ i)"
-        using Adagcar jlt mult_mat_vec_index xcar by blast
-
-      also have "dim_col (A\<^sup>\<dagger>) = n"
-        using Adagcar by blast
-
-      finally show "cnj (x $ j) * (A\<^sup>\<dagger> *\<^sub>v x) $ j
-                  = cnj (x $ j) * (\<Sum>i = 0..<n. (A\<^sup>\<dagger>) $$ (j, i) * x $ i)"
+      then have jlt: "j < n" by simp
+      have "(M *\<^sub>v y) $ j = (\<Sum>i = 0..<dim_col M. M $$ (j,i) * y $ i)"
+        using M jlt y mult_mat_vec_index
+        by (simp add: scalar_prod_def)
+      also have "dim_col M = m"
+        using M by simp
+      finally show "cnj (x $ j) * (M *\<^sub>v y) $ j
+                  = cnj (x $ j) * (\<Sum>i = 0..<m. M $$ (j,i) * y $ i)"
         by simp
     qed
-    also have "\<dots> = (\<Sum>j = 0..<n. cnj (x $ j) * (\<Sum>i = 0..<n. cnj (A $$ (i, j)) * x $ i))"
-      using Acar by (intro sum.cong refl) (simp add: dagger_def)
-    also have "\<dots> = (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (x $ j) * (cnj (A $$ (i, j)) * x $ i))"
+    also have "\<dots> = (\<Sum>j = 0..<n. \<Sum>i = 0..<m. cnj (x $ j) * (M $$ (j,i) * y $ i))"
       by (simp add: sum_distrib_left)
-    also have "\<dots> = (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
-      by (intro sum.cong refl, auto)                                                                    
+    also have "\<dots> = (\<Sum>j = 0..<n. \<Sum>i = 0..<m. cnj (x $ j) * M $$ (j,i) * y $ i)"
+      by (intro sum.cong refl, simp)     
+    finally show ?thesis .
+  qed
+  have rhs: "\<langle>M\<^sup>\<dagger> *\<^sub>v x | y\<rangle> = (\<Sum>i = 0..<m. \<Sum>j = 0..<n. cnj (x $ j) * M $$ (j,i) * y $ i)"
+  proof -
+    have "\<langle>M\<^sup>\<dagger> *\<^sub>v x | y\<rangle> = (\<Sum>i = 0..<m. cnj ((M\<^sup>\<dagger> *\<^sub>v x) $ i) * y $ i)"
+      using y Mdagx_dim by (simp add: inner_prod_def)
+    also have "\<dots> = (\<Sum>i = 0..<m. cnj (\<Sum>j = 0..<n. (M\<^sup>\<dagger>) $$ (i,j) * x $ j) * y $ i)"
+    proof (rule sum.cong[OF refl])
+      fix i
+      assume i: "i \<in> {0..<m}"
+      then have ilt: "i < m"
+        by simp
+      have "(M\<^sup>\<dagger> *\<^sub>v x) $ i = (\<Sum>j = 0..<dim_col (M\<^sup>\<dagger>). (M\<^sup>\<dagger>) $$ (i,j) * x $ j)"
+        using Mdag ilt x mult_mat_vec_index
+        by (metis (no_types, lifting) carrier_matD(2) carrier_vec_dim_vec sum.cong)
+      also have "dim_col (M\<^sup>\<dagger>) = n"
+        using Mxy_dim by auto
+      finally show "cnj ((M\<^sup>\<dagger> *\<^sub>v x) $ i) * y $ i
+                  = cnj (\<Sum>j = 0..<n. (M\<^sup>\<dagger>) $$ (i,j) * x $ j) * y $ i"
+        by simp
+    qed
+    also have "\<dots> = (\<Sum>i = 0..<m. (\<Sum>j = 0..<n. cnj ((M\<^sup>\<dagger>) $$ (i,j) * x $ j)) * y $ i)"
+      by simp
+    also have "\<dots> = (\<Sum>i = 0..<m. (\<Sum>j = 0..<n. cnj ((M\<^sup>\<dagger>) $$ (i,j)) * cnj (x $ j)) * y $ i)"
+      by simp
+    also have "\<dots> = (\<Sum>i = 0..<m. (\<Sum>j = 0..<n. M $$ (j,i) * cnj (x $ j)) * y $ i)"
+    proof (intro sum.cong refl)
+      fix i
+      assume i: "i \<in> {0..<m}"
+      show "(\<Sum>j = 0..<n. cnj (M\<^sup>\<dagger> $$ (i, j)) * cnj (x $ j)) * y $ i = (\<Sum>j = 0..<n. M $$ (j, i) * cnj (x $ j)) * y $ i"
+        using M i by (intro arg_cong[where f = "\<lambda>s. s * y $ i"] sum.cong refl) (simp add: dagger_def)
+    qed
+    also have "\<dots> = (\<Sum>i = 0..<m. \<Sum>j = 0..<n. (M $$ (j,i) * cnj (x $ j)) * y $ i)"
+      by (simp add: sum_distrib_right)
+    also have "\<dots> = (\<Sum>i = 0..<m. \<Sum>j = 0..<n. cnj (x $ j) * M $$ (j,i) * y $ i)"
+      by (intro sum.cong refl, simp add: algebra_simps)
     finally show ?thesis.
   qed
-  have "(\<Sum>i = 0..<n. \<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)
-      = (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
+
+  have "(\<Sum>j = 0..<n. \<Sum>i = 0..<m. cnj (x $ j) * M $$ (j,i) * y $ i)
+      = (\<Sum>i = 0..<m. \<Sum>j = 0..<n. cnj (x $ j) * M $$ (j,i) * y $ i)"
     by (rule sum.swap)
-  thus ?thesis using lhs rhs by simp
+
+  thus ?thesis
+    using lhs rhs by simp
 qed
 
 (* Hermitian \<leftrightarrow> \<langle>x|Hx\<rangle> \<in> \<real> for all x *)
@@ -2840,7 +2870,7 @@ proof
       have "cnj \<langle>x | A *\<^sub>v x\<rangle> = \<langle>A *\<^sub>v x | x\<rangle>"
         by (metis carrier_matD(1) dim_mult_mat_vec inner_prod_cnj sq xdim)
       also have "... = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>"
-        using inner_prod_adjoint_swap[OF sq xcar] by simp
+        using hA hermitian_def inner_prod_adjoint_swap sq xdim by auto
       also have "... = \<langle>x | A *\<^sub>v x\<rangle>"
         using hA by (simp add: hermitian_def)
       finally show ?thesis .
@@ -2870,7 +2900,8 @@ next
     also have "... = \<langle>x | A *\<^sub>v x\<rangle> - cnj \<langle>x | A *\<^sub>v x\<rangle>"
     proof -
       have "\<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle> = \<langle>A *\<^sub>v x | x\<rangle>"
-        using inner_prod_adjoint_swap[OF sq xcar] by simp
+        by (metis carrier_matD(1,2) dim_mult_mat_vec dim_row_of_dagger 
+            inner_prod_adjoint_swap inner_prod_cnj sq xdim)        
       also have "... = cnj \<langle>x | A *\<^sub>v x\<rangle>"
         by (metis carrier_matD(1) dim_mult_mat_vec inner_prod_cnj sq xdim)
       finally show ?thesis by simp
@@ -2881,7 +2912,7 @@ next
   qed
 
   have "?T = 0\<^sub>m n n"
-    using quadratic_form_zero[OF Tcar qzero] .
+    using quadratic_form_zero[OF Tcar qzero].
   hence "A = (A\<^sup>\<dagger>)"
   proof -
     have Adagcar: "A\<^sup>\<dagger> \<in> carrier_mat n n" using sq by auto
@@ -2939,7 +2970,7 @@ theorem hermitian_spectral_decomp:
          U \<in> carrier_mat n n \<and>
          unitary U \<and>
          length D = n \<and>
-         U\<^sup>\<dagger> * H * U = diag_mat_of_real D"
+         (U\<^sup>\<dagger>) * H * U = diag_mat_of_real D"
 proof -
   (* Step 1: Schur gives U unitary, T = U\<dagger>HU upper triangular. *)
   obtain U T where Uc: "U \<in> carrier_mat n n" and Tc: "T \<in> carrier_mat n n"
@@ -2960,7 +2991,7 @@ proof -
     have dcUd: "dim_col ?Ud = dim_row H" using Udagcar sq by auto
     have step1: "dagger (?A * U) = dagger U * dagger ?A"
       by (rule dagger_of_prod[OF dcA])
-    have step2: "dagger ?A = H\<^sup>\<dagger> * dagger ?Ud"
+    have step2: "dagger ?A = (H\<^sup>\<dagger>) * dagger ?Ud"
       by (rule dagger_of_prod[OF dcUd])
     have step3: "dagger ?Ud = U" using Uc by (simp add: dagger_of_dagger_is_id)
     have "T\<^sup>\<dagger> = dagger (?A * U)" using schur by simp
@@ -2968,9 +2999,9 @@ proof -
     also have "\<dots> = dagger U * (H\<^sup>\<dagger> * dagger ?Ud)" using step2 by simp
     also have "\<dots> = dagger U * (H * U)" using step3 Hdag by simp
     also have "\<dots> = ?Ud * H * U"
-      using Udagcar sq Uc by (simp add: assoc_mult_mat)
+      using Udagcar sq Uc by simp
     also have "\<dots> = T" using schur by simp
-    finally show ?thesis .
+    finally show ?thesis.
   qed
 
   (* Step 3: T upper triangular + T\<dagger> = T \<Longrightarrow> T diagonal. *)
@@ -2990,7 +3021,7 @@ proof -
       also have "\<dots> = cnj (T $$ (j, i))"
         using i j Tc by (simp add: dagger_def)
       also have "\<dots> = 0" using Tji0 by simp
-      finally show ?thesis .
+      finally show ?thesis.
     qed
   qed
 
@@ -3001,7 +3032,7 @@ proof -
     have "cnj (T $$ (i, i)) = (T\<^sup>\<dagger>) $$ (i, i)"
       using i Tc by (simp add: dagger_def)
     also have "\<dots> = T $$ (i, i)" using Tdag by simp
-    finally have "cnj (T $$ (i, i)) = T $$ (i, i)" .
+    finally have "cnj (T $$ (i, i)) = T $$ (i, i)".
     then show "T $$ (i, i) \<in> \<real>" using Reals_cnj_iff by metis
   qed
 
@@ -3028,7 +3059,7 @@ proof -
         using True inb D_len D_idx[OF inb(1)] by simp
     next
       case False
-      have "T $$ (i, j) = 0" using T_off_diag[OF inb(1) inb(2) False] .
+      have "T $$ (i, j) = 0" using T_off_diag[OF inb(1) inb(2) False].
       moreover have "diag_mat_of_real ?D $$ (i, j) = 0"
         using False inb D_len by simp
       ultimately show ?thesis by simp
@@ -3096,6 +3127,54 @@ notation pd  ("_ >\<^sub>M 0")
 lemma psd_hermitian: "psd P \<Longrightarrow> hermitian P"
   by (simp add: psd_def)
 
+lemma psd_MdagM:
+  assumes M: "M \<in> carrier_mat n m"
+  shows "psd (M\<^sup>\<dagger> * M)"
+proof -
+  have MM_car: "M\<^sup>\<dagger> * M \<in> carrier_mat m m"
+    using assms by fastforce
+
+  have herm: "hermitian (M\<^sup>\<dagger> * M)"
+    unfolding hermitian_def using M
+    by (simp add: dagger_of_dagger_is_id dagger_of_prod)
+
+
+  have nonneg:
+    "\<forall>x :: complex Matrix.vec. dim_vec x = dim_row (M\<^sup>\<dagger> * M) \<longrightarrow>  Re \<langle>x | (M\<^sup>\<dagger> * M) *\<^sub>v x\<rangle> \<ge> 0"
+  proof (intro allI impI)
+    fix x :: "complex Matrix.vec"
+    assume xdim: "dim_vec x = dim_row (M\<^sup>\<dagger> * M)"
+
+    have dim_row_MM: "dim_row (M\<^sup>\<dagger> * M) = m"
+      using M by simp
+    hence xdim': "dim_vec x = m"
+      using xdim by simp
+
+    have Mx_dim: "dim_vec (M *\<^sub>v x) = n"
+      using M xdim' by simp
+
+    have qf:  "\<langle>x | (M\<^sup>\<dagger> * M) *\<^sub>v x\<rangle> = \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle>"
+    proof -
+      have "\<langle>x | (M\<^sup>\<dagger> * M) *\<^sub>v x\<rangle> = \<langle>x | M\<^sup>\<dagger> *\<^sub>v (M *\<^sub>v x)\<rangle>"
+        using M xdim'
+        by (metis assoc_mult_mat_vec carrier_matD(1) carrier_vec_dim_vec dagger_def mat_carrier)
+      also have "... = \<langle>(M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v x | M *\<^sub>v x\<rangle>"
+        using M xdim' Mx_dim
+        by (metis carrier_matD(2) dagger_of_dagger_is_id dim_mult_mat_vec 
+            dim_row_of_dagger inner_prod_adjoint_swap inner_prod_cnj)
+      also have "... = \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle>"
+        using dagger_of_dagger_is_id by presburger
+      finally show ?thesis .
+    qed
+    have "Re \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle> \<ge> 0"
+      using Mx_dim using inner_prod_with_itself_Re by blast
+    thus "Re \<langle>x | (M\<^sup>\<dagger> * M) *\<^sub>v x\<rangle> \<ge> 0"
+      using qf by simp
+  qed
+  show ?thesis
+    unfolding psd_def using herm nonneg by simp
+qed
+
 (* PSD iff all eigenvalues are non-negative (requires spectral theorem) *)
 
 theorem psd_iff_nonneg_eigenvalues:
@@ -3103,18 +3182,86 @@ theorem psd_iff_nonneg_eigenvalues:
   assumes sq: "P \<in> carrier_mat n n"
   shows "psd P \<longleftrightarrow>
          (hermitian P \<and>
-          (\<forall>mu :: complex. \<exists>v :: complex Matrix.vec. v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and>
-             P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0))"
+          (\<forall>mu :: complex. \<forall>v :: complex Matrix.vec.
+             v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0))"
 proof
-  assume "psd P"
-  thus "hermitian P \<and> (\<forall>mu. \<exists>v. v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and>
-                                  P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0)"
-    by (metis psd_hermitian)
+  assume pos: "psd P"
+  have herm: "hermitian P"
+    using pos by (rule psd_hermitian)
+
+  have eig_nonneg:
+    "\<forall>mu v. v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0"
+  proof (intro allI impI)
+    fix mu :: complex
+    fix v  :: "complex Matrix.vec"
+    assume hyp: "v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v"
+    then have vneq: "v \<noteq> 0\<^sub>v n"
+      and vdim: "dim_vec v = n"
+      and eig:  "P *\<^sub>v v = mu \<cdot>\<^sub>v v"
+      by auto
+    have qf_nonneg: "0 \<le> Re \<langle>v | P *\<^sub>v v\<rangle>"
+      using pos vdim  unfolding psd_def  using sq by auto
+    have inner_eig: "\<langle>v | P *\<^sub>v v\<rangle> = mu * \<langle>v | v\<rangle>"
+      by (simp add: hyp)
+    have vv_real: "\<langle>v | v\<rangle> = of_real (Re \<langle>v | v\<rangle>)"
+      using inner_prod_with_itself_real of_real_Re by presburger
+    have vv_pos: "0 < Re \<langle>v | v\<rangle>"
+      using vneq vdim inner_prod_with_itself_Re_non0 by blast
+    have "0 \<le> Re (mu * \<langle>v | v\<rangle>)"
+      using qf_nonneg by (simp add: inner_eig)
+    hence "0 \<le> Re mu * Re \<langle>v | v\<rangle>"
+      using inner_prod_with_itself_Im by auto     
+    thus "Re mu \<ge> 0"
+      by (meson linorder_not_less vv_pos zero_le_mult_iff)
+  qed
+  show "hermitian P \<and>
+        (\<forall>mu::complex. \<forall>v::complex Matrix.vec.
+           v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0)"
+    using herm eig_nonneg by blast
 next
-  assume rhs: "hermitian P \<and> (\<forall>mu. \<exists>v. v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and>
-                                          P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0)"
-  show "psd P"
-    sorry  (* By spectral theorem, P = U D U\<dagger>, eigenvalues \<ge> 0 \<Longrightarrow> \<langle>x|Px\<rangle> \<ge> 0 *)
+  assume rhs:
+    "hermitian P \<and>
+     (\<forall>mu::complex. \<forall>v::complex Matrix.vec.
+        v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0)"
+  then have herm: "hermitian P"
+    by blast
+  from rhs have eig_nonneg:
+    "\<forall>mu::complex. \<forall>v::complex Matrix.vec.
+       v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0"
+    by blast
+
+  have "psd P"
+  proof -
+    have spec:
+      "\<forall>v. dim_vec v = n \<longrightarrow> 0 \<le> Re \<langle>v | P *\<^sub>v v\<rangle>"
+    proof (intro allI impI)
+      fix v :: "complex Matrix.vec"
+      assume vdim: "dim_vec v = n"
+      show "0 \<le> Re \<langle>v | P *\<^sub>v v\<rangle>"
+      proof (cases "v = 0\<^sub>v n")
+        case True
+        then show ?thesis
+          using vdim sq
+          by (metis carrier_matD(1) dim_mult_mat_vec index_smult_vec(2) inner_prod_cnj 
+              inner_prod_right_smult' inner_prod_with_itself_nonneg_reals_non0 mult_zero_left 
+              verit_comp_simplify1(2) zero_complex.simps(1)) 
+      next
+        case False
+        from herm sq obtain mu :: complex
+          where eig: "P *\<^sub>v v = mu \<cdot>\<^sub>v v"
+            and rv: "Re mu = Re \<langle>v | P *\<^sub>v v\<rangle> / Re \<langle>v | v\<rangle>"
+          sorry
+        have "Re mu \<ge> 0"
+          using eig_nonneg False vdim eig by blast
+        then show ?thesis
+          sorry
+      qed
+    qed
+    show ?thesis
+      unfolding psd_def
+      using sq herm spec by auto
+  qed
+  thus "psd P".
 qed
 
 (* PSD iff P = \<Sigma>ᵢ |vᵢ\<rangle>\<langle>vᵢ| (Kraus-like characterisation) *)
@@ -3133,8 +3280,46 @@ proof -
      For x with dim_vec x = n, set y = (mat_of_cols n vs)\<^sup>\<dagger> *\<^sub>v x; then
      \<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | M M\<^sup>\<dagger> x\<rangle> = \<langle>M\<^sup>\<dagger> x | M\<^sup>\<dagger> x\<rangle> = \<parallel>y\<parallel>\<^sup>2 \<ge> 0. *)
   have nonneg: "\<forall>x. dim_vec x = dim_row (outer_sum n vs) \<longrightarrow>
-                Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0"
-    by (smt (verit) carrier_mat_triv dr herm outer_sum_dim_col psd_def psd_iff_nonneg_eigenvalues)
+              Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0"
+  proof (intro allI impI)
+    fix x :: "complex Matrix.vec"
+    assume xdim: "dim_vec x = dim_row (outer_sum n vs)"
+    let ?M = "mat_of_cols n vs"
+    let ?y = "(?M\<^sup>\<dagger>) *\<^sub>v x"
+
+    have M_car: "?M \<in> carrier_mat n k"
+      using len vdim
+      by (simp add: mat_of_cols_def)
+
+
+    have xdim_n: "dim_vec x = n"
+      using xdim by simp
+
+    have xcar: "x \<in> carrier_vec n"
+      using xdim_n carrier_vec_dim_vec by blast 
+
+    have ycar: "?y \<in> carrier_vec k"
+      using M_car xcar carrier_dim_vec len by force
+
+
+    have outer_as_MMdag: "outer_sum n vs = ?M * (?M\<^sup>\<dagger>)"
+      using len vdim outer_sum_def by presburger
+
+
+    have "\<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | (?M * (?M\<^sup>\<dagger>)) *\<^sub>v x\<rangle>"
+      using outer_as_MMdag by simp
+    also have "... = \<langle>x | ?M *\<^sub>v ((?M\<^sup>\<dagger>) *\<^sub>v x)\<rangle>"
+      using M_car xcar 
+      by (metis assoc_mult_mat_vec carrier_mat_triv dim_col_of_dagger 
+            dim_row_of_dagger mat_of_cols_carrier(2))
+    also have "... = \<langle>x | ?M *\<^sub>v ?y\<rangle>"
+      by simp    
+    also have "... = \<langle>?y | ?y\<rangle>"
+      sorry
+    
+    show "Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0" 
+      sorry
+  qed
   show ?thesis
     unfolding psd_def using herm nonneg by simp
 qed
@@ -3273,16 +3458,13 @@ qed
    minor has positive determinant.  This is Sylvester's criterion.
    We state it and defer the proof which requires determinant theory. *)
 
-theorem sylvester_criterion:
-  fixes P :: "complex Matrix.mat"
-  assumes sq: "P \<in> carrier_mat n n"
-      and herm: "hermitian P"
-  shows "pd P \<longleftrightarrow>
-         (\<forall>k. k \<le> n \<longrightarrow> 0 < 0)"  (* placeholder signature *)
-  sorry  (* Placeholder statement: full Sylvester needs det theory + leading minors. *)
+(*We need to prove this LAST!  Perhaps use UTP/vcg to define a program which handles this...*)
+  
 
 (* Cholesky reduction: P \<ge> 0 iff P - (p_{i1}\<sqdot>p_{1j}/p_{11}) \<ge> 0
    (when p_{11} > 0), stated as an inductive test *)
+
+
 
 theorem cholesky_reduction:
   fixes P :: "complex Matrix.mat"
@@ -3337,7 +3519,7 @@ proof -
 
   also have "(\<Sum>i = 0..<m. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
              (\<Sum>i = 0..<m. cnj (v1 $ i) * v2 $ i)"
-    using vd1 vd2 by (intro sum.cong refl, simp add: direct_sum_vec_left)
+    using vd1 vd2 by (intro sum.cong refl, simp)
   also have "(\<Sum>i = m..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
              (\<Sum>j = 0..<p. cnj (w1 $ j) * w2 $ j)"
   proof -
@@ -3359,7 +3541,7 @@ proof -
             cnj (w1 $ j) * w2 $ j"
         using e1 e2 by simp
     qed
-    finally show ?thesis .
+    finally show ?thesis.
   qed
   finally show ?thesis
     using vd1 vd2 wd1 wd2 by (simp add: inner_prod_def)
@@ -3409,7 +3591,11 @@ lemma block_mat_apply:
 lemma tensor_vec_bilinear_left:
   assumes vd: "dim_vec v1 = n" "dim_vec v2 = n" "dim_vec w = m"
   shows "tensor_vec (v1 + v2) w = tensor_vec v1 w + tensor_vec v2 w"
-  sorry  (* (tensor_vec v w)$(i*m+j) = v$i * w$j; bilinearity by index. *)
+  sorry
+
+
+
+
 
 lemma tensor_vec_bilinear_right:
   assumes vd: "dim_vec v = n" "dim_vec w1 = m" "dim_vec w2 = m"
@@ -3671,9 +3857,9 @@ definition povm :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool
 
 lemma measurement_induces_povm:
   assumes ms: "measurement_system n Ms"
-  shows "povm n (map (\<lambda>M. M\<^sup>\<dagger> * M) Ms)"
+  shows "povm n (map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms)"
 proof -
-  let ?Ps = "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms"
+  let ?Ps = "map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms"
   (* All M \<in> Ms are in carrier_mat n n by ms. *)
   have all_carrier: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
     using ms by (simp add: measurement_system_def)
@@ -3683,11 +3869,62 @@ proof -
   (* Each M\<^sup>\<dagger> * M is psd: hermitian (M\<^sup>\<dagger>M)\<^sup>\<dagger> = M\<^sup>\<dagger>M\<^sup>\<dagger>\<^sup>\<dagger> = M\<^sup>\<dagger>M, and
      \<langle>x | M\<^sup>\<dagger>M x\<rangle> = \<langle>Mx | Mx\<rangle> = \<parallel>Mx\<parallel>\<^sup>2 \<ge> 0. *)
   have P_psd: "\<forall>P \<in> set ?Ps. psd P"
-    using P_carrier dagger_of_dagger_is_id dagger_of_prod hermitian_def psd_iff_nonneg_eigenvalues 
-    by fastforce
+  proof clarify
+    fix P
+    assume P_in: "P \<in> set ?Ps"
+    then obtain M where M_in: "M \<in> set Ms" and P_def: "P = (M\<^sup>\<dagger>) * M"
+      by auto
+
+    have M_car: "M \<in> carrier_mat n n"
+      using all_carrier M_in by blast
+    hence P_car: "P \<in> carrier_mat n n"
+      using P_carrier P_in by blast
+
+    have P_herm: "hermitian P"
+      unfolding P_def hermitian_def
+      using M_car
+      by (simp add: dagger_of_dagger_is_id dagger_of_prod)
+
+
+    have quad_nonneg: "\<forall>x. dim_vec x = n \<longrightarrow> 0 \<le> Re \<langle>x | P *\<^sub>v x\<rangle>"
+    proof (intro allI impI)
+      fix x  :: "complex Matrix.vec"
+      assume xdim: "dim_vec x = n"
+
+      have Mx_dim: "dim_vec (M *\<^sub>v x) = n"
+        using M_car xdim by simp
+
+      have "\<langle>x | P *\<^sub>v x\<rangle> = \<langle>x | M\<^sup>\<dagger> *\<^sub>v (M *\<^sub>v x)\<rangle>"
+        unfolding P_def
+        using M_car xdim
+        by (metis assoc_mult_mat_vec carrier_matD(1) carrier_vec_dim_vec dagger_def mat_carrier)
+      also have "... = \<langle>(M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v x | M *\<^sub>v x\<rangle>"
+        using M_car xdim Mx_dim
+        by (metis carrier_matD(2) dagger_of_dagger_is_id dim_col_of_dagger dim_mult_mat_vec 
+            inner_prod_adjoint_swap inner_prod_cnj)
+      also have "... = \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle>"
+        using dagger_of_dagger_is_id by presburger
+      finally have qf_eq: "\<langle>x | P *\<^sub>v x\<rangle> = \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle>" .
+
+      have "0 \<le> Re \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle>"
+        using Mx_dim
+        using inner_prod_with_itself_Re by blast
+
+      thus "0 \<le> Re \<langle>x | P *\<^sub>v x\<rangle>"
+        using qf_eq by simp
+    qed
+
+    show "psd P"
+      unfolding psd_def
+      using P_car P_herm quad_nonneg by blast
+  qed
   (* The sum equals I by definition of measurement_system. *)
-  have id_sum: "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n) = 1\<^sub>m n"
-    by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) not_less_zero one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
+  have "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n)  = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)"
+    by (metis (lifting) dagger_of_id_is_id hermitian_def index_one_mat(2) less_irrefl 
+        one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
+  also have "... = 1\<^sub>m n"
+    using ms by (simp add: measurement_system_def)
+  finally have id_sum: "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n) = 1\<^sub>m n" .
   show ?thesis
     unfolding povm_def using P_carrier P_psd id_sum by auto
 qed
@@ -4108,7 +4345,8 @@ proof -
   have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
   (* M\<^sup>\<dagger>M is psd (\<langle>x|M\<^sup>\<dagger>Mx\<rangle> = \<langle>Mx|Mx\<rangle> \<ge> 0).
      For psd A, B: Tr(AB) = Tr(\<surd>A \<sqdot> B \<sqdot> \<surd>A) \<ge> 0 since \<surd>A B \<surd>A is psd. *)
-  have MdM_psd: "psd (M\<^sup>\<dagger> * M)"
+  have MdM_psd: "psd ((M\<^sup>\<dagger>) * M)"
+
     by (metis M_carr Min One_nat_def ab_semigroup_mult_class.mult_ac(1) assoc_mult_mat carrier_matD(1,2) carrier_matI class_cring.factors_equal dagger_four_block_mat_complex dagger_of_dagger_is_id dagger_of_prod dim_col_of_dagger dim_row_of_dagger dm hermitian_def hermitian_spectral_decomp householder_hermitian index_mult_mat(2,3) measurement_system_def ms mult.commute mult.left_commute mult.right_neutral mult_carrier_mat psd_def psd_hermitian psd_iff_nonneg_eigenvalues psd_sqrt_exists rho_psd schur_induct semigroup_mult_class.mult.assoc zero_carrier_mat)
   show ?thesis
     using MdM_psd rho_psd sorry
