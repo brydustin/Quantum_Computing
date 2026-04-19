@@ -3491,7 +3491,25 @@ lemma measurement_probs_sum_one:
   assumes ms: "measurement_system n Ms"
       and st: "quantum_state n \<psi>"
   shows "(\<Sum>M \<leftarrow> Ms. meas_prob M \<psi>) = 1"
-  sorry  (* \<Sum>m \<parallel>Mm\<psi>\<parallel>² = \<Sum>m \<langle>\<psi> | Mm\<dagger>Mm \<psi>\<rangle> = \<langle>\<psi> | (\<Sum>m Mm\<dagger>Mm) \<psi>\<rangle> = \<langle>\<psi>|I\<psi>\<rangle> = 1. *)
+proof -
+  have psi_dim: "dim_vec \<psi> = n" using st by (auto simp: quantum_state_def)
+  have psi_norm: "\<parallel>\<psi>\<parallel> = 1" using st by (auto simp: quantum_state_def)
+  have psi_car: "\<psi> \<in> carrier_vec n" using psi_dim by (simp add: carrier_vecI)
+  (* Step 1: \<parallel>M\<psi>\<parallel>² = \<langle>\<psi> | M\<dagger>M \<psi>\<rangle> for each M *)
+  have step1: "\<And>M. M \<in> set Ms \<Longrightarrow> meas_prob M \<psi> = Re (\<langle>\<psi> | (M\<^sup>\<dagger> * M) *\<^sub>v \<psi>\<rangle>)"
+    sorry
+  (* Step 2: sum over M and pull out, using \<Sum>M\<dagger>M = I *)
+  have sum_eq: "(\<Sum>M \<leftarrow> Ms. meas_prob M \<psi>) =
+                Re (\<langle>\<psi> | (foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+    sorry
+  (* Step 3: replace \<Sum>M\<dagger>M with I and use \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>² = 1 *)
+  have id_eq: "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
+    using ms by (simp add: measurement_system_def)
+  have inner_one: "\<langle>\<psi> | (1\<^sub>m n) *\<^sub>v \<psi>\<rangle> = 1"
+    sorry
+  show ?thesis
+    using sum_eq id_eq inner_one by simp
+qed
 
 (* After observing outcome m, the post-measurement state is M_m \<psi> / \<Parallel>M_m \<psi>\<Parallel> *)
 
@@ -3570,25 +3588,55 @@ definition povm :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool
 (* Every measurement system induces a POVM via P_m = M_m\<dagger> M_m *)
 
 lemma measurement_induces_povm:
-  assumes "measurement_system n Ms"
+  assumes ms: "measurement_system n Ms"
   shows "povm n (map (\<lambda>M. M\<^sup>\<dagger> * M) Ms)"
-  sorry  (* Each M\<dagger>M is psd; sum is I by definition of measurement_system. *)
+proof -
+  let ?Ps = "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms"
+  (* All M ∈ Ms are in carrier_mat n n by ms. *)
+  have all_carrier: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+    using ms by (simp add: measurement_system_def)
+  have P_carrier: "\<forall>P \<in> set ?Ps. P \<in> carrier_mat n n"
+    using all_carrier by auto
+  (* Each M\<^sup>\<dagger> * M is psd: hermitian (M\<^sup>\<dagger>M)\<^sup>\<dagger> = M\<^sup>\<dagger>M\<^sup>\<dagger>\<^sup>\<dagger> = M\<^sup>\<dagger>M, and
+     \<langle>x | M\<^sup>\<dagger>M x\<rangle> = \<langle>Mx | Mx\<rangle> = \<parallel>Mx\<parallel>\<^sup>2 \<ge> 0. *)
+  have P_psd: "\<forall>P \<in> set ?Ps. psd P" sorry
+  (* The sum equals I by definition of measurement_system. *)
+  have id_sum: "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n) = 1\<^sub>m n"
+    using ms by (simp add: measurement_system_def)
+  show ?thesis
+    unfolding povm_def using P_carrier P_psd id_sum by auto
+qed
 
 (* Every POVM comes from a measurement system via P_m = (P_m)^{1/2} *)
 
 lemma povm_from_sqrt:
-  assumes "povm n Ps"
+  assumes pv: "povm n Ps"
   shows "\<exists>Ms. measurement_system n Ms \<and>
               map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
-  sorry  (* Use psd_sqrt_exists for each P\<in>Ps; M = \<surd>P satisfies M\<dagger>M = P. *)
+proof -
+  (* For each P\<in>Ps, psd_sqrt_exists gives a Q with Q\<^sup>2 = P, Q psd, Q hermitian.
+     Take M = Q.  Then M\<^sup>\<dagger>M = Q\<^sup>\<dagger>Q = Q\<^sup>2 = P. *)
+  have psd_each: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P"
+    using pv by (simp add: povm_def)
+  have sum_id: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
+    using pv by (simp add: povm_def)
+  (* Construct the list of square roots. *)
+  show ?thesis sorry
+qed
 
 (* Probability formula for POVM: p_m(\<psi>) = \<langle>\<psi>|P_m|\<psi>\<rangle> *)
 
 lemma povm_prob:
-  assumes "povm n Ps" and "quantum_state n \<psi>"
-      and "P \<in> set Ps"
+  assumes pv: "povm n Ps" and st: "quantum_state n \<psi>"
+      and Pin: "P \<in> set Ps"
   shows "Re (\<langle>\<psi> | P *\<^sub>v \<psi>\<rangle>) \<ge> 0"
-  sorry  (* P psd by povm definition + psd quadratic form is \<ge> 0. *)
+proof -
+  have Ppsd: "psd P" using pv Pin by (auto simp: povm_def)
+  have Pcar: "P \<in> carrier_mat n n" using pv Pin by (auto simp: povm_def)
+  have psi_dim: "dim_vec \<psi> = n" using st by (auto simp: quantum_state_def)
+  show ?thesis
+    using Ppsd Pcar psi_dim unfolding psd_def by simp
+qed
 
 
 (* ============================================================================
@@ -3607,11 +3655,24 @@ lemma povm_prob:
 
 lemma composite_measurement_prob:
   fixes M :: "complex Matrix.mat" and \<psi> :: "complex Matrix.vec" and \<phi> :: "complex Matrix.vec"
-  assumes "quantum_state n \<psi>" and "quantum_state m \<phi>"
+  assumes psi_st: "quantum_state n \<psi>" and phi_st: "quantum_state m \<phi>"
       and M_sq: "M \<in> carrier_mat n n"
   shows "meas_prob (M \<Otimes> 1\<^sub>m m) (tensor_vec \<psi> \<phi>) = meas_prob M \<psi>"
-  sorry  (* (M\<otimes>I)(\<psi>\<otimes>\<phi>) = M\<psi> \<otimes> \<phi>, then \<parallel>\<sqdot>\<parallel>² uses tensor_inner_prod
-            and \<parallel>\<phi>\<parallel> = 1. *)
+proof -
+  have psi_dim: "dim_vec \<psi> = n" using psi_st by (auto simp: quantum_state_def)
+  have phi_dim: "dim_vec \<phi> = m" using phi_st by (auto simp: quantum_state_def)
+  have phi_norm: "\<parallel>\<phi>\<parallel> = 1" using phi_st by (auto simp: quantum_state_def)
+  (* Step 1: (M \<otimes> I_m)(\<psi> \<otimes> \<phi>) = (M\<psi>) \<otimes> \<phi> -- mixed product property *)
+  have mix: "(M \<Otimes> 1\<^sub>m m) *\<^sub>v (tensor_vec \<psi> \<phi>) = tensor_vec (M *\<^sub>v \<psi>) \<phi>"
+    sorry
+  (* Step 2: \<parallel>(M\<psi>)\<otimes>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² · \<parallel>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² · 1 *)
+  have norm_prod: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2 * \<parallel>\<phi>\<parallel>^2"
+    sorry
+  have eq: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2"
+    using norm_prod phi_norm by simp
+  show ?thesis
+    unfolding meas_prob_def using mix eq by simp
+qed
 (* Key step: \<Parallel>(M \<otimes> I)(\<psi> \<otimes> \<phi>)\<Parallel>² = \<Parallel>M\<psi> \<otimes> \<phi>\<Parallel>² = \<Parallel>M\<psi>\<Parallel>² \<sqdot> \<Parallel>\<phi>\<Parallel>² = \<Parallel>M\<psi>\<Parallel>² \<sqdot> 1 *)
 
 (* --------------------------------------------------------------------------
@@ -3635,9 +3696,26 @@ definition bell_state :: "complex Matrix.vec" where
 
 lemma bell_state_is_quantum_state:
   "quantum_state 4 bell_state"
-  unfolding quantum_state_def bell_state_def
-  sorry  (* dim = 4 by tensor_vec_dim; norm² = (|1|²+|1|²)/2 = 1 by tensor_inner_prod
-            applied to e₀\<otimes>e₀ + e₁\<otimes>e₁ (which are orthogonal). *)
+proof -
+  let ?u = "tensor_vec (unit_vec 2 0) (unit_vec 2 0)"
+  let ?v = "tensor_vec (unit_vec 2 1) (unit_vec 2 1)"
+  (* Step 1: each tensor has dim 4. *)
+  have du: "dim_vec ?u = 4" using tensor_vec_dim by simp
+  have dv: "dim_vec ?v = 4" using tensor_vec_dim by simp
+  have dim_sum: "dim_vec (?u + ?v) = 4" using du dv by simp
+  have dim_bell: "dim_vec bell_state = 4"
+    using dim_sum unfolding bell_state_def by simp
+  (* Step 2: \<langle>?u | ?u\<rangle> = 1, \<langle>?v | ?v\<rangle> = 1, and \<langle>?u | ?v\<rangle> = 0
+     (using tensor_inner_prod and unit_vec orthonormality). *)
+  have inner_uu: "\<langle>?u | ?u\<rangle> = 1" sorry
+  have inner_vv: "\<langle>?v | ?v\<rangle> = 1" sorry
+  have inner_uv: "\<langle>?u | ?v\<rangle> = 0" sorry
+  have inner_vu: "\<langle>?v | ?u\<rangle> = 0" sorry
+  (* Step 3: \<parallel>(1/\<surd>2)(?u + ?v)\<parallel>\<^sup>2 = (1/2)(\<langle>?u+?v|?u+?v\<rangle>) = (1/2)(1+0+0+1) = 1 *)
+  have norm_bell: "\<parallel>bell_state\<parallel> = 1" sorry
+  show ?thesis
+    unfolding quantum_state_def using dim_bell norm_bell by simp
+qed
 
 lemma bell_state_entangled:
   "entangled 2 2 bell_state"
@@ -3948,15 +4026,21 @@ theorem pure_density_iff_idempotent:
       and dm: "density_matrix n \<rho>"
   shows "is_pure_density n \<rho> \<longleftrightarrow> \<rho> * \<rho> = \<rho>"
 proof
-  assume "is_pure_density n \<rho>"
-  (* \<rho> = |\<psi>\<rangle>\<langle>\<psi>|; then \<rho>² = |\<psi>\<rangle>\<langle>\<psi>|\<psi>\<rangle>\<langle>\<psi>| = \<langle>\<psi>|\<psi>\<rangle> \<sqdot> |\<psi>\<rangle>\<langle>\<psi>| = 1 \<sqdot> \<rho> = \<rho>. *)
-  thus "\<rho> * \<rho> = \<rho>" sorry
+  assume pure: "is_pure_density n \<rho>"
+  then obtain \<psi> where st: "quantum_state n \<psi>" and rho_eq: "\<rho> = outer_sum n [\<psi>]"
+    unfolding is_pure_density_def by blast
+  have psi_dim: "dim_vec \<psi> = n" using st by (auto simp: quantum_state_def)
+  have psi_norm: "\<parallel>\<psi>\<parallel> = 1" using st by (auto simp: quantum_state_def)
+  (* outer_sum n [\<psi>] = mat_of_cols n [\<psi>] * (mat_of_cols n [\<psi>])\<^sup>\<dagger>.
+     Then \<rho>\<^sup>2 = M M\<^sup>\<dagger> M M\<^sup>\<dagger> with M\<^sup>\<dagger> M = 1\<^sub>m 1 (since \<langle>\<psi>|\<psi>\<rangle> = 1).
+     Hence \<rho>\<^sup>2 = M (M\<^sup>\<dagger> M) M\<^sup>\<dagger> = M M\<^sup>\<dagger> = \<rho>. *)
+  show "\<rho> * \<rho> = \<rho>" sorry
 next
   assume idem: "\<rho> * \<rho> = \<rho>"
-  (* Spectral decomp: \<rho> = U D U\<dagger>, idempotent + Tr=1 \<Longrightarrow> D has exactly one
-     nonzero entry equal to 1 \<Longrightarrow> \<rho> is rank-1, so \<rho> = |\<psi>\<rangle>\<langle>\<psi>| for the
-     corresponding column of U. *)
-  thus "is_pure_density n \<rho>" sorry
+  (* Spectral decomp: \<rho> = U D U\<^sup>\<dagger> with D real-diagonal and \<ge> 0 (since psd).
+     idempotent + Tr=1 \<Longrightarrow> D has eigenvalues in {0,1} summing to 1 \<Longrightarrow> exactly one
+     diagonal entry is 1.  Set \<psi> = column i of U; then \<rho> = |\<psi>\<rangle>\<langle>\<psi>|. *)
+  show "is_pure_density n \<rho>" sorry
 qed
 
 
@@ -5118,14 +5202,89 @@ definition pauli_Z :: "complex Matrix.mat" where
 
 (* X,Y,Z are unitary. *)
 
+lemma pauli_X_carrier[simp]: "pauli_X \<in> carrier_mat 2 2"
+  unfolding pauli_X_def by auto
+
+lemma pauli_Y_carrier[simp]: "pauli_Y \<in> carrier_mat 2 2"
+  unfolding pauli_Y_def by auto
+
+lemma pauli_Z_carrier[simp]: "pauli_Z \<in> carrier_mat 2 2"
+  unfolding pauli_Z_def by auto
+
+lemma pauli_X_dagger: "pauli_X\<^sup>\<dagger> = pauli_X"
+proof (rule eq_matI)
+  show "dim_row (pauli_X\<^sup>\<dagger>) = dim_row pauli_X" by (simp add: pauli_X_def)
+  show "dim_col (pauli_X\<^sup>\<dagger>) = dim_col pauli_X" by (simp add: pauli_X_def)
+next
+  fix i j assume "i < dim_row pauli_X" "j < dim_col pauli_X"
+  thus "(pauli_X\<^sup>\<dagger>) $$ (i, j) = pauli_X $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: pauli_X_def dagger_def)
+qed
+
+lemma pauli_X_squared: "pauli_X * pauli_X = 1\<^sub>m 2"
+proof (rule eq_matI)
+  show "dim_row (pauli_X * pauli_X) = dim_row (1\<^sub>m 2)" by (simp add: pauli_X_def)
+  show "dim_col (pauli_X * pauli_X) = dim_col (1\<^sub>m 2)" by (simp add: pauli_X_def)
+next
+  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
+  hence ij: "i < 2" "j < 2" by auto
+  thus "(pauli_X * pauli_X) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    by (cases i; cases j; simp add: pauli_X_def scalar_prod_def)
+qed
+
 lemma pauli_X_unitary: "unitary pauli_X"
-  sorry  (* X² = I; X\<dagger> = X (real symmetric); so X\<dagger>X = I. *)
+  unfolding unitary_def
+  using pauli_X_dagger pauli_X_squared by (simp add: pauli_X_def)
+
+lemma pauli_Y_dagger: "pauli_Y\<^sup>\<dagger> = pauli_Y"
+proof (rule eq_matI)
+  show "dim_row (pauli_Y\<^sup>\<dagger>) = dim_row pauli_Y" by (simp add: pauli_Y_def)
+  show "dim_col (pauli_Y\<^sup>\<dagger>) = dim_col pauli_Y" by (simp add: pauli_Y_def)
+next
+  fix i j assume "i < dim_row pauli_Y" "j < dim_col pauli_Y"
+  thus "(pauli_Y\<^sup>\<dagger>) $$ (i, j) = pauli_Y $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: pauli_Y_def dagger_def)
+qed
+
+lemma pauli_Y_squared: "pauli_Y * pauli_Y = 1\<^sub>m 2"
+proof (rule eq_matI)
+  show "dim_row (pauli_Y * pauli_Y) = dim_row (1\<^sub>m 2)" by (simp add: pauli_Y_def)
+  show "dim_col (pauli_Y * pauli_Y) = dim_col (1\<^sub>m 2)" by (simp add: pauli_Y_def)
+next
+  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
+  hence ij: "i < 2" "j < 2" by auto
+  thus "(pauli_Y * pauli_Y) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    by (cases i; cases j; simp add: pauli_Y_def scalar_prod_def)
+qed
 
 lemma pauli_Y_unitary: "unitary pauli_Y"
-  sorry  (* Y² = I; Y\<dagger> = Y (Hermitian); so Y\<dagger>Y = I. *)
+  unfolding unitary_def
+  using pauli_Y_dagger pauli_Y_squared by (simp add: pauli_Y_def)
+
+lemma pauli_Z_dagger: "pauli_Z\<^sup>\<dagger> = pauli_Z"
+proof (rule eq_matI)
+  show "dim_row (pauli_Z\<^sup>\<dagger>) = dim_row pauli_Z" by (simp add: pauli_Z_def)
+  show "dim_col (pauli_Z\<^sup>\<dagger>) = dim_col pauli_Z" by (simp add: pauli_Z_def)
+next
+  fix i j assume "i < dim_row pauli_Z" "j < dim_col pauli_Z"
+  thus "(pauli_Z\<^sup>\<dagger>) $$ (i, j) = pauli_Z $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: pauli_Z_def dagger_def)
+qed
+
+lemma pauli_Z_squared: "pauli_Z * pauli_Z = 1\<^sub>m 2"
+proof (rule eq_matI)
+  show "dim_row (pauli_Z * pauli_Z) = dim_row (1\<^sub>m 2)" by (simp add: pauli_Z_def)
+  show "dim_col (pauli_Z * pauli_Z) = dim_col (1\<^sub>m 2)" by (simp add: pauli_Z_def)
+next
+  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
+  hence ij: "i < 2" "j < 2" by auto
+  thus "(pauli_Z * pauli_Z) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    by (cases i; cases j; simp add: pauli_Z_def scalar_prod_def)
+qed
 
 lemma pauli_Z_unitary: "unitary pauli_Z"
-  sorry  (* Z² = I; Z\<dagger> = Z (real diagonal); so Z\<dagger>Z = I. *)
+  unfolding unitary_def
+  using pauli_Z_dagger pauli_Z_squared by (simp add: pauli_Z_def)
 
 (* I, X, Y, Z are orthogonal in M_2 w.r.t. Hilbert-Schmidt inner product. *)
 
