@@ -2962,6 +2962,115 @@ lemma diag_mat_of_real_index[simp]:
          (if i = j then complex_of_real (D ! i) else 0)"
   using assms unfolding diag_mat_of_real_def by simp
 
+lemma diag_mat_of_real_mult_vec_index:
+  fixes y :: "complex Matrix.vec"
+  assumes ydim: "dim_vec y = length D"
+      and i: "i < length D"
+  shows "(diag_mat_of_real D *\<^sub>v y) $ i = complex_of_real (D ! i) * y $ i"
+proof -
+  have ycar: "y \<in> carrier_vec (length D)"
+    by (simp add: carrier_vecI ydim)
+  have "(diag_mat_of_real D *\<^sub>v y) $ i =
+        (\<Sum>j = 0..<length D. diag_mat_of_real D $$ (i, j) * y $ j)"
+    using mult_mat_vec_index[OF diag_mat_of_real_carrier ycar i] .
+  also have "\<dots> =
+        (\<Sum>j = 0..<length D. (if i = j then complex_of_real (D ! i) * y $ j else 0))"
+    using i by (intro sum.cong refl) auto
+  also have "\<dots> = complex_of_real (D ! i) * y $ i"
+    using i by simp
+  finally show ?thesis.
+qed
+
+lemma diag_mat_of_real_quad_Re_nonneg:
+  fixes y :: "complex Matrix.vec"
+  assumes ydim: "dim_vec y = length D"
+      and D_nonneg: "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
+  shows "0 \<le> Re \<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>"
+proof -
+  have Dy_dim: "dim_vec (diag_mat_of_real D *\<^sub>v y) = length D"
+    using ydim by simp
+
+  have inner_expand:
+    "\<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>
+      = (\<Sum>i = 0..<length D. cnj (y $ i) * ((diag_mat_of_real D *\<^sub>v y) $ i))"
+    using ydim Dy_dim
+    by (simp add: inner_prod_def)
+
+  have diag_action:
+    "\<And>i. i < length D \<Longrightarrow> (diag_mat_of_real D *\<^sub>v y) $ i = complex_of_real (D ! i) * y $ i"
+  proof -
+    fix i
+    assume ilt: "i < length D"
+    have "(diag_mat_of_real D *\<^sub>v y) $ i
+        = (\<Sum>j = 0..<dim_col (diag_mat_of_real D). diag_mat_of_real D $$ (i,j) * y $ j)"
+      using ilt ydim
+      by (metis (full_types) carrier_vec_dim_vec 
+          diag_mat_of_real_carrier dim_col_diag_mat_of_real mult_mat_vec_index)
+    also have "... = (\<Sum>j = 0..<length D. diag_mat_of_real D $$ (i,j) * y $ j)"
+      by simp
+    also have "... = (\<Sum>j = 0..<length D.
+             (if i = j then complex_of_real (D ! i) else 0) * y $ j)"
+      using ilt
+      by (intro sum.cong refl, simp add: diag_mat_of_real_def)
+    also have "... = complex_of_real (D ! i) * y $ i"
+      using ilt
+      by (metis calculation diag_mat_of_real_mult_vec_index ydim)
+    finally show "(diag_mat_of_real D *\<^sub>v y) $ i = complex_of_real (D ! i) * y $ i" .
+  qed
+
+  have "\<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>
+      = (\<Sum>i = 0..<length D. cnj (y $ i) * ((diag_mat_of_real D *\<^sub>v y) $ i))"
+    using inner_expand .
+  also have "... = (\<Sum>i = 0..<length D. cnj (y $ i) * (complex_of_real (D ! i) * y $ i))"
+  proof (intro sum.cong refl)
+    fix i
+    assume ilt: "i \<in> {0..<length D}"
+    then have "i < length D" by simp
+    thus "cnj (y $ i) * ((diag_mat_of_real D *\<^sub>v y) $ i)
+        = cnj (y $ i) * (complex_of_real (D ! i) * y $ i)"
+      using diag_action by simp
+  qed
+  finally have quad_expand:
+    "\<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>
+      = (\<Sum>i = 0..<length D. cnj (y $ i) * (complex_of_real (D ! i) * y $ i))" .
+
+  have Re_expand:
+    "Re \<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>
+      = (\<Sum>i = 0..<length D. D ! i * Re (cnj (y $ i) * y $ i))"
+  proof -
+    have "Re \<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>
+        = Re (\<Sum>i = 0..<length D. cnj (y $ i) * (complex_of_real (D ! i) * y $ i))"
+      using quad_expand by simp
+    also have "... = Re (\<Sum>i = 0..<length D. complex_of_real (D ! i) * (cnj (y $ i) * y $ i))"
+      by (simp add: sum_distrib_left algebra_simps)
+    also have "... = (\<Sum>i = 0..<length D. Re (complex_of_real (D ! i) * (cnj (y $ i) * y $ i)))"
+      by simp
+    also have "... = (\<Sum>i = 0..<length D. D ! i * Re (cnj (y $ i) * y $ i))"
+      by simp
+    finally show ?thesis.
+  qed
+
+  have term_nonneg:
+    "\<And>i. i \<in> {0..<length D} \<Longrightarrow> 0 \<le> D ! i * Re (cnj (y $ i) * y $ i)"
+  proof -
+    fix i
+    assume i: "i \<in> {0..<length D}"
+    then have ilt: "i < length D"
+      by simp
+    have "0 \<le> D ! i"
+      using D_nonneg ilt by simp
+    moreover have "0 \<le> Re (cnj (y $ i) * y $ i)"
+      by simp
+    ultimately show "0 \<le> D ! i * Re (cnj (y $ i) * y $ i)"
+      by simp
+  qed
+
+  have "0 \<le> (\<Sum>i = 0..<length D. D ! i * Re (cnj (y $ i) * y $ i))"
+    by (rule sum_nonneg, rule term_nonneg)
+  thus "0 \<le> Re \<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>"
+    using Re_expand by simp
+qed
+
 theorem hermitian_spectral_decomp:
   fixes H :: "complex Matrix.mat"
   assumes sq: "H \<in> carrier_mat n n"
@@ -3164,7 +3273,7 @@ proof -
             dim_row_of_dagger inner_prod_adjoint_swap inner_prod_cnj)
       also have "... = \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle>"
         using dagger_of_dagger_is_id by presburger
-      finally show ?thesis .
+      finally show ?thesis.
     qed
     have "Re \<langle>M *\<^sub>v x | M *\<^sub>v x\<rangle> \<ge> 0"
       using Mx_dim using inner_prod_with_itself_Re by blast
@@ -3232,30 +3341,126 @@ next
 
   have "psd P"
   proof -
-    have spec:
-      "\<forall>v. dim_vec v = n \<longrightarrow> 0 \<le> Re \<langle>v | P *\<^sub>v v\<rangle>"
+    obtain U :: "complex Matrix.mat" and D :: "real list"
+      where Uc: "U \<in> carrier_mat n n"
+        and UU: "unitary U"
+        and Dlen: "length D = n"
+        and specD: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
+      using hermitian_spectral_decomp[OF sq herm] by blast
+
+    have Udag_c: "U\<^sup>\<dagger> \<in> carrier_mat n n"
+      using Uc by auto
+    have UdagU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n"
+      using Uc UU unfolding unitary_def by auto
+    have UUdag: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
+      using Uc UU unfolding unitary_def by auto
+    have P_eq: "P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+    proof -
+      have "U * diag_mat_of_real D * (U\<^sup>\<dagger>) = U * ((U\<^sup>\<dagger>) * P * U) * (U\<^sup>\<dagger>)"
+        using specD by simp
+      also have "\<dots> = P"
+        using Uc Udag_c sq UdagU UUdag Dlen 
+        by (smt (verit, ccfv_SIG) assoc_mult_mat left_mult_one_mat 
+            mult_carrier_mat right_mult_one_mat)
+      finally show ?thesis by simp
+    qed
+
+    have PU_eq_UD: "P * U = U * diag_mat_of_real D"
+    proof -
+      have "P * U = (U * diag_mat_of_real D * (U\<^sup>\<dagger>)) * U"
+        using P_eq by simp
+      also have "\<dots> = U * diag_mat_of_real D"
+        using Uc Udag_c UdagU Dlen
+        by (smt (verit, del_insts) assoc_mult_mat carrier_mat_triv 
+            dim_col_diag_mat_of_real index_mult_mat(3) right_mult_one_mat) 
+      finally show ?thesis.
+    qed
+
+    have D_nonneg: "\<And>i. i < n \<Longrightarrow> 0 \<le> D ! i"
+    proof -
+      fix i assume i: "i < n"
+      let ?ui = "Matrix.col U i"
+      have uidim: "dim_vec ?ui = n"
+        using Uc by simp
+      have ui_nonzero: "?ui \<noteq> 0\<^sub>v n"
+      proof
+        assume zero: "?ui = 0\<^sub>v n"
+        have "\<parallel>?ui\<parallel> = (1 :: real)"
+          using UU i Uc by (metis carrier_matD(2) unitary_unit_col)
+        moreover have "\<parallel>?ui\<parallel> = 0"
+          using zero uidim cpx_vec_length_zero_iff by metis
+        ultimately show False by simp
+      qed
+      have eig: "P *\<^sub>v ?ui = complex_of_real (D ! i) \<cdot>\<^sub>v ?ui"
+      proof (rule eq_vecI)
+        show "dim_vec (P *\<^sub>v ?ui) = dim_vec (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui)"
+          using sq uidim by simp
+      next
+        fix k
+        assume k: "k < dim_vec (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui)"
+        then have klt: "k < n"
+          using uidim by simp
+        have "(P *\<^sub>v ?ui) $ k = (P * U) $$ (k, i)"
+          using sq Uc i klt by (metis carrier_matD(1,2) index_mult_mat(1) index_mult_mat_vec)
+        also have "\<dots> = (U * diag_mat_of_real D) $$ (k, i)"
+          using PU_eq_UD by simp
+        also have "\<dots> = complex_of_real (D ! i) * U $$ (k, i)"
+        proof -
+          have "(U * diag_mat_of_real D) $$ (k, i) =
+                (\<Sum>j = 0..<n. U $$ (k, j) * diag_mat_of_real D $$ (j, i))"
+            using Uc Dlen klt i by (simp add: scalar_prod_def lessThan_atLeast0)
+          also have "\<dots> =
+                (\<Sum>j = 0..<n. (if j = i then U $$ (k, j) * complex_of_real (D ! i) else 0))"
+            using Dlen i by (intro sum.cong refl, auto)
+          also have "\<dots> = U $$ (k, i) * complex_of_real (D ! i)"
+            using i by simp
+          also have "\<dots> = complex_of_real (D ! i) * U $$ (k, i)"
+            by (simp add: mult.commute)
+          finally show ?thesis.
+        qed
+        also have "\<dots> = (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui) $ k"
+          using klt Uc  by (simp add: i) 
+        finally show "(P *\<^sub>v ?ui) $ k = (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui) $ k" .
+      qed
+      have "0 \<le> Re (complex_of_real (D ! i))"
+        using eig eig_nonneg ui_nonzero uidim by blast
+      then show "0 \<le> D ! i"
+        by simp
+    qed
+
+    have spec: "\<forall>v. dim_vec v = n \<longrightarrow> 0 \<le> Re \<langle>v | P *\<^sub>v v\<rangle>"
     proof (intro allI impI)
       fix v :: "complex Matrix.vec"
       assume vdim: "dim_vec v = n"
-      show "0 \<le> Re \<langle>v | P *\<^sub>v v\<rangle>"
-      proof (cases "v = 0\<^sub>v n")
-        case True
-        then show ?thesis
-          using vdim sq
-          by (metis carrier_matD(1) dim_mult_mat_vec index_smult_vec(2) inner_prod_cnj 
-              inner_prod_right_smult' inner_prod_with_itself_nonneg_reals_non0 mult_zero_left 
-              verit_comp_simplify1(2) zero_complex.simps(1)) 
-      next
-        case False
-        from herm sq obtain mu :: complex
-          where eig: "P *\<^sub>v v = mu \<cdot>\<^sub>v v"
-            and rv: "Re mu = Re \<langle>v | P *\<^sub>v v\<rangle> / Re \<langle>v | v\<rangle>"
-          sorry
-        have "Re mu \<ge> 0"
-          using eig_nonneg False vdim eig by blast
-        then show ?thesis
-          sorry
+      let ?y = "U\<^sup>\<dagger> *\<^sub>v v"
+      have ydim: "dim_vec ?y = n"
+        using Uc by force
+      have v_as_Uy: "U *\<^sub>v ?y = v"
+      proof -
+        have "U *\<^sub>v ((U\<^sup>\<dagger>) *\<^sub>v v) = (U * (U\<^sup>\<dagger>)) *\<^sub>v v"
+          using Uc Udag_c vdim by force
+        also have "\<dots> = v"
+          using UUdag vdim by force
+        finally show ?thesis.
       qed
+      have Pv_as: "P *\<^sub>v v = U *\<^sub>v (diag_mat_of_real D *\<^sub>v ?y)"
+      proof -
+        have "P *\<^sub>v v = (U * diag_mat_of_real D * (U\<^sup>\<dagger>)) *\<^sub>v v"
+          using P_eq by simp
+        also have "\<dots> = U *\<^sub>v (diag_mat_of_real D *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v v))"
+          using Uc Udag_c sq Dlen vdim
+          by (smt (verit, ccfv_SIG) assoc_mult_mat_vec 
+              carrier_vec_dim_vec diag_mat_of_real_carrier mult_carrier_mat ydim)
+        finally show ?thesis.
+      qed
+      have "\<langle>v | P *\<^sub>v v\<rangle> = \<langle>U *\<^sub>v ?y | U *\<^sub>v (diag_mat_of_real D *\<^sub>v ?y)\<rangle>"
+        using v_as_Uy Pv_as by simp
+      also have "\<dots> = \<langle>?y | diag_mat_of_real D *\<^sub>v ?y\<rangle>"
+        by (metis Uc dim_mult_mat_vec index_mult_mat(2) 
+            inner_prod_adjoint_swap specD v_as_Uy vdim ydim)
+      finally have qeq: "\<langle>v | P *\<^sub>v v\<rangle> = \<langle>?y | diag_mat_of_real D *\<^sub>v ?y\<rangle>".
+      show "0 \<le> Re \<langle>v | P *\<^sub>v v\<rangle>"
+        using diag_mat_of_real_quad_Re_nonneg[OF _] D_nonneg Dlen ydim qeq by auto
     qed
     show ?thesis
       unfolding psd_def
@@ -3275,10 +3480,8 @@ lemma outer_sum_psd:
 proof -
   have herm: "hermitian (outer_sum n vs)"
     unfolding hermitian_def using outer_sum_hermitian by simp
-  have dr: "dim_row (outer_sum n vs) = n" by simp
-  (* outer_sum n vs = mat_of_cols n vs * (mat_of_cols n vs)\<^sup>\<dagger>.
-     For x with dim_vec x = n, set y = (mat_of_cols n vs)\<^sup>\<dagger> *\<^sub>v x; then
-     \<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | M M\<^sup>\<dagger> x\<rangle> = \<langle>M\<^sup>\<dagger> x | M\<^sup>\<dagger> x\<rangle> = \<parallel>y\<parallel>\<^sup>2 \<ge> 0. *)
+  have dr: "dim_row (outer_sum n vs) = n"
+    by simp
   have nonneg: "\<forall>x. dim_vec x = dim_row (outer_sum n vs) \<longrightarrow>
               Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0"
   proof (intro allI impI)
@@ -3286,46 +3489,73 @@ proof -
     assume xdim: "dim_vec x = dim_row (outer_sum n vs)"
     let ?M = "mat_of_cols n vs"
     let ?y = "(?M\<^sup>\<dagger>) *\<^sub>v x"
-
     have M_car: "?M \<in> carrier_mat n k"
-      using len vdim
-      by (simp add: mat_of_cols_def)
-
-
+      using len vdim by (simp add: mat_of_cols_def)
     have xdim_n: "dim_vec x = n"
       using xdim by simp
-
     have xcar: "x \<in> carrier_vec n"
-      using xdim_n carrier_vec_dim_vec by blast 
-
+      using xdim_n carrier_vec_dim_vec by blast
     have ycar: "?y \<in> carrier_vec k"
       using M_car xcar carrier_dim_vec len by force
-
-
+    have ydim: "dim_vec ?y = k"
+      using ycar carrier_dim_vec by blast
     have outer_as_MMdag: "outer_sum n vs = ?M * (?M\<^sup>\<dagger>)"
       using len vdim outer_sum_def by presburger
-
-
-    have "\<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | (?M * (?M\<^sup>\<dagger>)) *\<^sub>v x\<rangle>"
-      using outer_as_MMdag by simp
-    also have "... = \<langle>x | ?M *\<^sub>v ((?M\<^sup>\<dagger>) *\<^sub>v x)\<rangle>"
-      using M_car xcar 
-      by (metis assoc_mult_mat_vec carrier_mat_triv dim_col_of_dagger 
-            dim_row_of_dagger mat_of_cols_carrier(2))
-    also have "... = \<langle>x | ?M *\<^sub>v ?y\<rangle>"
-      by simp    
-    also have "... = \<langle>?y | ?y\<rangle>"
-      sorry
-    
-    show "Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0" 
-      sorry
+    have qf: "\<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>?y | ?y\<rangle>"
+    proof - 
+      have  "\<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | ((?M * (?M\<^sup>\<dagger>)) *\<^sub>v x)\<rangle>"
+        using outer_as_MMdag by simp
+      also have  "... = \<langle>x | ?M *\<^sub>v ((?M\<^sup>\<dagger>) *\<^sub>v x)\<rangle>"
+        using M_car xcar by (metis assoc_mult_mat_vec carrier_matD(1)
+            carrier_mat_triv dim_col_of_dagger dim_mult_mat_vec ydim)
+      also have " ...  = \<langle>?y | ?y\<rangle>"
+        using inner_prod_adjoint_swap M_car xcar  by simp
+      finally show ?thesis.
+    qed
+    have self_nonneg: "Re \<langle>?y | ?y\<rangle> \<ge> 0"
+      using ydim inner_prod_with_itself_Re by blast
+    show "Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0"
+      using qf self_nonneg by simp
   qed
   show ?thesis
     unfolding psd_def using herm nonneg by simp
 qed
 
-(* Direction \<rightarrow>: if P \<ge> 0 then P = \<Sigma> |vᵢ\<rangle>\<langle>vᵢ| (requires spectral theorem) *)
 
+lemma hermitian_spectral_decomp_eq:
+  assumes Uc: "U \<in> carrier_mat n n"
+      and Pcar: "P \<in> carrier_mat n n"
+      and unit: "unitary U"
+      and spec: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
+  shows "P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+proof -
+  have UdagU: "U\<^sup>\<dagger> * U = 1\<^sub>m n"
+    using Uc unit unfolding unitary_def by auto
+  have UUdag: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
+    using Uc unit unfolding unitary_def by auto
+  have "U * diag_mat_of_real D * (U\<^sup>\<dagger>) = U * ((U\<^sup>\<dagger>) * P * U) * (U\<^sup>\<dagger>)"
+    using spec by simp
+  also have "... = (U * (U\<^sup>\<dagger>)) * P * (U * (U\<^sup>\<dagger>))"
+    by (smt (verit, best) Pcar UUdag UdagU assoc_mult_mat carrier_matD(2) 
+        carrier_mat_triv dim_row_of_dagger index_mult_mat(2,3) index_one_mat(2))
+  also have "... = (1\<^sub>m n) * P * (1\<^sub>m n)"
+    using UUdag by simp
+  also have "... = P"
+    using Pcar by simp
+  finally show ?thesis
+    by simp
+qed
+
+lemma hermitian_spectral_decomp_right:
+  assumes Uc: "U \<in> carrier_mat n n"
+      and Pcar: "P \<in> carrier_mat n n"
+      and unit: "unitary U"
+      and spec: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
+  shows "P * U = U * diag_mat_of_real D"
+  by (smt (verit, best) hermitian_spectral_decomp_eq Pcar Uc assoc_mult_mat carrier_mat_triv 
+      dim_col_of_dagger unitary_def index_mult_mat(2,3) local.spec right_mult_one_mat unit)
+
+(* Direction \<rightarrow>: if P \<ge> 0 then P = \<Sigma> |vᵢ\<rangle>\<langle>vᵢ| (requires spectral theorem) *)
 theorem psd_kraus_decomp:
   fixes P :: "complex Matrix.mat"
   assumes sq: "P \<in> carrier_mat n n"
@@ -3336,27 +3566,74 @@ theorem psd_kraus_decomp:
 proof -
   (* By spectral theorem, P = U D U\<dagger> with D diagonal real \<ge> 0.
      Take vᵢ = \<surd>(Dᵢᵢ) \<cdot> col i of U.  Then \<Sum>|vᵢ\<rangle>\<langle>vᵢ| = U D U\<dagger> = P. *)
-  have herm: "hermitian P" using pos by (rule psd_hermitian)
-  obtain U D where Uc: "U \<in> carrier_mat n n" and UU: "unitary U"
-    and Dlen: "length D = n" and spec: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
+  have herm: "hermitian P"
+    using pos by (rule psd_hermitian)
+
+  obtain U D where
+      Uc: "U \<in> carrier_mat n n"
+    and UU: "unitary U"
+    and Dlen: "length D = n"
+    and spec: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
     using hermitian_spectral_decomp[OF sq herm] by blast
+
+  have P_eq: "P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+    using hermitian_spectral_decomp_eq[OF Uc sq UU spec].   
+  have PU_eq_UD: "P * U = U * diag_mat_of_real D"
+    using UU Uc hermitian_spectral_decomp_right local.spec sq by presburger
+  
+  have eig_nonneg:
+    "\<forall>mu::complex. \<forall>v::complex Matrix.vec.
+       v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0"
+    using psd_iff_nonneg_eigenvalues[OF sq] pos by blast
   (* All entries of D are \<ge> 0 because P is psd. *)
   have D_nonneg: "\<forall>i < n. D ! i \<ge> 0"
   proof (intro allI impI)
     fix i assume iltn: "i < n"
-    (* Strategy: (D!i) appears as the i-th diagonal of the real diagonal matrix
-       diag_mat_of_real D = U\<^sup>\<dagger> * P * U.  Apply the psd form at x = U * e_i;
-       then \<langle>x | P x\<rangle> = \<langle>e_i | U\<^sup>\<dagger> P U e_i\<rangle> = (diag_mat_of_real D) $$ (i,i) = D ! i.
-       Psd of P gives Re \<langle>x|Px\<rangle> \<ge> 0, so D ! i \<ge> 0.  *)
-    let ?x = "U *\<^sub>v unit_vec n i"
-    have ei_dim: "dim_vec (unit_vec n i :: complex Matrix.vec) = n" by simp
-    have x_dim: "dim_vec ?x = n" using Uc by simp
-    have x_inner_P: "\<langle>?x | P *\<^sub>v ?x\<rangle> = complex_of_real (D ! i)"
-      sorry
-    have nonneg: "Re (\<langle>?x | P *\<^sub>v ?x\<rangle>) \<ge> 0"
-      using pos x_dim sq unfolding psd_def by (metis carrier_matD(1))
-    have "Re (complex_of_real (D ! i)) \<ge> 0"
-      using nonneg x_inner_P by simp
+    let ?ui = "Matrix.col U i"
+    have uidim: "dim_vec ?ui = n"
+      using Uc by simp
+    have ui_nonzero: "?ui \<noteq> 0\<^sub>v n"
+    proof
+      assume zero: "?ui = 0\<^sub>v n"
+      have "\<parallel>?ui\<parallel> = (1 :: real)"
+        using UU iltn Uc by (metis carrier_matD(2) unitary_unit_col)
+      moreover have "\<parallel>?ui\<parallel> = 0"
+        using zero uidim cpx_vec_length_zero_iff by metis
+      ultimately show False by simp
+    qed
+    have eig: "P *\<^sub>v ?ui = complex_of_real (D ! i) \<cdot>\<^sub>v ?ui"
+    proof (rule eq_vecI)
+      show "dim_vec (P *\<^sub>v ?ui) = dim_vec (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui)"
+        using sq uidim by simp
+    next
+      fix k
+      assume k: "k < dim_vec (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui)"
+      then have klt: "k < n"
+        using uidim by simp
+      have "(P *\<^sub>v ?ui) $ k = (P * U) $$ (k, i)"
+        using sq Uc iltn klt by (metis carrier_matD(1,2) index_mult_mat(1) index_mult_mat_vec)
+      also have "\<dots> = (U * diag_mat_of_real D) $$ (k, i)"
+        using PU_eq_UD by simp
+      also have "\<dots> = complex_of_real (D ! i) * U $$ (k, i)"
+      proof -
+        have "(U * diag_mat_of_real D) $$ (k, i) =
+              (\<Sum>j = 0..<n. U $$ (k, j) * diag_mat_of_real D $$ (j, i))"
+          using Uc Dlen klt iltn by (simp add: scalar_prod_def lessThan_atLeast0)
+        also have "\<dots> =
+              (\<Sum>j = 0..<n. (if j = i then U $$ (k, j) * complex_of_real (D ! i) else 0))"
+          using Dlen iltn by (intro sum.cong refl, auto)
+        also have "\<dots> = U $$ (k, i) * complex_of_real (D ! i)"
+          using iltn by simp
+        also have "\<dots> = complex_of_real (D ! i) * U $$ (k, i)"
+          by (simp add: mult.commute)
+        finally show ?thesis.
+      qed
+      also have "\<dots> = (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui) $ k"
+        using klt Uc by (simp add: iltn)
+      finally show "(P *\<^sub>v ?ui) $ k = (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui) $ k" .
+    qed
+    have "0 \<le> Re (complex_of_real (D ! i))"
+      using eig eig_nonneg ui_nonzero uidim by blast
     thus "D ! i \<ge> 0" by simp
   qed
   (* Construct vᵢ = \<surd>(Dᵢ) \<cdot> col i of U *)
@@ -3369,12 +3646,103 @@ proof -
        because each vᵢ vᵢ\<dagger> = (D!i) \<cdot> (col U i)(col U i)\<dagger>,
        and \<Sum>_{i<n} (D!i) \<cdot> (col U i)(col U i)\<dagger> = U D U\<dagger>. *)
     have stepA: "outer_sum n ?vs = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
-      sorry
+    proof -
+      let ?sqrtD = "map sqrt D"
+      let ?S = "diag_mat_of_real ?sqrtD"
+      have sqrtDlen: "length ?sqrtD = n"
+        using Dlen by simp
+      have S_car: "?S \<in> carrier_mat n n"
+        using sqrtDlen by force
+      have M_eq: "mat_of_cols n ?vs = U * ?S"
+      proof (rule eq_matI)
+        show "dim_row (mat_of_cols n ?vs) = dim_row (U * ?S)"
+          using Uc S_car by simp
+        show "dim_col (mat_of_cols n ?vs) = dim_col (U * ?S)"
+          using Uc S_car by force
+      next
+        fix r c
+        assume rc: "r < dim_row (U * ?S)" "c < dim_col (U * ?S)"
+        then have rlt: "r < n" and clt: "c < n"
+          using Uc S_car by auto
+        have "(mat_of_cols n ?vs) $$ (r, c) =
+              complex_of_real (sqrt (D ! c)) * U $$ (r, c)"
+          using Uc rlt clt by (simp add: mat_of_cols_def)
+        also have "\<dots> = (U * ?S) $$ (r, c)"
+        proof -
+          have "(U * ?S) $$ (r, c) =  (\<Sum>j = 0..<n. U $$ (r, j) * ?S $$ (j, c))"
+            using Uc S_car sqrtDlen rlt clt by (simp add: scalar_prod_def lessThan_atLeast0)
+          also have "\<dots> =
+                (\<Sum>j = 0..<n.
+                   (if j = c then U $$ (r, j) * complex_of_real (sqrt (D ! c)) else 0))"
+            using Dlen clt by (intro sum.cong refl, auto)
+          also have "\<dots> = U $$ (r, c) * complex_of_real (sqrt (D ! c))"
+            using clt by simp
+          also have "\<dots> = complex_of_real (sqrt (D ! c)) * U $$ (r, c)"
+            by (simp add: mult.commute)
+          finally show ?thesis by simp
+        qed
+        finally show "(mat_of_cols n ?vs) $$ (r, c) = (U * ?S) $$ (r, c)" .
+      qed
+      have S_square: "?S * (?S\<^sup>\<dagger>) = diag_mat_of_real D"
+      proof (rule eq_matI)
+        show "dim_row (?S * (?S\<^sup>\<dagger>)) = dim_row (diag_mat_of_real D)"
+          using Dlen sqrtDlen by simp
+        show "dim_col (?S * (?S\<^sup>\<dagger>)) = dim_col (diag_mat_of_real D)"
+          using Dlen sqrtDlen by simp
+      next
+        fix r c
+        assume rc: "r < dim_row (diag_mat_of_real D)" "c < dim_col (diag_mat_of_real D)"
+        then have rlt: "r < n" and clt: "c < n"
+          using Dlen by auto
+        have "(?S * (?S\<^sup>\<dagger>)) $$ (r, c) = (\<Sum>j = 0..<n. ?S $$ (r, j) * (?S\<^sup>\<dagger>) $$ (j, c))"
+          using S_car sqrtDlen rlt clt by (simp add: scalar_prod_def lessThan_atLeast0)
+        also have "\<dots> =
+              (\<Sum>j = 0..<n.
+                 (if r = j \<and> j = c
+                  then complex_of_real (sqrt (D ! r)) * complex_of_real (sqrt (D ! c))
+                  else 0))"
+          using Dlen rlt clt by (intro sum.cong refl, auto simp: dagger_def)
+        also have "\<dots> = (if r = c then complex_of_real (D ! r) else 0)"
+        proof (cases "r = c")
+          case True
+          then have "0 \<le> D ! r"
+            using D_nonneg rlt by simp
+          then have sqrt_sq:
+            "complex_of_real (sqrt (D ! r)) * complex_of_real (sqrt (D ! r)) =
+             complex_of_real (D ! r)"
+            by (simp add: of_real_mult[symmetric])
+          have sum_single:
+            "(\<Sum>j = 0..<n.
+                 (if r = j \<and> j = c
+                  then complex_of_real (sqrt (D ! r)) * complex_of_real (sqrt (D ! c))
+                  else 0))
+             = complex_of_real (sqrt (D ! r)) * complex_of_real (sqrt (D ! r))"
+            using True rlt by (subst sum.remove[where x=r], auto)
+          then show ?thesis
+            using True sqrt_sq by argo
+        next
+          case False
+          then show ?thesis by simp
+        qed
+        also have "\<dots> = diag_mat_of_real D $$ (r, c)"
+          using Dlen rlt clt by simp
+        finally show "(?S * (?S\<^sup>\<dagger>)) $$ (r, c) = diag_mat_of_real D $$ (r, c)" .
+      qed
+      have "outer_sum n ?vs = (U * ?S) * ((U * ?S)\<^sup>\<dagger>)"
+        using M_eq by (simp add: outer_sum_def)
+      also have "\<dots> = U * (?S * (?S\<^sup>\<dagger>)) * (U\<^sup>\<dagger>)"
+        by (smt (verit, ccfv_threshold) Uc assoc_mult_mat carrier_matD(2) carrier_mat_triv sqrtDlen
+            dagger_of_prod dim_col_of_dagger dim_row_diag_mat_of_real dim_row_of_dagger 
+            mult_carrier_mat)        
+      also have "\<dots> = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+        using S_square by simp
+      finally show ?thesis.
+    qed
     (* Step B: U * diag_mat_of_real D * U\<^sup>\<dagger> = P
        follows from spec (U\<^sup>\<dagger> * P * U = diag_mat_of_real D)
        by multiplying on left by U and right by U\<^sup>\<dagger> and using U U\<^sup>\<dagger> = 1\<^sub>m n. *)
     have stepB: "U * diag_mat_of_real D * (U\<^sup>\<dagger>) = P"
-      sorry
+      using P_eq by blast
     from stepA stepB show ?thesis by simp
   qed
   show ?thesis using vs_dim decomp by blast
@@ -3757,14 +4125,17 @@ proof -
     by fastforce 
 
   (* Step 1: \<parallel>M\<psi>\<parallel>² = \<langle>\<psi> | M\<dagger>M \<psi>\<rangle> for each M *)
-  have step1: "\<And>M. M \<in> set Ms \<Longrightarrow> meas_prob M \<psi> = Re (\<langle>\<psi> | (M\<^sup>\<dagger> * M) *\<^sub>v \<psi>\<rangle>)"
-    by (metis dagger_of_id_is_id dual_order.refl hermitian_def index_one_mat(2) linorder_not_le one_carrier_mat pd_def sylvester_criterion vec_of_dim_0)
+  have step1: "\<And>M. M \<in> set Ms \<Longrightarrow> meas_prob M \<psi> = Re (\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle>)"
+    by (metis (lifting) Re_complex_of_real assoc_mult_mat_vec carrier_matD(2) carrier_mat_triv 
+        cpx_vec_length_inner_prod dagger_of_dagger_is_id dim_mult_mat_vec dim_row_of_dagger 
+        inner_prod_adjoint_swap meas_prob_def measurement_system_def ms psi_car psi_dim)
+
   (* Step 2: sum over M and pull out, using \<Sum>M\<dagger>M = I *)
   have sum_eq: "(\<Sum>M \<leftarrow> Ms. meas_prob M \<psi>) =
-                Re (\<langle>\<psi> | (foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
-    by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) linorder_not_le not_less_zero one_carrier_mat pd_def sylvester_criterion vec_of_dim_0)
+                Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+    sorry
   (* Step 3: replace \<Sum>M\<dagger>M with I and use \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>² = 1 *)
-  have id_eq: "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
+  have id_eq: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
     using ms by (simp add: measurement_system_def)
   have inner_one: "\<langle>\<psi> | (1\<^sub>m n) *\<^sub>v \<psi>\<rangle> = 1"
   proof -
@@ -3773,7 +4144,7 @@ proof -
     also have "\<dots> = (\<parallel>\<psi>\<parallel>)\<^sup>2"
       by (metis cpx_vec_length_inner_prod)
     also have "\<dots> = 1" using psi_norm by simp
-    finally show ?thesis .
+    finally show ?thesis.
   qed
   show ?thesis
     using sum_eq id_eq inner_one by simp
@@ -3800,7 +4171,8 @@ proof -
     using d1 d2 by (rule tensor_vec_dim)
   (* From tensor_inner_prod: \<langle>\<psi>1\<otimes>\<psi>2 | \<psi>1\<otimes>\<psi>2\<rangle> = \<langle>\<psi>1|\<psi>1\<rangle>\<sqdot>\<langle>\<psi>2|\<psi>2\<rangle> = 1\<sqdot>1 = 1. *)
   have norm_tensor: "\<parallel>tensor_vec \<psi>1 \<psi>2\<parallel> = 1"
-    by (smt (verit) cpx_vec_length_inner_prod inner_prod_csqrt norm1 norm2 of_real_eq_1_iff one_power2 power2_eq_square tensor_inner_prod)
+    by (smt (verit) cpx_vec_length_inner_prod inner_prod_csqrt norm1 norm2 of_real_eq_1_iff 
+        one_power2 power2_eq_square tensor_inner_prod)
   show ?thesis
     unfolding quantum_state_def using dim norm_tensor by simp
 qed
@@ -3826,7 +4198,7 @@ lemma orthogonal_states_distinguishable:
          (\<exists>M1 M2. M1 \<in> set Ms \<and> M2 \<in> set Ms \<and>
             meas_prob M1 \<psi>1 = 1 \<and> meas_prob M2 \<psi>1 = 0 \<and>
             meas_prob M1 \<psi>2 = 0 \<and> meas_prob M2 \<psi>2 = 1)"
-  by (metis carrier_matI dagger_of_id_is_id dim_col_of_dagger hermitian_def index_one_mat(2) not_gr_zero pd_def sylvester_criterion vec_of_dim_0 zero_le)
+  sorry
 (* Construction: M₁ = |\<psi>₁\<rangle>\<langle>\<psi>₁|, M₂ = |\<psi>₂\<rangle>\<langle>\<psi>₂|,
    M₃ = I - M₁ - M₂ (projection onto {\<psi>₁,\<psi>₂}^\<bottom>). *)
 
@@ -3920,8 +4292,7 @@ proof -
   qed
   (* The sum equals I by definition of measurement_system. *)
   have "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n)  = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)"
-    by (metis (lifting) dagger_of_id_is_id hermitian_def index_one_mat(2) less_irrefl 
-        one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
+    sorry
   also have "... = 1\<^sub>m n"
     using ms by (simp add: measurement_system_def)
   finally have id_sum: "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n) = 1\<^sub>m n" .
@@ -4298,7 +4669,7 @@ proof -
   have norm: "\<parallel>\<psi>\<parallel> = 1" using assms by (auto simp: quantum_state_def)
   show ?thesis
     unfolding density_matrix_def pure_density_def Let_def
-    by (metis carrier_matI find_index.simps(1) find_index_not_in_set list.size(3) not_less_zero outer_sum_dim_col outer_sum_dim_row pd_def pd_iff_spanning sylvester_criterion vec_of_dim_0 zero_le)
+    sorry
 qed
 
 (* Density matrix of an ensemble *)
@@ -4313,7 +4684,7 @@ definition ensemble_density :: "nat \<Rightarrow> (real \<times> complex Matrix.
 theorem ensemble_density_is_dm:
   assumes "ensemble n E"
   shows "density_matrix n (ensemble_density n E)"
-  by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) less_zeroE one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
+  sorry
 (* Convex combination of pure densities: hermitian + psd preserved by
    non-negative linear combinations; trace = \<Sum>p_i \<cdot> 1 = 1. *)
 
@@ -4328,7 +4699,7 @@ lemma pure_state_prob_trace:
   assumes st: "quantum_state n \<psi>"
       and Msq: "M \<in> carrier_mat n n"
   shows "meas_prob M \<psi> = Re (Tr (M\<^sup>\<dagger> * M * outer_sum n [\<psi>]))"
-  by (metis dagger_of_id_is_id hermitian_def index_one_mat(2) not_less_zero one_carrier_mat pd_def sylvester_criterion vec_of_dim_0 zero_le)
+  sorry
 
 (* For an ensemble with density \<rho>: p_\<alpha>(\<rho>) = Tr(M_\<alpha>\<dagger> M_\<alpha> \<rho>) *)
 
@@ -4346,10 +4717,9 @@ proof -
   (* M\<^sup>\<dagger>M is psd (\<langle>x|M\<^sup>\<dagger>Mx\<rangle> = \<langle>Mx|Mx\<rangle> \<ge> 0).
      For psd A, B: Tr(AB) = Tr(\<surd>A \<sqdot> B \<sqdot> \<surd>A) \<ge> 0 since \<surd>A B \<surd>A is psd. *)
   have MdM_psd: "psd ((M\<^sup>\<dagger>) * M)"
-
-    by (metis M_carr Min One_nat_def ab_semigroup_mult_class.mult_ac(1) assoc_mult_mat carrier_matD(1,2) carrier_matI class_cring.factors_equal dagger_four_block_mat_complex dagger_of_dagger_is_id dagger_of_prod dim_col_of_dagger dim_row_of_dagger dm hermitian_def hermitian_spectral_decomp householder_hermitian index_mult_mat(2,3) measurement_system_def ms mult.commute mult.left_commute mult.right_neutral mult_carrier_mat psd_def psd_hermitian psd_iff_nonneg_eigenvalues psd_sqrt_exists rho_psd schur_induct semigroup_mult_class.mult.assoc zero_carrier_mat)
+    using psd_MdagM by blast
   show ?thesis
-    using MdM_psd rho_psd sorry
+    sorry
 qed
 
 
