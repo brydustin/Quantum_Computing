@@ -3312,7 +3312,27 @@ proof -
     using vd1 vd2 by (intro sum.cong refl, simp add: direct_sum_vec_left)
   also have "(\<Sum>i = m..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
              (\<Sum>j = 0..<p. cnj (w1 $ j) * w2 $ j)"
-    sorry  (* reindex i = m + j; use direct_sum_vec_right *)
+  proof -
+    have "(\<Sum>i = m..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
+          (\<Sum>j = 0..<p. cnj ((v1 \<oplus>\<^sub>v w1) $ (j + m)) * (v2 \<oplus>\<^sub>v w2) $ (j + m))"
+      using sum.shift_bounds_nat_ivl[of _ 0 m p]
+      by (simp add: add.commute)
+    also have "\<dots> = (\<Sum>j = 0..<p. cnj (w1 $ j) * w2 $ j)"
+    proof (intro sum.cong refl)
+      fix j assume "j \<in> {0..<p}"
+      hence jp: "j < p" by simp
+      have e1: "(v1 \<oplus>\<^sub>v w1) $ (j + m) = w1 $ j"
+        using jp vd1 wd1 direct_sum_vec_right[of j w1 v1]
+        by (simp add: add.commute)
+      have e2: "(v2 \<oplus>\<^sub>v w2) $ (j + m) = w2 $ j"
+        using jp vd2 wd2 direct_sum_vec_right[of j w2 v2]
+        by (simp add: add.commute)
+      show "cnj ((v1 \<oplus>\<^sub>v w1) $ (j + m)) * (v2 \<oplus>\<^sub>v w2) $ (j + m) =
+            cnj (w1 $ j) * w2 $ j"
+        using e1 e2 by simp
+    qed
+    finally show ?thesis .
+  qed
   finally show ?thesis
     using vd1 vd2 wd1 wd2 by (simp add: inner_prod_def)
 qed
@@ -3437,7 +3457,17 @@ proof -
     sorry  (* Reindex i = a*m + b using tensor_vec definition. *)
   also have "\<dots> = (\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
                   (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)"
-    sorry  (* Distribute product of sums. *)
+  proof -
+    have "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
+             cnj (h1 $ a) * cnj (k1 $ b) * (h2 $ a * k2 $ b))
+        = (\<Sum>a = 0..<n. \<Sum>b = 0..<m.
+             (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))"
+      by (intro sum.cong refl) (simp add: ac_simps)
+    also have "\<dots> = (\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
+                    (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)"
+      by (simp add: sum_product)
+    finally show ?thesis .
+  qed
   also have "\<dots> = \<langle>h1 | h2\<rangle> * \<langle>k1 | k2\<rangle>"
     using assms by (simp add: inner_prod_def)
   finally show ?thesis .
