@@ -3122,17 +3122,19 @@ qed
 (* Direction \<leftarrow>: if P = \<Sigma> |vᵢ\<rangle>\<langle>vᵢ| then P \<ge> 0. *)
 
 lemma outer_sum_psd:
-  assumes "length vs = k"
-      and "\<forall>v \<in> set vs. dim_vec v = n"
+  assumes len: "length vs = k"
+      and vdim: "\<forall>v \<in> set vs. dim_vec v = n"
   shows "psd (outer_sum n vs)"
 proof -
-  (* outer_sum is hermitian (already in Basic_Math: outer_sum_hermitian)
-     and \<langle>x | (\<Sum>|vᵢ\<rangle>\<langle>vᵢ|) x\<rangle> = \<Sum> |\<langle>vᵢ|x\<rangle>|² \<ge> 0. *)
   have herm: "hermitian (outer_sum n vs)"
     unfolding hermitian_def using outer_sum_hermitian by simp
+  have dr: "dim_row (outer_sum n vs) = n" by simp
+  (* outer_sum n vs = mat_of_cols n vs * (mat_of_cols n vs)\<^sup>\<dagger>.
+     For x with dim_vec x = n, set y = (mat_of_cols n vs)\<^sup>\<dagger> *\<^sub>v x; then
+     \<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | M M\<^sup>\<dagger> x\<rangle> = \<langle>M\<^sup>\<dagger> x | M\<^sup>\<dagger> x\<rangle> = \<parallel>y\<parallel>\<^sup>2 \<ge> 0. *)
   have nonneg: "\<forall>x. dim_vec x = dim_row (outer_sum n vs) \<longrightarrow>
                 Re (\<langle>x | outer_sum n vs *\<^sub>v x\<rangle>) \<ge> 0"
-    sorry  (* \<langle>x | (\<Sum>|vᵢ\<rangle>\<langle>vᵢ|) x\<rangle> = \<Sum>|\<langle>vᵢ|x\<rangle>|² *)
+    sorry
   show ?thesis
     unfolding psd_def using herm nonneg by simp
 qed
@@ -3284,22 +3286,27 @@ lemma direct_sum_vec_right [simp]:
 (* Inner product on V \<oplus> W: \<langle>(v₁,w₁)|(v₂,w₂)\<rangle> = \<langle>v₁|v₂\<rangle>_V + \<langle>w₁|w₂\<rangle>_W *)
 
 lemma direct_sum_inner_prod:
-  assumes "dim_vec v1 = m" and "dim_vec v2 = m"
-      and "dim_vec w1 = p" and "dim_vec w2 = p"
+  assumes vd1: "dim_vec v1 = m" and vd2: "dim_vec v2 = m"
+      and wd1: "dim_vec w1 = p" and wd2: "dim_vec w2 = p"
   shows "\<langle>v1 \<oplus>\<^sub>v w1 | v2 \<oplus>\<^sub>v w2\<rangle> = \<langle>v1 | v2\<rangle> + \<langle>w1 | w2\<rangle>"
 proof -
-  (* Split the sum at the boundary i = m:
-     \<Sum>_{i<m+p} cnj((v1\<oplus>w1)$i) * (v2\<oplus>w2)$i
-     = \<Sum>_{i<m} cnj(v1$i) * v2$i + \<Sum>_{j<p} cnj(w1$j) * w2$j. *)
+  (* Split at i = m using sum.atLeastLessThan_concat:
+       (\<Sum>i = 0..<m+p. f i) = (\<Sum>i = 0..<m. f i) + (\<Sum>i = m..<m+p. f i),
+     then reindex i \<mapsto> m + j to match the second range. *)
   have "\<langle>v1 \<oplus>\<^sub>v w1 | v2 \<oplus>\<^sub>v w2\<rangle> =
         (\<Sum>i = 0..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i)"
     using assms by (simp add: inner_prod_def)
-  also have "\<dots> = (\<Sum>i = 0..<m. cnj (v1 $ i) * v2 $ i)
-                + (\<Sum>i = 0..<p. cnj (w1 $ i) * w2 $ i)"
-    sorry  (* split sum at i=m using direct_sum_vec_left/right *)
-  also have "\<dots> = \<langle>v1 | v2\<rangle> + \<langle>w1 | w2\<rangle>"
-    using assms by (simp add: inner_prod_def)
-  finally show ?thesis .
+  also have "\<dots> = (\<Sum>i = 0..<m. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i)
+                + (\<Sum>i = m..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i)"
+    by (rule sum.atLeastLessThan_concat) auto
+  also have "(\<Sum>i = 0..<m. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
+             (\<Sum>i = 0..<m. cnj (v1 $ i) * v2 $ i)"
+    using vd1 vd2 by (intro sum.cong refl) (simp add: direct_sum_vec_left)
+  also have "(\<Sum>i = m..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i) =
+             (\<Sum>j = 0..<p. cnj (w1 $ j) * w2 $ j)"
+    sorry  (* reindex i = m + j; use direct_sum_vec_right *)
+  finally show ?thesis
+    using vd1 vd2 wd1 wd2 by (simp add: inner_prod_def)
 qed
 
 (* Dimension formula: dim(V \<oplus> W) = dim V + dim W *)
@@ -3992,10 +3999,19 @@ lemma ensemble_prob_trace:
   fixes Ms :: "complex Matrix.mat list"
   assumes ms: "measurement_system n Ms"
       and dm: "density_matrix n \<rho>"
-      and "M \<in> set Ms"
+      and Min: "M \<in> set Ms"
   shows "Re (Tr (M\<^sup>\<dagger> * M * \<rho>)) \<ge> 0"
-  sorry  (* M\<dagger>M is psd; product of two psd matrices has nonnegative trace
-            (since Tr(AB) = Tr(\<surd>A \<sqdot> B \<sqdot> \<surd>A) and B \<ge> 0 \<Longrightarrow> \<surd>A B \<surd>A \<ge> 0). *)
+proof -
+  have M_carr: "M \<in> carrier_mat n n"
+    using ms Min by (auto simp: measurement_system_def)
+  have rho_carr: "\<rho> \<in> carrier_mat n n" using dm by (auto simp: density_matrix_def)
+  have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
+  (* M\<^sup>\<dagger>M is psd (\<langle>x|M\<^sup>\<dagger>Mx\<rangle> = \<langle>Mx|Mx\<rangle> \<ge> 0).
+     For psd A, B: Tr(AB) = Tr(\<surd>A \<sqdot> B \<sqdot> \<surd>A) \<ge> 0 since \<surd>A B \<surd>A is psd. *)
+  have MdM_psd: "psd (M\<^sup>\<dagger> * M)" sorry
+  show ?thesis
+    using MdM_psd rho_psd sorry
+qed
 
 
 (* ============================================================================
@@ -4165,9 +4181,22 @@ lemma meas_map_density:
   assumes ms: "measurement_system n Ms"
       and dm: "density_matrix n \<rho>"
   shows "density_matrix n (meas_map Ms \<rho>)"
-  sorry  (* Hermitian: each M\<rho>M\<dagger> is hermitian; sum stays hermitian.
-            PSD: \<langle>x | M\<rho>M\<dagger> x\<rangle> = \<langle>M\<dagger>x | \<rho> M\<dagger>x\<rangle> \<ge> 0; sum stays \<ge> 0.
-            Trace: Tr(\<Sum>M\<rho>M\<dagger>) = \<Sum>Tr(M\<rho>M\<dagger>) = \<Sum>Tr(M\<dagger>M\<sqdot>\<rho>) = Tr((\<Sum>M\<dagger>M)\<rho>) = Tr(\<rho>) = 1. *)
+proof -
+  have rho_carr: "\<rho> \<in> carrier_mat n n" using dm by (auto simp: density_matrix_def)
+  have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
+  have rho_tr: "Tr \<rho> = 1" using dm by (auto simp: density_matrix_def)
+  have Ms_carr: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+    using ms by (simp add: measurement_system_def)
+  (* Step 1: meas_map Ms \<rho> \<in> carrier_mat n n. *)
+  have map_carr: "meas_map Ms \<rho> \<in> carrier_mat n n"
+    sorry
+  (* Step 2: meas_map Ms \<rho> is psd: each M\<rho>M\<^sup>\<dagger> is psd, sum stays psd. *)
+  have map_psd: "psd (meas_map Ms \<rho>)" sorry
+  (* Step 3: trace preserved.  Tr(\<Sum> M\<rho>M\<^sup>\<dagger>) = Tr((\<Sum> M\<^sup>\<dagger>M)\<rho>) = Tr(I\<rho>) = Tr \<rho> = 1. *)
+  have map_tr: "Tr (meas_map Ms \<rho>) = 1" sorry
+  show ?thesis
+    unfolding density_matrix_def using map_carr map_psd map_tr by simp
+qed
 
 (* --------------------------------------------------------------------------
    Quantum noise: Kraus representation
