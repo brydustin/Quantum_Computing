@@ -3766,12 +3766,22 @@ lemma hadamard_squared:
 lemma hadamard_e0:
   "H_gate *\<^sub>v unit_vec 2 0 =
    (1 / csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
-  sorry  (* Direct 2x2 matrix-vector calculation. *)
+proof -
+  (* H = (1/\<surd>2)[[1,1],[1,-1]].  Then H*[1,0]^T = (1/\<surd>2)[1,1]^T. *)
+  show ?thesis
+    unfolding H_gate_def
+    sorry
+qed
 
 lemma hadamard_e1:
   "H_gate *\<^sub>v unit_vec 2 1 =
    (1 / csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 - unit_vec 2 1)"
-  sorry  (* Direct 2x2 matrix-vector calculation. *)
+proof -
+  (* H * [0,1]^T = (1/\<surd>2)[1,-1]^T. *)
+  show ?thesis
+    unfolding H_gate_def
+    sorry
+qed
 
 (* --------------------------------------------------------------------------
    2-Qubit gates
@@ -3788,12 +3798,19 @@ lemma CNOT_unitary: "unitary CNOT"
 lemma CNOT_00:
   "CNOT *\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0)) =
    tensor_vec (unit_vec 2 0) (unit_vec 2 0)"
-  sorry  (* Direct 4x4 calculation; CNOT acts as identity on |00\<rangle>. *)
+proof -
+  (* CNOT is the 4x4 permutation matrix that fixes |00\<rangle> and |01\<rangle>,
+     and swaps |10\<rangle> with |11\<rangle>.  Applied to |00\<rangle> = e\<^sub>0 \<otimes> e\<^sub>0 = e\<^sub>0 (in \<complex>\<^sup>4). *)
+  show ?thesis sorry
+qed
 
 lemma CNOT_10:
   "CNOT *\<^sub>v (tensor_vec (unit_vec 2 1) (unit_vec 2 0)) =
    tensor_vec (unit_vec 2 1) (unit_vec 2 1)"
-  sorry  (* Direct 4x4 calculation; CNOT flips |10\<rangle> \<mapsto> |11\<rangle>. *)
+proof -
+  (* CNOT|10\<rangle> = |11\<rangle> by definition of CNOT. *)
+  show ?thesis sorry
+qed
 
 (* --------------------------------------------------------------------------
    Super Dense Coding
@@ -5406,21 +5423,50 @@ definition ket_minus :: "complex Matrix.vec" where
   "ket_minus \<equiv> (1/sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 - unit_vec 2 1)"
 
 lemma ket_plus_unit: "\<parallel>ket_plus\<parallel> = 1"
-  sorry  (* \<parallel>(1/\<surd>2)(e0+e1)\<parallel>² = (1/2)(1²+1²) = 1. *)
+proof -
+  (* \<parallel>(1/\<surd>2)(e\<^sub>0+e\<^sub>1)\<parallel>\<^sup>2 = (1/2)\<langle>e\<^sub>0+e\<^sub>1 | e\<^sub>0+e\<^sub>1\<rangle> = (1/2)(1+0+0+1) = 1. *)
+  have inner: "\<langle>ket_plus | ket_plus\<rangle> = 1"
+    sorry
+  show ?thesis
+    using inner sorry  (* via cpx_vec_length_inner_prod *)
+qed
 
 lemma ket_minus_unit: "\<parallel>ket_minus\<parallel> = 1"
-  sorry  (* Symmetric. *)
+proof -
+  have inner: "\<langle>ket_minus | ket_minus\<rangle> = 1" sorry
+  show ?thesis using inner sorry
+qed
 
 lemma ket_plus_minus_orthog: "\<langle>ket_plus | ket_minus\<rangle> = 0"
-  sorry  (* (1/2)(1\<sqdot>1 + 1\<sqdot>(-1)) = 0. *)
+proof -
+  (* (1/2) \<langle>e\<^sub>0+e\<^sub>1 | e\<^sub>0-e\<^sub>1\<rangle> = (1/2)(\<langle>e\<^sub>0|e\<^sub>0\<rangle> - \<langle>e\<^sub>0|e\<^sub>1\<rangle> + \<langle>e\<^sub>1|e\<^sub>0\<rangle> - \<langle>e\<^sub>1|e\<^sub>1\<rangle>)
+                                = (1/2)(1 - 0 + 0 - 1) = 0. *)
+  show ?thesis
+    unfolding ket_plus_def ket_minus_def
+    sorry
+qed
 
 (* Z|+\<rangle> = |-\<rangle> and Z|-\<rangle> = |+\<rangle> *)
 
 lemma pauli_Z_ket_plus: "pauli_Z *\<^sub>v ket_plus = ket_minus"
-  sorry  (* Direct 2x2 calculation:  Z * (1/\<surd>2)(1,1) = (1/\<surd>2)(1,-1) = ket_minus. *)
+proof -
+  (* Direct 2x2 calculation:  pauli_Z = diag(1, -1).
+     pauli_Z \<sqdot> (1/\<surd>2)(1, 1) = (1/\<surd>2)(1, -1) = ket_minus. *)
+  show ?thesis
+    unfolding pauli_Z_def ket_plus_def ket_minus_def
+    sorry
+qed
 
 lemma pauli_Z_ket_minus: "pauli_Z *\<^sub>v ket_minus = ket_plus"
-  sorry  (* Z² = I, so Z|-\<rangle> = Z\<sqdot>Z|+\<rangle> = |+\<rangle>. *)
+proof -
+  (* pauli_Z\<^sup>2 = I, so pauli_Z|-\<rangle> = pauli_Z\<sqdot>pauli_Z|+\<rangle> = |+\<rangle>. *)
+  have "pauli_Z *\<^sub>v ket_minus = pauli_Z *\<^sub>v (pauli_Z *\<^sub>v ket_plus)"
+    using pauli_Z_ket_plus by simp
+  also have "\<dots> = (pauli_Z * pauli_Z) *\<^sub>v ket_plus" sorry
+  also have "\<dots> = (1\<^sub>m 2) *\<^sub>v ket_plus" using pauli_Z_squared by simp
+  also have "\<dots> = ket_plus" sorry  (* dim_vec ket_plus = 2 *)
+  finally show ?thesis .
+qed
 
 (* The Shor code: logical zero and one. *)
 
