@@ -2548,6 +2548,112 @@ proof -
   finally show ?thesis.
 qed
 
+
+(* Helper: \<Sum>_k \<Sum>_l 1[k=p] * T_kl * 1[l=q] = T_pq.
+   Useful any time you project out a single matrix entry by a unit-vector pair. *)
+lemma sum_indicator_T_indicator:
+  fixes T :: "complex Matrix.mat"
+  assumes p: "p < n" and q: "q < n"
+  shows "(\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+            (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
+            (if l = q then (1 :: complex) else 0))
+       = T $$ (p, q)"
+proof -
+  have inner: "\<And>k. (\<Sum>l = 0..<n.
+                (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
+                (if l = q then (1 :: complex) else 0))
+              = (if k = p then T $$ (k, q) else 0)"
+  proof -
+    fix k
+    show "(\<Sum>l = 0..<n.
+            (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
+            (if l = q then (1 :: complex) else 0))
+          = (if k = p then T $$ (k, q) else 0)"
+    proof (cases "k = p")
+      case True
+      have "(\<Sum>l = 0..<n.
+              (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
+              (if l = q then (1 :: complex) else 0))
+            = (\<Sum>l = 0..<n. T $$ (k, l) * (if l = q then (1 :: complex) else 0))"
+        using True by simp
+      also have "\<dots> = (\<Sum>l = 0..<n. (if l = q then T $$ (k, l) else 0))"
+        by (rule sum.cong[OF refl]) auto
+      also have "\<dots> = T $$ (k, q)" using q by simp
+      finally show ?thesis using True by simp
+    next
+      case False
+      then have "\<And>l. (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
+                       (if l = q then (1 :: complex) else 0) = 0" by simp
+      then show ?thesis using False by simp
+    qed
+  qed
+  have "(\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+                (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
+                (if l = q then (1 :: complex) else 0))
+       = (\<Sum>k = 0..<n. (if k = p then T $$ (k, q) else 0))"
+    using inner by (intro sum.cong refl)
+  also have "\<dots> = T $$ (p, q)" using p by simp
+  finally show ?thesis .
+qed
+
+(* Polarization helper:
+   \<langle>a\<cdot>e_i + b\<cdot>e_j | T *\<^sub>v (c\<cdot>e_i + d\<cdot>e_j)\<rangle>
+     = cnj a * c * T_ii + cnj a * d * T_ij + cnj b * c * T_ji + cnj b * d * T_jj.
+   Choosing (a,b,c,d) = (1,1,1,1) gives the real polarization;
+   (a,b,c,d) = (1,\<i>,1,\<i>) gives the imaginary polarization.   *)
+lemma polarization_helper:
+  fixes T :: "complex Matrix.mat" and a b c d :: complex
+  assumes sq: "T \<in> carrier_mat n n"
+      and i: "i < n" and j: "j < n"
+  shows "\<langle>a \<cdot>\<^sub>v unit_vec n i + b \<cdot>\<^sub>v unit_vec n j
+         | T *\<^sub>v (c \<cdot>\<^sub>v unit_vec n i + d \<cdot>\<^sub>v unit_vec n j)\<rangle>
+        = cnj a * c * T $$ (i, i) + cnj a * d * T $$ (i, j)
+        + cnj b * c * T $$ (j, i) + cnj b * d * T $$ (j, j)"
+proof -
+  let ?u = "a \<cdot>\<^sub>v unit_vec n i + b \<cdot>\<^sub>v unit_vec n j :: complex Matrix.vec"
+  let ?v = "c \<cdot>\<^sub>v unit_vec n i + d \<cdot>\<^sub>v unit_vec n j :: complex Matrix.vec"
+  have udim: "dim_vec ?u = n" by simp
+  have vdim: "dim_vec ?v = n" by simp
+  have u_cnj: "\<And>k. k < n \<Longrightarrow>
+      cnj (?u $ k) = cnj a * (if k = i then 1 else 0) + cnj b * (if k = j then 1 else 0)"
+    using i j by auto
+  have v_idx: "\<And>l. l < n \<Longrightarrow>
+      ?v $ l = c * (if l = i then 1 else 0) + d * (if l = j then 1 else 0)"
+    using i j by auto
+
+  have "\<langle>?u | T *\<^sub>v ?v\<rangle>
+      = (\<Sum>k = 0..<n. \<Sum>l = 0..<n. cnj (?u $ k) * T $$ (k, l) * ?v $ l)"
+    using inner_T_double_sum[OF sq udim vdim] .
+  also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+                  (cnj a * (if k = i then 1 else 0) + cnj b * (if k = j then 1 else 0)) *
+                  T $$ (k, l) *
+                  (c * (if l = i then 1 else 0) + d * (if l = j then 1 else 0)))"
+    using u_cnj v_idx by (intro sum.cong refl) auto
+  also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+                cnj a * c * ((if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
+              + cnj a * d * ((if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
+              + cnj b * c * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
+              + cnj b * d * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)))"
+    by (intro sum.cong refl) (simp add: distrib_left distrib_right ac_simps)
+  also have "\<dots> = cnj a * c * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+                                  (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
+              + cnj a * d * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+                                  (if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
+              + cnj b * c * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+                                  (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
+              + cnj b * d * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
+                                  (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))"
+    by (simp add: sum.distrib sum_distrib_left)
+  also have "\<dots> = cnj a * c * T $$ (i, i) + cnj a * d * T $$ (i, j)
+              + cnj b * c * T $$ (j, i) + cnj b * d * T $$ (j, j)"
+    using sum_indicator_T_indicator[OF i i, of T]
+          sum_indicator_T_indicator[OF i j, of T]
+          sum_indicator_T_indicator[OF j i, of T]
+          sum_indicator_T_indicator[OF j j, of T]
+    by simp
+  finally show ?thesis .
+qed
+
 (* Key Lemma: if \<langle>x|Tx\<rangle> = 0 for all x \<in> \<complex>^n then T = 0. *)
 
 lemma quadratic_form_zero:
@@ -2556,15 +2662,12 @@ lemma quadratic_form_zero:
       and zero: "\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | T *\<^sub>v x\<rangle> = 0"
   shows "T = 0\<^sub>m n n"
 proof (rule eq_matI)
-  show "dim_row T = dim_row (0\<^sub>m n n)"
-    using sq by simp
-  show "dim_col T = dim_col (0\<^sub>m n n)"
-    using sq by simp
+  show "dim_row T = dim_row (0\<^sub>m n n)" using sq by simp
+  show "dim_col T = dim_col (0\<^sub>m n n)" using sq by simp
 next
   fix i j
   assume "i < dim_row (0\<^sub>m n n)" "j < dim_col (0\<^sub>m n n)"
-  then have inb: "i < n" "j < n"
-    using sq by simp_all
+  then have inb: "i < n" "j < n" using sq by simp_all
 
   let ?ei = "unit_vec n i :: complex Matrix.vec"
   let ?ej = "unit_vec n j :: complex Matrix.vec"
@@ -2581,355 +2684,30 @@ next
 
   have q_sum_zero: "\<langle>?ei + ?ej | T *\<^sub>v (?ei + ?ej)\<rangle> = 0"
     using zero[rule_format, of "?ei + ?ej"] eiej_dim by simp
+  have q_isum_zero: "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle> = 0"
+    using zero[rule_format, of "?ei + \<i> \<cdot>\<^sub>v ?ej"] eiiej_dim by simp
 
+  (* Real polarization: scalars (1,1,1,1).  Note 1\<cdot>v = v, so
+     \<langle>?ei + ?ej | T (?ei + ?ej)\<rangle> = \<langle>1\<cdot>?ei + 1\<cdot>?ej | T (1\<cdot>?ei + 1\<cdot>?ej)\<rangle>. *)
   have sum_expand: "\<langle>?ei + ?ej | T *\<^sub>v (?ei + ?ej)\<rangle>
-                    = T $$ (i, i) + T $$ (i, j) + T $$ (j, i) + T $$ (j, j)"
-  proof -
-    have "\<langle>?ei + ?ej | T *\<^sub>v (?ei + ?ej)\<rangle>
-        = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-              cnj ((?ei + ?ej) $ k) * T $$ (k, l) * (?ei + ?ej) $ l)"
-      using inner_T_double_sum[OF sq eiej_dim eiej_dim] .
-    also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-              ((if k = i then 1 else 0) + (if k = j then 1 else 0)) * T $$ (k, l) *
-              ((if l = i then 1 else 0) + (if l = j then 1 else 0)))"
-      using inb by (intro sum.cong refl) auto
-    also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-              (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0)
-            + (if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)
-            + (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0)
-            + (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))"
-      by (simp add: algebra_simps)
-    also have "\<dots> =
-      (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, i))
-      + (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, j))
-      + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, i))
-      + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, j))"
-    proof -
-      have "(\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-              (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0)
-            + (if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)
-            + (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0)
-            + (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
-          =
-          (\<Sum>k = 0..<n.
-             (\<Sum>l = 0..<n. (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-           + (\<Sum>l = 0..<n. (if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
-           + (\<Sum>l = 0..<n. (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-           + (\<Sum>l = 0..<n. (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)))"
-        by (simp add: sum.distrib algebra_simps)
-      also have "\<dots> =
-          (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, i))
-        + (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, j))
-        + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, i))
-        + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, j))"
-      proof -
-        have "(\<Sum>k = 0..<n.
-                 (\<Sum>l = 0..<n. (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-               + (\<Sum>l = 0..<n. (if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
-               + (\<Sum>l = 0..<n. (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-               + (\<Sum>l = 0..<n. (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)))
-              =
-              (\<Sum>k = 0..<n. (if k = i then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0)))
-            + (\<Sum>k = 0..<n. (if k = i then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0)))
-            + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0)))
-            + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0)))"
-          by (simp add: sum_distrib_left algebra_simps)
-        also have "\<dots> =
-              (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, i))
-            + (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, j))
-            + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, i))
-            + (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, j))"
-        proof -
-          have "(\<Sum>k = 0..<n. (if k = i then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0)))
-              = (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, i))"
-          proof (rule sum.cong[OF refl])
-            fix k
-            assume k: "k \<in> {0..<n}"
-            have "(\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0))
-                = (\<Sum>l = 0..<n. (if l = i then T $$ (k, l) else 0))"
-            proof (rule sum.cong[OF refl])
-              fix l
-              assume l: "l \<in> {0..<n}"
-              show "T $$ (k, l) * (if l = i then 1 else 0)
-                  = (if l = i then T $$ (k, l) else 0)"
-                by (cases "l = i", simp_all)
-            qed
-            also have "\<dots> = T $$ (k, i)"
-            proof -
-              have "i \<in> {0..<n}"
-                using inb(1) by simp
-              then show ?thesis
-                by simp
-            qed
-            finally show "(if k = i then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0))
-                        = (if k = i then 1 else 0) * T $$ (k, i)"
-              by simp
-          qed
-          moreover have "(\<Sum>k = 0..<n. (if k = i then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0)))
-              = (\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, j))"
-          proof (rule sum.cong[OF refl])
-            fix k
-            assume k: "k \<in> {0..<n}"
-            have "(\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0))
-                = (\<Sum>l = 0..<n. (if l = j then T $$ (k, l) else 0))"
-            proof (rule sum.cong[OF refl])
-              fix l
-              assume l: "l \<in> {0..<n}"
-              show "T $$ (k, l) * (if l = j then 1 else 0)
-                  = (if l = j then T $$ (k, l) else 0)"
-                by (cases "l = j", simp_all)
-            qed
-            also have "\<dots> = T $$ (k, j)"
-            proof -
-              have "j \<in> {0..<n}"
-                using inb(2) by simp
-              then show ?thesis
-                by simp
-            qed
-            finally show "(if k = i then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0))
-                        = (if k = i then 1 else 0) * T $$ (k, j)"
-              by simp
-          qed
-          moreover have "(\<Sum>k = 0..<n. (if k = j then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0)))
-              = (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, i))"
-          proof (rule sum.cong[OF refl])
-            fix k
-            assume k: "k \<in> {0..<n}"
-            have "(\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0))
-                = (\<Sum>l = 0..<n. (if l = i then T $$ (k, l) else 0))"
-            proof (rule sum.cong[OF refl])
-              fix l
-              assume l: "l \<in> {0..<n}"
-              show "T $$ (k, l) * (if l = i then 1 else 0)
-                  = (if l = i then T $$ (k, l) else 0)"
-                by (cases "l = i", simp_all)
-            qed
-            also have "\<dots> = T $$ (k, i)"
-            proof -
-              have "i \<in> {0..<n}"
-                using inb(1) by simp
-              then show ?thesis
-                by simp
-            qed
-            finally show "(if k = j then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = i then 1 else 0))
-                        = (if k = j then 1 else 0) * T $$ (k, i)"
-              by simp
-          qed
-          moreover have "(\<Sum>k = 0..<n. (if k = j then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0)))
-              = (\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, j))"
-          proof (rule sum.cong[OF refl])
-            fix k
-            assume k: "k \<in> {0..<n}"
-            have "(\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0))
-                = (\<Sum>l = 0..<n. (if l = j then T $$ (k, l) else 0))"
-            proof (rule sum.cong[OF refl])
-              fix l
-              assume l: "l \<in> {0..<n}"
-              show "T $$ (k, l) * (if l = j then 1 else 0)
-                  = (if l = j then T $$ (k, l) else 0)"
-                by (cases "l = j", simp_all)
-            qed
-            also have "\<dots> = T $$ (k, j)"
-            proof -
-              have "j \<in> {0..<n}"
-                using inb(2) by simp
-              then show ?thesis
-                by simp
-            qed
-            finally show "(if k = j then 1 else 0) * (\<Sum>l = 0..<n. T $$ (k, l) * (if l = j then 1 else 0))
-                        = (if k = j then 1 else 0) * T $$ (k, j)"
-              by simp
-          qed
-          ultimately show ?thesis
-            by simp
-        qed
-        finally show ?thesis.
-      qed
-      finally show ?thesis.
-    qed
-    also have "\<dots> =
-      (\<Sum>k = 0..<n. (if k = i then T $$ (k, i) else 0))
-      + (\<Sum>k = 0..<n. (if k = i then T $$ (k, j) else 0))
-      + (\<Sum>k = 0..<n. (if k = j then T $$ (k, i) else 0))
-      + (\<Sum>k = 0..<n. (if k = j then T $$ (k, j) else 0))"
-    proof -
-      have "(\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, i))
-          = (\<Sum>k = 0..<n. (if k = i then T $$ (k, i) else 0))"
-      proof (rule sum.cong[OF refl])
-        fix k
-        assume k: "k \<in> {0..<n}"
-        show "(if k = i then 1 else 0) * T $$ (k, i)
-            = (if k = i then T $$ (k, i) else 0)"
-          by (cases "k = i", simp_all)
-      qed
-      moreover have "(\<Sum>k = 0..<n. (if k = i then 1 else 0) * T $$ (k, j))
-          = (\<Sum>k = 0..<n. (if k = i then T $$ (k, j) else 0))"
-      proof (rule sum.cong[OF refl])
-        fix k
-        assume k: "k \<in> {0..<n}"
-        show "(if k = i then 1 else 0) * T $$ (k, j)
-            = (if k = i then T $$ (k, j) else 0)"
-          by (cases "k = i", simp_all)
-      qed
-      moreover have "(\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, i))
-          = (\<Sum>k = 0..<n. (if k = j then T $$ (k, i) else 0))"
-      proof (rule sum.cong[OF refl])
-        fix k
-        assume k: "k \<in> {0..<n}"
-        show "(if k = j then 1 else 0) * T $$ (k, i)
-            = (if k = j then T $$ (k, i) else 0)"
-          by (cases "k = j", simp_all)
-      qed
-      moreover have "(\<Sum>k = 0..<n. (if k = j then 1 else 0) * T $$ (k, j))
-          = (\<Sum>k = 0..<n. (if k = j then T $$ (k, j) else 0))"
-      proof (rule sum.cong[OF refl])
-        fix k
-        assume k: "k \<in> {0..<n}"
-        show "(if k = j then 1 else 0) * T $$ (k, j)
-            = (if k = j then T $$ (k, j) else 0)"
-          by (cases "k = j") simp_all
-      qed
-      ultimately show ?thesis
-        by simp
-    qed
-    also have "\<dots> = T $$ (i, i) + T $$ (i, j) + T $$ (j, i) + T $$ (j, j)"
-    proof -
-      have "(\<Sum>k = 0..<n. (if k = i then T $$ (k, i) else 0)) = T $$ (i, i)"
-      proof -
-        have "i \<in> {0..<n}"
-          using inb(1) by simp
-        then show ?thesis
-          by simp
-      qed
-      moreover have "(\<Sum>k = 0..<n. (if k = i then T $$ (k, j) else 0)) = T $$ (i, j)"
-      proof -
-        have "i \<in> {0..<n}"
-          using inb(1) by simp
-        then show ?thesis
-          by simp
-      qed
-      moreover have "(\<Sum>k = 0..<n. (if k = j then T $$ (k, i) else 0)) = T $$ (j, i)"
-      proof -
-        have "j \<in> {0..<n}"
-          using inb(2) by simp
-        then show ?thesis
-          by simp
-      qed
-      moreover have "(\<Sum>k = 0..<n. (if k = j then T $$ (k, j) else 0)) = T $$ (j, j)"
-      proof -
-        have "j \<in> {0..<n}"
-          using inb(2) by simp
-        then show ?thesis
-          by simp
-      qed
-      ultimately show ?thesis
-        by simp
-    qed
-    finally show ?thesis.
-  qed
+                  = T $$ (i, i) + T $$ (i, j) + T $$ (j, i) + T $$ (j, j)"
+    using polarization_helper[OF sq inb(1) inb(2), of 1 1 1 1] by simp
 
   have sum_eq: "T $$ (i, j) + T $$ (j, i) = 0"
     using q_sum_zero sum_expand diag_i diag_j by simp
 
-  have q_isum_zero: "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle> = 0"
-    using zero[rule_format, of "?ei + \<i> \<cdot>\<^sub>v ?ej"] eiiej_dim by simp
-
+  (* Imaginary polarization: scalars (1, \<i>, 1, \<i>). *)
   have isum_expand: "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle>
-                     = T $$ (i, i) + \<i> * T $$ (i, j) - \<i> * T $$ (j, i) + T $$ (j, j)"
-  proof -
-    (* Local helper: indicator * T * indicator double sum collapses to T_pq. *)
-    have indicator_collapse:
-      "\<And>p q. p < n \<Longrightarrow> q < n \<Longrightarrow>
-        (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-          (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-          (if l = q then (1 :: complex) else 0))
-        = T $$ (p, q)"
-    proof -
-      fix p q :: nat assume p: "p < n" and q: "q < n"
-      have inner: "\<And>k. (\<Sum>l = 0..<n.
-                    (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                    (if l = q then (1 :: complex) else 0))
-                  = (if k = p then T $$ (k, q) else 0)"
-      proof -
-        fix k
-        show "(\<Sum>l = 0..<n.
-                (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                (if l = q then (1 :: complex) else 0))
-              = (if k = p then T $$ (k, q) else 0)"
-        proof (cases "k = p")
-          case True
-          have "(\<Sum>l = 0..<n.
-                  (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                  (if l = q then (1 :: complex) else 0))
-                = (\<Sum>l = 0..<n. T $$ (k, l) * (if l = q then (1 :: complex) else 0))"
-            using True by simp
-          also have "\<dots> = (\<Sum>l = 0..<n. (if l = q then T $$ (k, l) else 0))"
-            by (rule sum.cong[OF refl]) auto
-          also have "\<dots> = T $$ (k, q)" using q by simp
-          finally show ?thesis using True by simp
-        next
-          case False
-          then have "\<And>l. (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                           (if l = q then (1 :: complex) else 0) = 0" by simp
-          then show ?thesis using False by simp
-        qed
-      qed
-      have "(\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                    (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                    (if l = q then (1 :: complex) else 0))
-           = (\<Sum>k = 0..<n. (if k = p then T $$ (k, q) else 0))"
-        using inner by (intro sum.cong refl)
-      also have "\<dots> = T $$ (p, q)" using p by simp
-      finally show "(\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                      (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                      (if l = q then (1 :: complex) else 0))
-                  = T $$ (p, q)" .
-    qed
+                   = T $$ (i, i) + \<i> * T $$ (i, j) - \<i> * T $$ (j, i) + T $$ (j, j)"
+    using polarization_helper[OF sq inb(1) inb(2), of 1 \<i> 1 \<i>] by simp
 
-    (* Step 1: expand inner_T_double_sum *)
-    have "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle>
-        = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-              cnj ((?ei + \<i> \<cdot>\<^sub>v ?ej) $ k) * T $$ (k, l) * (?ei + \<i> \<cdot>\<^sub>v ?ej) $ l)"
-      using inner_T_double_sum[OF sq eiiej_dim eiiej_dim] .
-    (* Step 2: substitute the unit-vector entries *)
-    also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-              ((if k = i then 1 else 0) + cnj \<i> * (if k = j then 1 else 0)) * T $$ (k, l) *
-              ((if l = i then 1 else 0) + \<i> * (if l = j then 1 else 0)))"
-      using inb by (intro sum.cong refl) auto
-    (* Step 3: distribute the products into 4 indicator-T-indicator terms with scalars. *)
-    also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0)
-              + \<i> * ((if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
-              + cnj \<i> * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-              + cnj \<i> * \<i> * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)))"
-      by (intro sum.cong refl) (simp add: distrib_left distrib_right ac_simps del: complex_cnj_i)
-    (* Step 4: split into 4 separate double sums. *)
-    also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n. (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-                + (\<Sum>k = 0..<n. \<Sum>l = 0..<n. \<i> * ((if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)))
-                + (\<Sum>k = 0..<n. \<Sum>l = 0..<n. cnj \<i> * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0)))
-                + (\<Sum>k = 0..<n. \<Sum>l = 0..<n. cnj \<i> * \<i> * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)))"
-      by (simp add: sum.distrib del: complex_cnj_i)
-    (* Step 5: pull constants out of each sum. *)
-    also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n. (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-                + \<i> * (\<Sum>k = 0..<n. \<Sum>l = 0..<n. (if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
-                + cnj \<i> * (\<Sum>k = 0..<n. \<Sum>l = 0..<n. (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-                + cnj \<i> * \<i> * (\<Sum>k = 0..<n. \<Sum>l = 0..<n. (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))"
-      by (simp add: sum_distrib_left)
-    (* Step 6: collapse each indicator-T-indicator double sum to a matrix entry. *)
-    also have "\<dots> = T $$ (i, i) + \<i> * T $$ (i, j) + cnj \<i> * T $$ (j, i) + cnj \<i> * \<i> * T $$ (j, j)"
-      using indicator_collapse[OF inb(1) inb(1)]
-            indicator_collapse[OF inb(1) inb(2)]
-            indicator_collapse[OF inb(2) inb(1)]
-            indicator_collapse[OF inb(2) inb(2)]
-      by simp
-    (* Step 7: simplify cnj 𝗂 = -𝗂. *)
-    also have "\<dots> = T $$ (i, i) + \<i> * T $$ (i, j) - \<i> * T $$ (j, i) + T $$ (j, j)"
-      by simp
-    finally show ?thesis .
-  qed
+  have diff_eq: "T $$ (i, j) - T $$ (j, i) = 0"
+    using q_isum_zero isum_expand diag_i diag_j by (simp add: field_simps)
 
-  then show "T $$ (i, j) = 0\<^sub>m n n $$ (i, j)"
-    using diag_i diag_j inb(1,2) q_isum_zero sum_eq by auto
+  have "2 * T $$ (i, j) = 0"
+    using sum_eq diff_eq by (simp add: algebra_simps)
+  hence "T $$ (i, j) = 0" by simp
+  thus "T $$ (i, j) = 0\<^sub>m n n $$ (i, j)" using inb by simp
 qed
 
 
