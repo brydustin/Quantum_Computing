@@ -2710,6 +2710,117 @@ next
   thus "T $$ (i, j) = 0\<^sub>m n n $$ (i, j)" using inb by simp
 qed
 
+lemma mult_mat_vec_index:
+  fixes A :: "'a::{comm_ring_1} Matrix.mat"
+    and x :: "'a Matrix.vec"
+  assumes A: "A \<in> carrier_mat m n"
+      and x: "x \<in> carrier_vec n"
+      and j: "j < m"
+  shows "(A *\<^sub>v x) $ j = (\<Sum>i = 0..<n. A $$ (j, i) * x $ i)"
+proof -
+  have step1: "A *\<^sub>v x = Matrix.vec (dim_row A) (\<lambda>r. Matrix.row A r \<bullet> x)"
+    unfolding mult_mat_vec_def
+    by simp
+
+  have step2: "(A *\<^sub>v x) $ j = (Matrix.vec (dim_row A) (\<lambda>r. Matrix.row A r \<bullet> x)) $ j"
+    using step1 by simp
+
+  have step3: "(Matrix.vec (dim_row A) (\<lambda>r. Matrix.row A r \<bullet> x)) $ j = Matrix.row A j \<bullet> x"
+    using A j
+    by simp
+
+  have step4: "Matrix.row A j \<bullet> x = (\<Sum>i = 0..<dim_vec x. Matrix.row A j $ i * x $ i)"
+    by (simp add: scalar_prod_def)
+
+  have step5: "(\<Sum>i = 0..<dim_vec x. Matrix.row A j $ i * x $ i)
+             = (\<Sum>i = 0..<n. Matrix.row A j $ i * x $ i)"
+    using x by simp
+
+  have step6: "(\<Sum>i = 0..<n. Matrix.row A j $ i * x $ i)
+             = (\<Sum>i = 0..<n. A $$ (j, i) * x $ i)"
+  proof (rule sum.cong[OF refl])
+    fix i
+    assume i: "i \<in> {0..<n}"
+    then have "i < n"
+      by simp
+    moreover have "j < dim_row A"
+      using A j by simp
+    ultimately have "Matrix.row A j $ i = A $$ (j, i)"
+      using A by auto
+    then show "Matrix.row A j $ i * x $ i = A $$ (j, i) * x $ i"
+      by simp
+  qed
+
+  have "(A *\<^sub>v x) $ j = Matrix.row A j \<bullet> x"
+    using step2 step3 by simp
+  also have "... = (\<Sum>i = 0..<dim_vec x. Matrix.row A j $ i * x $ i)"
+    using step4 by simp
+  also have "... = (\<Sum>i = 0..<n. Matrix.row A j $ i * x $ i)"
+    using step5 by simp
+  also have "... = (\<Sum>i = 0..<n. A $$ (j, i) * x $ i)"
+    using step6 by simp
+  finally show ?thesis.
+qed
+
+(* Adjoint moves to the other slot of the inner product:
+   \<langle>A *\<^sub>v x | x\<rangle> = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>.
+   This is the defining property of the adjoint A\<^sup>\<dagger>. *)
+lemma inner_prod_adjoint_swap:
+  fixes A :: "complex Matrix.mat" and x :: "complex Matrix.vec"
+  assumes Acar: "A \<in> carrier_mat n n" and xcar: "x \<in> carrier_vec n"
+  shows "\<langle>A *\<^sub>v x | x\<rangle> = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>"
+proof -
+  have xdim: "dim_vec x = n" using xcar by auto
+  have Axdim: "dim_vec (A *\<^sub>v x) = n" using Acar by auto
+  have Adagcar: "A\<^sup>\<dagger> \<in> carrier_mat n n" using Acar by auto
+  (* Both sides reduced to a common canonical double-sum form. *)
+  have lhs: "\<langle>A *\<^sub>v x | x\<rangle> =
+             (\<Sum>i = 0..<n. \<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
+  proof -
+    have "\<langle>A *\<^sub>v x | x\<rangle> = (\<Sum>i = 0..<n. cnj ((A *\<^sub>v x) $ i) * x $ i)"
+      using xdim by (simp add: inner_prod_def)
+    also have "\<dots> = (\<Sum>i = 0..<n. cnj (\<Sum>j = 0..<n. A $$ (i, j) * x $ j) * x $ i)"
+      using Acar xcar by (simp add: scalar_prod_def)
+    also have "\<dots> = (\<Sum>i = 0..<n. (\<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j)) * x $ i)"
+      by simp
+    also have "\<dots> = (\<Sum>i = 0..<n. \<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
+      by (simp add: sum_distrib_right)
+    finally show ?thesis .
+  qed
+  have rhs: "\<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle> =
+             (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
+  proof -
+    have "\<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle> = (\<Sum>j = 0..<n. cnj (x $ j) * (A\<^sup>\<dagger> *\<^sub>v x) $ j)"
+      using Adagcar inner_prod_expand xcar by auto
+    also have "\<dots> = (\<Sum>j = 0..<n. cnj (x $ j) * (\<Sum>i = 0..<n. (A\<^sup>\<dagger>) $$ (j, i) * x $ i))"
+    proof (rule sum.cong[OF refl])
+      fix j
+      assume j: "j \<in> {0..<n}"
+      then have jlt: "j < n"
+        by simp
+      have "(A\<^sup>\<dagger> *\<^sub>v x) $ j = (\<Sum>i = 0..<dim_col (A\<^sup>\<dagger>). (A\<^sup>\<dagger>) $$ (j, i) * x $ i)"
+        using Adagcar jlt mult_mat_vec_index xcar by blast
+
+      also have "dim_col (A\<^sup>\<dagger>) = n"
+        using Adagcar by blast
+
+      finally show "cnj (x $ j) * (A\<^sup>\<dagger> *\<^sub>v x) $ j
+                  = cnj (x $ j) * (\<Sum>i = 0..<n. (A\<^sup>\<dagger>) $$ (j, i) * x $ i)"
+        by simp
+    qed
+    also have "\<dots> = (\<Sum>j = 0..<n. cnj (x $ j) * (\<Sum>i = 0..<n. cnj (A $$ (i, j)) * x $ i))"
+      using Acar by (intro sum.cong refl) (simp add: dagger_def)
+    also have "\<dots> = (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (x $ j) * (cnj (A $$ (i, j)) * x $ i))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
+      by (intro sum.cong refl, auto)                                                                    
+    finally show ?thesis.
+  qed
+  have "(\<Sum>i = 0..<n. \<Sum>j = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)
+      = (\<Sum>j = 0..<n. \<Sum>i = 0..<n. cnj (A $$ (i, j)) * cnj (x $ j) * x $ i)"
+    by (rule sum.swap)
+  thus ?thesis using lhs rhs by simp
+qed
 
 (* Hermitian \<leftrightarrow> \<langle>x|Hx\<rangle> \<in> \<real> for all x *)
 
@@ -2729,15 +2840,7 @@ proof
       have "cnj \<langle>x | A *\<^sub>v x\<rangle> = \<langle>A *\<^sub>v x | x\<rangle>"
         by (metis carrier_matD(1) dim_mult_mat_vec inner_prod_cnj sq xdim)
       also have "... = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>"
-      proof -
-        have Acar: "A \<in> carrier_mat (dim_vec x) (dim_vec x)"
-          using sq xdim by simp
-        then have "(A *\<^sub>v x) \<in> carrier_vec (dim_vec x)"
-          using xcar by simp
-        then show ?thesis
-          using Acar xcar
-          sorry
-      qed
+        using inner_prod_adjoint_swap[OF sq xcar] by simp
       also have "... = \<langle>x | A *\<^sub>v x\<rangle>"
         using hA by (simp add: hermitian_def)
       finally show ?thesis .
@@ -2766,14 +2869,11 @@ next
           mat_carrier minus_mult_distrib_mat_vec sq xcar)
     also have "... = \<langle>x | A *\<^sub>v x\<rangle> - cnj \<langle>x | A *\<^sub>v x\<rangle>"
     proof -
-      have Acar: "A \<in> carrier_mat (dim_vec x) (dim_vec x)"
-        using sq xdim by simp
       have "\<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle> = \<langle>A *\<^sub>v x | x\<rangle>"
-        sorry
+        using inner_prod_adjoint_swap[OF sq xcar] by simp
       also have "... = cnj \<langle>x | A *\<^sub>v x\<rangle>"
         by (metis carrier_matD(1) dim_mult_mat_vec inner_prod_cnj sq xdim)
-      finally show ?thesis
-        by simp
+      finally show ?thesis by simp
     qed
     also have "... = 0"
       using Reals_cnj_iff qA_real by force
@@ -2784,12 +2884,22 @@ next
     using quadratic_form_zero[OF Tcar qzero] .
   hence "A = (A\<^sup>\<dagger>)"
   proof -
-    have "A - (A\<^sup>\<dagger>) = 0\<^sub>m n n"
+    have Adagcar: "A\<^sup>\<dagger> \<in> carrier_mat n n" using sq by auto
+    have "A = (A - (A\<^sup>\<dagger>)) + (A\<^sup>\<dagger>)"
+    proof -
+      have "A = A + 0\<^sub>m n n"
+        using sq by simp
+      also have "... = A + (-(A\<^sup>\<dagger>) + (A\<^sup>\<dagger>))"
+        using Adagcar by force
+      also have "... = (A - (A\<^sup>\<dagger>)) + (A\<^sup>\<dagger>)"
+        by (smt (verit, best) Adagcar add_uminus_minus_mat assoc_add_mat sq uminus_carrier_mat)
+      finally show ?thesis.
+    qed
+    also have "\<dots> = (0\<^sub>m n n) + (A\<^sup>\<dagger>)"
       using \<open>?T = 0\<^sub>m n n\<close> by simp
-    then have "(A - (A\<^sup>\<dagger>)) + (A\<^sup>\<dagger>) = (0\<^sub>m n n) + (A\<^sup>\<dagger>)"
-      by simp
-    then show ?thesis
-      sorry
+    also have "\<dots> = (A\<^sup>\<dagger>)"
+      using Adagcar by auto
+    finally show ?thesis.
   qed
   then show "hermitian A"
     by (simp add: hermitian_def)
