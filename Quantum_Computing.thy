@@ -5477,26 +5477,50 @@ lemma ket_minus_dim[simp]: "dim_vec ket_minus = 2"
 
 lemma ket_plus_unit: "\<parallel>ket_plus\<parallel> = 1"
 proof -
-  (* \<parallel>(1/\<surd>2)(e\<^sub>0+e\<^sub>1)\<parallel>\<^sup>2 = (1/2)\<langle>e\<^sub>0+e\<^sub>1 | e\<^sub>0+e\<^sub>1\<rangle> = (1/2)(1+0+0+1) = 1. *)
   have inner: "\<langle>ket_plus | ket_plus\<rangle> = 1"
-    sorry
-  show ?thesis
-    using inner sorry  (* via cpx_vec_length_inner_prod *)
+  proof -
+    have "\<langle>ket_plus | ket_plus\<rangle> = (\<Sum>i = 0..<2. cnj (ket_plus $ i) * (ket_plus $ i))"
+      unfolding inner_prod_def by simp
+    also have "\<dots> = cnj (ket_plus $ 0) * (ket_plus $ 0) +
+                    cnj (ket_plus $ 1) * (ket_plus $ 1)"
+      by (simp add: numeral_2_eq_2)
+    also have "\<dots> = 1"
+      unfolding ket_plus_def by simp
+    finally show ?thesis .
+  qed
+  have "(\<parallel>ket_plus\<parallel>)\<^sup>2 = 1"
+    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff of_real_power)
+  thus ?thesis by (metis abs_1 real_sqrt_abs2 real_sqrt_one)
 qed
 
 lemma ket_minus_unit: "\<parallel>ket_minus\<parallel> = 1"
 proof -
-  have inner: "\<langle>ket_minus | ket_minus\<rangle> = 1" sorry
-  show ?thesis using inner sorry
+  have inner: "\<langle>ket_minus | ket_minus\<rangle> = 1"
+  proof -
+    have "\<langle>ket_minus | ket_minus\<rangle> = (\<Sum>i = 0..<2. cnj (ket_minus $ i) * (ket_minus $ i))"
+      unfolding inner_prod_def by simp
+    also have "\<dots> = cnj (ket_minus $ 0) * (ket_minus $ 0) +
+                    cnj (ket_minus $ 1) * (ket_minus $ 1)"
+      by (simp add: numeral_2_eq_2)
+    also have "\<dots> = 1"
+      unfolding ket_minus_def by simp
+    finally show ?thesis .
+  qed
+  have "(\<parallel>ket_minus\<parallel>)\<^sup>2 = 1"
+    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff of_real_power)
+  thus ?thesis by (metis abs_1 real_sqrt_abs2 real_sqrt_one)
 qed
 
 lemma ket_plus_minus_orthog: "\<langle>ket_plus | ket_minus\<rangle> = 0"
 proof -
-  (* (1/2) \<langle>e\<^sub>0+e\<^sub>1 | e\<^sub>0-e\<^sub>1\<rangle> = (1/2)(\<langle>e\<^sub>0|e\<^sub>0\<rangle> - \<langle>e\<^sub>0|e\<^sub>1\<rangle> + \<langle>e\<^sub>1|e\<^sub>0\<rangle> - \<langle>e\<^sub>1|e\<^sub>1\<rangle>)
-                                = (1/2)(1 - 0 + 0 - 1) = 0. *)
-  show ?thesis
-    unfolding ket_plus_def ket_minus_def
-    sorry
+  have "\<langle>ket_plus | ket_minus\<rangle> = (\<Sum>i = 0..<2. cnj (ket_plus $ i) * (ket_minus $ i))"
+    unfolding inner_prod_def by simp
+  also have "\<dots> = cnj (ket_plus $ 0) * (ket_minus $ 0) +
+                  cnj (ket_plus $ 1) * (ket_minus $ 1)"
+    by (simp add: numeral_2_eq_2)
+  also have "\<dots> = 0"
+    unfolding ket_plus_def ket_minus_def by simp
+  finally show ?thesis .
 qed
 
 (* Z|+\<rangle> = |-\<rangle> and Z|-\<rangle> = |+\<rangle> *)
