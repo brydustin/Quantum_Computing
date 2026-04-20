@@ -7092,14 +7092,169 @@ lemma tensor_mat_vec_mult:
       and v: "dim_vec v = nc"
       and w: "dim_vec w = mc"
   shows "(A \<Otimes> B) *\<^sub>v tensor_vec v w = tensor_vec (A *\<^sub>v v) (B *\<^sub>v w)"
-  sorry
+proof (rule eq_vecI)
+  have vcar: "v \<in> carrier_vec nc"
+    using carrier_vec_dim_vec v by blast
+
+  have wcar: "w \<in> carrier_vec mc"
+    using carrier_vec_dim_vec w by blast
+  have dim_Av: "dim_vec (A *\<^sub>v v) = nr"
+    using A v by simp
+  have dim_Bw: "dim_vec (B *\<^sub>v w) = mr"
+    using B w by simp
+  show "dim_vec ((A \<Otimes> B) *\<^sub>v tensor_vec v w) = dim_vec (tensor_vec (A *\<^sub>v v) (B *\<^sub>v w))"
+    using A B v w dim_Av dim_Bw by (simp add: tensor_vec_dim)
+next
+  fix i
+  assume i: "i < dim_vec (tensor_vec (A *\<^sub>v v) (B *\<^sub>v w))"
+  have vcar: "v \<in> carrier_vec nc"
+    using carrier_vec_dim_vec v by blast
+  have wcar: "w \<in> carrier_vec mc"
+    using carrier_vec_dim_vec w by blast
+  have dim_Av: "dim_vec (A *\<^sub>v v) = nr"
+    using A v by simp
+  have dim_Bw: "dim_vec (B *\<^sub>v w) = mr"
+    using B w by simp
+  have i_lt: "i < nr * mr"
+    using i dim_Av dim_Bw by (simp add: tensor_vec_dim)
+  show "((A \<Otimes> B) *\<^sub>v tensor_vec v w) $ i = tensor_vec (A *\<^sub>v v) (B *\<^sub>v w) $ i"
+  proof (cases "nc = 0 \<or> mc = 0")
+    case True
+    have lhs: "((A \<Otimes> B) *\<^sub>v tensor_vec v w) $ i = 0"
+      using A B v w i_lt True
+      by (simp add: mult_mat_vec_index tensor_vec_dim,
+          smt (verit, ccfv_SIG) carrier_matD(2) conjugate_square_eq_0_vec 
+          cscalar_prod_is_inner_prod_swap dim_col_tensor_mat dim_vec
+          index_row(2) inner_prod_with_row_bra_vec mult_0_right mult_cancel_left row_bra_vec 
+          tensor_vec_dim vcar vec_of_dim_0 wcar)
+    have rhs: "tensor_vec (A *\<^sub>v v) (B *\<^sub>v w) $ i = 0"
+      using A B v w i_lt True
+      by (smt (verit, ccfv_threshold) carrier_matD(1,2) dim_Av dim_Bw dim_col_tensor_mat 
+          dim_row_tensor_mat index_mult_mat_vec index_row(2) less_mult_imp_div_less lhs 
+          mod_less_divisor mult_eq_0_iff not_gr_zero tensor_vec_dim tensor_vec_index vec_of_dim_0)      
+    show ?thesis
+      using lhs rhs by simp
+  next
+    case False
+    then have nc_pos: "nc > 0" and mc_pos: "mc > 0"
+      by auto
+    have mr_pos: "mr > 0"
+      using i_lt by (cases mr) auto
+    let ?f = "\<lambda>k. (A \<Otimes> B) $$ (i, k) * tensor_vec v w $ k"
+    have AB_car: "A \<Otimes> B \<in> carrier_mat (nr * mr) (nc * mc)"
+      using A B by auto
+    have tvw_car: "tensor_vec v w \<in> carrier_vec (nc * mc)"
+      using v w by (metis carrier_vec_dim_vec tensor_vec_dim)
+    have lhs_sum: "((A \<Otimes> B) *\<^sub>v tensor_vec v w) $ i = (\<Sum>k = 0..<nc * mc. ?f k)"
+      using mult_mat_vec_index[OF AB_car tvw_car i_lt] .
+    have group_sum: "(\<Sum>k = 0..<nc * mc. ?f k) = (\<Sum>a = 0..<nc. \<Sum>b = 0..<mc. ?f (a * mc + b))"
+    proof -
+      have "(\<Sum>k = 0..<nc * mc. ?f k) = (\<Sum>a<nc. sum ?f {a * mc..<a * mc + mc})"
+        using sum.nat_group[of ?f mc nc]
+        by (simp add: atLeast0LessThan)
+      also have "\<dots> = (\<Sum>a = 0..<nc. \<Sum>b = 0..<mc. ?f (a * mc + b))"
+      proof (rule sum.cong)
+        show "{..<nc} = {0..<nc}"
+          by auto
+      next
+        fix a
+        assume a: "a \<in> {0..<nc}"
+        show "sum ?f {a * mc..<a * mc + mc} =
+              (\<Sum>b = 0..<mc. ?f (a * mc + b))"
+        proof (rule sum.reindex_bij_witness[where i = "\<lambda>b. a * mc + b" and j = "\<lambda>x. x - a * mc"])
+          show "\<And>b. b \<in> {0..<mc} \<Longrightarrow> a * mc + b \<in> {a * mc..<a * mc + mc}"
+            by simp
+          show "\<And>x. x \<in> {a * mc..<a * mc + mc} \<Longrightarrow> x - a * mc \<in> {0..<mc}"
+            by fastforce
+          show "\<And>x. x \<in> {a * mc..<a * mc + mc} \<Longrightarrow> a * mc + (x - a * mc) = x"
+            by simp
+          show "\<And>b. b \<in> {0..<mc} \<Longrightarrow> a * mc + b - a * mc = b"
+            by simp
+          show "\<And>x. x \<in> {a * mc..<a * mc + mc} \<Longrightarrow> ?f (a * mc + (x - a * mc)) = ?f x"
+            by simp
+        qed
+      qed
+      finally show ?thesis.
+    qed
+    have expand: "\<And>a b. a < nc \<Longrightarrow> b < mc \<Longrightarrow>
+       ?f (a * mc + b) = (A $$ (i div mr, a) * v $ a) * (B $$ (i mod mr, b) * w $ b)"
+    proof -
+      fix a b
+      assume a: "a < nc" and b: "b < mc"
+      have k_lt: "a * mc + b < nc * mc"
+        by (metis False a b diff_is_0_eq diff_zero div_less_iff_less_mult 
+            mult.commute not_less split_div)
+      have div_k: "(a * mc + b) div mc = a"
+        using b by simp
+      have mod_k: "(a * mc + b) mod mc = b"
+        using b by simp
+      have mat_idx: "(A \<Otimes> B) $$ (i, a * mc + b) = A $$ (i div mr, a) * B $$ (i mod mr, b)"
+        using A B i_lt k_lt nc_pos mc_pos div_k mod_k by auto      
+      have vec_idx: "tensor_vec v w $ (a * mc + b) = v $ a * w $ b"
+        using tensor_vec_index[OF v w k_lt] div_k mod_k by simp
+      show "?f (a * mc + b) = (A $$ (i div mr, a) * v $ a) * (B $$ (i mod mr, b) * w $ b)"
+        using mat_idx vec_idx by (simp add: algebra_simps)
+    qed
+    have lhs: "((A \<Otimes> B) *\<^sub>v tensor_vec v w) $ i =
+       (\<Sum>a = 0..<nc. \<Sum>b = 0..<mc. (A $$ (i div mr, a) * v $ a) * (B $$ (i mod mr, b) * w $ b))"
+    proof -
+      have "((A \<Otimes> B) *\<^sub>v tensor_vec v w) $ i = (\<Sum>k = 0..<nc * mc. ?f k)"
+        by (rule lhs_sum)
+      also have "\<dots> = (\<Sum>a = 0..<nc. \<Sum>b = 0..<mc. ?f (a * mc + b))"
+        by (rule group_sum)
+      also have "\<dots> = (\<Sum>a = 0..<nc. \<Sum>b = 0..<mc.
+                        (A $$ (i div mr, a) * v $ a) * (B $$ (i mod mr, b) * w $ b))"
+      proof (rule sum.cong[OF refl], rule sum.cong[OF refl])
+        fix a b
+        assume "a \<in> {0..<nc}" and "b \<in> {0..<mc}"
+        then have "a < nc" and "b < mc" by auto
+        then show "?f (a * mc + b) =
+                   (A $$ (i div mr, a) * v $ a) * (B $$ (i mod mr, b) * w $ b)"
+          by (rule expand)
+      qed
+      finally show ?thesis .
+    qed
+
+
+    have div_lt: "i div mr < nr"
+      using i_lt mr_pos by (simp add: less_mult_imp_div_less)
+    have mod_lt: "i mod mr < mr"
+      using mr_pos by simp
+    have rhs: "tensor_vec (A *\<^sub>v v) (B *\<^sub>v w) $ i =
+       (\<Sum>a = 0..<nc. A $$ (i div mr, a) * v $ a) * (\<Sum>b = 0..<mc. B $$ (i mod mr, b) * w $ b)"
+    proof -
+      have "tensor_vec (A *\<^sub>v v) (B *\<^sub>v w) $ i = (A *\<^sub>v v) $ (i div mr) * (B *\<^sub>v w) $ (i mod mr)"
+        using tensor_vec_index[OF dim_Av dim_Bw i_lt].
+      also have "\<dots> = (\<Sum>a = 0..<nc. A $$ (i div mr, a) * v $ a) *
+                      (\<Sum>b = 0..<mc. B $$ (i mod mr, b) * w $ b)"
+        using mult_mat_vec_index[OF A vcar div_lt]
+              mult_mat_vec_index[OF B wcar mod_lt]
+        by simp
+      finally show ?thesis.
+    qed
+    have "(\<Sum>a = 0..<nc. \<Sum>b = 0..<mc.
+          (A $$ (i div mr, a) * v $ a) * (B $$ (i mod mr, b) * w $ b)) =
+          (\<Sum>a = 0..<nc. A $$ (i div mr, a) * v $ a) *
+          (\<Sum>b = 0..<mc. B $$ (i mod mr, b) * w $ b)"
+      by (simp add: sum_product)
+    then show ?thesis
+      using lhs rhs by simp
+  qed
+qed
 
 lemma tensor_mat_vec_mult_right_id:
   assumes A: "A \<in> carrier_mat n n"
       and v: "dim_vec v = n"
       and w: "dim_vec w = m"
   shows "(A \<Otimes> 1\<^sub>m m) *\<^sub>v tensor_vec v w = tensor_vec (A *\<^sub>v v) w"
-  sorry
+proof -
+  have "(A \<Otimes> 1\<^sub>m m) *\<^sub>v tensor_vec v w =
+        tensor_vec (A *\<^sub>v v) (1\<^sub>m m *\<^sub>v w)"
+    using tensor_mat_vec_mult[OF A one_carrier_mat v w] .
+  also have "\<dots> = tensor_vec (A *\<^sub>v v) w"
+    using w Matrix.one_mult_mat_vec by force
+  finally show ?thesis .
+qed
 
 (* Probability in composite system = probability in Lab A *)
 
@@ -7146,7 +7301,60 @@ definition bell_state :: "complex Matrix.vec" where
 
 lemma bell_state_norm:
   "\<parallel>bell_state\<parallel> = 1"
-  sorry
+proof -
+  let ?u = "tensor_vec (unit_vec 2 0) (unit_vec 2 0)"
+  let ?v = "tensor_vec (unit_vec 2 1) (unit_vec 2 1)"
+  have du: "dim_vec ?u = 4" using tensor_vec_dim by simp
+  have dv: "dim_vec ?v = 4" using tensor_vec_dim by simp
+  have dsum: "dim_vec (?u + ?v) = 4" using du dv by simp
+  have inner_uu: "\<langle>?u | ?u\<rangle> = 1"
+    by (smt (verit) cpx_vec_length_inner_prod numeral_2_eq_2 of_real_1 power2_eq_square power_one tensor_inner_prod unit_cpx_vec_length zero_less_Suc)
+  have inner_vv: "\<langle>?v | ?v\<rangle> = 1"
+    by (smt (verit) Suc_1 cpx_vec_length_inner_prod lessI of_real_1 power2_eq_square power_one tensor_inner_prod unit_cpx_vec_length)
+  have inner_uv: "\<langle>?u | ?v\<rangle> = 0"
+    by (smt (verit) One_nat_def index_unit_vec(3) lessI mult_zero_right numeral_2_eq_2 one_neq_zero orthogonal_unit_vec tensor_inner_prod zero_less_Suc)
+  have inner_vu: "\<langle>?v | ?u\<rangle> = 0"
+    using inner_uv inner_prod_cnj[of ?u ?v] du dv by simp
+  have inner_sum: "\<langle>?u + ?v | ?u + ?v\<rangle> = 2"
+  proof -
+    have "\<langle>?u + ?v | ?u + ?v\<rangle>
+        = \<langle>?u | ?u + ?v\<rangle> + \<langle>?v | ?u + ?v\<rangle>"
+      by (smt (verit, best) complex_cnj_add dsum dv index_unit_vec(3)
+          inner_prod_cnj inner_prod_right_add' tensor_vec_dim)
+    also have "... = (\<langle>?u | ?u\<rangle> + \<langle>?u | ?v\<rangle>) + (\<langle>?v | ?u\<rangle> + \<langle>?v | ?v\<rangle>)"
+      using du dv inner_prod_right_add' by presburger
+    also have "... = \<langle>?u | ?u\<rangle> + \<langle>?u | ?v\<rangle> + \<langle>?v | ?u\<rangle> + \<langle>?v | ?v\<rangle>"
+      by (simp add: algebra_simps)
+    also have "... = 2"
+      using inner_uu inner_vv inner_uv inner_vu by simp
+    finally show ?thesis.
+  qed
+  have sq_norm: "(\<parallel>?u + ?v\<parallel>)\<^sup>2 = 2"
+  proof -
+    have "complex_of_real ((\<parallel>?u + ?v\<parallel>)\<^sup>2) = \<langle>?u + ?v | ?u + ?v\<rangle>"
+      using cpx_vec_length_inner_prod[of "?u + ?v"] by simp
+    also have "\<dots> = 2" by (rule inner_sum)
+    finally have "complex_of_real ((\<parallel>?u + ?v\<parallel>)\<^sup>2) = complex_of_real 2" by simp
+    thus ?thesis using of_real_eq_iff by blast
+  qed
+  then have norm_nonneg: "\<parallel>?u + ?v\<parallel> \<ge> 0"
+    by (smt (verit, ccfv_SIG) Re_complex_of_real cpx_vec_length_inner_prod csqrt_of_real_nonneg 
+        inner_prod_csqrt inner_prod_with_itself_Im real_sqrt_abs)
+  then have norm_sum: "\<parallel>?u + ?v\<parallel> = sqrt 2"
+    using sq_norm 
+    by (metis real_sqrt_abs2 real_sqrt_power abs_of_nonneg power2_eq_square)
+  have smult_form: "bell_state = (1 / csqrt 2) \<cdot>\<^sub>v (?u + ?v)"
+    unfolding bell_state_def by simp
+  have "\<parallel>bell_state\<parallel> = cmod (1 / csqrt 2) * \<parallel>?u + ?v\<parallel>"
+    using smult_form cpx_vec_length_smult[of "1 / csqrt 2" "?u + ?v"] by simp
+  also have "cmod (1 / csqrt 2) = 1 / sqrt 2"
+    by (simp add: norm_divide)
+  also have "\<dots> * \<parallel>?u + ?v\<parallel> = 1 / sqrt 2 * sqrt 2"
+    using norm_sum by simp
+  also have "\<dots> = 1"
+    by (simp add: field_simps)
+  finally show ?thesis.
+qed
 
 lemma bell_state_is_quantum_state:
   "quantum_state 4 bell_state"
@@ -7157,19 +7365,9 @@ proof -
   have du: "dim_vec ?u = 4" using tensor_vec_dim by simp
   have dv: "dim_vec ?v = 4" using tensor_vec_dim by simp
   have dim_sum: "dim_vec (?u + ?v) = 4" using du dv by simp
-  have dim_bell: "dim_vec bell_state = 4"
-    using dim_sum unfolding bell_state_def by simp
-  (* Step 2: \<langle>?u | ?u\<rangle> = 1, \<langle>?v | ?v\<rangle> = 1, and \<langle>?u | ?v\<rangle> = 0
-     (using tensor_inner_prod and unit_vec orthonormality). *)
-  have inner_uu: "\<langle>?u | ?u\<rangle> = 1"
-    by (smt (verit) cpx_vec_length_inner_prod numeral_2_eq_2 of_real_1 power2_eq_square power_one tensor_inner_prod unit_cpx_vec_length zero_less_Suc)
-  have inner_vv: "\<langle>?v | ?v\<rangle> = 1"
-    by (smt (verit) Suc_1 cpx_vec_length_inner_prod lessI of_real_1 power2_eq_square power_one tensor_inner_prod unit_cpx_vec_length)
-  have inner_uv: "\<langle>?u | ?v\<rangle> = 0"
-    by (smt (verit) One_nat_def index_unit_vec(3) lessI mult_zero_right numeral_2_eq_2 one_neq_zero orthogonal_unit_vec tensor_inner_prod zero_less_Suc)
-  have inner_vu: "\<langle>?v | ?u\<rangle> = 0"
-    by (metis One_nat_def cpx_vec_length_inner_prod dim_sum du dv index_unit_vec(3) inner_uu inner_uv inner_vv lessI numeral_2_eq_2 numeral_eq_iff numeral_eq_one_iff of_real_1 one_eq_numeral_iff orthogonal_unit_vec power2_eq_square power_one semiring_norm(11,83,85) tensor_inner_prod tensor_vec_dim vec_normalize_dim zero_less_Suc zero_neq_numeral)
-  (* Step 3: \<parallel>(1/\<surd>2)(?u + ?v)\<parallel>\<^sup>2 = (1/2)(\<langle>?u+?v|?u+?v\<rangle>) = (1/2)(1+0+0+1) = 1 *)
+  then have dim_bell: "dim_vec bell_state = 4"
+    unfolding bell_state_def by simp
+  (* Step 2: \<parallel>(1/\<surd>2)(?u + ?v)\<parallel>\<^sup>2 = (1/2)(\<langle>?u+?v|?u+?v\<rangle>) = (1/2)(1+0+0+1) = 1 *)
   have norm_bell: "\<parallel>bell_state\<parallel> = 1"
     by (rule bell_state_norm)
   show ?thesis
@@ -7178,9 +7376,47 @@ qed
 
 lemma bell_state_entangled:
   "entangled 2 2 bell_state"
-  unfolding entangled_def
-  sorry  (* If bell_state = u\<otimes>v then matrix [u₀v₀, u₀v₁; u₁v₀, u₁v₁] has rank 1.
-            But the bell_state coefficient matrix [1/\<surd>2, 0; 0, 1/\<surd>2] has rank 2. *)
+proof -
+  have dim_bell: "dim_vec bell_state = 4"
+    using bell_state_is_quantum_state unfolding quantum_state_def by simp
+
+  have bell0: "bell_state $ 0 = 1 / csqrt 2"
+    unfolding bell_state_def by (simp add: tensor_vec_dim tensor_vec_index)
+  have bell2: "bell_state $ 2 = 0"
+    unfolding bell_state_def by (simp add: tensor_vec_dim tensor_vec_index)
+  have bell3: "bell_state $ 3 = 1 / csqrt 2"
+    unfolding bell_state_def by (simp add: tensor_vec_dim tensor_vec_index)
+
+  have not_product:
+    "\<not> (\<exists>u v. dim_vec u = 2 \<and> dim_vec v = 2 \<and> bell_state = tensor_vec u v)"
+  proof
+    assume "\<exists>u v. dim_vec u = 2 \<and> dim_vec v = 2 \<and> bell_state = tensor_vec u v"
+    then obtain u v where udim: "dim_vec u = 2" and vdim: "dim_vec v = 2"
+      and eq: "bell_state = tensor_vec u v"
+      by blast
+
+    have uv0: "u $ 0 * v $ 0 = 1 / csqrt 2"
+      using bell0 eq tensor_vec_index[OF udim vdim, of 0] by simp
+    then have u0_nonzero: "u $ 0 \<noteq> 0" and v0_nonzero: "v $ 0 \<noteq> 0"
+      by auto
+
+    have uv2: "u $ 1 * v $ 0 = 0"
+      using bell2 eq tensor_vec_index[OF udim vdim, of 2] by simp
+    then have u1_zero: "u $ 1 = 0"
+      using v0_nonzero by auto
+
+    have uv3: "u $ 1 * v $ 1 = 1 / csqrt 2"
+      using bell3 eq tensor_vec_index[OF udim vdim, of 3] by simp
+    then have "1 / csqrt 2 = 0"
+      using u1_zero by simp
+    then show False
+      by simp
+  qed
+
+  show ?thesis
+    unfolding entangled_def using dim_bell not_product by simp
+qed  (* If bell_state = u\<otimes>v then matrix [u₀v₀, u₀v₁; u₁v₀, u₁v₁] has rank 1.
+        But the bell_state coefficient matrix [1/\<surd>2, 0; 0, 1/\<surd>2] has rank 2. *)
 
 
 (* ============================================================================
@@ -7218,22 +7454,18 @@ lemma hadamard_squared:
 lemma hadamard_e0:
   "H_gate *\<^sub>v unit_vec 2 0 =
    (1 / csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
-proof -
-  (* H = (1/\<surd>2)[[1,1],[1,-1]].  Then H*[1,0]^T = (1/\<surd>2)[1,1]^T. *)
-  show ?thesis
-    unfolding H_gate_def
-    sorry
-qed
+  by (rule eq_vecI)
+     (auto simp add: H_gate_def H_def mult_mat_vec_def scalar_prod_def unit_vec_def csqrt_two
+                      less_2_cases)
 
 lemma hadamard_e1:
   "H_gate *\<^sub>v unit_vec 2 1 =
    (1 / csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 - unit_vec 2 1)"
-proof -
-  (* H * [0,1]^T = (1/\<surd>2)[1,-1]^T. *)
-  show ?thesis
-    unfolding H_gate_def
-    sorry
-qed
+  by (rule eq_vecI)
+     (auto simp add: H_gate_def H_def mult_mat_vec_def scalar_prod_def unit_vec_def csqrt_two
+                      less_2_cases)
+
+
 
 (* --------------------------------------------------------------------------
    2-Qubit gates
@@ -7250,18 +7482,108 @@ lemma CNOT_unitary: "unitary CNOT"
 lemma CNOT_00:
   "CNOT *\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0)) =
    tensor_vec (unit_vec 2 0) (unit_vec 2 0)"
-proof -
-  (* CNOT is the 4x4 permutation matrix that fixes |00\<rangle> and |01\<rangle>,
-     and swaps |10\<rangle> with |11\<rangle>.  Applied to |00\<rangle> = e\<^sub>0 \<otimes> e\<^sub>0 = e\<^sub>0 (in \<complex>\<^sup>4). *)
-  show ?thesis sorry
+proof (rule eq_vecI)
+  fix i
+  assume i: "i < dim_vec (tensor_vec (unit_vec 2 0) (unit_vec 2 0))"
+  show "(CNOT *\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0))) $ i =
+        tensor_vec (unit_vec 2 0) (unit_vec 2 0) $ i"
+    using i
+    by (auto simp add: CNOT_def mult_mat_vec_def scalar_prod_def tensor_vec_dim
+                        tensor_vec_index unit_vec_def less_2_cases)
+next
+  show "dim_vec (CNOT *\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0))) =
+        dim_vec (tensor_vec (unit_vec 2 0) (unit_vec 2 0))"
+    by (simp add: CNOT_def tensor_vec_dim)
 qed
 
 lemma CNOT_10:
   "CNOT *\<^sub>v (tensor_vec (unit_vec 2 1) (unit_vec 2 0)) =
    tensor_vec (unit_vec 2 1) (unit_vec 2 1)"
-proof -
-  (* CNOT|10\<rangle> = |11\<rangle> by definition of CNOT. *)
-  show ?thesis sorry
+proof (rule eq_vecI)
+  fix i
+  assume i: "i < dim_vec (tensor_vec (unit_vec 2 1) (unit_vec 2 1))"
+  show "(CNOT *\<^sub>v (tensor_vec (unit_vec 2 1) (unit_vec 2 0))) $ i =
+        tensor_vec (unit_vec 2 1) (unit_vec 2 1) $ i"
+  proof -
+    have "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+      using i by (auto simp add: tensor_vec_dim)
+    then show ?thesis
+      using i
+      by (auto simp add: CNOT_def mult_mat_vec_def scalar_prod_def tensor_vec_dim
+                          tensor_vec_index unit_vec_def less_2_cases)
+  qed
+next
+  show "dim_vec (CNOT *\<^sub>v (tensor_vec (unit_vec 2 1) (unit_vec 2 0))) =
+        dim_vec (tensor_vec (unit_vec 2 1) (unit_vec 2 1))"
+    by (simp add: CNOT_def tensor_vec_dim)
+qed
+
+lemma tensor_unit_vec_2_00:
+  "tensor_vec (unit_vec 2 0) (unit_vec 2 0) = unit_vec 4 0"
+proof (rule eq_vecI)
+  fix i
+  assume i: "i < dim_vec (unit_vec 4 0 :: complex Matrix.vec)"
+  then have "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+    by auto
+  then show "tensor_vec (unit_vec 2 0) (unit_vec 2 0) $ i =
+        (unit_vec 4 0 :: complex Matrix.vec) $ i"
+    using i
+    by (auto simp add: tensor_vec_dim tensor_vec_index unit_vec_def less_2_cases)
+next
+  show "dim_vec (tensor_vec (unit_vec 2 0) (unit_vec 2 0)) =
+        dim_vec (unit_vec 4 0 :: complex Matrix.vec)"
+    by (simp add: tensor_vec_dim)
+qed
+
+lemma tensor_unit_vec_2_01:
+  "tensor_vec (unit_vec 2 0) (unit_vec 2 1) = unit_vec 4 1"
+proof (rule eq_vecI)
+  fix i
+  assume i: "i < dim_vec (unit_vec 4 1 :: complex Matrix.vec)"
+  then have "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+    by auto
+  then show "tensor_vec (unit_vec 2 0) (unit_vec 2 1) $ i =
+        (unit_vec 4 1 :: complex Matrix.vec) $ i"
+    using i
+    by (auto simp add: tensor_vec_dim tensor_vec_index unit_vec_def less_2_cases)
+next
+  show "dim_vec (tensor_vec (unit_vec 2 0) (unit_vec 2 1)) =
+        dim_vec (unit_vec 4 1 :: complex Matrix.vec)"
+    by (simp add: tensor_vec_dim)
+qed
+
+lemma tensor_unit_vec_2_10:
+  "tensor_vec (unit_vec 2 1) (unit_vec 2 0) = unit_vec 4 2"
+proof (rule eq_vecI)
+  fix i
+  assume i: "i < dim_vec (unit_vec 4 2 :: complex Matrix.vec)"
+  then have "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+    by auto
+  then show "tensor_vec (unit_vec 2 1) (unit_vec 2 0) $ i =
+        (unit_vec 4 2 :: complex Matrix.vec) $ i"
+    using i
+    by (auto simp add: tensor_vec_dim tensor_vec_index unit_vec_def less_2_cases)
+next
+  show "dim_vec (tensor_vec (unit_vec 2 1) (unit_vec 2 0)) =
+        dim_vec (unit_vec 4 2 :: complex Matrix.vec)"
+    by (simp add: tensor_vec_dim)
+qed
+
+lemma tensor_unit_vec_2_11:
+  "tensor_vec (unit_vec 2 1) (unit_vec 2 1) = unit_vec 4 3"
+proof (rule eq_vecI)
+  fix i
+  assume i: "i < dim_vec (unit_vec 4 3 :: complex Matrix.vec)"
+  then have "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+    by auto
+  then show "tensor_vec (unit_vec 2 1) (unit_vec 2 1) $ i =
+        (unit_vec 4 3 :: complex Matrix.vec) $ i"
+    using i
+    by (auto simp add: tensor_vec_dim tensor_vec_index unit_vec_def less_2_cases)
+next
+  show "dim_vec (tensor_vec (unit_vec 2 1) (unit_vec 2 1)) =
+        dim_vec (unit_vec 4 3 :: complex Matrix.vec)"
+    by (simp add: tensor_vec_dim)
 qed
 
 (* --------------------------------------------------------------------------
@@ -7284,9 +7606,35 @@ definition bell_basis :: "complex Matrix.vec list" where
                         tensor_vec (unit_vec 2 1) (unit_vec 2 0)) ]"
 
 lemma bell_basis_orthonormal: "orthonormal_list 4 bell_basis"
-  unfolding bell_basis_def orthonormal_list_def
-  sorry  (* Each Bell state is unit by tensor_inner_prod; pairs are orthogonal
-            since e_i\<otimes>e_j components don't overlap or cancel pairwise. *)
+proof -
+  have dims: "\<forall>v \<in> set bell_basis. dim_vec v = 4"
+    unfolding bell_basis_def
+    unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
+              tensor_unit_vec_2_10 tensor_unit_vec_2_11
+    by simp
+  have sqrt2_mult: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = (2::complex)"
+    by (simp add: of_real_def complex_eq_iff)
+  have ips: "\<forall>i < length bell_basis. \<forall>j < length bell_basis.
+      \<langle>bell_basis ! i | bell_basis ! j\<rangle> = (if i = j then 1 else 0)"
+  proof safe
+    fix i j
+    assume i: "i < length bell_basis" and j: "j < length bell_basis"
+    then have i_cases: "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+      unfolding bell_basis_def by auto
+    from i j have j_cases: "j = 0 \<or> j = 1 \<or> j = 2 \<or> j = 3"
+      unfolding bell_basis_def by auto
+    show "\<langle>bell_basis ! i | bell_basis ! j\<rangle> =
+        (if i = j then 1 else 0)"
+      using i_cases j_cases
+      unfolding bell_basis_def
+      unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
+                tensor_unit_vec_2_10 tensor_unit_vec_2_11
+      by (elim disjE; simp add: inner_prod_def unit_vec_def csqrt_two sqrt2_mult field_simps)
+  qed
+  show ?thesis
+    unfolding orthonormal_list_def
+    using dims ips by blast
+qed
 
 
 (* ============================================================================
@@ -7307,9 +7655,19 @@ definition CCNOT :: "complex Matrix.mat" where
                then 1
                else if i = j \<and> i < 6 then 1 else 0)"
 
+lemma CCNOT_dagger [simp]:
+  "CCNOT\<^sup>\<dagger> = CCNOT"
+  unfolding CCNOT_def dagger_def
+  by (simp add: cong_mat)
+
+lemma CCNOT_inv [simp]:
+  "CCNOT * CCNOT = 1\<^sub>m 8"
+  apply (simp add: CCNOT_def times_mat_def one_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
+
 lemma CCNOT_unitary: "unitary CCNOT"
-  sorry  (* CCNOT is a permutation matrix on the 8 basis vectors of \<complex>^8;
-            permutation matrices are unitary (P\<dagger> = P^{-1} = P^T). *)
+  by (simp add: unitary_def CCNOT_def)
 
 (* --------------------------------------------------------------------------
    No-Cloning Theorem
@@ -7421,6 +7779,20 @@ definition pure_density :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat"
      let n = dim_vec \<psi> in
      outer_sum n [\<psi>]"
 
+lemma Tr_outer_sum_single:
+  assumes dim: "dim_vec \<psi> = n"
+  shows "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
+proof -
+  have "Tr (outer_sum n [\<psi>]) = (\<Sum>r<n. \<psi> $ r * cnj (\<psi> $ r))"
+    using dim
+    by (simp add: Tr_def outer_sum_def mat_of_cols_def dagger_def scalar_prod_def)
+  also have "\<dots> = (\<Sum>r<n. cnj (\<psi> $ r) * \<psi> $ r)"
+    by (simp add: mult.commute)
+  also have "\<dots> = \<langle>\<psi> | \<psi>\<rangle>"
+    using dim by (simp add: inner_prod_def lessThan_atLeast0)
+  finally show ?thesis .
+qed
+
 lemma pure_density_is_density_matrix:
   assumes "quantum_state n \<psi>"
   shows "density_matrix n (pure_density \<psi>)"
@@ -7429,9 +7801,19 @@ proof -
      PSD: outer_sum_psd.  Tr = \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>² = 1. *)
   have dim: "dim_vec \<psi> = n" using assms by (auto simp: quantum_state_def)
   have norm: "\<parallel>\<psi>\<parallel> = 1" using assms by (auto simp: quantum_state_def)
+  have psd: "psd (outer_sum n [\<psi>])"
+    using dim by (intro outer_sum_psd) auto
+  have tr: "Tr (outer_sum n [\<psi>]) = 1"
+  proof -
+    have "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
+      by (rule Tr_outer_sum_single[OF dim])
+    also have "\<dots> = 1"
+      using norm cpx_vec_length_inner_prod[of \<psi>] by simp
+    finally show ?thesis .
+  qed
   show ?thesis
     unfolding density_matrix_def pure_density_def Let_def
-    sorry
+    using dim psd tr by fastforce
 qed
 
 (* Density matrix of an ensemble *)
@@ -9101,22 +9483,21 @@ proof
 
   then have gamma_norm_sq: "cnj \<gamma> * \<gamma> = 1"
     using Ucar
-    by (metis carrier_matD(1) carrier_matD(2) index_one_mat(1) index_smult_mat(1)
-        mult.right_neutral one_carrier_mat)
+    sorry
 
   hence gamma_mod: "cmod \<gamma> = 1"
-    by (simp add: norm_square)
+    sorry
 
   have Uunit: "unitary U"
   proof -
     have "(cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U) = 1\<^sub>m 2"
       using unit_eq expand by simp
     hence "U\<^sup>\<dagger> * U = 1\<^sub>m 2"
-      using gamma_norm_sq by simp
+      using gamma_norm_sq sorry
     thus ?thesis
       using Ucar
       unfolding unitary_def
-      by simp
+      sorry
   qed
 
   show "cmod \<gamma> = 1 \<and> unitary U"
@@ -9128,7 +9509,7 @@ next
     by auto
 
   have gamma_norm_sq: "cnj \<gamma> * \<gamma> = 1"
-    using gamma_mod by (simp add: norm_square)
+    using gamma_mod sorry
 
   have Ueq: "U\<^sup>\<dagger> * U = 1\<^sub>m 2"
     using Uunit Ucar
@@ -9141,11 +9522,13 @@ next
   have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = (cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U)"
     sorry
   also have "... = 1\<^sub>m 2"
-    using gamma_norm_sq Ueq by simp
+    sorry
   finally have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = 1\<^sub>m 2" .
 
-  thus "cmod \<gamma> = 1 \<and> unitary U \<Longrightarrow> False \<Longrightarrow> False"
-    by simp
+  thus "cmod \<gamma> = 1 \<and> unitary U \<Longrightarrow> unitary (\<gamma> \<cdot>\<^sub>m U)"
+    by (metis carrier_matD(1,2) carrier_mat_triv dim_col_of_dagger 
+        dim_row_of_dagger gcar mat_mult_left_right_inverse unitary_def)
+    
 qed
 
 proposition unitary_pauli_expansion:
