@@ -5990,7 +5990,20 @@ proof -
       also have "... = ?P1 + ?Q"
         using P1car Qcar by simp
       also have "... = 1\<^sub>m n"
-        using P1car sorry
+      proof (rule eq_matI)
+        show "dim_row (?P1 + (1\<^sub>m n - ?P1)) = dim_row (1\<^sub>m n)"
+          using P1car by auto
+        show "dim_col (?P1 + (1\<^sub>m n - ?P1)) = dim_col (1\<^sub>m n)"
+          using P1car by auto
+      next
+        fix i j
+        assume i: "i < dim_row (1\<^sub>m n)" and j: "j < dim_col (1\<^sub>m n)"
+        then have iln: "i < n" and jln: "j < n" by auto
+        show "(?P1 + (1\<^sub>m n - ?P1)) $$ (i,j) = (1\<^sub>m n) $$ (i,j)"
+          using iln jln P1car
+          by (metis add.commute add_diff_cancel_left' carrier_matD(1,2)
+              index_add_mat(1) index_minus_mat(1))
+      qed
       finally show ?thesis.
     qed
     show ?thesis
