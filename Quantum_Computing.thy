@@ -5868,108 +5868,177 @@ proof -
     using q1 by (simp add: quantum_state_def)
   have \<psi>2dim: "dim_vec \<psi>2 = n"
     using q2 by (simp add: quantum_state_def)
+
   let ?P1 = "outer_prod \<psi>1 \<psi>1"
-  let ?P2 = "outer_prod \<psi>2 \<psi>2"
-  let ?R  = "1\<^sub>m n - ?P1 - ?P2"
-  let ?Ms = "[?P1, ?P2, ?R]"
+  let ?Q = "1\<^sub>m n - ?P1"
+  let ?Ms = "[?P1, ?Q]"
+
   have P1car: "?P1 \<in> carrier_mat n n"
-    by (metis \<psi>1dim carrier_mat_triv dim_mult_mat_vec 
-        dim_row_of_dagger outer_proj_hermitian outer_proj_self q1)
-  have P2car: "?P2 \<in> carrier_mat n n"
-    by (metis \<psi>2dim carrier_mat_triv dim_mult_mat_vec 
-        dim_row_of_dagger outer_proj_hermitian outer_proj_self q2)
-  have Rcar: "?R \<in> carrier_mat n n"
-    by (simp add: P2car minus_carrier_mat)
+    by (metis \<psi>1dim carrier_mat_triv dim_mult_mat_vec dim_row_of_dagger outer_proj_hermitian outer_proj_self q1)
+  have Qcar: "?Q \<in> carrier_mat n n"
+    by (simp add: P1car minus_carrier_mat)
   have P1herm: "?P1\<^sup>\<dagger> = ?P1"
     using outer_proj_hermitian[OF \<psi>1dim].
-  have P2herm: "?P2\<^sup>\<dagger> = ?P2"
-    using outer_proj_hermitian[OF \<psi>2dim].
+
   have P1idem: "?P1 * ?P1 = ?P1"
     using outer_proj_idem[OF q1].
-  have P2idem: "?P2 * ?P2 = ?P2"
-    using outer_proj_idem[OF q2].
-  have cross12: "?P1 * ?P2 = 0\<^sub>m n n"
-    using outer_proj_cross_zero[OF q1 q2 orth].
-  have cross21: "?P2 * ?P1 = 0\<^sub>m n n"
-    using outer_proj_cross_zero[OF q2 q1] orth \<psi>1dim \<psi>2dim complex_cnj_zero inner_prod_cnj 
-    by presburger
-  have Riderm: "?R * ?R = ?R"
-  proof -
-    have R_expand:
-      "?R * ?R = (1\<^sub>m n - ?P1 - ?P2) * (1\<^sub>m n - ?P1 - ?P2)"
-      by simp         
-    also have "... =
-        ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1 - ?P1 * (1\<^sub>m n) + ?P1 * ?P1)
-        - ((1\<^sub>m n) * ?P2 - ?P1 * ?P2)
-        - (?P2 * (1\<^sub>m n) - ?P2 * ?P1)
-        + (?P2 * ?P2)"
-      using P1car P2car
-      sorry 
-    also have "... =
-        (1\<^sub>m n - ?P1 - ?P1 + ?P1)
-        - (?P2 - 0\<^sub>m n n)
-        - (?P2 - 0\<^sub>m n n)
-        + ?P2"
-      using P1car P2car P1idem P2idem cross12 cross21
-      by (simp add: left_mult_one_mat right_mult_one_mat)  
-    also have "... = ?R"
-      sorry 
-    finally show ?thesis
-      using
-        \<open>(1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>2 \<circledcirc> \<psi>2) * (1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>2 \<circledcirc> \<psi>2) = 1\<^sub>m n * 1\<^sub>m n - 1\<^sub>m n * \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 * 1\<^sub>m n + \<psi>1 \<circledcirc> \<psi>1 * \<psi>1 \<circledcirc> \<psi>1 - (1\<^sub>m n * \<psi>2 \<circledcirc> \<psi>2 - \<psi>1 \<circledcirc> \<psi>1 * \<psi>2 \<circledcirc> \<psi>2) - (\<psi>2 \<circledcirc> \<psi>2 * 1\<^sub>m n - \<psi>2 \<circledcirc> \<psi>2 * \<psi>1 \<circledcirc> \<psi>1) + \<psi>2 \<circledcirc> \<psi>2 * \<psi>2 \<circledcirc> \<psi>2\<close>
-        \<open>1\<^sub>m n * 1\<^sub>m n - 1\<^sub>m n * \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 * 1\<^sub>m n + \<psi>1 \<circledcirc> \<psi>1 * \<psi>1 \<circledcirc> \<psi>1 - (1\<^sub>m n * \<psi>2 \<circledcirc> \<psi>2 - \<psi>1 \<circledcirc> \<psi>1 * \<psi>2 \<circledcirc> \<psi>2) - (\<psi>2 \<circledcirc> \<psi>2 * 1\<^sub>m n - \<psi>2 \<circledcirc> \<psi>2 * \<psi>1 \<circledcirc> \<psi>1) + \<psi>2 \<circledcirc> \<psi>2 * \<psi>2 \<circledcirc> \<psi>2 = 1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 + \<psi>1 \<circledcirc> \<psi>1 - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) + \<psi>2 \<circledcirc> \<psi>2\<close>
-        \<open>1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 + \<psi>1 \<circledcirc> \<psi>1 - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) + \<psi>2 \<circledcirc> \<psi>2 = 1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>2 \<circledcirc> \<psi>2\<close>
-      by argo
 
+  have Qherm: "?Q\<^sup>\<dagger> = ?Q"
+  proof (rule eq_matI)
+    show "dim_row (?Q\<^sup>\<dagger>) = dim_row ?Q"
+      by (metis Qcar carrier_matD(1,2) dim_row_of_dagger)
+    show "dim_col (?Q\<^sup>\<dagger>) = dim_col ?Q"
+      by (metis Qcar carrier_matD(1,2) dim_col_of_dagger)
+  next
+    fix i j
+    assume i: "i < dim_row ?Q" and j: "j < dim_col ?Q"
+    have iln: "i < n" and jln: "j < n"
+      using i j Qcar by auto
+    have "?Q\<^sup>\<dagger> $$ (i,j) = cnj (?Q $$ (j,i))"
+      using iln jln Qcar
+      by (simp add: dagger_def,
+          metis P1car carrier_matD(1,2) case_prod_conv index_mat(1) index_mult_mat(2,3))
+    also have "... = cnj ((1\<^sub>m n) $$ (j,i) - ?P1 $$ (j,i))"
+      using P1car iln jln
+      by (metis carrier_matD(1,2) index_minus_mat(1))
+    also have "... = cnj ((1\<^sub>m n) $$ (j,i)) - cnj (?P1 $$ (j,i))"
+      by simp
+    also have "... = (1\<^sub>m n) $$ (i,j) - cnj (?P1 $$ (j,i))"
+      using iln jln by simp
+    also have "... = (1\<^sub>m n) $$ (i,j) - ?P1 $$ (i,j)"
+      using P1herm P1car iln jln
+      by (simp add: dagger_def,
+          metis P1herm carrier_matD(1,2) hermitian_def hermitian_index)
+    also have "... = ?Q $$ (i,j)"
+      using P1car iln jln
+      by (metis carrier_matD(1,2) index_minus_mat(1))
+    finally show "?Q\<^sup>\<dagger> $$ (i,j) = ?Q $$ (i,j)".
   qed
-  have Rherm: "?R\<^sup>\<dagger> = ?R"
-    sorry
-  have meas: "measurement_system n ?Ms"
+
+  have Qidem: "?Q * ?Q = ?Q"
+  proof (rule eq_matI)
+    show "dim_row (?Q * ?Q) = dim_row ?Q"
+      using Qcar by simp
+    show "dim_col (?Q * ?Q) = dim_col ?Q"
+      using Qcar by simp
+  next
+    fix r c
+    assume r: "r < dim_row ?Q" and c: "c < dim_col ?Q"
+    have rln: "r < n" and cln: "c < n"
+      using r c Qcar by auto
+
+    have qq_expand:
+      "?Q * ?Q =
+        ((1\<^sub>m n) * (1\<^sub>m n)) - ((1\<^sub>m n) * ?P1) - (?P1 * (1\<^sub>m n)) + (?P1 * ?P1)"
+    proof -
+      have "?Q * ?Q = (1\<^sub>m n) * (1\<^sub>m n - ?P1) - ?P1 * (1\<^sub>m n - ?P1)"
+        using P1car by (meson Qcar minus_mult_distrib_mat one_carrier_mat)
+      also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1)
+                       - (?P1 * (1\<^sub>m n) - ?P1 * ?P1)"
+        using P1car by (simp add: right_diff_distrib,
+                        metis left_mult_one_mat mult_minus_distrib_mat one_carrier_mat)
+      also have "... = ((1\<^sub>m n) * (1\<^sub>m n)) - ((1\<^sub>m n) * ?P1) - (?P1 * (1\<^sub>m n)) + (?P1 * ?P1)"
+      proof -
+        have "((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1)
+              - (?P1 * (1\<^sub>m n) - ?P1 * ?P1)
+            = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1)
+              + (-(?P1 * (1\<^sub>m n) - ?P1 * ?P1))"
+          by auto
+        also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1)
+                         + (-(?P1 * (1\<^sub>m n)) + (?P1 * ?P1))"
+          using P1car by fastforce
+        also have "... = ((1\<^sub>m n) * (1\<^sub>m n)) - ((1\<^sub>m n) * ?P1) - (?P1 * (1\<^sub>m n)) + (?P1 * ?P1)"
+          using Qcar by fastforce
+        finally show ?thesis .
+      qed
+      finally show ?thesis .
+    qed
+
+    have "(?Q * ?Q) $$ (r,c)
+        = (((1\<^sub>m n) * (1\<^sub>m n)) - ((1\<^sub>m n) * ?P1) - (?P1 * (1\<^sub>m n)) + (?P1 * ?P1)) $$ (r,c)"
+      using qq_expand by simp
+    also have "... = ((1\<^sub>m n) $$ (r,c) - ((1\<^sub>m n) * ?P1) $$ (r,c) - (?P1 * (1\<^sub>m n)) $$ (r,c)
+                     + (?P1 * ?P1) $$ (r,c))"
+      using rln cln P1car by(simp, smt (verit, ccfv_SIG) P1idem carrier_matD(1,2) diff_0 
+          index_add_mat(1) index_minus_mat(1) index_one_mat(1) left_mult_one_mat right_mult_one_mat)
+    also have "... = ((1\<^sub>m n) $$ (r,c) - ?P1 $$ (r,c) - ?P1 $$ (r,c) + (?P1 * ?P1) $$ (r,c))"
+      using rln cln P1car
+      by (simp add: left_mult_one_mat right_mult_one_mat)
+    also have "... = ((1\<^sub>m n) $$ (r,c) - ?P1 $$ (r,c) - ?P1 $$ (r,c) + ?P1 $$ (r,c))"
+      using P1idem rln cln P1car by simp
+    also have "... = ((1\<^sub>m n) $$ (r,c) - ?P1 $$ (r,c))"
+      by simp      
+    also have "... = ?Q $$ (r,c)"
+      using rln cln P1car
+      by (metis carrier_matD(1,2) index_minus_mat(1)) 
+    finally show "(?Q * ?Q) $$ (r,c) = ?Q $$ (r,c)".
+  qed
+
+  have meas_sys: "measurement_system n ?Ms"
   proof -
-    have cars: "\<forall>M \<in> set ?Ms. M \<in> carrier_mat n n"
-      using P1car P2car Rcar by simp
-    have compl: "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) ?Ms (0\<^sub>m n n) = 1\<^sub>m n"
+    have carrs: "\<forall>M \<in> set ?Ms. M \<in> carrier_mat n n"
+      using P1car Qcar by simp
+    have fold_eq: "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) ?Ms (0\<^sub>m n n) = 1\<^sub>m n"
     proof -
       have "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) ?Ms (0\<^sub>m n n)
-          = ?P1\<^sup>\<dagger> * ?P1 + (?P2\<^sup>\<dagger> * ?P2 + (?R\<^sup>\<dagger> * ?R + 0\<^sub>m n n))"
+          = ?P1\<^sup>\<dagger> * ?P1 + (?Q\<^sup>\<dagger> * ?Q + 0\<^sub>m n n)"
         by simp
-      also have "... = ?P1 + (?P2 + (?R + 0\<^sub>m n n))"
-        using P1idem P2idem Riderm P1herm P2herm Rherm by simp
-      also have "... = ?P1 + ?P2 + ?R"
-        using P1car P2car Rcar by simp
+      also have "... = ?P1 * ?P1 + (?Q * ?Q + 0\<^sub>m n n)"
+        using P1herm Qherm by simp
+      also have "... = ?P1 + (?Q + 0\<^sub>m n n)"
+        using P1idem Qidem by simp
+      also have "... = ?P1 + ?Q"
+        using P1car Qcar by simp
       also have "... = 1\<^sub>m n"
-        sorry
+        using P1car sorry
       finally show ?thesis.
     qed
     show ?thesis
       unfolding measurement_system_def
-      using cars compl by blast
+      using carrs fold_eq by blast
   qed
 
-  have P1_\<psi>1: "?P1 *\<^sub>v \<psi>1 = \<psi>1"
+  have P1_on_\<psi>1: "?P1 *\<^sub>v \<psi>1 = \<psi>1"
     using outer_proj_self[OF q1] .
-  have P1_\<psi>2: "?P1 *\<^sub>v \<psi>2 = 0\<^sub>v n"
+  have P1_on_\<psi>2: "?P1 *\<^sub>v \<psi>2 = 0\<^sub>v n"
     using outer_proj_orth_zero[OF q1 q2 orth] .
 
-  have P2_\<psi>2: "?P2 *\<^sub>v \<psi>2 = \<psi>2"
-    using outer_proj_self[OF q2] .
-  have P2_\<psi>1: "?P2 *\<^sub>v \<psi>1 = 0\<^sub>v n"
-    using outer_proj_orth_zero[OF q2 q1] orth
-    using \<psi>1dim \<psi>2dim complex_cnj_zero inner_prod_cnj by presburger
+  have Q_on_\<psi>1: "?Q *\<^sub>v \<psi>1 = 0\<^sub>v n"
+  proof -
+    have "?Q *\<^sub>v \<psi>1 = (1\<^sub>m n) *\<^sub>v \<psi>1 - ?P1 *\<^sub>v \<psi>1"
+      using P1car \<psi>1dim carrier_vec_dim_vec minus_mult_distrib_mat_vec one_carrier_mat by blast
+    also have "... = \<psi>1 - ?P1 *\<^sub>v \<psi>1"
+      using \<psi>1dim by fastforce
+    also have "... = 0\<^sub>v n"
+      using P1_on_\<psi>1 \<psi>1dim by fastforce
+    finally show ?thesis.
+  qed
 
+  have Q_on_\<psi>2: "?Q *\<^sub>v \<psi>2 = \<psi>2"
+  proof -
+    have "?Q *\<^sub>v \<psi>2 = (1\<^sub>m n) *\<^sub>v \<psi>2 - ?P1 *\<^sub>v \<psi>2"
+      using P1car \<psi>2dim carrier_vec_dim_vec minus_mult_distrib_mat_vec one_carrier_mat by blast
+    also have "... = \<psi>2 - ?P1 *\<^sub>v \<psi>2"
+      using \<psi>2dim by fastforce
+    also have "... = \<psi>2"
+      using P1_on_\<psi>2 \<psi>2dim by fastforce
+    finally show ?thesis.
+  qed
 
   have prob_P1_\<psi>1: "meas_prob ?P1 \<psi>1 = 1"
-    using q1 P1_\<psi>1
+    using P1_on_\<psi>1 q1
     by (simp add: meas_prob_def quantum_state_def)
-  have prob_P2_\<psi>1: "meas_prob ?P2 \<psi>1 = 0"
-    using P2_\<psi>1 \<psi>1dim
+  have prob_Q_\<psi>1: "meas_prob ?Q \<psi>1 = 0"
+    using Q_on_\<psi>1 \<psi>1dim
     by (simp add: cpx_vec_length_zero_iff meas_prob_def)
   have prob_P1_\<psi>2: "meas_prob ?P1 \<psi>2 = 0"
-    using P2_\<psi>1 P1_\<psi>2 \<psi>2dim meas_prob_def prob_P2_\<psi>1 by presburger
-  have prob_P2_\<psi>2: "meas_prob ?P2 \<psi>2 = 1"
-    using q2 P2_\<psi>2 by (simp add: meas_prob_def quantum_state_def)
+    using P1_on_\<psi>2 \<psi>2dim
+    by (simp add: meas_prob_def, simp add: cpx_vec_length_zero_iff)
+  have prob_Q_\<psi>2: "meas_prob ?Q \<psi>2 = 1"
+    using Q_on_\<psi>2 q2
+    by (simp add: meas_prob_def quantum_state_def)
   show ?thesis
-    by (intro exI[of _ ?Ms], use meas prob_P1_\<psi>1 prob_P2_\<psi>1 prob_P1_\<psi>2 prob_P2_\<psi>2 in auto)
+    by (intro exI[of _ ?Ms], use meas_sys prob_P1_\<psi>1 prob_Q_\<psi>1 prob_P1_\<psi>2 prob_Q_\<psi>2 in auto)
 qed
 (* Construction: M₁ = |\<psi>₁\<rangle>\<langle>\<psi>₁|, M₂ = |\<psi>₂\<rangle>\<langle>\<psi>₂|,
    M₃ = I - M₁ - M₂ (projection onto {\<psi>₁,\<psi>₂}^\<bottom>). *)
@@ -5987,8 +6056,154 @@ theorem linearly_independent_states_unambiguously_measurable:
          length Ms = k + 1 \<and>
          (\<forall>i < k. \<forall>j < k. i \<noteq> j \<longrightarrow> meas_prob (Ms ! i) (\<psi>s ! j) = 0) \<and>
          (\<forall>i < k. 0 < meas_prob (Ms ! i) (\<psi>s ! i))"
-  sorry  (* Gram-Schmidt to get dual basis \<phi>i with \<langle>\<phi>i|\<psi>j\<rangle> = \<delta>ij,
-            then Mi = |\<phi>i\<rangle>\<langle>\<phi>i| (plus completion). *)
+proof -
+  (* \<psi>s carriers, implied by quantum_state *)
+  have \<psi>s_carrier: "\<forall>i < k. \<psi>s ! i \<in> carrier_vec n"
+    using qstates len
+    by (metis carrier_vec_dim_vec nth_mem quantum_state_def)
+
+  (* Step 1: dual basis \<phi>s with \<langle>\<phi>s!i | \<psi>s!j\<rangle> = \<delta>_ij.
+     Exists because \<psi>s is linearly independent: restrict to span(\<psi>s),
+     invert the k\<times>k Gram matrix, and lift back to C^n. *)
+  obtain \<phi>s :: "complex Matrix.vec list"
+    where \<phi>s_len: "length \<phi>s = k"
+      and \<phi>s_carrier: "\<forall>i < k. \<phi>s ! i \<in> carrier_vec n"
+      and dual: "\<forall>i < k. \<forall>j < k. \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)"
+    sorry
+
+  (* Step 2: pick a positive scale c small enough that
+     I - c \<Sum>i |\<phi>i\<rangle>\<langle>\<phi>i| is positive semidefinite. Possible because
+     \<Sum>i |\<phi>i\<rangle>\<langle>\<phi>i| is psd hence has finite operator norm. *)
+  let ?T = "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) \<phi>s (0\<^sub>m n n)"
+  obtain c :: real
+    where c_pos: "0 < c"
+      and c_bound: "psd (1\<^sub>m n - (of_real c) \<cdot>\<^sub>m ?T)"
+    sorry
+
+  define Mpre :: "complex Matrix.mat list"
+    where "Mpre = map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) \<phi>s"
+  define Slast :: "complex Matrix.mat"
+    where "Slast = foldr (\<lambda>M acc. M + acc) Mpre (0\<^sub>m n n)"
+  define Mlast :: "complex Matrix.mat"
+    where "Mlast = 1\<^sub>m n - Slast"
+  define Ps :: "complex Matrix.mat list"
+    where "Ps = Mpre @ [Mlast]"
+
+  have len_Ps: "length Ps = k + 1"
+    using \<phi>s_len unfolding Ps_def Mpre_def by simp
+
+  have povm_Ps: "povm n Ps"
+    sorry
+
+  (* Square-root lift: get a measurement_system Ms with Ms_i\<^sup>\<dagger>Ms_i = Ps_i. *)
+  obtain Ms :: "complex Matrix.mat list"
+    where ms: "measurement_system n Ms"
+      and ms_induces: "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
+    using povm_from_sqrt[OF povm_Ps] by blast
+
+  have len_Ms: "length Ms = k + 1"
+    using ms_induces len_Ps by (metis length_map)
+
+  (* meas_prob Ms!i \<psi>s!j = c |\<langle>\<phi>i | \<psi>s!j\<rangle>|\<^sup>2. *)
+  have meas_eq: "\<forall>i < k. \<forall>j < k. meas_prob (Ms ! i) (\<psi>s ! j)
+                     = c * (cmod (\<langle>\<phi>s ! i | \<psi>s ! j\<rangle>))\<^sup>2"
+  proof (intro allI impI)
+    fix i j assume i: "i < k" and j: "j < k"
+    let ?\<phi> = "\<phi>s ! i"  let ?\<psi> = "\<psi>s ! j"  let ?M = "Ms ! i"
+
+    have \<phi>car: "?\<phi> \<in> carrier_vec n" using \<phi>s_carrier i by blast
+    have \<psi>car: "?\<psi> \<in> carrier_vec n" using \<psi>s_carrier j by blast
+    have \<phi>dim: "dim_vec ?\<phi> = n" using \<phi>car by simp
+    have \<psi>dim: "dim_vec ?\<psi> = n" using \<psi>car by simp
+
+    have Mpre_len: "length Mpre = k" unfolding Mpre_def using \<phi>s_len by simp
+    have Ms_len: "length Ms = k + 1" using len_Ms .
+
+    have Ps_i: "Ps ! i = (of_real c :: complex) \<cdot>\<^sub>m outer_prod ?\<phi> ?\<phi>"
+      using i Mpre_len \<phi>s_len unfolding Ps_def Mpre_def
+      by (simp add: nth_append)
+
+    have MtM_eq_Ps: "?M\<^sup>\<dagger> * ?M = Ps ! i"
+      using ms_induces i Ms_len
+      by (metis nth_map)
+
+    have M_in_set: "?M \<in> set Ms"
+      using i Ms_len by (simp add: nth_mem)
+    have M_car: "?M \<in> carrier_mat n n"
+      using ms M_in_set by (simp add: measurement_system_def)
+    have Mv_dim: "dim_vec (?M *\<^sub>v ?\<psi>) = n" using M_car \<psi>car by simp
+
+    have qf: "\<langle>?M *\<^sub>v ?\<psi> | ?M *\<^sub>v ?\<psi>\<rangle> = \<langle>?\<psi> | (?M\<^sup>\<dagger> * ?M) *\<^sub>v ?\<psi>\<rangle>"
+    proof -
+      have A: "\<langle>?\<psi> | (?M\<^sup>\<dagger> * ?M) *\<^sub>v ?\<psi>\<rangle> = \<langle>?\<psi> | ?M\<^sup>\<dagger> *\<^sub>v (?M *\<^sub>v ?\<psi>)\<rangle>"
+        using M_car \<psi>car
+        by (metis assoc_mult_mat_vec carrier_matD(1) carrier_vec_dim_vec
+            dagger_def mat_carrier)
+      have B: "\<langle>?\<psi> | ?M\<^sup>\<dagger> *\<^sub>v (?M *\<^sub>v ?\<psi>)\<rangle> = \<langle>(?M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v ?\<psi> | ?M *\<^sub>v ?\<psi>\<rangle>"
+        using M_car Mv_dim \<psi>dim
+        by (metis carrier_matD(2) dagger_of_dagger_is_id dim_col_of_dagger
+            dim_mult_mat_vec inner_prod_adjoint_swap inner_prod_cnj)
+      have C: "(?M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v ?\<psi> = ?M *\<^sub>v ?\<psi>"
+        using dagger_of_dagger_is_id by presburger
+      show ?thesis using A B C by simp
+    qed
+
+    have meas_MtM: "meas_prob ?M ?\<psi> = Re \<langle>?\<psi> | (?M\<^sup>\<dagger> * ?M) *\<^sub>v ?\<psi>\<rangle>"
+      using qf Mv_dim inner_prod_with_itself_Re
+      by (simp add: meas_prob_def)
+
+    have opxx_car: "outer_prod ?\<phi> ?\<phi> \<in> carrier_mat n n"
+      using \<phi>dim
+      by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
+          carrier_matI)
+
+    have op\<psi>: "outer_prod ?\<phi> ?\<phi> *\<^sub>v ?\<psi> = \<langle>?\<phi>|?\<psi>\<rangle> \<cdot>\<^sub>v ?\<phi>"
+      using outer_prod_mult_vec[of ?\<psi> ?\<phi> ?\<phi>] \<phi>dim \<psi>dim by simp
+
+    have smult_op: "((of_real c :: complex) \<cdot>\<^sub>m outer_prod ?\<phi> ?\<phi>) *\<^sub>v ?\<psi>
+                  = (of_real c :: complex) \<cdot>\<^sub>v (outer_prod ?\<phi> ?\<phi> *\<^sub>v ?\<psi>)"
+      using smult_mat_mult_vec opxx_car \<psi>car by blast
+
+    have ip_collapse: "\<langle>?\<psi> | (?M\<^sup>\<dagger> * ?M) *\<^sub>v ?\<psi>\<rangle>
+                     = (of_real c :: complex) * (cnj \<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<phi>|?\<psi>\<rangle>)"
+    proof -
+      have "\<langle>?\<psi> | (?M\<^sup>\<dagger> * ?M) *\<^sub>v ?\<psi>\<rangle>
+          = \<langle>?\<psi> | ((of_real c :: complex) \<cdot>\<^sub>m outer_prod ?\<phi> ?\<phi>) *\<^sub>v ?\<psi>\<rangle>"
+        using MtM_eq_Ps Ps_i by simp
+      also have "... = \<langle>?\<psi> | (of_real c :: complex) \<cdot>\<^sub>v (outer_prod ?\<phi> ?\<phi> *\<^sub>v ?\<psi>)\<rangle>"
+        using smult_op by simp
+      also have "... = (of_real c :: complex) * \<langle>?\<psi> | outer_prod ?\<phi> ?\<phi> *\<^sub>v ?\<psi>\<rangle>"
+        by (rule inner_prod_right_smult')
+      also have "... = (of_real c :: complex) * \<langle>?\<psi> | \<langle>?\<phi>|?\<psi>\<rangle> \<cdot>\<^sub>v ?\<phi>\<rangle>"
+        using op\<psi> by simp
+      also have "... = (of_real c :: complex) * (\<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<psi>|?\<phi>\<rangle>)"
+        by (simp add: inner_prod_right_smult')
+      also have "... = (of_real c :: complex) * (\<langle>?\<phi>|?\<psi>\<rangle> * cnj \<langle>?\<phi>|?\<psi>\<rangle>)"
+        by (simp add: inner_prod_cnj)
+      also have "... = (of_real c :: complex) * (cnj \<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<phi>|?\<psi>\<rangle>)"
+        by (simp add: mult.commute)
+      finally show ?thesis .
+    qed
+
+    have "meas_prob ?M ?\<psi>
+        = Re ((of_real c :: complex) * (cnj \<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<phi>|?\<psi>\<rangle>))"
+      using meas_MtM ip_collapse by simp
+    also have "... = c * Re (cnj \<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<phi>|?\<psi>\<rangle>)"
+      by simp
+    also have "... = c * (cmod \<langle>?\<phi>|?\<psi>\<rangle>)\<^sup>2"
+      by (simp add: complex_mult_cnj complex_norm_square)
+    finally show "meas_prob ?M ?\<psi> = c * (cmod \<langle>?\<phi>|?\<psi>\<rangle>)\<^sup>2" .
+  qed
+
+  have orth_meas: "\<forall>i < k. \<forall>j < k. i \<noteq> j \<longrightarrow> meas_prob (Ms ! i) (\<psi>s ! j) = 0"
+    using meas_eq dual by fastforce
+
+  have pos_meas: "\<forall>i < k. 0 < meas_prob (Ms ! i) (\<psi>s ! i)"
+    using meas_eq dual c_pos by fastforce
+
+  show ?thesis
+    using ms len_Ms orth_meas pos_meas by blast
+qed
 
 (* --------------------------------------------------------------------------
    Positive Operator-Valued Measures (POVMs)
