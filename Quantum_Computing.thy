@@ -239,6 +239,9 @@ next
   finally show "((a \<cdot>\<^sub>m A) *\<^sub>v x) $ i = (a \<cdot>\<^sub>v (A *\<^sub>v x)) $ i" .
 qed
 
+
+
+
 lemma cpx_vec_length_zero_iff:
   fixes v :: "complex Matrix.vec"
   shows "\<parallel>v\<parallel> = 0 \<longleftrightarrow> v = 0\<^sub>v (dim_vec v)"
@@ -360,6 +363,30 @@ proof -
   also have "\<dots> = \<langle>u | w\<rangle> - \<langle>v | w\<rangle>"
     using dims by (simp add: inner_prod_def lessThan_atLeast0)
   finally show ?thesis .
+qed
+
+lemma dagger_of_smult:
+  fixes \<gamma> :: complex
+    and U :: "complex Matrix.mat"
+  shows "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> = (cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>)"
+proof (rule eq_matI)
+  show "dim_row ((\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger>) = dim_row ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>))"
+    by simp
+  show "dim_col ((\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger>) = dim_col ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>))"
+    by simp
+next
+  fix i j
+  assume i: "i < dim_row ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>))"
+  assume j: "j < dim_col ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>))"
+  have "((\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger>) $$ (i,j) = cnj ((\<gamma> \<cdot>\<^sub>m U) $$ (j,i))"
+    using i j by (simp add: dagger_def)
+  also have "... = cnj (\<gamma> * (U $$ (j,i)))"
+    using i j by simp
+  also have "... = (cnj \<gamma>) * cnj (U $$ (j,i))"
+    by simp
+  also have "... = ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>)) $$ (i,j)"
+    using i j by (simp add: dagger_def)
+  finally show "((\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger>) $$ (i,j) = ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>)) $$ (i,j)" .
 qed
 
 definition householder :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
@@ -2723,21 +2750,16 @@ proof -
   have step1: "A *\<^sub>v x = Matrix.vec (dim_row A) (\<lambda>r. Matrix.row A r \<bullet> x)"
     unfolding mult_mat_vec_def
     by simp
-
   have step2: "(A *\<^sub>v x) $ j = (Matrix.vec (dim_row A) (\<lambda>r. Matrix.row A r \<bullet> x)) $ j"
     using step1 by simp
-
   have step3: "(Matrix.vec (dim_row A) (\<lambda>r. Matrix.row A r \<bullet> x)) $ j = Matrix.row A j \<bullet> x"
     using A j
     by simp
-
   have step4: "Matrix.row A j \<bullet> x = (\<Sum>i = 0..<dim_vec x. Matrix.row A j $ i * x $ i)"
     by (simp add: scalar_prod_def)
-
   have step5: "(\<Sum>i = 0..<dim_vec x. Matrix.row A j $ i * x $ i)
              = (\<Sum>i = 0..<n. Matrix.row A j $ i * x $ i)"
     using x by simp
-
   have step6: "(\<Sum>i = 0..<n. Matrix.row A j $ i * x $ i)
              = (\<Sum>i = 0..<n. A $$ (j, i) * x $ i)"
   proof (rule sum.cong[OF refl])
@@ -2847,7 +2869,6 @@ proof -
   have "(\<Sum>j = 0..<n. \<Sum>i = 0..<m. cnj (x $ j) * M $$ (j,i) * y $ i)
       = (\<Sum>i = 0..<m. \<Sum>j = 0..<n. cnj (x $ j) * M $$ (j,i) * y $ i)"
     by (rule sum.swap)
-
   thus ?thesis
     using lhs rhs by simp
 qed
@@ -4323,7 +4344,7 @@ proof -
         also have "\<dots> = P $$ (0,0) * z + (\<Sum>j = 0..<n-1. P $$ (0, j+1) * ?x $ (j+1))"
           using reindex by simp
         also have "\<dots> = P $$ (0,0) * z + (\<Sum>j = 0..<(n-1). P $$ (0, j+1) * y $ j)"
-          by (intro arg_cong2[where f="(+)"] refl sum.cong refl) (simp add: xSuc)
+          by (intro arg_cong2[where f="(+)"] refl sum.cong refl, simp add: xSuc)
         finally show ?thesis .
       qed
       from step1 step2 show ?thesis
@@ -4382,7 +4403,7 @@ proof -
         also have "\<dots> = P $$ (i+1,0) * z + (\<Sum>j = 0..<n-1. P $$ (i+1, j+1) * ?x $ (j+1))"
           using reindex by simp
         also have "\<dots> = P $$ (i+1,0) * z + (\<Sum>j = 0..<(n-1). P $$ (i+1, j+1) * y $ j)"
-          by (intro arg_cong2[where f="(+)"] refl sum.cong refl) (simp add: xSuc)
+          by (intro arg_cong2[where f="(+)"] refl sum.cong refl, simp add: xSuc)
         finally show ?thesis .
       qed
       from step1 step2 show "(P *\<^sub>v ?x) $ (i+1) =
@@ -4443,7 +4464,7 @@ proof -
         by (simp add: algebra_simps sum_distrib_left sum_distrib_right sum.distrib)
       also have "\<dots> = cnj z * ?a * z + cnj z * ?c + cnj ?c * z + ?tail_quad"
         using cnj_c by simp
-      finally show ?thesis .
+      finally show ?thesis.
     qed
 
     have Schur_quad:
@@ -4513,12 +4534,10 @@ proof -
     have square_expand:
       "cnj (z + ?c / ?a) * ?a * (z + ?c / ?a) =
        cnj z * ?a * z + cnj z * ?c + cnj ?c * z + cnj ?c * ?c / ?a"
-      using P00_nonzero cnj_a
-      by (simp add: field_simps algebra_simps)
+      using P00_nonzero cnj_a by (simp add: algebra_simps)
 
     show "\<langle>?lift z y | P *\<^sub>v (?lift z y)\<rangle> =
-        cnj (z + ?cross y / P $$ (0,0)) * (P $$ (0,0)) * (z + ?cross y / P $$ (0,0)) +
-        \<langle>y | ?S *\<^sub>v y\<rangle>"
+        cnj (z + ?cross y / P $$ (0,0)) * (P $$ (0,0)) * (z + ?cross y / P $$ (0,0)) + \<langle>y | ?S *\<^sub>v y\<rangle>"
       using full_quad Schur_quad square_expand by simp
   qed
 
@@ -4541,7 +4560,7 @@ proof -
     finally show "\<langle>x | P *\<^sub>v x\<rangle> =
         cnj (x $ 0 + ?cross (?tail x) / P $$ (0,0)) * (P $$ (0,0)) *
           (x $ 0 + ?cross (?tail x) / P $$ (0,0)) +
-        \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>" .
+        \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>".
   qed
 
   have completed_square_nonneg: "\<And>w. 0 \<le> Re (cnj w * (P $$ (0,0)) * w)"
@@ -4701,7 +4720,77 @@ lemma block_mat_apply:
       and "T21 \<in> carrier_mat n2 k1" and "T22 \<in> carrier_mat n2 k2"
   shows "four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w) =
          (T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)"
-  sorry  (* Index-by-index unfolding of four_block_mat row dot direct_sum_vec. *)
+proof -
+  have v_carrier: "v \<in> carrier_vec k1"
+    using assms(1) by (rule carrier_vecI)
+  have w_carrier: "w \<in> carrier_vec k2"
+    using assms(2) by (rule carrier_vecI)
+  have vw_append: "v \<oplus>\<^sub>v w = v @\<^sub>v w"
+    by (simp add: direct_sum_vec_def append_vec_def Let_def)
+
+  have left_dim:
+    "dim_vec (four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) = n1 + n2"
+    using assms by simp
+  have right_dim:
+    "dim_vec ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) = n1 + n2"
+    using assms by simp
+
+  show ?thesis
+  proof
+    show "dim_vec (four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) =
+          dim_vec ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w))"
+      using left_dim right_dim by simp
+  next
+    fix i
+    assume i: "i < dim_vec ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v
+                             (T21 *\<^sub>v v + T22 *\<^sub>v w))"
+    then have i_bound: "i < n1 + n2"
+      using right_dim by simp
+    show "(four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) $ i =
+          ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) $ i"
+    proof (cases "i < n1")
+      case True
+      have row_top:
+        "Matrix.row (four_block_mat T11 T12 T21 T22) i = Matrix.row T11 i @\<^sub>v Matrix.row T12 i"
+        using assms True row_four_block_mat[of T11 n1 k1 T12 k2 T21 n2 T22 i]
+        by simp
+      have lhs_i:
+        "(four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) $ i =
+         Matrix.row T11 i \<bullet> v + Matrix.row T12 i \<bullet> w"
+        using assms True v_carrier w_carrier vw_append row_top
+        by (metis dim_mult_mat_vec i_bound index_mult_mat_vec
+            left_dim row_carrier_vec scalar_prod_append)
+      have rhs_i:
+        "((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) $ i =
+         Matrix.row T11 i \<bullet> v + Matrix.row T12 i \<bullet> w"
+        using assms True
+        by simp
+      show ?thesis
+        using lhs_i rhs_i by simp
+    next
+      case False
+      let ?j = "i - n1"
+      have j_bound: "?j < n2"
+        using False i_bound by simp
+      have row_bottom:
+        "Matrix.row (four_block_mat T11 T12 T21 T22) i = Matrix.row T21 ?j @\<^sub>v Matrix.row T22 ?j"
+        using assms False i_bound row_four_block_mat[of T11 n1 k1 T12 k2 T21 n2 T22 i]
+        by simp
+      have lhs_i:
+        "(four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) $ i =
+         Matrix.row T21 ?j \<bullet> v + Matrix.row T22 ?j \<bullet> w"
+        using assms False i_bound v_carrier w_carrier vw_append row_bottom
+        by (metis dim_mult_mat_vec index_mult_mat_vec j_bound left_dim row_carrier_vec scalar_prod_append)
+      have rhs_i:
+        "((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) $ i =
+         Matrix.row T21 ?j \<bullet> v + Matrix.row T22 ?j \<bullet> w"
+        using assms False j_bound
+        by (simp add: direct_sum_vec_def)
+      show ?thesis
+        using lhs_i rhs_i by simp
+    qed
+  qed
+qed
 
 
 (* ============================================================================
@@ -4720,32 +4809,6 @@ lemma block_mat_apply:
    The tensor of two matrices is the Kronecker product.
    -------------------------------------------------------------------------- *)
 
-(* Bilinearity of the tensor product *)
-
-lemma tensor_vec_bilinear_left:
-  assumes vd: "dim_vec v1 = n" "dim_vec v2 = n" "dim_vec w = m"
-  shows "tensor_vec (v1 + v2) w = tensor_vec v1 w + tensor_vec v2 w"
-  sorry
-
-
-
-
-
-lemma tensor_vec_bilinear_right:
-  assumes vd: "dim_vec v = n" "dim_vec w1 = m" "dim_vec w2 = m"
-  shows "tensor_vec v (w1 + w2) = tensor_vec v w1 + tensor_vec v w2"
-  sorry  (* Symmetric to tensor_vec_bilinear_left. *)
-
-lemma tensor_vec_smult_left:
-  assumes vd: "dim_vec v = n" "dim_vec w = m"
-  shows "tensor_vec (\<alpha> \<cdot>\<^sub>v v) w = \<alpha> \<cdot>\<^sub>v tensor_vec v w"
-  sorry  (* (\<alpha>\<sqdot>v)$i * w$j = \<alpha> * (v$i * w$j) by index. *)
-
-lemma tensor_vec_smult_right:
-  assumes vd: "dim_vec v = n" "dim_vec w = m"
-  shows "tensor_vec v (\<alpha> \<cdot>\<^sub>v w) = \<alpha> \<cdot>\<^sub>v tensor_vec v w"
-  sorry  (* Symmetric. *)
-
 (* Dimension formula: dim(\<complex>^n \<otimes> \<complex>^m) = n \<sqdot> m *)
 
 lemma tensor_vec_dim:
@@ -4760,7 +4823,228 @@ proof -
       length (list_of_vec v) * length (list_of_vec w)"
     by (rule len_aux)
   show ?thesis
-    using assms len by (simp add: tensor_vec_def length_list_of_vec)
+    using assms len by (simp add: tensor_vec_def)
+qed
+
+(* Index formula: (v \<otimes> w) $ i = v $ (i div m) * w $ (i mod m) *)
+
+lemma tensor_vec_index:
+  assumes "dim_vec v = n" "dim_vec w = m" "i < n * m"
+  shows "tensor_vec v w $ i = v $ (i div m) * w $ (i mod m)"
+proof -
+  have m_pos: "m > 0" using assms(3) by (cases m) auto
+  have n_pos: "n > 0" using assms(3) by (cases n) auto
+  have lw_nonempty: "list_of_vec w \<noteq> []"
+    using assms(2) m_pos by (metis length_greater_0_conv length_list_of_vec)
+  have len_v: "length (list_of_vec v) = n" using assms(1) by simp
+  have len_w: "length (list_of_vec w) = m" using assms(2) by simp
+  have mult_inst: "Matrix_Tensor.mult (1::complex) (*)"
+    by (simp add: Matrix_Tensor.mult_def)
+  have elems: "\<forall>i. i < length (list_of_vec v) * length (list_of_vec w) \<longrightarrow>
+     (mult.vec_vec_Tensor (*) (list_of_vec v) (list_of_vec w)) ! i =
+        ((list_of_vec v) ! (i div length (list_of_vec w))) *
+        ((list_of_vec w) ! (i mod length (list_of_vec w)))"
+    using mult.vec_vec_Tensor_elements[OF mult_inst lw_nonempty,
+        of "(list_of_vec v)"] by simp
+  have i_bound: "i < length (list_of_vec v) * length (list_of_vec w)"
+    using assms(3) len_v len_w by simp
+  have div_bound: "i div m < n" using assms(3) less_mult_imp_div_less by blast
+  have mod_bound: "i mod m < m" using m_pos by simp
+  have len_tensor: "length (mult.vec_vec_Tensor (*) (list_of_vec v) (list_of_vec w)) = n * m"
+    using len_v len_w mult.vec_vec_Tensor_length[OF mult_inst] by simp
+  have "tensor_vec v w $ i =
+      (mult.vec_vec_Tensor (*) (list_of_vec v) (list_of_vec w)) ! i"
+    unfolding tensor_vec_def using assms(3) len_tensor
+    by (simp add: vec_of_list_index)
+  also have "\<dots> = (list_of_vec v) ! (i div m) * (list_of_vec w) ! (i mod m)"
+    using elems i_bound len_w by simp
+  also have "\<dots> = v $ (i div m) * w $ (i mod m)"
+    using div_bound mod_bound assms(1,2) by (simp add: list_of_vec_index)
+  finally show ?thesis .
+qed
+
+(* Bilinearity of the tensor product *)
+
+lemma tensor_vec_bilinear_left:
+  assumes vd: "dim_vec v1 = n" "dim_vec v2 = n" "dim_vec w = m"
+  shows "tensor_vec (v1 + v2) w = tensor_vec v1 w + tensor_vec v2 w"
+proof -
+  have v1_carrier: "v1 \<in> carrier_vec n"
+    using vd(1) by (rule carrier_vecI)
+  have v2_carrier: "v2 \<in> carrier_vec n"
+    using vd(2) by (rule carrier_vecI)
+  have w_carrier: "w \<in> carrier_vec m"
+    using vd(3) by (rule carrier_vecI)
+
+  have dim_lhs: "dim_vec (tensor_vec (v1 + v2) w) = n * m"
+    using vd by (simp add: tensor_vec_dim)
+  have dim_rhs: "dim_vec (tensor_vec v1 w + tensor_vec v2 w) = n * m"
+    using vd by (simp add: tensor_vec_dim)
+
+  show ?thesis
+  proof
+    show "dim_vec (tensor_vec (v1 + v2) w) =
+          dim_vec (tensor_vec v1 w + tensor_vec v2 w)"
+      using dim_lhs dim_rhs by simp
+  next
+    fix i
+    assume i: "i < dim_vec (tensor_vec v1 w + tensor_vec v2 w)"
+    then have i_bound: "i < n * m"
+      using dim_rhs by simp
+    let ?a = "i div m"
+    let ?b = "i mod m"
+    have split_index: "i = ?a * m + ?b"
+      by presburger
+    have a_bound: "?a < n"
+      using i_bound less_mult_imp_div_less by blast
+    have b_bound: "?b < m"
+      by (metis gr0I i_bound less_zeroE mod_less_divisor mult_not_zero)
+
+
+    have dim_v12: "dim_vec (v1 + v2) = n" using vd by simp
+    have lhs_i:  "tensor_vec (v1 + v2) w $ i = ((v1 + v2) $ ?a) * (w $ ?b)"
+      using tensor_vec_index[OF dim_v12 vd(3) i_bound] .
+    also have "\<dots> = (v1 $ ?a * w $ ?b) + (v2 $ ?a * w $ ?b)"
+      using vd a_bound b_bound by (simp add: algebra_simps)
+    also have "\<dots> = (tensor_vec v1 w + tensor_vec v2 w) $ i"
+    proof -
+      have t1: "tensor_vec v1 w $ i = v1 $ ?a * w $ ?b"
+        using tensor_vec_index[OF vd(1) vd(3) i_bound] .
+      have t2: "tensor_vec v2 w $ i = v2 $ ?a * w $ ?b"
+        using tensor_vec_index[OF vd(2) vd(3) i_bound] .
+      have di_rhs: "i < dim_vec (tensor_vec v1 w + tensor_vec v2 w)"
+        using dim_rhs i_bound by simp
+      have dt1: "dim_vec (tensor_vec v1 w) = n * m" using vd by (simp add: tensor_vec_dim)
+      have dt2: "dim_vec (tensor_vec v2 w) = n * m" using vd by (simp add: tensor_vec_dim)
+      have "(tensor_vec v1 w + tensor_vec v2 w) $ i = tensor_vec v1 w $ i + tensor_vec v2 w $ i"
+        using dt1 dt2 i_bound by simp
+      with t1 t2 show ?thesis by simp
+    qed
+    finally show "tensor_vec (v1 + v2) w $ i =
+                  (tensor_vec v1 w + tensor_vec v2 w) $ i" .
+  qed
+qed
+
+
+
+
+
+lemma tensor_vec_bilinear_right:
+  assumes vd: "dim_vec v = n" "dim_vec w1 = m" "dim_vec w2 = m"
+  shows "tensor_vec v (w1 + w2) = tensor_vec v w1 + tensor_vec v w2"
+proof -
+  have v_carrier: "v \<in> carrier_vec n"
+    using vd(1) by (rule carrier_vecI)
+  have w1_carrier: "w1 \<in> carrier_vec m"
+    using vd(2) by (rule carrier_vecI)
+  have w2_carrier: "w2 \<in> carrier_vec m"
+    using vd(3) by (rule carrier_vecI)
+
+  have dim_lhs: "dim_vec (tensor_vec v (w1 + w2)) = n * m"
+    using vd by (simp add: tensor_vec_dim)
+  have dim_rhs: "dim_vec (tensor_vec v w1 + tensor_vec v w2) = n * m"
+    using vd by (simp add: tensor_vec_dim)
+
+  show ?thesis
+  proof
+    show "dim_vec (tensor_vec v (w1 + w2)) =
+          dim_vec (tensor_vec v w1 + tensor_vec v w2)"
+      using dim_lhs dim_rhs by simp
+  next
+    fix i
+    assume i: "i < dim_vec (tensor_vec v w1 + tensor_vec v w2)"
+    then have i_bound: "i < n * m"
+      using dim_rhs by simp
+    let ?a = "i div m"
+    let ?b = "i mod m"
+    have split_index: "i = ?a * m + ?b"
+      by presburger
+    have a_bound: "?a < n"
+      using i_bound less_mult_imp_div_less by blast
+    have b_bound: "?b < m"
+      by (metis i_bound mod_by_0 mod_less_divisor mod_mult_self2_is_0 not_gr0)
+    have dim_w12: "dim_vec (w1 + w2) = m" using vd by simp
+    have lhs_i:
+      "tensor_vec v (w1 + w2) $ i = (v $ ?a) * ((w1 + w2) $ ?b)"
+      using tensor_vec_index[OF vd(1) dim_w12 i_bound] .
+    also have "\<dots> = (v $ ?a * w1 $ ?b) + (v $ ?a * w2 $ ?b)"
+      using vd a_bound b_bound by (simp add: algebra_simps)
+    also have "\<dots> = (tensor_vec v w1 + tensor_vec v w2) $ i"
+    proof -
+      have t1: "tensor_vec v w1 $ i = v $ ?a * w1 $ ?b"
+        using tensor_vec_index[OF vd(1) vd(2) i_bound] .
+      have t2: "tensor_vec v w2 $ i = v $ ?a * w2 $ ?b"
+        using tensor_vec_index[OF vd(1) vd(3) i_bound] .
+      have dt1: "dim_vec (tensor_vec v w1) = n * m" using vd by (simp add: tensor_vec_dim)
+      have dt2: "dim_vec (tensor_vec v w2) = n * m" using vd by (simp add: tensor_vec_dim)
+      have "(tensor_vec v w1 + tensor_vec v w2) $ i = tensor_vec v w1 $ i + tensor_vec v w2 $ i"
+        using dt1 dt2 i_bound by simp
+      with t1 t2 show ?thesis by simp
+    qed
+    finally show "tensor_vec v (w1 + w2) $ i =
+                  (tensor_vec v w1 + tensor_vec v w2) $ i" .
+  qed
+qed
+
+lemma tensor_vec_smult_left:
+  assumes vd: "dim_vec v = n" "dim_vec w = m"
+  shows "tensor_vec (\<alpha> \<cdot>\<^sub>v v) w = \<alpha> \<cdot>\<^sub>v tensor_vec v w"
+proof
+  have dim_av: "dim_vec (\<alpha> \<cdot>\<^sub>v v) = n" using vd by simp
+  have dim_lhs: "dim_vec (tensor_vec (\<alpha> \<cdot>\<^sub>v v) w) = n * m"
+    using dim_av vd(2) by (simp add: tensor_vec_dim)
+  have dim_rhs: "dim_vec (\<alpha> \<cdot>\<^sub>v tensor_vec v w) = n * m"
+    using vd by (simp add: tensor_vec_dim)
+  show "dim_vec (tensor_vec (\<alpha> \<cdot>\<^sub>v v) w) = dim_vec (\<alpha> \<cdot>\<^sub>v tensor_vec v w)"
+    using dim_lhs dim_rhs by simp
+next
+  fix i
+  assume i: "i < dim_vec (\<alpha> \<cdot>\<^sub>v tensor_vec v w)"
+  have dim_tvw: "dim_vec (tensor_vec v w) = n * m" using vd by (simp add: tensor_vec_dim)
+  have i_bound: "i < n * m" using i dim_tvw by simp
+  have dim_av: "dim_vec (\<alpha> \<cdot>\<^sub>v v) = n" using vd by simp
+  let ?a = "i div m" let ?b = "i mod m"
+  have a_bound: "?a < n" using i_bound less_mult_imp_div_less by blast
+  have lhs: "tensor_vec (\<alpha> \<cdot>\<^sub>v v) w $ i = (\<alpha> \<cdot>\<^sub>v v) $ ?a * w $ ?b"
+    using tensor_vec_index[OF dim_av vd(2) i_bound] .
+  also have "\<dots> = \<alpha> * (v $ ?a * w $ ?b)"
+    using a_bound vd by simp
+  also have "\<dots> = \<alpha> * (tensor_vec v w $ i)"
+    using tensor_vec_index[OF vd i_bound] by simp
+  also have "\<dots> = (\<alpha> \<cdot>\<^sub>v tensor_vec v w) $ i"
+    using i by simp
+  finally show "tensor_vec (\<alpha> \<cdot>\<^sub>v v) w $ i = (\<alpha> \<cdot>\<^sub>v tensor_vec v w) $ i" .
+qed
+
+lemma tensor_vec_smult_right:
+  assumes vd: "dim_vec v = n" "dim_vec w = m"
+  shows "tensor_vec v (\<alpha> \<cdot>\<^sub>v w) = \<alpha> \<cdot>\<^sub>v tensor_vec v w"
+proof
+  have dim_aw: "dim_vec (\<alpha> \<cdot>\<^sub>v w) = m" using vd by simp
+  have dim_lhs: "dim_vec (tensor_vec v (\<alpha> \<cdot>\<^sub>v w)) = n * m"
+    using vd(1) dim_aw by (simp add: tensor_vec_dim)
+  have dim_rhs: "dim_vec (\<alpha> \<cdot>\<^sub>v tensor_vec v w) = n * m"
+    using vd by (simp add: tensor_vec_dim)
+  show "dim_vec (tensor_vec v (\<alpha> \<cdot>\<^sub>v w)) = dim_vec (\<alpha> \<cdot>\<^sub>v tensor_vec v w)"
+    using dim_lhs dim_rhs by simp
+next
+  fix i
+  assume i: "i < dim_vec (\<alpha> \<cdot>\<^sub>v tensor_vec v w)"
+  have dim_tvw: "dim_vec (tensor_vec v w) = n * m" using vd by (simp add: tensor_vec_dim)
+  have i_bound: "i < n * m" using i dim_tvw by simp
+  have dim_aw: "dim_vec (\<alpha> \<cdot>\<^sub>v w) = m" using vd by simp
+  let ?a = "i div m" let ?b = "i mod m"
+  have m_pos: "m > 0" using i_bound by (cases m) auto
+  have b_bound: "?b < m" using m_pos by simp
+  have lhs: "tensor_vec v (\<alpha> \<cdot>\<^sub>v w) $ i = v $ ?a * (\<alpha> \<cdot>\<^sub>v w) $ ?b"
+    using tensor_vec_index[OF vd(1) dim_aw i_bound] .
+  also have "\<dots> = \<alpha> * (v $ ?a * w $ ?b)"
+    using b_bound vd by simp
+  also have "\<dots> = \<alpha> * (tensor_vec v w $ i)"
+    using tensor_vec_index[OF vd i_bound] by simp
+  also have "\<dots> = (\<alpha> \<cdot>\<^sub>v tensor_vec v w) $ i"
+    using i by simp
+  finally show "tensor_vec v (\<alpha> \<cdot>\<^sub>v w) $ i = (\<alpha> \<cdot>\<^sub>v tensor_vec v w) $ i" .
 qed
 
 (* Tensor basis theorem: {eᵢ \<otimes> fⱼ} is a basis for \<complex>^n \<otimes> \<complex>^m *)
@@ -4794,43 +5078,316 @@ lemma tensor_inner_prod:
   shows "\<langle>tensor_vec h1 k1 | tensor_vec h2 k2\<rangle> =
          \<langle>h1 | h2\<rangle> * \<langle>k1 | k2\<rangle>"
 proof -
-  (* \<Sum>_{i<n*m} cnj((h1\<otimes>k1)$i) * (h2\<otimes>k2)$i, reindex i = a*m + b:
-     = \<Sum>_{a<n}\<Sum>_{b<m} cnj(h1$a)cnj(k1$b)*h2$a*k2$b
-     = (\<Sum>cnj(h1)h2)(\<Sum>cnj(k1)k2). *)
-  have "\<langle>tensor_vec h1 k1 | tensor_vec h2 k2\<rangle> =
-        (\<Sum>i = 0..<n*m. cnj (tensor_vec h1 k1 $ i) * tensor_vec h2 k2 $ i)"
-    using assms by (simp add: inner_prod_def tensor_vec_dim)
-  also have "\<dots> = (\<Sum>a = 0..<n. \<Sum>b = 0..<m.
-                     cnj (h1 $ a) * cnj (k1 $ b) * (h2 $ a * k2 $ b))"
-    sorry  (* Reindex i = a*m + b using tensor_vec definition. *)
-  also have "\<dots> = (\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
-                  (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)"
+  let ?f = "\<lambda>i. cnj (tensor_vec h1 k1 $ i) * tensor_vec h2 k2 $ i"
+
+  have step1:
+    "\<langle>tensor_vec h1 k1 | tensor_vec h2 k2\<rangle> =
+     (\<Sum>i = 0..<n*m. ?f i)"
+    using assms
+    by (simp add: inner_prod_def tensor_vec_dim)
+
+  have step2:
+    "(\<Sum>i = 0..<n*m. ?f i) =
+     (\<Sum>a = 0..<n. \<Sum>b = 0..<m. ?f (a*m+b))"
+  proof -
+    have "(\<Sum>i = 0..<n*m. ?f i) = (\<Sum>a<n. sum ?f {a*m..<a*m+m})"
+      using sum.nat_group[of ?f m n]
+      by (simp add: atLeast0LessThan)
+    also have "... = (\<Sum>a = 0..<n. \<Sum>b = 0..<m. ?f (a*m+b))"
+    proof (rule sum.cong)
+      show "{..<n} = {0..<n}" by auto
+    next
+      fix a
+      assume a: "a \<in> {0..<n}"
+      have "sum ?f {a*m..<a*m+m} = (\<Sum>b = 0..<m. ?f (a*m+b))"
+      proof (rule sum.reindex_bij_witness[where i = "\<lambda>b. a*m+b" and j = "\<lambda>x. x - a*m"])
+        show "\<And>b. b \<in> {0..<m} \<Longrightarrow> a*m + b \<in> {a*m..<a*m+m}"
+          by simp
+        show "\<And>x. x \<in> {a*m..<a*m+m} \<Longrightarrow> x - a*m \<in> {0..<m}"
+          by fastforce
+        show "\<And>x. x \<in> {a*m..<a*m+m} \<Longrightarrow> (\<lambda>b. a*m+b) (x - a*m) = x"
+          by simp
+        show "\<And>b. b \<in> {0..<m} \<Longrightarrow> (\<lambda>x. x - a*m) ((\<lambda>b. a*m+b) b) = b"
+          by simp
+        show "\<And>b. b \<in> {a * m..<a * m + m} \<Longrightarrow>
+            (cnj ((tensor_vec h1 k1) $ (a * m + (b - a * m))) *
+             ((tensor_vec h2 k2) $ (a * m + (b - a * m)))) =
+            (cnj ((tensor_vec h1 k1) $ b) *
+             ((tensor_vec h2 k2) $ b))"
+            by force
+      qed
+      then show "(\<Sum>i = a * m..<a * m + m.
+        (cnj ((tensor_vec h1 k1) $ i)) * ((tensor_vec h2 k2) $ i)) =
+        (\<Sum>b = 0..<m.(cnj ((tensor_vec h1 k1) $ (a * m + b))) * ((tensor_vec h2 k2) $ (a*m + b)))".
+    qed
+    finally show ?thesis.
+  qed
+
+  have step3:
+    "(\<Sum>a = 0..<n. \<Sum>b = 0..<m. ?f (a*m+b)) =
+     (\<Sum>a = 0..<n. \<Sum>b = 0..<m.
+        cnj (h1 $ a * k1 $ b) * (h2 $ a * k2 $ b))"
+  proof (rule sum.cong)
+    show "{0..<n} = {0..<n}" by simp
+  next
+    fix a
+    assume a: "a \<in> {0..<n}"
+    show "(\<Sum>b = 0..<m. ?f (a*m+b)) =
+          (\<Sum>b = 0..<m. cnj (h1 $ a * k1 $ b) * (h2 $ a * k2 $ b))"
+    proof (rule sum.cong)
+      show "{0..<m} = {0..<m}" by simp
+    next
+      fix b
+      assume b: "b \<in> {0..<m}"
+      have alt: "a < n"
+        using a by simp
+      have blt: "b < m"
+        using b by simp
+      have ab_lt: "a * m + b < n * m"
+      proof -
+        have "a * m + b < a * m + m"
+          using blt by simp
+        also have "... \<le> n * m"
+          by (metis Suc_leI add.commute alt mult_Suc mult_le_mono1)
+        finally show ?thesis.
+      qed
+      have div_eq: "(a*m+b) div m = a" using blt by simp
+      have mod_eq: "(a*m+b) mod m = b" using blt by simp
+      have idx1: "tensor_vec h1 k1 $ (a*m+b) = h1 $ a * k1 $ b"
+        using tensor_vec_index[OF assms(1) assms(3) ab_lt] div_eq mod_eq by simp
+
+      have idx2: "tensor_vec h2 k2 $ (a*m+b) = h2 $ a * k2 $ b"
+        using tensor_vec_index[OF assms(2) assms(4) ab_lt] div_eq mod_eq by simp
+
+      show "?f (a*m+b) = cnj (h1 $ a * k1 $ b) * (h2 $ a * k2 $ b)"
+        unfolding idx1 idx2 by simp
+    qed
+  qed
+
+  have step4:
+    "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
+        cnj (h1 $ a * k1 $ b) * (h2 $ a * k2 $ b)) =
+     (\<Sum>a = 0..<n. \<Sum>b = 0..<m.
+        (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))"
+    by (smt (verit, best) complex_cnj_mult mult.commute semigroup_mult_class.mult.assoc sum.cong)
+
+
+  have step5:
+  "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
+      (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b)) =
+   (\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
+   (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)"
   proof -
     have "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
-             cnj (h1 $ a) * cnj (k1 $ b) * (h2 $ a * k2 $ b))
-        = (\<Sum>a = 0..<n. \<Sum>b = 0..<m.
-             (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))"
-      by (intro sum.cong refl) (simp add: ac_simps)
-    also have "\<dots> = (\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
-                    (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)"
-      by (simp add: sum_product)
+            (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))
+        = (\<Sum>a = 0..<n. (cnj (h1 $ a) * h2 $ a) * (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b))"
+      by (simp add: sum_distrib_left algebra_simps)
+    also have "... =
+        (\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
+        (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)"
+      by (simp add: sum_distrib_right algebra_simps)
     finally show ?thesis .
   qed
-  also have "\<dots> = \<langle>h1 | h2\<rangle> * \<langle>k1 | k2\<rangle>"
-    using assms by (simp add: inner_prod_def)
-  finally show ?thesis .
+
+  have step6:
+    "(\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
+     (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)
+     = \<langle>h1 | h2\<rangle> * \<langle>k1 | k2\<rangle>"
+    using assms
+    by (simp add: inner_prod_def)
+
+  show ?thesis
+    using step1 step2 step3 step4 step5 step6
+    by argo
 qed
 
 (* Orthonormal basis for \<complex>^n \<otimes> \<complex>^m from ONBs of each factor *)
 
+lemma length_concat_map_upt:
+  "length (concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<n])) = n * m"
+  by (simp add: length_concat o_def sum_list_triv)
+
+lemma nth_concat_map_upt:
+  assumes p_lt: "p < n * m"
+  shows "concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<n]) ! p =
+         f (p div m) (p mod m)"
+  using p_lt
+proof (induction n arbitrary: p)
+  case 0
+  then show ?case by simp
+next
+  case (Suc n)
+  have m_pos: "0 < m"
+    using Suc.prems by (cases m) auto
+  have upt_Suc: "[0..<Suc n] = [0..<n] @ [n]"
+    by (simp add: upt_Suc_append)
+  show ?case
+  proof (cases "p < n * m")
+    case True
+    have len_prev:
+      "length (concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<n])) = n * m"
+      by (rule length_concat_map_upt)
+    have "concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<Suc n]) ! p =
+          concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<n]) ! p"
+      using True len_prev
+      by (simp add: upt_Suc nth_append)
+    also have "... = f (p div m) (p mod m)"
+      using Suc.IH[OF True] .
+    finally show ?thesis .
+  next
+    case False
+    have p_ge: "n * m \<le> p"
+      using False by simp
+    define r where "r = p - n * m"
+    have p_eq: "p = n * m + r"
+      using p_ge by (simp add: r_def)
+    have r_lt: "r < m"
+      using Suc.prems p_eq by simp
+    have div_eq: "p div m = n"
+      using p_eq r_lt m_pos by simp
+    have mod_eq: "p mod m = r"
+      using p_eq r_lt by simp
+    have len_prev:
+      "length (concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<n])) = n * m"
+      by (rule length_concat_map_upt)
+    have "concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<Suc n]) ! p =
+          (map (\<lambda>j. f n j) [0..<m]) ! r"
+      using p_eq len_prev
+      by (simp add: upt_Suc nth_append)
+    also have "... = f n r"
+      using r_lt by simp
+    also have "... = f (p div m) (p mod m)"
+      using div_eq mod_eq by simp
+    finally show ?thesis .
+  qed
+qed
+
 lemma tensor_onb:
-  assumes "orthonormal_list n hs" "length hs = n"
-          "orthonormal_list m ks" "length ks = m"
+  assumes hs_onb: "orthonormal_list n hs"
+      and hs_len: "length hs = n"
+      and ks_onb: "orthonormal_list m ks"
+      and ks_len: "length ks = m"
   shows "orthonormal_list (n*m)
          [tensor_vec (hs ! i) (ks ! j). i \<leftarrow> [0..<n], j \<leftarrow> [0..<m]]"
-  sorry  (* From tensor_inner_prod: \<langle>hi\<otimes>kj | hi'\<otimes>kj'\<rangle> = \<langle>hi|hi'\<rangle>\<langle>kj|kj'\<rangle> = \<delta>ii'\<delta>jj'. *)
-(* Proof: orthonormality follows from tensor_inner_prod and orthonormality of hs, ks;
-   cardinality is n\<sqdot>m = dim(\<complex>^n \<otimes> \<complex>^m). *)
+proof -
+  let ?ts = "[tensor_vec (hs ! i) (ks ! j). i \<leftarrow> [0..<n], j \<leftarrow> [0..<m]]"
+
+  have ts_len: "length ?ts = n * m"
+    using length_concat_map_upt[of "\<lambda>i j. tensor_vec (hs ! i) (ks ! j)" m n]
+    by simp
+
+  have hs_dim:
+    "\<And>i. i < n \<Longrightarrow> dim_vec (hs ! i) = n"
+    using hs_onb hs_len
+    unfolding orthonormal_list_def
+    by auto
+
+  have ks_dim:
+    "\<And>j. j < m \<Longrightarrow> dim_vec (ks ! j) = m"
+    using ks_onb ks_len
+    unfolding orthonormal_list_def
+    by auto
+
+  have hs_ip:
+    "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> \<langle>hs ! i | hs ! j\<rangle> = (if i = j then 1 else 0)"
+    using hs_onb hs_len
+    unfolding orthonormal_list_def
+    by auto
+
+  have ks_ip:
+    "\<And>i j. i < m \<Longrightarrow> j < m \<Longrightarrow> \<langle>ks ! i | ks ! j\<rangle> = (if i = j then 1 else 0)"
+    using ks_onb ks_len
+    unfolding orthonormal_list_def
+    by auto
+
+  have nth_ts: "\<And>p. p < n*m \<Longrightarrow> ?ts ! p = tensor_vec (hs ! (p div m)) (ks ! (p mod m))"
+  proof -
+    fix p
+    assume p_lt: "p < n*m"
+    then have div_lt: "p div m < n"
+      using less_mult_imp_div_less by presburger
+
+    have mod_lt: "p mod m < m"
+      by (metis mod_by_0 mod_less_divisor mod_mult_self2_is_0 p_lt zero_less_iff_neq_zero)
+
+
+    have "?ts = concat (map (\<lambda>i. map (\<lambda>j. tensor_vec (hs ! i) (ks ! j)) [0..<m]) [0..<n])"
+      by simp
+    moreover have
+      "concat (map (\<lambda>i. map (\<lambda>j. tensor_vec (hs ! i) (ks ! j)) [0..<m]) [0..<n]) ! p
+       = tensor_vec (hs ! (p div m)) (ks ! (p mod m))"
+      using nth_concat_map_upt[OF p_lt, of "\<lambda>i j. tensor_vec (hs ! i) (ks ! j)"] .
+    ultimately show "?ts ! p = tensor_vec (hs ! (p div m)) (ks ! (p mod m))"
+      by simp
+  qed
+
+  have ts_dim:  "\<And>p. p < length ?ts \<Longrightarrow> dim_vec (?ts ! p) = n*m"
+  proof -
+    fix p
+    assume p_lt: "p < length ?ts"
+    then have p_lt': "p < n*m"
+      using ts_len by simp
+    have div_lt: "p div m < n"
+      using less_mult_imp_div_less p_lt' by blast
+    have mod_lt: "p mod m < m"
+      using p_lt' ks_len
+      by (cases m, auto)
+    have "?ts ! p = tensor_vec (hs ! (p div m)) (ks ! (p mod m))"
+      using nth_ts p_lt' by blast
+    then show "dim_vec (?ts ! p) = n*m"
+      using hs_dim[OF div_lt] ks_dim[OF mod_lt] tensor_vec_dim by presburger
+  qed
+
+  have ts_ip:
+    "\<And>p q. p < length ?ts \<Longrightarrow> q < length ?ts
+       \<Longrightarrow> \<langle>?ts ! p | ?ts ! q\<rangle> = (if p = q then 1 else 0)"
+  proof -
+    fix p q
+    assume p_lt: "p < length ?ts"
+       and q_lt: "q < length ?ts"
+
+    have p_lt': "p < n*m" and q_lt': "q < n*m"
+      using p_lt q_lt ts_len by simp_all
+
+    have pd: "p div m < n"
+      using less_mult_imp_div_less p_lt' by blast
+    have pm: "p mod m < m"
+      using p_lt' ks_len by (cases m, auto)
+    have qd: "q div m < n"
+      using less_mult_imp_div_less q_lt' by blast
+    have qm: "q mod m < m"
+      using q_lt' ks_len by (cases m, auto)
+    have p_nth:
+      "?ts ! p = tensor_vec (hs ! (p div m)) (ks ! (p mod m))"
+      using nth_ts p_lt' by blast
+    have q_nth:
+      "?ts ! q = tensor_vec (hs ! (q div m)) (ks ! (q mod m))"
+      using nth_ts q_lt' by blast
+
+    have "\<langle>?ts ! p | ?ts ! q\<rangle>
+        = \<langle>tensor_vec (hs ! (p div m)) (ks ! (p mod m))
+           | tensor_vec (hs ! (q div m)) (ks ! (q mod m))\<rangle>"
+      using p_nth q_nth by simp
+    also have "... =
+        \<langle>hs ! (p div m) | hs ! (q div m)\<rangle> *
+        \<langle>ks ! (p mod m) | ks ! (q mod m)\<rangle>"
+      using hs_dim[OF pd] hs_dim[OF qd] ks_dim[OF pm] ks_dim[OF qm]
+      by (rule tensor_inner_prod)
+    also have "... =
+        (if p div m = q div m then 1 else 0) *
+        (if p mod m = q mod m then 1 else 0)"
+      using hs_ip[OF pd qd] ks_ip[OF pm qm] by simp
+    also have "... = (if p = q then 1 else 0)"
+      using p_lt' q_lt' ks_len
+      by (simp, metis div_mod_decomp)
+    finally show "\<langle>?ts ! p | ?ts ! q\<rangle> = (if p = q then 1 else 0)".
+  qed
+
+  show ?thesis
+    unfolding orthonormal_list_def
+    using ts_len ts_dim ts_ip
+    by (metis (lifting) in_set_conv_nth)
+qed
 
 (* --------------------------------------------------------------------------
    Postulates of Quantum Mechanics
@@ -4843,6 +5400,18 @@ lemma tensor_onb:
 
 definition quantum_state :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> bool" where
   "quantum_state n \<psi> \<equiv> dim_vec \<psi> = n \<and> \<parallel>\<psi>\<parallel> = 1"
+
+lemma quantum_state_norm1:
+  assumes "quantum_state n \<psi>"
+  shows "\<parallel>\<psi>\<parallel> = 1"
+  using assms
+  by (simp add: quantum_state_def)
+
+lemma quantum_state_dim:
+  assumes "quantum_state n \<psi>"
+  shows "dim_vec \<psi> = n"
+  using assms
+  by (simp add: quantum_state_def)
 
 (* Postulate 2: Time evolution of a closed system *)
 (* Evolution from t₁ to t₂ is described by a unitary U.
@@ -4862,7 +5431,7 @@ proof
     by (simp add: quantum_state_def)
   also have "\<parallel>\<psi>\<parallel> = 1"
     using assms(2) quantum_state_def by simp
-  finally show "\<parallel>U *\<^sub>v \<psi>\<parallel> = 1" .
+  finally show "\<parallel>U *\<^sub>v \<psi>\<parallel> = 1".
 qed
 
 (* Postulate 3: Quantum Measurements *)
@@ -4873,10 +5442,10 @@ qed
 definition measurement_system :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool" where
   "measurement_system n Ms \<equiv>
      (\<forall>M \<in> set Ms. M \<in> carrier_mat n n) \<and>
-     foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
+     foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
 
 definition meas_prob :: "complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> real" where
-  "meas_prob M \<psi> \<equiv> \<parallel>M *\<^sub>v \<psi>\<parallel>^2"
+  "meas_prob M \<psi> \<equiv> \<parallel>M *\<^sub>v \<psi>\<parallel>\<^sup>2"
 
 (* Probabilities sum to 1 *)
 
@@ -4896,10 +5465,127 @@ proof -
         cpx_vec_length_inner_prod dagger_of_dagger_is_id dim_mult_mat_vec dim_row_of_dagger 
         inner_prod_adjoint_swap meas_prob_def measurement_system_def ms psi_car psi_dim)
 
-  (* Step 2: sum over M and pull out, using \<Sum>M\<dagger>M = I *)
+(* Step 2: sum over M and pull out, using \<Sum>M\<dagger>M = I *)
   have sum_eq: "(\<Sum>M \<leftarrow> Ms. meas_prob M \<psi>) =
-                Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
-    sorry
+              Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+  proof -
+    have all_car: "\<And>M. M \<in> set Ms \<Longrightarrow> M \<in> carrier_mat n n"
+      using ms by (auto simp: measurement_system_def)
+    have fold_car:
+      "\<And>Ns. set Ns \<subseteq> set Ms \<Longrightarrow>
+        foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n) \<in> carrier_mat n n"
+    proof -
+      fix Ns
+      assume sub: "set Ns \<subseteq> set Ms"
+      show "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n) \<in> carrier_mat n n"
+        using sub
+      proof (induction Ns)
+        case Nil
+        show ?case by simp
+      next
+        case (Cons A As)
+        have Acar: "A \<in> carrier_mat n n"
+          using Cons.prems all_car by auto
+        have sub_As: "set As \<subseteq> set Ms"
+          using Cons.prems by auto
+        show ?case
+          using Cons.IH[OF sub_As] Acar by simp
+      qed
+    qed
+
+    have sum_eq_aux:
+      "\<And>Ns. set Ns \<subseteq> set Ms \<Longrightarrow>
+        (\<Sum>M \<leftarrow> Ns. meas_prob M \<psi>) =
+        Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+    proof -
+      fix Ns
+      assume sub: "set Ns \<subseteq> set Ms"
+      show "(\<Sum>M \<leftarrow> Ns. meas_prob M \<psi>) =
+        Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+        using sub
+      proof (induction Ns)
+        case Nil
+        have "(\<Sum>M\<leftarrow>[]. meas_prob M \<psi>) = 0"
+          by simp
+        also have "... = Re (\<langle>\<psi> | (0\<^sub>m n n) *\<^sub>v \<psi>\<rangle>)"
+          by (metis diff_self inner_prod_right_minus' minus_mult_distrib_mat_vec minus_r_inv_mat
+              one_carrier_mat psi_car zero_complex.simps(1))
+        finally show ?case
+          by simp
+      next
+        case (Cons M Ns)
+        have Mcar: "M \<in> carrier_mat n n"
+          using Cons.prems all_car by auto
+        have sub_Ns: "set Ns \<subseteq> set Ms"
+          using Cons.prems by auto
+        have IH:
+          "(\<Sum>Ma\<leftarrow>Ns. meas_prob Ma \<psi>) =
+           Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+          using Cons.IH[OF sub_Ns] .
+        have Mpsi_dim: "dim_vec (M *\<^sub>v \<psi>) = n"
+          using Mcar psi_dim by simp
+        have stepM: "meas_prob M \<psi> = Re (\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle>)"
+        proof -
+          have adj_eq: "\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle> = \<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle>"
+          proof -
+            have "\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle> = \<langle>\<psi> | (M\<^sup>\<dagger>) *\<^sub>v (M *\<^sub>v \<psi>)\<rangle>"
+              using Mcar psi_car
+              by (metis Mpsi_dim assoc_mult_mat_vec
+                  carrier_mat_triv dim_col_of_dagger dim_mult_mat_vec)
+            also have "... = \<langle>(M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle>"
+              using inner_prod_adjoint_swap[of "M\<^sup>\<dagger>" n n \<psi> "M *\<^sub>v \<psi>"] Mcar psi_dim Mpsi_dim by force
+            also have "... = \<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle>"
+              using dagger_of_dagger_is_id by presburger
+            finally show ?thesis .
+          qed
+          have "meas_prob M \<psi> = \<parallel>M *\<^sub>v \<psi>\<parallel>\<^sup>2"
+            by (simp add: meas_prob_def)
+          also have "... = Re (\<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle>)"
+            by (metis Re_complex_of_real cpx_vec_length_inner_prod)
+          also have "... = Re (\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle>)"
+            using adj_eq by simp
+          finally show ?thesis .
+        qed
+        have carr_fold:
+          "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n) \<in> carrier_mat n n"
+          using fold_car[OF sub_Ns] .
+        have add_inside:
+          "Re (\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle>) +
+           Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)
+           =
+           Re (\<langle>\<psi> | (((M\<^sup>\<dagger>) * M) +
+                     foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+        proof -
+          have "\<langle>\<psi> | ((((M\<^sup>\<dagger>) * M) +
+                     foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>)\<rangle>
+              = \<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle>
+                + \<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>"
+            using psi_dim Mcar carr_fold
+            by (metis (lifting) add_mult_distrib_mat_vec carrier_matD(1,2) carrier_mat_triv
+                dim_mult_mat_vec dim_row_of_dagger index_mult_mat(2,3) inner_prod_right_add' psi_car)
+          then show ?thesis
+            by simp
+        qed
+        have "(\<Sum>Ma\<leftarrow>M # Ns. meas_prob Ma \<psi>)
+            = meas_prob M \<psi> + (\<Sum>Ma\<leftarrow>Ns. meas_prob Ma \<psi>)"
+          by simp
+        also have "... =
+            Re (\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle>) +
+            Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+          using stepM IH by simp
+        also have "... =
+            Re (\<langle>\<psi> | ((((M\<^sup>\<dagger>) * M) +
+                     foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n)) *\<^sub>v \<psi>)\<rangle>)"
+          using add_inside by simp
+        also have "... =
+            Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (M # Ns) (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
+          by simp
+        finally show ?case .
+      qed
+    qed
+    show ?thesis
+      using sum_eq_aux[of Ms] by simp
+  qed
   (* Step 3: replace \<Sum>M\<dagger>M with I and use \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>² = 1 *)
   have id_eq: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
     using ms by (simp add: measurement_system_def)
@@ -4953,32 +5639,328 @@ qed
    Quantum Game: distinguishing non-orthogonal states
    -------------------------------------------------------------------------- *)
 
+lemma outer_proj_self:
+  assumes q: "quantum_state n \<psi>"
+  shows "outer_prod \<psi> \<psi> *\<^sub>v \<psi> = \<psi>"
+proof -
+  have \<psi>dim: "dim_vec \<psi> = n"
+    using q by (simp add: quantum_state_def)
+  have \<psi>norm: "\<langle>\<psi> | \<psi>\<rangle> = 1"
+    by (metis (no_types) csqrt_eq_1 inner_prod_csqrt of_real_1 q quantum_state_def)
+  show ?thesis
+  proof (rule eq_vecI)
+    show "dim_vec (outer_prod \<psi> \<psi> *\<^sub>v \<psi>) = dim_vec \<psi>"
+      by (simp add: outer_prod_mult_vec)
+
+  next
+    fix i
+    assume i: "i < dim_vec \<psi>"
+    then have ilt: "i < n"
+      using \<psi>dim by simp
+    have "(outer_prod \<psi> \<psi> *\<^sub>v \<psi>) $ i
+        = (\<Sum>j = 0..<n. (outer_prod \<psi> \<psi>) $$ (i,j) * \<psi> $ j)"
+      using \<psi>dim ilt
+      by (metis (no_types, lifting) bra_bra_vec carrier_mat_triv carrier_vec_dim_vec dagger_of_ket_is_bra dim_col_of_dagger
+          dim_row_mat(1) index_mult_mat(2,3) ket_vec_def mult_mat_vec_index sum.cong)
+    also have "... = (\<Sum>j = 0..<n. (\<psi> $ i * cnj (\<psi> $ j)) * \<psi> $ j)"
+      using \<psi>dim ilt
+      by (metis (no_types, lifting) ab_semigroup_mult_class.mult_ac(1) 
+          calculation inner_prod_def outer_prod_mult_vec_index sum.cong sum_distrib_left)
+    also have "... = (\<psi> $ i) * (\<Sum>j = 0..<n. cnj (\<psi> $ j) * \<psi> $ j)"
+      by (simp add: sum_distrib_left algebra_simps)
+    also have "... = (\<psi> $ i) * \<langle>\<psi> | \<psi>\<rangle>"
+      using \<psi>dim by (simp add: inner_prod_def)
+    also have "... = \<psi> $ i"
+      using \<psi>norm by simp
+    finally show "(outer_prod \<psi> \<psi> *\<^sub>v \<psi>) $ i = \<psi> $ i" .
+  qed
+qed
+
+lemma outer_proj_orth_zero:
+  assumes q1: "quantum_state n \<psi>1"
+      and q2: "quantum_state n \<psi>2"
+      and orth: "\<langle>\<psi>1 | \<psi>2\<rangle> = 0"
+  shows "outer_prod \<psi>1 \<psi>1 *\<^sub>v \<psi>2 = 0\<^sub>v n"
+proof -
+  have d1: "dim_vec \<psi>1 = n"
+    using q1 by (simp add: quantum_state_def)
+  have d2: "dim_vec \<psi>2 = n"
+    using q2 by (simp add: quantum_state_def)
+
+  show ?thesis
+  proof (rule eq_vecI)
+    show "dim_vec (outer_prod \<psi>1 \<psi>1 *\<^sub>v \<psi>2) = dim_vec (0\<^sub>v n)"
+      by (simp add: d1 d2 outer_prod_mult_vec)
+  next
+    fix i
+    assume i: "i < dim_vec (0\<^sub>v n)"
+    then have ilt: "i < n"
+      by simp
+    have "(outer_prod \<psi>1 \<psi>1 *\<^sub>v \<psi>2) $ i
+        = (\<Sum>j = 0..<n. (outer_prod \<psi>1 \<psi>1) $$ (i,j) * \<psi>2 $ j)"
+      using d1 d2 ilt
+      by (metis (no_types, lifting) bra_bra_vec carrier_mat_triv carrier_vec_dim_vec dagger_of_ket_is_bra dim_col_of_dagger
+          dim_row_mat(1) index_mult_mat(2,3) ket_vec_def mult_mat_vec_index sum.cong)
+    also have "... = (\<Sum>j = 0..<n. (\<psi>1 $ i * cnj (\<psi>1 $ j)) * \<psi>2 $ j)"
+      using d1 ilt
+      by (metis (no_types, lifting) ab_semigroup_mult_class.mult_ac(1) calculation d2 inner_prod_def
+          outer_prod_mult_vec_index sum.cong sum_distrib_left)
+    also have "... = (\<psi>1 $ i) * (\<Sum>j = 0..<n. cnj (\<psi>1 $ j) * \<psi>2 $ j)"
+      by (simp add: sum_distrib_left algebra_simps)
+    also have "... = (\<psi>1 $ i) * \<langle>\<psi>1 | \<psi>2\<rangle>"
+      using d1 d2 by (simp add: inner_prod_def)
+    also have "... = 0"
+      using orth by simp
+    also have "... = (0\<^sub>v n) $ i"
+      using ilt by simp
+    finally show "(outer_prod \<psi>1 \<psi>1 *\<^sub>v \<psi>2) $ i = (0\<^sub>v n) $ i" .
+  qed
+qed
+
+lemma outer_proj_idem:
+  assumes q: "quantum_state n \<psi>"
+  shows "(outer_prod \<psi> \<psi>) * (outer_prod \<psi> \<psi>) = outer_prod \<psi> \<psi>"
+proof -
+  have \<psi>dim: "dim_vec \<psi> = n"
+    using q by (simp add: quantum_state_def)
+  have \<psi>norm: "\<langle>\<psi> | \<psi>\<rangle> = 1"
+    by (metis (full_types) csqrt_eq_1 inner_prod_csqrt of_real_1 q quantum_state_def)
+  show ?thesis
+  proof (rule eq_matI)
+    show "dim_row ((outer_prod \<psi> \<psi>) * (outer_prod \<psi> \<psi>)) = dim_row (outer_prod \<psi> \<psi>)"
+      using \<psi>dim by simp
+    show "dim_col ((outer_prod \<psi> \<psi>) * (outer_prod \<psi> \<psi>)) = dim_col (outer_prod \<psi> \<psi>)"
+      using \<psi>dim by simp
+  next
+    fix r c
+    assume r: "r < dim_row (outer_prod \<psi> \<psi>)"
+    assume c: "c < dim_col (outer_prod \<psi> \<psi>)"
+    then have rlt: "r < n" and clt: "c < n"
+      by (metis \<psi>dim dim_col index_mult_mat(2) ket_vec_col r,
+          metis \<psi>dim c dim_vec index_mult_mat(3) index_row(2) row_bra_vec)
+    have "((outer_prod \<psi> \<psi>) * (outer_prod \<psi> \<psi>)) $$ (r,c)
+      = (\<Sum>j = 0..<n. (outer_prod \<psi> \<psi>) $$ (r,j) * (outer_prod \<psi> \<psi>) $$ (j,c))"
+      by (metis (no_types, lifting) ext \<psi>dim atLeast0LessThan bra_bra_vec clt dagger_of_ket_is_bra 
+          dim_col dim_col_of_dagger index_matrix_prod index_mult_mat(2,3) ket_vec_col rlt)  
+    also have "... = (\<Sum>j = 0..<n. (\<psi> $ r * cnj (\<psi> $ j)) * (\<psi> $ j * cnj (\<psi> $ c)))"
+      sorry
+
+    also have "... = (\<psi> $ r) * (\<Sum>j = 0..<n. cnj (\<psi> $ j) * \<psi> $ j) * cnj (\<psi> $ c)"
+      by (simp add: sum_distrib_left sum_distrib_right algebra_simps)
+    also have "... = (\<psi> $ r) * \<langle>\<psi> | \<psi>\<rangle> * cnj (\<psi> $ c)"
+      using \<psi>dim by (simp add: inner_prod_def)
+    also have "... = \<psi> $ r * cnj (\<psi> $ c)"
+      using \<psi>norm by simp
+    also have "... = (outer_prod \<psi> \<psi>) $$ (r,c)"
+      using \<psi>dim rlt clt outer_prod_index by presburger
+    finally show "((outer_prod \<psi> \<psi>) * (outer_prod \<psi> \<psi>)) $$ (r,c) = (outer_prod \<psi> \<psi>) $$ (r,c)".
+  qed
+qed
+
+lemma outer_proj_hermitian:
+  assumes "dim_vec \<psi> = n"
+  shows "(outer_prod \<psi> \<psi>)\<^sup>\<dagger> = outer_prod \<psi> \<psi>"
+proof (rule eq_matI)
+  show "dim_row ((outer_prod \<psi> \<psi>)\<^sup>\<dagger>) = dim_row (outer_prod \<psi> \<psi>)"
+    by (metis (no_types) bra_bra_vec bra_def dim_col_mat(1) dim_row_of_dagger index_mult_mat(2,3))
+  show "dim_col ((outer_prod \<psi> \<psi>)\<^sup>\<dagger>) = dim_col (outer_prod \<psi> \<psi>)"
+    by (simp add: bra_vec_def cpx_mat_cnj_def ket_vec_def row_vec_def)
+next
+  fix i j
+  assume i: "i < dim_row (outer_prod \<psi> \<psi>)"
+  assume j: "j < dim_col (outer_prod \<psi> \<psi>)"
+  then have ilt: "i < n" and jlt: "j < n"
+    using assms i ket_vec_def  
+    by (auto, metis bra_bra_vec dagger_of_ket_is_bra dim_col_of_dagger dim_row_mat(1))
+  have "((outer_prod \<psi> \<psi>)\<^sup>\<dagger>) $$ (i,j) = cnj ((outer_prod \<psi> \<psi>) $$ (j,i))"
+    using assms ilt jlt
+    by (simp add: bra_vec_def cpx_mat_cnj_def dagger_def ket_vec_def row_vec_def)
+  also have "... = cnj (\<psi> $ j * cnj (\<psi> $ i))"
+    using assms ilt jlt outer_prod_index by presburger
+  also have "... = \<psi> $ i * cnj (\<psi> $ j)"
+    by simp
+  also have "... = (outer_prod \<psi> \<psi>) $$ (i,j)"
+    using assms ilt jlt outer_prod_index by presburger
+  finally show "((outer_prod \<psi> \<psi>)\<^sup>\<dagger>) $$ (i,j) = (outer_prod \<psi> \<psi>) $$ (i,j)".
+qed
+
+lemma outer_proj_cross_zero:
+  assumes q1: "quantum_state n \<psi>1"
+      and q2: "quantum_state n \<psi>2"
+      and orth: "\<langle>\<psi>1 | \<psi>2\<rangle> = 0"
+  shows "(outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2) = 0\<^sub>m n n"
+proof -
+  have d1: "dim_vec \<psi>1 = n"
+    using q1 by (simp add: quantum_state_def)
+  have d2: "dim_vec \<psi>2 = n"
+    using q2 by (simp add: quantum_state_def)
+  show ?thesis
+  proof (rule eq_matI)
+    show "dim_row ((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) = dim_row (0\<^sub>m n n)"
+      by (simp add: d1 ket_vec_def)
+    show "dim_col ((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) = dim_col (0\<^sub>m n n)"
+      by (simp add: bra_vec_def cpx_mat_cnj_def d2 row_vec_def)
+  next
+    fix r c
+    assume r: "r < dim_row (0\<^sub>m n n)"
+    assume c: "c < dim_col (0\<^sub>m n n)"
+    then have rlt: "r < n" and clt: "c < n"
+      using r by auto
+    have "((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) $$ (r,c)
+        = (\<Sum>j = 0..<n. (outer_prod \<psi>1 \<psi>1) $$ (r,j) * (outer_prod \<psi>2 \<psi>2) $$ (j,c))"
+      using d1 d2 rlt clt
+      by (metis (no_types, lifting) ext atLeast0LessThan bra_bra_vec dagger_of_ket_is_bra dim_col 
+          dim_col_of_dagger index_matrix_prod index_mult_mat(2,3) ket_vec_col)
+    also have "... = (\<Sum>j = 0..<n. (\<psi>1 $ r * cnj (\<psi>1 $ j)) * (\<psi>2 $ j * cnj (\<psi>2 $ c)))"
+      using d1 d2 rlt clt sorry
+    also have "... = (\<psi>1 $ r) * (\<Sum>j = 0..<n. cnj (\<psi>1 $ j) * \<psi>2 $ j) * cnj (\<psi>2 $ c)"
+      by (simp add: sum_distrib_left sum_distrib_right algebra_simps)
+    also have "... = (\<psi>1 $ r) * \<langle>\<psi>1 | \<psi>2\<rangle> * cnj (\<psi>2 $ c)"
+      using d1 d2 by (simp add: inner_prod_def)
+    also have "... = 0"
+      using orth by simp
+    also have "... = (0\<^sub>m n n) $$ (r,c)"
+      using rlt clt by simp
+    finally show "((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) $$ (r,c) = (0\<^sub>m n n) $$ (r,c)".
+  qed
+qed
+
 (* Case I: orthogonal states can be distinguished perfectly *)
 
 lemma orthogonal_states_distinguishable:
   fixes \<psi>1 \<psi>2 :: "complex Matrix.vec"
-  assumes "quantum_state n \<psi>1" and "quantum_state n \<psi>2"
+  assumes q1: "quantum_state n \<psi>1"
+      and q2: "quantum_state n \<psi>2"
       and orth: "\<langle>\<psi>1 | \<psi>2\<rangle> = 0"
   shows "\<exists>Ms :: complex Matrix.mat list.
          measurement_system n Ms \<and>
          (\<exists>M1 M2. M1 \<in> set Ms \<and> M2 \<in> set Ms \<and>
             meas_prob M1 \<psi>1 = 1 \<and> meas_prob M2 \<psi>1 = 0 \<and>
             meas_prob M1 \<psi>2 = 0 \<and> meas_prob M2 \<psi>2 = 1)"
-  sorry
+proof -
+  have \<psi>1dim: "dim_vec \<psi>1 = n"
+    using q1 by (simp add: quantum_state_def)
+  have \<psi>2dim: "dim_vec \<psi>2 = n"
+    using q2 by (simp add: quantum_state_def)
+  let ?P1 = "outer_prod \<psi>1 \<psi>1"
+  let ?P2 = "outer_prod \<psi>2 \<psi>2"
+  let ?R  = "1\<^sub>m n - ?P1 - ?P2"
+  let ?Ms = "[?P1, ?P2, ?R]"
+  have P1car: "?P1 \<in> carrier_mat n n"
+    by (metis \<psi>1dim carrier_mat_triv dim_mult_mat_vec 
+        dim_row_of_dagger outer_proj_hermitian outer_proj_self q1)
+  have P2car: "?P2 \<in> carrier_mat n n"
+    by (metis \<psi>2dim carrier_mat_triv dim_mult_mat_vec 
+        dim_row_of_dagger outer_proj_hermitian outer_proj_self q2)
+  have Rcar: "?R \<in> carrier_mat n n"
+    by (simp add: P2car minus_carrier_mat)
+  have P1herm: "?P1\<^sup>\<dagger> = ?P1"
+    using outer_proj_hermitian[OF \<psi>1dim].
+  have P2herm: "?P2\<^sup>\<dagger> = ?P2"
+    using outer_proj_hermitian[OF \<psi>2dim].
+  have P1idem: "?P1 * ?P1 = ?P1"
+    using outer_proj_idem[OF q1].
+  have P2idem: "?P2 * ?P2 = ?P2"
+    using outer_proj_idem[OF q2].
+  have cross12: "?P1 * ?P2 = 0\<^sub>m n n"
+    using outer_proj_cross_zero[OF q1 q2 orth].
+  have cross21: "?P2 * ?P1 = 0\<^sub>m n n"
+    using outer_proj_cross_zero[OF q2 q1] orth \<psi>1dim \<psi>2dim complex_cnj_zero inner_prod_cnj 
+    by presburger
+  have Riderm: "?R * ?R = ?R"
+  proof -
+    have R_expand:
+      "?R * ?R = (1\<^sub>m n - ?P1 - ?P2) * (1\<^sub>m n - ?P1 - ?P2)"
+      by simp         
+    also have "... =
+        ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1 - ?P1 * (1\<^sub>m n) + ?P1 * ?P1)
+        - ((1\<^sub>m n) * ?P2 - ?P1 * ?P2)
+        - (?P2 * (1\<^sub>m n) - ?P2 * ?P1)
+        + (?P2 * ?P2)"
+      using P1car P2car
+      sorry 
+    also have "... =
+        (1\<^sub>m n - ?P1 - ?P1 + ?P1)
+        - (?P2 - 0\<^sub>m n n)
+        - (?P2 - 0\<^sub>m n n)
+        + ?P2"
+      using P1car P2car P1idem P2idem cross12 cross21
+      by (simp add: left_mult_one_mat right_mult_one_mat)  
+    also have "... = ?R"
+      sorry 
+    finally show ?thesis
+      using
+        \<open>(1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>2 \<circledcirc> \<psi>2) * (1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>2 \<circledcirc> \<psi>2) = 1\<^sub>m n * 1\<^sub>m n - 1\<^sub>m n * \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 * 1\<^sub>m n + \<psi>1 \<circledcirc> \<psi>1 * \<psi>1 \<circledcirc> \<psi>1 - (1\<^sub>m n * \<psi>2 \<circledcirc> \<psi>2 - \<psi>1 \<circledcirc> \<psi>1 * \<psi>2 \<circledcirc> \<psi>2) - (\<psi>2 \<circledcirc> \<psi>2 * 1\<^sub>m n - \<psi>2 \<circledcirc> \<psi>2 * \<psi>1 \<circledcirc> \<psi>1) + \<psi>2 \<circledcirc> \<psi>2 * \<psi>2 \<circledcirc> \<psi>2\<close>
+        \<open>1\<^sub>m n * 1\<^sub>m n - 1\<^sub>m n * \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 * 1\<^sub>m n + \<psi>1 \<circledcirc> \<psi>1 * \<psi>1 \<circledcirc> \<psi>1 - (1\<^sub>m n * \<psi>2 \<circledcirc> \<psi>2 - \<psi>1 \<circledcirc> \<psi>1 * \<psi>2 \<circledcirc> \<psi>2) - (\<psi>2 \<circledcirc> \<psi>2 * 1\<^sub>m n - \<psi>2 \<circledcirc> \<psi>2 * \<psi>1 \<circledcirc> \<psi>1) + \<psi>2 \<circledcirc> \<psi>2 * \<psi>2 \<circledcirc> \<psi>2 = 1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 + \<psi>1 \<circledcirc> \<psi>1 - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) + \<psi>2 \<circledcirc> \<psi>2\<close>
+        \<open>1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>1 \<circledcirc> \<psi>1 + \<psi>1 \<circledcirc> \<psi>1 - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) - (\<psi>2 \<circledcirc> \<psi>2 - 0\<^sub>m n n) + \<psi>2 \<circledcirc> \<psi>2 = 1\<^sub>m n - \<psi>1 \<circledcirc> \<psi>1 - \<psi>2 \<circledcirc> \<psi>2\<close>
+      by argo
+
+  qed
+  have Rherm: "?R\<^sup>\<dagger> = ?R"
+    sorry
+  have meas: "measurement_system n ?Ms"
+  proof -
+    have cars: "\<forall>M \<in> set ?Ms. M \<in> carrier_mat n n"
+      using P1car P2car Rcar by simp
+    have compl: "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) ?Ms (0\<^sub>m n n) = 1\<^sub>m n"
+    proof -
+      have "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) ?Ms (0\<^sub>m n n)
+          = ?P1\<^sup>\<dagger> * ?P1 + (?P2\<^sup>\<dagger> * ?P2 + (?R\<^sup>\<dagger> * ?R + 0\<^sub>m n n))"
+        by simp
+      also have "... = ?P1 + (?P2 + (?R + 0\<^sub>m n n))"
+        using P1idem P2idem Riderm P1herm P2herm Rherm by simp
+      also have "... = ?P1 + ?P2 + ?R"
+        using P1car P2car Rcar by simp
+      also have "... = 1\<^sub>m n"
+        sorry
+      finally show ?thesis.
+    qed
+    show ?thesis
+      unfolding measurement_system_def
+      using cars compl by blast
+  qed
+
+  have P1_\<psi>1: "?P1 *\<^sub>v \<psi>1 = \<psi>1"
+    using outer_proj_self[OF q1] .
+  have P1_\<psi>2: "?P1 *\<^sub>v \<psi>2 = 0\<^sub>v n"
+    using outer_proj_orth_zero[OF q1 q2 orth] .
+
+  have P2_\<psi>2: "?P2 *\<^sub>v \<psi>2 = \<psi>2"
+    using outer_proj_self[OF q2] .
+  have P2_\<psi>1: "?P2 *\<^sub>v \<psi>1 = 0\<^sub>v n"
+    using outer_proj_orth_zero[OF q2 q1] orth
+    using \<psi>1dim \<psi>2dim complex_cnj_zero inner_prod_cnj by presburger
+
+
+  have prob_P1_\<psi>1: "meas_prob ?P1 \<psi>1 = 1"
+    using q1 P1_\<psi>1
+    by (simp add: meas_prob_def quantum_state_def)
+  have prob_P2_\<psi>1: "meas_prob ?P2 \<psi>1 = 0"
+    using P2_\<psi>1 \<psi>1dim
+    by (simp add: cpx_vec_length_zero_iff meas_prob_def)
+  have prob_P1_\<psi>2: "meas_prob ?P1 \<psi>2 = 0"
+    using P2_\<psi>1 P1_\<psi>2 \<psi>2dim meas_prob_def prob_P2_\<psi>1 by presburger
+  have prob_P2_\<psi>2: "meas_prob ?P2 \<psi>2 = 1"
+    using q2 P2_\<psi>2 by (simp add: meas_prob_def quantum_state_def)
+  show ?thesis
+    by (intro exI[of _ ?Ms], use meas prob_P1_\<psi>1 prob_P2_\<psi>1 prob_P1_\<psi>2 prob_P2_\<psi>2 in auto)
+qed
 (* Construction: M₁ = |\<psi>₁\<rangle>\<langle>\<psi>₁|, M₂ = |\<psi>₂\<rangle>\<langle>\<psi>₂|,
    M₃ = I - M₁ - M₂ (projection onto {\<psi>₁,\<psi>₂}^\<bottom>). *)
 
 (* Theorem: linearly independent states can be identified (but not perfectly distinguished) *)
 
-theorem linearly_independent_states_measurable:
+theorem linearly_independent_states_unambiguously_measurable:
   fixes \<psi>s :: "complex Matrix.vec list"
-  assumes "\<forall>\<psi> \<in> set \<psi>s. quantum_state n \<psi>"
-      and lin_indep: True  (* placeholder for linear independence *)
-      and k_lt: "length \<psi>s = k" and "k \<le> n"
+  assumes qstates: "\<forall>\<psi> \<in> set \<psi>s. quantum_state n \<psi>"
+      and lin_indep: "lin_indpt (set \<psi>s)"
+      and len: "length \<psi>s = k"
+      and kle: "k \<le> n"
   shows "\<exists>Ms :: complex Matrix.mat list.
          measurement_system n Ms \<and>
-         (\<forall>i < k. \<forall>j < k. i \<noteq> j \<longrightarrow>
-            meas_prob (Ms ! i) (\<psi>s ! j) = 0)"
+         length Ms = k + 1 \<and>
+         (\<forall>i < k. \<forall>j < k. i \<noteq> j \<longrightarrow> meas_prob (Ms ! i) (\<psi>s ! j) = 0) \<and>
+         (\<forall>i < k. 0 < meas_prob (Ms ! i) (\<psi>s ! i))"
   sorry  (* Gram-Schmidt to get dual basis \<phi>i with \<langle>\<phi>i|\<psi>j\<rangle> = \<delta>ij,
             then Mi = |\<phi>i\<rangle>\<langle>\<phi>i| (plus completion). *)
 
@@ -5058,7 +6040,7 @@ proof -
   qed
   (* The sum equals I by definition of measurement_system. *)
   have "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n)  = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)"
-    sorry
+    by (induction Ms) simp_all
   also have "... = 1\<^sub>m n"
     using ms by (simp add: measurement_system_def)
   finally have id_sum: "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n) = 1\<^sub>m n" .
@@ -6637,19 +7619,57 @@ next
 qed
 
 lemma hamming_dist_zero:
-  assumes "length v = n" "length w = n"
+  assumes lenv: "length v = n"
+      and lenw: "length w = n"
+      and bits_v: "\<forall>x\<in>set v. x < 2"
+      and bits_w: "\<forall>x\<in>set w. x < 2"
   shows "hamming_dist v w = 0 \<longleftrightarrow> v = w"
-  using assms
+  using lenv lenw bits_v bits_w
 proof (induction v arbitrary: w n)
   case Nil
-  then show ?case by (cases w) (simp_all add: hamming_dist_def hamming_weight_def)
+  then have "w = []"
+    by (cases w, auto)
+  then show ?case
+    by (simp add: hamming_dist_def hamming_weight_def)
 next
   case (Cons a v)
-  then obtain b ws where w: "w = b # ws" by (cases w) auto
-  (* hamming_dist (a#v) (b#ws) = 0 iff (a+b) mod 2 = 0 (i.e. a = b for bits) AND
-     hamming_dist v ws = 0 (by IH).  But for arbitrary nat we'd also need a, b < 2;
-     this lemma is intended for binary lists. *)
-  show ?case sorry
+  then obtain b ws where w: "w = b # ws"
+    by (cases w) auto
+
+  have bits_a: "a < 2"
+    using Cons.prems by simp
+  have bits_b: "b < 2"
+    using Cons.prems w by simp
+
+  have bits_v': "\<forall>x\<in>set v. x < 2"
+    using Cons.prems by simp
+  have bits_ws: "\<forall>x\<in>set ws. x < 2"
+    using Cons.prems w by simp
+
+  have len_ws: "length ws = n"
+    sorry
+
+  have bit_eq_iff_mod:
+  "((a + b) mod 2 = 0) \<longleftrightarrow> a = b"
+  proof
+    assume h: "(a + b) mod 2 = 0"
+    from bits_a bits_b have "a = 0 \<or> a = 1"
+      by arith
+    moreover from bits_a bits_b have "b = 0 \<or> b = 1"
+      by arith
+    ultimately show "a = b"
+      using h by auto
+  next
+    assume "a = b"
+    then show "(a + b) mod 2 = 0"
+      using bits_a by auto
+  qed
+  have tail_ih: "hamming_dist v ws = 0 \<longleftrightarrow> v = ws"
+    using Cons.prems(2) len_ws w by auto
+  show ?case
+    unfolding w
+    by (simp add: hamming_dist_def hamming_weight_def bit_eq_iff_mod tail_ih,
+        metis Cons.prems(2) impossible_Cons len_ws nat_le_linear w)
 qed
 
 (* The minimum distance of a code S \<subseteq> {0,1}^n is
@@ -6842,6 +7862,280 @@ qed
 (* Proposition: If U \<in> M_2 is unitary and U = a₀I + a₁X + a₂Y + a₃Z,
    then |a₀|² + |a₁|² + |a₂|² + |a₃|² = 1. *)
 
+definition pauli_combo :: "complex \<Rightarrow> complex \<Rightarrow> complex \<Rightarrow> complex \<Rightarrow> complex Matrix.mat" where
+  "pauli_combo a0 a1 a2 a3 =
+     a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m pauli_X + a2 \<cdot>\<^sub>m pauli_Y + a3 \<cdot>\<^sub>m pauli_Z"
+
+proposition unitary_pauli_expansion:
+  fixes a0 a1 a2 a3 :: complex
+  defines "U \<equiv> pauli_combo a0 a1 a2 a3"
+  assumes "unitary U"
+  shows "U\<^sup>\<dagger> * U = 1\<^sub>m 2"
+  by (metis U_def assms(2) index_add_mat(3) index_smult_mat(3) 
+      pauli_Z_dagger pauli_Z_squared pauli_Z_unitary pauli_combo_def unitary_def)
+
+proposition su2_pauli_expansion_unitary:
+  fixes a0 a1 a2 a3 :: real
+  defines "U \<equiv> complex_of_real a0 \<cdot>\<^sub>m 1\<^sub>m 2
+            + (\<i> * complex_of_real a1) \<cdot>\<^sub>m pauli_X
+            + (\<i> * complex_of_real a2) \<cdot>\<^sub>m pauli_Y
+            + (\<i> * complex_of_real a3) \<cdot>\<^sub>m pauli_Z"
+  shows "unitary U \<longleftrightarrow> a0\<^sup>2 + a1\<^sup>2 + a2\<^sup>2 + a3\<^sup>2 = 1"
+proof -
+  let ?I = "1\<^sub>m 2"
+  let ?x = "pauli_X"
+  let ?y = "pauli_Y"
+  let ?z = "pauli_Z"
+  have Ucar: "U \<in> carrier_mat 2 2"
+    unfolding U_def by simp
+  have Xcar: "?x \<in> carrier_mat 2 2" by simp
+  have Ycar: "?y \<in> carrier_mat 2 2" by simp
+  have Zcar: "?z \<in> carrier_mat 2 2" by simp
+  have Xh: "?x\<^sup>\<dagger> = ?x"
+    by (simp add: pauli_X_dagger)
+  have Yh: "?y\<^sup>\<dagger> = ?y"
+    by (simp add: pauli_Y_dagger)
+  have Zh: "?z\<^sup>\<dagger> = ?z"
+    by (simp add: pauli_Z_dagger)
+  have X2: "?x * ?x = ?I"
+    using pauli_X_squared by fastforce
+  have Y2: "?y * ?y = ?I"
+    using pauli_Y_squared by fastforce
+  have Z2: "?z * ?z = ?I"
+    using pauli_Z_squared by fastforce
+  have XY: "?x * ?y + ?y * ?x = 0\<^sub>m 2 2"
+  proof (rule eq_matI)
+    show "dim_row (?x * ?y + ?y * ?x) = dim_row (0\<^sub>m 2 2)"
+      by (simp add: pauli_Y_def)
+    show "dim_col (?x * ?y + ?y * ?x) = dim_col (0\<^sub>m 2 2)"
+      by (simp add: pauli_X_def)
+  next
+    fix r c
+    assume r: "r < dim_row (0\<^sub>m 2 2)"
+    assume c: "c < dim_col (0\<^sub>m 2 2)"
+    hence r2: "r < 2" and c2: "c < 2"
+      using r by auto
+    have "((?x * ?y + ?y * ?x) $$ (r,c))
+        = ((?x * ?y) $$ (r,c)) + ((?y * ?x) $$ (r,c))"
+      by (metis Yh c2 dim_row_of_dagger index_add_mat(1) index_mult_mat(2,3) 
+          index_one_mat(3) pauli_X_squared pauli_Y_squared r2)     
+    also have "... = (\<Sum>k = 0..<2. ?x $$ (r,k) * ?y $$ (k,c))
+                   + (\<Sum>k = 0..<2. ?y $$ (r,k) * ?x $$ (k,c))"
+      using r2 c2  by (simp add: pauli_X_def pauli_Y_def sumof2)
+    also have "... = 0"
+      using r2 c2 by (cases r; cases c, simp_all add: pauli_X_def pauli_Y_def)
+    also have "... = (0\<^sub>m 2 2) $$ (r,c)"
+      using r2 c2 by simp
+    finally show "(?x * ?y + ?y * ?x) $$ (r,c) = (0\<^sub>m 2 2) $$ (r,c)".
+  qed
+  have XZ: "?x * ?z + ?z * ?x = 0\<^sub>m 2 2"
+  proof (rule eq_matI)
+    show "dim_row (?x * ?z + ?z * ?x) = dim_row (0\<^sub>m 2 2)"
+      by (simp add: pauli_Z_def)
+    show "dim_col (?x * ?z + ?z * ?x) = dim_col (0\<^sub>m 2 2)"
+      by (simp add: pauli_X_def)
+  next
+    fix r c
+    assume r: "r < dim_row (0\<^sub>m 2 2)"
+    assume c: "c < dim_col (0\<^sub>m 2 2)"
+    hence r2: "r < 2" and c2: "c < 2"
+      using r by auto
+    have "((?x * ?z + ?z * ?x) $$ (r,c))
+        = ((?x * ?z) $$ (r,c)) + ((?z * ?x) $$ (r,c))"
+      by (metis Zh c2 dim_row_of_dagger index_add_mat(1) index_mult_mat(2,3)
+          index_one_mat(3) pauli_X_squared pauli_Z_squared r2)
+    also have "... = (\<Sum>k = 0..<2. ?x $$ (r,k) * ?z $$ (k,c))
+                   + (\<Sum>k = 0..<2. ?z $$ (r,k) * ?x $$ (k,c))"
+      using r2 c2 by (simp add: pauli_X_def pauli_Z_def sumof2)
+    also have "... = 0"
+      using r2 c2 by (cases r; cases c, simp_all add: pauli_X_def pauli_Z_def)
+    also have "... = (0\<^sub>m 2 2) $$ (r,c)"
+      using r2 c2 by simp
+    finally show "(?x * ?z + ?z * ?x) $$ (r,c) = (0\<^sub>m 2 2) $$ (r,c)" .
+  qed
+  have YZ: "?y * ?z + ?z * ?y = 0\<^sub>m 2 2"
+  proof (rule eq_matI)
+    show "dim_row (?y * ?z + ?z * ?y) = dim_row (0\<^sub>m 2 2)"
+      by (simp add: pauli_Z_def)
+    show "dim_col (?y * ?z + ?z * ?y) = dim_col (0\<^sub>m 2 2)"
+      by (simp add: pauli_Y_def)
+  next
+    fix r c
+    assume r: "r < dim_row (0\<^sub>m 2 2)"
+    assume c: "c < dim_col (0\<^sub>m 2 2)"
+    hence r2: "r < 2" and c2: "c < 2"
+      using r by auto
+    have "((?y * ?z + ?z * ?y) $$ (r,c))
+        = ((?y * ?z) $$ (r,c)) + ((?z * ?y) $$ (r,c))"
+      by (metis Zh c2 dim_row_of_dagger index_add_mat(1) index_mult_mat(2,3)
+          index_one_mat(3) pauli_Y_squared pauli_Z_squared r2)
+    also have "... = (\<Sum>k = 0..<2. ?y $$ (r,k) * ?z $$ (k,c))
+                   + (\<Sum>k = 0..<2. ?z $$ (r,k) * ?y $$ (k,c))"
+      using r2 c2 by (simp add: pauli_Y_def pauli_Z_def sumof2)
+    also have "... = 0"
+      using r2 c2 by (cases r; cases c, simp_all add: pauli_Y_def pauli_Z_def)
+    also have "... = (0\<^sub>m 2 2) $$ (r,c)"
+      using r2 c2 by simp
+    finally show "(?y * ?z + ?z * ?y) $$ (r,c) = (0\<^sub>m 2 2) $$ (r,c)" .
+  qed
+  have Udag:
+  "U\<^sup>\<dagger> =
+    (complex_of_real a0) \<cdot>\<^sub>m ?I
+    - ((\<i> * complex_of_real a1) \<cdot>\<^sub>m ?x)
+    - ((\<i> * complex_of_real a2) \<cdot>\<^sub>m ?y)
+    - ((\<i> * complex_of_real a3) \<cdot>\<^sub>m ?z)"
+  proof -
+    have "U\<^sup>\<dagger> =
+      (((complex_of_real a0) \<cdot>\<^sub>m ?I)
+        + ((\<i> * complex_of_real a1) \<cdot>\<^sub>m ?x)
+        + ((\<i> * complex_of_real a2) \<cdot>\<^sub>m ?y)
+        + ((\<i> * complex_of_real a3) \<cdot>\<^sub>m ?z))\<^sup>\<dagger>"
+      unfolding U_def by simp
+    also have "... =
+      ((((complex_of_real a0) \<cdot>\<^sub>m ?I)
+        + ((\<i> * complex_of_real a1) \<cdot>\<^sub>m ?x)
+        + ((\<i> * complex_of_real a2) \<cdot>\<^sub>m ?y))\<^sup>\<dagger>)
+      + ((((\<i> * complex_of_real a3) \<cdot>\<^sub>m ?z))\<^sup>\<dagger>)"
+      sorry
+    also have "... =
+      (((((complex_of_real a0) \<cdot>\<^sub>m ?I)
+        + ((\<i> * complex_of_real a1) \<cdot>\<^sub>m ?x))\<^sup>\<dagger>)
+      + ((((\<i> * complex_of_real a2) \<cdot>\<^sub>m ?y))\<^sup>\<dagger>))
+      + ((((\<i> * complex_of_real a3) \<cdot>\<^sub>m ?z))\<^sup>\<dagger>)"
+      sorry
+    also have "... =
+      ((((((complex_of_real a0) \<cdot>\<^sub>m ?I))\<^sup>\<dagger>)
+      + ((((\<i> * complex_of_real a1) \<cdot>\<^sub>m ?x))\<^sup>\<dagger>))
+      + ((((\<i> * complex_of_real a2) \<cdot>\<^sub>m ?y))\<^sup>\<dagger>))
+      + ((((\<i> * complex_of_real a3) \<cdot>\<^sub>m ?z))\<^sup>\<dagger>)"
+      sorry
+    also have "... =
+      (cnj (complex_of_real a0)) \<cdot>\<^sub>m (?I\<^sup>\<dagger>)
+      + (cnj (\<i> * complex_of_real a1)) \<cdot>\<^sub>m (?x\<^sup>\<dagger>)
+      + (cnj (\<i> * complex_of_real a2)) \<cdot>\<^sub>m (?y\<^sup>\<dagger>)
+      + (cnj (\<i> * complex_of_real a3)) \<cdot>\<^sub>m (?z\<^sup>\<dagger>)"
+      sorry
+    also have "... =
+      (complex_of_real a0) \<cdot>\<^sub>m ?I
+      + (-(\<i> * complex_of_real a1)) \<cdot>\<^sub>m ?x
+      + (-(\<i> * complex_of_real a2)) \<cdot>\<^sub>m ?y
+      + (-(\<i> * complex_of_real a3)) \<cdot>\<^sub>m ?z"
+      using Xh Yh Zh
+      by simp
+    also have "... =
+      (complex_of_real a0) \<cdot>\<^sub>m ?I
+      - ((\<i> * complex_of_real a1) \<cdot>\<^sub>m ?x)
+      - ((\<i> * complex_of_real a2) \<cdot>\<^sub>m ?y)
+      - ((\<i> * complex_of_real a3) \<cdot>\<^sub>m ?z)"
+      sorry
+    finally show ?thesis.
+  qed
+
+
+  have UU: "U\<^sup>\<dagger> * U = complex_of_real (a0\<^sup>2 + a1\<^sup>2 + a2\<^sup>2 + a3\<^sup>2) \<cdot>\<^sub>m ?I"
+  unfolding Udag U_def sorry
+
+
+  have unitary_iff:  "unitary U \<longleftrightarrow> (U\<^sup>\<dagger>) * U = ?I"
+    using Ucar unfolding unitary_def
+    by (metis carrier_matD(1,2) carrier_mat_triv 
+        dim_col_of_dagger dim_row_of_dagger mat_mult_left_right_inverse) 
+
+  show ?thesis
+  proof
+    assume "unitary U"
+    hence "U\<^sup>\<dagger> * U = ?I"
+      using unitary_iff by simp
+    with UU show "a0\<^sup>2 + a1\<^sup>2 + a2\<^sup>2 + a3\<^sup>2 = 1"
+      sorry
+  next
+    assume h: "a0\<^sup>2 + a1\<^sup>2 + a2\<^sup>2 + a3\<^sup>2 = 1"
+    have "U\<^sup>\<dagger> * U = ?I"
+      using UU h by fastforce
+    thus "unitary U"
+      using unitary_iff by simp
+  qed
+qed
+
+lemma unitary_smult_mat_iff:
+  assumes Ucar: "U \<in> carrier_mat 2 2"
+  shows "unitary (\<gamma> \<cdot>\<^sub>m U) \<longleftrightarrow> (cmod \<gamma> = 1 \<and> unitary U)"
+proof 
+  assume h: "unitary (\<gamma> \<cdot>\<^sub>m U)"
+  have gcar: "\<gamma> \<cdot>\<^sub>m U \<in> carrier_mat 2 2"
+    using Ucar by simp
+
+  have unit_eq:
+    "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = 1\<^sub>m 2"
+    using h gcar
+    unfolding unitary_def
+    by force
+
+  have expand:
+  "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = (cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U)"
+  proof -
+    have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>)) * (\<gamma> \<cdot>\<^sub>m U)"
+
+    also have "... = (cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U)"
+      using Ucar
+      by (simp add: smult_mult_mat_assoc algebra_simps)
+    finally show ?thesis .
+  qed
+
+
+    have "(cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U) = 1\<^sub>m 2"
+    using unit_eq expand by simp
+
+  then have gamma_norm_sq: "cnj \<gamma> * \<gamma> = 1"
+    using Ucar
+    by (metis carrier_matD(1) carrier_matD(2) index_one_mat(1) index_smult_mat(1)
+        mult.right_neutral one_carrier_mat)
+
+  hence gamma_mod: "cmod \<gamma> = 1"
+    by (simp add: norm_square)
+
+  have Uunit: "unitary U"
+  proof -
+    have "(cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U) = 1\<^sub>m 2"
+      using unit_eq expand by simp
+    hence "U\<^sup>\<dagger> * U = 1\<^sub>m 2"
+      using gamma_norm_sq by simp
+    thus ?thesis
+      using Ucar
+      unfolding unitary_def
+      by simp
+  qed
+
+  show "cmod \<gamma> = 1 \<and> unitary U"
+    using gamma_mod Uunit by simp
+next
+  assume h: "cmod \<gamma> = 1 \<and> unitary U"
+  then have gamma_mod: "cmod \<gamma> = 1"
+    and Uunit: "unitary U"
+    by auto
+
+  have gamma_norm_sq: "cnj \<gamma> * \<gamma> = 1"
+    using gamma_mod by (simp add: norm_square)
+
+  have Ueq: "U\<^sup>\<dagger> * U = 1\<^sub>m 2"
+    using Uunit Ucar
+    unfolding unitary_def
+    by simp
+
+  have gcar: "\<gamma> \<cdot>\<^sub>m U \<in> carrier_mat 2 2"
+    using Ucar by simp
+
+  have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = (cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U)"
+    using Ucar
+    by (simp add: dagger_of_smult smult_mult_mat_assoc algebra_simps)
+  also have "... = 1\<^sub>m 2"
+    using gamma_norm_sq Ueq by simp
+  finally have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = 1\<^sub>m 2" .
+
+  thus "cmod \<gamma> = 1 \<and> unitary U \<Longrightarrow> False \<Longrightarrow> False"
+    by simp
+qed
+
 proposition unitary_pauli_expansion:
   fixes a0 a1 a2 a3 :: complex
   assumes "unitary (a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m pauli_X + a2 \<cdot>\<^sub>m pauli_Y + a3 \<cdot>\<^sub>m pauli_Z)"
@@ -6933,7 +8227,7 @@ proof -
                     cnj (ket_plus $ 1) * (ket_plus $ 1)"
       by (simp add: numeral_2_eq_2)
     also have "\<dots> = 1"
-      unfolding ket_plus_def sorry
+      unfolding ket_plus_def by (simp add: of_real_mult [symmetric])
     finally show ?thesis.
   qed
   have "(\<parallel>ket_plus\<parallel>)\<^sup>2 = 1"
@@ -6954,7 +8248,7 @@ proof -
                     cnj (ket_minus $ 1) * (ket_minus $ 1)"
       by (simp add: numeral_2_eq_2)
     also have "\<dots> = 1"
-      unfolding ket_minus_def sorry
+      unfolding ket_minus_def by (simp add: of_real_mult [symmetric])
     finally show ?thesis .
   qed
   have "(\<parallel>ket_minus\<parallel>)\<^sup>2 = 1"
