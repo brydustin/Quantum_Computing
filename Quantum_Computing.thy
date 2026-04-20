@@ -6227,9 +6227,254 @@ proof -
     finally show "c * (D ! i) \<le> 1" .
   qed
 
-  have c_bound: "psd (1\<^sub>m n - (of_real c) \<cdot>\<^sub>m ?T)"
-    sorry  (* Via spectral decomp: 1 - c \<cdot>\<^sub>m T = U (I - c diag(D)) U\<^sup>\<dagger> = U diag(1-c*D_i) U\<^sup>\<dagger>,
-              which is PSD since each 1 - c*D_i \<ge> 0 by c_Dbound. *)
+  (* Spectral derivation of c_bound. *)
+  have Udag_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by auto
+  have UUdag: "U * U\<^sup>\<dagger> = 1\<^sub>m n"
+    using unitary_left_right(2)[OF UU] Uc by (metis carrier_matD(1))
+  have UdagU: "U\<^sup>\<dagger> * U = 1\<^sub>m n"
+    using unitary_left_right(1)[OF UU] Uc by (metis carrier_matD(2))
+  have D_car: "diag_mat_of_real D \<in> carrier_mat n n"
+    using Dlen by simp
+
+  have T_eq_UDU: "?T = U * (diag_mat_of_real D) * U\<^sup>\<dagger>"
+  proof -
+    have "U * (U\<^sup>\<dagger> * ?T * U) * U\<^sup>\<dagger> = U * (diag_mat_of_real D) * U\<^sup>\<dagger>"
+      using specD by simp
+    moreover have "U * (U\<^sup>\<dagger> * ?T * U) * U\<^sup>\<dagger> = ?T"
+    proof -
+      have UU_dag: "U \<in> carrier_mat n n" by (rule Uc)
+      have T_c: "?T \<in> carrier_mat n n" by (rule T_car)
+      have "U * (U\<^sup>\<dagger> * ?T * U) * U\<^sup>\<dagger> = (U * U\<^sup>\<dagger>) * ?T * (U * U\<^sup>\<dagger>)"
+        using Uc Udag_c T_car
+        by (smt (verit, ccfv_SIG) assoc_mult_mat carrier_mat_triv mult_carrier_mat)
+      also have "... = 1\<^sub>m n * ?T * 1\<^sub>m n"
+        using UUdag by simp
+      also have "... = ?T"
+        using T_car by simp
+      finally show ?thesis .
+    qed
+    ultimately show ?thesis by simp
+  qed
+
+  define D' :: "real list" where "D' = map (\<lambda>d. 1 - c * d) D"
+  have D'len: "length D' = n"
+    using Dlen unfolding D'_def by simp
+  have D'nonneg: "\<forall>i < n. 0 \<le> D' ! i"
+    using c_Dbound Dlen unfolding D'_def by auto
+
+  (* Entrywise: diag(D') = 1\<^sub>m n - c \<cdot>\<^sub>m diag(D) *)
+  have diag_D'_eq: "diag_mat_of_real D'
+                  = 1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D"
+  proof (rule eq_matI)
+    show "dim_row (diag_mat_of_real D')
+        = dim_row (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
+      using D'len Dlen by simp
+    show "dim_col (diag_mat_of_real D')
+        = dim_col (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
+      using D'len Dlen by simp
+  next
+    fix i j
+    assume ij: "i < dim_row (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
+               "j < dim_col (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
+    have iln: "i < n" and jln: "j < n" using ij by auto
+    have Dil: "i < length D" and Djl: "j < length D"
+      using iln jln Dlen by auto
+    have D'il: "i < length D'" using iln D'len by simp
+    show "diag_mat_of_real D' $$ (i,j)
+        = (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,j)"
+    proof (cases "i = j")
+      case True
+      have lhs: "diag_mat_of_real D' $$ (i,i) = of_real (D' ! i)"
+        using D'il by simp
+      have "D' ! i = 1 - c * D ! i"
+        using Dil unfolding D'_def by simp
+      hence lhs_val: "diag_mat_of_real D' $$ (i,i) = 1 - of_real c * of_real (D ! i)"
+        using lhs by (simp add: of_real_diff of_real_mult)
+      have rhs_diag: "diag_mat_of_real D $$ (i,i) = of_real (D ! i)"
+        using Dil by simp
+      have "(1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,i)
+          = (1\<^sub>m n) $$ (i,i) - ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,i)"
+        using iln D_car
+        by (metis carrier_matD(1,2) index_minus_mat(1))
+      also have "... = 1 - (of_real c :: complex) * diag_mat_of_real D $$ (i,i)"
+        using iln D_car by simp
+      also have "... = 1 - (of_real c :: complex) * of_real (D ! i)"
+        using rhs_diag by simp
+      finally have rhs_val:
+        "(1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,i)
+       = 1 - (of_real c :: complex) * of_real (D ! i)" .
+      show ?thesis using True lhs_val rhs_val by simp
+    next
+      case False
+      have lhs0: "diag_mat_of_real D' $$ (i,j) = 0"
+        using D'il jln D'len False by simp
+      have rhs1: "diag_mat_of_real D $$ (i,j) = 0"
+        using Dil Djl False by simp
+      have "(1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,j)
+          = (1\<^sub>m n) $$ (i,j) - ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,j)"
+        using iln jln D_car
+        by (metis carrier_matD(1,2) index_minus_mat(1))
+      also have "... = 0 - (of_real c :: complex) * diag_mat_of_real D $$ (i,j)"
+        using iln jln False D_car by simp
+      also have "... = 0"
+        using rhs1 by simp
+      finally have rhs_val:
+        "(1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,j) = 0" .
+      show ?thesis using lhs0 rhs_val by simp
+    qed
+  qed
+
+  (* Quadratic form non-negativity of ?M via U diag(D') U\<^sup>\<dagger> *)
+  have c_bound: "psd (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m ?T)"
+  proof -
+    let ?M = "1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m ?T"
+    have M_car: "?M \<in> carrier_mat n n"
+      using T_car by auto
+
+    have M_qf: "\<forall>x. dim_vec x = dim_row ?M \<longrightarrow> 0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>"
+    proof (intro allI impI)
+      fix x :: "complex Matrix.vec"
+      assume "dim_vec x = dim_row ?M"
+      hence xdim: "dim_vec x = n" using M_car by auto
+      have xcar: "x \<in> carrier_vec n" using xdim by auto
+      let ?y = "U\<^sup>\<dagger> *\<^sub>v x"
+      have ydim: "dim_vec ?y = n"
+        using Udag_c xdim by simp
+      have ycar: "?y \<in> carrier_vec n" using ydim by auto
+
+      have Mx_step1: "?M *\<^sub>v x = (U * diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x"
+      proof -
+        have "?M = 1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m (U * diag_mat_of_real D * U\<^sup>\<dagger>)"
+          using T_eq_UDU by simp
+        (* = U U\<^sup>\<dagger> - c \<cdot>\<^sub>m (U diag(D) U\<^sup>\<dagger>) = U (1 - c \<cdot>\<^sub>m diag(D)) U\<^sup>\<dagger> = U diag(D') U\<^sup>\<dagger> *)
+        also have "... = U * 1\<^sub>m n * U\<^sup>\<dagger>
+                        - (of_real c :: complex) \<cdot>\<^sub>m (U * diag_mat_of_real D * U\<^sup>\<dagger>)"
+          using UUdag Uc Udag_c
+          by (metis left_mult_one_mat right_mult_one_mat)
+        also have "... = U * 1\<^sub>m n * U\<^sup>\<dagger>
+                        - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * U\<^sup>\<dagger>"
+          using Uc Udag_c D_car
+          by (metis mult_smult_assoc_mat mult_smult_distrib)
+        also have "... = U * (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * U\<^sup>\<dagger>"
+        proof -
+          have one_car: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
+          have cD_car: "(of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D \<in> carrier_mat n n"
+            using D_car by auto
+          have UA_car: "U * (1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n"
+            using Uc one_car by auto
+          have UB_car: "U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) \<in> carrier_mat n n"
+            using Uc cD_car by auto
+          have "U * 1\<^sub>m n * U\<^sup>\<dagger>
+              - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * U\<^sup>\<dagger>
+              = (U * 1\<^sub>m n
+                 - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)) * U\<^sup>\<dagger>"
+            using UA_car UB_car Udag_c
+            by (simp add: minus_mult_distrib_mat)
+          also have "U * (1\<^sub>m n :: complex Matrix.mat)
+                   - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)
+                   = U * (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
+            using Uc one_car cD_car
+            by (simp add: mult_minus_distrib_mat)
+          finally show ?thesis .
+        qed
+        also have "... = U * diag_mat_of_real D' * U\<^sup>\<dagger>"
+          using diag_D'_eq by simp
+        finally show ?thesis by simp
+      qed
+
+      have Mx_step2: "(U * diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x
+                    = U *\<^sub>v (diag_mat_of_real D' *\<^sub>v ?y)"
+      proof -
+        have D'car: "diag_mat_of_real D' \<in> carrier_mat n n"
+          using D'len by simp
+        have inner_prod: "diag_mat_of_real D' * U\<^sup>\<dagger> \<in> carrier_mat n n"
+          using D'car Udag_c by auto
+        have "(U * diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x
+            = (U * (diag_mat_of_real D' * U\<^sup>\<dagger>)) *\<^sub>v x"
+          using Uc D'car Udag_c by (simp add: assoc_mult_mat)
+        also have "... = U *\<^sub>v ((diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x)"
+          using Uc inner_prod xcar by (simp add: assoc_mult_mat_vec)
+        also have "... = U *\<^sub>v (diag_mat_of_real D' *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v x))"
+          using D'car Udag_c xcar by (simp add: assoc_mult_mat_vec)
+        finally show ?thesis .
+      qed
+
+      have Mx_eq: "?M *\<^sub>v x = U *\<^sub>v (diag_mat_of_real D' *\<^sub>v ?y)"
+        using Mx_step1 Mx_step2 by simp
+
+      have qf_swap: "\<langle>x | U *\<^sub>v (diag_mat_of_real D' *\<^sub>v ?y)\<rangle>
+                   = \<langle>U\<^sup>\<dagger> *\<^sub>v x | diag_mat_of_real D' *\<^sub>v ?y\<rangle>"
+        using Uc xdim ydim
+        by (metis D'len carrier_matD(2) diag_mat_of_real_carrier
+            dim_mult_mat_vec inner_prod_adjoint_swap)
+
+      have "\<langle>x | ?M *\<^sub>v x\<rangle> = \<langle>?y | diag_mat_of_real D' *\<^sub>v ?y\<rangle>"
+        using Mx_eq qf_swap by simp
+      moreover have "0 \<le> Re \<langle>?y | diag_mat_of_real D' *\<^sub>v ?y\<rangle>"
+        using diag_mat_of_real_quad_Re_nonneg ydim D'len D'nonneg
+        by (metis (no_types) )
+      ultimately show "0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>" by simp
+    qed
+
+    have M_herm: "hermitian ?M"
+    proof -
+      have one_car: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
+      have cT_car: "(of_real c :: complex) \<cdot>\<^sub>m ?T \<in> carrier_mat n n"
+        using T_car by auto
+      have "?M\<^sup>\<dagger> = ?M"
+      proof (rule eq_matI)
+        show "dim_row (?M\<^sup>\<dagger>) = dim_row ?M"
+          using M_car by (simp add: dagger_def)
+        show "dim_col (?M\<^sup>\<dagger>) = dim_col ?M"
+          using M_car by (simp add: dagger_def)
+      next
+        fix i j
+        assume ij: "i < dim_row ?M" "j < dim_col ?M"
+        have iln: "i < n" and jln: "j < n" using ij M_car by auto
+        have ji_bound: "j < dim_row ?M" "i < dim_col ?M"
+          using jln iln M_car by auto
+        have "?M\<^sup>\<dagger> $$ (i,j) = cnj (?M $$ (j,i))"
+          using iln jln M_car
+          by (simp add: dagger_def)
+        also have "... = cnj ((1\<^sub>m n) $$ (j,i) - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
+          using iln jln cT_car
+          by (metis carrier_matD(1,2) index_minus_mat(1))
+        also have "... = cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
+                         - cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
+          by simp
+        also have "cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
+                 = (1\<^sub>m n :: complex Matrix.mat) $$ (i,j)"
+          using iln jln by (cases "i = j") auto
+        also have "cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))
+                 = cnj ((of_real c :: complex) * ?T $$ (j,i))"
+          using iln jln T_car by simp
+        also have "... = cnj (of_real c :: complex) * cnj (?T $$ (j,i))"
+          by simp
+        also have "cnj (of_real c :: complex) = (of_real c :: complex)"
+          by simp
+        also have "cnj (?T $$ (j,i)) = ?T $$ (i,j)"
+          using iln jln T_herm T_car
+          by (metis carrier_matD(1,2) hermitian_index)
+        also have "(of_real c :: complex) * ?T $$ (i,j)
+                 = ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
+          using iln jln T_car by simp
+        finally have eq_step:
+          "?M\<^sup>\<dagger> $$ (i,j) = (1\<^sub>m n) $$ (i,j)
+                         - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
+          by simp
+        have rhs: "?M $$ (i,j) = (1\<^sub>m n) $$ (i,j)
+                                - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
+          using iln jln cT_car
+          by (metis carrier_matD(1,2) index_minus_mat(1))
+        show "?M\<^sup>\<dagger> $$ (i,j) = ?M $$ (i,j)"
+          using eq_step rhs by simp
+      qed
+      thus ?thesis by (simp add: hermitian_def)
+    qed
+
+    show ?thesis
+      unfolding psd_def using M_herm M_qf by blast
+  qed
 
   define Mpre :: "complex Matrix.mat list"
     where "Mpre = map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) \<phi>s"
