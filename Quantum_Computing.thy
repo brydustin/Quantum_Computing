@@ -5824,7 +5824,21 @@ proof -
       by (metis (no_types, lifting) ext atLeast0LessThan bra_bra_vec dagger_of_ket_is_bra dim_col 
           dim_col_of_dagger index_matrix_prod index_mult_mat(2,3) ket_vec_col)
     also have "... = (\<Sum>j = 0..<n. (\<psi>1 $ r * cnj (\<psi>1 $ j)) * (\<psi>2 $ j * cnj (\<psi>2 $ c)))"
-      using d1 d2 rlt clt sorry
+    proof (rule sum.cong[OF refl])
+      fix j assume "j \<in> {0..<n}"
+      then have jn: "j < n" by simp
+      have rv: "r < dim_vec \<psi>1" using d1 rlt by simp
+      have jv1: "j < dim_vec \<psi>1" using d1 jn by simp
+      have jv2: "j < dim_vec \<psi>2" using d2 jn by simp
+      have cv: "c < dim_vec \<psi>2" using d2 clt by simp
+      have step_rj: "(outer_prod \<psi>1 \<psi>1) $$ (r,j) = \<psi>1 $ r * cnj (\<psi>1 $ j)"
+        using outer_prod_index[OF rv jv1] .
+      have step_jc: "(outer_prod \<psi>2 \<psi>2) $$ (j,c) = \<psi>2 $ j * cnj (\<psi>2 $ c)"
+        using outer_prod_index[OF jv2 cv] .
+      show "(outer_prod \<psi>1 \<psi>1) $$ (r,j) * (outer_prod \<psi>2 \<psi>2) $$ (j,c)
+          = (\<psi>1 $ r * cnj (\<psi>1 $ j)) * (\<psi>2 $ j * cnj (\<psi>2 $ c))"
+        using step_rj step_jc by simp
+    qed
     also have "... = (\<psi>1 $ r) * (\<Sum>j = 0..<n. cnj (\<psi>1 $ j) * \<psi>2 $ j) * cnj (\<psi>2 $ c)"
       by (simp add: sum_distrib_left sum_distrib_right algebra_simps)
     also have "... = (\<psi>1 $ r) * \<langle>\<psi>1 | \<psi>2\<rangle> * cnj (\<psi>2 $ c)"
