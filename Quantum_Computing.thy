@@ -6086,12 +6086,150 @@ proof -
 
   (* Step 2: pick a positive scale c small enough that
      I - c \<Sum>i |\<phi>i\<rangle>\<langle>\<phi>i| is positive semidefinite. Possible because
-     \<Sum>i |\<phi>i\<rangle>\<langle>\<phi>i| is psd hence has finite operator norm. *)
+     \<Sum>i |\<phi>i\<rangle>\<langle>\<phi>i| is hermitian: spectral-decomp it and choose c below
+     1 / (1 + max eigenvalue), so every entry of I - c \<cdot>\<^sub>m ?T has
+     non-negative eigenvalue. *)
   let ?T = "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) \<phi>s (0\<^sub>m n n)"
-  obtain c :: real
-    where c_pos: "0 < c"
-      and c_bound: "psd (1\<^sub>m n - (of_real c) \<cdot>\<^sub>m ?T)"
-    sorry
+
+  have \<phi>s_all_car: "\<forall>\<phi> \<in> set \<phi>s. \<phi> \<in> carrier_vec n"
+    using \<phi>s_carrier \<phi>s_len by (metis in_set_conv_nth)
+
+  have T_car: "?T \<in> carrier_mat n n"
+  proof -
+    have "\<And>xs. (\<forall>\<phi> \<in> set xs. \<phi> \<in> carrier_vec n) \<Longrightarrow>
+           foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+    proof -
+      fix xs :: "complex Matrix.vec list"
+      assume h: "\<forall>\<phi> \<in> set xs. \<phi> \<in> carrier_vec n"
+      from h show "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+      proof (induction xs)
+        case Nil thus ?case by auto
+      next
+        case (Cons \<phi> xs)
+        have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
+        have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
+        have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
+          using \<phi>_dim
+          by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
+              carrier_matI)
+        have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+          using Cons by simp
+        show ?case using op_car IH_car by simp
+      qed
+    qed
+    from this[OF \<phi>s_all_car] show ?thesis .
+  qed
+
+  have T_herm: "hermitian ?T"
+  proof -
+    have aux: "\<And>xs. (\<forall>\<phi> \<in> set xs. \<phi> \<in> carrier_vec n) \<Longrightarrow>
+         foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n \<and>
+         hermitian (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+    proof -
+      fix xs :: "complex Matrix.vec list"
+      assume h: "\<forall>\<phi> \<in> set xs. \<phi> \<in> carrier_vec n"
+      from h show
+        "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n \<and>
+         hermitian (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+      proof (induction xs)
+        case Nil
+        have zero_car: "(0\<^sub>m n n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
+        have zero_herm: "hermitian (0\<^sub>m n n :: complex Matrix.mat)"
+          unfolding hermitian_def
+          by (rule eq_matI, auto simp: dagger_def)
+        show ?case using zero_car zero_herm by simp
+      next
+        case (Cons \<phi> xs)
+        have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
+        have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
+        have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
+          using \<phi>_dim
+          by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
+              carrier_matI)
+        have op_herm: "hermitian (outer_prod \<phi> \<phi>)"
+          unfolding hermitian_def using outer_proj_hermitian[OF \<phi>_dim] .
+        have xs_all: "\<forall>\<phi>' \<in> set xs. \<phi>' \<in> carrier_vec n" using Cons.prems by simp
+        from Cons.IH[OF xs_all]
+        have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+          and IH_herm: "hermitian (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+          by auto
+        have cons_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n) \<in> carrier_mat n n"
+          using op_car IH_car by simp
+        (* sum of hermitians is hermitian *)
+        have sum_herm: "hermitian (outer_prod \<phi> \<phi> + foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+        proof -
+          let ?A = "outer_prod \<phi> \<phi>"
+          let ?B = "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n)"
+          have "(?A + ?B)\<^sup>\<dagger> = ?A\<^sup>\<dagger> + ?B\<^sup>\<dagger>"
+          proof (rule eq_matI)
+            show "dim_row ((?A + ?B)\<^sup>\<dagger>) = dim_row (?A\<^sup>\<dagger> + ?B\<^sup>\<dagger>)"
+              using op_car IH_car by (simp add: dagger_def)
+            show "dim_col ((?A + ?B)\<^sup>\<dagger>) = dim_col (?A\<^sup>\<dagger> + ?B\<^sup>\<dagger>)"
+              using op_car IH_car by (simp add: dagger_def)
+          next
+            fix i j
+            assume i: "i < dim_row (?A\<^sup>\<dagger> + ?B\<^sup>\<dagger>)"
+               and j: "j < dim_col (?A\<^sup>\<dagger> + ?B\<^sup>\<dagger>)"
+            have iln: "i < n" and jln: "j < n"
+              using i j op_car IH_car by (auto simp: dagger_def)
+            have "(?A + ?B)\<^sup>\<dagger> $$ (i,j) = cnj ((?A + ?B) $$ (j,i))"
+              using iln jln op_car IH_car
+              by (simp add: dagger_def)
+            also have "... = cnj (?A $$ (j,i)) + cnj (?B $$ (j,i))"
+              using iln jln op_car IH_car
+              by (metis carrier_matD(1,2) index_add_mat(1) complex_cnj_add)
+            also have "... = ?A\<^sup>\<dagger> $$ (i,j) + ?B\<^sup>\<dagger> $$ (i,j)"
+              using iln jln op_car IH_car
+              by (simp add: dagger_def)
+            also have "... = (?A\<^sup>\<dagger> + ?B\<^sup>\<dagger>) $$ (i,j)"
+              using iln jln op_car IH_car
+              by (simp add: dagger_def)
+            finally show "(?A + ?B)\<^sup>\<dagger> $$ (i,j) = (?A\<^sup>\<dagger> + ?B\<^sup>\<dagger>) $$ (i,j)" .
+          qed
+          also have "... = ?A + ?B"
+            using op_herm IH_herm by (simp add: hermitian_def)
+          finally show ?thesis by (simp add: hermitian_def)
+        qed
+        show ?case using cons_car sum_herm by simp
+      qed
+    qed
+    from aux[OF \<phi>s_all_car] show ?thesis by blast
+  qed
+
+  (* Use hermitian_spectral_decomp on ?T to find c. *)
+  obtain U :: "complex Matrix.mat" and D :: "real list"
+    where Uc: "U \<in> carrier_mat n n"
+      and UU: "unitary U"
+      and Dlen: "length D = n"
+      and specD: "U\<^sup>\<dagger> * ?T * U = diag_mat_of_real D"
+    using hermitian_spectral_decomp[OF T_car T_herm] by blast
+
+  define maxD :: real where "maxD = Max (insert (0::real) (set D))"
+  define c :: real where "c = 1 / (1 + maxD)"
+
+  have maxD_ge_0: "0 \<le> maxD"
+    unfolding maxD_def by simp
+  have c_pos: "0 < c"
+    unfolding c_def using maxD_ge_0 by simp
+  have D_bounded: "\<forall>i < length D. D ! i \<le> maxD"
+    unfolding maxD_def by simp
+  have c_Dbound: "\<forall>i < length D. c * (D ! i) \<le> 1"
+  proof (intro allI impI)
+    fix i assume i: "i < length D"
+    have Dile: "D ! i \<le> maxD" using D_bounded i by simp
+    have c_nn: "0 \<le> c" using c_pos by simp
+    have "c * (D ! i) \<le> c * maxD"
+      using Dile c_nn by (simp add: mult_left_mono)
+    also have "c * maxD = maxD / (1 + maxD)"
+      unfolding c_def by (simp add: field_simps)
+    also have "maxD / (1 + maxD) \<le> 1"
+      using maxD_ge_0 by (simp add: divide_le_eq)
+    finally show "c * (D ! i) \<le> 1" .
+  qed
+
+  have c_bound: "psd (1\<^sub>m n - (of_real c) \<cdot>\<^sub>m ?T)"
+    sorry  (* Via spectral decomp: 1 - c \<cdot>\<^sub>m T = U (I - c diag(D)) U\<^sup>\<dagger> = U diag(1-c*D_i) U\<^sup>\<dagger>,
+              which is PSD since each 1 - c*D_i \<ge> 0 by c_Dbound. *)
 
   define Mpre :: "complex Matrix.mat list"
     where "Mpre = map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) \<phi>s"
