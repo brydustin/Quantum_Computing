@@ -5743,8 +5743,20 @@ proof -
       by (metis (no_types, lifting) ext \<psi>dim atLeast0LessThan bra_bra_vec clt dagger_of_ket_is_bra 
           dim_col dim_col_of_dagger index_matrix_prod index_mult_mat(2,3) ket_vec_col rlt)  
     also have "... = (\<Sum>j = 0..<n. (\<psi> $ r * cnj (\<psi> $ j)) * (\<psi> $ j * cnj (\<psi> $ c)))"
-      sorry
-
+    proof (rule sum.cong[OF refl])
+      fix j assume "j \<in> {0..<n}"
+      then have jn: "j < n" by simp
+      have rv: "r < dim_vec \<psi>" using \<psi>dim rlt by simp
+      have jv: "j < dim_vec \<psi>" using \<psi>dim jn by simp
+      have cv: "c < dim_vec \<psi>" using \<psi>dim clt by simp
+      have step_rj: "(outer_prod \<psi> \<psi>) $$ (r,j) = \<psi> $ r * cnj (\<psi> $ j)"
+        using outer_prod_index[OF rv jv] .
+      have step_jc: "(outer_prod \<psi> \<psi>) $$ (j,c) = \<psi> $ j * cnj (\<psi> $ c)"
+        using outer_prod_index[OF jv cv] .
+      show "(outer_prod \<psi> \<psi>) $$ (r,j) * (outer_prod \<psi> \<psi>) $$ (j,c)
+          = (\<psi> $ r * cnj (\<psi> $ j)) * (\<psi> $ j * cnj (\<psi> $ c))"
+        using step_rj step_jc by simp
+    qed
     also have "... = (\<psi> $ r) * (\<Sum>j = 0..<n. cnj (\<psi> $ j) * \<psi> $ j) * cnj (\<psi> $ c)"
       by (simp add: sum_distrib_left sum_distrib_right algebra_simps)
     also have "... = (\<psi> $ r) * \<langle>\<psi> | \<psi>\<rangle> * cnj (\<psi> $ c)"
