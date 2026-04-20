@@ -6106,7 +6106,301 @@ proof -
     using \<phi>s_len unfolding Ps_def Mpre_def by simp
 
   have povm_Ps: "povm n Ps"
-    sorry
+  proof -
+    (* Carriers *)
+    have Mpre_car: "\<forall>M \<in> set Mpre. M \<in> carrier_mat n n"
+    proof
+      fix M assume "M \<in> set Mpre"
+      then obtain \<phi> where \<phi>_in: "\<phi> \<in> set \<phi>s"
+                      and M_eq: "M = (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>"
+        unfolding Mpre_def by auto
+      have \<phi>_car: "\<phi> \<in> carrier_vec n"
+        using \<phi>s_carrier \<phi>_in \<phi>s_len by (metis in_set_conv_nth)
+      hence \<phi>_dim: "dim_vec \<phi> = n" by simp
+      have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
+        using \<phi>_dim
+        by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
+            carrier_matI)
+      thus "M \<in> carrier_mat n n"
+        using M_eq by auto
+    qed
+
+    have Slast_car: "Slast \<in> carrier_mat n n"
+    proof -
+      have "foldr (\<lambda>M acc. M + acc) Mpre (0\<^sub>m n n) \<in> carrier_mat n n"
+        using Mpre_car
+      proof (induction Mpre)
+        case Nil thus ?case by auto
+      next
+        case (Cons M Ms)
+        hence M_car: "M \<in> carrier_mat n n" by simp
+        from Cons.IH Cons.prems
+        have rest_car: "foldr (\<lambda>M acc. M + acc) Ms (0\<^sub>m n n) \<in> carrier_mat n n" by simp
+        show ?case using M_car rest_car by simp
+      qed
+      thus ?thesis unfolding Slast_def .
+    qed
+
+    have Mlast_car: "Mlast \<in> carrier_mat n n"
+      unfolding Mlast_def using Slast_car by auto
+
+    have Ps_car: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n"
+      unfolding Ps_def using Mpre_car Mlast_car by auto
+
+    (* PSD of each Mpre element *)
+    have Mpre_psd: "\<forall>M \<in> set Mpre. psd M"
+    proof
+      fix M assume "M \<in> set Mpre"
+      then obtain \<phi> where \<phi>_in: "\<phi> \<in> set \<phi>s"
+                      and M_eq: "M = (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>"
+        unfolding Mpre_def by auto
+      have \<phi>_car: "\<phi> \<in> carrier_vec n"
+        using \<phi>s_all_car \<phi>_in by blast
+      have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
+      have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
+        using \<phi>_dim
+        by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
+            carrier_matI)
+      have M_car: "M \<in> carrier_mat n n"
+        using M_eq op_car by auto
+
+      (* Hermitian: (c \<cdot>\<^sub>m outer_prod \<phi> \<phi>)\<^sup>\<dagger> = c \<cdot>\<^sub>m outer_prod \<phi> \<phi> *)
+      have M_herm: "hermitian M"
+      proof -
+        have op_herm_dag: "(outer_prod \<phi> \<phi>)\<^sup>\<dagger> = outer_prod \<phi> \<phi>"
+          by (metis \<phi>_dim bra_bra_vec dagger_of_ket_is_bra dagger_of_prod
+              dim_col_of_dagger index_one_mat(3) ket_vec_col
+              outer_prod_index op_car carrier_matD(1) carrier_matD(2)
+              hermitian_def hermitian_index eq_matI
+              outer_proj_hermitian[of \<phi> n, unfolded hermitian_def])
+        have "M\<^sup>\<dagger> = (cnj (of_real c :: complex)) \<cdot>\<^sub>m (outer_prod \<phi> \<phi>)\<^sup>\<dagger>"
+          using M_eq dagger_of_smult by simp
+        also have "cnj (of_real c :: complex) = of_real c"
+          by simp
+        also have "(of_real c :: complex) \<cdot>\<^sub>m (outer_prod \<phi> \<phi>)\<^sup>\<dagger>
+                 = (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>"
+          using op_herm_dag by simp
+        also have "... = M" using M_eq by simp
+        finally show ?thesis by (simp add: hermitian_def)
+      qed
+
+      (* Quadratic form is real non-negative *)
+      have M_qf_nonneg: "\<forall>x. dim_vec x = dim_row M
+                           \<longrightarrow> 0 \<le> Re \<langle>x | M *\<^sub>v x\<rangle>"
+      proof (intro allI impI)
+        fix x :: "complex Matrix.vec"
+        assume xdim: "dim_vec x = dim_row M"
+        have xn: "dim_vec x = n" using xdim M_car by auto
+        have xcar: "x \<in> carrier_vec n" using xn by auto
+
+        have "M *\<^sub>v x = ((of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) *\<^sub>v x"
+          using M_eq by simp
+        also have "... = (of_real c :: complex) \<cdot>\<^sub>v (outer_prod \<phi> \<phi> *\<^sub>v x)"
+          using smult_mat_mult_vec op_car xcar by blast
+        finally have Mvx: "M *\<^sub>v x = (of_real c :: complex) \<cdot>\<^sub>v (outer_prod \<phi> \<phi> *\<^sub>v x)" .
+
+        have op_action: "outer_prod \<phi> \<phi> *\<^sub>v x = \<langle>\<phi>|x\<rangle> \<cdot>\<^sub>v \<phi>"
+          using outer_prod_mult_vec[of x \<phi> \<phi>] \<phi>_dim xn by simp
+
+        have "\<langle>x | M *\<^sub>v x\<rangle>
+            = \<langle>x | (of_real c :: complex) \<cdot>\<^sub>v (outer_prod \<phi> \<phi> *\<^sub>v x)\<rangle>"
+          using Mvx by simp
+        also have "... = (of_real c :: complex) * \<langle>x | outer_prod \<phi> \<phi> *\<^sub>v x\<rangle>"
+          by (rule inner_prod_right_smult')
+        also have "... = (of_real c :: complex) * \<langle>x | \<langle>\<phi>|x\<rangle> \<cdot>\<^sub>v \<phi>\<rangle>"
+          using op_action by simp
+        also have "... = (of_real c :: complex) * (\<langle>\<phi>|x\<rangle> * \<langle>x|\<phi>\<rangle>)"
+          by (simp add: inner_prod_right_smult')
+        also have "... = (of_real c :: complex) * (\<langle>\<phi>|x\<rangle> * cnj \<langle>\<phi>|x\<rangle>)"
+          by (simp add: inner_prod_cnj)
+        also have "... = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
+          by (simp add: mult.commute)
+        finally have qf_eq: "\<langle>x | M *\<^sub>v x\<rangle>
+            = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)" .
+
+        have "Re \<langle>x | M *\<^sub>v x\<rangle>
+            = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
+          using qf_eq by simp
+        also have "... = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
+          by (simp add: complex_mult_cnj complex_norm_square)
+        finally have re_eq: "Re \<langle>x | M *\<^sub>v x\<rangle> = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2" .
+
+        have "0 \<le> c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
+          using c_pos by auto
+        thus "0 \<le> Re \<langle>x | M *\<^sub>v x\<rangle>"
+          using re_eq by simp
+      qed
+
+      show "psd M"
+        unfolding psd_def using M_herm M_qf_nonneg by blast
+    qed
+
+    (* Slast = c \<cdot>\<^sub>m ?T (scalar factored out of fold) *)
+    have \<phi>s_all_car: "\<forall>\<phi> \<in> set \<phi>s. \<phi> \<in> carrier_vec n"
+      using \<phi>s_carrier \<phi>s_len by (metis in_set_conv_nth)
+
+    have slast_aux:
+      "\<And>xs. (\<forall>\<phi> \<in> set xs. \<phi> \<in> carrier_vec n) \<Longrightarrow>
+         foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n \<and>
+         foldr (\<lambda>M rest. M + rest)
+           (map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) xs) (0\<^sub>m n n)
+         = (of_real c :: complex) \<cdot>\<^sub>m
+             (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+    proof -
+      fix xs :: "complex Matrix.vec list"
+      assume h: "\<forall>\<phi> \<in> set xs. \<phi> \<in> carrier_vec n"
+      from h show
+        "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n \<and>
+         foldr (\<lambda>M rest. M + rest)
+           (map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) xs) (0\<^sub>m n n)
+         = (of_real c :: complex) \<cdot>\<^sub>m
+             (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+      proof (induction xs)
+        case Nil
+        have "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) [] (0\<^sub>m n n) = 0\<^sub>m n n" by simp
+        moreover have "(of_real c :: complex) \<cdot>\<^sub>m (0\<^sub>m n n) = 0\<^sub>m n n"
+          by auto
+        ultimately show ?case by simp
+      next
+        case (Cons \<phi> xs)
+        have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
+        have xs_all: "\<forall>\<phi>' \<in> set xs. \<phi>' \<in> carrier_vec n" using Cons.prems by simp
+        have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
+        have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
+          using \<phi>_dim
+          by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
+              carrier_matI)
+        from Cons.IH[OF xs_all]
+        have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+          and IH_eq:
+             "foldr (\<lambda>M rest. M + rest)
+                (map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) xs) (0\<^sub>m n n)
+              = (of_real c :: complex) \<cdot>\<^sub>m
+                  (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+          by auto
+
+        have cons_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n)
+                       \<in> carrier_mat n n"
+          using op_car IH_car by simp
+
+        have "foldr (\<lambda>M rest. M + rest)
+                (map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) (\<phi> # xs)) (0\<^sub>m n n)
+            = (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>
+              + foldr (\<lambda>M rest. M + rest)
+                  (map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) xs) (0\<^sub>m n n)"
+          by simp
+        also have "... = (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>
+              + (of_real c :: complex) \<cdot>\<^sub>m
+                  (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+          using IH_eq by simp
+        also have "... = (of_real c :: complex) \<cdot>\<^sub>m
+            (outer_prod \<phi> \<phi> + foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+          using add_smult_distrib_left_mat[OF op_car IH_car] by simp
+        also have "... = (of_real c :: complex) \<cdot>\<^sub>m
+            (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n))"
+          by simp
+        finally show ?case using cons_car by simp
+      qed
+    qed
+
+    from slast_aux[OF \<phi>s_all_car]
+    have Slast_eq: "Slast = (of_real c :: complex) \<cdot>\<^sub>m ?T"
+      unfolding Slast_def Mpre_def by simp
+
+    have Mlast_psd: "psd Mlast"
+      using c_bound Slast_eq unfolding Mlast_def by simp
+
+    have Ps_psd: "\<forall>P \<in> set Ps. psd P"
+      unfolding Ps_def using Mpre_psd Mlast_psd by auto
+
+    (* Helper: foldr of + over Mpre, with any carrier_mat acc, shifts out *)
+    have fold_aux: "\<And>xs acc. (\<forall>M \<in> set xs. M \<in> carrier_mat n n) \<Longrightarrow>
+                             acc \<in> carrier_mat n n \<Longrightarrow>
+        foldr (\<lambda>M rest. M + rest) xs acc \<in> carrier_mat n n \<and>
+        foldr (\<lambda>M rest. M + rest) xs acc
+          = foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc"
+    proof -
+      fix xs :: "complex Matrix.mat list" and acc :: "complex Matrix.mat"
+      assume h1: "\<forall>M \<in> set xs. M \<in> carrier_mat n n" and h2: "acc \<in> carrier_mat n n"
+      from h1 h2 show
+        "foldr (\<lambda>M rest. M + rest) xs acc \<in> carrier_mat n n \<and>
+         foldr (\<lambda>M rest. M + rest) xs acc
+           = foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc"
+      proof (induction xs)
+        case Nil
+        hence "foldr (\<lambda>M rest. M + rest) [] acc = acc" by simp
+        moreover have "foldr (\<lambda>M rest. M + rest) [] (0\<^sub>m n n) + acc = 0\<^sub>m n n + acc"
+          by simp
+        moreover have "0\<^sub>m n n + acc = acc"
+          using Nil by auto
+        ultimately show ?case using Nil by auto
+      next
+        case (Cons M xs)
+        have M_car: "M \<in> carrier_mat n n" using Cons.prems by simp
+        have xs_all: "\<forall>M' \<in> set xs. M' \<in> carrier_mat n n" using Cons.prems by simp
+        from Cons.IH[OF xs_all Cons.prems(2)]
+        have IH1: "foldr (\<lambda>M rest. M + rest) xs acc \<in> carrier_mat n n"
+          and IH2: "foldr (\<lambda>M rest. M + rest) xs acc
+                   = foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc"
+          by auto
+        (* carrier for fold with 0\<^sub>m n n acc *)
+        from Cons.IH[OF xs_all] have IH0_car:
+          "foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+          by auto
+        have cons_eq: "foldr (\<lambda>M rest. M + rest) (M # xs) acc
+                      = M + foldr (\<lambda>M rest. M + rest) xs acc" by simp
+        hence cons_car: "foldr (\<lambda>M rest. M + rest) (M # xs) acc \<in> carrier_mat n n"
+          using M_car IH1 by simp
+        have "foldr (\<lambda>M rest. M + rest) (M # xs) acc
+            = M + (foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc)"
+          using cons_eq IH2 by simp
+        also have "... = (M + foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n)) + acc"
+          using M_car IH0_car Cons.prems(2) by (simp add: assoc_add_mat)
+        also have "... = foldr (\<lambda>M rest. M + rest) (M # xs) (0\<^sub>m n n) + acc"
+          by simp
+        finally show ?case using cons_car by simp
+      qed
+    qed
+
+    have Slast_expand: "Slast = foldr (\<lambda>P acc. P + acc) Mpre (0\<^sub>m n n)"
+      unfolding Slast_def ..
+
+    (* Sum = I: foldr over (Mpre @ [Mlast]) = foldr over Mpre with Mlast as acc *)
+    have Ps_sum: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
+    proof -
+      have step1: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n)
+                  = foldr (\<lambda>P acc. P + acc) Mpre (Mlast + 0\<^sub>m n n)"
+        unfolding Ps_def by simp
+      also have "Mlast + 0\<^sub>m n n = Mlast"
+        using Mlast_car by auto
+      also have "foldr (\<lambda>P acc. P + acc) Mpre Mlast
+               = foldr (\<lambda>P acc. P + acc) Mpre (0\<^sub>m n n) + Mlast"
+        using fold_aux[OF Mpre_car Mlast_car] by blast
+      also have "... = Slast + Mlast"
+        using Slast_expand by simp
+      also have "Slast + Mlast = Slast + (1\<^sub>m n - Slast)"
+        unfolding Mlast_def ..
+      also have "... = 1\<^sub>m n"
+      proof (rule eq_matI)
+        show "dim_row (Slast + (1\<^sub>m n - Slast)) = dim_row (1\<^sub>m n)"
+          using Slast_car by auto
+        show "dim_col (Slast + (1\<^sub>m n - Slast)) = dim_col (1\<^sub>m n)"
+          using Slast_car by auto
+      next
+        fix i j
+        assume i: "i < dim_row (1\<^sub>m n)" and j: "j < dim_col (1\<^sub>m n)"
+        then have iln: "i < n" and jln: "j < n" by auto
+        show "(Slast + (1\<^sub>m n - Slast)) $$ (i,j) = (1\<^sub>m n) $$ (i,j)"
+          using iln jln Slast_car
+          by (metis add.commute add_diff_cancel_left' carrier_matD(1,2)
+              index_add_mat(1) index_minus_mat(1))
+      qed
+      finally show ?thesis .
+    qed
+
+    show ?thesis
+      unfolding povm_def using Ps_car Ps_psd Ps_sum by auto
+  qed
 
   (* Square-root lift: get a measurement_system Ms with Ms_i\<^sup>\<dagger>Ms_i = Ps_i. *)
   obtain Ms :: "complex Matrix.mat list"
