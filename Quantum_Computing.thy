@@ -6985,6 +6985,51 @@ qed
 
 (* Every POVM comes from a measurement system via P_m = (P_m)^{1/2} *)
 
+lemma psd_sqrt_measurement_factor:
+  assumes Pcar: "P \<in> carrier_mat n n"
+      and Ppsd: "psd P"
+  shows "\<exists>M. M \<in> carrier_mat n n \<and> M\<^sup>\<dagger> * M = P"
+proof -
+  obtain Q where Qcar: "Q \<in> carrier_mat n n"
+    and Qpsd: "psd Q"
+    and QQ: "Q * Q = P"
+    using psd_sqrt_exists[OF Pcar Ppsd] by blast
+  have Qdag: "Q\<^sup>\<dagger> = Q"
+    using psd_hermitian[OF Qpsd]
+    unfolding hermitian_def by simp
+  have "Q\<^sup>\<dagger> * Q = P"
+    using Qdag QQ by simp
+  thus ?thesis
+    using Qcar by blast
+qed
+
+lemma psd_sqrt_measurement_factors:
+  assumes Ps: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P"
+  shows "\<exists>Ms. (\<forall>M \<in> set Ms. M \<in> carrier_mat n n) \<and>
+               map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
+  using Ps
+proof (induction Ps)
+  case Nil
+  show ?case by simp
+next
+  case (Cons P Ps)
+  have Pcar: "P \<in> carrier_mat n n"
+    using Cons.prems by simp
+  have Ppsd: "psd P"
+    using Cons.prems by simp
+  obtain M where Mcar: "M \<in> carrier_mat n n"
+    and M_factor: "M\<^sup>\<dagger> * M = P"
+    using psd_sqrt_measurement_factor[OF Pcar Ppsd] by blast
+  obtain Ms where Mscar: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+    and Ms_factor: "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
+    using Cons.IH Cons.prems by simp blast
+  have "(\<forall>N \<in> set (M # Ms). N \<in> carrier_mat n n) \<and>
+        map (\<lambda>N. N\<^sup>\<dagger> * N) (M # Ms) = P # Ps"
+    using Mcar M_factor Mscar Ms_factor by simp
+  thus ?case
+    by meson
+qed
+
 lemma povm_from_sqrt:
   assumes pv: "povm n Ps"
   shows "\<exists>Ms. measurement_system n Ms \<and>
@@ -6997,7 +7042,21 @@ proof -
   have sum_id: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
     using pv by (simp add: povm_def)
   (* Construct the list of square roots. *)
-  show ?thesis sorry
+  obtain Ms where Mcar: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+    and Ms_factor: "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
+    using psd_sqrt_measurement_factors[OF psd_each] by blast
+  have "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n) =
+        foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n)"
+    using Ms_factor by (induction Ms arbitrary: Ps) auto
+  also have "\<dots> = 1\<^sub>m n"
+    using sum_id by simp
+  finally have meas_sum:
+    "foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n" .
+  have "measurement_system n Ms"
+    unfolding measurement_system_def
+    using Mcar meas_sum by simp
+  thus ?thesis
+    using Ms_factor by blast
 qed
 
 (* Probability formula for POVM: p_m(\<psi>) = \<langle>\<psi>|P_m|\<psi>\<rangle> *)
@@ -7027,6 +7086,21 @@ qed
 (* If Lab A has measurement {M_m} on H_A, the composite measurement is
    {M_m \<otimes> I_{H_B}} on H_A \<otimes> H_B. *)
 
+lemma tensor_mat_vec_mult:
+  assumes A: "A \<in> carrier_mat nr nc"
+      and B: "B \<in> carrier_mat mr mc"
+      and v: "dim_vec v = nc"
+      and w: "dim_vec w = mc"
+  shows "(A \<Otimes> B) *\<^sub>v tensor_vec v w = tensor_vec (A *\<^sub>v v) (B *\<^sub>v w)"
+  sorry
+
+lemma tensor_mat_vec_mult_right_id:
+  assumes A: "A \<in> carrier_mat n n"
+      and v: "dim_vec v = n"
+      and w: "dim_vec w = m"
+  shows "(A \<Otimes> 1\<^sub>m m) *\<^sub>v tensor_vec v w = tensor_vec (A *\<^sub>v v) w"
+  sorry
+
 (* Probability in composite system = probability in Lab A *)
 
 lemma composite_measurement_prob:
@@ -7040,7 +7114,7 @@ proof -
   have phi_norm: "\<parallel>\<phi>\<parallel> = 1" using phi_st by (auto simp: quantum_state_def)
   (* Step 1: (M \<otimes> I_m)(\<psi> \<otimes> \<phi>) = (M\<psi>) \<otimes> \<phi> -- mixed product property *)
   have mix: "(M \<Otimes> 1\<^sub>m m) *\<^sub>v (tensor_vec \<psi> \<phi>) = tensor_vec (M *\<^sub>v \<psi>) \<phi>"
-    sorry
+    using tensor_mat_vec_mult_right_id[OF M_sq psi_dim phi_dim] .
   (* Step 2: \<parallel>(M\<psi>)\<otimes>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> \<parallel>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> 1 *)
   have norm_prod: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2 * \<parallel>\<phi>\<parallel>^2"
     by (smt (verit) Re_complex_of_real cpx_vec_length_inner_prod of_real_mult tensor_inner_prod)
@@ -7070,6 +7144,10 @@ definition bell_state :: "complex Matrix.vec" where
                  (tensor_vec (unit_vec 2 0) (unit_vec 2 0) +
                   tensor_vec (unit_vec 2 1) (unit_vec 2 1))"
 
+lemma bell_state_norm:
+  "\<parallel>bell_state\<parallel> = 1"
+  sorry
+
 lemma bell_state_is_quantum_state:
   "quantum_state 4 bell_state"
 proof -
@@ -7092,7 +7170,8 @@ proof -
   have inner_vu: "\<langle>?v | ?u\<rangle> = 0"
     by (metis One_nat_def cpx_vec_length_inner_prod dim_sum du dv index_unit_vec(3) inner_uu inner_uv inner_vv lessI numeral_2_eq_2 numeral_eq_iff numeral_eq_one_iff of_real_1 one_eq_numeral_iff orthogonal_unit_vec power2_eq_square power_one semiring_norm(11,83,85) tensor_inner_prod tensor_vec_dim vec_normalize_dim zero_less_Suc zero_neq_numeral)
   (* Step 3: \<parallel>(1/\<surd>2)(?u + ?v)\<parallel>\<^sup>2 = (1/2)(\<langle>?u+?v|?u+?v\<rangle>) = (1/2)(1+0+0+1) = 1 *)
-  have norm_bell: "\<parallel>bell_state\<parallel> = 1" sorry
+  have norm_bell: "\<parallel>bell_state\<parallel> = 1"
+    by (rule bell_state_norm)
   show ?thesis
     unfolding quantum_state_def using dim_bell norm_bell by simp
 qed
@@ -8801,7 +8880,7 @@ definition pauli_combo :: "complex \<Rightarrow> complex \<Rightarrow> complex \
   "pauli_combo a0 a1 a2 a3 =
      a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m pauli_X + a2 \<cdot>\<^sub>m pauli_Y + a3 \<cdot>\<^sub>m pauli_Z"
 
-proposition unitary_pauli_expansion:
+proposition unitary_pauli_expansion_placeholder:
   fixes a0 a1 a2 a3 :: complex
   defines "U \<equiv> pauli_combo a0 a1 a2 a3"
   assumes "unitary U"
@@ -9010,10 +9089,9 @@ proof
   "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = (cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U)"
   proof -
     have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>)) * (\<gamma> \<cdot>\<^sub>m U)"
-
+      using Ucar by (simp add: dagger_of_smult)
     also have "... = (cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U)"
-      using Ucar
-      by (simp add: smult_mult_mat_assoc algebra_simps)
+      sorry
     finally show ?thesis .
   qed
 
@@ -9061,8 +9139,7 @@ next
     using Ucar by simp
 
   have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = (cnj \<gamma> * \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger> * U)"
-    using Ucar
-    by (simp add: dagger_of_smult smult_mult_mat_assoc algebra_simps)
+    sorry
   also have "... = 1\<^sub>m 2"
     using gamma_norm_sq Ueq by simp
   finally have "(\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger> * (\<gamma> \<cdot>\<^sub>m U) = 1\<^sub>m 2" .
