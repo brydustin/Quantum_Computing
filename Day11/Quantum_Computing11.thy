@@ -1415,4 +1415,119 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 14 — 28 / Sep / 11
+   Topic: Characterisation of Density Matrices; Pure States;
+          Composite Ensembles; Partial Trace (motivation)
+   ============================================================================ *)
+
+(* --------------------------------------------------------------------------
+   \<section>15.1 (Continuation).  Every density matrix is the density of some
+   ensemble (the spectral ensemble).  Combined with the Day-13 theorem
+   \<open>ensemble_density_is_dm\<close>, this characterises density matrices as exactly
+   those \<rho> with \<rho> \<ge> 0 and \<open>Tr \<rho> = 1\<close>.
+   -------------------------------------------------------------------------- *)
+
+theorem spectral_ensemble_exists:
+  fixes \<rho> :: "complex Matrix.mat"
+  assumes dm: "density_matrix n \<rho>"
+  shows "\<exists>E. ensemble n E \<and> ensemble_density n E = \<rho>"
+  sorry
+  (* Proof sketch (PDF p.\ 43, proof of the Proposition, direction \<Leftarrow>):
+     From \<open>density_matrix n \<rho>\<close> we have \<rho> hermitian, \<rho> PSD, and \<open>Tr \<rho> = 1\<close>.
+     By \<open>hermitian_spectral_decomp\<close> (Days 3\<endash>10) there exist a unitary U and a
+     real list D of length n with \<open>U\<^sup>\<dagger> * \<rho> * U = diag_mat_of_real D\<close>, hence
+       \<open>\<rho> = U * diag_mat_of_real D * U\<^sup>\<dagger> = \<Sum>i<n. (D!i) \<cdot> |col U i\<rangle>\<langle>col U i|\<close>.
+     Each \<open>D!i\<close> is \<ge>0 (\<rho> PSD) and \<open>\<Sum>i<n. D!i = Tr \<rho> = 1\<close>.  Thus
+       \<open>E = zip D (map (\<lambda>i. col U i) [0..<n])\<close>
+     is an ensemble with \<open>ensemble_density n E = \<rho>\<close>. *)
+
+corollary density_matrix_iff_ensemble:
+  fixes \<rho> :: "complex Matrix.mat"
+  shows "density_matrix n \<rho> \<longleftrightarrow>
+           (\<exists>E. ensemble n E \<and> ensemble_density n E = \<rho>)"
+proof
+  assume "density_matrix n \<rho>"
+  thus "\<exists>E. ensemble n E \<and> ensemble_density n E = \<rho>"
+    by (rule spectral_ensemble_exists)
+next
+  assume "\<exists>E. ensemble n E \<and> ensemble_density n E = \<rho>"
+  then obtain E where ens: "ensemble n E"
+                 and eq: "ensemble_density n E = \<rho>" by blast
+  have "density_matrix n (ensemble_density n E)"
+    by (rule ensemble_density_is_dm[OF ens])
+  with eq show "density_matrix n \<rho>" by simp
+qed
+
+(* --------------------------------------------------------------------------
+   \<section>15.1 (Pure states).  A density matrix of the form \<open>|\<psi>\<rangle>\<langle>\<psi>|\<close> is called
+   a \<^emph>\<open>pure state\<close>.  Any ensemble representing such a \<rho> uses only vectors
+   parallel to \<psi>.
+   -------------------------------------------------------------------------- *)
+
+definition pure_state_density :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "pure_state_density n \<rho> \<equiv>
+     density_matrix n \<rho> \<and>
+     (\<exists>\<psi>. quantum_state n \<psi> \<and> \<rho> = pure_density \<psi>)"
+
+lemma pure_state_density_is_density:
+  assumes "pure_state_density n \<rho>"
+  shows "density_matrix n \<rho>"
+  using assms by (simp add: pure_state_density_def)
+
+lemma pure_density_is_pure_state_density:
+  assumes "quantum_state n \<psi>"
+  shows "pure_state_density n (pure_density \<psi>)"
+  unfolding pure_state_density_def
+  using assms pure_density_is_density_matrix by blast
+
+theorem pure_ensemble_parallel:
+  fixes \<psi> :: "complex Matrix.vec"
+  assumes st: "quantum_state n \<psi>"
+      and ens: "ensemble n E"
+      and dens: "ensemble_density n E = pure_density \<psi>"
+      and mem: "(p, \<psi>\<^sub>i) \<in> set E"
+      and ppos: "0 < p"
+  shows "\<exists>\<beta>. \<psi>\<^sub>i = \<beta> \<cdot>\<^sub>v \<psi>"
+  sorry
+  (* Proof sketch (PDF p.\ 44): fix any \<gamma> with \<open>dim_vec \<gamma> = n\<close> and \<open>\<langle>\<psi>|\<gamma>\<rangle> = 0\<close>.
+     Compute \<open>\<langle>\<gamma> | pure_density \<psi> *\<^sub>v \<gamma>\<rangle> = |\<langle>\<psi>|\<gamma>\<rangle>|\<^sup>2 = 0\<close>.  By \<open>dens\<close> the same
+     quantity equals \<open>\<Sum>_{(p,\<psi>\<^sub>j) \<in> E} p \<cdot> |\<langle>\<psi>\<^sub>j|\<gamma>\<rangle>|\<^sup>2\<close> \<ge> 0, so every term
+     vanishes; in particular \<open>\<langle>\<psi>\<^sub>i|\<gamma>\<rangle> = 0\<close> using \<open>ppos\<close>.  Thus \<psi>\<^sub>i is orthogonal
+     to every \<gamma> orthogonal to \<psi>, so \<psi>\<^sub>i lies in \<open>span {\<psi>}\<close>, and we can write
+     \<open>\<psi>\<^sub>i = \<beta> \<cdot>\<^sub>v \<psi>\<close> with \<open>\<beta> = \<langle>\<psi>|\<psi>\<^sub>i\<rangle>\<close>. *)
+
+(* --------------------------------------------------------------------------
+   \<section>15.2 Composite Ensembles.  The pure density of a tensor is the tensor
+   of pure densities: \<open>|\<psi> \<otimes> \<phi>\<rangle>\<langle>\<psi> \<otimes> \<phi>| = |\<psi>\<rangle>\<langle>\<psi>| \<otimes> |\<phi>\<rangle>\<langle>\<phi>|\<close>.
+   -------------------------------------------------------------------------- *)
+
+lemma tensor_pure_density:
+  fixes \<psi> \<phi> :: "complex Matrix.vec"
+  assumes \<psi>_dim: "dim_vec \<psi> = m"
+      and \<phi>_dim: "dim_vec \<phi> = p"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "pure_density (tensor_vec \<psi> \<phi>) =
+         (pure_density \<psi>) \<Otimes> (pure_density \<phi>)"
+  sorry
+  (* Proof sketch (PDF p.\ 45, verification of \<open>|\<psi>\<otimes>\<phi>\<rangle>\<langle>\<psi>\<otimes>\<phi>| = |\<psi>\<rangle>\<langle>\<psi>| \<otimes> |\<phi>\<rangle>\<langle>\<phi>|\<close>):
+     both sides live in \<open>carrier_mat (m*p) (m*p)\<close>.  For indices
+       \<open>i = i\<^sub>1*p + i\<^sub>2\<close>, \<open>j = j\<^sub>1*p + j\<^sub>2\<close> with \<open>i\<^sub>1,j\<^sub>1<m\<close>, \<open>i\<^sub>2,j\<^sub>2<p\<close>,
+     LHS $$ (i,j) = \<open>(tensor_vec \<psi> \<phi>) $ i * cnj ((tensor_vec \<psi> \<phi>) $ j)
+                  = (\<psi>$i\<^sub>1 \<cdot> \<phi>$i\<^sub>2) * cnj (\<psi>$j\<^sub>1 \<cdot> \<phi>$j\<^sub>2)
+                  = (\<psi>$i\<^sub>1 * cnj (\<psi>$j\<^sub>1)) * (\<phi>$i\<^sub>2 * cnj (\<phi>$j\<^sub>2))
+                  = pure_density \<psi> $$ (i\<^sub>1,j\<^sub>1) * pure_density \<phi> $$ (i\<^sub>2,j\<^sub>2)\<close>,
+     which is exactly \<open>index_tensor_mat\<close> applied to RHS.  Conclude by
+     \<open>eq_matI\<close>. *)
+
+(* --------------------------------------------------------------------------
+   \<section>15.3 Partial Traces (motivation).
+   For a bipartite density matrix \<rho> \<in> L(H\<^sub>A \<otimes> H\<^sub>B), measurements acting only
+   on the A-side correspond to operators of the form \<open>M \<Otimes> 1\<^sub>m p\<close>.  One seeks
+   a linear "partial trace" map \<open>tr\<^sub>B : L(H\<^sub>A \<otimes> H\<^sub>B) \<rightarrow> L(H\<^sub>A)\<close> satisfying
+       \<open>Tr ((M \<Otimes> 1\<^sub>m p) * \<rho>) = Tr (M * tr\<^sub>B \<rho>)    \<forall>M\<close>.
+   Existence, uniqueness, and the construction of \<open>tr\<^sub>B\<close> are taken up in Day 15.
+   -------------------------------------------------------------------------- *)
+
+
 end
