@@ -1428,6 +1428,15 @@ qed
    those \<rho> with \<rho> \<ge> 0 and \<open>Tr \<rho> = 1\<close>.
    -------------------------------------------------------------------------- *)
 
+(* Unfolding the definition: for square \<rho>, being a density matrix is just
+   \<open>\<rho> \<ge> 0 \<and> Tr \<rho> = 1\<close>.  This matches Paulsen's Definition on p.\ 43. *)
+
+theorem density_matrix_characterisation:
+  fixes \<rho> :: "complex Matrix.mat"
+  assumes sq: "\<rho> \<in> carrier_mat n n"
+  shows "density_matrix n \<rho> \<longleftrightarrow> psd \<rho> \<and> Tr \<rho> = 1"
+  using sq by (simp add: density_matrix_def)
+
 theorem spectral_ensemble_exists:
   fixes \<rho> :: "complex Matrix.mat"
   assumes dm: "density_matrix n \<rho>"
@@ -1480,6 +1489,33 @@ lemma pure_density_is_pure_state_density:
   shows "pure_state_density n (pure_density \<psi>)"
   unfolding pure_state_density_def
   using assms pure_density_is_density_matrix by blast
+
+(* Rank-1 characterisation: a density matrix \<rho> is pure iff it is idempotent
+   (equivalently, iff it is a rank-one projection).  Not explicit in
+   Paulsen p.\ 44 but a standard companion fact whose proof uses the spectral
+   decomposition from Days 3\<endash>10. *)
+
+theorem pure_density_iff_idempotent:
+  fixes \<rho> :: "complex Matrix.mat"
+  assumes dm: "density_matrix n \<rho>"
+  shows "pure_state_density n \<rho> \<longleftrightarrow> \<rho> * \<rho> = \<rho>"
+proof
+  assume pure: "pure_state_density n \<rho>"
+  then obtain \<psi> where st: "quantum_state n \<psi>" and rho_eq: "\<rho> = pure_density \<psi>"
+    unfolding pure_state_density_def by blast
+  show "\<rho> * \<rho> = \<rho>" sorry
+  (* Proof sketch: with \<rho> = mat_of_cols n [\<psi>] * (mat_of_cols n [\<psi>])\<^sup>\<dagger>
+     = M * M\<^sup>\<dagger>, one has M\<^sup>\<dagger> * M = (1\<^sub>m 1) since \<open>\<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>\<^sup>2 = 1\<close>.
+     Then \<rho>\<^sup>2 = M * (M\<^sup>\<dagger> * M) * M\<^sup>\<dagger> = M * M\<^sup>\<dagger> = \<rho>. *)
+next
+  assume idem: "\<rho> * \<rho> = \<rho>"
+  show "pure_state_density n \<rho>" sorry
+  (* Proof sketch: spectral decomposition gives \<rho> = U * diag_mat_of_real D * U\<^sup>\<dagger>
+     with D!i \<ge> 0 (PSD) and \<open>\<Sum>i<n. D!i = Tr \<rho> = 1\<close>.  Idempotence forces
+     (D!i)\<^sup>2 = D!i, i.e. D!i \<in> {0,1}; combined with \<open>\<Sum>i<n. D!i = 1\<close>, exactly
+     one diagonal entry equals 1.  Let \<psi> = col U i for that i; then
+     \<open>\<rho> = pure_density \<psi>\<close> and \<psi> is a unit vector, so \<open>quantum_state n \<psi>\<close>. *)
+qed
 
 theorem pure_ensemble_parallel:
   fixes \<psi> :: "complex Matrix.vec"
