@@ -2620,4 +2620,132 @@ qed
    -------------------------------------------------------------------------- *)
 
 
+(* ============================================================================
+   DAY 15 — 30 / Sep / 11
+   Topic: Trace Formulas; Tensor Products of Operators; Partial Traces
+   ============================================================================ *)
+
+(* --------------------------------------------------------------------------
+   Section 16.1.  Tr(A) equals the sum of quadratic forms in any orthonormal
+   basis.  (PDF p.46.)
+   -------------------------------------------------------------------------- *)
+
+theorem trace_via_onb:
+  fixes A :: "complex Matrix.mat"
+  assumes sq: "A \<in> carrier_mat n n"
+      and orth: "orthonormal_list n vs"
+      and full: "length vs = n"
+  shows "Tr A = (\<Sum>i<n. \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>)"
+  sorry
+  (* Sketch: let V = mat_of_cols n vs.  By orthonormal_mat_unitary, V is
+     unitary.  Hence sum_i <vs!i | A vs!i> = sum_i <V e_i | A V e_i>
+     = sum_i <e_i | V-dagger A V e_i> = Tr (V-dagger A V) = Tr A
+     using Tr_unitary_conjugation. *)
+
+(* --------------------------------------------------------------------------
+   Tr(R tensor T) = Tr R times Tr T.  (PDF pp.46-47.)
+   -------------------------------------------------------------------------- *)
+
+theorem trace_tensor:
+  fixes R T :: "complex Matrix.mat"
+  assumes Rsq: "R \<in> carrier_mat m m"
+      and Tsq: "T \<in> carrier_mat p p"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "Tr (R \<Otimes> T) = Tr R * Tr T"
+  sorry
+  (* Sketch: Tr(R tensor T) = sum over r < m*p of (R tensor T)$$(r, r),
+     and by index_tensor_mat with r = i*p + k (i < m, k < p) this equals
+     sum_i sum_k (R $$ (i, i)) * (T $$ (k, k)) = Tr R * Tr T. *)
+
+(* --------------------------------------------------------------------------
+   Section 16.1 (cont'd).  The canonical map
+       Gamma : L(H_A) tensor L(H_B) -> L(H_A tensor H_B),  R tensor T |-> R tensor T
+   is a vector-space isomorphism in finite dimensions.  We record only the
+   dimension-counting half: both sides have dimension (m*p)^2.
+   -------------------------------------------------------------------------- *)
+
+proposition L_tensor_dim:
+  fixes m p :: nat
+  shows "m^2 * p^2 = (m * p)^2"
+  by (simp add: power2_eq_square mult.assoc mult.left_commute)
+
+(* --------------------------------------------------------------------------
+   Section 16.2.  Partial traces.  For X in L(H_A tensor H_B) we define
+       tr_B : L(H_A tensor H_B) -> L(H_A),     tr_B(R tensor T) = (Tr T) * R,
+       tr_A : L(H_A tensor H_B) -> L(H_B),     tr_A(R tensor T) = (Tr R) * T.
+   Concrete implementation: view X as an m*p by m*p matrix indexed by
+   pairs (i, k) with i < m, k < p and flat index i*p + k (so H_A is the
+   "block" factor and H_B is the "within-block" factor, matching Isabelle's
+   tensor convention (A tensor B)$$(r, c) = A$$(r div rB, c div cB) *
+   B$$(r mod rB, c mod cB)).  Then
+       (tr_B X)$$(i, j) = sum_k < p. X $$ (i*p + k, j*p + k),
+       (tr_A X)$$(i, j) = sum_k < m. X $$ (k*p + i, k*p + j).
+   -------------------------------------------------------------------------- *)
+
+definition partial_trace_B :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "partial_trace_B m p x \<equiv>
+     Matrix.mat m m (\<lambda>(i, j). \<Sum>k<p. x $$ (i * p + k, j * p + k))"
+
+definition partial_trace_A :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "partial_trace_A m p x \<equiv>
+     Matrix.mat p p (\<lambda>(i, j). \<Sum>k<m. x $$ (k * p + i, k * p + j))"
+
+lemma dim_row_partial_trace_B [simp]: "dim_row (partial_trace_B m p x) = m"
+  by (simp add: partial_trace_B_def)
+
+lemma dim_col_partial_trace_B [simp]: "dim_col (partial_trace_B m p x) = m"
+  by (simp add: partial_trace_B_def)
+
+lemma partial_trace_B_carrier [simp]:
+  "partial_trace_B m p x \<in> carrier_mat m m"
+  by auto
+
+lemma dim_row_partial_trace_A [simp]: "dim_row (partial_trace_A m p x) = p"
+  by (simp add: partial_trace_A_def)
+
+lemma dim_col_partial_trace_A [simp]: "dim_col (partial_trace_A m p x) = p"
+  by (simp add: partial_trace_A_def)
+
+lemma partial_trace_A_carrier [simp]:
+  "partial_trace_A m p x \<in> carrier_mat p p"
+  by auto
+
+(* Defining property on elementary tensors. *)
+
+lemma partial_trace_B_tensor:
+  fixes R T :: "complex Matrix.mat"
+  assumes Rsq: "R \<in> carrier_mat m m"
+      and Tsq: "T \<in> carrier_mat p p"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "partial_trace_B m p (R \<Otimes> T) = Tr T \<cdot>\<^sub>m R"
+  sorry
+  (* Sketch: entry (i, j) with i, j < m evaluates to
+       sum_k < p. (R tensor T) $$ (i*p + k, j*p + k)
+     = sum_k < p. R $$ (i, j) * T $$ (k, k)                 by index_tensor_mat
+     = R $$ (i, j) * Tr T.
+     This equals (Tr T * R) $$ (i, j), giving the claim by eq_matI. *)
+
+lemma partial_trace_A_tensor:
+  fixes R T :: "complex Matrix.mat"
+  assumes Rsq: "R \<in> carrier_mat m m"
+      and Tsq: "T \<in> carrier_mat p p"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "partial_trace_A m p (R \<Otimes> T) = Tr R \<cdot>\<^sub>m T"
+  sorry
+  (* Sketch: symmetric to partial_trace_B_tensor.  Entry (i, j) with
+     i, j < p is sum_k < m. (R tensor T) $$ (k*p + i, k*p + j)
+     = sum_k < m. R $$ (k, k) * T $$ (i, j) = Tr R * T $$ (i, j). *)
+
+(* --------------------------------------------------------------------------
+   Section 16.3.  Partial traces and measurements (motivation).
+   For a bipartite density matrix rho on H_A tensor H_B, an A-side
+   measurement system {M_alpha} acts as {M_alpha tensor I_{H_B}}, and
+       Tr ((M_alpha-dagger M_alpha) tensor I_{H_B} . rho)
+         = Tr ((M_alpha-dagger M_alpha) . tr_B(rho)).
+   Thus Lab A only sees rho^A = tr_B(rho).  Existence, uniqueness, and
+   density-matrix preservation of the partial trace, together with the
+   compatibility theorem above, are taken up in Day 16.
+   -------------------------------------------------------------------------- *)
+
+
 end
