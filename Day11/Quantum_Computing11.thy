@@ -715,4 +715,704 @@ definition count_zeros :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarro
   "count_zeros f N \<equiv> card {J. J < 2^N \<and> f J = 0}"
 
 
+(* ============================================================================
+   DAY 13 — 26 / Sep / 11
+   Topic: Ensembles and Mixed States; Density Matrices
+   ============================================================================ *)
+
+(* --------------------------------------------------------------------------
+   Ensembles
+   -------------------------------------------------------------------------- *)
+
+definition ensemble :: "nat \<Rightarrow> (real \<times> complex Matrix.vec) list \<Rightarrow> bool" where
+  "ensemble n E \<equiv>
+     (\<forall>(p, \<psi>) \<in> set E. p \<ge> 0 \<and> quantum_state n \<psi>) \<and>
+     (\<Sum>(p, _) \<leftarrow> E. p) = 1"
+
+(* --------------------------------------------------------------------------
+   Density Matrix
+   -------------------------------------------------------------------------- *)
+
+definition density_matrix :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "density_matrix n \<rho> \<equiv> \<rho> \<in> carrier_mat n n \<and> psd \<rho> \<and> Tr \<rho> = 1"
+
+(* Density matrix associated to a pure state *)
+
+definition pure_density :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
+  "pure_density \<psi> \<equiv>
+     let n = dim_vec \<psi> in
+     outer_sum n [\<psi>]"
+
+lemma Tr_outer_sum_single:
+  assumes dim: "dim_vec \<psi> = n"
+  shows "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
+proof -
+  have "Tr (outer_sum n [\<psi>]) = (\<Sum>r<n. \<psi> $ r * cnj (\<psi> $ r))"
+    using dim
+    by (simp add: Tr_def outer_sum_def mat_of_cols_def dagger_def scalar_prod_def)
+  also have "\<dots> = (\<Sum>r<n. cnj (\<psi> $ r) * \<psi> $ r)"
+    by (simp add: mult.commute)
+  also have "\<dots> = \<langle>\<psi> | \<psi>\<rangle>"
+    using dim by (simp add: inner_prod_def lessThan_atLeast0)
+  finally show ?thesis .
+qed
+
+lemma pure_density_is_density_matrix:
+  assumes "quantum_state n \<psi>"
+  shows "density_matrix n (pure_density \<psi>)"
+proof -
+  (* pure_density \<psi> = |\<psi>\<rangle>\<langle>\<psi>|.  Hermitian: outer_sum_hermitian.
+     PSD: outer_sum_psd.  Tr = \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>\<^sup>2 = 1. *)
+  have dim: "dim_vec \<psi> = n" using assms by (auto simp: quantum_state_def)
+  have norm: "\<parallel>\<psi>\<parallel> = 1" using assms by (auto simp: quantum_state_def)
+  have psd: "psd (outer_sum n [\<psi>])"
+    using dim by (intro outer_sum_psd) auto
+  have tr: "Tr (outer_sum n [\<psi>]) = 1"
+  proof -
+    have "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
+      by (rule Tr_outer_sum_single[OF dim])
+    also have "\<dots> = 1"
+      using norm cpx_vec_length_inner_prod[of \<psi>] by simp
+    finally show ?thesis .
+  qed
+  show ?thesis
+    unfolding density_matrix_def pure_density_def Let_def
+    using dim psd tr by fastforce
+qed
+
+(* Density matrix of an ensemble *)
+
+definition ensemble_density :: "nat \<Rightarrow> (real \<times> complex Matrix.vec) list \<Rightarrow> complex Matrix.mat" where
+  "ensemble_density n E \<equiv>
+     foldr (\<lambda>(p,\<psi>) acc. complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] + acc)
+           E (0\<^sub>m n n)"
+
+(* -- Auxiliary: PSD preservation helpers (not in the imported library) -- *)
+
+lemma psd_zero_mat [simp]:
+  "psd (0\<^sub>m n n)"
+proof -
+  have herm: "((0\<^sub>m n n)\<^sup>\<dagger>) = 0\<^sub>m n n"
+    unfolding dagger_def by (rule eq_matI) simp_all
+  have quad: "\<And>x::complex Matrix.vec.
+        dim_vec x = n \<Longrightarrow> Re (\<langle>x | (0\<^sub>m n n) *\<^sub>v x\<rangle>) \<ge> 0"
+  proof -
+    fix x :: "complex Matrix.vec" assume dx: "dim_vec x = n"
+    have "(0\<^sub>m n n) *\<^sub>v x = 0\<^sub>v n"
+      using dx by (intro eq_vecI) (simp_all add: scalar_prod_def)
+    hence "\<langle>x | (0\<^sub>m n n) *\<^sub>v x\<rangle> = 0"
+      using dx by (simp add: inner_prod_def)
+    thus "Re (\<langle>x | (0\<^sub>m n n) *\<^sub>v x\<rangle>) \<ge> 0" by simp
+  qed
+  show ?thesis
+    unfolding psd_def hermitian_def
+    using herm quad by simp
+qed
+
+lemma psd_smult_nonneg:
+  assumes c: "0 \<le> c"
+      and A: "psd A" and Ac: "A \<in> carrier_mat n n"
+  shows "psd (complex_of_real c \<cdot>\<^sub>m A)"
+proof -
+  have A_dagger: "(A\<^sup>\<dagger>) = A" using A by (simp add: psd_def hermitian_def)
+  have A_quad: "\<And>x. dim_vec x = n \<Longrightarrow> Re (\<langle>x | A *\<^sub>v x\<rangle>) \<ge> 0"
+    using A Ac by (simp add: psd_def)
+
+  have herm_cA: "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = complex_of_real c \<cdot>\<^sub>m A"
+  proof -
+    have "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = (cnj (complex_of_real c)) \<cdot>\<^sub>m (A\<^sup>\<dagger>)"
+      by (rule dagger_of_smult)
+    also have "\<dots> = complex_of_real c \<cdot>\<^sub>m A"
+      using A_dagger by simp
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>Action of the scaled matrix on a vector.\<close>
+  have smult_mv:
+    "\<And>x. x \<in> carrier_vec n \<Longrightarrow>
+         (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
+  proof -
+    fix x :: "complex Matrix.vec" assume x_car: "x \<in> carrier_vec n"
+    show "(complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
+    proof (rule eq_vecI)
+      show "dim_vec ((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x)
+            = dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
+        using Ac by simp
+    next
+      fix i assume "i < dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
+      hence i: "i < n" using Ac by simp
+      have r1: "Matrix.row A i \<in> carrier_vec n"
+        using Ac i by auto
+      have i_dr: "i < dim_row A" using i Ac by simp
+      have "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
+              = Matrix.row (complex_of_real c \<cdot>\<^sub>m A) i \<bullet> x"
+        using i Ac by auto
+      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v Matrix.row A i) \<bullet> x"
+        using row_smult[OF i_dr] by simp
+      also have "\<dots> = complex_of_real c * (Matrix.row A i \<bullet> x)"
+        using r1 x_car by simp
+      also have "\<dots> = complex_of_real c * (A *\<^sub>v x) $ i"
+        using i Ac by auto
+      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i"
+        using i Ac by auto
+      finally show "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
+                  = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i" .
+    qed
+  qed
+
+  have quad: "\<And>x. dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A) \<Longrightarrow>
+                Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>) \<ge> 0"
+  proof -
+    fix x :: "complex Matrix.vec"
+    assume dx: "dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A)"
+    hence dx': "dim_vec x = n" using Ac by simp
+    have x_car: "x \<in> carrier_vec n" using dx' by auto
+
+    have "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
+        = \<langle>x | complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
+      using smult_mv[OF x_car] by simp
+    also have "\<dots> = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>"
+      by (rule inner_prod_right_smult')
+    finally have eq: "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
+                    = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>" .
+
+    have Re_split: "Re (complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>)
+                  = c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
+      by simp
+    have "0 \<le> c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
+      using c A_quad[OF dx'] by (rule mult_nonneg_nonneg)
+    thus "0 \<le> Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>)"
+      using eq Re_split by simp
+  qed
+
+  show ?thesis
+    unfolding psd_def hermitian_def
+    using herm_cA quad by blast
+qed
+
+lemma psd_add_psd:
+  assumes A: "psd A" and B: "psd B"
+      and Ac: "A \<in> carrier_mat n n" and Bc: "B \<in> carrier_mat n n"
+  shows "psd (A + B)"
+proof -
+  have A_dagger: "(A\<^sup>\<dagger>) = A" using A by (simp add: psd_def hermitian_def)
+  have B_dagger: "(B\<^sup>\<dagger>) = B" using B by (simp add: psd_def hermitian_def)
+  have A_quad: "\<And>x. dim_vec x = n \<Longrightarrow> Re (\<langle>x | A *\<^sub>v x\<rangle>) \<ge> 0"
+    using A Ac by (simp add: psd_def)
+  have B_quad: "\<And>x. dim_vec x = n \<Longrightarrow> Re (\<langle>x | B *\<^sub>v x\<rangle>) \<ge> 0"
+    using B Bc by (simp add: psd_def)
+
+  have herm_AB: "((A + B)\<^sup>\<dagger>) = A + B"
+  proof (rule eq_matI)
+    show "dim_row ((A + B)\<^sup>\<dagger>) = dim_row (A + B)"
+      using Ac Bc by simp
+    show "dim_col ((A + B)\<^sup>\<dagger>) = dim_col (A + B)"
+      using Ac Bc by simp
+  next
+    fix i j
+    assume "i < dim_row (A + B)" and "j < dim_col (A + B)"
+    then have i: "i < n" and j: "j < n" using Ac Bc by auto
+    have "((A + B)\<^sup>\<dagger>) $$ (i, j) = cnj ((A + B) $$ (j, i))"
+      using i j Ac Bc by (simp add: dagger_def)
+    also have "\<dots> = cnj (A $$ (j, i)) + cnj (B $$ (j, i))"
+      using i j Ac Bc by simp
+    also have "\<dots> = (A\<^sup>\<dagger>) $$ (i, j) + (B\<^sup>\<dagger>) $$ (i, j)"
+      using i j Ac Bc by (simp add: dagger_def)
+    also have "\<dots> = A $$ (i, j) + B $$ (i, j)"
+      using A_dagger B_dagger by simp
+    also have "\<dots> = (A + B) $$ (i, j)"
+      using i j Ac Bc by simp
+    finally show "((A + B)\<^sup>\<dagger>) $$ (i, j) = (A + B) $$ (i, j)" .
+  qed
+
+  have quad: "\<And>x. dim_vec x = dim_row (A + B) \<Longrightarrow>
+                Re (\<langle>x | (A + B) *\<^sub>v x\<rangle>) \<ge> 0"
+  proof -
+    fix x :: "complex Matrix.vec"
+    assume dx: "dim_vec x = dim_row (A + B)"
+    hence dx': "dim_vec x = n" using Ac Bc by simp
+    have x_car: "x \<in> carrier_vec n" using dx' by auto
+    have Ax_car: "A *\<^sub>v x \<in> carrier_vec n" using Ac x_car by auto
+    have Bx_car: "B *\<^sub>v x \<in> carrier_vec n" using Bc x_car by auto
+    have dim_eq: "dim_vec (A *\<^sub>v x) = dim_vec (B *\<^sub>v x)"
+      using Ac Bc by simp
+
+    have "\<langle>x | (A + B) *\<^sub>v x\<rangle> = \<langle>x | A *\<^sub>v x + B *\<^sub>v x\<rangle>"
+      using add_mult_distrib_mat_vec[OF Ac Bc x_car] by simp
+    also have "\<dots> = \<langle>x | A *\<^sub>v x\<rangle> + \<langle>x | B *\<^sub>v x\<rangle>"
+      by (rule inner_prod_right_add'[OF dim_eq])
+    finally have eq: "\<langle>x | (A + B) *\<^sub>v x\<rangle>
+                    = \<langle>x | A *\<^sub>v x\<rangle> + \<langle>x | B *\<^sub>v x\<rangle>" .
+
+    have "0 \<le> Re (\<langle>x | A *\<^sub>v x\<rangle>) + Re (\<langle>x | B *\<^sub>v x\<rangle>)"
+      using A_quad[OF dx'] B_quad[OF dx'] by simp
+    thus "0 \<le> Re (\<langle>x | (A + B) *\<^sub>v x\<rangle>)"
+      using eq by simp
+  qed
+
+  show ?thesis
+    unfolding psd_def hermitian_def
+    using herm_AB quad by blast
+qed
+
+(* -- Auxiliary: structural lemmas about ensemble_density on a list -- *)
+
+lemma ensemble_density_Nil [simp]:
+  "ensemble_density n [] = 0\<^sub>m n n"
+  by (simp add: ensemble_density_def)
+
+lemma ensemble_density_Cons:
+  "ensemble_density n ((p, \<psi>) # E) =
+     complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] + ensemble_density n E"
+  by (simp add: ensemble_density_def)
+
+lemma ensemble_density_carrier:
+  assumes "\<forall>(p, \<psi>) \<in> set E. quantum_state n \<psi>"
+  shows "ensemble_density n E \<in> carrier_mat n n"
+  using assms
+proof (induct E)
+  case Nil
+  show ?case by simp
+next
+  case (Cons a E)
+  obtain p \<psi> where a_eq: "a = (p, \<psi>)" by (cases a) auto
+  have q: "quantum_state n \<psi>" using Cons.prems a_eq by auto
+  have os_car: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
+  have sm_car: "complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] \<in> carrier_mat n n"
+    using os_car by auto
+  have IH: "ensemble_density n E \<in> carrier_mat n n"
+    using Cons.hyps Cons.prems by auto
+  show ?case
+    unfolding a_eq ensemble_density_Cons
+    using IH by (rule add_carrier_mat)
+qed
+
+lemma ensemble_density_psd_aux:
+  assumes "\<forall>(p, \<psi>) \<in> set E. p \<ge> 0 \<and> quantum_state n \<psi>"
+  shows "psd (ensemble_density n E)"
+  using assms
+proof (induct E)
+  case Nil
+  show ?case by simp
+next
+  case (Cons a E)
+  obtain p \<psi> where a_eq: "a = (p, \<psi>)" by (cases a) auto
+  have p_nn: "0 \<le> p" using Cons.prems a_eq by auto
+  have q: "quantum_state n \<psi>" using Cons.prems a_eq by auto
+  have d\<psi>: "dim_vec \<psi> = n" using q by (simp add: quantum_state_def)
+
+  have os_car: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
+  have os_psd: "psd (outer_sum n [\<psi>])"
+    using d\<psi> by (intro outer_sum_psd) auto
+  have sm_psd: "psd (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>])"
+    using p_nn os_psd os_car by (rule psd_smult_nonneg)
+  have sm_car: "complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] \<in> carrier_mat n n"
+    using os_car by auto
+
+  have IH_psd: "psd (ensemble_density n E)"
+    using Cons.hyps Cons.prems by auto
+  have IH_car: "ensemble_density n E \<in> carrier_mat n n"
+    by (rule ensemble_density_carrier) (use Cons.prems in auto)
+
+  show ?case
+    unfolding a_eq ensemble_density_Cons
+    using sm_psd IH_psd sm_car IH_car by (rule psd_add_psd)
+qed
+
+lemma Tr_zero_mat' [simp]:
+  "Tr (0\<^sub>m n n) = 0"
+  by (simp add: Tr_def zero_mat_def)
+
+lemma ensemble_density_Tr:
+  assumes "\<forall>(p, \<psi>) \<in> set E. quantum_state n \<psi>"
+  shows "Tr (ensemble_density n E) = complex_of_real (\<Sum>(p, _) \<leftarrow> E. p)"
+  using assms
+proof (induct E)
+  case Nil
+  show ?case by simp
+next
+  case (Cons a E)
+  obtain p \<psi> where a_eq: "a = (p, \<psi>)" by (cases a) auto
+  have q: "quantum_state n \<psi>" using Cons.prems a_eq by auto
+  have d\<psi>: "dim_vec \<psi> = n" using q by (simp add: quantum_state_def)
+
+  have os_car: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
+  have sm_car: "complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] \<in> carrier_mat n n"
+    using os_car by auto
+  have IH_car: "ensemble_density n E \<in> carrier_mat n n"
+    by (rule ensemble_density_carrier) (use Cons.prems in auto)
+
+  have Tr_os: "Tr (outer_sum n [\<psi>]) = 1"
+  proof -
+    have "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
+      by (rule Tr_outer_sum_single[OF d\<psi>])
+    also have "\<dots> = 1"
+      using q by (metis cpx_vec_length_inner_prod of_real_1 one_power2 quantum_state_norm1)
+    finally show ?thesis .
+  qed
+
+  have "Tr (ensemble_density n ((p, \<psi>) # E))
+        = Tr (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] + ensemble_density n E)"
+    by (simp add: ensemble_density_Cons)
+  also have "\<dots> = Tr (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>]) + Tr (ensemble_density n E)"
+  proof (rule Tr_add)
+    show "dim_row (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>]) = dim_row (ensemble_density n E)"
+      using sm_car IH_car by auto
+    show "dim_col (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>]) = dim_col (ensemble_density n E)"
+      using sm_car IH_car by auto
+  qed
+  also have "\<dots> = complex_of_real p * Tr (outer_sum n [\<psi>]) + Tr (ensemble_density n E)"
+    by (simp add: Tr_smult)
+  also have "\<dots> = complex_of_real p + Tr (ensemble_density n E)"
+    using Tr_os by simp
+  also have "\<dots> = complex_of_real p + complex_of_real (\<Sum>(p, _) \<leftarrow> E. p)"
+    using Cons.hyps Cons.prems by auto
+  also have "\<dots> = complex_of_real (p + (\<Sum>(p, _) \<leftarrow> E. p))"
+    by simp
+  also have "\<dots> = complex_of_real (\<Sum>(p, _) \<leftarrow> ((p, \<psi>) # E). p)"
+    by simp
+  finally show ?case unfolding a_eq .
+qed
+
+(* The ensemble density is a density matrix *)
+
+theorem ensemble_density_is_dm:
+  assumes E: "ensemble n E"
+  shows "density_matrix n (ensemble_density n E)"
+proof -
+  from E have states_q: "\<forall>(p, \<psi>) \<in> set E. quantum_state n \<psi>"
+    and states_pq: "\<forall>(p, \<psi>) \<in> set E. p \<ge> 0 \<and> quantum_state n \<psi>"
+    and probs: "(\<Sum>(p, _) \<leftarrow> E. p) = 1"
+    unfolding ensemble_def by auto
+
+  have carr: "ensemble_density n E \<in> carrier_mat n n"
+    by (rule ensemble_density_carrier[OF states_q])
+  have psd_ed: "psd (ensemble_density n E)"
+    by (rule ensemble_density_psd_aux[OF states_pq])
+  have tr_ed: "Tr (ensemble_density n E) = 1"
+    using ensemble_density_Tr[OF states_q] probs by simp
+
+  show ?thesis
+    unfolding density_matrix_def
+    using carr psd_ed tr_ed by blast
+qed
+
+(* --------------------------------------------------------------------------
+   Von Neumann's approach: probabilities via Tr(M\<dagger>M \<rho>)
+   -------------------------------------------------------------------------- *)
+
+(* For a pure state \<psi>: \<Parallel>M\<psi>\<Parallel>\<^sup>2 = Tr(M\<dagger>M |\<psi>\<rangle>\<langle>\<psi>|) *)
+
+lemma pure_state_prob_trace:
+  fixes M :: "complex Matrix.mat" and \<psi> :: "complex Matrix.vec"
+  assumes st: "quantum_state n \<psi>"
+      and Msq: "M \<in> carrier_mat n n"
+  shows "meas_prob M \<psi> = Re (Tr ((M\<^sup>\<dagger>) * M * outer_sum n [\<psi>]))"
+proof -
+  let ?A = "(M\<^sup>\<dagger>) * M"
+  have Ac: "?A \<in> carrier_mat n n" using Msq by auto
+  have dpsi: "dim_vec \<psi> = n" using st by (simp add: quantum_state_def)
+  have psi_car: "\<psi> \<in> carrier_vec n" using dpsi by auto
+  have Mpsi_car: "M *\<^sub>v \<psi> \<in> carrier_vec n" using Msq psi_car by auto
+
+  \<comment> \<open>Entry formula for \<open>outer_sum n [\<psi>]\<close>.\<close>
+  have OS_entry: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
+                 outer_sum n [\<psi>] $$ (i, j) = \<psi> $ i * cnj (\<psi> $ j)"
+  proof -
+    fix i j :: nat assume i: "i < n" and j: "j < n"
+    let ?V = "mat_of_cols n [\<psi>]"
+    have dVr: "dim_row ?V = n" by simp
+    have dVc: "dim_col ?V = 1" by simp
+    have Vc: "?V \<in> carrier_mat n 1" by auto
+    have dVdr: "dim_row (?V\<^sup>\<dagger>) = 1" by simp
+    have dVdc: "dim_col (?V\<^sup>\<dagger>) = n" by simp
+    have Vdc: "(?V\<^sup>\<dagger>) \<in> carrier_mat 1 n"
+      using dVdr dVdc by auto
+
+    have Vi0: "?V $$ (i, 0) = \<psi> $ i"
+      using i by (simp add: mat_of_cols_index)
+    have Vj0: "?V $$ (j, 0) = \<psi> $ j"
+      using j by (simp add: mat_of_cols_index)
+    have Vd_0j: "(?V\<^sup>\<dagger>) $$ (0, j) = cnj (\<psi> $ j)"
+    proof -
+      have "(?V\<^sup>\<dagger>) $$ (0, j) = cnj (?V $$ (j, 0))"
+        using j dVr dVc by (simp add: dagger_def)
+      with Vj0 show ?thesis by simp
+    qed
+
+    have "outer_sum n [\<psi>] $$ (i, j) = (?V * (?V\<^sup>\<dagger>)) $$ (i, j)"
+      by (simp add: outer_sum_def)
+    also have "\<dots> = Matrix.row ?V i \<bullet> Matrix.col (?V\<^sup>\<dagger>) j"
+    proof -
+      have "i < dim_row ?V" using i dVr by simp
+      moreover have "j < dim_col (?V\<^sup>\<dagger>)" using j dVdc by simp
+      ultimately show ?thesis by (simp add: times_mat_def)
+    qed
+    also have "\<dots> = (\<Sum>k = 0..<1. Matrix.row ?V i $ k * Matrix.col (?V\<^sup>\<dagger>) j $ k)"
+      using dVdr by (simp add: scalar_prod_def)
+    also have "\<dots> = Matrix.row ?V i $ 0 * Matrix.col (?V\<^sup>\<dagger>) j $ 0" by simp
+    also have "Matrix.row ?V i $ 0 = ?V $$ (i, 0)"
+      using i dVc by auto
+    also have "Matrix.col (?V\<^sup>\<dagger>) j $ 0 = (?V\<^sup>\<dagger>) $$ (0, j)"
+    proof -
+      have h1: "0 < dim_row (?V\<^sup>\<dagger>)" using dVdr by simp
+      have h2: "j < dim_col (?V\<^sup>\<dagger>)" using j dVdc by simp
+      show ?thesis by (rule index_col[OF h1 h2])
+    qed
+    finally show "outer_sum n [\<psi>] $$ (i, j) = \<psi> $ i * cnj (\<psi> $ j)"
+      using Vi0 Vd_0j by simp
+  qed
+
+  \<comment> \<open>Cyclic identity: \<open>Tr (A \<cdot> |\<psi>\<rangle>\<langle>\<psi>|) = \<langle>\<psi> | A \<psi>\<rangle>\<close>.\<close>
+  have Tr_id: "Tr (?A * outer_sum n [\<psi>]) = \<langle>\<psi> | ?A *\<^sub>v \<psi>\<rangle>"
+  proof -
+    have OSc: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
+    have prodc: "?A * outer_sum n [\<psi>] \<in> carrier_mat n n" using Ac OSc by auto
+    have "Tr (?A * outer_sum n [\<psi>])
+           = (\<Sum>i<n. (?A * outer_sum n [\<psi>]) $$ (i, i))"
+    proof -
+      have dr: "dim_row (?A * outer_sum n [\<psi>]) = n" using prodc by auto
+      have dc: "dim_col (?A * outer_sum n [\<psi>]) = n" using prodc by auto
+      show ?thesis using dr dc by (simp add: Tr_def)
+    qed
+    also have "\<dots> = (\<Sum>i<n. \<Sum>k = 0..<n. ?A $$ (i, k) * outer_sum n [\<psi>] $$ (k, i))"
+    proof (intro sum.cong refl)
+      fix i assume "i \<in> {..<n}"
+      hence i: "i < n" by simp
+      have iA: "i < dim_row ?A" using i Ac by auto
+      have iOS: "i < dim_col (outer_sum n [\<psi>])" using i OSc by auto
+      have dOS: "dim_row (outer_sum n [\<psi>]) = n" using OSc by auto
+      have "(?A * outer_sum n [\<psi>]) $$ (i, i)
+            = Matrix.row ?A i \<bullet> Matrix.col (outer_sum n [\<psi>]) i"
+        using iA iOS by (simp add: times_mat_def)
+      also have "\<dots> = (\<Sum>k = 0..<n.
+           Matrix.row ?A i $ k * Matrix.col (outer_sum n [\<psi>]) i $ k)"
+        using dOS by (simp add: scalar_prod_def)
+      also have "\<dots> = (\<Sum>k = 0..<n. ?A $$ (i, k) * outer_sum n [\<psi>] $$ (k, i))"
+      proof (intro sum.cong refl)
+        fix k assume "k \<in> {0..<n}"
+        hence k: "k < n" by simp
+        have "Matrix.row ?A i $ k = ?A $$ (i, k)"
+          using i k Ac by auto
+        moreover have "Matrix.col (outer_sum n [\<psi>]) i $ k
+                     = outer_sum n [\<psi>] $$ (k, i)"
+          using k i OSc by auto
+        ultimately show
+          "Matrix.row ?A i $ k * Matrix.col (outer_sum n [\<psi>]) i $ k
+             = ?A $$ (i, k) * outer_sum n [\<psi>] $$ (k, i)"
+          by simp
+      qed
+      finally show "(?A * outer_sum n [\<psi>]) $$ (i, i)
+                  = (\<Sum>k = 0..<n. ?A $$ (i, k) * outer_sum n [\<psi>] $$ (k, i))" .
+    qed
+    also have "\<dots> = (\<Sum>i<n. \<Sum>j<n. ?A $$ (i, j) * (\<psi> $ j * cnj (\<psi> $ i)))"
+    proof -
+      have entry:
+        "\<And>i j. i \<in> {..<n} \<Longrightarrow> j \<in> {..<n} \<Longrightarrow>
+            ?A $$ (i, j) * outer_sum n [\<psi>] $$ (j, i)
+             = ?A $$ (i, j) * (\<psi> $ j * cnj (\<psi> $ i))"
+      proof -
+        fix i j
+        assume "i \<in> {..<n}"
+        assume "j \<in> {..<n}"
+        hence i: "i < n" and j: "j < n"
+          using \<open>i \<in> {..<n}\<close> by auto 
+        from OS_entry[OF j i]
+        show "?A $$ (i, j) * outer_sum n [\<psi>] $$ (j, i)
+             = ?A $$ (i, j) * (\<psi> $ j * cnj (\<psi> $ i))"
+          by simp
+      qed
+      have "(\<Sum>i<n. \<Sum>j = 0..<n. ?A $$ (i, j) * outer_sum n [\<psi>] $$ (j, i))
+           = (\<Sum>i<n. \<Sum>j<n. ?A $$ (i, j) * outer_sum n [\<psi>] $$ (j, i))"
+        by (simp add: lessThan_atLeast0)
+      also have "\<dots> = (\<Sum>i<n. \<Sum>j<n. ?A $$ (i, j) * (\<psi> $ j * cnj (\<psi> $ i)))"
+        using entry by (intro sum.cong refl) simp
+      finally show ?thesis.
+    qed
+    also have "\<dots> = (\<Sum>i<n. cnj (\<psi> $ i) * (\<Sum>k = 0..<n. ?A $$ (i, k) * \<psi> $ k))"
+    proof (intro sum.cong refl)
+      fix i assume "i \<in> {..<n}"
+      have "(\<Sum>j<n. ?A $$ (i, j) * (\<psi> $ j * cnj (\<psi> $ i)))
+           = (\<Sum>j<n. cnj (\<psi> $ i) * (?A $$ (i, j) * \<psi> $ j))"
+        by (intro sum.cong refl) (simp add: ac_simps)
+      also have "\<dots> = cnj (\<psi> $ i) * (\<Sum>j<n. ?A $$ (i, j) * \<psi> $ j)"
+        by (simp add: sum_distrib_left)
+      also have "\<dots> = cnj (\<psi> $ i) * (\<Sum>k = 0..<n. ?A $$ (i, k) * \<psi> $ k)"
+        by (simp add: lessThan_atLeast0)
+      finally show "(\<Sum>j<n. ?A $$ (i, j) * (\<psi> $ j * cnj (\<psi> $ i)))
+                  = cnj (\<psi> $ i) * (\<Sum>k = 0..<n. ?A $$ (i, k) * \<psi> $ k)" .
+    qed
+    also have "\<dots> = (\<Sum>i<n. cnj (\<psi> $ i) * (?A *\<^sub>v \<psi>) $ i)"
+      using Ac dpsi
+      by (intro sum.cong refl, simp add: mult_mat_vec_index psi_car)
+    also have "\<dots> = \<langle>\<psi> | ?A *\<^sub>v \<psi>\<rangle>"
+      using Msq atLeast0LessThan inner_prod_def by auto 
+    finally show ?thesis.
+  qed
+
+  \<comment> \<open>Bridge \<open>\<parallel>M\<psi>\<parallel>\<^sup>2 = Re \<langle>\<psi> | M\<^sup>\<dagger> M \<psi>\<rangle>\<close> via adjoint swap.\<close>
+  have inner_eq: "\<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle> = cnj (\<langle>\<psi> | ?A *\<^sub>v \<psi>\<rangle>)"
+  proof -
+    have "\<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle> = \<langle>(M\<^sup>\<dagger>) *\<^sub>v (M *\<^sub>v \<psi>) | \<psi>\<rangle>"
+    proof -
+      have dim_Mpsi: "dim_vec (M *\<^sub>v \<psi>) = n" using Mpsi_car carrier_vecD by blast 
+      show ?thesis by (rule inner_prod_adjoint_swap[OF Msq dim_Mpsi dpsi])
+    qed
+    also have "(M\<^sup>\<dagger>) *\<^sub>v (M *\<^sub>v \<psi>) = ?A *\<^sub>v \<psi>"
+      using Msq psi_car
+      by (metis assoc_mult_mat_vec carrier_matD(1) carrier_matI dim_col_of_dagger)
+    finally have "\<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle> = \<langle>?A *\<^sub>v \<psi> | \<psi>\<rangle>".
+    also have "\<dots> = cnj (\<langle>\<psi> | ?A *\<^sub>v \<psi>\<rangle>)"
+      using Msq dpsi inner_prod_cnj by force          
+    finally show ?thesis.
+  qed
+
+  have norm_sq: "\<parallel>M *\<^sub>v \<psi>\<parallel>\<^sup>2 = Re (\<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle>)"
+    by (metis Re_complex_of_real cpx_vec_length_inner_prod)
+  have "meas_prob M \<psi> = \<parallel>M *\<^sub>v \<psi>\<parallel>\<^sup>2" by (simp add: meas_prob_def)
+  also have "\<dots> = Re (\<langle>M *\<^sub>v \<psi> | M *\<^sub>v \<psi>\<rangle>)" by (rule norm_sq)
+  also have "\<dots> = Re (cnj (\<langle>\<psi> | ?A *\<^sub>v \<psi>\<rangle>))" using inner_eq by simp
+  also have "\<dots> = Re (\<langle>\<psi> | ?A *\<^sub>v \<psi>\<rangle>)" by simp
+  also have "\<dots> = Re (Tr (?A * outer_sum n [\<psi>]))" using Tr_id by simp
+  finally show ?thesis.
+qed
+
+(* For an ensemble with density \<rho>: p_\<alpha>(\<rho>) = Tr(M_\<alpha>\<dagger> M_\<alpha> \<rho>) *)
+
+(* Helper: the trace of a PSD matrix has non-negative real part (in fact
+   it is a non-negative real number). *)
+
+lemma Tr_psd_Re_nonneg:
+  assumes P: "psd P" and Pc: "P \<in> carrier_mat n n"
+  shows "0 \<le> Re (Tr P)"
+proof -
+  have dr: "dim_row P = n" and dc: "dim_col P = n" using Pc by auto
+
+  \<comment> \<open>Diagonal entries are inner products with unit vectors.\<close>
+  have diag_entry:
+    "\<And>i. i < n \<Longrightarrow> P $$ (i, i) = \<langle>unit_vec n i | P *\<^sub>v unit_vec n i\<rangle>"
+  proof -
+    fix i assume i: "i < n"
+    let ?e = "unit_vec n i"
+    have de: "dim_vec ?e = n" by simp
+    have Pe_idx: "\<And>k. k < n \<Longrightarrow> (P *\<^sub>v ?e) $ k = P $$ (k, i)"
+    proof -
+      fix k assume k: "k < n"
+      have "(P *\<^sub>v ?e) $ k = Matrix.row P k \<bullet> ?e"
+        using k Pc by auto
+      also have "\<dots> = (\<Sum>m = 0..<n. Matrix.row P k $ m * ?e $ m)"
+        using k Pc by (simp add: scalar_prod_def)
+      also have "\<dots> = (\<Sum>m = 0..<n. if m = i then Matrix.row P k $ m else 0)"
+        using i by (intro sum.cong refl) simp
+      also have "\<dots> = Matrix.row P k $ i"
+        using i by simp
+      also have "\<dots> = P $$ (k, i)"
+        using k i Pc by auto
+      finally show "(P *\<^sub>v ?e) $ k = P $$ (k, i)".
+    qed
+    have "\<langle>?e | P *\<^sub>v ?e\<rangle> = (\<Sum>k = 0..<n. cnj (?e $ k) * (P *\<^sub>v ?e) $ k)"
+      using Pc by (simp add: inner_prod_def)
+    also have "\<dots> = (\<Sum>k = 0..<n. if k = i then (P *\<^sub>v ?e) $ k else 0)"
+      using i by (intro sum.cong refl) simp
+    also have "\<dots> = (P *\<^sub>v ?e) $ i"
+      using i by simp
+    also have "\<dots> = P $$ (i, i)"
+      using Pe_idx[OF i] by simp
+    finally show "P $$ (i, i) = \<langle>?e | P *\<^sub>v ?e\<rangle>" by simp
+  qed
+
+  \<comment> \<open>Each diagonal entry has non-negative real part, so the trace does.\<close>
+  have Re_diag_nn: "\<And>i. i < n \<Longrightarrow> 0 \<le> Re (P $$ (i, i))"
+  proof -
+    fix i assume i: "i < n"
+    have "Re (P $$ (i, i)) = Re (\<langle>unit_vec n i | P *\<^sub>v unit_vec n i\<rangle>)"
+      using diag_entry[OF i] by simp
+    moreover have "0 \<le> Re (\<langle>unit_vec n i | P *\<^sub>v unit_vec n i\<rangle>)"
+      using P Pc by (simp add: psd_def)
+    ultimately show "0 \<le> Re (P $$ (i, i))" by simp
+  qed
+
+  have "Re (Tr P) = Re (\<Sum>r<n. if r < n then P $$ (r, r) else 0)"
+    using dr dc by (simp add: Tr_def)
+  also have "\<dots> = (\<Sum>r<n. Re (P $$ (r, r)))" by simp
+  finally have "Re (Tr P) = (\<Sum>r<n. Re (P $$ (r, r)))".
+  moreover have "0 \<le> (\<Sum>r<n. Re (P $$ (r, r)))"
+    using Re_diag_nn by (intro sum_nonneg) auto
+  ultimately show ?thesis by simp
+qed
+
+lemma ensemble_prob_trace:
+  fixes Ms :: "complex Matrix.mat list"
+  assumes ms: "measurement_system n Ms"
+      and dm: "density_matrix n \<rho>"
+      and Min: "M \<in> set Ms"
+  shows "Re (Tr ((M\<^sup>\<dagger>) * M * \<rho>)) \<ge> 0"
+proof -
+  have M_carr: "M \<in> carrier_mat n n"
+    using ms Min by (auto simp: measurement_system_def)
+  have rho_carr: "\<rho> \<in> carrier_mat n n" using dm by (auto simp: density_matrix_def)
+  have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
+
+  \<comment> \<open>Take a PSD square root of @{term \<rho>}.\<close>
+  obtain Q where Qc: "Q \<in> carrier_mat n n" and Qpsd: "psd Q" and QQ: "Q * Q = \<rho>"
+    using psd_sqrt_exists[OF rho_carr rho_psd] by blast
+  have Qdag: "(Q\<^sup>\<dagger>) = Q" using Qpsd by (simp add: psd_def hermitian_def)
+  have Md_c: "(M\<^sup>\<dagger>) \<in> carrier_mat n n" using M_carr by auto
+  have MdM_c: "(M\<^sup>\<dagger>) * M \<in> carrier_mat n n" using Md_c M_carr by auto
+  have MQ_c: "M * Q \<in> carrier_mat n n" using M_carr Qc by auto
+  have MQd_c: "((M * Q)\<^sup>\<dagger>) \<in> carrier_mat n n"
+  proof -
+    have dr: "dim_row ((M * Q)\<^sup>\<dagger>) = dim_col (M * Q)" by simp
+    have dc: "dim_col ((M * Q)\<^sup>\<dagger>) = dim_row (M * Q)" by simp
+    have "dim_col (M * Q) = n" using MQ_c by auto
+    moreover have "dim_row (M * Q) = n" using MQ_c by auto
+    ultimately show ?thesis using dr dc by auto
+  qed
+
+  \<comment> \<open>Key identity: @{term "(M*Q)\<^sup>\<dagger> * (M*Q) = Q * (M\<^sup>\<dagger>) * M * Q"}.\<close>
+  have expand: "((M * Q)\<^sup>\<dagger>) * (M * Q) = Q * ((M\<^sup>\<dagger>) * M) * Q"
+  proof -
+    have "((M * Q)\<^sup>\<dagger>) * (M * Q) = ((Q\<^sup>\<dagger>) * (M\<^sup>\<dagger>)) * (M * Q)"
+      using M_carr Qc by (simp add: dagger_of_prod)
+    also have "\<dots> = (Q * (M\<^sup>\<dagger>)) * (M * Q)" using Qdag by simp
+    also have "\<dots> = Q * ((M\<^sup>\<dagger>) * (M * Q))"
+      using assoc_mult_mat[OF Qc Md_c MQ_c] by simp
+    also have "\<dots> = Q * (((M\<^sup>\<dagger>) * M) * Q)"
+      using assoc_mult_mat[OF Md_c M_carr Qc, symmetric] by simp
+    also have "\<dots> = (Q * ((M\<^sup>\<dagger>) * M)) * Q"
+      using assoc_mult_mat[OF Qc MdM_c Qc, symmetric] by simp
+    finally show ?thesis by simp
+  qed
+
+  \<comment> \<open>Key identity 2: @{term "Tr (A*Q*Q) = Tr (Q * A * Q)"} for \<open>A = M\<^sup>\<dagger>*M\<close>.\<close>
+  have Tr_eq: "Tr ((M\<^sup>\<dagger>) * M * \<rho>) = Tr (((M * Q)\<^sup>\<dagger>) * (M * Q))"
+  proof -
+    have "Tr ((M\<^sup>\<dagger>) * M * \<rho>) = Tr ((M\<^sup>\<dagger>) * M * (Q * Q))"
+      using QQ by simp
+    also have "\<dots> = Tr (((M\<^sup>\<dagger>) * M * Q) * Q)"
+      using MdM_c Qc by simp
+    also have "\<dots> = Tr (Q * ((M\<^sup>\<dagger>) * M * Q))"
+    proof (rule Tr_cyclic)
+      show "dim_col ((M\<^sup>\<dagger>) * M * Q) = dim_row Q" using MdM_c Qc by auto
+      show "dim_row ((M\<^sup>\<dagger>) * M * Q) = dim_col Q" using MdM_c Qc by auto
+    qed
+    also have "\<dots> = Tr (Q * ((M\<^sup>\<dagger>) * M) * Q)"
+      using Qc MdM_c by simp
+    also have "\<dots> = Tr (((M * Q)\<^sup>\<dagger>) * (M * Q))"
+      using expand by simp
+    finally show ?thesis.
+  qed
+
+  \<comment> \<open>\<open>(MQ)\<^sup>\<dagger>(MQ)\<close> is PSD, so its trace has non-negative real part.\<close>
+  have MQd_MQ_psd: "psd (((M * Q)\<^sup>\<dagger>) * (M * Q))"
+    using psd_MdagM[OF MQ_c] by simp
+  have MQd_MQ_c: "((M * Q)\<^sup>\<dagger>) * (M * Q) \<in> carrier_mat n n"
+    using MQ_c MQd_c by auto
+
+  have "0 \<le> Re (Tr (((M * Q)\<^sup>\<dagger>) * (M * Q)))"
+    using Tr_psd_Re_nonneg[OF MQd_MQ_psd MQd_MQ_c].
+  thus ?thesis using Tr_eq by simp
+qed
+
+
 end
