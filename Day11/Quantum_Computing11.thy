@@ -2529,16 +2529,86 @@ lemma tensor_pure_density:
       and m_pos: "0 < m" and p_pos: "0 < p"
   shows "pure_density (tensor_vec \<psi> \<phi>) =
          (pure_density \<psi>) \<Otimes> (pure_density \<phi>)"
-  sorry
-  (* Proof sketch (PDF p.\ 45, verification of \<open>|\<psi>\<otimes>\<phi>\<rangle>\<langle>\<psi>\<otimes>\<phi>| = |\<psi>\<rangle>\<langle>\<psi>| \<otimes> |\<phi>\<rangle>\<langle>\<phi>|\<close>):
-     both sides live in \<open>carrier_mat (m*p) (m*p)\<close>.  For indices
-       \<open>i = i\<^sub>1*p + i\<^sub>2\<close>, \<open>j = j\<^sub>1*p + j\<^sub>2\<close> with \<open>i\<^sub>1,j\<^sub>1<m\<close>, \<open>i\<^sub>2,j\<^sub>2<p\<close>,
-     LHS $$ (i,j) = \<open>(tensor_vec \<psi> \<phi>) $ i * cnj ((tensor_vec \<psi> \<phi>) $ j)
-                  = (\<psi>$i\<^sub>1 \<cdot> \<phi>$i\<^sub>2) * cnj (\<psi>$j\<^sub>1 \<cdot> \<phi>$j\<^sub>2)
-                  = (\<psi>$i\<^sub>1 * cnj (\<psi>$j\<^sub>1)) * (\<phi>$i\<^sub>2 * cnj (\<phi>$j\<^sub>2))
-                  = pure_density \<psi> $$ (i\<^sub>1,j\<^sub>1) * pure_density \<phi> $$ (i\<^sub>2,j\<^sub>2)\<close>,
-     which is exactly \<open>index_tensor_mat\<close> applied to RHS.  Conclude by
-     \<open>eq_matI\<close>. *)
+proof -
+  let ?T = "tensor_vec \<psi> \<phi>"
+  let ?A = "pure_density \<psi>"
+  let ?B = "pure_density \<phi>"
+  have T_dim: "dim_vec ?T = m * p"
+    using tensor_vec_dim \<psi>_dim \<phi>_dim by simp
+  have lhs_eq: "pure_density ?T = outer_sum (m * p) [?T]"
+    using T_dim by (simp add: pure_density_def)
+  have lhs_car: "pure_density ?T \<in> carrier_mat (m*p) (m*p)"
+    using lhs_eq by force
+  have A_car: "?A \<in> carrier_mat m m"
+    using \<psi>_dim by (simp add: pure_density_def, simp add: carrier_matI)
+  have B_car: "?B \<in> carrier_mat p p"
+    using \<phi>_dim by (simp add: pure_density_def, simp add: carrier_matI)
+  have rhs_dim_row: "dim_row (?A \<Otimes> ?B) = m * p" using A_car B_car by auto
+  have rhs_dim_col: "dim_col (?A \<Otimes> ?B) = m * p" using A_car B_car by auto
+
+  show ?thesis
+  proof (rule eq_matI)
+    show "dim_row (pure_density ?T) = dim_row (?A \<Otimes> ?B)"
+      using lhs_car rhs_dim_row by auto
+    show "dim_col (pure_density ?T) = dim_col (?A \<Otimes> ?B)"
+      using lhs_car rhs_dim_col by auto
+  next
+    fix r c
+    assume rc: "r < dim_row (?A \<Otimes> ?B)" "c < dim_col (?A \<Otimes> ?B)"
+    from rc rhs_dim_row rhs_dim_col have r_lt: "r < m * p" and c_lt: "c < m * p"
+      by auto
+
+    let ?r1 = "r div p"  let ?r2 = "r mod p"
+    let ?c1 = "c div p"  let ?c2 = "c mod p"
+    have r1_lt: "?r1 < m" using r_lt less_mult_imp_div_less by blast
+    have r2_lt: "?r2 < p" using p_pos by simp
+    have c1_lt: "?c1 < m" using c_lt less_mult_imp_div_less by blast
+    have c2_lt: "?c2 < p" using p_pos by simp
+
+    \<comment> \<open>LHS entry.\<close>
+    have lhs_ent: "pure_density ?T $$ (r, c) = ?T $ r * cnj (?T $ c)"
+      using lhs_eq outer_sum_singleton_index[OF r_lt c_lt] by simp
+    have T_r: "?T $ r = \<psi> $ ?r1 * \<phi> $ ?r2"
+      using tensor_vec_index[OF \<psi>_dim \<phi>_dim r_lt] .
+    have T_c: "?T $ c = \<psi> $ ?c1 * \<phi> $ ?c2"
+      using tensor_vec_index[OF \<psi>_dim \<phi>_dim c_lt] .
+    have lhs_ent': "pure_density ?T $$ (r, c)
+                    = \<psi> $ ?r1 * \<phi> $ ?r2 * (cnj (\<psi> $ ?c1) * cnj (\<phi> $ ?c2))"
+      using lhs_ent T_r T_c by simp
+
+    \<comment> \<open>RHS entry via index_tensor_mat.\<close>
+    have AB_ent: "(?A \<Otimes> ?B) $$ (r, c) = ?A $$ (?r1, ?c1) * ?B $$ (?r2, ?c2)"
+    proof -
+      have drA: "dim_row ?A = m" using A_car by auto
+      have dcA: "dim_col ?A = m" using A_car by auto
+      have drB: "dim_row ?B = p" using B_car by auto
+      have dcB: "dim_col ?B = p" using B_car by auto
+      show ?thesis
+        using index_tensor_mat[OF drA dcA drB dcB] r_lt c_lt m_pos p_pos
+        by simp
+    qed
+    have A_ent: "?A $$ (?r1, ?c1) = \<psi> $ ?r1 * cnj (\<psi> $ ?c1)"
+    proof -
+      have "?A = outer_sum m [\<psi>]"
+        using \<psi>_dim by (simp add: pure_density_def)
+      thus ?thesis
+        using outer_sum_singleton_index[OF r1_lt c1_lt] by simp
+    qed
+    have B_ent: "?B $$ (?r2, ?c2) = \<phi> $ ?r2 * cnj (\<phi> $ ?c2)"
+    proof -
+      have "?B = outer_sum p [\<phi>]"
+        using \<phi>_dim by (simp add: pure_density_def)
+      thus ?thesis
+        using outer_sum_singleton_index[OF r2_lt c2_lt] by simp
+    qed
+    have rhs_ent: "(?A \<Otimes> ?B) $$ (r, c)
+                   = (\<psi> $ ?r1 * cnj (\<psi> $ ?c1)) * (\<phi> $ ?r2 * cnj (\<phi> $ ?c2))"
+      using AB_ent A_ent B_ent by simp
+
+    show "pure_density ?T $$ (r, c) = (?A \<Otimes> ?B) $$ (r, c)"
+      using lhs_ent' rhs_ent by (simp add: mult.commute mult.left_commute)
+  qed
+qed
 
 (* --------------------------------------------------------------------------
    \<section>15.3 Partial Traces (motivation).
