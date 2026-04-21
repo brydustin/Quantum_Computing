@@ -1437,19 +1437,318 @@ theorem density_matrix_characterisation:
   shows "density_matrix n \<rho> \<longleftrightarrow> psd \<rho> \<and> Tr \<rho> = 1"
   using sq by (simp add: density_matrix_def)
 
+(* --- Helpers for the spectral-ensemble construction -------------------- *)
+
+lemma ensemble_density_carrier_dim:
+  shows "ensemble_density n E \<in> carrier_mat n n"
+proof (induct E)
+  case Nil show ?case by (simp add: ensemble_density_def)
+next
+  case (Cons a E)
+  obtain p \<psi> where a: "a = (p, \<psi>)" by (cases a) auto
+  have "ensemble_density n (a # E)
+          = complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] + ensemble_density n E"
+    by (simp add: a ensemble_density_Cons)
+  moreover have "complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] \<in> carrier_mat n n"
+    by auto
+  ultimately show ?case using Cons.hyps by auto
+qed
+
+lemma outer_sum_singleton_index:
+  assumes r: "r < n" and c: "c < n"
+  shows "outer_sum n [\<psi>] $$ (r, c) = \<psi> $ r * cnj (\<psi> $ c)"
+proof -
+  let ?M = "mat_of_cols n [\<psi>]"
+  let ?Md = "(?M)\<^sup>\<dagger>"
+  have M_car: "?M \<in> carrier_mat n 1"
+    by (simp add: mat_of_cols_def)
+  have Md_car: "?Md \<in> carrier_mat 1 n"
+    using M_car by auto
+  have dr: "r < dim_row ?M" using M_car r by auto
+  have dc: "c < dim_col ?Md" using Md_car c by auto
+  have "outer_sum n [\<psi>] $$ (r, c) = (?M * ?Md) $$ (r, c)"
+    by (simp add: outer_sum_def)
+  also have "\<dots> = Matrix.row ?M r \<bullet> Matrix.col ?Md c"
+    using dc dr index_mult_mat(1) by blast
+  also have "\<dots> = (\<Sum>j = 0..<1. ?M $$ (r, j) * ?Md $$ (j, c))"
+    using M_car Md_car r c
+    by (simp add: scalar_prod_def Matrix.row_def Matrix.col_def)
+  also have "\<dots> = ?M $$ (r, 0) * ?Md $$ (0, c)"
+    by simp
+  also have "\<dots> = \<psi> $ r * cnj (\<psi> $ c)"
+    using r c by (simp add: mat_of_cols_def dagger_def)
+  finally show ?thesis.
+qed
+
+lemma ensemble_density_index:
+  assumes r: "r < n" and c: "c < n"
+  shows "ensemble_density n E $$ (r, c) =
+         (\<Sum>(p, \<psi>) \<leftarrow> E. complex_of_real p * \<psi> $ r * cnj (\<psi> $ c))"
+proof (induct E)
+  case Nil
+  have "ensemble_density n [] $$ (r, c) = (0\<^sub>m n n) $$ (r, c)"
+    by (simp add: ensemble_density_def)
+  also have "\<dots> = 0" using r c by simp
+  finally show ?case by simp
+next
+  case (Cons a E)
+  obtain p \<psi> where a: "a = (p, \<psi>)" by (cases a) auto
+  let ?S = "complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>]"
+  have S_car: "?S \<in> carrier_mat n n" by auto
+  have ED_car: "ensemble_density n E \<in> carrier_mat n n"
+    by (rule ensemble_density_carrier_dim)
+  have sum_car: "?S + ensemble_density n E \<in> carrier_mat n n"
+    using S_car ED_car by auto
+  have "ensemble_density n (a # E) $$ (r, c)
+          = (?S + ensemble_density n E) $$ (r, c)"
+    by (simp add: a ensemble_density_Cons)
+  also have "\<dots> = ?S $$ (r, c) + ensemble_density n E $$ (r, c)"
+    using S_car ED_car r c by simp
+  also have "?S $$ (r, c) = complex_of_real p * outer_sum n [\<psi>] $$ (r, c)"
+    using r c by simp
+  also have "outer_sum n [\<psi>] $$ (r, c) = \<psi> $ r * cnj (\<psi> $ c)"
+    using r c by (rule outer_sum_singleton_index)
+  also have "ensemble_density n E $$ (r, c) =
+               (\<Sum>(q, \<phi>) \<leftarrow> E. complex_of_real q * \<phi> $ r * cnj (\<phi> $ c))"
+    by (rule Cons.hyps)
+  finally show ?case
+    by (simp add: a mult.assoc)
+qed
+
+(* --- Spectral ensemble: main theorem ----------------------------------- *)
+
 theorem spectral_ensemble_exists:
   fixes \<rho> :: "complex Matrix.mat"
   assumes dm: "density_matrix n \<rho>"
   shows "\<exists>E. ensemble n E \<and> ensemble_density n E = \<rho>"
-  sorry
-  (* Proof sketch (PDF p.\ 43, proof of the Proposition, direction \<Leftarrow>):
-     From \<open>density_matrix n \<rho>\<close> we have \<rho> hermitian, \<rho> PSD, and \<open>Tr \<rho> = 1\<close>.
-     By \<open>hermitian_spectral_decomp\<close> (Days 3\<endash>10) there exist a unitary U and a
-     real list D of length n with \<open>U\<^sup>\<dagger> * \<rho> * U = diag_mat_of_real D\<close>, hence
-       \<open>\<rho> = U * diag_mat_of_real D * U\<^sup>\<dagger> = \<Sum>i<n. (D!i) \<cdot> |col U i\<rangle>\<langle>col U i|\<close>.
-     Each \<open>D!i\<close> is \<ge>0 (\<rho> PSD) and \<open>\<Sum>i<n. D!i = Tr \<rho> = 1\<close>.  Thus
-       \<open>E = zip D (map (\<lambda>i. col U i) [0..<n])\<close>
-     is an ensemble with \<open>ensemble_density n E = \<rho>\<close>. *)
+proof -
+  have rho_car: "\<rho> \<in> carrier_mat n n"
+   and rho_psd: "psd \<rho>"
+   and rho_Tr: "Tr \<rho> = 1"
+    using dm unfolding density_matrix_def by auto
+  have rho_herm: "hermitian \<rho>" using rho_psd by (rule psd_hermitian)
+
+  obtain U D where Uc: "U \<in> carrier_mat n n" and UU: "unitary U"
+       and Dlen: "length D = n"
+       and spec: "U\<^sup>\<dagger> * \<rho> * U = diag_mat_of_real D"
+    using hermitian_spectral_decomp[OF rho_car rho_herm] by blast
+  have Udag_car: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by auto
+  have rho_times_U: "\<rho> * U = U * diag_mat_of_real D"
+    using hermitian_spectral_decomp_right[OF Uc rho_car UU spec].
+
+  \<comment> \<open>Columns of U are unit vectors of length n.\<close>
+  have col_dim: "\<And>i. i < n \<Longrightarrow> dim_vec (Matrix.col U i) = n" using Uc by simp
+  have col_norm: "\<And>i. i < n \<Longrightarrow> \<parallel>Matrix.col U i\<parallel> = 1"
+    using UU Uc unitary_unit_col by (metis carrier_matD(2))
+  have col_qs: "\<And>i. i < n \<Longrightarrow> quantum_state n (Matrix.col U i)"
+    using col_dim col_norm by (auto simp: quantum_state_def)
+  have col_ne: "\<And>i. i < n \<Longrightarrow> Matrix.col U i \<noteq> 0\<^sub>v n"
+  proof -
+    fix i assume i: "i < n"
+    show "Matrix.col U i \<noteq> 0\<^sub>v n"
+    proof
+      assume z: "Matrix.col U i = 0\<^sub>v n"
+      hence "\<parallel>Matrix.col U i\<parallel> = 0"
+        using col_dim[OF i] cpx_vec_length_zero_iff by metis
+      with col_norm[OF i] show False by simp
+    qed
+  qed
+
+  \<comment> \<open>Each column of U is an eigenvector of \<rho> with eigenvalue \<open>D ! i\<close>.\<close>
+  have eig: "\<And>i. i < n \<Longrightarrow>
+               \<rho> *\<^sub>v Matrix.col U i = complex_of_real (D!i) \<cdot>\<^sub>v Matrix.col U i"
+  proof -
+    fix i assume i: "i < n"
+    let ?u = "Matrix.col U i"
+    show "\<rho> *\<^sub>v ?u = complex_of_real (D!i) \<cdot>\<^sub>v ?u"
+    proof (rule eq_vecI)
+      show "dim_vec (\<rho> *\<^sub>v ?u) = dim_vec (complex_of_real (D!i) \<cdot>\<^sub>v ?u)"
+        using rho_car col_dim[OF i] by simp
+    next
+      fix k assume k: "k < dim_vec (complex_of_real (D!i) \<cdot>\<^sub>v ?u)"
+      hence klt: "k < n" using col_dim[OF i] by simp
+      have "(\<rho> *\<^sub>v ?u) $ k = (\<rho> * U) $$ (k, i)"
+        using rho_car Uc i klt
+        by (metis carrier_matD(1,2) index_mult_mat(1) index_mult_mat_vec)
+      also have "\<dots> = (U * diag_mat_of_real D) $$ (k, i)"
+        using rho_times_U by simp
+      also have "\<dots> = (\<Sum>j = 0..<n.
+                          U $$ (k, j) * diag_mat_of_real D $$ (j, i))"
+        using Uc Dlen klt i by (simp add: scalar_prod_def lessThan_atLeast0)
+      also have "\<dots> = (\<Sum>j = 0..<n.
+                          if j = i then U $$ (k, j) * complex_of_real (D!i) else 0)"
+        using Dlen i by (intro sum.cong refl) auto
+      also have "\<dots> = U $$ (k, i) * complex_of_real (D!i)"
+        using i by simp
+      also have "\<dots> = complex_of_real (D!i) * U $$ (k, i)"
+        by (simp add: mult.commute)
+      also have "\<dots> = (complex_of_real (D!i) \<cdot>\<^sub>v ?u) $ k"
+        using klt Uc i by simp
+      finally show "(\<rho> *\<^sub>v ?u) $ k = (complex_of_real (D!i) \<cdot>\<^sub>v ?u) $ k".
+    qed
+  qed
+
+  \<comment> \<open>Eigenvalues are non-negative (\<rho> is PSD).\<close>
+  have eig_nn:
+    "\<forall>mu::complex. \<forall>v::complex Matrix.vec.
+       v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> \<rho> *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0"
+    using psd_iff_nonneg_eigenvalues[OF rho_car] rho_psd by blast
+  have D_nn: "\<And>i. i < n \<Longrightarrow> 0 \<le> D ! i"
+  proof -
+    fix i assume i: "i < n"
+    have "0 \<le> Re (complex_of_real (D ! i))"
+      using eig_nn eig[OF i] col_ne[OF i] col_dim[OF i] by blast
+    thus "0 \<le> D ! i" by simp
+  qed
+
+  \<comment> \<open>Eigenvalues sum to \<open>Tr \<rho> = 1\<close>.\<close>
+  have Tr_diag: "Tr (diag_mat_of_real D) = (\<Sum>i<n. complex_of_real (D!i))"
+    using Dlen by (simp add: Tr_def)
+  have D_sum_complex: "(\<Sum>i<n. complex_of_real (D!i)) = 1"
+  proof -
+    have "(\<Sum>i<n. complex_of_real (D!i)) = Tr (diag_mat_of_real D)"
+      using Tr_diag by simp
+    also have "\<dots> = Tr (U\<^sup>\<dagger> * \<rho> * U)" using spec by simp
+    also have "\<dots> = Tr \<rho>"
+      using Tr_unitary_conjugation[OF UU] rho_car Uc by simp
+    also have "\<dots> = 1" using rho_Tr by simp
+    finally show ?thesis.
+  qed
+  have D_sum: "(\<Sum>i<n. D!i) = 1"
+  proof -
+    have "complex_of_real (\<Sum>i<n. D!i) = (\<Sum>i<n. complex_of_real (D!i))"
+      by simp
+    also have "\<dots> = 1" by (rule D_sum_complex)
+    finally show ?thesis
+      using of_real_eq_1_iff by blast
+  qed
+
+  \<comment> \<open>Build the ensemble \<open>E = map (\<lambda>i. (D!i, col U i)) [0..<n]\<close>.\<close>
+  define E where "E = map (\<lambda>i. (D!i, Matrix.col U i)) [0..<n]"
+  have E_set: "set E = (\<lambda>i. (D!i, Matrix.col U i)) ` {..<n}"
+    by (simp add: E_def atLeast0LessThan)
+  have ens_ok: "\<forall>(p, \<psi>) \<in> set E. 0 \<le> p \<and> quantum_state n \<psi>"
+    using E_set D_nn col_qs by auto
+  have probs: "(\<Sum>(p, _) \<leftarrow> E. p) = 1"
+  proof -
+    have "(\<Sum>(p, _) \<leftarrow> E. p) = sum_list (map (\<lambda>i. D!i) [0..<n])"
+      unfolding E_def by (simp add: o_def case_prod_beta)
+    also have "\<dots> = (\<Sum>i = 0..<n. D!i)"
+      by (simp add: interv_sum_list_conv_sum_set_nat)
+    also have "\<dots> = (\<Sum>i<n. D!i)"
+      by (simp add: atLeast0LessThan)
+    also have "\<dots> = 1" by (rule D_sum)
+    finally show ?thesis.
+  qed
+  have ens: "ensemble n E"
+    unfolding ensemble_def using ens_ok probs by blast
+
+  \<comment> \<open>Entry-wise: \<open>ensemble_density n E = U * diag_mat_of_real D * U\<^sup>\<dagger> = \<rho>\<close>.\<close>
+  have ED_car: "ensemble_density n E \<in> carrier_mat n n"
+    by (rule ensemble_density_carrier_dim)
+  have ED_eq: "ensemble_density n E = \<rho>"
+  proof (rule eq_matI)
+    show "dim_row (ensemble_density n E) = dim_row \<rho>"
+      using ED_car rho_car by simp
+    show "dim_col (ensemble_density n E) = dim_col \<rho>"
+      using ED_car rho_car by simp
+  next
+    fix r c assume rc: "r < dim_row \<rho>" "c < dim_col \<rho>"
+    then have r: "r < n" and c: "c < n" using rho_car by auto
+
+    \<comment> \<open>LHS via entry formula.\<close>
+    have LHS: "ensemble_density n E $$ (r, c) =
+               (\<Sum>i<n. complex_of_real (D!i) * U $$ (r, i) * cnj (U $$ (c, i)))"
+    proof -
+      have "ensemble_density n E $$ (r, c) =
+              (\<Sum>(p, \<psi>) \<leftarrow> E. complex_of_real p * \<psi> $ r * cnj (\<psi> $ c))"
+        by (rule ensemble_density_index[OF r c])
+      also have "\<dots> = sum_list (map (\<lambda>i. complex_of_real (D!i)
+                                          * Matrix.col U i $ r
+                                          * cnj (Matrix.col U i $ c)) [0..<n])"
+        unfolding E_def by (simp add: o_def case_prod_beta)
+      also have "\<dots> = (\<Sum>i = 0..<n.
+                          complex_of_real (D!i)
+                            * Matrix.col U i $ r
+                            * cnj (Matrix.col U i $ c))"
+        by (simp add: interv_sum_list_conv_sum_set_nat)
+      also have "\<dots> = (\<Sum>i<n. complex_of_real (D!i)
+                                * Matrix.col U i $ r
+                                * cnj (Matrix.col U i $ c))"
+        by (simp add: atLeast0LessThan)
+      also have "\<dots> = (\<Sum>i<n. complex_of_real (D!i) * U $$ (r, i) * cnj (U $$ (c, i)))"
+        using Uc r c by (intro sum.cong refl) simp
+      finally show ?thesis.
+    qed
+
+    \<comment> \<open>RHS: expand \<rho> = U * diag_mat_of_real D * U-dagger entry-wise.\<close>
+    let ?UD = "U * diag_mat_of_real D"
+    have diag_car: "diag_mat_of_real D \<in> carrier_mat n n"
+      using Dlen by force
+    have UD_car: "?UD \<in> carrier_mat n n"
+      using Uc diag_car by auto
+
+    have UD_index: "\<And>k. k < n \<Longrightarrow>
+         ?UD $$ (r, k) = complex_of_real (D!k) * U $$ (r, k)"
+    proof -
+      fix k assume k: "k < n"
+      have "?UD $$ (r, k) = (\<Sum>j = 0..<n. U $$ (r, j) * diag_mat_of_real D $$ (j, k))"
+        using Uc Dlen r k by (simp add: scalar_prod_def lessThan_atLeast0)
+      also have "\<dots> = (\<Sum>j = 0..<n.
+                          if j = k then U $$ (r, j) * complex_of_real (D!k) else 0)"
+        using Dlen k by (intro sum.cong refl) auto
+      also have "\<dots> = U $$ (r, k) * complex_of_real (D!k)"
+        using k by simp
+      also have "\<dots> = complex_of_real (D!k) * U $$ (r, k)"
+        by (simp add: mult.commute)
+      finally show "?UD $$ (r, k) = complex_of_real (D!k) * U $$ (r, k)".
+    qed
+
+    have RHS: "\<rho> $$ (r, c) =
+               (\<Sum>i<n. complex_of_real (D!i) * U $$ (r, i) * cnj (U $$ (c, i)))"
+    proof -
+      have r_UD: "r < dim_row ?UD" using UD_car r by auto
+      have c_Ud: "c < dim_col (U\<^sup>\<dagger>)" using Udag_car c by auto
+      have rho_expand: "\<rho> = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+        by (rule hermitian_spectral_decomp_eq[OF Uc rho_car UU spec])
+      have dim_col_Ud: "dim_vec (Matrix.col (U\<^sup>\<dagger>) c) = n"
+        using Uc by simp
+      have "\<rho> $$ (r, c) = (?UD * (U\<^sup>\<dagger>)) $$ (r, c)"
+        using rho_expand by simp
+      also have "\<dots> = Matrix.row ?UD r \<bullet> Matrix.col (U\<^sup>\<dagger>) c"
+        using index_mult_mat(1)[OF r_UD c_Ud] .
+      also have "\<dots> = (\<Sum>k = 0..<n. Matrix.row ?UD r $ k * Matrix.col (U\<^sup>\<dagger>) c $ k)"
+        unfolding scalar_prod_def using dim_col_Ud by simp
+      also have "\<dots> = (\<Sum>k = 0..<n. ?UD $$ (r, k) * (U\<^sup>\<dagger>) $$ (k, c))"
+      proof (intro sum.cong refl)
+        fix k assume k: "k \<in> {0..<n}"
+        hence klt: "k < n" by simp
+        have kr: "r < dim_row ?UD" using UD_car r by auto
+        have kc_UD: "k < dim_col ?UD" using UD_car klt by auto
+        have rowk: "Matrix.row ?UD r $ k = ?UD $$ (r, k)"
+          using kr kc_UD by simp
+        have kr_Ud: "k < dim_row (U\<^sup>\<dagger>)" using Udag_car klt by auto
+        have kc_Ud: "c < dim_col (U\<^sup>\<dagger>)" using Udag_car c by auto
+        have colk: "Matrix.col (U\<^sup>\<dagger>) c $ k = (U\<^sup>\<dagger>) $$ (k, c)"
+          using kr_Ud kc_Ud by (simp add: dagger_def)
+        show "Matrix.row ?UD r $ k * Matrix.col (U\<^sup>\<dagger>) c $ k
+                = ?UD $$ (r, k) * (U\<^sup>\<dagger>) $$ (k, c)"
+          by (simp add: rowk colk)
+      qed
+      also have "\<dots> = (\<Sum>k = 0..<n. complex_of_real (D!k) * U $$ (r, k)
+                                      * cnj (U $$ (c, k)))"
+        using UD_index Uc c by (intro sum.cong refl, simp add: dagger_def)
+      also have "\<dots> = (\<Sum>i<n. complex_of_real (D!i) * U $$ (r, i)
+                                * cnj (U $$ (c, i)))"
+        by (simp add: atLeast0LessThan)
+      finally show ?thesis.
+    qed
+    from LHS RHS show "ensemble_density n E $$ (r, c) = \<rho> $$ (r, c)" 
+      by simp
+  qed
+
+  from ens ED_eq show ?thesis by blast
+qed
 
 corollary density_matrix_iff_ensemble:
   fixes \<rho> :: "complex Matrix.mat"
