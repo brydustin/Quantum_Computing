@@ -3609,4 +3609,386 @@ proof -
     using main_eq by (simp add: M_def)
 qed
 
+(* ============================================================================
+   DAY 17 — Measurement Maps
+   Topic: M(\<rho>) = \<Sum>_\<alpha> M_\<alpha> \<rho> M_\<alpha>\<^sup>\<dagger> sends density matrices to density matrices.
+   ============================================================================ *)
+
+definition meas_map :: "complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "meas_map Ms \<rho> \<equiv>
+     foldr (\<lambda>M acc. M * \<rho> * (M\<^sup>\<dagger>) + acc) Ms (0\<^sub>m (dim_row \<rho>) (dim_col \<rho>))"
+
+lemma meas_map_Nil [simp]:
+  "meas_map [] \<rho> = 0\<^sub>m (dim_row \<rho>) (dim_col \<rho>)"
+  by (simp add: meas_map_def)
+
+lemma meas_map_Cons [simp]:
+  "meas_map (M # Ms) \<rho> = M * \<rho> * (M\<^sup>\<dagger>) + meas_map Ms \<rho>"
+  by (simp add: meas_map_def)
+
+lemma meas_map_carrier:
+  assumes Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "meas_map Ms \<rho> \<in> carrier_mat n n"
+  using Ms_c
+proof (induction Ms)
+  case Nil
+  show ?case using \<rho>_c by simp
+next
+  case (Cons M Ms)
+  hence M_c: "M \<in> carrier_mat n n" and Ms_c': "\<forall>X \<in> set Ms. X \<in> carrier_mat n n"
+    by auto
+  have Mdag_c: "M\<^sup>\<dagger> \<in> carrier_mat n n"
+    using M_c
+    by (simp add: dagger_def) 
+  have term_c: "M * \<rho> * (M\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using M_c \<rho>_c Mdag_c by simp
+  have rec_c: "meas_map Ms \<rho> \<in> carrier_mat n n"
+    using Cons.IH Ms_c' by blast
+  show ?case
+    using term_c rec_c by simp
+qed
+
+lemma dagger_carrier:
+  assumes "M \<in> carrier_mat m n"
+  shows "(M\<^sup>\<dagger>) \<in> carrier_mat n m"
+  using assms
+  by (simp add: dagger_def) 
+
+lemma meas_map_psd:
+  assumes Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+      and \<rho>_psd: "psd \<rho>"
+  shows "psd (meas_map Ms \<rho>)"
+  using Ms_c
+proof (induction Ms)
+  case Nil
+  have "meas_map [] \<rho> = 0\<^sub>m n n" using \<rho>_c by simp
+  thus ?case using psd_zero_mat by simp
+next
+  case (Cons M Ms)
+  hence M_c: "M \<in> carrier_mat n n" and Ms_c': "\<forall>X \<in> set Ms. X \<in> carrier_mat n n"
+    by auto
+  have Mdag_c: "(M\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using M_c by (rule dagger_carrier)
+  obtain Q where Qc: "Q \<in> carrier_mat n n" and Qpsd: "psd Q" and QQ: "Q * Q = \<rho>"
+    using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
+  have Qdag: "(Q\<^sup>\<dagger>) = Q" using Qpsd by (simp add: psd_def hermitian_def)
+  have MQ_c: "M * Q \<in> carrier_mat n n"
+    using M_c Qc by (intro mult_carrier_mat) auto
+  have MQdag_c: "((M * Q)\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using MQ_c by (rule dagger_carrier)
+
+  have term_eq: "M * \<rho> * (M\<^sup>\<dagger>) = (M * Q) * ((M * Q)\<^sup>\<dagger>)"
+  proof -
+    have dagprod: "((M * Q)\<^sup>\<dagger>) = (Q\<^sup>\<dagger>) * (M\<^sup>\<dagger>)"
+      using M_c Qc by (simp add: dagger_of_prod)
+    have dagprod': "((M * Q)\<^sup>\<dagger>) = Q * (M\<^sup>\<dagger>)"
+      using dagprod Qdag by simp
+    have a1: "(M * Q) * ((M * Q)\<^sup>\<dagger>) = (M * Q) * (Q * (M\<^sup>\<dagger>))"
+      using dagprod' by simp
+    have a2: "(M * Q) * (Q * (M\<^sup>\<dagger>)) = M * Q * Q * (M\<^sup>\<dagger>)"
+      using M_c Qc Mdag_c
+      by (metis assoc_mult_mat mult_carrier_mat)
+    have a3: "M * Q * Q * (M\<^sup>\<dagger>) = M * (Q * Q) * (M\<^sup>\<dagger>)"
+      using M_c Qc by (metis assoc_mult_mat)
+    have a4: "M * (Q * Q) * (M\<^sup>\<dagger>) = M * \<rho> * (M\<^sup>\<dagger>)" using QQ by simp
+    show ?thesis using a1 a2 a3 a4 by simp
+  qed
+
+  have term_psd: "psd (M * \<rho> * (M\<^sup>\<dagger>))"
+  proof -
+    have psd_dd: "psd (((M * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((M * Q)\<^sup>\<dagger>))"
+      using psd_MdagM[OF MQdag_c] .
+    have dd_eq: "((M * Q)\<^sup>\<dagger>\<^sup>\<dagger>) = M * Q"
+      using MQ_c by (simp add: dagger_of_dagger_is_id)
+    from psd_dd dd_eq have "psd ((M * Q) * ((M * Q)\<^sup>\<dagger>))" by simp
+    thus ?thesis using term_eq by simp
+  qed
+  have term_c: "M * \<rho> * (M\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using M_c \<rho>_c Mdag_c by (intro mult_carrier_mat) auto
+  have IH_c: "meas_map Ms \<rho> \<in> carrier_mat n n"
+    using meas_map_carrier[OF Ms_c' \<rho>_c] .
+  have IH_psd: "psd (meas_map Ms \<rho>)"
+    using Cons.IH Ms_c' by blast
+  have "psd (M * \<rho> * (M\<^sup>\<dagger>) + meas_map Ms \<rho>)"
+    using term_psd IH_psd term_c IH_c by (rule psd_add_psd)
+  thus ?case by simp
+qed
+
+lemma foldr_MdagM_carrier:
+  assumes Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+  shows "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) \<in> carrier_mat n n"
+  using Ms_c
+proof (induction Ms)
+  case Nil
+  show ?case by simp
+next
+  case (Cons K Ks)
+  hence K_c: "K \<in> carrier_mat n n" and Ks_c: "\<forall>X \<in> set Ks. X \<in> carrier_mat n n"
+    by auto
+  have Kdag_c: "(K\<^sup>\<dagger>) \<in> carrier_mat n n" using K_c by (rule dagger_carrier)
+  have KdK_c: "(K\<^sup>\<dagger>) * K \<in> carrier_mat n n"
+    using Kdag_c K_c by (intro mult_carrier_mat) auto
+  have rec_c: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ks (0\<^sub>m n n) \<in> carrier_mat n n"
+    using Cons.IH Ks_c by blast
+  show ?case using KdK_c rec_c by simp
+qed
+
+lemma meas_map_trace_aux:
+  assumes Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "Tr (meas_map Ms \<rho>) =
+         Tr (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) * \<rho>)"
+  using Ms_c
+proof (induction Ms)
+  case Nil
+  have lhs: "Tr (meas_map [] \<rho>) = 0"
+    using \<rho>_c by (simp add: Tr_def)
+  have "(0\<^sub>m n n :: complex Matrix.mat) * \<rho> = 0\<^sub>m n n"
+    using \<rho>_c by simp
+  hence rhs: "Tr ((0\<^sub>m n n :: complex Matrix.mat) * \<rho>) = 0"
+    by (simp add: Tr_def)
+  show ?case using lhs rhs by simp
+next
+  case (Cons M Ms)
+  hence M_c: "M \<in> carrier_mat n n" and Ms_c': "\<forall>X \<in> set Ms. X \<in> carrier_mat n n"
+    by auto
+  have Mdag_c: "(M\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using M_c by (rule dagger_carrier)
+  have MdM_c: "(M\<^sup>\<dagger>) * M \<in> carrier_mat n n"
+    using Mdag_c M_c by (intro mult_carrier_mat) auto
+  have MrM_c: "M * \<rho> * (M\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using M_c \<rho>_c Mdag_c by (intro mult_carrier_mat) auto
+  have IH_carr: "meas_map Ms \<rho> \<in> carrier_mat n n"
+    using meas_map_carrier[OF Ms_c' \<rho>_c] .
+  define S where S_def:
+    "S = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)"
+  have S_carr: "S \<in> carrier_mat n n"
+    unfolding S_def using foldr_MdagM_carrier[OF Ms_c'] .
+
+  have IH: "Tr (meas_map Ms \<rho>) = Tr (S * \<rho>)"
+    using Cons.IH[OF Ms_c'] by (simp add: S_def)
+
+  have step_a: "Tr (M * \<rho> * (M\<^sup>\<dagger>)) = Tr ((M\<^sup>\<dagger>) * M * \<rho>)"
+  proof -
+    have "Tr (M * \<rho> * (M\<^sup>\<dagger>)) = Tr ((M\<^sup>\<dagger>) * (M * \<rho>))"
+      using M_c \<rho>_c Mdag_c by (intro Tr_cyclic) auto
+    also have "\<dots> = Tr ((M\<^sup>\<dagger>) * M * \<rho>)"
+      using Mdag_c M_c \<rho>_c by (metis assoc_mult_mat)
+    finally show ?thesis .
+  qed
+
+  have "Tr (meas_map (M # Ms) \<rho>) = Tr (M * \<rho> * (M\<^sup>\<dagger>) + meas_map Ms \<rho>)"
+    by simp
+  also have "\<dots> = Tr (M * \<rho> * (M\<^sup>\<dagger>)) + Tr (meas_map Ms \<rho>)"
+    using MrM_c IH_carr by (intro Tr_add) auto
+  also have "\<dots> = Tr ((M\<^sup>\<dagger>) * M * \<rho>) + Tr (S * \<rho>)"
+    using step_a IH by simp
+  also have "\<dots> = Tr (((M\<^sup>\<dagger>) * M) * \<rho> + S * \<rho>)"
+    using MdM_c S_carr \<rho>_c by (intro Tr_add[symmetric]) auto
+  also have "\<dots> = Tr (((M\<^sup>\<dagger>) * M + S) * \<rho>)"
+    using MdM_c S_carr \<rho>_c by (simp add: add_mult_distrib_mat)
+  also have "\<dots> = Tr (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (M # Ms) (0\<^sub>m n n) * \<rho>)"
+    by (simp add: S_def)
+  finally show ?case .
+qed
+
+lemma meas_map_density:
+  assumes ms: "measurement_system n Ms"
+      and dm: "density_matrix n \<rho>"
+  shows "density_matrix n (meas_map Ms \<rho>)"
+proof -
+  have rho_carr: "\<rho> \<in> carrier_mat n n"
+    using dm by (auto simp: density_matrix_def)
+  have rho_psd: "psd \<rho>"
+    using dm by (auto simp: density_matrix_def)
+  have rho_tr: "Tr \<rho> = 1"
+    using dm by (auto simp: density_matrix_def)
+  have Ms_carr: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+    using ms by (simp add: measurement_system_def)
+  have id_eq: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
+    using ms by (simp add: measurement_system_def)
+
+  have map_carr: "meas_map Ms \<rho> \<in> carrier_mat n n"
+    using meas_map_carrier[OF Ms_carr rho_carr] .
+
+  have map_psd: "psd (meas_map Ms \<rho>)"
+    using meas_map_psd[OF Ms_carr rho_carr rho_psd] .
+
+  have "Tr (meas_map Ms \<rho>) = Tr (1\<^sub>m n * \<rho>)"
+    using meas_map_trace_aux[OF Ms_carr rho_carr] id_eq by simp
+  also have "\<dots> = Tr \<rho>"
+    using rho_carr by simp
+  finally have map_tr: "Tr (meas_map Ms \<rho>) = 1"
+    using rho_tr by simp
+
+  show ?thesis
+    unfolding density_matrix_def using map_carr map_psd map_tr by simp
+qed
+
+(* ============================================================================
+   DAY 18 — Theory of CP Maps; Span of M_n^+
+   ============================================================================ *)
+
+(* Any X \<in> M_n can be written as X = (P1 - P2) + i(P3 - P4) with each Pi \<ge> 0.
+   Hence span(M_n^+) = M_n. *)
+
+lemma hermitian_decomp_psd:
+  fixes H :: "complex Matrix.mat"
+  assumes sq: "H \<in> carrier_mat n n"
+      and herm: "hermitian H"
+  shows "\<exists>P1 P2 :: complex Matrix.mat.
+         P1 \<in> carrier_mat n n \<and> P2 \<in> carrier_mat n n \<and>
+         psd P1 \<and> psd P2 \<and>
+         H = P1 - P2"
+proof -
+  (* Spectral decomp: H = U D (U\<^sup>\<dagger>), D real diagonal.  Split D into D+ (\<lambda>i \<ge> 0)
+     and D- (-\<lambda>i for \<lambda>i < 0).  Then P1 = U D+ (U\<^sup>\<dagger>), P2 = U D- (U\<^sup>\<dagger>). *)
+  obtain U D where Uc: "U \<in> carrier_mat n n" and UU: "unitary U"
+    and Dlen: "length D = n"
+    and spec: "(U\<^sup>\<dagger>) * H * U = diag_mat_of_real D"
+    using hermitian_spectral_decomp[OF sq herm] by blast
+  let ?Dpos = "map (\<lambda>x. max x 0) D"
+  let ?Dneg = "map (\<lambda>x. max (- x) 0) D"
+  let ?P1 = "U * diag_mat_of_real ?Dpos * (U\<^sup>\<dagger>)"
+  let ?P2 = "U * diag_mat_of_real ?Dneg * (U\<^sup>\<dagger>)"
+  have Udag: "(U\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using Uc by (rule dagger_carrier)
+  have Dpos_len: "length ?Dpos = n" using Dlen by simp
+  have Dneg_len: "length ?Dneg = n" using Dlen by simp
+  have c1: "?P1 \<in> carrier_mat n n"
+    using Uc Udag Dpos_len by auto
+  have c2: "?P2 \<in> carrier_mat n n"
+    using Uc Udag Dneg_len by auto
+  have p1: "psd ?P1" sorry
+  have p2: "psd ?P2" sorry
+  have eq: "H = ?P1 - ?P2" sorry
+  show ?thesis using c1 c2 p1 p2 eq by blast
+qed
+
+(* Proof: Let \<lambda>1,...,\<lambda>n be eigenvalues with ONB u1,...,un.
+   P1 = \<Sum>_{\<lambda>i\<ge>0} \<lambda>i |ui\<rangle>\<langle>ui|, P2 = \<Sum>_{\<lambda>i<0} (-\<lambda>i) |ui\<rangle>\<langle>ui|.
+   Both \<ge> 0 and H = P1 - P2. *)
+
+lemma matrix_decomp_psd:
+  fixes X :: "complex Matrix.mat"
+  assumes sq: "X \<in> carrier_mat n n"
+  shows "\<exists>P1 P2 P3 P4 :: complex Matrix.mat.
+         (\<forall>i \<in> {0..3}. [P1,P2,P3,P4] ! i \<in> carrier_mat n n \<and> psd ([P1,P2,P3,P4] ! i)) \<and>
+         X = (P1 - P2) + \<i> \<cdot>\<^sub>m (P3 - P4)"
+proof -
+  let ?Hr = "(((1/2) :: complex) \<cdot>\<^sub>m (X + (X\<^sup>\<dagger>)))"
+  let ?Hi = "(((1 / (2 * \<i>)) :: complex) \<cdot>\<^sub>m (X - (X\<^sup>\<dagger>)))"
+
+  have Hr_carrier: "?Hr \<in> carrier_mat n n"
+    using sq by auto
+  have Hi_carrier: "?Hi \<in> carrier_mat n n"
+    using sq by auto
+
+  have Hr_herm: "hermitian ?Hr"
+  proof -
+    have "((?Hr)\<^sup>\<dagger>) = ((cnj ((1/2) :: complex)) \<cdot>\<^sub>m ((X + (X\<^sup>\<dagger>))\<^sup>\<dagger>))"
+      sorry
+    also have "\<dots> = ((((1/2) :: complex) \<cdot>\<^sub>m (X + (X\<^sup>\<dagger>))))"
+      sorry
+    finally show ?thesis
+      by (simp add: hermitian_def)
+  qed
+
+  have Hi_herm: "hermitian ?Hi"
+  proof -
+    have "((?Hi)\<^sup>\<dagger>) = ((cnj (((1 / (2 * \<i>)) :: complex))) \<cdot>\<^sub>m ((X - (X\<^sup>\<dagger>))\<^sup>\<dagger>))"
+      sorry
+    also have "\<dots> = ((- (((1 / (2 * \<i>)) :: complex))) \<cdot>\<^sub>m ((X\<^sup>\<dagger>) - X))"
+      sorry
+    also have "\<dots> = ((((1 / (2 * \<i>)) :: complex)) \<cdot>\<^sub>m (X - (X\<^sup>\<dagger>)))"
+      sorry
+    finally show ?thesis
+      by (simp add: hermitian_def)
+  qed
+
+  obtain A B :: "complex Matrix.mat"
+    where A_car: "A \<in> carrier_mat n n"
+      and B_car: "B \<in> carrier_mat n n"
+      and A_psd: "psd A"
+      and B_psd: "psd B"
+      and Hr_decomp: "?Hr = A - B"
+    using hermitian_decomp_psd[OF Hr_carrier Hr_herm] by blast
+
+  obtain C D :: "complex Matrix.mat"
+    where C_car: "C \<in> carrier_mat n n"
+      and D_car: "D \<in> carrier_mat n n"
+      and C_psd: "psd C"
+      and D_psd: "psd D"
+      and Hi_decomp: "?Hi = C - D"
+    using hermitian_decomp_psd[OF Hi_carrier Hi_herm] by blast
+
+  have X_split: "X = ?Hr + (\<i> \<cdot>\<^sub>m ?Hi)"
+  proof -
+    have "?Hr + (\<i> \<cdot>\<^sub>m ?Hi)
+        = ((((1/2) :: complex) \<cdot>\<^sub>m (X + (X\<^sup>\<dagger>)))
+           + (\<i> \<cdot>\<^sub>m ((((1 / (2 * \<i>)) :: complex) \<cdot>\<^sub>m (X - (X\<^sup>\<dagger>))))))"
+      by simp
+    also have "\<dots> =
+        ((((1/2) :: complex) \<cdot>\<^sub>m (X + (X\<^sup>\<dagger>)))
+         + ((((1/2) :: complex) \<cdot>\<^sub>m (X - (X\<^sup>\<dagger>)))))"
+      sorry
+    also have "\<dots> =
+        ((((1/2) :: complex) \<cdot>\<^sub>m ((X + (X\<^sup>\<dagger>)) + (X - (X\<^sup>\<dagger>)))))"
+      by (smt (verit) Hi_carrier Hr_carrier add_smult_distrib_left_mat
+            carrier_matD(1,2) carrier_mat_triv index_smult_mat(2,3))
+    also have "\<dots> = ((((1/2) :: complex) \<cdot>\<^sub>m ((2 :: complex) \<cdot>\<^sub>m X)))"
+      sorry
+    also have "\<dots> = X"
+      by auto
+    finally show ?thesis
+      sorry
+  qed
+
+  have X_decomp: "X = (A - B) + \<i> \<cdot>\<^sub>m (C - D)"
+    using X_split Hr_decomp Hi_decomp by simp
+
+  have list_cond:
+    "\<forall>i \<in> {0..3}. [A,B,C,D] ! i \<in> carrier_mat n n \<and> psd ([A,B,C,D] ! i)"
+  proof clarify
+    fix i :: nat
+    assume i: "i \<in> {0..3}"
+    then have i_cases: "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+      by auto
+    then show "[A,B,C,D] ! i \<in> carrier_mat n n \<and> psd ([A,B,C,D] ! i)"
+    proof
+      assume "i = 0"
+      then show ?thesis using A_car A_psd by simp
+    next
+      assume "i = 1 \<or> i = 2 \<or> i = 3"
+      then show "[A,B,C,D] ! i \<in> carrier_mat n n \<and> psd ([A,B,C,D] ! i)"
+      proof -
+        assume "i = 1 \<or> i = 2 \<or> i = 3"
+        then show ?thesis
+        proof
+          assume "i = 1"
+          then show ?thesis using B_car B_psd by simp
+        next
+          assume "i = 2 \<or> i = 3"
+          then show ?thesis
+          proof -
+            assume "i = 2 \<or> i = 3"
+            then show ?thesis
+            proof
+              assume "i = 2"
+              then show ?thesis using C_car C_psd by simp
+            next
+              assume "i = 3"
+              then show ?thesis using D_car D_psd by auto
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+  show ?thesis
+    using list_cond X_decomp by blast
+qed
+
 end
