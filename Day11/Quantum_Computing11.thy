@@ -3834,6 +3834,110 @@ qed
 (* Any X \<in> M_n can be written as X = (P1 - P2) + i(P3 - P4) with each Pi \<ge> 0.
    Hence span(M_n^+) = M_n. *)
 
+lemma diag_mat_of_real_hermitian:
+  "((diag_mat_of_real D)\<^sup>\<dagger>) = diag_mat_of_real D"
+proof (rule eq_matI)
+  show "dim_row ((diag_mat_of_real D)\<^sup>\<dagger>) = dim_row (diag_mat_of_real D)"
+    by simp
+  show "dim_col ((diag_mat_of_real D)\<^sup>\<dagger>) = dim_col (diag_mat_of_real D)"
+    by simp
+next
+  fix i j
+  assume ij: "i < dim_row (diag_mat_of_real D)"
+             "j < dim_col (diag_mat_of_real D)"
+  hence iln: "i < length D" and jln: "j < length D" by simp_all
+  have "(diag_mat_of_real D)\<^sup>\<dagger> $$ (i,j) = cnj (diag_mat_of_real D $$ (j,i))"
+    using iln jln by (simp add: dagger_def)
+  also have "\<dots> = (if i = j then cnj (of_real (D ! i)) else 0)"
+    using iln jln by auto
+  also have "\<dots> = (if i = j then of_real (D ! i) else 0)"
+    by simp
+  also have "\<dots> = diag_mat_of_real D $$ (i,j)"
+    using iln jln by auto
+  finally show "(diag_mat_of_real D)\<^sup>\<dagger> $$ (i,j) = diag_mat_of_real D $$ (i,j)" .
+qed
+
+lemma psd_U_diag_Udag:
+  fixes U :: "complex Matrix.mat" and D :: "real list"
+  assumes Uc: "U \<in> carrier_mat n n"
+      and Dlen: "length D = n"
+      and Dnn: "\<And>i. i < n \<Longrightarrow> 0 \<le> D ! i"
+  shows "psd (U * diag_mat_of_real D * (U\<^sup>\<dagger>))"
+proof -
+  let ?D = "diag_mat_of_real D"
+  let ?P = "U * ?D * (U\<^sup>\<dagger>)"
+  have Udag_c: "(U\<^sup>\<dagger>) \<in> carrier_mat n n" using Uc by (rule dagger_carrier)
+  have D_c: "?D \<in> carrier_mat n n"
+    using Dlen diag_mat_of_real_carrier by metis
+  have UD_c: "U * ?D \<in> carrier_mat n n"
+    using Uc D_c by simp
+  have P_c: "?P \<in> carrier_mat n n"
+    using UD_c Udag_c by simp
+
+  have herm: "hermitian ?P"
+  proof -
+    have UD_dim: "dim_col U = dim_row ?D"
+      using Uc D_c by (metis carrier_matD)
+    have UDU_dim: "dim_col (U * ?D) = dim_row (U\<^sup>\<dagger>)"
+      using UD_c Udag_c by (metis carrier_matD)
+    have prep1: "(U * ?D)\<^sup>\<dagger> = (?D)\<^sup>\<dagger> * (U\<^sup>\<dagger>)"
+      using UD_dim by (rule dagger_of_prod)
+    have prep2: "((U * ?D) * (U\<^sup>\<dagger>))\<^sup>\<dagger> = ((U\<^sup>\<dagger>)\<^sup>\<dagger>) * ((U * ?D)\<^sup>\<dagger>)"
+      using UDU_dim by (rule dagger_of_prod)
+    have prep3: "((U\<^sup>\<dagger>)\<^sup>\<dagger>) = U" using Uc by (subst dagger_of_dagger_is_id, simp)
+    have prep4: "(?D)\<^sup>\<dagger> = ?D" using diag_mat_of_real_hermitian .
+    have "(?P)\<^sup>\<dagger> = ((U\<^sup>\<dagger>)\<^sup>\<dagger>) * ((U * ?D)\<^sup>\<dagger>)" using prep2 by simp
+    also have "\<dots> = U * ((U * ?D)\<^sup>\<dagger>)" using prep3 by simp
+    also have "\<dots> = U * ((?D)\<^sup>\<dagger> * (U\<^sup>\<dagger>))" using prep1 by simp
+    also have "\<dots> = U * (?D * (U\<^sup>\<dagger>))" using prep4 by simp
+    also have "\<dots> = U * ?D * (U\<^sup>\<dagger>)"
+      using Uc D_c Udag_c by (metis assoc_mult_mat)
+    finally show ?thesis by (simp add: hermitian_def)
+  qed
+
+  have nn: "\<forall>x :: complex Matrix.vec.
+              dim_vec x = dim_row ?P \<longrightarrow> 0 \<le> Re \<langle>x | ?P *\<^sub>v x\<rangle>"
+  proof (intro allI impI)
+    fix x :: "complex Matrix.vec"
+    assume "dim_vec x = dim_row ?P"
+    hence xdim: "dim_vec x = n" using P_c by auto
+    have xcar: "x \<in> carrier_vec n" using xdim by auto
+    let ?y = "(U\<^sup>\<dagger>) *\<^sub>v x"
+    have ydim: "dim_vec ?y = n"
+      using Udag_c by (metis carrier_matD(1) dim_mult_mat_vec)
+    have ycar: "?y \<in> carrier_vec n" using ydim carrier_vec_dim_vec by blast 
+
+    have step1: "?P *\<^sub>v x = U *\<^sub>v (?D *\<^sub>v ?y)"
+    proof -
+      have "?P *\<^sub>v x = (U * (?D * (U\<^sup>\<dagger>))) *\<^sub>v x"
+        using Uc D_c Udag_c by (metis assoc_mult_mat)
+      also have "\<dots> = U *\<^sub>v ((?D * (U\<^sup>\<dagger>)) *\<^sub>v x)"
+        using Uc D_c Udag_c xcar
+        by (intro assoc_mult_mat_vec) auto
+      also have "\<dots> = U *\<^sub>v (?D *\<^sub>v ((U\<^sup>\<dagger>) *\<^sub>v x))"
+        using D_c Udag_c xcar by (intro arg_cong[where f = "(*\<^sub>v) U"] assoc_mult_mat_vec) auto
+      finally show ?thesis .
+    qed
+
+    have step2: "\<langle>x | U *\<^sub>v (?D *\<^sub>v ?y)\<rangle> = \<langle>(U\<^sup>\<dagger>) *\<^sub>v x | ?D *\<^sub>v ?y\<rangle>"
+      using Uc xdim ydim
+      using Dlen inner_prod_adjoint_swap by auto
+
+
+    have qf_eq: "\<langle>x | ?P *\<^sub>v x\<rangle> = \<langle>?y | ?D *\<^sub>v ?y\<rangle>"
+      using step1 step2 by simp
+
+    have D_nn_idx: "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
+      using Dnn Dlen by auto
+    have "0 \<le> Re \<langle>?y | ?D *\<^sub>v ?y\<rangle>"
+      using diag_mat_of_real_quad_Re_nonneg[OF _ D_nn_idx] ydim Dlen by simp
+    thus "0 \<le> Re \<langle>x | ?P *\<^sub>v x\<rangle>" using qf_eq by simp
+  qed
+
+  show ?thesis
+    unfolding psd_def using herm nn P_c by simp
+qed
+
 lemma hermitian_decomp_psd:
   fixes H :: "complex Matrix.mat"
   assumes sq: "H \<in> carrier_mat n n"
@@ -3861,9 +3965,110 @@ proof -
     using Uc Udag Dpos_len by auto
   have c2: "?P2 \<in> carrier_mat n n"
     using Uc Udag Dneg_len by auto
-  have p1: "psd ?P1" sorry
-  have p2: "psd ?P2" sorry
-  have eq: "H = ?P1 - ?P2" sorry
+
+  have Dpos_nn: "\<And>i. i < n \<Longrightarrow> 0 \<le> ?Dpos ! i"
+    using Dlen by simp
+  have Dneg_nn: "\<And>i. i < n \<Longrightarrow> 0 \<le> ?Dneg ! i"
+    using Dlen by simp
+  have p1: "psd ?P1"
+    using psd_U_diag_Udag[OF Uc Dpos_len Dpos_nn] .
+  have p2: "psd ?P2"
+    using psd_U_diag_Udag[OF Uc Dneg_len Dneg_nn] .
+
+  (* H = U * diag D * U\<^sup>\<dagger> *)
+  have UdagU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n" using Uc UU unfolding unitary_def by auto
+  have UUdag: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using Uc UU unfolding unitary_def by auto
+  have D_c: "diag_mat_of_real D \<in> carrier_mat n n"
+    using Dlen diag_mat_of_real_carrier by metis
+  have H_eq: "H = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+  proof -
+    have "U * diag_mat_of_real D * (U\<^sup>\<dagger>) = U * ((U\<^sup>\<dagger>) * H * U) * (U\<^sup>\<dagger>)"
+      using spec by simp
+    also have "\<dots> = (U * (U\<^sup>\<dagger>)) * H * (U * (U\<^sup>\<dagger>))"
+      using Uc Udag sq
+      by (smt (verit, ccfv_SIG) assoc_mult_mat carrier_mat_triv mult_carrier_mat)
+    also have "\<dots> = 1\<^sub>m n * H * 1\<^sub>m n" using UUdag by simp
+    also have "\<dots> = H" using sq by simp
+    finally show ?thesis by simp
+  qed
+
+  (* diag_mat_of_real D = diag ?Dpos - diag ?Dneg *)
+  have diag_split: "diag_mat_of_real D
+                  = diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg"
+  proof (rule eq_matI)
+    show "dim_row (diag_mat_of_real D)
+        = dim_row (diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg)"
+      using Dpos_len Dneg_len Dlen by simp
+    show "dim_col (diag_mat_of_real D)
+        = dim_col (diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg)"
+      using Dpos_len Dneg_len Dlen by simp
+  next
+    fix i j
+    assume "i < dim_row (diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg)"
+           "j < dim_col (diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg)"
+    hence iln: "i < n" and jln: "j < n"
+      using Dpos_len Dneg_len by auto
+    have iD: "i < length D" and jD: "j < length D"
+      using iln jln Dlen by auto
+    have iDp: "i < length ?Dpos" and jDp: "j < length ?Dpos"
+      using iln jln Dpos_len by auto
+    have iDn: "i < length ?Dneg" and jDn: "j < length ?Dneg"
+      using iln jln Dneg_len by auto
+    have rhs_entry:
+      "(diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg) $$ (i,j)
+       = diag_mat_of_real ?Dpos $$ (i,j) - diag_mat_of_real ?Dneg $$ (i,j)"
+      using iDp jDp by simp
+    show "diag_mat_of_real D $$ (i,j)
+        = (diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg) $$ (i,j)"
+    proof (cases "i = j")
+      case True
+      have lhs_val: "diag_mat_of_real D $$ (i,j) = of_real (D ! i)"
+        using True iD by simp
+      have p_val: "diag_mat_of_real ?Dpos $$ (i,j) = of_real (max (D ! i) 0)"
+        using True iDp Dlen by simp
+      have n_val: "diag_mat_of_real ?Dneg $$ (i,j) = of_real (max (- (D ! i)) 0)"
+        using True iDn Dlen by simp
+      have real_split: "(D ! i) = max (D ! i) 0 - max (- (D ! i)) 0"
+        by linarith
+      have of_real_split:
+        "(of_real (D ! i) :: complex)
+         = of_real (max (D ! i) 0) - of_real (max (- (D ! i)) 0)"
+        using real_split by (metis of_real_diff)
+      show ?thesis
+        using lhs_val p_val n_val rhs_entry of_real_split by simp
+    next
+      case False
+      have lhs0: "diag_mat_of_real D $$ (i,j) = 0" using iD jD False by simp
+      have p0: "diag_mat_of_real ?Dpos $$ (i,j) = 0"
+        using iDp jDp False by simp
+      have n0: "diag_mat_of_real ?Dneg $$ (i,j) = 0"
+        using iDn jDn False by simp
+      show ?thesis using lhs0 p0 n0 rhs_entry by simp
+    qed
+  qed
+
+  have Dp_c: "diag_mat_of_real ?Dpos \<in> carrier_mat n n"
+    using Dpos_len diag_mat_of_real_carrier by metis
+  have Dn_c: "diag_mat_of_real ?Dneg \<in> carrier_mat n n"
+    using Dneg_len diag_mat_of_real_carrier by metis
+  have UDp_c: "U * diag_mat_of_real ?Dpos \<in> carrier_mat n n"
+    using Uc Dp_c by (intro mult_carrier_mat) auto
+  have UDn_c: "U * diag_mat_of_real ?Dneg \<in> carrier_mat n n"
+    using Uc Dn_c by (intro mult_carrier_mat) auto
+
+  have eq: "H = ?P1 - ?P2"
+  proof -
+    have "H = U * diag_mat_of_real D * (U\<^sup>\<dagger>)" using H_eq .
+    also have "\<dots> = U * (diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg) * (U\<^sup>\<dagger>)"
+      using diag_split by simp
+    also have "\<dots> = (U * diag_mat_of_real ?Dpos - U * diag_mat_of_real ?Dneg) * (U\<^sup>\<dagger>)"
+      using Uc Dp_c Dn_c by (simp add: mult_minus_distrib_mat)
+    also have "\<dots> = U * diag_mat_of_real ?Dpos * (U\<^sup>\<dagger>)
+                  - U * diag_mat_of_real ?Dneg * (U\<^sup>\<dagger>)"
+      using UDp_c UDn_c Udag by (simp add: minus_mult_distrib_mat)
+    finally show ?thesis .
+  qed
+
   show ?thesis using c1 c2 p1 p2 eq by blast
 qed
 
