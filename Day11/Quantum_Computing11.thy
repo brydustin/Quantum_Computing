@@ -4093,24 +4093,68 @@ proof -
 
   have Hr_herm: "hermitian ?Hr"
   proof -
-    have "((?Hr)\<^sup>\<dagger>) = ((cnj ((1/2) :: complex)) \<cdot>\<^sub>m ((X + (X\<^sup>\<dagger>))\<^sup>\<dagger>))"
-      sorry
-    also have "\<dots> = ((((1/2) :: complex) \<cdot>\<^sub>m (X + (X\<^sup>\<dagger>))))"
-      sorry
-    finally show ?thesis
-      by (simp add: hermitian_def)
+    have "((?Hr)\<^sup>\<dagger>) = ?Hr"
+    proof (rule eq_matI)
+      show "dim_row ((?Hr)\<^sup>\<dagger>) = dim_row ?Hr"
+        using Hr_carrier sq by (simp add: dagger_def)
+      show "dim_col ((?Hr)\<^sup>\<dagger>) = dim_col ?Hr"
+        using Hr_carrier sq by (simp add: dagger_def)
+    next
+      fix i j
+      assume "i < dim_row ?Hr" "j < dim_col ?Hr"
+      hence iln: "i < n" and jln: "j < n" using Hr_carrier by auto
+      have hr_ji: "?Hr $$ (j,i) = (1/2) * (X $$ (j,i) + cnj (X $$ (i,j)))"
+        using iln jln sq by (simp add: dagger_def)
+      have hr_ij: "?Hr $$ (i,j) = (1/2) * (X $$ (i,j) + cnj (X $$ (j,i)))"
+        using iln jln sq by (simp add: dagger_def)
+      have d_eval: "(?Hr)\<^sup>\<dagger> $$ (i,j) = cnj (?Hr $$ (j,i))"
+        using iln jln Hr_carrier sq by (simp add: dagger_def)
+      have d_val: "(?Hr)\<^sup>\<dagger> $$ (i,j)
+                 = (1/2) * (cnj (X $$ (j,i)) + X $$ (i,j))"
+        using d_eval hr_ji by simp
+      have "(?Hr)\<^sup>\<dagger> $$ (i,j)
+            = (1/2) * (cnj (X $$ (j,i)) + X $$ (i,j))" using d_val .
+      also have "\<dots> = (1/2) * (X $$ (i,j) + cnj (X $$ (j,i)))"
+        by (simp add: add.commute)
+      also have "\<dots> = ?Hr $$ (i,j)" using hr_ij[symmetric] .
+      finally show "(?Hr)\<^sup>\<dagger> $$ (i,j) = ?Hr $$ (i,j)" .
+    qed
+    thus ?thesis by (simp add: hermitian_def)
   qed
 
   have Hi_herm: "hermitian ?Hi"
   proof -
-    have "((?Hi)\<^sup>\<dagger>) = ((cnj (((1 / (2 * \<i>)) :: complex))) \<cdot>\<^sub>m ((X - (X\<^sup>\<dagger>))\<^sup>\<dagger>))"
-      sorry
-    also have "\<dots> = ((- (((1 / (2 * \<i>)) :: complex))) \<cdot>\<^sub>m ((X\<^sup>\<dagger>) - X))"
-      sorry
-    also have "\<dots> = ((((1 / (2 * \<i>)) :: complex)) \<cdot>\<^sub>m (X - (X\<^sup>\<dagger>)))"
-      sorry
-    finally show ?thesis
-      by (simp add: hermitian_def)
+    have "((?Hi)\<^sup>\<dagger>) = ?Hi"
+    proof (rule eq_matI)
+      show "dim_row ((?Hi)\<^sup>\<dagger>) = dim_row ?Hi"
+        using Hi_carrier sq by (simp add: dagger_def)
+      show "dim_col ((?Hi)\<^sup>\<dagger>) = dim_col ?Hi"
+        using Hi_carrier sq by (simp add: dagger_def)
+    next
+      fix i j
+      assume "i < dim_row ?Hi" "j < dim_col ?Hi"
+      hence iln: "i < n" and jln: "j < n" using Hi_carrier by auto
+      have hi_ji: "?Hi $$ (j,i) = (1 / (2 * \<i>)) * (X $$ (j,i) - cnj (X $$ (i,j)))"
+        using iln jln sq by (simp add: dagger_def)
+      have hi_ij: "?Hi $$ (i,j) = (1 / (2 * \<i>)) * (X $$ (i,j) - cnj (X $$ (j,i)))"
+        using iln jln sq by (simp add: dagger_def)
+      have d_eval: "(?Hi)\<^sup>\<dagger> $$ (i,j) = cnj (?Hi $$ (j,i))"
+        using iln jln Hi_carrier sq by (simp add: dagger_def)
+      have cnj_coef: "cnj (1 / (2 * \<i>) :: complex) = - (1 / (2 * \<i>))"
+        by (simp add: complex_eq_iff)
+      have "(?Hi)\<^sup>\<dagger> $$ (i,j) = cnj (?Hi $$ (j,i))" using d_eval .
+      also have "\<dots> = cnj ((1 / (2 * \<i>)) * (X $$ (j,i) - cnj (X $$ (i,j))))"
+        using hi_ji by simp
+      also have "\<dots> = cnj (1 / (2 * \<i>)) * cnj (X $$ (j,i) - cnj (X $$ (i,j)))"
+        by simp
+      also have "\<dots> = (- (1 / (2 * \<i>))) * (cnj (X $$ (j,i)) - X $$ (i,j))"
+        using cnj_coef by simp
+      also have "\<dots> = (1 / (2 * \<i>)) * (X $$ (i,j) - cnj (X $$ (j,i)))"
+        by (simp add: field_simps)
+      also have "\<dots> = ?Hi $$ (i,j)" using hi_ij[symmetric] .
+      finally show "(?Hi)\<^sup>\<dagger> $$ (i,j) = ?Hi $$ (i,j)" .
+    qed
+    thus ?thesis by (simp add: hermitian_def)
   qed
 
   obtain A B :: "complex Matrix.mat"
@@ -4130,25 +4174,45 @@ proof -
     using hermitian_decomp_psd[OF Hi_carrier Hi_herm] by blast
 
   have X_split: "X = ?Hr + (\<i> \<cdot>\<^sub>m ?Hi)"
-  proof -
-    have "?Hr + (\<i> \<cdot>\<^sub>m ?Hi)
-        = ((((1/2) :: complex) \<cdot>\<^sub>m (X + (X\<^sup>\<dagger>)))
-           + (\<i> \<cdot>\<^sub>m ((((1 / (2 * \<i>)) :: complex) \<cdot>\<^sub>m (X - (X\<^sup>\<dagger>))))))"
-      by simp
-    also have "\<dots> =
-        ((((1/2) :: complex) \<cdot>\<^sub>m (X + (X\<^sup>\<dagger>)))
-         + ((((1/2) :: complex) \<cdot>\<^sub>m (X - (X\<^sup>\<dagger>)))))"
-      sorry
-    also have "\<dots> =
-        ((((1/2) :: complex) \<cdot>\<^sub>m ((X + (X\<^sup>\<dagger>)) + (X - (X\<^sup>\<dagger>)))))"
-      by (smt (verit) Hi_carrier Hr_carrier add_smult_distrib_left_mat
-            carrier_matD(1,2) carrier_mat_triv index_smult_mat(2,3))
-    also have "\<dots> = ((((1/2) :: complex) \<cdot>\<^sub>m ((2 :: complex) \<cdot>\<^sub>m X)))"
-      sorry
-    also have "\<dots> = X"
-      by auto
-    finally show ?thesis
-      sorry
+  proof (rule eq_matI)
+    show "dim_row X = dim_row (?Hr + (\<i> \<cdot>\<^sub>m ?Hi))"
+      using sq Hr_carrier Hi_carrier by simp
+    show "dim_col X = dim_col (?Hr + (\<i> \<cdot>\<^sub>m ?Hi))"
+      using sq Hr_carrier Hi_carrier by simp
+  next
+    fix i j
+    assume "i < dim_row (?Hr + (\<i> \<cdot>\<^sub>m ?Hi))"
+           "j < dim_col (?Hr + (\<i> \<cdot>\<^sub>m ?Hi))"
+    hence iln: "i < n" and jln: "j < n" using Hr_carrier Hi_carrier by auto
+    have hr_at: "?Hr $$ (i,j) = (1/2) * (X $$ (i,j) + cnj (X $$ (j,i)))"
+      using iln jln sq by (simp add: dagger_def)
+    have hi_at: "?Hi $$ (i,j)
+                 = (1 / (2 * \<i>)) * (X $$ (i,j) - cnj (X $$ (j,i)))"
+      using iln jln sq by (simp add: dagger_def)
+    have iHi_c: "\<i> \<cdot>\<^sub>m ?Hi \<in> carrier_mat n n"
+      using Hi_carrier by simp
+    have Hi_dim_row: "dim_row ?Hi = n" using Hi_carrier by auto
+    have Hi_dim_col: "dim_col ?Hi = n" using Hi_carrier by auto
+    have iHi_at: "(\<i> \<cdot>\<^sub>m ?Hi) $$ (i,j) = \<i> * ?Hi $$ (i,j)"
+      using iln jln Hi_dim_row Hi_dim_col index_smult_mat by metis
+    have Hr_dim_row: "dim_row ?Hr = n" using Hr_carrier by auto
+    have Hr_dim_col: "dim_col ?Hr = n" using Hr_carrier by auto
+    have iHi_dim_row: "dim_row (\<i> \<cdot>\<^sub>m ?Hi) = n" using iHi_c by auto
+    have iHi_dim_col: "dim_col (\<i> \<cdot>\<^sub>m ?Hi) = n" using iHi_c by auto
+    have add_at: "(?Hr + (\<i> \<cdot>\<^sub>m ?Hi)) $$ (i,j)
+                = ?Hr $$ (i,j) + (\<i> \<cdot>\<^sub>m ?Hi) $$ (i,j)"
+      using iln jln Hr_dim_row Hr_dim_col iHi_dim_row iHi_dim_col index_add_mat
+      by metis
+    have sum_at: "(?Hr + (\<i> \<cdot>\<^sub>m ?Hi)) $$ (i,j)
+                = ?Hr $$ (i,j) + \<i> * ?Hi $$ (i,j)"
+      using add_at iHi_at by simp
+    have arith:
+      "(1/2 :: complex) * (X $$ (i,j) + cnj (X $$ (j,i)))
+       + \<i> * ((1 / (2 * \<i>)) * (X $$ (i,j) - cnj (X $$ (j,i))))
+       = X $$ (i,j)"
+      by (simp add: field_simps)
+    show "X $$ (i,j) = (?Hr + (\<i> \<cdot>\<^sub>m ?Hi)) $$ (i,j)"
+      using sum_at hr_at hi_at arith by simp
   qed
 
   have X_decomp: "X = (A - B) + \<i> \<cdot>\<^sub>m (C - D)"
