@@ -5624,6 +5624,170 @@ proof -
     using choi_matrix_as_amplification[OF npos dpos, of \<Phi>] by simp
 qed
 
+(* ============================================================================
+   Helpers for the reverse direction of Choi's theorem.
+   ============================================================================ *)
+
+text \<open>
+  Complete positivity from a Kraus list without the trace-preservation
+  constraint: the argument is the same as @{thm kraus_is_cp}, which only uses
+  the carrier hypothesis.
+\<close>
+lemma kraus_cp_no_tp:
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "completely_positive n d (kraus_map_dim d Ws)"
+proof (unfold completely_positive_def p_positive_def, intro allI impI)
+  fix p :: nat and X :: "complex Matrix.mat"
+  assume ppos: "0 < p"
+     and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+     and X_psd: "psd X"
+  have lifted_c: "\<forall>L \<in> set (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws).
+      L \<in> carrier_mat (p*d) (p*n)"
+    using tensor_id_kraus_list_carrier[OF Ws_c] .
+  have amp_eq: "amplification n d p (kraus_map_dim d Ws) X =
+      kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) X"
+    using amplification_kraus_map_dim[OF Ws_c X_c dpos npos] .
+  show "psd (amplification n d p (kraus_map_dim d Ws) X)"
+    using kraus_map_dim_psd[OF lifted_c X_c X_psd] amp_eq by simp
+qed
+
+text \<open>Linearity of the Kraus-sum map in its matrix argument.\<close>
+
+lemma kraus_map_dim_add:
+  assumes A_c: "A \<in> carrier_mat n n" and B_c: "B \<in> carrier_mat n n"
+      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+  shows "kraus_map_dim d Ws (A + B) =
+         kraus_map_dim d Ws A + kraus_map_dim d Ws B"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  have "kraus_map_dim d [] (A + B) = 0\<^sub>m d d" by simp
+  also have "\<dots> = (0\<^sub>m d d :: complex Matrix.mat) + 0\<^sub>m d d"
+    by (intro eq_matI) auto
+  also have "\<dots> = kraus_map_dim d [] A + kraus_map_dim d [] B"
+    by simp
+  finally show ?case .
+next
+  case (Cons W Ws)
+  hence Wc: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n"
+    by auto
+  have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using Wc by (rule dagger_carrier)
+  have WA_c: "W * A \<in> carrier_mat d n" using Wc A_c by auto
+  have WB_c: "W * B \<in> carrier_mat d n" using Wc B_c by auto
+  have WAD_c: "W * A * (W\<^sup>\<dagger>) \<in> carrier_mat d d" using WA_c Wdag by auto
+  have WBD_c: "W * B * (W\<^sup>\<dagger>) \<in> carrier_mat d d" using WB_c Wdag by auto
+  have rec_cA: "kraus_map_dim d Ws A \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Ws_c' A_c] .
+  have rec_cB: "kraus_map_dim d Ws B \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Ws_c' B_c] .
+
+  have sum_c: "A + B \<in> carrier_mat n n" using A_c B_c by auto
+  have W_sum: "W * (A + B) = W * A + W * B"
+    using Wc A_c B_c by (simp add: mult_add_distrib_mat)
+  have "W * (A + B) * (W\<^sup>\<dagger>) = (W * A + W * B) * (W\<^sup>\<dagger>)"
+    using W_sum by simp
+  also have "\<dots> = W * A * (W\<^sup>\<dagger>) + W * B * (W\<^sup>\<dagger>)"
+    using WA_c WB_c Wdag by (simp add: add_mult_distrib_mat)
+  finally have term_split:
+    "W * (A + B) * (W\<^sup>\<dagger>) = W * A * (W\<^sup>\<dagger>) + W * B * (W\<^sup>\<dagger>)" .
+
+  have IH: "kraus_map_dim d Ws (A + B) =
+            kraus_map_dim d Ws A + kraus_map_dim d Ws B"
+    using Cons.IH[OF Ws_c'] .
+
+  have "kraus_map_dim d (W # Ws) (A + B) =
+        W * (A + B) * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (A + B)"
+    by simp
+  also have "\<dots> = (W * A * (W\<^sup>\<dagger>) + W * B * (W\<^sup>\<dagger>))
+                + (kraus_map_dim d Ws A + kraus_map_dim d Ws B)"
+    using term_split IH by simp
+  also have "\<dots> = (W * A * (W\<^sup>\<dagger>) + kraus_map_dim d Ws A)
+                + (W * B * (W\<^sup>\<dagger>) + kraus_map_dim d Ws B)"
+    using WAD_c WBD_c rec_cA rec_cB
+    by (intro eq_matI) (auto simp: add.commute add.assoc)
+  also have "\<dots> = kraus_map_dim d (W # Ws) A + kraus_map_dim d (W # Ws) B"
+    by simp
+  finally show ?case .
+qed
+
+lemma kraus_map_dim_smult:
+  assumes A_c: "A \<in> carrier_mat n n"
+      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+  shows "kraus_map_dim d Ws (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m kraus_map_dim d Ws A"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  have "(c \<cdot>\<^sub>m 0\<^sub>m d d :: complex Matrix.mat) = 0\<^sub>m d d"
+    by (intro eq_matI) auto
+  thus ?case by simp
+next
+  case (Cons W Ws)
+  hence Wc: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n"
+    by auto
+  have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using Wc by (rule dagger_carrier)
+  have WA_c: "W * A \<in> carrier_mat d n" using Wc A_c by auto
+  have WAD_c: "W * A * (W\<^sup>\<dagger>) \<in> carrier_mat d d" using WA_c Wdag by auto
+  have rec_c: "kraus_map_dim d Ws A \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Ws_c' A_c] .
+
+  have W_scale: "W * (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m (W * A)"
+    using Wc A_c by (simp add: mult_smult_distrib)
+  have "W * (c \<cdot>\<^sub>m A) * (W\<^sup>\<dagger>) = (c \<cdot>\<^sub>m (W * A)) * (W\<^sup>\<dagger>)"
+    using W_scale by simp
+  also have "\<dots> = c \<cdot>\<^sub>m (W * A * (W\<^sup>\<dagger>))"
+    using WA_c Wdag by (simp add: mult_smult_assoc_mat)
+  finally have term_eq:
+    "W * (c \<cdot>\<^sub>m A) * (W\<^sup>\<dagger>) = c \<cdot>\<^sub>m (W * A * (W\<^sup>\<dagger>))" .
+
+  have IH: "kraus_map_dim d Ws (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m kraus_map_dim d Ws A"
+    using Cons.IH[OF Ws_c'] .
+
+  have "kraus_map_dim d (W # Ws) (c \<cdot>\<^sub>m A) =
+        W * (c \<cdot>\<^sub>m A) * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (c \<cdot>\<^sub>m A)"
+    by simp
+  also have "\<dots> = c \<cdot>\<^sub>m (W * A * (W\<^sup>\<dagger>)) + c \<cdot>\<^sub>m kraus_map_dim d Ws A"
+    using term_eq IH by simp
+  also have "\<dots> = c \<cdot>\<^sub>m (W * A * (W\<^sup>\<dagger>) + kraus_map_dim d Ws A)"
+    using WAD_c rec_c by (simp add: add_smult_distrib_left_mat)
+  also have "\<dots> = c \<cdot>\<^sub>m kraus_map_dim d (W # Ws) A"
+    by simp
+  finally show ?case .
+qed
+
+lemma kraus_map_dim_zero [simp]:
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+  shows "kraus_map_dim d Ws (0\<^sub>m n n) = 0\<^sub>m d d"
+  using Ws_c
+proof (induction Ws)
+  case Nil show ?case by simp
+next
+  case (Cons W Ws)
+  hence Wc: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n"
+    by auto
+  have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using Wc by (rule dagger_carrier)
+  have W0: "W * (0\<^sub>m n n) = 0\<^sub>m d n"
+    using Wc by (metis right_mult_zero_mat carrier_matD(2))
+  have term_zero: "W * (0\<^sub>m n n) * (W\<^sup>\<dagger>) = 0\<^sub>m d d"
+    using W0 Wdag by (metis left_mult_zero_mat carrier_matD)
+  have IH: "kraus_map_dim d Ws (0\<^sub>m n n) = 0\<^sub>m d d" using Cons.IH[OF Ws_c'] .
+  have "kraus_map_dim d (W # Ws) (0\<^sub>m n n) =
+        W * (0\<^sub>m n n) * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (0\<^sub>m n n)"
+    by simp
+  also have "\<dots> = 0\<^sub>m d d + 0\<^sub>m d d"
+    using term_zero IH by simp
+  also have "\<dots> = 0\<^sub>m d d"
+    by (intro eq_matI) auto
+  finally show ?case .
+qed
+
 theorem choi_theorem:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
