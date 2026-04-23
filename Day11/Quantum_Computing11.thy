@@ -4231,7 +4231,7 @@ definition kraus_map :: "complex Matrix.mat list \<Rightarrow> complex Matrix.ma
 definition kraus_operators :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool" where
   "kraus_operators n d Ws \<equiv>
      (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
-     foldr (\<lambda>W acc. W\<^sup>\<dagger> * W + acc) Ws (0\<^sub>m n n) = 1\<^sub>m n"
+     foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) Ws (0\<^sub>m n n) = 1\<^sub>m n"
 
 lemma kraus_map_dim_Nil [simp]:
   "kraus_map_dim d [] \<rho> = 0\<^sub>m d d"
@@ -6449,17 +6449,229 @@ next
   qed
 qed
 
+text \<open>Accumulated \<open>\<Sum>\<^sub>i W\<^sub>i\<^sup>\<dagger> W\<^sub>i\<close> over a Kraus list.\<close>
+
+definition sum_wdag_w :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
+  "sum_wdag_w n Ws \<equiv>
+     foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) Ws (0\<^sub>m n n)"
+
+lemma sum_wdag_w_Nil [simp]: "sum_wdag_w n [] = 0\<^sub>m n n"
+  by (simp add: sum_wdag_w_def)
+
+lemma sum_wdag_w_Cons:
+  "sum_wdag_w n (W # Ws) = (W\<^sup>\<dagger>) * W + sum_wdag_w n Ws"
+  by (simp add: sum_wdag_w_def)
+
+lemma sum_wdag_w_carrier:
+  assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+  shows "sum_wdag_w n Ws \<in> carrier_mat n n"
+  using assms
+proof (induction Ws)
+  case Nil show ?case by simp
+next
+  case (Cons W Ws)
+  hence Wc: "W \<in> carrier_mat d n" by simp
+  have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using Wc by (rule dagger_carrier)
+  have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n" using Wdag_c Wc by auto
+  show ?case
+    using WdW_c Cons by (simp add: sum_wdag_w_Cons)
+qed
+
+lemma kraus_operators_altdef:
+  "kraus_operators n d Ws \<longleftrightarrow>
+     (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and> sum_wdag_w n Ws = 1\<^sub>m n"
+  by (simp add: kraus_operators_def sum_wdag_w_def)
+
+lemma Tr_kraus_map_dim_as_wdagw:
+  fixes \<rho> :: "complex Matrix.mat"
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and X_c: "\<rho> \<in> carrier_mat n n"
+  shows "Tr (kraus_map_dim d Ws \<rho>) = Tr (sum_wdag_w n Ws * \<rho>)"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  have "kraus_map_dim d [] \<rho> = 0\<^sub>m d d" by simp
+  hence lhs: "Tr (kraus_map_dim d [] \<rho>) = 0" by simp
+  have "sum_wdag_w n [] * \<rho> = 0\<^sub>m n n * \<rho>" by simp
+  also have "\<dots> = 0\<^sub>m n n"
+    using X_c by (metis carrier_matD(1) left_mult_zero_mat)
+  finally have "Tr (sum_wdag_w n [] * \<rho>) = 0" by simp
+  thus ?case using lhs by simp
+next
+  case (Cons W Ws)
+  hence Wc: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>Y \<in> set Ws. Y \<in> carrier_mat d n" by auto
+  have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d" using Wc by (rule dagger_carrier)
+  have WX_c: "W * \<rho> \<in> carrier_mat d n" using Wc X_c by auto
+  have WXWd_c: "W * \<rho> * (W\<^sup>\<dagger>) \<in> carrier_mat d d" using WX_c Wdag_c by auto
+  have km_c: "kraus_map_dim d Ws \<rho> \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Ws_c' X_c] .
+  have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n" using Wdag_c Wc by auto
+  have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Ws_c'] .
+  have sum_X_c: "sum_wdag_w n Ws * \<rho> \<in> carrier_mat n n"
+    using sum_c X_c by auto
+  have WdWX_c: "(W\<^sup>\<dagger>) * W * \<rho> \<in> carrier_mat n n"
+    using WdW_c X_c by auto
+
+  have tr_cyc:
+    "Tr (W * \<rho> * (W\<^sup>\<dagger>)) = Tr ((W\<^sup>\<dagger>) * W * \<rho>)"
+  proof -
+    have "Tr (W * \<rho> * (W\<^sup>\<dagger>)) = Tr ((W\<^sup>\<dagger>) * (W * \<rho>))"
+      using WX_c Wdag_c Wc X_c by (intro Tr_cyclic) auto
+    also have "\<dots> = Tr ((W\<^sup>\<dagger>) * W * \<rho>)"
+      using Wdag_c Wc X_c by (simp add: assoc_mult_mat)
+    finally show ?thesis .
+  qed
+
+  have IH: "Tr (kraus_map_dim d Ws \<rho>) = Tr (sum_wdag_w n Ws * \<rho>)"
+    using Cons.IH[OF Ws_c'] .
+
+  have "Tr (kraus_map_dim d (W # Ws) \<rho>)
+      = Tr (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)"
+    by simp
+  also have "\<dots> = Tr (W * \<rho> * (W\<^sup>\<dagger>)) + Tr (kraus_map_dim d Ws \<rho>)"
+    using WXWd_c km_c by (intro Tr_add) auto
+  also have "\<dots> = Tr ((W\<^sup>\<dagger>) * W * \<rho>) + Tr (sum_wdag_w n Ws * \<rho>)"
+    using tr_cyc IH by simp
+  also have "\<dots> = Tr ((W\<^sup>\<dagger>) * W * \<rho> + sum_wdag_w n Ws * \<rho>)"
+    using WdWX_c sum_X_c
+    by (metis Tr_add carrier_matD(1) carrier_matD(2))
+  also have "(W\<^sup>\<dagger>) * W * \<rho> + sum_wdag_w n Ws * \<rho>
+           = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) * \<rho>"
+    using WdW_c sum_c X_c by (simp add: add_mult_distrib_mat)
+  also have "(W\<^sup>\<dagger>) * W + sum_wdag_w n Ws = sum_wdag_w n (W # Ws)"
+    by (simp add: sum_wdag_w_Cons)
+  finally show ?case .
+qed
+
+text \<open>The \<open>\<Sum>\<^sub>i W\<^sub>i\<^sup>\<dagger> W\<^sub>i\<close> matrix entry equals a sum-list of
+  \<open>cnj(W\<^sub>i\<^sub>k\<^sub>a)\<cdot>W\<^sub>i\<^sub>k\<^sub>b\<close> contributions (needed to recover \<open>1\<^sub>n\<close> from trace preservation).\<close>
+
+lemma sum_wdag_w_entry:
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and a_lt: "a < n" and b_lt: "b < n"
+  shows "sum_wdag_w n Ws $$ (a, b) =
+         sum_list (map (\<lambda>W. ((W\<^sup>\<dagger>) * W) $$ (a, b)) Ws)"
+  using Ws_c
+proof (induction Ws)
+  case Nil show ?case using a_lt b_lt by simp
+next
+  case (Cons W Ws)
+  hence Wc: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>Y \<in> set Ws. Y \<in> carrier_mat d n" by auto
+  have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d" using Wc by (rule dagger_carrier)
+  have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n" using Wdag_c Wc by auto
+  have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Ws_c'] .
+  have IH: "sum_wdag_w n Ws $$ (a, b) =
+            sum_list (map (\<lambda>W. ((W\<^sup>\<dagger>) * W) $$ (a, b)) Ws)"
+    using Cons.IH[OF Ws_c'] .
+  have "sum_wdag_w n (W # Ws) $$ (a, b)
+      = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) $$ (a, b)"
+    by (simp add: sum_wdag_w_Cons)
+  also have "\<dots> = ((W\<^sup>\<dagger>) * W) $$ (a, b) + sum_wdag_w n Ws $$ (a, b)"
+    using WdW_c sum_c a_lt b_lt by simp
+  also have "\<dots> = ((W\<^sup>\<dagger>) * W) $$ (a, b)
+               + sum_list (map (\<lambda>W. ((W\<^sup>\<dagger>) * W) $$ (a, b)) Ws)"
+    using IH by simp
+  finally show ?case by simp
+qed
+
 theorem choi_kraus_cptp:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
                    \<Phi> (A + B) = \<Phi> A + \<Phi> B"
       and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
       and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and npos: "n > 0"
+      and dpos: "d > 0"
   shows "(completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>) \<longleftrightarrow>
          (\<exists>Ws :: complex Matrix.mat list.
             kraus_operators n d Ws \<and>
             (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Ws X))"
-  sorry  (* Choi's theorem gives the Kraus form; trace preservation is equivalent
-            to \<Sum>W\<^sub>i\<^sup>\<dagger>W\<^sub>i = I by cyclicity of trace. *)
+proof
+  \<comment> \<open>Direction \<open>\<Longleftarrow>\<close>: a Kraus representation yields a CP trace-preserving map.\<close>
+  assume "\<exists>Ws :: complex Matrix.mat list.
+            kraus_operators n d Ws \<and>
+            (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Ws X)"
+  then obtain Ws where
+        Ws_kraus: "kraus_operators n d Ws"
+    and phi_eq: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Ws X"
+    by blast
+  have Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+    using Ws_kraus by (simp add: kraus_operators_def)
+  have Ws_sum: "sum_wdag_w n Ws = 1\<^sub>m n"
+    using Ws_kraus by (simp add: kraus_operators_altdef)
+
+  \<comment> \<open>CP: transport from @{thm kraus_is_cp} through the agreement on \<open>M\<^sub>n\<close>.\<close>
+  have kmd_cp: "completely_positive n d (kraus_map_dim d Ws)"
+    using kraus_is_cp[OF Ws_kraus npos dpos] .
+  have cp_\<Phi>: "completely_positive n d \<Phi>"
+    unfolding completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p" and Xc: "X \<in> carrier_mat (p*n) (p*n)"
+       and Xpsd: "psd X"
+    have psd_kmd: "psd (amplification n d p (kraus_map_dim d Ws) X)"
+      using kmd_cp ppos Xc Xpsd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp_eq:
+      "amplification n d p \<Phi> X = amplification n d p (kraus_map_dim d Ws) X"
+    proof (rule eq_matI)
+      show "dim_row (amplification n d p \<Phi> X) =
+            dim_row (amplification n d p (kraus_map_dim d Ws) X)"
+        by (simp add: amplification_def)
+      show "dim_col (amplification n d p \<Phi> X) =
+            dim_col (amplification n d p (kraus_map_dim d Ws) X)"
+        by (simp add: amplification_def)
+    next
+      fix i j
+      assume "i < dim_row (amplification n d p (kraus_map_dim d Ws) X)"
+             "j < dim_col (amplification n d p (kraus_map_dim d Ws) X)"
+      hence i_lt: "i < p*d" and j_lt: "j < p*d"
+        by (simp_all add: amplification_def)
+      have block_c: "block_of_mat n X (i div d) (j div d) \<in> carrier_mat n n"
+        by (simp add: block_of_mat_def)
+      have "\<Phi> (block_of_mat n X (i div d) (j div d))
+          = kraus_map_dim d Ws (block_of_mat n X (i div d) (j div d))"
+        using phi_eq block_c by simp
+      thus "amplification n d p \<Phi> X $$ (i, j) =
+            amplification n d p (kraus_map_dim d Ws) X $$ (i, j)"
+        using i_lt j_lt by (simp add: amplification_def)
+    qed
+    show "psd (amplification n d p \<Phi> X)"
+      using psd_kmd amp_eq by simp
+  qed
+
+  \<comment> \<open>TP: use \<open>Tr (\<Phi> X) = Tr(\<Sum>W\<^sup>\<dagger>W \<cdot> X) = Tr (1\<^sub>n \<cdot> X) = Tr X\<close>.\<close>
+  have tp_\<Phi>: "trace_preserving n \<Phi>"
+    unfolding trace_preserving_def
+  proof (intro allI impI)
+    fix A :: "complex Matrix.mat" assume Ac: "A \<in> carrier_mat n n"
+    have "Tr (\<Phi> A) = Tr (kraus_map_dim d Ws A)"
+      using phi_eq Ac by simp
+    also have "\<dots> = Tr (sum_wdag_w n Ws * A)"
+      using Tr_kraus_map_dim_as_wdagw[OF Ws_c Ac] .
+    also have "\<dots> = Tr (1\<^sub>m n * A)"
+      using Ws_sum by simp
+    also have "\<dots> = Tr A"
+      using Ac by simp
+    finally show "Tr (\<Phi> A) = Tr A" .
+  qed
+
+  show "completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>"
+    using cp_\<Phi> tp_\<Phi> by simp
+next
+  \<comment> \<open>Direction \<open>\<Longrightarrow>\<close>: a CP trace-preserving map admits a Kraus form.\<close>
+  assume "completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>"
+  hence cp: "completely_positive n d \<Phi>"
+    and tp: "trace_preserving n \<Phi>" by auto
+  show "\<exists>Ws :: complex Matrix.mat list.
+          kraus_operators n d Ws \<and>
+          (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Ws X)"
+    sorry
+qed
 
 end
