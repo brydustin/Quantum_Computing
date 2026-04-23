@@ -5788,6 +5788,266 @@ next
   finally show ?case .
 qed
 
+text \<open>Enumeration of \<open>[0..<n] \<times> [0..<n]\<close> as a list of pairs.\<close>
+
+definition mat_unit_pairs :: "nat \<Rightarrow> (nat \<times> nat) list" where
+  "mat_unit_pairs n \<equiv>
+     concat (map (\<lambda>a. map (Pair a) [0..<n]) [0..<n])"
+
+lemma mat_unit_pairs_set:
+  "set (mat_unit_pairs n) = {p. fst p < n \<and> snd p < n}"
+  unfolding mat_unit_pairs_def by auto
+
+lemma mat_unit_pairs_distinct: "distinct (mat_unit_pairs n)"
+  unfolding mat_unit_pairs_def
+proof (intro distinct_concat)
+  have inj: "inj_on (\<lambda>a. map (Pair a) [0..<n]) (set [0..<n])"
+  proof (rule inj_onI)
+    fix a1 a2
+    assume a1_in: "a1 \<in> set [0..<n]" and a2_in: "a2 \<in> set [0..<n]"
+       and eq: "map (Pair a1) [0..<n] = map (Pair a2) [0..<n]"
+    have npos: "0 < n" using a1_in by simp
+    from eq show "a1 = a2" using npos by auto
+  qed
+  show "distinct (map (\<lambda>a. map (Pair a) [0..<n]) [0..<n])"
+    using inj by (simp add: distinct_map)
+next
+  fix ys
+  assume "ys \<in> set (map (\<lambda>a. map (Pair a) [0..<n]) [0..<n])"
+  thus "distinct ys"
+    by (auto simp: distinct_map inj_on_def)
+next
+  fix ys zs
+  assume "ys \<in> set (map (\<lambda>a. map (Pair a) [0..<n]) [0..<n])"
+     and "zs \<in> set (map (\<lambda>a. map (Pair a) [0..<n]) [0..<n])"
+     and "ys \<noteq> zs"
+  thus "set ys \<inter> set zs = {}"
+    by auto
+qed
+
+text \<open>Generic pair-indexed linear combination of \<open>f (E\<^sub>a\<^sub>b)\<close> contributions,
+  weighted by the entries of \<open>A\<close>.\<close>
+
+primrec pair_comb ::
+  "(complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat \<Rightarrow>
+   nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat) list \<Rightarrow> complex Matrix.mat" where
+  "pair_comb f A n d [] = 0\<^sub>m d d" |
+  "pair_comb f A n d (p # ps) =
+     A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n) + pair_comb f A n d ps"
+
+lemma pair_comb_carrier:
+  assumes f_car: "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> f (mat_unit a b n n) \<in> carrier_mat d d"
+      and ps_valid: "\<forall>p \<in> set ps. fst p < n \<and> snd p < n"
+  shows "pair_comb f A n d ps \<in> carrier_mat d d"
+  using ps_valid
+proof (induction ps)
+  case Nil show ?case by simp
+next
+  case (Cons p ps)
+  obtain a b where p_eq: "p = (a,b)" by (cases p)
+  hence a_lt: "a < n" and b_lt: "b < n"
+    using Cons.prems by auto
+  have fE_car: "f (mat_unit a b n n) \<in> carrier_mat d d"
+    using f_car[OF a_lt b_lt] .
+  have smult_c: "A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n) \<in> carrier_mat d d"
+    using fE_car p_eq by simp
+  have rec_c: "pair_comb f A n d ps \<in> carrier_mat d d"
+    using Cons by auto
+  show ?case using smult_c rec_c by simp
+qed
+
+lemma pair_comb_entry:
+  assumes f_car: "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> f (mat_unit a b n n) \<in> carrier_mat d d"
+      and ps_valid: "\<forall>p \<in> set ps. fst p < n \<and> snd p < n"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "pair_comb f A n d ps $$ (r,c) =
+         (\<Sum>p \<leftarrow> ps. A $$ p * f (mat_unit (fst p) (snd p) n n) $$ (r,c))"
+  using ps_valid
+proof (induction ps)
+  case Nil
+  show ?case using r_lt c_lt by simp
+next
+  case (Cons p ps)
+  obtain a b where p_eq: "p = (a,b)" by (cases p)
+  hence a_lt: "a < n" and b_lt: "b < n"
+    using Cons.prems by auto
+  have fE_car: "f (mat_unit a b n n) \<in> carrier_mat d d"
+    using f_car[OF a_lt b_lt] .
+  have smult_c: "A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n) \<in> carrier_mat d d"
+    using fE_car p_eq by simp
+  have rec_c: "pair_comb f A n d ps \<in> carrier_mat d d"
+    using Cons.prems f_car pair_comb_carrier[where f=f] by auto
+  have IH: "pair_comb f A n d ps $$ (r,c) =
+            (\<Sum>q \<leftarrow> ps. A $$ q * f (mat_unit (fst q) (snd q) n n) $$ (r,c))"
+    using Cons by auto
+  have "pair_comb f A n d (p # ps) $$ (r,c) =
+        (A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n) + pair_comb f A n d ps) $$ (r,c)"
+    by simp
+  also have "\<dots> = (A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n)) $$ (r,c)
+                + pair_comb f A n d ps $$ (r,c)"
+    using smult_c rec_c r_lt c_lt by simp
+  also have "(A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n)) $$ (r,c)
+           = A $$ p * f (mat_unit (fst p) (snd p) n n) $$ (r,c)"
+    using fE_car r_lt c_lt p_eq by simp
+  finally show ?case using IH by simp
+qed
+
+text \<open>For the identity-like choice \<open>f = id\<close>, the pair combination reconstructs
+  \<open>A\<close> when \<open>ps\<close> enumerates all basis positions.\<close>
+
+lemma pair_comb_id_reconstructs:
+  assumes A_car: "A \<in> carrier_mat n n"
+  shows "pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n) = A"
+proof (rule eq_matI)
+  have ps_valid: "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
+    using mat_unit_pairs_set by auto
+  have comb_car: "pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n) \<in> carrier_mat n n"
+  proof (rule pair_comb_carrier)
+    fix a b :: nat
+    assume "a < n" "b < n"
+    show "(\<lambda>X. X) (mat_unit a b n n) \<in> carrier_mat n n"
+      by (simp add: mat_unit_def)
+  qed (use ps_valid in auto)
+  show "dim_row (pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n)) = dim_row A"
+    using comb_car A_car by auto
+  show "dim_col (pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n)) = dim_col A"
+    using comb_car A_car by auto
+next
+  fix r c
+  assume "r < dim_row A" "c < dim_col A"
+  hence r_lt: "r < n" and c_lt: "c < n"
+    using A_car by auto
+  have ps_valid: "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
+    using mat_unit_pairs_set by auto
+  have pc_entry:
+    "pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n) $$ (r,c) =
+     (\<Sum>p \<leftarrow> mat_unit_pairs n. A $$ p * (\<lambda>X. X) (mat_unit (fst p) (snd p) n n) $$ (r,c))"
+  proof (rule pair_comb_entry)
+    fix a b :: nat
+    assume "a < n" "b < n"
+    show "(\<lambda>X. X) (mat_unit a b n n) \<in> carrier_mat n n"
+      by (simp add: mat_unit_def)
+  qed (use ps_valid r_lt c_lt in auto)
+  have "pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n) $$ (r,c) =
+        (\<Sum>p \<leftarrow> mat_unit_pairs n. A $$ p * mat_unit (fst p) (snd p) n n $$ (r,c))"
+    using pc_entry by simp
+  also have "\<dots> = (\<Sum>p \<leftarrow> mat_unit_pairs n.
+                    A $$ p * (if fst p = r \<and> snd p = c then 1 else 0))"
+    using r_lt c_lt
+    by (intro arg_cong[where f=sum_list] list.map_cong refl)
+       (auto simp: case_prod_beta)
+  also have "\<dots> = (\<Sum>p \<leftarrow> mat_unit_pairs n.
+                    (if p = (r,c) then A $$ (r,c) else 0))"
+    by (intro arg_cong[where f=sum_list] list.map_cong refl)
+       (auto simp: prod_eq_iff)
+  also have "\<dots> = A $$ (r,c)"
+  proof -
+    have rc_in: "(r,c) \<in> set (mat_unit_pairs n)"
+      using r_lt c_lt by (simp add: mat_unit_pairs_set)
+    have dist: "distinct (mat_unit_pairs n)"
+      by (rule mat_unit_pairs_distinct)
+    have "(\<Sum>p \<leftarrow> mat_unit_pairs n.
+             (if p = (r,c) then A $$ (r,c) else 0))
+          = (\<Sum>p \<in> set (mat_unit_pairs n).
+               (if p = (r,c) then A $$ (r,c) else 0))"
+      using dist by (rule sum_list_distinct_conv_sum_set)
+    also have "\<dots> = A $$ (r,c)"
+      using rc_in by (subst sum.delta_remove) auto
+    finally show ?thesis .
+  qed
+  finally show "pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n) $$ (r,c) = A $$ (r,c)"
+    by simp
+qed
+
+text \<open>For a linear map \<open>f : M\<^sub>n \<rightarrow> M\<^sub>d\<close>, applying \<open>f\<close> to \<open>A\<close> equals the
+  pair combination of \<open>f\<close> evaluated on the basis.\<close>
+
+lemma linear_eq_pair_comb:
+  fixes f :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes f_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n \<Longrightarrow>
+                   f (X + Y) = f X + f Y"
+      and f_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> f (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m f X"
+      and f_car: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> f X \<in> carrier_mat d d"
+      and A_car: "A \<in> carrier_mat n n"
+      and npos: "n > 0" and dpos: "d > 0"
+  shows "f A = pair_comb f A n d (mat_unit_pairs n)"
+proof -
+  have Eab_car: "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> mat_unit a b n n \<in> carrier_mat n n"
+    by (simp add: mat_unit_def)
+  have fEab_car: "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> f (mat_unit a b n n) \<in> carrier_mat d d"
+    using f_car Eab_car by blast
+  have f_zero: "f (0\<^sub>m n n) = 0\<^sub>m d d"
+  proof -
+    have zc: "0\<^sub>m n n \<in> carrier_mat n n" by auto
+    have "f (0\<^sub>m n n) = f (0 \<cdot>\<^sub>m 0\<^sub>m n n)"
+      by (intro arg_cong[where f=f]) (rule eq_matI; auto)
+    also have "\<dots> = 0 \<cdot>\<^sub>m f (0\<^sub>m n n)"
+      using f_smult[OF zc] by simp
+    also have "\<dots> = 0\<^sub>m d d"
+      using f_car[OF zc] by (intro eq_matI) auto
+    finally show ?thesis .
+  qed
+  \<comment> \<open>Key induction: for any list \<open>ps\<close> of valid pairs, \<open>f\<close> applied to the
+     \<open>\<lambda>X. X\<close> pair-combination equals the \<open>f\<close> pair-combination.\<close>
+  have gen: "\<And>ps. (\<forall>p \<in> set ps. fst p < n \<and> snd p < n) \<Longrightarrow>
+              f (pair_comb (\<lambda>X. X) A n n ps) = pair_comb f A n d ps"
+  proof -
+    fix ps :: "(nat \<times> nat) list"
+    assume ps_valid: "\<forall>p \<in> set ps. fst p < n \<and> snd p < n"
+    show "f (pair_comb (\<lambda>X. X) A n n ps) = pair_comb f A n d ps"
+      using ps_valid
+    proof (induction ps)
+      case Nil
+      show ?case using f_zero by simp
+    next
+      case (Cons p ps)
+      obtain a b where p_eq: "p = (a,b)" by (cases p)
+      hence a_lt: "a < n" and b_lt: "b < n"
+        using Cons.prems by auto
+      have Eab_c: "mat_unit a b n n \<in> carrier_mat n n"
+        using a_lt b_lt Eab_car by simp
+      have smult_Eab_c: "A $$ p \<cdot>\<^sub>m mat_unit (fst p) (snd p) n n \<in> carrier_mat n n"
+        using Eab_c p_eq by simp
+      have ps_valid': "\<forall>q \<in> set ps. fst q < n \<and> snd q < n"
+        using Cons.prems by simp
+      have rec_c: "pair_comb (\<lambda>X. X) A n n ps \<in> carrier_mat n n"
+      proof (rule pair_comb_carrier)
+        fix a b :: nat
+        assume "a < n" "b < n"
+        show "(\<lambda>X. X) (mat_unit a b n n) \<in> carrier_mat n n"
+          by (simp add: mat_unit_def)
+      qed (use ps_valid' in auto)
+      have "f (pair_comb (\<lambda>X. X) A n n (p # ps)) =
+            f (A $$ p \<cdot>\<^sub>m mat_unit (fst p) (snd p) n n + pair_comb (\<lambda>X. X) A n n ps)"
+        by simp
+      also have "\<dots> = f (A $$ p \<cdot>\<^sub>m mat_unit (fst p) (snd p) n n)
+                    + f (pair_comb (\<lambda>X. X) A n n ps)"
+        using f_add[OF smult_Eab_c rec_c] by simp
+      also have "\<dots> = A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n)
+                    + f (pair_comb (\<lambda>X. X) A n n ps)"
+      proof -
+        have "f (A $$ p \<cdot>\<^sub>m mat_unit (fst p) (snd p) n n)
+              = A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n)"
+          using f_smult[OF Eab_c] p_eq by simp
+        thus ?thesis by simp
+      qed
+      also have "\<dots> = A $$ p \<cdot>\<^sub>m f (mat_unit (fst p) (snd p) n n)
+                    + pair_comb f A n d ps"
+        using Cons.IH[OF ps_valid'] by simp
+      also have "\<dots> = pair_comb f A n d (p # ps)"
+        by simp
+      finally show ?case .
+    qed
+  qed
+  have ps_valid_full: "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
+    using mat_unit_pairs_set by auto
+  have "f A = f (pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n))"
+    using pair_comb_id_reconstructs[OF A_car] by simp
+  also have "\<dots> = pair_comb f A n d (mat_unit_pairs n)"
+    using gen[OF ps_valid_full] .
+  finally show ?thesis .
+qed
+
 theorem choi_theorem:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
@@ -5805,8 +6065,7 @@ proof
 next
   assume "psd (choi_matrix n d \<Phi>)"
   thus "completely_positive n d \<Phi>"
-    sorry  (* Factor P\<^sub>\<Phi> = \<Sum>k v\<^sub>k v\<^sub>k\<^sup>\<dagger>, block each v\<^sub>k into d-vectors,
-              and obtain a Choi-Kraus representation. *)
+    sorry
 qed
 
 theorem choi_kraus_cptp:
