@@ -6225,6 +6225,168 @@ proof -
   finally show ?thesis .
 qed
 
+text \<open>Kraus representation extracted from a psd Choi matrix: reshape each
+  column of a psd factorization of \<open>P\<^sub>\<Phi>\<close> into a Kraus operator, and the
+  resulting list agrees with \<open>\<Phi>\<close> on all of \<open>M\<^sub>n\<close>.\<close>
+
+lemma kraus_rep_of_psd_choi:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
+                   \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and npos: "n > 0"
+      and dpos: "d > 0"
+      and psdP: "psd (choi_matrix n d \<Phi>)"
+  shows "\<exists>Ws :: complex Matrix.mat list.
+           (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
+           (\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A)"
+proof -
+  have P_car: "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
+    by (simp add: choi_matrix_def)
+  obtain vs :: "complex Matrix.vec list"
+    where vs_dim: "\<forall>v \<in> set vs. dim_vec v = n*d"
+      and vs_sum: "outer_sum (n*d) vs = choi_matrix n d \<Phi>"
+    using psd_kraus_decomp[OF P_car psdP] by blast
+  define Ws :: "complex Matrix.mat list" where
+    "Ws = map (\<lambda>v. Matrix.mat d n (\<lambda>(i, a). v $ (a*d + i))) vs"
+  have Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+    by (auto simp: Ws_def)
+  have len_Ws: "length Ws = length vs"
+    by (simp add: Ws_def)
+
+  have match_unit:
+    "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow>
+       \<Phi> (mat_unit a b n n) = kraus_map_dim d Ws (mat_unit a b n n)"
+  proof -
+    fix a b assume a_lt: "a < n" and b_lt: "b < n"
+    have Eab_c: "mat_unit a b n n \<in> carrier_mat n n"
+      by (simp add: mat_unit_def)
+    have \<Phi>Eab_c: "\<Phi> (mat_unit a b n n) \<in> carrier_mat d d"
+      using range Eab_c by blast
+    have kmd_c: "kraus_map_dim d Ws (mat_unit a b n n) \<in> carrier_mat d d"
+      using kraus_map_dim_carrier[OF Ws_c Eab_c] .
+    show "\<Phi> (mat_unit a b n n) = kraus_map_dim d Ws (mat_unit a b n n)"
+    proof (rule eq_matI)
+      show "dim_row (\<Phi> (mat_unit a b n n)) =
+            dim_row (kraus_map_dim d Ws (mat_unit a b n n))"
+        using \<Phi>Eab_c kmd_c by auto
+      show "dim_col (\<Phi> (mat_unit a b n n)) =
+            dim_col (kraus_map_dim d Ws (mat_unit a b n n))"
+        using \<Phi>Eab_c kmd_c by auto
+    next
+      fix i j
+      assume "i < dim_row (kraus_map_dim d Ws (mat_unit a b n n))"
+             "j < dim_col (kraus_map_dim d Ws (mat_unit a b n n))"
+      hence i_lt: "i < d" and j_lt: "j < d"
+        using kmd_c by auto
+      have adi_lt: "a*d + i < n*d"
+        using a_lt i_lt
+        by (metis Nat.add_0_right div_less div_less_iff_less_mult div_mult_self3 dpos not_less0)
+      have bdj_lt: "b*d + j < n*d"
+        using b_lt j_lt
+        by (metis Nat.add_0_right div_less div_less_iff_less_mult div_mult_self3 dpos not_less0)
+      have adi_div: "(a*d + i) div d = a" using i_lt dpos by simp
+      have bdj_div: "(b*d + j) div d = b" using j_lt dpos by simp
+      have adi_mod: "(a*d + i) mod d = i" using i_lt dpos by simp
+      have bdj_mod: "(b*d + j) mod d = j" using j_lt dpos by simp
+      have "\<Phi> (mat_unit a b n n) $$ (i, j)
+          = choi_matrix n d \<Phi> $$ (a*d + i, b*d + j)"
+        using adi_lt bdj_lt adi_div bdj_div adi_mod bdj_mod
+        by (simp add: choi_matrix_def)
+      also have "\<dots> = outer_sum (n*d) vs $$ (a*d + i, b*d + j)"
+        using vs_sum by simp
+      also have "\<dots> = sum_list (map (\<lambda>v. v $ (a*d + i) * cnj (v $ (b*d + j))) vs)"
+        using outer_sum_entry_sum_list[OF vs_dim adi_lt bdj_lt] .
+      also have "\<dots> = sum_list (map (\<lambda>W. (W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
+      proof -
+        have point_eq:
+          "\<And>W. W \<in> set Ws \<Longrightarrow>
+              (W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j) =
+              W $$ (i, a) * cnj (W $$ (j, b))"
+        proof -
+          fix W assume W_in: "W \<in> set Ws"
+          have Wc_k: "W \<in> carrier_mat d n" using Ws_c W_in by simp
+          show "(W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j) =
+                W $$ (i, a) * cnj (W $$ (j, b))"
+            using conjugation_mat_unit_entry[OF Wc_k a_lt b_lt i_lt j_lt] .
+        qed
+        have "sum_list (map (\<lambda>v. v $ (a*d + i) * cnj (v $ (b*d + j))) vs) =
+              sum_list (map (\<lambda>W. W $$ (i, a) * cnj (W $$ (j, b))) Ws)"
+          unfolding Ws_def
+          using i_lt a_lt j_lt b_lt
+          by (induction vs) simp_all
+        also have "\<dots> = sum_list (map (\<lambda>W. (W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
+          using point_eq
+          by (intro arg_cong[where f=sum_list] map_cong refl) (metis)
+        finally show ?thesis.
+      qed
+      also have "\<dots> = kraus_map_dim d Ws (mat_unit a b n n) $$ (i, j)"
+        using kraus_map_dim_entry_sum_list[OF Ws_c Eab_c i_lt j_lt] by simp
+      finally show "\<Phi> (mat_unit a b n n) $$ (i, j) =
+                    kraus_map_dim d Ws (mat_unit a b n n) $$ (i, j)" .
+    qed
+  qed
+
+  have kmd_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n \<Longrightarrow>
+      kraus_map_dim d Ws (X + Y) = kraus_map_dim d Ws X + kraus_map_dim d Ws Y"
+    using kraus_map_dim_add Ws_c by blast
+  have kmd_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow>
+      kraus_map_dim d Ws (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m kraus_map_dim d Ws X"
+    using kraus_map_dim_smult Ws_c by blast
+  have kmd_car: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
+      kraus_map_dim d Ws X \<in> carrier_mat d d"
+    using kraus_map_dim_carrier Ws_c by blast
+  have \<Phi>_car: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X \<in> carrier_mat d d"
+    using range by blast
+
+  have phi_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
+  proof (intro allI impI)
+    fix A :: "complex Matrix.mat" assume Ac: "A \<in> carrier_mat n n"
+    have lhs: "\<Phi> A = pair_comb \<Phi> A n d (mat_unit_pairs n)"
+      using linear_eq_pair_comb[OF linear smult \<Phi>_car Ac npos dpos] .
+    have rhs: "kraus_map_dim d Ws A =
+               pair_comb (kraus_map_dim d Ws) A n d (mat_unit_pairs n)"
+      using linear_eq_pair_comb[OF kmd_add kmd_smult kmd_car Ac npos dpos] .
+    have comb_eq:
+      "pair_comb \<Phi> A n d (mat_unit_pairs n) =
+       pair_comb (kraus_map_dim d Ws) A n d (mat_unit_pairs n)"
+    proof -
+      have "\<And>ps. (\<forall>p \<in> set ps. fst p < n \<and> snd p < n) \<Longrightarrow>
+          pair_comb \<Phi> A n d ps = pair_comb (kraus_map_dim d Ws) A n d ps"
+      proof -
+        fix ps :: "(nat \<times> nat) list"
+        assume ps_valid: "\<forall>p \<in> set ps. fst p < n \<and> snd p < n"
+        show "pair_comb \<Phi> A n d ps =
+              pair_comb (kraus_map_dim d Ws) A n d ps"
+          using ps_valid
+        proof (induction ps)
+          case Nil show ?case by simp
+        next
+          case (Cons p ps)
+          obtain a b where p_eq: "p = (a, b)" by (cases p)
+          hence a_lt: "a < n" and b_lt: "b < n"
+            using Cons.prems by auto
+          have basis_eq: "\<Phi> (mat_unit (fst p) (snd p) n n) =
+                          kraus_map_dim d Ws (mat_unit (fst p) (snd p) n n)"
+            using match_unit[OF a_lt b_lt] p_eq by simp
+          have IH: "pair_comb \<Phi> A n d ps =
+                    pair_comb (kraus_map_dim d Ws) A n d ps"
+            using Cons by auto
+          show ?case using basis_eq IH by simp
+        qed
+      qed
+      moreover have "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
+        using mat_unit_pairs_set by auto
+      ultimately show ?thesis by blast
+    qed
+    show "\<Phi> A = kraus_map_dim d Ws A"
+      using lhs rhs comb_eq by simp
+  qed
+
+  show ?thesis using Ws_c phi_eq by blast
+qed
+
 theorem choi_theorem:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
@@ -6579,6 +6741,71 @@ next
   finally show ?case by simp
 qed
 
+text \<open>Pairing with \<open>E\<^sub>a\<^sub>b\<close> extracts the \<open>(b,a)\<close> entry under the trace.\<close>
+
+lemma Tr_mult_mat_unit:
+  assumes M_c: "M \<in> carrier_mat n n"
+      and a_lt: "a < n" and b_lt: "b < n"
+  shows "Tr (M * mat_unit a b n n) = M $$ (b, a)"
+proof -
+  let ?E = "mat_unit a b n n"
+  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+  have ME_c: "M * ?E \<in> carrier_mat n n" using M_c E_c by auto
+  have "Tr (M * ?E) = (\<Sum>i<n. (M * ?E) $$ (i, i))"
+    using ME_c by (auto simp: Tr_def)
+  also have "\<dots> = (\<Sum>i<n.
+        (\<Sum>k<n. M $$ (i, k) * ?E $$ (k, i)))"
+  proof (intro sum.cong refl)
+    fix i assume "i \<in> {..<n}"
+    hence i_lt: "i < n" by simp
+    have i_M: "i < dim_row M" using M_c i_lt by auto
+    have i_E: "i < dim_col ?E" using E_c i_lt by auto
+    have "(M * ?E) $$ (i, i) = Matrix.row M i \<bullet> Matrix.col ?E i"
+      using index_mult_mat(1)[OF i_M i_E] .
+    also have "\<dots> = (\<Sum>k<n. Matrix.row M i $ k * Matrix.col ?E i $ k)"
+      unfolding scalar_prod_def using M_c
+      by (simp add: atLeast0LessThan)
+    also have "\<dots> = (\<Sum>k<n. M $$ (i, k) * ?E $$ (k, i))"
+    proof (intro sum.cong refl)
+      fix k assume "k \<in> {..<n}"
+      hence k_lt: "k < n" by simp
+      have row: "Matrix.row M i $ k = M $$ (i, k)"
+        using i_M k_lt M_c by simp
+      have col: "Matrix.col ?E i $ k = ?E $$ (k, i)"
+        using E_c k_lt i_lt by simp
+      show "Matrix.row M i $ k * Matrix.col ?E i $ k = M $$ (i, k) * ?E $$ (k, i)"
+        using row col by simp
+    qed
+    finally show "(M * ?E) $$ (i, i) = (\<Sum>k<n. M $$ (i, k) * ?E $$ (k, i))" .
+  qed
+  also have "\<dots> = (\<Sum>i<n.
+        (\<Sum>k<n. M $$ (i, k) * (if k = a \<and> i = b then 1 else 0)))"
+    by (intro sum.cong refl) simp
+  also have "\<dots> = (\<Sum>i<n.
+        (if i = b then M $$ (i, a) else 0))"
+  proof (intro sum.cong refl)
+    fix i assume "i \<in> {..<n}"
+    hence i_lt: "i < n" by simp
+    show "(\<Sum>k<n. M $$ (i, k) * (if k = a \<and> i = b then 1 else 0))
+        = (if i = b then M $$ (i, a) else 0)"
+    proof (cases "i = b")
+      case True
+      have "(\<Sum>k<n. M $$ (i, k) * (if k = a \<and> i = b then 1 else 0))
+          = (\<Sum>k<n. if k = a then M $$ (i, k) else 0)"
+        using True by (intro sum.cong refl) simp
+      also have "\<dots> = M $$ (i, a)"
+        using a_lt by simp
+      finally show ?thesis using True by simp
+    next
+      case False
+      thus ?thesis by (simp cong: sum.cong)
+    qed
+  qed
+  also have "\<dots> = M $$ (b, a)"
+    using b_lt by simp
+  finally show ?thesis .
+qed
+
 theorem choi_kraus_cptp:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
@@ -6668,10 +6895,58 @@ next
   assume "completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>"
   hence cp: "completely_positive n d \<Phi>"
     and tp: "trace_preserving n \<Phi>" by auto
+  \<comment> \<open>Step 1: CP implies the Choi matrix is psd.\<close>
+  have psdP: "psd (choi_matrix n d \<Phi>)"
+    using choi_theorem[OF linear smult range npos dpos] cp by blast
+  \<comment> \<open>Step 2: reshape a decomposition of the Choi matrix into a Kraus list.\<close>
+  obtain Ws :: "complex Matrix.mat list"
+    where Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and phi_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
+    using kraus_rep_of_psd_choi[OF linear smult range npos dpos psdP]
+    by blast
+  \<comment> \<open>Step 3: trace preservation forces sum_wdag_w n Ws = 1_n.\<close>
+  have sum_is_one: "sum_wdag_w n Ws = 1\<^sub>m n"
+  proof (rule eq_matI)
+    have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
+      using sum_wdag_w_carrier[OF Ws_c] .
+    show "dim_row (sum_wdag_w n Ws) = dim_row (1\<^sub>m n)"
+      using sum_c by auto
+    show "dim_col (sum_wdag_w n Ws) = dim_col (1\<^sub>m n)"
+      using sum_c by auto
+  next
+    fix a b
+    assume a_in: "a < dim_row (1\<^sub>m n)"
+       and b_in: "b < dim_col (1\<^sub>m n)"
+    hence a_lt: "a < n" and b_lt: "b < n" by auto
+    let ?E = "mat_unit b a n n"
+    have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+    have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
+      using sum_wdag_w_carrier[OF Ws_c] .
+    have one_c: "1\<^sub>m n \<in> carrier_mat n n" by simp
+    \<comment> \<open>Pair both sides with the mat_unit (b,a) and compare through Tr.\<close>
+    have lhs: "sum_wdag_w n Ws $$ (a, b) = Tr (sum_wdag_w n Ws * ?E)"
+      using Tr_mult_mat_unit[OF sum_c b_lt a_lt] by simp
+    have rhs: "1\<^sub>m n $$ (a, b) = Tr (1\<^sub>m n * ?E)"
+      using Tr_mult_mat_unit[OF one_c b_lt a_lt] by simp
+    have "Tr (sum_wdag_w n Ws * ?E) = Tr (kraus_map_dim d Ws ?E)"
+      using Tr_kraus_map_dim_as_wdagw[OF Ws_c E_c] by simp
+    also have "\<dots> = Tr (\<Phi> ?E)"
+      using phi_eq E_c by simp
+    also have "\<dots> = Tr ?E"
+      using tp E_c by (simp add: trace_preserving_def)
+    also have "\<dots> = Tr (1\<^sub>m n * ?E)"
+      using E_c by simp
+    finally have "Tr (sum_wdag_w n Ws * ?E) = Tr (1\<^sub>m n * ?E)" .
+    thus "sum_wdag_w n Ws $$ (a, b) = 1\<^sub>m n $$ (a, b)"
+      using lhs rhs by simp
+  qed
+  \<comment> \<open>Step 4: package the Kraus list.\<close>
+  have kraus: "kraus_operators n d Ws"
+    unfolding kraus_operators_altdef using Ws_c sum_is_one by simp
   show "\<exists>Ws :: complex Matrix.mat list.
           kraus_operators n d Ws \<and>
           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Ws X)"
-    sorry
+    using kraus phi_eq by blast
 qed
 
 end
