@@ -6048,6 +6048,183 @@ proof -
   finally show ?thesis .
 qed
 
+text \<open>Conjugation \<open>W E\<^sub>a\<^sub>b W\<^sup>\<dagger>\<close> has entry \<open>W\<^sub>i\<^sub>a\<cdot>\<^sup>\<dagger>W\<^sub>j\<^sub>b\<close>.\<close>
+
+lemma conjugation_mat_unit_entry:
+  assumes Wc: "W \<in> carrier_mat d n"
+      and a_lt: "a < n" and b_lt: "b < n"
+      and i_lt: "i < d" and j_lt: "j < d"
+  shows "(W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j) =
+         W $$ (i, a) * cnj (W $$ (j, b))"
+proof -
+  have Eab_c: "mat_unit a b n n \<in> carrier_mat n n"
+    by (simp add: mat_unit_def)
+  have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using Wc by (rule dagger_carrier)
+  have WE_c: "W * mat_unit a b n n \<in> carrier_mat d n"
+    using Wc Eab_c by auto
+  have dim_WE: "dim_col (W * mat_unit a b n n) = n"
+    using WE_c by auto
+  have dim_W: "dim_col W = n" using Wc by auto
+  have i_WE: "i < dim_row (W * mat_unit a b n n)"
+    using WE_c i_lt by auto
+  have j_Wdag: "j < dim_col (W\<^sup>\<dagger>)"
+    using Wdag_c j_lt by auto
+  have "(W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j)
+      = Matrix.row (W * mat_unit a b n n) i \<bullet> Matrix.col (W\<^sup>\<dagger>) j"
+    using index_mult_mat(1)[OF i_WE j_Wdag] .
+  also have "\<dots> = (\<Sum>p<n.
+        Matrix.row (W * mat_unit a b n n) i $ p * Matrix.col (W\<^sup>\<dagger>) j $ p)"
+    unfolding scalar_prod_def using dim_WE dim_W Wdag_c
+    by (simp add: atLeast0LessThan)
+  also have "\<dots> = (\<Sum>p<n.
+        (W * mat_unit a b n n) $$ (i, p) * (W\<^sup>\<dagger>) $$ (p, j))"
+  proof (intro sum.cong refl)
+    fix p assume "p \<in> {..<n}"
+    hence p_lt: "p < n" by simp
+    have "Matrix.row (W * mat_unit a b n n) i $ p = (W * mat_unit a b n n) $$ (i, p)"
+      using i_WE p_lt dim_WE by simp
+    moreover have "Matrix.col (W\<^sup>\<dagger>) j $ p = (W\<^sup>\<dagger>) $$ (p, j)"
+      using Wdag_c j_lt p_lt
+      by (metis carrier_matD(1) carrier_matD(2) index_col)
+    ultimately show "Matrix.row (W * mat_unit a b n n) i $ p *
+                     Matrix.col (W\<^sup>\<dagger>) j $ p
+                   = (W * mat_unit a b n n) $$ (i, p) * (W\<^sup>\<dagger>) $$ (p, j)"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>p<n.
+        (\<Sum>q<n. W $$ (i, q) * mat_unit a b n n $$ (q, p)) * (W\<^sup>\<dagger>) $$ (p, j))"
+  proof (intro sum.cong refl)
+    fix p assume "p \<in> {..<n}"
+    hence p_lt: "p < n" by simp
+    have i_W: "i < dim_row W" using Wc i_lt by auto
+    have p_E: "p < dim_col (mat_unit a b n n)" using Eab_c p_lt by simp
+    have "(W * mat_unit a b n n) $$ (i, p) =
+          Matrix.row W i \<bullet> Matrix.col (mat_unit a b n n) p"
+      using index_mult_mat(1)[OF i_W p_E] .
+    also have "\<dots> = (\<Sum>q<n. Matrix.row W i $ q *
+                           Matrix.col (mat_unit a b n n) p $ q)"
+      unfolding scalar_prod_def using dim_W
+      by (simp add: atLeast0LessThan)
+    also have "\<dots> = (\<Sum>q<n. W $$ (i, q) * mat_unit a b n n $$ (q, p))"
+    proof (intro sum.cong refl)
+      fix q assume "q \<in> {..<n}"
+      hence q_lt: "q < n" by simp
+      have "Matrix.row W i $ q = W $$ (i, q)"
+        using i_W q_lt dim_W by simp
+      moreover have
+        "Matrix.col (mat_unit a b n n) p $ q = mat_unit a b n n $$ (q, p)"
+        using Eab_c p_lt q_lt by simp
+      ultimately show "Matrix.row W i $ q * Matrix.col (mat_unit a b n n) p $ q
+                     = W $$ (i, q) * mat_unit a b n n $$ (q, p)"
+        by simp
+    qed
+    finally show
+      "(W * mat_unit a b n n) $$ (i, p) * (W\<^sup>\<dagger>) $$ (p, j) =
+       (\<Sum>q<n. W $$ (i, q) * mat_unit a b n n $$ (q, p)) * (W\<^sup>\<dagger>) $$ (p, j)"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>p<n.
+        (\<Sum>q<n. W $$ (i, q) * (if q = a \<and> p = b then 1 else 0))
+           * (W\<^sup>\<dagger>) $$ (p, j))"
+    by (intro sum.cong refl) (simp)
+  also have "\<dots> = (\<Sum>p<n.
+        (if p = b then W $$ (i, a) else 0) * (W\<^sup>\<dagger>) $$ (p, j))"
+  proof (intro sum.cong refl)
+    fix p assume "p \<in> {..<n}"
+    hence p_lt: "p < n" by simp
+    have "(\<Sum>q<n. W $$ (i, q) * (if q = a \<and> p = b then 1 else 0))
+        = (\<Sum>q<n. if q = a \<and> p = b then W $$ (i, q) else 0)"
+      by (intro sum.cong refl) simp
+    also have "\<dots> = (if p = b then W $$ (i, a) else 0)"
+      using a_lt by simp
+    finally show "(\<Sum>q<n. W $$ (i, q) * (if q = a \<and> p = b then 1 else 0))
+               * (W\<^sup>\<dagger>) $$ (p, j)
+               = (if p = b then W $$ (i, a) else 0) * (W\<^sup>\<dagger>) $$ (p, j)"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>p<n. if p = b then W $$ (i, a) * (W\<^sup>\<dagger>) $$ (p, j) else 0)"
+    by (intro sum.cong refl) simp
+  also have "\<dots> = W $$ (i, a) * (W\<^sup>\<dagger>) $$ (b, j)"
+    using b_lt by simp
+  also have "(W\<^sup>\<dagger>) $$ (b, j) = cnj (W $$ (j, b))"
+    using Wc b_lt j_lt by (simp add: dagger_def)
+  finally show ?thesis .
+qed
+
+text \<open>Entry-wise formula for @{const kraus_map_dim} as a sum over the list.\<close>
+
+lemma kraus_map_dim_entry_sum_list:
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and i_lt: "i < d" and j_lt: "j < d"
+  shows "kraus_map_dim d Ws \<rho> $$ (i, j) =
+         sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  show ?case using i_lt j_lt by simp
+next
+  case (Cons W Ws)
+  hence Wc: "W \<in> carrier_mat d n" and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n"
+    by auto
+  have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using Wc by (rule dagger_carrier)
+  have Wr_c: "W * \<rho> \<in> carrier_mat d n" using Wc rho_c by auto
+  have WrW_c: "W * \<rho> * (W\<^sup>\<dagger>) \<in> carrier_mat d d" using Wr_c Wdag_c by auto
+  have rec_c: "kraus_map_dim d Ws \<rho> \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Ws_c' rho_c] .
+  have IH: "kraus_map_dim d Ws \<rho> $$ (i, j) =
+            sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
+    using Cons.IH[OF Ws_c'] .
+  have "kraus_map_dim d (W # Ws) \<rho> $$ (i, j)
+      = (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>) $$ (i, j)"
+    by simp
+  also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j) + kraus_map_dim d Ws \<rho> $$ (i, j)"
+    using WrW_c rec_c i_lt j_lt by simp
+  also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)
+                + sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
+    using IH by simp
+  also have "\<dots> = sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) (W # Ws))"
+    by simp
+  finally show ?case .
+qed
+
+text \<open>Entry-wise formula for @{const outer_sum} without orthonormality.\<close>
+
+lemma outer_sum_entry_sum_list:
+  assumes vs_dim: "\<forall>v \<in> set vs. dim_vec v = n"
+      and i_lt: "i < n" and j_lt: "j < n"
+  shows "outer_sum n vs $$ (i, j) =
+         sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) vs)"
+proof -
+  let ?V = "mat_of_cols n vs"
+  let ?k = "length vs"
+  have V_c: "?V \<in> carrier_mat n ?k"
+    using vs_dim by (simp add: mat_of_cols_def)
+  have Vdag_c: "?V\<^sup>\<dagger> \<in> carrier_mat ?k n"
+    using V_c by (rule dagger_carrier)
+  have "outer_sum n vs $$ (i, j) = (?V * (?V\<^sup>\<dagger>)) $$ (i, j)"
+    by (simp add: outer_sum_def)
+  also have "\<dots> = (\<Sum>l<?k. ?V $$ (i, l) * (?V\<^sup>\<dagger>) $$ (l, j))"
+    using i_lt j_lt V_c Vdag_c by (simp add: index_mult_mat(1))
+  also have "\<dots> = (\<Sum>l<?k. (vs ! l) $ i * cnj ((vs ! l) $ j))"
+  proof (intro sum.cong refl)
+    fix l assume "l \<in> {..<?k}"
+    hence l_lt: "l < ?k" by simp
+    have vl_dim: "dim_vec (vs ! l) = n" using vs_dim l_lt by auto
+    have V_idx: "?V $$ (i, l) = (vs ! l) $ i"
+      using i_lt l_lt by (simp add: mat_of_cols_def)
+    have Vdag_idx: "(?V\<^sup>\<dagger>) $$ (l, j) = cnj ((vs ! l) $ j)"
+      using j_lt l_lt vl_dim by (simp add: dagger_def mat_of_cols_def)
+    show "?V $$ (i, l) * (?V\<^sup>\<dagger>) $$ (l, j) = (vs ! l) $ i * cnj ((vs ! l) $ j)"
+      using V_idx Vdag_idx by simp
+  qed
+  also have "\<dots> = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) vs)"
+    by (simp add: sum_list_sum_nth atLeast0LessThan)
+  finally show ?thesis .
+qed
+
 theorem choi_theorem:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
@@ -6063,9 +6240,213 @@ proof
   thus "psd (choi_matrix n d \<Phi>)"
     using choi_psd_if_cp[OF npos dpos] by simp
 next
-  assume "psd (choi_matrix n d \<Phi>)"
-  thus "completely_positive n d \<Phi>"
-    sorry
+  assume psdP: "psd (choi_matrix n d \<Phi>)"
+  \<comment> \<open>Factor \<open>P\<^sub>\<Phi> = \<Sum>\<^sub>k v\<^sub>k v\<^sub>k\<^sup>\<dagger>\<close> and reshape each \<open>v\<^sub>k \<in> \<complex>\<^bsup>nd\<^esup>\<close> into a
+     \<open>d \<times> n\<close> Kraus operator \<open>W\<^sub>k\<close>.  Each \<open>W\<^sub>k\<close> is given by
+     \<open>(W\<^sub>k)\<^sub>i\<^sub>a = v\<^sub>k $ (a*d + i)\<close>, matching the Choi-index convention.\<close>
+  have P_car: "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
+    by (simp add: choi_matrix_def)
+  obtain vs :: "complex Matrix.vec list"
+    where vs_dim: "\<forall>v \<in> set vs. dim_vec v = n*d"
+      and vs_sum: "outer_sum (n*d) vs = choi_matrix n d \<Phi>"
+    using psd_kraus_decomp[OF P_car psdP] by blast
+  define Ws :: "complex Matrix.mat list" where
+    "Ws = map (\<lambda>v. Matrix.mat d n (\<lambda>(i, a). v $ (a*d + i))) vs"
+  have Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+    by (auto simp: Ws_def)
+  have len_Ws: "length Ws = length vs"
+    by (simp add: Ws_def)
+
+  \<comment> \<open>Step 1: \<open>\<Phi>(E\<^sub>a\<^sub>b) = kraus_map_dim d Ws E\<^sub>a\<^sub>b\<close> for \<open>a, b < n\<close>.\<close>
+  have match_unit:
+    "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow>
+       \<Phi> (mat_unit a b n n) = kraus_map_dim d Ws (mat_unit a b n n)"
+  proof -
+    fix a b assume a_lt: "a < n" and b_lt: "b < n"
+    have Eab_c: "mat_unit a b n n \<in> carrier_mat n n"
+      by (simp add: mat_unit_def)
+    have \<Phi>Eab_c: "\<Phi> (mat_unit a b n n) \<in> carrier_mat d d"
+      using range Eab_c by blast
+    have kmd_c: "kraus_map_dim d Ws (mat_unit a b n n) \<in> carrier_mat d d"
+      using kraus_map_dim_carrier[OF Ws_c Eab_c] .
+    show "\<Phi> (mat_unit a b n n) = kraus_map_dim d Ws (mat_unit a b n n)"
+    proof (rule eq_matI)
+      show "dim_row (\<Phi> (mat_unit a b n n)) =
+            dim_row (kraus_map_dim d Ws (mat_unit a b n n))"
+        using \<Phi>Eab_c kmd_c by auto
+      show "dim_col (\<Phi> (mat_unit a b n n)) =
+            dim_col (kraus_map_dim d Ws (mat_unit a b n n))"
+        using \<Phi>Eab_c kmd_c by auto
+    next
+      fix i j
+      assume "i < dim_row (kraus_map_dim d Ws (mat_unit a b n n))"
+             "j < dim_col (kraus_map_dim d Ws (mat_unit a b n n))"
+      hence i_lt: "i < d" and j_lt: "j < d"
+        using kmd_c by auto
+      have adi_lt: "a*d + i < n*d"
+        using a_lt i_lt
+        by (metis Nat.add_0_right div_less div_less_iff_less_mult div_mult_self3 dpos not_less0)
+      
+      have bdj_lt: "b*d + j < n*d"
+        using b_lt j_lt
+        by (metis Nat.add_0_right div_less div_less_iff_less_mult div_mult_self3 dpos not_less0)
+
+      have adi_div: "(a*d + i) div d = a" using i_lt dpos by simp
+      have bdj_div: "(b*d + j) div d = b" using j_lt dpos by simp
+      have adi_mod: "(a*d + i) mod d = i" using i_lt dpos by simp
+      have bdj_mod: "(b*d + j) mod d = j" using j_lt dpos by simp
+      \<comment> \<open>LHS via the Choi matrix.\<close>
+      have "\<Phi> (mat_unit a b n n) $$ (i, j)
+          = choi_matrix n d \<Phi> $$ (a*d + i, b*d + j)"
+        using adi_lt bdj_lt adi_div bdj_div adi_mod bdj_mod
+        by (simp add: choi_matrix_def)
+      also have "\<dots> = outer_sum (n*d) vs $$ (a*d + i, b*d + j)"
+        using vs_sum by simp
+      also have "\<dots> = sum_list (map (\<lambda>v. v $ (a*d + i) * cnj (v $ (b*d + j))) vs)"
+        using outer_sum_entry_sum_list[OF vs_dim adi_lt bdj_lt] .
+      \<comment> \<open>RHS via the reshape identity.\<close>
+      also have "\<dots> = sum_list (map (\<lambda>W. (W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
+      proof -
+        have "\<And>v. v \<in> set vs \<Longrightarrow>
+              (Matrix.mat d n (\<lambda>(i, a). v $ (a*d + i))) $$ (i, a)
+              = v $ (a*d + i)"
+          using i_lt a_lt by simp
+        have Ws_nth: "\<And>k. k < length vs \<Longrightarrow>
+              Ws ! k = Matrix.mat d n (\<lambda>(i, a). (vs ! k) $ (a*d + i))"
+          by (simp add: Ws_def)
+        have Ws_c_idx: "\<And>k. k < length vs \<Longrightarrow> Ws ! k \<in> carrier_mat d n"
+          using Ws_c len_Ws by (auto simp: set_conv_nth)
+        have point_eq:
+          "\<And>W. W \<in> set Ws \<Longrightarrow>
+              (W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j) =
+              W $$ (i, a) * cnj (W $$ (j, b))"
+        proof -
+          fix W assume "W \<in> set Ws"
+          then obtain k where k_lt: "k < length Ws" and W_eq: "W = Ws ! k"
+            by (metis in_set_conv_nth)
+          have Wc_k: "W \<in> carrier_mat d n"
+            using W_eq Ws_c \<open>W \<in> set Ws\<close> by simp
+          show "(W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j) =
+                W $$ (i, a) * cnj (W $$ (j, b))"
+            using conjugation_mat_unit_entry[OF Wc_k a_lt b_lt i_lt j_lt] .
+        qed
+        have "sum_list (map (\<lambda>v. v $ (a*d + i) * cnj (v $ (b*d + j))) vs) =
+              sum_list (map (\<lambda>W. W $$ (i, a) * cnj (W $$ (j, b))) Ws)"
+          unfolding Ws_def
+          using i_lt a_lt j_lt b_lt
+          by (induction vs) simp_all
+        also have "\<dots> = sum_list (map (\<lambda>W. (W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
+          using point_eq
+          by (intro arg_cong[where f=sum_list] map_cong refl) (metis)
+        finally show ?thesis.
+      qed
+      also have "\<dots> = kraus_map_dim d Ws (mat_unit a b n n) $$ (i, j)"
+        using kraus_map_dim_entry_sum_list[OF Ws_c Eab_c i_lt j_lt] by simp
+      finally show "\<Phi> (mat_unit a b n n) $$ (i, j) =
+                    kraus_map_dim d Ws (mat_unit a b n n) $$ (i, j)" .
+    qed
+  qed
+
+  \<comment> \<open>Step 2: Extend to all \<open>A \<in> M\<^sub>n\<close> by linearity.\<close>
+  have kmd_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n \<Longrightarrow>
+      kraus_map_dim d Ws (X + Y) = kraus_map_dim d Ws X + kraus_map_dim d Ws Y"
+    using kraus_map_dim_add Ws_c by blast
+  have kmd_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow>
+      kraus_map_dim d Ws (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m kraus_map_dim d Ws X"
+    using kraus_map_dim_smult Ws_c by blast
+  have kmd_car: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
+      kraus_map_dim d Ws X \<in> carrier_mat d d"
+    using kraus_map_dim_carrier Ws_c by blast
+  have \<Phi>_car: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X \<in> carrier_mat d d"
+    using range by blast
+
+  have phi_eq: "\<And>A. A \<in> carrier_mat n n \<Longrightarrow>
+                \<Phi> A = kraus_map_dim d Ws A"
+  proof -
+    fix A :: "complex Matrix.mat" assume Ac: "A \<in> carrier_mat n n"
+    have lhs: "\<Phi> A = pair_comb \<Phi> A n d (mat_unit_pairs n)"
+      using linear_eq_pair_comb[OF linear smult \<Phi>_car Ac npos dpos] .
+    have rhs: "kraus_map_dim d Ws A =
+               pair_comb (kraus_map_dim d Ws) A n d (mat_unit_pairs n)"
+      using linear_eq_pair_comb[OF kmd_add kmd_smult kmd_car Ac npos dpos] .
+    \<comment> \<open>Both pair combinations are equal because the basis values agree.\<close>
+    have comb_eq:
+      "pair_comb \<Phi> A n d (mat_unit_pairs n) =
+       pair_comb (kraus_map_dim d Ws) A n d (mat_unit_pairs n)"
+    proof -
+      have "\<And>ps. (\<forall>p \<in> set ps. fst p < n \<and> snd p < n) \<Longrightarrow>
+          pair_comb \<Phi> A n d ps = pair_comb (kraus_map_dim d Ws) A n d ps"
+      proof -
+        fix ps :: "(nat \<times> nat) list"
+        assume ps_valid: "\<forall>p \<in> set ps. fst p < n \<and> snd p < n"
+        show "pair_comb \<Phi> A n d ps =
+              pair_comb (kraus_map_dim d Ws) A n d ps"
+          using ps_valid
+        proof (induction ps)
+          case Nil show ?case by simp
+        next
+          case (Cons p ps)
+          obtain a b where p_eq: "p = (a, b)" by (cases p)
+          hence a_lt: "a < n" and b_lt: "b < n"
+            using Cons.prems by auto
+          have basis_eq: "\<Phi> (mat_unit (fst p) (snd p) n n) =
+                          kraus_map_dim d Ws (mat_unit (fst p) (snd p) n n)"
+            using match_unit[OF a_lt b_lt] p_eq by simp
+          have IH: "pair_comb \<Phi> A n d ps =
+                    pair_comb (kraus_map_dim d Ws) A n d ps"
+            using Cons by auto
+          show ?case using basis_eq IH by simp
+        qed
+      qed
+      moreover have "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
+        using mat_unit_pairs_set by auto
+      ultimately show ?thesis by blast
+    qed
+    show "\<Phi> A = kraus_map_dim d Ws A"
+      using lhs rhs comb_eq by simp
+  qed
+
+  \<comment> \<open>Step 3: Transport CP from the Kraus representation back to \<open>\<Phi>\<close>.\<close>
+  have kmd_cp: "completely_positive n d (kraus_map_dim d Ws)"
+    using kraus_cp_no_tp[OF Ws_c npos dpos] .
+  show "completely_positive n d \<Phi>"
+    unfolding completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p" and Xc: "X \<in> carrier_mat (p*n) (p*n)"
+       and Xpsd: "psd X"
+    have psd_kmd: "psd (amplification n d p (kraus_map_dim d Ws) X)"
+      using kmd_cp ppos Xc Xpsd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp_eq:
+      "amplification n d p \<Phi> X = amplification n d p (kraus_map_dim d Ws) X"
+    proof (rule eq_matI)
+      show "dim_row (amplification n d p \<Phi> X) =
+            dim_row (amplification n d p (kraus_map_dim d Ws) X)"
+        by (simp add: amplification_def)
+      show "dim_col (amplification n d p \<Phi> X) =
+            dim_col (amplification n d p (kraus_map_dim d Ws) X)"
+        by (simp add: amplification_def)
+    next
+      fix i j
+      assume "i < dim_row (amplification n d p (kraus_map_dim d Ws) X)"
+             "j < dim_col (amplification n d p (kraus_map_dim d Ws) X)"
+      hence i_lt: "i < p*d" and j_lt: "j < p*d"
+        by (simp_all add: amplification_def)
+      have block_c: "block_of_mat n X (i div d) (j div d) \<in> carrier_mat n n"
+        by (simp add: block_of_mat_def)
+      have phi_kmd:
+        "\<Phi> (block_of_mat n X (i div d) (j div d))
+         = kraus_map_dim d Ws (block_of_mat n X (i div d) (j div d))"
+        using phi_eq[OF block_c] .
+      show "amplification n d p \<Phi> X $$ (i, j) =
+            amplification n d p (kraus_map_dim d Ws) X $$ (i, j)"
+        using i_lt j_lt phi_kmd
+        by (simp add: amplification_def)
+    qed
+    show "psd (amplification n d p \<Phi> X)"
+      using psd_kmd amp_eq by simp
+  qed
 qed
 
 theorem choi_kraus_cptp:
