@@ -6949,4 +6949,277 @@ next
     using kraus phi_eq by blast
 qed
 
+
+(* ============================================================================
+   DAY 20 \<mdash> 12 / Oct / 11
+   Topic: d = 1 case of Choi; adjoint of a CP map;
+          UCP / CPTP duality; Choi rank.
+   ============================================================================ *)
+
+(* --------------------------------------------------------------------------
+   1. Adjoint of a Kraus-represented map.
+
+   If \<Phi>(X) = \<Sum>\<^sub>i A\<^sub>i X A\<^sub>i\<^sup>\<dagger> with A\<^sub>i \<in> M\<^sub>d\<^sub>,\<^sub>n, the Hilbert-Schmidt
+   adjoint \<Phi>\<^sup>* : M\<^sub>d \<rightarrow> M\<^sub>n is \<Phi>\<^sup>*(Y) = \<Sum>\<^sub>i A\<^sub>i\<^sup>\<dagger> Y A\<^sub>i.
+   The output dimension \<open>n\<close> is kept explicit (needed when \<open>As\<close> is empty).
+   -------------------------------------------------------------------------- *)
+
+definition kraus_adjoint_dim ::
+  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "kraus_adjoint_dim n As y \<equiv>
+     foldr (\<lambda>A acc. (A\<^sup>\<dagger>) * y * A + acc) As (0\<^sub>m n n)"
+
+lemma kraus_adjoint_dim_Nil [simp]:
+  "kraus_adjoint_dim n [] Y = 0\<^sub>m n n"
+  by (simp add: kraus_adjoint_dim_def)
+
+lemma kraus_adjoint_dim_Cons [simp]:
+  "kraus_adjoint_dim n (A # As) Y =
+     (A\<^sup>\<dagger>) * Y * A + kraus_adjoint_dim n As Y"
+  by (simp add: kraus_adjoint_dim_def)
+
+lemma kraus_adjoint_dim_carrier:
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and Y_c: "Y \<in> carrier_mat d d"
+  shows "kraus_adjoint_dim n As Y \<in> carrier_mat n n"
+  using As_c
+proof (induction As)
+  case Nil
+  show ?case by simp
+next
+  case (Cons A As)
+  hence A_c: "A \<in> carrier_mat d n"
+    and As_c': "\<forall>X \<in> set As. X \<in> carrier_mat d n"
+    by auto
+  have Adag_c: "A\<^sup>\<dagger> \<in> carrier_mat n d"
+    using A_c by (rule dagger_carrier)
+  have term_c: "(A\<^sup>\<dagger>) * Y * A \<in> carrier_mat n n"
+    using Adag_c Y_c A_c by (intro mult_carrier_mat) auto
+  have rec_c: "kraus_adjoint_dim n As Y \<in> carrier_mat n n"
+    using Cons.IH As_c' by blast
+  show ?case
+    using term_c rec_c by simp
+qed
+
+(* Adjoint is itself a Kraus map whose operators are the daggers. *)
+
+lemma kraus_adjoint_dim_as_kraus_map_dim:
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and Y_c: "Y \<in> carrier_mat d d"
+  shows "kraus_adjoint_dim n As Y =
+           kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
+  using As_c
+proof (induction As)
+  case Nil
+  show ?case by simp
+next
+  case (Cons A As)
+  hence A_c: "A \<in> carrier_mat d n"
+    and As_c': "\<forall>X \<in> set As. X \<in> carrier_mat d n"
+    by auto
+  have dd_eq: "(A\<^sup>\<dagger>)\<^sup>\<dagger> = A"
+    using A_c by (simp add: dagger_of_dagger_is_id)
+  have IH: "kraus_adjoint_dim n As Y
+              = kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
+    using Cons.IH As_c' by blast
+  have "kraus_adjoint_dim n (A # As) Y
+          = (A\<^sup>\<dagger>) * Y * A + kraus_adjoint_dim n As Y"
+    by simp
+  also have "\<dots> = (A\<^sup>\<dagger>) * Y * ((A\<^sup>\<dagger>)\<^sup>\<dagger>)
+                  + kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
+    using dd_eq IH by simp
+  also have "\<dots> = kraus_map_dim n ((A\<^sup>\<dagger>) # map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
+    by simp
+  also have "\<dots> = kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) (A # As)) Y"
+    by simp
+  finally show ?case .
+qed
+
+(* --------------------------------------------------------------------------
+   2. Hilbert-Schmidt adjoint identity.
+
+      \<langle>\<langle> Y | kraus_map_dim d As X \<rangle>\<rangle>
+        = \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>.
+
+   Induction on \<open>As\<close>; each summand reduces via trace cyclicity and
+   \<open>((A\<^sup>\<dagger>) Y A)\<^sup>\<dagger> = (A\<^sup>\<dagger>) Y\<^sup>\<dagger> A\<close> (applied in the Tr-form of \<langle>\<langle>\<cdot>|\<cdot>\<rangle>\<rangle>).
+   -------------------------------------------------------------------------- *)
+
+lemma hs_inner_prod_left_add:
+  assumes d1r: "dim_row Y1 = dim_row X" and d1c: "dim_col Y1 = dim_col X"
+      and d2r: "dim_row Y2 = dim_row X" and d2c: "dim_col Y2 = dim_col X"
+  shows "\<langle>\<langle> Y1 + Y2 | X \<rangle>\<rangle> = \<langle>\<langle> Y1 | X \<rangle>\<rangle> + \<langle>\<langle> Y2 | X \<rangle>\<rangle>"
+proof -
+  have sum_eq: "(Y1 + Y2) $$ (i, j) = Y1 $$ (i, j) + Y2 $$ (i, j)"
+    if ij: "i < dim_row X" "j < dim_col X" for i j
+    using that d1r d1c d2r d2c by simp
+  have "\<langle>\<langle> Y1 + Y2 | X \<rangle>\<rangle>
+          = (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
+               cnj ((Y1 + Y2) $$ (i, j)) * X $$ (i, j))"
+    by (simp add: hs_inner_prod_def)
+  also have "\<dots> = (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
+               (cnj (Y1 $$ (i, j)) + cnj (Y2 $$ (i, j))) * X $$ (i, j))"
+    by (intro sum.cong refl) (simp add: sum_eq)
+  also have "\<dots> = (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
+                       cnj (Y1 $$ (i, j)) * X $$ (i, j))
+                + (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
+                       cnj (Y2 $$ (i, j)) * X $$ (i, j))"
+    by (simp add: distrib_right sum.distrib)
+  also have "\<dots> = \<langle>\<langle> Y1 | X \<rangle>\<rangle> + \<langle>\<langle> Y2 | X \<rangle>\<rangle>"
+    by (simp add: hs_inner_prod_def)
+  finally show ?thesis .
+qed
+
+lemma hs_inner_prod_right_zero:
+  "\<langle>\<langle> y | 0\<^sub>m m n \<rangle>\<rangle> = 0"
+proof -
+  have "\<langle>\<langle> y | 0\<^sub>m m n \<rangle>\<rangle>
+          = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}.
+                cnj (y $$ (i, j)) * (0\<^sub>m m n) $$ (i, j))"
+    by (simp add: hs_inner_prod_def)
+  also have "\<dots> = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}. (0 :: complex))"
+    by (intro sum.cong refl) simp
+  also have "\<dots> = 0" by simp
+  finally show ?thesis .
+qed
+
+lemma hs_inner_prod_left_zero:
+  assumes X_c: "X \<in> carrier_mat m n"
+  shows "\<langle>\<langle> 0\<^sub>m m n | X \<rangle>\<rangle> = 0"
+proof -
+  from X_c have dr: "dim_row X = m" and dc: "dim_col X = n" by auto
+  have "\<langle>\<langle> 0\<^sub>m m n | X \<rangle>\<rangle>
+          = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}.
+                cnj ((0\<^sub>m m n) $$ (i, j)) * X $$ (i, j))"
+    using dr dc by (simp add: hs_inner_prod_def)
+  also have "\<dots> = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}. (0 :: complex))"
+    by (intro sum.cong refl) simp
+  also have "\<dots> = 0" by simp
+  finally show ?thesis .
+qed
+
+theorem kraus_adjoint_correct:
+  fixes As :: "complex Matrix.mat list"
+    and X :: "complex Matrix.mat"
+    and Y :: "complex Matrix.mat"
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and X_c: "X \<in> carrier_mat n n"
+      and Y_c: "Y \<in> carrier_mat d d"
+  shows "\<langle>\<langle> Y | kraus_map_dim d As X \<rangle>\<rangle>
+         = \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
+  sorry
+(* WIP proof sketch (induction on As; roughly half-working \<mdash> commented out
+   so the file remains sorry-complete without simp-failure churn):
+
+   Nil:
+     \<langle>\<langle>Y | kraus_map_dim d [] X\<rangle>\<rangle> = \<langle>\<langle>Y | 0\<^sub>m d d\<rangle>\<rangle> = 0
+       (hs_inner_prod_right_zero \<mdash> proved above)
+     \<langle>\<langle>kraus_adjoint_dim n [] Y | X\<rangle>\<rangle> = \<langle>\<langle>0\<^sub>m n n | X\<rangle>\<rangle> = 0
+       (hs_inner_prod_left_zero, with X_c)
+
+   Cons A As:
+     Key helper lemmas (all local carriers):
+       A_c: A \<in> carrier_mat d n             Adag_c: A\<^sup>\<dagger> \<in> carrier_mat n d
+       Y_c: Y \<in> carrier_mat d d             Ydag_c: Y\<^sup>\<dagger> \<in> carrier_mat d d
+       AXAd_c: A * X * A\<^sup>\<dagger> \<in> carrier_mat d d
+       AdYA_c: A\<^sup>\<dagger> * Y * A \<in> carrier_mat n n
+       km_c:   kraus_map_dim d As X \<in> carrier_mat d d
+       ka_c:   kraus_adjoint_dim n As Y \<in> carrier_mat n n
+
+     Single-term identity (via hs_inner_prod_as_trace + Tr_cyclic +
+     (A\<^sup>\<dagger> Y A)\<^sup>\<dagger> = A\<^sup>\<dagger> Y\<^sup>\<dagger> A, the latter via two applications of
+     dagger_of_prod and dagger_of_dagger_is_id):
+       \<langle>\<langle>Y | A X A\<^sup>\<dagger>\<rangle>\<rangle> = Tr(Y\<^sup>\<dagger> A X A\<^sup>\<dagger>)
+                      = Tr(A\<^sup>\<dagger> Y\<^sup>\<dagger> A X)   [Tr_cyclic]
+                      = Tr((A\<^sup>\<dagger> Y A)\<^sup>\<dagger> X)
+                      = \<langle>\<langle>A\<^sup>\<dagger> Y A | X\<rangle>\<rangle>
+
+     Combine with IH:
+       \<langle>\<langle>Y | kraus_map_dim d (A#As) X\<rangle>\<rangle>
+         = \<langle>\<langle>Y | A X A\<^sup>\<dagger> + kraus_map_dim d As X\<rangle>\<rangle>          [simp: Cons]
+         = \<langle>\<langle>Y | A X A\<^sup>\<dagger>\<rangle>\<rangle> + \<langle>\<langle>Y | kraus_map_dim d As X\<rangle>\<rangle>   [hs_inner_prod_right_add]
+         = \<langle>\<langle>A\<^sup>\<dagger> Y A | X\<rangle>\<rangle> + \<langle>\<langle>kraus_adjoint_dim n As Y | X\<rangle>\<rangle>  [single + IH]
+         = \<langle>\<langle>A\<^sup>\<dagger> Y A + kraus_adjoint_dim n As Y | X\<rangle>\<rangle>        [hs_inner_prod_left_add]
+         = \<langle>\<langle>kraus_adjoint_dim n (A#As) Y | X\<rangle>\<rangle>            [simp: Cons]
+
+   Issue hit when resumed: simp was not rewriting
+     \<langle>\<langle>kraus_adjoint_dim n [] Y | X\<rangle>\<rangle>  \<leadsto>  \<langle>\<langle>0\<^sub>m n n | X\<rangle>\<rangle>
+   inside the HS-bracket notation in the Nil case.  Try either:
+     * unfolding kraus_adjoint_dim_Nil explicitly then applying
+       hs_inner_prod_left_zero, or
+     * reformulating hs_inner_prod_left_zero with the explicit argument
+       shape matching the goal after simp. *)
+
+(* --------------------------------------------------------------------------
+   3. CP \<leftrightarrow> CP of the adjoint; UCP \<leftrightarrow> CPTP of the adjoint.
+
+   When \<Phi> has a Kraus representation (A\<^sub>i), \<Phi>\<^sup>* is the Kraus map with
+   operators (A\<^sub>i\<^sup>\<dagger>) \<mdash> cf. \<open>kraus_adjoint_dim_as_kraus_map_dim\<close>.
+   Hence \<open>kraus_is_cp\<close> applies in both directions.
+   -------------------------------------------------------------------------- *)
+
+theorem adjoint_cp_from_kraus:
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "completely_positive d n (kraus_adjoint_dim n As)"
+  sorry (* By kraus_adjoint_dim_as_kraus_map_dim, kraus_adjoint_dim n As Y =
+           kraus_map_dim n [A\<^sup>\<dagger> | A \<leftarrow> As] Y.  The list [A\<^sup>\<dagger> | A \<leftarrow> As] still
+           needs \<Sum> (A\<^sup>\<dagger>)\<^sup>\<dagger> A\<^sup>\<dagger> = I_d for \<open>kraus_operators d n\<close>, which is
+           \<Sum> A A\<^sup>\<dagger> = I_d \<mdash> the UCP (unital) condition on \<Phi>.  Actual CP only
+           needs the shape, not the sum, so this can be simplified once
+           \<open>kraus_is_cp\<close> is relaxed to drop the trace-preserving condition. *)
+
+theorem cp_unital_iff_adjoint_tp:
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "unital_map n d (kraus_map_dim d As)
+         \<longleftrightarrow> trace_preserving d (kraus_adjoint_dim n As)"
+  sorry (* \<Phi>(I\<^sub>n) = \<Sum> A A\<^sup>\<dagger> so unital \<Leftrightarrow> \<Sum> A A\<^sup>\<dagger> = I\<^sub>d.
+           Tr(\<Phi>\<^sup>*(Y)) = Tr(\<Sum> A\<^sup>\<dagger> Y A) = Tr((\<Sum> A A\<^sup>\<dagger>) Y) by Tr_cyclic.
+           The map Y \<mapsto> Tr(B Y) equals Tr iff B = I\<^sub>d (test on E_{ij}). *)
+
+(* --------------------------------------------------------------------------
+   4. d = 1 case of Choi's theorem: positive \<Leftrightarrow> CP for \<phi> : M\<^sub>n \<rightarrow> \<complex>.
+
+   The direction CP \<Leftrightarrow> P\<^sub>\<phi> \<ge> 0 is already Choi's theorem with d = 1.
+   Only "positive \<Rightarrow> CP" is new content.  Given P = (P\<^sub>i\<^sub>j) \<in> M\<^sub>r(M\<^sub>n)\<^sup>+
+   and v = (\<alpha>\<^sub>i), form Y with \<alpha>\<^sub>i\<cdot>I as the i-th block row.  Then
+   Y\<^sup>* P Y = \<Sum> cnj(\<alpha>\<^sub>i)\<alpha>\<^sub>j P\<^sub>i\<^sub>j \<ge> 0, so \<phi> positive gives
+   \<langle>v | \<phi>\<^sup>(\<^sup>r\<^sup>)(P) v\<rangle> = \<phi>(Y\<^sup>* P Y) \<ge> 0.
+   -------------------------------------------------------------------------- *)
+
+theorem positive_scalar_is_cp:
+  fixes \<phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n
+                      \<Longrightarrow> \<phi> (A + B) = \<phi> A + \<phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<phi> A \<in> carrier_mat 1 1"
+      and pos:    "positive_map n 1 \<phi>"
+      and npos:   "0 < n"
+  shows "completely_positive n 1 \<phi>"
+  sorry (* See comment block above; construction of Y and application of
+           positivity of \<phi>.  Needs a way to index into M\<^sub>r(M\<^sub>n) blocks \<mdash>
+           \<open>block_of_mat\<close> is already defined and can supply P\<^sub>i\<^sub>j. *)
+
+(* --------------------------------------------------------------------------
+   5. Choi rank.
+
+   \<open>choi_rank n d \<Phi>\<close> := the smallest \<open>length As\<close> over all Kraus
+   representations of \<Phi>.  Choi's theorem gives
+   \<open>choi_rank n d \<Phi> = rank (P\<^sub>\<Phi>)\<close>, which we state but defer.
+   -------------------------------------------------------------------------- *)
+
+definition choi_rank ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> nat" where
+  "choi_rank n d \<Phi> \<equiv>
+     Inf { length As | As :: complex Matrix.mat list.
+             (\<forall>A \<in> set As. A \<in> carrier_mat d n)
+             \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X) }"
+
+(* Choi-rank = rank(P_\<Phi>) is deferred; it relies on a matrix-rank predicate
+   for complex matrices that has not been set up in this development. *)
+
+
 end
