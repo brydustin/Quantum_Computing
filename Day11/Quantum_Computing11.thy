@@ -7007,6 +7007,7 @@ qed
 (* Adjoint is itself a Kraus map whose operators are the daggers. *)
 
 lemma kraus_adjoint_dim_as_kraus_map_dim:
+  fixes Y :: "complex Matrix.mat"
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
       and Y_c: "Y \<in> carrier_mat d d"
   shows "kraus_adjoint_dim n As Y =
@@ -7253,12 +7254,114 @@ theorem adjoint_cp_from_kraus:
       and npos: "0 < n"
       and dpos: "0 < d"
   shows "completely_positive d n (kraus_adjoint_dim n As)"
-  sorry (* By kraus_adjoint_dim_as_kraus_map_dim, kraus_adjoint_dim n As Y =
-           kraus_map_dim n [A\<^sup>\<dagger> | A \<leftarrow> As] Y.  The list [A\<^sup>\<dagger> | A \<leftarrow> As] still
-           needs \<Sum> (A\<^sup>\<dagger>)\<^sup>\<dagger> A\<^sup>\<dagger> = I_d for \<open>kraus_operators d n\<close>, which is
-           \<Sum> A A\<^sup>\<dagger> = I_d \<mdash> the UCP (unital) condition on \<Phi>.  Actual CP only
-           needs the shape, not the sum, so this can be simplified once
-           \<open>kraus_is_cp\<close> is relaxed to drop the trace-preserving condition. *)
+proof -
+  define Bs where "Bs = map (\<lambda>A. A\<^sup>\<dagger>) As"
+  have Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n d"
+    using As_c by (auto simp: Bs_def dagger_carrier)
+
+  show ?thesis
+  proof (unfold completely_positive_def p_positive_def, intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p"
+       and X_c: "X \<in> carrier_mat (p*d) (p*d)"
+       and X_psd: "psd X"
+
+    (* Amplification of kraus_adjoint_dim n As agrees with that of
+       kraus_map_dim n Bs because the two functions agree on M_{d,d}
+       (kraus_adjoint_dim_as_kraus_map_dim). *)
+    have amp_eq:
+      "amplification d n p (kraus_adjoint_dim n As) X =
+       amplification d n p (kraus_map_dim n Bs) X"
+    proof (rule eq_matI)
+      show "dim_row (amplification d n p (kraus_adjoint_dim n As) X) =
+            dim_row (amplification d n p (kraus_map_dim n Bs) X)"
+        by (simp add: amplification_def)
+      show "dim_col (amplification d n p (kraus_adjoint_dim n As) X) =
+            dim_col (amplification d n p (kraus_map_dim n Bs) X)"
+        by (simp add: amplification_def)
+    next
+      fix i j
+      assume i: "i < dim_row (amplification d n p (kraus_map_dim n Bs) X)"
+         and j: "j < dim_col (amplification d n p (kraus_map_dim n Bs) X)"
+      hence ipn: "i < p*n" and jpn: "j < p*n"
+        by (auto simp: amplification_def)
+      have B_c: "block_of_mat d X (i div n) (j div n) \<in> carrier_mat d d"
+        by (simp add: block_of_mat_def)
+      have eq:
+        "kraus_adjoint_dim n As (block_of_mat d X (i div n) (j div n)) =
+         kraus_map_dim n Bs (block_of_mat d X (i div n) (j div n))"
+        unfolding Bs_def
+        using kraus_adjoint_dim_as_kraus_map_dim[OF As_c B_c] .
+      have lhs_index:
+        "amplification d n p (kraus_adjoint_dim n As) X $$ (i,j)
+           = (kraus_adjoint_dim n As)
+                (block_of_mat d X (i div n) (j div n)) $$
+             (i mod n, j mod n)"
+        using ipn jpn by (simp add: amplification_def)
+      have rhs_index:
+        "amplification d n p (kraus_map_dim n Bs) X $$ (i,j)
+           = (kraus_map_dim n Bs)
+                (block_of_mat d X (i div n) (j div n)) $$
+             (i mod n, j mod n)"
+        using ipn jpn by (simp add: amplification_def)
+      show "amplification d n p (kraus_adjoint_dim n As) X $$ (i,j) =
+            amplification d n p (kraus_map_dim n Bs) X $$ (i,j)"
+        using lhs_index rhs_index eq by simp
+    qed
+
+    (* Reduce to PSD-ness of an amplified Kraus map (no TP needed). *)
+    have lifted_c:
+      "\<forall>L \<in> set (map (\<lambda>B. 1\<^sub>m p \<Otimes> B) Bs). L \<in> carrier_mat (p*n) (p*d)"
+      using tensor_id_kraus_list_carrier[OF Bs_c] .
+    have amp_kr:
+      "amplification d n p (kraus_map_dim n Bs) X =
+         kraus_map_dim (p*n) (map (\<lambda>B. 1\<^sub>m p \<Otimes> B) Bs) X"
+      using amplification_kraus_map_dim[OF Bs_c X_c npos dpos] .
+    have psd_kr:
+      "psd (kraus_map_dim (p*n) (map (\<lambda>B. 1\<^sub>m p \<Otimes> B) Bs) X)"
+      using kraus_map_dim_psd[OF lifted_c X_c X_psd] .
+    show "psd (amplification d n p (kraus_adjoint_dim n As) X)"
+      using amp_eq amp_kr psd_kr by simp
+  qed
+qed
+
+(* Helper: kraus_map_dim d As (1\<^sub>m n) = \<Sum> A A\<^sup>\<dagger>, which is
+   sum_wdag_w d (map dagger As) since (A\<^sup>\<dagger>)\<^sup>\<dagger> A\<^sup>\<dagger> = A A\<^sup>\<dagger>. *)
+
+lemma kraus_map_dim_one_eq_sum_wdag_w_dagger:
+  fixes As :: "complex Matrix.mat list"
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+  shows "kraus_map_dim d As (1\<^sub>m n)
+         = sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+  using As_c
+proof (induction As)
+  case Nil
+  show ?case by (simp add: sum_wdag_w_def)
+next
+  case (Cons A As)
+  hence A_c: "A \<in> carrier_mat d n"
+    and As_c': "\<forall>B \<in> set As. B \<in> carrier_mat d n" by auto
+  have Adag_c: "A\<^sup>\<dagger> \<in> carrier_mat n d" using A_c by (rule dagger_carrier)
+  have A_one: "A * 1\<^sub>m n = A" using A_c by simp
+  have ddag: "(A\<^sup>\<dagger>)\<^sup>\<dagger> = A"
+    using A_c by (simp add: dagger_of_dagger_is_id)
+  have IH: "kraus_map_dim d As (1\<^sub>m n)
+              = sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+    using Cons.IH As_c' .
+  have "kraus_map_dim d (A # As) (1\<^sub>m n)
+          = A * 1\<^sub>m n * (A\<^sup>\<dagger>) + kraus_map_dim d As (1\<^sub>m n)"
+    by simp
+  also have "\<dots> = A * (A\<^sup>\<dagger>) + sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+    using A_one IH by simp
+  also have "\<dots> = ((A\<^sup>\<dagger>)\<^sup>\<dagger>) * (A\<^sup>\<dagger>)
+                  + sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+    using ddag by simp
+  also have "\<dots> = sum_wdag_w d (A\<^sup>\<dagger> # map (\<lambda>A. A\<^sup>\<dagger>) As)"
+    by (simp add: sum_wdag_w_Cons)
+  also have "\<dots> = sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) (A # As))"
+    by simp
+  finally show ?case .
+qed
 
 theorem cp_unital_iff_adjoint_tp:
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
@@ -7266,9 +7369,92 @@ theorem cp_unital_iff_adjoint_tp:
       and dpos: "0 < d"
   shows "unital_map n d (kraus_map_dim d As)
          \<longleftrightarrow> trace_preserving d (kraus_adjoint_dim n As)"
-  sorry (* \<Phi>(I\<^sub>n) = \<Sum> A A\<^sup>\<dagger> so unital \<Leftrightarrow> \<Sum> A A\<^sup>\<dagger> = I\<^sub>d.
-           Tr(\<Phi>\<^sup>*(Y)) = Tr(\<Sum> A\<^sup>\<dagger> Y A) = Tr((\<Sum> A A\<^sup>\<dagger>) Y) by Tr_cyclic.
-           The map Y \<mapsto> Tr(B Y) equals Tr iff B = I\<^sub>d (test on E_{ij}). *)
+proof -
+  define Bs where "Bs = map (\<lambda>A. A\<^sup>\<dagger>) As"
+  have Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n d"
+    using As_c by (auto simp: Bs_def dagger_carrier)
+  let ?M = "sum_wdag_w d Bs"
+  have M_c: "?M \<in> carrier_mat d d"
+    using sum_wdag_w_carrier[OF Bs_c] .
+
+  (* Unital: \<Phi>(I_n) = \<Sum> A A\<^sup>\<dagger> = ?M, so unital iff ?M = I_d *)
+  have unital_iff:
+    "unital_map n d (kraus_map_dim d As) \<longleftrightarrow> ?M = 1\<^sub>m d"
+  proof -
+    have eq: "kraus_map_dim d As (1\<^sub>m n) = ?M"
+      unfolding Bs_def
+      using kraus_map_dim_one_eq_sum_wdag_w_dagger[OF As_c] .
+    show ?thesis unfolding unital_map_def using eq by simp
+  qed
+
+  (* TP: Tr(\<Phi>\<^sup>*(Y)) = Tr(?M * Y), so TP iff \<forall>Y. Tr(?M * Y) = Tr Y *)
+  have Tr_adj:
+    "\<And>Y. Y \<in> carrier_mat d d
+       \<Longrightarrow> Tr (kraus_adjoint_dim n As Y) = Tr (?M * Y)"
+  proof -
+    fix Y :: "complex Matrix.mat"
+    assume Y_c: "Y \<in> carrier_mat d d"
+    have step1: "kraus_adjoint_dim n As Y = kraus_map_dim n Bs Y"
+      unfolding Bs_def
+      using kraus_adjoint_dim_as_kraus_map_dim[OF As_c Y_c] .
+    have step2: "Tr (kraus_map_dim n Bs Y) = Tr (?M * Y)"
+      using Tr_kraus_map_dim_as_wdagw[OF Bs_c Y_c] .
+    show "Tr (kraus_adjoint_dim n As Y) = Tr (?M * Y)"
+      using step1 step2 by simp
+  qed
+
+  have tp_iff:
+    "trace_preserving d (kraus_adjoint_dim n As) \<longleftrightarrow> ?M = 1\<^sub>m d"
+  proof
+    assume tp: "trace_preserving d (kraus_adjoint_dim n As)"
+    have Tr_eq: "\<And>Y. Y \<in> carrier_mat d d \<Longrightarrow> Tr (?M * Y) = Tr Y"
+    proof -
+      fix Y :: "complex Matrix.mat"
+      assume Y_c: "Y \<in> carrier_mat d d"
+      have "Tr (kraus_adjoint_dim n As Y) = Tr Y"
+        using tp Y_c by (simp add: trace_preserving_def)
+      thus "Tr (?M * Y) = Tr Y" using Tr_adj[OF Y_c] by simp
+    qed
+    show "?M = 1\<^sub>m d"
+    proof (rule eq_matI)
+      show "dim_row ?M = dim_row (1\<^sub>m d)" using M_c by simp
+      show "dim_col ?M = dim_col (1\<^sub>m d)" using M_c by simp
+    next
+      fix i j
+      assume i: "i < dim_row (1\<^sub>m d)" and j: "j < dim_col (1\<^sub>m d)"
+      hence id: "i < d" and jd: "j < d" by simp_all
+      let ?E = "mat_unit j i d d"
+      have E_c: "?E \<in> carrier_mat d d"
+        by (simp add: mat_unit_def)
+      have Tr_ME: "Tr (?M * ?E) = ?M $$ (i, j)"
+        using Tr_mult_mat_unit[OF M_c jd id] .
+      have Tr_E: "Tr ?E = (if j = i then 1 else 0)"
+        using Tr_mat_unit[OF jd id] .
+      have eq: "Tr (?M * ?E) = Tr ?E"
+        using Tr_eq[OF E_c] .
+      have M_ij: "?M $$ (i, j) = (if j = i then 1 else 0)"
+        using Tr_ME Tr_E eq by simp
+      have one_ij: "(1\<^sub>m d) $$ (i, j) = (if i = j then 1 else 0)"
+        using id jd by simp
+      show "?M $$ (i, j) = (1\<^sub>m d) $$ (i, j)"
+        using M_ij one_ij by (cases "i = j") auto
+    qed
+  next
+    assume M_id: "?M = 1\<^sub>m d"
+    show "trace_preserving d (kraus_adjoint_dim n As)"
+    proof (unfold trace_preserving_def, intro allI impI)
+      fix Y :: "complex Matrix.mat"
+      assume Y_c: "Y \<in> carrier_mat d d"
+      have "Tr (kraus_adjoint_dim n As Y) = Tr (?M * Y)"
+        using Tr_adj[OF Y_c] .
+      also have "\<dots> = Tr ((1\<^sub>m d) * Y)" using M_id by simp
+      also have "\<dots> = Tr Y" using Y_c by simp
+      finally show "Tr (kraus_adjoint_dim n As Y) = Tr Y" .
+    qed
+  qed
+
+  show ?thesis using unital_iff tp_iff by simp
+qed
 
 (* --------------------------------------------------------------------------
    4. d = 1 case of Choi's theorem: positive \<Leftrightarrow> CP for \<phi> : M\<^sub>n \<rightarrow> \<complex>.
