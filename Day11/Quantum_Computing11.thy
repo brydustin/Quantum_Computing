@@ -7098,6 +7098,82 @@ proof -
   finally show ?thesis .
 qed
 
+(* Single-Kraus-term identity:
+     \<langle>\<langle> Y | A X A\<^sup>\<dagger> \<rangle>\<rangle> = \<langle>\<langle> A\<^sup>\<dagger> Y A | X \<rangle>\<rangle>
+   for A \<in> M_{d,n}, X \<in> M_n, Y \<in> M_d.  Proved via
+   hs_inner_prod_as_trace + Tr_cyclic + (A\<^sup>\<dagger> Y A)\<^sup>\<dagger> = A\<^sup>\<dagger> Y\<^sup>\<dagger> A. *)
+
+lemma hs_inner_prod_kraus_term:
+  assumes A_c: "A \<in> carrier_mat d n"
+      and X_c: "X \<in> carrier_mat n n"
+      and Y_c: "Y \<in> carrier_mat d d"
+  shows "\<langle>\<langle> Y | A * X * (A\<^sup>\<dagger>) \<rangle>\<rangle> = \<langle>\<langle> (A\<^sup>\<dagger>) * Y * A | X \<rangle>\<rangle>"
+proof -
+  have Adag_c: "A\<^sup>\<dagger> \<in> carrier_mat n d" using A_c by (rule dagger_carrier)
+  have Ydag_c: "Y\<^sup>\<dagger> \<in> carrier_mat d d" using Y_c by (rule dagger_carrier)
+  have AX_c: "A * X \<in> carrier_mat d n"
+    using A_c X_c by (rule mult_carrier_mat)
+  have AXAd_c: "A * X * (A\<^sup>\<dagger>) \<in> carrier_mat d d"
+    using AX_c Adag_c by (rule mult_carrier_mat)
+  have YdA_c: "Y\<^sup>\<dagger> * A \<in> carrier_mat d n"
+    using Ydag_c A_c by (rule mult_carrier_mat)
+  have YdAX_c: "Y\<^sup>\<dagger> * A * X \<in> carrier_mat d n"
+    using YdA_c X_c by (rule mult_carrier_mat)
+  have AdY_c: "A\<^sup>\<dagger> * Y \<in> carrier_mat n d"
+    using Adag_c Y_c by (rule mult_carrier_mat)
+  have AdYA_c: "A\<^sup>\<dagger> * Y * A \<in> carrier_mat n n"
+    using AdY_c A_c by (rule mult_carrier_mat)
+  have AdYd_c: "(A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) \<in> carrier_mat n d"
+    using Adag_c Ydag_c by (rule mult_carrier_mat)
+  have AdYdA_c: "(A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A \<in> carrier_mat n n"
+    using AdYd_c A_c by (rule mult_carrier_mat)
+
+  (* LHS as trace *)
+  have lhs: "\<langle>\<langle> Y | A * X * (A\<^sup>\<dagger>) \<rangle>\<rangle> = Tr (Y\<^sup>\<dagger> * (A * X * (A\<^sup>\<dagger>)))"
+    using Y_c AXAd_c by (intro hs_inner_prod_as_trace) auto
+
+  (* Re-bracket: Y\<^sup>\<dagger> * (A X * A\<^sup>\<dagger>) = (Y\<^sup>\<dagger> * A * X) * A\<^sup>\<dagger> *)
+  have assoc1: "Y\<^sup>\<dagger> * (A * X * (A\<^sup>\<dagger>)) = (Y\<^sup>\<dagger> * A * X) * (A\<^sup>\<dagger>)"
+    using Ydag_c A_c X_c Adag_c
+    by (smt (verit) AX_c assoc_mult_mat mult_carrier_mat)
+
+  (* Trace cyclicity: Tr ((Y\<^sup>\<dagger> A X) A\<^sup>\<dagger>) = Tr (A\<^sup>\<dagger> (Y\<^sup>\<dagger> A X)) *)
+  have cyc: "Tr ((Y\<^sup>\<dagger> * A * X) * (A\<^sup>\<dagger>)) = Tr ((A\<^sup>\<dagger>) * (Y\<^sup>\<dagger> * A * X))"
+    using YdAX_c Adag_c by (intro Tr_cyclic, blast+)
+    
+
+  (* Re-bracket: A\<^sup>\<dagger> * (Y\<^sup>\<dagger> * A * X) = (A\<^sup>\<dagger> * Y\<^sup>\<dagger> * A) * X *)
+  have assoc2: "(A\<^sup>\<dagger>) * ((Y\<^sup>\<dagger>) * A * X) = ((A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A) * X"
+    using Adag_c Ydag_c A_c X_c
+    by (smt (verit) YdA_c assoc_mult_mat mult_carrier_mat)
+
+  (* Dagger identity: (A\<^sup>\<dagger> * Y * A)\<^sup>\<dagger> = A\<^sup>\<dagger> * Y\<^sup>\<dagger> * A *)
+  have dim1: "dim_col ((A\<^sup>\<dagger>) * Y) = dim_row A"
+    using AdY_c A_c by (metis carrier_matD)
+  have dim2: "dim_col (A\<^sup>\<dagger>) = dim_row Y"
+    using Adag_c Y_c by (metis carrier_matD)
+  have dag_eq: "((A\<^sup>\<dagger>) * Y * A)\<^sup>\<dagger> = (A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A"
+  proof -
+    have step1: "((A\<^sup>\<dagger>) * Y * A)\<^sup>\<dagger> = (A\<^sup>\<dagger>) * (((A\<^sup>\<dagger>) * Y)\<^sup>\<dagger>)"
+      using dim1 by (rule dagger_of_prod)
+    have step2: "((A\<^sup>\<dagger>) * Y)\<^sup>\<dagger> = (Y\<^sup>\<dagger>) * ((A\<^sup>\<dagger>)\<^sup>\<dagger>)"
+      using dim2 by (rule dagger_of_prod)
+    have step3: "(A\<^sup>\<dagger>)\<^sup>\<dagger> = A"
+      using A_c by (simp add: dagger_of_dagger_is_id)
+    have step4: "(A\<^sup>\<dagger>) * ((Y\<^sup>\<dagger>) * A) = (A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A"
+      using Adag_c Ydag_c A_c by simp
+    show ?thesis
+      using step1 step2 step3 step4 by simp
+  qed
+
+  (* RHS as trace *)
+  have rhs: "\<langle>\<langle> (A\<^sup>\<dagger>) * Y * A | X \<rangle>\<rangle> = Tr (((A\<^sup>\<dagger>) * Y * A)\<^sup>\<dagger> * X)"
+    using AdYA_c X_c by (intro hs_inner_prod_as_trace) auto
+
+  show ?thesis
+    using lhs assoc1 cyc assoc2 dag_eq rhs by simp
+qed
+
 theorem kraus_adjoint_correct:
   fixes As :: "complex Matrix.mat list"
     and X :: "complex Matrix.mat"
@@ -7107,48 +7183,57 @@ theorem kraus_adjoint_correct:
       and Y_c: "Y \<in> carrier_mat d d"
   shows "\<langle>\<langle> Y | kraus_map_dim d As X \<rangle>\<rangle>
          = \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
-  sorry
-(* WIP proof sketch (induction on As; roughly half-working \<mdash> commented out
-   so the file remains sorry-complete without simp-failure churn):
+  using As_c
+proof (induction As)
+  case Nil
+  have lhs0: "\<langle>\<langle> Y | kraus_map_dim d [] X \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_right_zero)
+  have rhs0: "\<langle>\<langle> kraus_adjoint_dim n [] Y | X \<rangle>\<rangle> = 0"
+    using X_c hs_inner_prod_as_trace kraus_adjoint_dim_def by force
+  show "\<langle>\<langle> Y | kraus_map_dim d [] X \<rangle>\<rangle> = \<langle>\<langle> kraus_adjoint_dim n [] Y | X \<rangle>\<rangle>" using lhs0 rhs0 by simp
+next
+  case (Cons A As)
+  hence A_c: "A \<in> carrier_mat d n"
+    and As_c': "\<forall>B \<in> set As. B \<in> carrier_mat d n"
+    by auto
+  have Adag_c: "A\<^sup>\<dagger> \<in> carrier_mat n d" using A_c by (rule dagger_carrier)
+  have AX_c: "A * X \<in> carrier_mat d n" using A_c X_c by (rule mult_carrier_mat)
+  have AXAd_c: "A * X * (A\<^sup>\<dagger>) \<in> carrier_mat d d"
+    using AX_c Adag_c by (rule mult_carrier_mat)
+  have AdY_c: "A\<^sup>\<dagger> * Y \<in> carrier_mat n d"
+    using Adag_c Y_c by (rule mult_carrier_mat)
+  have AdYA_c: "A\<^sup>\<dagger> * Y * A \<in> carrier_mat n n"
+    using AdY_c A_c by (rule mult_carrier_mat)
+  have km_c: "kraus_map_dim d As X \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF As_c' X_c] .
+  have ka_c: "kraus_adjoint_dim n As Y \<in> carrier_mat n n"
+    sorry
 
-   Nil:
-     \<langle>\<langle>Y | kraus_map_dim d [] X\<rangle>\<rangle> = \<langle>\<langle>Y | 0\<^sub>m d d\<rangle>\<rangle> = 0
-       (hs_inner_prod_right_zero \<mdash> proved above)
-     \<langle>\<langle>kraus_adjoint_dim n [] Y | X\<rangle>\<rangle> = \<langle>\<langle>0\<^sub>m n n | X\<rangle>\<rangle> = 0
-       (hs_inner_prod_left_zero, with X_c)
+  have IH: "\<langle>\<langle> Y | kraus_map_dim d As X \<rangle>\<rangle>
+         = \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
+    using Cons.IH As_c' by blast
 
-   Cons A As:
-     Key helper lemmas (all local carriers):
-       A_c: A \<in> carrier_mat d n             Adag_c: A\<^sup>\<dagger> \<in> carrier_mat n d
-       Y_c: Y \<in> carrier_mat d d             Ydag_c: Y\<^sup>\<dagger> \<in> carrier_mat d d
-       AXAd_c: A * X * A\<^sup>\<dagger> \<in> carrier_mat d d
-       AdYA_c: A\<^sup>\<dagger> * Y * A \<in> carrier_mat n n
-       km_c:   kraus_map_dim d As X \<in> carrier_mat d d
-       ka_c:   kraus_adjoint_dim n As Y \<in> carrier_mat n n
+  have left_add: "\<langle>\<langle> A\<^sup>\<dagger> * Y * A + kraus_adjoint_dim n As Y | X \<rangle>\<rangle>
+                  = \<langle>\<langle> A\<^sup>\<dagger> * Y * A | X \<rangle>\<rangle>
+                    + \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
+    using AdYA_c ka_c X_c
+    by (metis carrier_matD(1,2) complex_cnj_add hs_inner_prod_cnj hs_inner_prod_right_add index_add_mat(2,3)) 
 
-     Single-term identity (via hs_inner_prod_as_trace + Tr_cyclic +
-     (A\<^sup>\<dagger> Y A)\<^sup>\<dagger> = A\<^sup>\<dagger> Y\<^sup>\<dagger> A, the latter via two applications of
-     dagger_of_prod and dagger_of_dagger_is_id):
-       \<langle>\<langle>Y | A X A\<^sup>\<dagger>\<rangle>\<rangle> = Tr(Y\<^sup>\<dagger> A X A\<^sup>\<dagger>)
-                      = Tr(A\<^sup>\<dagger> Y\<^sup>\<dagger> A X)   [Tr_cyclic]
-                      = Tr((A\<^sup>\<dagger> Y A)\<^sup>\<dagger> X)
-                      = \<langle>\<langle>A\<^sup>\<dagger> Y A | X\<rangle>\<rangle>
-
-     Combine with IH:
-       \<langle>\<langle>Y | kraus_map_dim d (A#As) X\<rangle>\<rangle>
-         = \<langle>\<langle>Y | A X A\<^sup>\<dagger> + kraus_map_dim d As X\<rangle>\<rangle>          [simp: Cons]
-         = \<langle>\<langle>Y | A X A\<^sup>\<dagger>\<rangle>\<rangle> + \<langle>\<langle>Y | kraus_map_dim d As X\<rangle>\<rangle>   [hs_inner_prod_right_add]
-         = \<langle>\<langle>A\<^sup>\<dagger> Y A | X\<rangle>\<rangle> + \<langle>\<langle>kraus_adjoint_dim n As Y | X\<rangle>\<rangle>  [single + IH]
-         = \<langle>\<langle>A\<^sup>\<dagger> Y A + kraus_adjoint_dim n As Y | X\<rangle>\<rangle>        [hs_inner_prod_left_add]
-         = \<langle>\<langle>kraus_adjoint_dim n (A#As) Y | X\<rangle>\<rangle>            [simp: Cons]
-
-   Issue hit when resumed: simp was not rewriting
-     \<langle>\<langle>kraus_adjoint_dim n [] Y | X\<rangle>\<rangle>  \<leadsto>  \<langle>\<langle>0\<^sub>m n n | X\<rangle>\<rangle>
-   inside the HS-bracket notation in the Nil case.  Try either:
-     * unfolding kraus_adjoint_dim_Nil explicitly then applying
-       hs_inner_prod_left_zero, or
-     * reformulating hs_inner_prod_left_zero with the explicit argument
-       shape matching the goal after simp. *)
+  have "\<langle>\<langle> Y | kraus_map_dim d (A # As) X \<rangle>\<rangle>
+        = \<langle>\<langle> Y | A * X * (A\<^sup>\<dagger>) + kraus_map_dim d As X \<rangle>\<rangle>"
+    by simp
+  also have "\<dots> = \<langle>\<langle> Y | A * X * (A\<^sup>\<dagger>) \<rangle>\<rangle>
+                  + \<langle>\<langle> Y | kraus_map_dim d As X \<rangle>\<rangle>"
+    using Y_c AXAd_c km_c by (intro hs_inner_prod_right_add) auto
+  also have "\<dots> = \<langle>\<langle> A\<^sup>\<dagger> * Y * A | X \<rangle>\<rangle>
+                  + \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
+    sorry
+  also have "\<dots> = \<langle>\<langle> A\<^sup>\<dagger> * Y * A + kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
+    using left_add by simp
+  also have "\<dots> = \<langle>\<langle> kraus_adjoint_dim n (A # As) Y | X \<rangle>\<rangle>"
+    sorry
+  finally show ?case .
+qed
 
 (* --------------------------------------------------------------------------
    3. CP \<leftrightarrow> CP of the adjoint; UCP \<leftrightarrow> CPTP of the adjoint.
