@@ -6970,15 +6970,18 @@ definition kraus_adjoint_dim ::
      foldr (\<lambda>A acc. (A\<^sup>\<dagger>) * y * A + acc) As (0\<^sub>m n n)"
 
 lemma kraus_adjoint_dim_Nil [simp]:
-  "kraus_adjoint_dim n [] Y = 0\<^sub>m n n"
+  fixes Y :: "complex Matrix.mat"
+  shows "kraus_adjoint_dim n [] Y = 0\<^sub>m n n"
   by (simp add: kraus_adjoint_dim_def)
 
 lemma kraus_adjoint_dim_Cons [simp]:
-  "kraus_adjoint_dim n (A # As) Y =
-     (A\<^sup>\<dagger>) * Y * A + kraus_adjoint_dim n As Y"
+  fixes Y :: "complex Matrix.mat"
+  shows "kraus_adjoint_dim n (A # As) Y =
+           (A\<^sup>\<dagger>) * Y * A + kraus_adjoint_dim n As Y"
   by (simp add: kraus_adjoint_dim_def)
 
 lemma kraus_adjoint_dim_carrier:
+  fixes Y :: "complex Matrix.mat"
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
       and Y_c: "Y \<in> carrier_mat d d"
   shows "kraus_adjoint_dim n As Y \<in> carrier_mat n n"
@@ -7084,6 +7087,7 @@ proof -
 qed
 
 lemma hs_inner_prod_left_zero:
+  fixes X :: "complex Matrix.mat"
   assumes X_c: "X \<in> carrier_mat m n"
   shows "\<langle>\<langle> 0\<^sub>m m n | X \<rangle>\<rangle> = 0"
 proof -
@@ -7104,6 +7108,7 @@ qed
    hs_inner_prod_as_trace + Tr_cyclic + (A\<^sup>\<dagger> Y A)\<^sup>\<dagger> = A\<^sup>\<dagger> Y\<^sup>\<dagger> A. *)
 
 lemma hs_inner_prod_kraus_term:
+  fixes A X Y :: "complex Matrix.mat"
   assumes A_c: "A \<in> carrier_mat d n"
       and X_c: "X \<in> carrier_mat n n"
       and Y_c: "Y \<in> carrier_mat d d"
@@ -7207,7 +7212,7 @@ next
   have km_c: "kraus_map_dim d As X \<in> carrier_mat d d"
     using kraus_map_dim_carrier[OF As_c' X_c] .
   have ka_c: "kraus_adjoint_dim n As Y \<in> carrier_mat n n"
-    sorry
+    using kraus_adjoint_dim_carrier[OF As_c' Y_c] .
 
   have IH: "\<langle>\<langle> Y | kraus_map_dim d As X \<rangle>\<rangle>
          = \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
@@ -7217,7 +7222,7 @@ next
                   = \<langle>\<langle> A\<^sup>\<dagger> * Y * A | X \<rangle>\<rangle>
                     + \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
     using AdYA_c ka_c X_c
-    by (metis carrier_matD(1,2) complex_cnj_add hs_inner_prod_cnj hs_inner_prod_right_add index_add_mat(2,3)) 
+    by (metis carrier_matD(1,2) complex_cnj_add hs_inner_prod_cnj hs_inner_prod_right_add index_add_mat(2,3))
 
   have "\<langle>\<langle> Y | kraus_map_dim d (A # As) X \<rangle>\<rangle>
         = \<langle>\<langle> Y | A * X * (A\<^sup>\<dagger>) + kraus_map_dim d As X \<rangle>\<rangle>"
@@ -7227,11 +7232,11 @@ next
     using Y_c AXAd_c km_c by (intro hs_inner_prod_right_add) auto
   also have "\<dots> = \<langle>\<langle> A\<^sup>\<dagger> * Y * A | X \<rangle>\<rangle>
                   + \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
-    sorry
+    using hs_inner_prod_kraus_term[OF A_c X_c Y_c] IH by simp
   also have "\<dots> = \<langle>\<langle> A\<^sup>\<dagger> * Y * A + kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
     using left_add by simp
   also have "\<dots> = \<langle>\<langle> kraus_adjoint_dim n (A # As) Y | X \<rangle>\<rangle>"
-    sorry
+    by simp
   finally show ?case .
 qed
 
