@@ -11160,4 +11160,63 @@ lemma bit_phase_flip_channel_fixes_max_mixed:
   by (simp add: bit_phase_flip_channel_eq)
 
 
+(* ============================================================================
+   DAY 58
+   Topic: Pauli channels preserve density_matrix
+
+   For any unitary U and 0 \<le> p \<le> 1, the unitary_conj_channel maps
+   density matrices to density matrices: carrier preservation, PSD
+   preservation, and trace preservation are all already proved.
+   ============================================================================ *)
+
+lemma unitary_conj_channel_preserves_density_matrix:
+  fixes p :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+      and p_nn: "0 \<le> p"
+      and p_le: "p \<le> 1"
+      and dm: "density_matrix n \<rho>"
+  shows "density_matrix n (unitary_conj_channel U p \<rho>)"
+proof -
+  have \<rho>_c: "\<rho> \<in> carrier_mat n n" using dm by (simp add: density_matrix_def)
+  have \<rho>_psd: "psd \<rho>" using dm by (simp add: density_matrix_def)
+  have \<rho>_tr: "Tr \<rho> = 1" using dm by (simp add: density_matrix_def)
+  have c: "unitary_conj_channel U p \<rho> \<in> carrier_mat n n"
+    using unitary_conj_channel_carrier[OF U_c \<rho>_c] .
+  have psd: "psd (unitary_conj_channel U p \<rho>)"
+    using unitary_conj_channel_psd[OF p_nn p_le U_c \<rho>_c \<rho>_psd] .
+  have tr: "Tr (unitary_conj_channel U p \<rho>) = 1"
+    using unitary_conj_channel_trace_preserving[OF U_c U_unit \<rho>_c] \<rho>_tr
+    by simp
+  show ?thesis unfolding density_matrix_def using c psd tr by blast
+qed
+
+lemma bit_flip_channel_preserves_density_matrix:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+      and dm: "density_matrix 2 \<rho>"
+  shows "density_matrix 2 (bit_flip_channel p \<rho>)"
+  using unitary_conj_channel_preserves_density_matrix
+          [OF pauli_X_carrier pauli_X_unitary p_nn p_le dm]
+  by (simp add: bit_flip_channel_eq)
+
+lemma phase_flip_channel_preserves_density_matrix:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+      and dm: "density_matrix 2 \<rho>"
+  shows "density_matrix 2 (phase_flip_channel p \<rho>)"
+  using unitary_conj_channel_preserves_density_matrix
+          [OF pauli_Z_carrier pauli_Z_unitary p_nn p_le dm]
+  by (simp add: phase_flip_channel_eq)
+
+lemma bit_phase_flip_channel_preserves_density_matrix:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+      and dm: "density_matrix 2 \<rho>"
+  shows "density_matrix 2 (bit_phase_flip_channel p \<rho>)"
+  using unitary_conj_channel_preserves_density_matrix
+          [OF pauli_Y_carrier pauli_Y_unitary p_nn p_le dm]
+  by (simp add: bit_phase_flip_channel_eq)
+
+
 end
