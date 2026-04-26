@@ -10775,4 +10775,61 @@ next
 qed
 
 
+(* ============================================================================
+   DAY 52
+   Topic: kraus_map_dim distributes over list concatenation
+
+   Companion of Day 51 for the actual Kraus map: for Ws, Vs of
+   operators in M_{d,n} and \<rho> in M_n,
+     kraus_map_dim d (Ws @ Vs) \<rho>
+       = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>.
+   ============================================================================ *)
+
+lemma kraus_map_dim_append:
+  fixes Ws Vs :: "complex Matrix.mat list"
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "kraus_map_dim d (Ws @ Vs) \<rho>
+         = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  have Vs_km_c: "kraus_map_dim d Vs \<rho> \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Vs_c \<rho>_c] .
+  show ?case
+    using Vs_km_c by (intro eq_matI) auto
+next
+  case (Cons W Ws)
+  hence W_c: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n" by auto
+  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using W_c by (rule dagger_carrier)
+  have W\<rho>_c: "W * \<rho> \<in> carrier_mat d n"
+    using W_c \<rho>_c by (rule mult_carrier_mat)
+  have W\<rho>Wd_c: "W * \<rho> * (W\<^sup>\<dagger>) \<in> carrier_mat d d"
+    using W\<rho>_c Wd_c by (rule mult_carrier_mat)
+  have Ws_km_c: "kraus_map_dim d Ws \<rho> \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Ws_c' \<rho>_c] .
+  have Vs_km_c: "kraus_map_dim d Vs \<rho> \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Vs_c \<rho>_c] .
+  have IH: "kraus_map_dim d (Ws @ Vs) \<rho>
+              = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>"
+    using Cons.IH Ws_c' by simp
+
+  have "kraus_map_dim d ((W # Ws) @ Vs) \<rho>
+          = W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d (Ws @ Vs) \<rho>"
+    by simp
+  also have "\<dots> = W * \<rho> * (W\<^sup>\<dagger>)
+                  + (kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>)"
+    using IH by simp
+  also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)
+                  + kraus_map_dim d Vs \<rho>"
+    using W\<rho>Wd_c Ws_km_c Vs_km_c by (simp add: assoc_add_mat)
+  also have "\<dots> = kraus_map_dim d (W # Ws) \<rho> + kraus_map_dim d Vs \<rho>"
+    by simp
+  finally show ?case .
+qed
+
+
 end
