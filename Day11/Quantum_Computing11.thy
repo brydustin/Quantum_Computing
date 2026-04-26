@@ -7851,4 +7851,241 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 22 \<mdash> 17 / Oct / 11
+   Topic: Linear Independence of Kraus Operators; Convex Sets; Krein-Milman
+   ============================================================================ *)
+
+(* --------------------------------------------------------------------------
+   1. Convex sets and extreme points (abstract).
+
+   Used as scaffolding for the next few days.  The definitions are
+   parametric in subsets of \<open>complex Matrix.mat\<close>, viewing them as
+   subsets of a real vector space via complex matrix arithmetic.
+   -------------------------------------------------------------------------- *)
+
+definition convex_set_mat :: "complex Matrix.mat set \<Rightarrow> bool" where
+  "convex_set_mat C \<equiv>
+     \<forall>A \<in> C. \<forall>B \<in> C. \<forall>t :: real. 0 \<le> t \<and> t \<le> 1 \<longrightarrow>
+       complex_of_real t \<cdot>\<^sub>m A
+       + (1 - complex_of_real t) \<cdot>\<^sub>m B \<in> C"
+
+definition extreme_point_mat ::
+  "complex Matrix.mat set \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "extreme_point_mat C v \<equiv>
+     v \<in> C \<and>
+     \<not> (\<exists>v1 \<in> C. \<exists>v2 \<in> C. v1 \<noteq> v \<and> v \<noteq> v2 \<and>
+           v = (1/2 :: complex) \<cdot>\<^sub>m v1 + (1/2 :: complex) \<cdot>\<^sub>m v2)"
+
+definition affine_map_mat ::
+  "(complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
+  "affine_map_mat tmap \<equiv>
+     \<forall>A B. \<forall>t :: real. 0 \<le> t \<and> t \<le> 1 \<longrightarrow>
+       tmap (complex_of_real t \<cdot>\<^sub>m A
+             + (1 - complex_of_real t) \<cdot>\<^sub>m B) =
+       complex_of_real t \<cdot>\<^sub>m tmap A
+       + (1 - complex_of_real t) \<cdot>\<^sub>m tmap B"
+
+
+(* --------------------------------------------------------------------------
+   2. UCP and CPTP function-spaces.
+   -------------------------------------------------------------------------- *)
+
+definition UCP ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) set" where
+  "UCP n d \<equiv> {\<Phi>. completely_positive n d \<Phi> \<and> unital_map n d \<Phi>}"
+
+definition CPTP ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) set" where
+  "CPTP n d \<equiv> {\<Phi>. completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>}"
+
+
+(* --------------------------------------------------------------------------
+   3. Amplification commutes with scalar multiplication
+   (companion to \<open>amplification_add\<close>).
+   -------------------------------------------------------------------------- *)
+
+lemma amplification_smult:
+  assumes dpos: "0 < d"
+      and F_block: "\<And>a b. F (block_of_mat n x a b) \<in> carrier_mat d d"
+  shows "amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x
+         = c \<cdot>\<^sub>m amplification n d p F x"
+proof (rule eq_matI)
+  show "dim_row (amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x) =
+        dim_row (c \<cdot>\<^sub>m amplification n d p F x)"
+    by (simp add: amplification_def)
+  show "dim_col (amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x) =
+        dim_col (c \<cdot>\<^sub>m amplification n d p F x)"
+    by (simp add: amplification_def)
+next
+  fix i j
+  assume i: "i < dim_row (c \<cdot>\<^sub>m amplification n d p F x)"
+     and j: "j < dim_col (c \<cdot>\<^sub>m amplification n d p F x)"
+  have ipd: "i < p*d" and jpd: "j < p*d"
+    using i j by (simp_all add: amplification_def)
+  have imodd: "i mod d < d" and jmodd: "j mod d < d"
+    using dpos by simp_all
+  let ?B = "block_of_mat n x (i div d) (j div d)"
+  have FB: "F ?B \<in> carrier_mat d d"
+    by (rule F_block)
+  show "amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x $$ (i,j) =
+        (c \<cdot>\<^sub>m amplification n d p F x) $$ (i,j)"
+    using ipd jpd imodd jmodd FB
+    by (simp add: amplification_def)
+qed
+
+
+(* --------------------------------------------------------------------------
+   4. UCP is convex: \<open>t \<Phi>\<^sub>1 + (1-t) \<Phi>\<^sub>2 \<in> UCP\<close> for \<open>t \<in> [0,1]\<close>.
+
+   The proof has two halves: CP closed under non-negative linear
+   combinations (via \<open>amplification_add\<close>, \<open>amplification_smult\<close>,
+   \<open>psd_smult_nonneg\<close>, \<open>psd_add_psd\<close>) and unitality preserved
+   (since \<open>t \<sqdot> I + (1-t) \<sqdot> I = I\<close>).
+
+   We strengthen the hypotheses slightly with explicit range conditions
+   on each \<open>\<Phi>\<^sub>i\<close>; these are implicit in the standard reading of
+   \<open>completely_positive n d\<close> (output in M_d), but \<open>completely_positive\<close>
+   itself does not constrain the output type, so we make the range a
+   formal assumption.
+   -------------------------------------------------------------------------- *)
+
+lemma UCP_convex:
+  fixes t :: real
+  assumes t_nn:   "0 \<le> t"
+      and t_le:   "t \<le> 1"
+      and \<Phi>1_in:  "\<Phi>1 \<in> UCP n d"
+      and \<Phi>2_in:  "\<Phi>2 \<in> UCP n d"
+      and r1: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>1 X \<in> carrier_mat d d"
+      and r2: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>2 X \<in> carrier_mat d d"
+      and dpos: "0 < d"
+  shows "(\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+              + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X) \<in> UCP n d"
+proof -
+  let ?\<Psi> = "\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+                + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X"
+  have cp1: "completely_positive n d \<Phi>1"
+    using \<Phi>1_in by (simp add: UCP_def)
+  have cp2: "completely_positive n d \<Phi>2"
+    using \<Phi>2_in by (simp add: UCP_def)
+  have un1: "unital_map n d \<Phi>1"
+    using \<Phi>1_in by (simp add: UCP_def)
+  have un2: "unital_map n d \<Phi>2"
+    using \<Phi>2_in by (simp add: UCP_def)
+  have one_minus_nn: "0 \<le> 1 - t" using t_le by simp
+  have one_minus_eq: "(1 - complex_of_real t) = complex_of_real (1 - t)"
+    by simp
+
+  (* Unitality. *)
+  have \<Psi>_unital: "unital_map n d ?\<Psi>"
+  proof -
+    have \<Phi>1_one: "\<Phi>1 (1\<^sub>m n) = 1\<^sub>m d" using un1 by (simp add: unital_map_def)
+    have \<Phi>2_one: "\<Phi>2 (1\<^sub>m n) = 1\<^sub>m d" using un2 by (simp add: unital_map_def)
+    have "?\<Psi> (1\<^sub>m n) = complex_of_real t \<cdot>\<^sub>m (1\<^sub>m d :: complex Matrix.mat)
+                       + (1 - complex_of_real t) \<cdot>\<^sub>m (1\<^sub>m d)"
+      using \<Phi>1_one \<Phi>2_one by simp
+    also have "\<dots> = (complex_of_real t + (1 - complex_of_real t))
+                     \<cdot>\<^sub>m (1\<^sub>m d :: complex Matrix.mat)"
+      by (rule add_smult_distrib_right_mat[symmetric]) auto
+    also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m (1\<^sub>m d :: complex Matrix.mat)"
+      by simp
+    also have "\<dots> = 1\<^sub>m d"
+      by (intro eq_matI) auto
+    finally show ?thesis unfolding unital_map_def .
+  qed
+
+  (* Complete positivity. *)
+  have \<Psi>_cp: "completely_positive n d ?\<Psi>"
+    unfolding completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+       and X_psd: "psd X"
+    have block_c: "\<And>a b. block_of_mat n X a b \<in> carrier_mat n n"
+      by (simp add: block_of_mat_def)
+    have F1_block: "\<And>a b. \<Phi>1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r1 block_c by blast
+    have F2_block: "\<And>a b. \<Phi>2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r2 block_c by blast
+    let ?F1 = "\<lambda>\<rho>. complex_of_real t \<cdot>\<^sub>m \<Phi>1 \<rho>"
+    let ?F2 = "\<lambda>\<rho>. (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 \<rho>"
+    have F1'_block: "\<And>a b. ?F1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F1_block by simp
+    have F2'_block: "\<And>a b. ?F2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F2_block by simp
+
+    (* amplification distributes over the convex combination *)
+    have amp_eq:
+      "amplification n d p ?\<Psi> X
+         = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+           + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+    proof -
+      have step_add:
+        "amplification n d p (\<lambda>\<rho>. ?F1 \<rho> + ?F2 \<rho>) X
+           = amplification n d p ?F1 X + amplification n d p ?F2 X"
+        using amplification_add[where F = ?F1 and G = ?F2
+                                 and n = n and d = d and p = p and x = X,
+                                OF dpos F1'_block F2'_block] .
+      have step_s1:
+        "amplification n d p ?F1 X
+           = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X"
+        using amplification_smult[where F = \<Phi>1 and c = "complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F1_block] .
+      have step_s2:
+        "amplification n d p ?F2 X
+           = (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+        using amplification_smult[where F = \<Phi>2 and c = "1 - complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F2_block] .
+      show ?thesis using step_add step_s1 step_s2 by simp
+    qed
+
+    have amp1_psd: "psd (amplification n d p \<Phi>1 X)"
+      using cp1 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp2_psd: "psd (amplification n d p \<Phi>2 X)"
+      using cp2 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp1_c: "amplification n d p \<Phi>1 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have amp2_c: "amplification n d p \<Phi>2 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+
+    have term1_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X)"
+      using t_nn amp1_psd amp1_c by (rule psd_smult_nonneg)
+    have term2_psd:
+      "psd ((1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+    proof -
+      have prev: "psd (complex_of_real (1 - t)
+                          \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+        using one_minus_nn amp2_psd amp2_c by (rule psd_smult_nonneg)
+      have rew: "complex_of_real (1 - t) = 1 - complex_of_real t"
+        by simp
+      show ?thesis using prev rew by metis
+    qed
+    have term1_c:
+      "complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp1_c by simp
+    have term2_c:
+      "(1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp2_c by simp
+
+    have psum_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+            + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+      using term1_psd term2_psd term1_c term2_c
+      by (rule psd_add_psd)
+
+    show "psd (amplification n d p ?\<Psi> X)"
+      using amp_eq psum_psd by simp
+  qed
+
+  show ?thesis using \<Psi>_cp \<Psi>_unital by (simp add: UCP_def)
+qed
+
+
 end
