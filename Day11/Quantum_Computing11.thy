@@ -6207,7 +6207,7 @@ proof -
   have "outer_sum n vs $$ (i, j) = (?V * (?V\<^sup>\<dagger>)) $$ (i, j)"
     by (simp add: outer_sum_def)
   also have "\<dots> = (\<Sum>l<?k. ?V $$ (i, l) * (?V\<^sup>\<dagger>) $$ (l, j))"
-    using i_lt j_lt V_c Vdag_c by (simp add: index_mult_mat(1))
+    using i_lt j_lt V_c Vdag_c by simp
   also have "\<dots> = (\<Sum>l<?k. (vs ! l) $ i * cnj ((vs ! l) $ j))"
   proof (intro sum.cong refl)
     fix l assume "l \<in> {..<?k}"
@@ -7031,17 +7031,9 @@ next
   have IH: "kraus_adjoint_dim n As Y
               = kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
     using Cons.IH As_c' by blast
-  have "kraus_adjoint_dim n (A # As) Y
-          = (A\<^sup>\<dagger>) * Y * A + kraus_adjoint_dim n As Y"
-    by simp
-  also have "\<dots> = (A\<^sup>\<dagger>) * Y * ((A\<^sup>\<dagger>)\<^sup>\<dagger>)
-                  + kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
+  show "kraus_adjoint_dim n (A # As) Y  
+      = kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) (A # As)) Y"
     using dd_eq IH by simp
-  also have "\<dots> = kraus_map_dim n ((A\<^sup>\<dagger>) # map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
-    by simp
-  also have "\<dots> = kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) (A # As)) Y"
-    by simp
-  finally show ?case .
 qed
 
 (* --------------------------------------------------------------------------
