@@ -10664,4 +10664,60 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 50
+   Topic: Identity channel is the singleton-identity Kraus map
+
+   The list [1_n] is a valid kraus_operators list, and kraus_map_dim n
+   on it produces exactly the identity channel.  This gives a Kraus
+   form for the identity channel matching the abstract \<open>identity_channel\<close>.
+   ============================================================================ *)
+
+lemma identity_kraus_operators:
+  "kraus_operators n n [1\<^sub>m n]"
+proof -
+  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+  have I_dag: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m n"
+    by (intro eq_matI) (auto simp: dagger_def)
+  have II: "(1\<^sub>m n :: complex Matrix.mat) * 1\<^sub>m n = 1\<^sub>m n"
+    by (intro eq_matI) auto
+  have all_in: "\<forall>W \<in> set [1\<^sub>m n :: complex Matrix.mat]. W \<in> carrier_mat n n"
+    using I_c by simp
+  have step:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [1\<^sub>m n :: complex Matrix.mat] (0\<^sub>m n n)
+       = (1\<^sub>m n) * (1\<^sub>m n) + 0\<^sub>m n n"
+    using I_dag by simp
+  also have "\<dots> = 1\<^sub>m n + 0\<^sub>m n n" using II by simp
+  also have "\<dots> = 1\<^sub>m n"
+    using I_c by (intro eq_matI) auto
+  finally have sum_eq:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [1\<^sub>m n :: complex Matrix.mat] (0\<^sub>m n n)
+       = 1\<^sub>m n" .
+  show ?thesis
+    unfolding kraus_operators_def
+    using all_in sum_eq by blast
+qed
+
+lemma identity_channel_eq_kraus_map_dim:
+  fixes n :: nat
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "identity_channel \<rho> = kraus_map_dim n [1\<^sub>m n] \<rho>"
+proof -
+  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+  have I_dag: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m n"
+    by (intro eq_matI) (auto simp: dagger_def)
+  have I\<rho>: "(1\<^sub>m n :: complex Matrix.mat) * \<rho> = \<rho>" using \<rho>_c by simp
+  have I\<rho>I: "((1\<^sub>m n :: complex Matrix.mat) * \<rho>) * (1\<^sub>m n) = \<rho>"
+    using \<rho>_c I\<rho> by simp
+  have rho_zero: "\<rho> + 0\<^sub>m n n = \<rho>" using \<rho>_c by (intro eq_matI) auto
+  have "kraus_map_dim n [1\<^sub>m n] \<rho>
+          = (1\<^sub>m n) * \<rho> * ((1\<^sub>m n)\<^sup>\<dagger>) + 0\<^sub>m n n" by simp
+  also have "\<dots> = (1\<^sub>m n) * \<rho> * (1\<^sub>m n) + 0\<^sub>m n n" using I_dag by simp
+  also have "\<dots> = \<rho> + 0\<^sub>m n n" using I\<rho>I by simp
+  also have "\<dots> = \<rho>" using rho_zero .
+  finally show ?thesis
+    by (simp add: identity_channel_def)
+qed
+
+
 end
