@@ -10832,4 +10832,92 @@ next
 qed
 
 
+(* ============================================================================
+   DAY 53
+   Topic: Pauli channels fix commuting states
+
+   If a matrix M in M_2 commutes with the Pauli matrix P, then
+   conjugation by P fixes M (using P^2 = I and P^dagger = P), and
+   therefore the corresponding Pauli channel does too.
+   ============================================================================ *)
+
+lemma pauli_X_conj_commute:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat 2 2"
+      and commute: "pauli_X * M = M * pauli_X"
+  shows "pauli_X * M * (pauli_X\<^sup>\<dagger>) = M"
+proof -
+  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
+  have x_dag: "pauli_X\<^sup>\<dagger> = pauli_X" by (rule pauli_X_dagger)
+  have x_sq: "pauli_X * pauli_X = 1\<^sub>m 2" by (rule pauli_X_squared)
+  have "pauli_X * M * (pauli_X\<^sup>\<dagger>) = pauli_X * M * pauli_X"
+    using x_dag by simp
+  also have "\<dots> = (M * pauli_X) * pauli_X" using commute by simp
+  also have "\<dots> = M * (pauli_X * pauli_X)"
+    using x_c M_c by (metis assoc_mult_mat)
+  also have "\<dots> = M * (1\<^sub>m 2)" using x_sq by simp
+  also have "\<dots> = M" using M_c by simp
+  finally show ?thesis .
+qed
+
+lemma bit_flip_channel_fixed_point_commute:
+  fixes p :: real
+  assumes M_c: "M \<in> carrier_mat 2 2"
+      and commute: "pauli_X * M = M * pauli_X"
+  shows "bit_flip_channel p M = M"
+proof -
+  have conj_eq: "pauli_X * M * (pauli_X\<^sup>\<dagger>) = M"
+    using pauli_X_conj_commute[OF M_c commute] .
+  have "bit_flip_channel p M
+          = complex_of_real (1 - p) \<cdot>\<^sub>m M
+            + complex_of_real p \<cdot>\<^sub>m M"
+    unfolding bit_flip_channel_def using conj_eq by simp
+  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) \<cdot>\<^sub>m M"
+    using M_c by (rule add_smult_distrib_right_mat[symmetric])
+  also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m M" by simp
+  also have "\<dots> = M" using M_c by (intro eq_matI) auto
+  finally show ?thesis .
+qed
+
+(* Analogously for phase_flip / Z and bit_phase_flip / Y. *)
+
+lemma pauli_Z_conj_commute:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat 2 2"
+      and commute: "pauli_Z * M = M * pauli_Z"
+  shows "pauli_Z * M * (pauli_Z\<^sup>\<dagger>) = M"
+proof -
+  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
+  have z_dag: "pauli_Z\<^sup>\<dagger> = pauli_Z" by (rule pauli_Z_dagger)
+  have z_sq: "pauli_Z * pauli_Z = 1\<^sub>m 2" by (rule pauli_Z_squared)
+  have "pauli_Z * M * (pauli_Z\<^sup>\<dagger>) = pauli_Z * M * pauli_Z"
+    using z_dag by simp
+  also have "\<dots> = (M * pauli_Z) * pauli_Z" using commute by simp
+  also have "\<dots> = M * (pauli_Z * pauli_Z)"
+    using z_c M_c by (metis assoc_mult_mat)
+  also have "\<dots> = M * (1\<^sub>m 2)" using z_sq by simp
+  also have "\<dots> = M" using M_c by simp
+  finally show ?thesis .
+qed
+
+lemma phase_flip_channel_fixed_point_commute:
+  fixes p :: real
+  assumes M_c: "M \<in> carrier_mat 2 2"
+      and commute: "pauli_Z * M = M * pauli_Z"
+  shows "phase_flip_channel p M = M"
+proof -
+  have conj_eq: "pauli_Z * M * (pauli_Z\<^sup>\<dagger>) = M"
+    using pauli_Z_conj_commute[OF M_c commute] .
+  have "phase_flip_channel p M
+          = complex_of_real (1 - p) \<cdot>\<^sub>m M
+            + complex_of_real p \<cdot>\<^sub>m M"
+    unfolding phase_flip_channel_def using conj_eq by simp
+  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) \<cdot>\<^sub>m M"
+    using M_c by (rule add_smult_distrib_right_mat[symmetric])
+  also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m M" by simp
+  also have "\<dots> = M" using M_c by (intro eq_matI) auto
+  finally show ?thesis .
+qed
+
+
 end
