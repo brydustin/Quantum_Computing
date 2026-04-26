@@ -9349,4 +9349,106 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 35
+   Topic: Rank-One Projections from Unit Vectors
+
+   For a unit vector \<psi> \<in> \<complex>\<^sup>n, the operator |\<psi>\<rangle>\<langle>\<psi>| =
+   outer_sum n [\<psi>] is a rank-one orthogonal projection: hermitian and
+   idempotent (using \<langle>\<psi>|\<psi>\<rangle> = 1).
+   ============================================================================ *)
+
+lemma outer_sum_singleton_hermitian:
+  fixes \<psi> :: "complex Matrix.vec"
+  shows "(outer_sum n [\<psi>])\<^sup>\<dagger> = outer_sum n [\<psi>]"
+proof (rule eq_matI)
+  show "dim_row ((outer_sum n [\<psi>])\<^sup>\<dagger>) = dim_row (outer_sum n [\<psi>])"
+    by simp
+  show "dim_col ((outer_sum n [\<psi>])\<^sup>\<dagger>) = dim_col (outer_sum n [\<psi>])"
+    by simp
+next
+  fix i j
+  assume i: "i < dim_row (outer_sum n [\<psi>])"
+     and j: "j < dim_col (outer_sum n [\<psi>])"
+  hence ij: "i < n" "j < n" by simp_all
+  have e1: "(outer_sum n [\<psi>])\<^sup>\<dagger> $$ (i, j)
+              = cnj ((outer_sum n [\<psi>]) $$ (j, i))"
+    using ij by (simp add: dagger_def)
+  also have "\<dots> = cnj (\<psi> $ j * cnj (\<psi> $ i))"
+    using outer_sum_singleton_index[OF ij(2) ij(1)] by simp
+  also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)"
+    by (simp add: complex_cnj_cnj complex_cnj_mult mult.commute)
+  also have "\<dots> = (outer_sum n [\<psi>]) $$ (i, j)"
+    using outer_sum_singleton_index[OF ij(1) ij(2)] by simp
+  finally show "(outer_sum n [\<psi>])\<^sup>\<dagger> $$ (i, j)
+                  = (outer_sum n [\<psi>]) $$ (i, j)" .
+qed
+
+lemma outer_sum_singleton_idempotent:
+  fixes \<psi> :: "complex Matrix.vec"
+  assumes \<psi>_qs: "quantum_state n \<psi>"
+  shows "outer_sum n [\<psi>] * outer_sum n [\<psi>] = outer_sum n [\<psi>]"
+proof -
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
+  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp add: quantum_state_def)
+  have inner_self: "\<langle>\<psi> | \<psi>\<rangle> = 1"
+  proof -
+    have "\<langle>\<psi> | \<psi>\<rangle> = complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2)"
+      by (metis cpx_vec_length_inner_prod)
+    also have "\<dots> = complex_of_real (1\<^sup>2)" using norm1 by simp
+    also have "\<dots> = 1" by simp
+    finally show ?thesis .
+  qed
+  let ?M = "outer_sum n [\<psi>]"
+  have M_c: "?M \<in> carrier_mat n n" by auto
+  show "?M * ?M = ?M"
+  proof (rule eq_matI)
+    show "dim_row (?M * ?M) = dim_row ?M" using M_c by simp
+    show "dim_col (?M * ?M) = dim_col ?M" using M_c by simp
+  next
+    fix i j
+    assume i: "i < dim_row ?M" and j: "j < dim_col ?M"
+    hence ij: "i < n" "j < n" by simp_all
+    have step1: "(?M * ?M) $$ (i, j)
+                   = (\<Sum>k = 0..<n. ?M $$ (i, k) * ?M $$ (k, j))"
+      using ij M_c
+      by (simp add: scalar_prod_def atLeast0LessThan)
+    also have "\<dots> = (\<Sum>k = 0..<n.
+                       \<psi> $ i * cnj (\<psi> $ k) * (\<psi> $ k * cnj (\<psi> $ j)))"
+      using ij
+      by (intro sum.cong refl)
+         (simp add: outer_sum_singleton_index)
+    also have "\<dots> = (\<Sum>k = 0..<n.
+                      \<psi> $ i * cnj (\<psi> $ j) * (cnj (\<psi> $ k) * \<psi> $ k))"
+      by (intro sum.cong refl) (simp add: ac_simps)
+    also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)
+                    * (\<Sum>k = 0..<n. cnj (\<psi> $ k) * \<psi> $ k)"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j) * \<langle>\<psi> | \<psi>\<rangle>"
+      using \<psi>_dim
+      by (simp add: inner_prod_def lessThan_atLeast0)
+    also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)"
+      using inner_self by simp
+    also have "\<dots> = ?M $$ (i, j)"
+      using outer_sum_singleton_index[OF ij(1) ij(2)] by simp
+    finally show "(?M * ?M) $$ (i, j) = ?M $$ (i, j)" .
+  qed
+qed
+
+lemma rank1_projection:
+  fixes \<psi> :: "complex Matrix.vec"
+  assumes \<psi>_qs: "quantum_state n \<psi>"
+  shows "projection n (outer_sum n [\<psi>])"
+proof -
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
+  have c: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
+  have h: "hermitian (outer_sum n [\<psi>])"
+    using outer_sum_singleton_hermitian
+    by (simp add: hermitian_def)
+  have idem: "outer_sum n [\<psi>] * outer_sum n [\<psi>] = outer_sum n [\<psi>]"
+    using outer_sum_singleton_idempotent[OF \<psi>_qs] .
+  show ?thesis unfolding projection_def using c h idem by blast
+qed
+
+
 end
