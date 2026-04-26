@@ -8376,7 +8376,7 @@ lemma hamming_dist_pos_iff:
   using hamming_dist_zero[OF lenw bits_v bits_w] by linarith
 
 lemma parity_bit_lt_2: "parity_bit v < 2"
-  by (induction v) (auto simp: parity_bit_def)
+  by (induction v, auto simp: parity_bit_def)
 
 lemma parity_check_encode_binary:
   assumes "\<forall>x \<in> set v. x < 2"
@@ -8425,7 +8425,7 @@ proof
 
   (* The XOR'ed word at index i is (?c ! i + e ! i) mod 2. *)
   have d_at_i: "?d ! i = (?c ! i + e ! i) mod 2"
-    using i_lt i_lt_c lenE by (simp add: nth_zip)
+    using i_lt i_lt_c lenE by simp
 
   have eq_i: "?c ! i = (?c ! i + 1) mod 2"
     using eq d_at_i ei_one by simp
@@ -8637,5 +8637,164 @@ proof -
   show ?thesis
     using assms x\<rho>xd_c by (auto simp: bit_flip_channel_def)
 qed
+
+
+(* ============================================================================
+   DAY 31 \<mdash> 11 / Nov / 11
+   Topic: Three Qubit Bit Flip Code; Fidelity
+   ============================================================================ *)
+
+(* Logical encoding |\<psi>\<rangle> = a|0\<rangle> + b|1\<rangle> \<mapsto> a|000\<rangle> + b|111\<rangle>, expressed as
+   a 8\<times>2 isometry sending the i-th computational basis vector of \<complex>\<^sup>2 to
+   the i-th computational basis vector of \<complex>\<^sup>8 (with i \<in> {0, 7}). *)
+
+definition encode_mat :: "complex Matrix.mat" where
+  "encode_mat \<equiv> Matrix.mat 8 2 (\<lambda>(i,j).
+     if i = 0 \<and> j = 0 then 1
+     else if i = 7 \<and> j = 1 then 1
+     else 0)"
+
+lemma encode_mat_carrier [simp]: "encode_mat \<in> carrier_mat 8 2"
+  by (auto simp: encode_mat_def)
+
+(* Fidelity between a pure state \<psi> and a density matrix \<rho>. *)
+
+definition fidelity ::
+  "complex Matrix.vec \<Rightarrow> complex Matrix.mat \<Rightarrow> real" where
+  "fidelity \<psi> \<rho> \<equiv> sqrt (Re (\<langle>\<psi> | \<rho> *\<^sub>v \<psi>\<rangle>))"
+
+lemma fidelity_def_eq:
+  "fidelity \<psi> \<rho> = sqrt (Re (\<langle>\<psi> | \<rho> *\<^sub>v \<psi>\<rangle>))"
+  by (simp add: fidelity_def)
+
+
+(* ============================================================================
+   DAY 32 \<mdash> 14 / Nov / 11
+   Topic: Phase Flip Code; Plus and Minus States
+   ============================================================================ *)
+
+(* The X-eigenbasis of \<complex>\<^sup>2: |+\<rangle> = (|0\<rangle> + |1\<rangle>)/\<surd>2, |-\<rangle> = (|0\<rangle> - |1\<rangle>)/\<surd>2. *)
+
+definition ket_plus :: "complex Matrix.vec" where
+  "ket_plus \<equiv> (1 / sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
+
+definition ket_minus :: "complex Matrix.vec" where
+  "ket_minus \<equiv> (1 / sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 - unit_vec 2 1)"
+
+lemma ket_plus_carrier [simp]: "ket_plus \<in> carrier_vec 2"
+  by (simp add: ket_plus_def)
+
+lemma ket_minus_carrier [simp]: "ket_minus \<in> carrier_vec 2"
+  by (simp add: ket_minus_def)
+
+lemma ket_plus_dim [simp]: "dim_vec ket_plus = 2"
+  by (simp add: ket_plus_def)
+
+lemma ket_minus_dim [simp]: "dim_vec ket_minus = 2"
+  by (simp add: ket_minus_def)
+
+lemma ket_plus_index_0: "ket_plus $ 0 = 1 / sqrt 2"
+  by (simp add: ket_plus_def)
+
+lemma ket_plus_index_1: "ket_plus $ 1 = 1 / sqrt 2"
+  by (simp add: ket_plus_def)
+
+lemma ket_minus_index_0: "ket_minus $ 0 = 1 / sqrt 2"
+  by (simp add: ket_minus_def)
+
+lemma ket_minus_index_1: "ket_minus $ 1 = - 1 / sqrt 2"
+  by (simp add: ket_minus_def)
+
+lemma ket_plus_unit: "\<parallel>ket_plus\<parallel> = 1"
+proof -
+  have inner: "\<langle>ket_plus | ket_plus\<rangle> = 1"
+  proof -
+    have "\<langle>ket_plus | ket_plus\<rangle>
+            = (\<Sum>i = 0..<2. cnj (ket_plus $ i) * (ket_plus $ i))"
+      unfolding inner_prod_def by simp
+    also have "\<dots> = cnj (ket_plus $ 0) * (ket_plus $ 0)
+                    + cnj (ket_plus $ 1) * (ket_plus $ 1)"
+      by (simp add: numeral_2_eq_2)
+    also have "\<dots> = 1"
+      unfolding ket_plus_def by (simp add: of_real_mult [symmetric])
+    finally show ?thesis .
+  qed
+  have "(\<parallel>ket_plus\<parallel>)\<^sup>2 = 1"
+    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
+  thus ?thesis
+    by (metis cpx_vec_length_inner_prod cpx_vec_length_zero_iff
+        inner_prod_csqrt ket_plus_carrier ket_plus_dim norm_eq_zero
+        norm_of_real normalized_vec_norm of_real_eq_0_iff of_real_eq_1_iff
+        power2_eq_1_iff real_sqrt_abs)
+qed
+
+lemma ket_minus_unit: "\<parallel>ket_minus\<parallel> = 1"
+proof -
+  have inner: "\<langle>ket_minus | ket_minus\<rangle> = 1"
+  proof -
+    have "\<langle>ket_minus | ket_minus\<rangle>
+            = (\<Sum>i = 0..<2. cnj (ket_minus $ i) * (ket_minus $ i))"
+      unfolding inner_prod_def by simp
+    also have "\<dots> = cnj (ket_minus $ 0) * (ket_minus $ 0)
+                    + cnj (ket_minus $ 1) * (ket_minus $ 1)"
+      by (simp add: numeral_2_eq_2)
+    also have "\<dots> = 1"
+      unfolding ket_minus_def by (simp add: of_real_mult [symmetric])
+    finally show ?thesis .
+  qed
+  have "(\<parallel>ket_minus\<parallel>)\<^sup>2 = 1"
+    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
+  thus ?thesis
+    by (metis cpx_vec_length_inner_prod inner_prod_csqrt ket_plus_unit
+        of_real_eq_1_iff power_one)
+qed
+
+lemma ket_plus_minus_orthog: "\<langle>ket_plus | ket_minus\<rangle> = 0"
+proof -
+  have "\<langle>ket_plus | ket_minus\<rangle>
+          = (\<Sum>i = 0..<2. cnj (ket_plus $ i) * (ket_minus $ i))"
+    unfolding inner_prod_def by simp
+  also have "\<dots> = cnj (ket_plus $ 0) * (ket_minus $ 0)
+                  + cnj (ket_plus $ 1) * (ket_minus $ 1)"
+    by (simp add: numeral_2_eq_2)
+  also have "\<dots> = 0"
+    unfolding ket_plus_def ket_minus_def by simp
+  finally show ?thesis .
+qed
+
+(* Pauli Z swaps |+\<rangle> and |-\<rangle>:  Z|+\<rangle> = |-\<rangle>, Z|-\<rangle> = |+\<rangle>. *)
+
+lemma pauli_Z_ket_plus: "pauli_Z *\<^sub>v ket_plus = ket_minus"
+proof (rule eq_vecI)
+  show "dim_vec (pauli_Z *\<^sub>v ket_plus) = dim_vec ket_minus"
+    by (simp add: pauli_Z_def)
+next
+  fix i assume "i < dim_vec ket_minus"
+  hence i_lt: "i < 2" by simp
+  have "(pauli_Z *\<^sub>v ket_plus) $ i =
+        (\<Sum>k = 0..<2. pauli_Z $$ (i, k) * ket_plus $ k)"
+    using i_lt by (simp add: scalar_prod_def pauli_Z_def)
+  also have "\<dots> = pauli_Z $$ (i, 0) * ket_plus $ 0
+                  + pauli_Z $$ (i, 1) * ket_plus $ 1"
+    by (simp add: numeral_2_eq_2)
+  also have "\<dots> = ket_minus $ i"
+    using i_lt
+    by (cases "i = 0";
+        simp add: pauli_Z_def ket_plus_def ket_minus_def)
+  finally show "(pauli_Z *\<^sub>v ket_plus) $ i = ket_minus $ i" .
+qed
+
+lemma pauli_Z_ket_minus: "pauli_Z *\<^sub>v ket_minus = ket_plus"
+proof -
+  have "pauli_Z *\<^sub>v ket_minus = pauli_Z *\<^sub>v (pauli_Z *\<^sub>v ket_plus)"
+    using pauli_Z_ket_plus by simp
+  also have "\<dots> = (pauli_Z * pauli_Z) *\<^sub>v ket_plus"
+    by (metis assoc_mult_mat_vec pauli_Z_carrier ket_plus_carrier)
+  also have "\<dots> = (1\<^sub>m 2) *\<^sub>v ket_plus"
+    using pauli_Z_squared by simp
+  also have "\<dots> = ket_plus" by simp
+  finally show ?thesis .
+qed
+
 
 end
