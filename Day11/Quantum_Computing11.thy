@@ -9451,4 +9451,73 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 36
+   Topic: Trace of a Rank-One Projection; Projection Action on its Image
+
+   Two concrete corollaries of the rank-one projection machinery:
+     - The rank-1 projection |\<psi>\<rangle>\<langle>\<psi>| acts as the identity on \<psi>
+       itself (the defining eigenvector property).
+     - The trace of |\<psi>\<rangle>\<langle>\<psi>| equals \<langle>\<psi>|\<psi>\<rangle>, hence 1
+       for a normalised state.
+   ============================================================================ *)
+
+lemma rank1_projection_acts_identity:
+  fixes \<psi> :: "complex Matrix.vec"
+  assumes \<psi>_qs: "quantum_state n \<psi>"
+  shows "outer_sum n [\<psi>] *\<^sub>v \<psi> = \<psi>"
+proof -
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
+  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp add: quantum_state_def)
+  have inner_self: "\<langle>\<psi> | \<psi>\<rangle> = 1"
+  proof -
+    have "\<langle>\<psi> | \<psi>\<rangle> = complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2)"
+      by (metis cpx_vec_length_inner_prod)
+    also have "\<dots> = complex_of_real (1\<^sup>2)" using norm1 by simp
+    also have "\<dots> = 1" by simp
+    finally show ?thesis .
+  qed
+  have act: "outer_sum n [\<psi>] *\<^sub>v \<psi> = \<langle>\<psi> | \<psi>\<rangle> \<cdot>\<^sub>v \<psi>"
+    using outer_sum_singleton_mult_vec[OF \<psi>_dim \<psi>_dim] .
+  also have "\<dots> = (1 :: complex) \<cdot>\<^sub>v \<psi>" using inner_self by simp
+  also have "\<dots> = \<psi>" by (intro eq_vecI) auto
+  finally show ?thesis .
+qed
+
+lemma rank1_projection_trace_inner:
+  fixes \<psi> :: "complex Matrix.vec"
+  assumes \<psi>_dim: "dim_vec \<psi> = n"
+  shows "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
+proof -
+  let ?M = "outer_sum n [\<psi>]"
+  have M_c: "?M \<in> carrier_mat n n" by auto
+  have "Tr ?M = (\<Sum>r < n. ?M $$ (r, r))"
+    using M_c by (auto simp: Tr_def)
+  also have "\<dots> = (\<Sum>r < n. \<psi> $ r * cnj (\<psi> $ r))"
+    by (intro sum.cong refl) (simp add: outer_sum_singleton_index)
+  also have "\<dots> = (\<Sum>r = 0..<n. cnj (\<psi> $ r) * \<psi> $ r)"
+    by (intro sum.cong refl)
+       (auto simp: atLeast0LessThan mult.commute)
+  also have "\<dots> = \<langle>\<psi> | \<psi>\<rangle>"
+    using \<psi>_dim by (simp add: inner_prod_def)
+  finally show ?thesis .
+qed
+
+lemma rank1_projection_trace_one:
+  fixes \<psi> :: "complex Matrix.vec"
+  assumes \<psi>_qs: "quantum_state n \<psi>"
+  shows "Tr (outer_sum n [\<psi>]) = 1"
+proof -
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
+  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp add: quantum_state_def)
+  have "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
+    using rank1_projection_trace_inner[OF \<psi>_dim] .
+  also have "\<dots> = complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2)"
+    by (metis cpx_vec_length_inner_prod)
+  also have "\<dots> = complex_of_real (1\<^sup>2)" using norm1 by simp
+  also have "\<dots> = 1" by simp
+  finally show ?thesis .
+qed
+
+
 end
