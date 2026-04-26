@@ -8638,6 +8638,66 @@ proof -
     using assms x\<rho>xd_c by (auto simp: bit_flip_channel_def)
 qed
 
+(* The bit-flip channel preserves trace: Tr(X rho X^dagger) = Tr rho
+   since X^dagger X = I, then add the (1-p) and p contributions. *)
+
+lemma bit_flip_channel_trace_preserving:
+  fixes p :: real
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat 2 2"
+  shows "Tr (bit_flip_channel p \<rho>) = Tr \<rho>"
+proof -
+  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using x_c by (rule dagger_carrier)
+  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+    using x_c \<rho>_c by (rule mult_carrier_mat)
+  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using x\<rho>_c xd_c by (rule mult_carrier_mat)
+  have xdx_eq: "(pauli_X\<^sup>\<dagger>) * pauli_X = 1\<^sub>m 2"
+    using pauli_X_dagger pauli_X_squared by simp
+
+  (* Tr(X \<rho> X^dagger) = Tr(X^dagger X \<rho>) = Tr(I \<rho>) = Tr \<rho>, by cyclicity. *)
+  have tr_conj: "Tr (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)) = Tr \<rho>"
+  proof -
+    have "Tr (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)) = Tr (pauli_X\<^sup>\<dagger> * (pauli_X * \<rho>))"
+    proof (rule Tr_cyclic)
+      show "dim_col (pauli_X * \<rho>) = dim_row (pauli_X\<^sup>\<dagger>)"
+        using x\<rho>_c xd_c by (metis carrier_matD)
+      show "dim_row (pauli_X * \<rho>) = dim_col (pauli_X\<^sup>\<dagger>)"
+        using x\<rho>_c xd_c by (metis carrier_matD)
+    qed
+    also have "\<dots> = Tr ((pauli_X\<^sup>\<dagger> * pauli_X) * \<rho>)"
+      by (metis xd_c x_c \<rho>_c assoc_mult_mat)
+    also have "\<dots> = Tr ((1\<^sub>m 2) * \<rho>)" using xdx_eq by simp
+    also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
+    finally show ?thesis .
+  qed
+
+  have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+                  = dim_row (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+    using \<rho>_c x\<rho>xd_c by (metis carrier_matD index_smult_mat)
+  have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+                  = dim_col (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+    using \<rho>_c x\<rho>xd_c by (metis carrier_matD index_smult_mat)
+  have "Tr (bit_flip_channel p \<rho>)
+          = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+            + Tr (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+    unfolding bit_flip_channel_def
+    using row_eq col_eq by (rule Tr_add)
+  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
+                  + complex_of_real p * Tr (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+    by (simp add: Tr_smult)
+  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
+                  + complex_of_real p * Tr \<rho>"
+    using tr_conj by simp
+  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) * Tr \<rho>"
+    by (simp add: ring_distribs)
+  also have "\<dots> = 1 * Tr \<rho>"
+    by simp
+  also have "\<dots> = Tr \<rho>" by simp
+  finally show ?thesis .
+qed
+
 
 (* ============================================================================
    DAY 31 \<mdash> 11 / Nov / 11
@@ -8723,6 +8783,38 @@ proof -
     using nn by simp
   finally show ?thesis.
 qed
+
+(* Pure-state fidelity to itself: a unit vector has fidelity 1 with its own
+   density matrix. *)
+
+lemma fidelity_self:
+  fixes \<psi> :: "complex Matrix.vec"
+  assumes \<psi>_qs: "quantum_state n \<psi>"
+  shows "fidelity \<psi> ((mat_of_cols n [\<psi>]) * ((mat_of_cols n [\<psi>])\<^sup>\<dagger>)) = 1"
+proof -
+  have norm1: "\<parallel>\<psi>\<parallel> = 1"
+    using \<psi>_qs by (simp add: quantum_state_def)
+  have "fidelity \<psi> ((mat_of_cols n [\<psi>]) * ((mat_of_cols n [\<psi>])\<^sup>\<dagger>))
+          = cmod (\<langle>\<psi> | \<psi>\<rangle>)"
+    using fidelity_pure_states[OF \<psi>_qs \<psi>_qs] .
+  also have "\<dots> = cmod (complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2))"
+    by (metis cpx_vec_length_inner_prod)
+  also have "\<dots> = cmod (complex_of_real (1\<^sup>2))"
+    using norm1 by simp
+  also have "\<dots> = 1"
+    by simp
+  finally show ?thesis .
+qed
+
+(* Pure-state fidelity is zero on orthogonal states. *)
+
+lemma fidelity_orthogonal:
+  fixes \<psi> \<psi>' :: "complex Matrix.vec"
+  assumes \<psi>_qs:  "quantum_state n \<psi>"
+      and \<psi>'_qs: "quantum_state n \<psi>'"
+      and ortho: "\<langle>\<psi> | \<psi>'\<rangle> = 0"
+  shows "fidelity \<psi> ((mat_of_cols n [\<psi>']) * ((mat_of_cols n [\<psi>'])\<^sup>\<dagger>)) = 0"
+  using fidelity_pure_states[OF \<psi>_qs \<psi>'_qs] ortho by simp
 
 
 (* ============================================================================
