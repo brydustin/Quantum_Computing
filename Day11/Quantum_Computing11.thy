@@ -8505,7 +8505,7 @@ next
   hence ij: "i < 2" "j < 2" by auto
   thus "(pauli_X * pauli_X) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
     unfolding pauli_X_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2)+)
+    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
 lemma pauli_X_unitary: "unitary pauli_X"
@@ -8533,7 +8533,7 @@ next
   hence ij: "i < 2" "j < 2" by auto
   thus "(pauli_Y * pauli_Y) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
     unfolding pauli_Y_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2)+)
+    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
 lemma pauli_Y_unitary: "unitary pauli_Y"
@@ -8561,7 +8561,7 @@ next
   hence ij: "i < 2" "j < 2" by auto
   thus "(pauli_Z * pauli_Z) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
     unfolding pauli_Z_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2)+)
+    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
 lemma pauli_Z_unitary: "unitary pauli_Z"
@@ -11217,6 +11217,62 @@ lemma bit_phase_flip_channel_preserves_density_matrix:
   using unitary_conj_channel_preserves_density_matrix
           [OF pauli_Y_carrier pauli_Y_unitary p_nn p_le dm]
   by (simp add: bit_phase_flip_channel_eq)
+
+
+(* ============================================================================
+   DAY 59
+   Topic: Pauli product identities
+
+   The Pauli matrices satisfy
+     X Y =  i Z,  Y Z =  i X,  Z X =  i Y,
+   the structure relations of the Lie algebra su(2).
+   Each is a direct 2x2 computation.
+   ============================================================================ *)
+
+lemma pauli_X_times_pauli_Y: "pauli_X * pauli_Y = \<i> \<cdot>\<^sub>m pauli_Z"
+proof (rule eq_matI)
+  show "dim_row (pauli_X * pauli_Y) = dim_row (\<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col (pauli_X * pauli_Y) = dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Z)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
+  hence ij: "i < 2" "j < 2" by (simp_all add: pauli_Z_def)
+  show "(pauli_X * pauli_Y) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_Z) $$ (i, j)"
+    using ij
+    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    sorry
+qed
+
+lemma pauli_Y_times_pauli_Z: "pauli_Y * pauli_Z = \<i> \<cdot>\<^sub>m pauli_X"
+proof (rule eq_matI)
+  show "dim_row (pauli_Y * pauli_Z) = dim_row (\<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
+  show "dim_col (pauli_Y * pauli_Z) = dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
+next
+  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_X)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
+  hence ij: "i < 2" "j < 2" by (simp_all add: pauli_X_def)
+  show "(pauli_Y * pauli_Z) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_X) $$ (i, j)"
+    using ij
+    unfolding pauli_Y_def pauli_Z_def pauli_X_def scalar_prod_def
+    sorry
+qed
+
+lemma pauli_Z_times_pauli_X: "pauli_Z * pauli_X = \<i> \<cdot>\<^sub>m pauli_Y"
+proof (rule eq_matI)
+  show "dim_row (pauli_Z * pauli_X) = dim_row (\<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
+  show "dim_col (pauli_Z * pauli_X) = dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
+next
+  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Y)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
+  hence ij: "i < 2" "j < 2" by (simp_all add: pauli_Y_def)
+  show "(pauli_Z * pauli_X) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_Y) $$ (i, j)"
+    using ij
+    unfolding pauli_Z_def pauli_X_def pauli_Y_def scalar_prod_def
+    sorry
+qed
 
 
 end
