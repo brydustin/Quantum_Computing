@@ -10629,4 +10629,39 @@ lemma kraus_is_cptp:
   by simp
 
 
+(* ============================================================================
+   DAY 49
+   Topic: Pauli singleton Kraus maps are CPTP
+
+   Specialise kraus_is_cptp to each Pauli matrix to obtain that
+   the conjugation channel \<rho> \<mapsto> P \<rho> P^dagger is CPTP for
+   P \<in> {X, Y, Z}.  Each kraus_map_dim 2 [P] inherits CPTP membership
+   directly from the Day-47 / Day-48 plumbing.
+   ============================================================================ *)
+
+lemma pauli_X_kraus_map_CPTP:
+  "kraus_map_dim 2 [pauli_X] \<in> CPTP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using kraus_is_cptp[OF pauli_X_kraus_operators npos npos] .
+qed
+
+lemma pauli_Y_kraus_map_CPTP:
+  "kraus_map_dim 2 [pauli_Y] \<in> CPTP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using kraus_is_cptp[OF pauli_Y_kraus_operators npos npos] .
+qed
+
+lemma pauli_Z_kraus_map_CPTP:
+  "kraus_map_dim 2 [pauli_Z] \<in> CPTP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using kraus_is_cptp[OF pauli_Z_kraus_operators npos npos] .
+qed
+
+
 end
