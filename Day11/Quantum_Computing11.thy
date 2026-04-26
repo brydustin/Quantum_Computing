@@ -10962,4 +10962,71 @@ lemma unitary_conj_channel_identity_op_eq:
      (simp add: unitary_conj_channel_identity_op identity_channel_def)
 
 
+(* ============================================================================
+   DAY 55
+   Topic: Maximally mixed state is a density matrix
+
+   maximally_mixed_state n = (1/n) . I_n.  For n > 0 this is psd
+   (scalar multiple of the identity, which is psd as a projection)
+   and has trace 1.
+   ============================================================================ *)
+
+definition maximally_mixed_state :: "nat \<Rightarrow> complex Matrix.mat" where
+  "maximally_mixed_state n \<equiv> complex_of_real (1 / real n) \<cdot>\<^sub>m (1\<^sub>m n)"
+
+lemma maximally_mixed_state_carrier [simp]:
+  "maximally_mixed_state n \<in> carrier_mat n n"
+  by (simp add: maximally_mixed_state_def)
+
+lemma Tr_one_mat:
+  "Tr (1\<^sub>m n :: complex Matrix.mat) = of_nat n"
+proof -
+  have "Tr (1\<^sub>m n :: complex Matrix.mat)
+          = (\<Sum>r < n. if r < n then (1\<^sub>m n :: complex Matrix.mat) $$ (r, r)
+                       else 0)"
+    by (simp add: Tr_def)
+  also have "\<dots> = (\<Sum>r < n. (1 :: complex))" by simp
+  also have "\<dots> = of_nat n" by simp
+  finally show ?thesis .
+qed
+
+lemma maximally_mixed_state_trace:
+  assumes npos: "0 < n"
+  shows "Tr (maximally_mixed_state n) = 1"
+proof -
+  have "Tr (maximally_mixed_state n)
+          = complex_of_real (1 / real n) * Tr (1\<^sub>m n :: complex Matrix.mat)"
+    unfolding maximally_mixed_state_def by (rule Tr_smult)
+  also have "\<dots> = complex_of_real (1 / real n) * of_nat n"
+    by (simp add: Tr_one_mat)
+  also have "\<dots> = complex_of_real (1 / real n * real n)"
+    by (simp add: of_real_mult)
+  also have "\<dots> = complex_of_real 1"
+    using npos by simp
+  also have "\<dots> = 1" by simp
+  finally show ?thesis .
+qed
+
+lemma maximally_mixed_state_psd:
+  "psd (maximally_mixed_state n)"
+proof -
+  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+  have I_psd: "psd (1\<^sub>m n :: complex Matrix.mat)"
+    using projection_psd[OF projection_one] .
+  have nn: "(0 :: real) \<le> 1 / real n"
+    by (cases n) auto
+  show ?thesis
+    unfolding maximally_mixed_state_def
+    using nn I_psd I_c by (rule psd_smult_nonneg)
+qed
+
+lemma maximally_mixed_state_density_matrix:
+  assumes npos: "0 < n"
+  shows "density_matrix n (maximally_mixed_state n)"
+  unfolding density_matrix_def
+  using maximally_mixed_state_carrier maximally_mixed_state_psd
+        maximally_mixed_state_trace[OF npos]
+  by blast
+
+
 end
