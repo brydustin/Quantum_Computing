@@ -9588,4 +9588,167 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 38
+   Topic: Phase-Flip Channel
+
+   The phase-flip channel applies Pauli-Z with probability \<open>p\<close>:
+   \<open>phase_flip_channel p \<rho> = (1-p) \<sqdot> \<rho> + p \<sqdot> Z \<rho> Z\<^sup>\<dagger>\<close>.
+   It is the Z-analogue of \<open>bit_flip_channel\<close>; the same proof skeleton
+   gives carrier preservation, trace preservation and PSD preservation.
+   ============================================================================ *)
+
+definition phase_flip_channel ::
+  "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "phase_flip_channel p \<rho> \<equiv>
+     complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
+     + complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))"
+
+lemma phase_flip_channel_carrier:
+  assumes "\<rho> \<in> carrier_mat 2 2"
+  shows "phase_flip_channel p \<rho> \<in> carrier_mat 2 2"
+proof -
+  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
+  have zd_c: "pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using z_c by (rule dagger_carrier)
+  have z\<rho>_c: "pauli_Z * \<rho> \<in> carrier_mat 2 2"
+    using z_c assms by (rule mult_carrier_mat)
+  have z\<rho>zd_c: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using z\<rho>_c zd_c by (rule mult_carrier_mat)
+  show ?thesis
+    using assms z\<rho>zd_c by (auto simp: phase_flip_channel_def)
+qed
+
+lemma phase_flip_channel_trace_preserving:
+  fixes p :: real
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat 2 2"
+  shows "Tr (phase_flip_channel p \<rho>) = Tr \<rho>"
+proof -
+  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
+  have zd_c: "pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using z_c by (rule dagger_carrier)
+  have z\<rho>_c: "pauli_Z * \<rho> \<in> carrier_mat 2 2"
+    using z_c \<rho>_c by (rule mult_carrier_mat)
+  have z\<rho>zd_c: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using z\<rho>_c zd_c by (rule mult_carrier_mat)
+  have zdz_eq: "(pauli_Z\<^sup>\<dagger>) * pauli_Z = 1\<^sub>m 2"
+    using pauli_Z_dagger pauli_Z_squared by simp
+
+  have tr_conj: "Tr (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)) = Tr \<rho>"
+  proof -
+    have "Tr (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)) = Tr (pauli_Z\<^sup>\<dagger> * (pauli_Z * \<rho>))"
+    proof (rule Tr_cyclic)
+      show "dim_col (pauli_Z * \<rho>) = dim_row (pauli_Z\<^sup>\<dagger>)"
+        using z\<rho>_c zd_c by (metis carrier_matD)
+      show "dim_row (pauli_Z * \<rho>) = dim_col (pauli_Z\<^sup>\<dagger>)"
+        using z\<rho>_c zd_c by (metis carrier_matD)
+    qed
+    also have "\<dots> = Tr ((pauli_Z\<^sup>\<dagger> * pauli_Z) * \<rho>)"
+      by (metis zd_c z_c \<rho>_c assoc_mult_mat)
+    also have "\<dots> = Tr ((1\<^sub>m 2) * \<rho>)" using zdz_eq by simp
+    also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
+    finally show ?thesis .
+  qed
+
+  have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+                  = dim_row (complex_of_real p
+                              \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+    using \<rho>_c z\<rho>zd_c by (metis carrier_matD index_smult_mat)
+  have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+                  = dim_col (complex_of_real p
+                              \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+    using \<rho>_c z\<rho>zd_c by (metis carrier_matD index_smult_mat)
+  have "Tr (phase_flip_channel p \<rho>)
+          = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+            + Tr (complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+    unfolding phase_flip_channel_def
+    using row_eq col_eq by (rule Tr_add)
+  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
+                  + complex_of_real p * Tr (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))"
+    by (simp add: Tr_smult)
+  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
+                  + complex_of_real p * Tr \<rho>"
+    using tr_conj by simp
+  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) * Tr \<rho>"
+    by (simp add: ring_distribs)
+  also have "\<dots> = 1 * Tr \<rho>" by simp
+  also have "\<dots> = Tr \<rho>" by simp
+  finally show ?thesis .
+qed
+
+lemma phase_flip_channel_psd:
+  fixes p :: real
+  assumes p_nn:    "0 \<le> p"
+      and p_le_1:  "p \<le> 1"
+      and \<rho>_c:    "\<rho> \<in> carrier_mat 2 2"
+      and \<rho>_psd:  "psd \<rho>"
+  shows "psd (phase_flip_channel p \<rho>)"
+proof -
+  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
+  have zd_c: "pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using z_c by (rule dagger_carrier)
+  have z\<rho>_c: "pauli_Z * \<rho> \<in> carrier_mat 2 2"
+    using z_c \<rho>_c by (rule mult_carrier_mat)
+  have z\<rho>zd_c: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using z\<rho>_c zd_c by (rule mult_carrier_mat)
+  have one_minus_nn: "0 \<le> 1 - p" using p_le_1 by simp
+
+  have conj_psd: "psd (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))"
+  proof -
+    obtain Q where Q_c:    "Q \<in> carrier_mat 2 2"
+               and Q_psd:  "psd Q"
+               and Q_sq:   "Q * Q = \<rho>"
+      using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
+    have Q_dagger: "Q\<^sup>\<dagger> = Q"
+      using Q_psd by (simp add: psd_def hermitian_def)
+    have ZQ_c: "pauli_Z * Q \<in> carrier_mat 2 2"
+      using z_c Q_c by (rule mult_carrier_mat)
+    have ZQd_c: "(pauli_Z * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
+      using ZQ_c by (rule dagger_carrier)
+    have eq: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) = (pauli_Z * Q) * ((pauli_Z * Q)\<^sup>\<dagger>)"
+    proof -
+      have dim_eq: "dim_col pauli_Z = dim_row Q"
+        using z_c Q_c by (metis carrier_matD)
+      have dagprod: "(pauli_Z * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (pauli_Z\<^sup>\<dagger>)"
+        using dim_eq by (rule dagger_of_prod)
+      hence dagprod': "(pauli_Z * Q)\<^sup>\<dagger> = Q * (pauli_Z\<^sup>\<dagger>)"
+        using Q_dagger by simp
+      have "(pauli_Z * Q) * ((pauli_Z * Q)\<^sup>\<dagger>)
+              = (pauli_Z * Q) * (Q * (pauli_Z\<^sup>\<dagger>))"
+        using dagprod' by simp
+      also have "\<dots> = pauli_Z * Q * Q * (pauli_Z\<^sup>\<dagger>)"
+        using z_c Q_c zd_c by (metis assoc_mult_mat mult_carrier_mat)
+      also have "\<dots> = pauli_Z * (Q * Q) * (pauli_Z\<^sup>\<dagger>)"
+        using z_c Q_c by (metis assoc_mult_mat)
+      also have "\<dots> = pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)"
+        using Q_sq by simp
+      finally show ?thesis by simp
+    qed
+    have psd_dd: "psd (((pauli_Z * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((pauli_Z * Q)\<^sup>\<dagger>))"
+      using psd_MdagM[OF ZQd_c] .
+    have dd_eq: "(pauli_Z * Q)\<^sup>\<dagger>\<^sup>\<dagger> = pauli_Z * Q"
+      using ZQ_c by (simp add: dagger_of_dagger_is_id)
+    have "psd ((pauli_Z * Q) * ((pauli_Z * Q)\<^sup>\<dagger>))"
+      using psd_dd dd_eq by simp
+    thus ?thesis using eq by simp
+  qed
+
+  have term1_psd: "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)"
+    using one_minus_nn \<rho>_psd \<rho>_c by (rule psd_smult_nonneg)
+  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+    using p_nn conj_psd z\<rho>zd_c by (rule psd_smult_nonneg)
+
+  have term1_c: "complex_of_real (1 - p) \<cdot>\<^sub>m \<rho> \<in> carrier_mat 2 2"
+    using \<rho>_c by simp
+  have term2_c: "complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))
+                   \<in> carrier_mat 2 2"
+    using z\<rho>zd_c by simp
+
+  have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
+              + complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+    using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
+  thus ?thesis by (simp add: phase_flip_channel_def)
+qed
+
+
 end
