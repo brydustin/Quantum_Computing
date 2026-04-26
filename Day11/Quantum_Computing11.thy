@@ -5980,12 +5980,12 @@ proof -
   proof -
     have zc: "0\<^sub>m n n \<in> carrier_mat n n" by auto
     have "f (0\<^sub>m n n) = f (0 \<cdot>\<^sub>m 0\<^sub>m n n)"
-      by (intro arg_cong[where f=f]) (rule eq_matI; auto)
+      by (intro arg_cong[where f=f]) (rule eq_matI, auto)
     also have "\<dots> = 0 \<cdot>\<^sub>m f (0\<^sub>m n n)"
       using f_smult[OF zc] by simp
     also have "\<dots> = 0\<^sub>m d d"
       using f_car[OF zc] by (intro eq_matI) auto
-    finally show ?thesis .
+    finally show ?thesis.
   qed
   \<comment> \<open>Key induction: for any list \<open>ps\<close> of valid pairs, \<open>f\<close> applied to the
      \<open>\<lambda>X. X\<close> pair-combination equals the \<open>f\<close> pair-combination.\<close>
@@ -6036,7 +6036,7 @@ proof -
         using Cons.IH[OF ps_valid'] by simp
       also have "\<dots> = pair_comb f A n d (p # ps)"
         by simp
-      finally show ?case .
+      finally show ?case.
     qed
   qed
   have ps_valid_full: "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
@@ -6044,8 +6044,8 @@ proof -
   have "f A = f (pair_comb (\<lambda>X. X) A n n (mat_unit_pairs n))"
     using pair_comb_id_reconstructs[OF A_car] by simp
   also have "\<dots> = pair_comb f A n d (mat_unit_pairs n)"
-    using gen[OF ps_valid_full] .
-  finally show ?thesis .
+    using gen[OF ps_valid_full].
+  finally show ?thesis.
 qed
 
 text \<open>Conjugation \<open>W E\<^sub>a\<^sub>b W\<^sup>\<dagger>\<close> has entry \<open>W\<^sub>i\<^sub>a\<cdot>\<^sup>\<dagger>W\<^sub>j\<^sub>b\<close>.\<close>
@@ -6072,7 +6072,7 @@ proof -
     using Wdag_c j_lt by auto
   have "(W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j)
       = Matrix.row (W * mat_unit a b n n) i \<bullet> Matrix.col (W\<^sup>\<dagger>) j"
-    using index_mult_mat(1)[OF i_WE j_Wdag] .
+    using index_mult_mat(1)[OF i_WE j_Wdag].
   also have "\<dots> = (\<Sum>p<n.
         Matrix.row (W * mat_unit a b n n) i $ p * Matrix.col (W\<^sup>\<dagger>) j $ p)"
     unfolding scalar_prod_def using dim_WE dim_W Wdag_c
@@ -6149,7 +6149,7 @@ proof -
     using b_lt by simp
   also have "(W\<^sup>\<dagger>) $$ (b, j) = cnj (W $$ (j, b))"
     using Wc b_lt j_lt by (simp add: dagger_def)
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 text \<open>Entry-wise formula for @{const kraus_map_dim} as a sum over the list.\<close>
@@ -6177,17 +6177,9 @@ next
   have IH: "kraus_map_dim d Ws \<rho> $$ (i, j) =
             sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
     using Cons.IH[OF Ws_c'] .
-  have "kraus_map_dim d (W # Ws) \<rho> $$ (i, j)
-      = (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>) $$ (i, j)"
-    by simp
-  also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j) + kraus_map_dim d Ws \<rho> $$ (i, j)"
-    using WrW_c rec_c i_lt j_lt by simp
-  also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)
-                + sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) Ws)"
-    using IH by simp
-  also have "\<dots> = sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) (W # Ws))"
-    by simp
-  finally show ?case .
+  show "kraus_map_dim d (W # Ws) \<rho> $$ (i, j)
+      = sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) (W # Ws))"
+    using IH WrW_c rec_c i_lt j_lt by simp
 qed
 
 text \<open>Entry-wise formula for @{const outer_sum} without orthonormality.\<close>
@@ -6222,7 +6214,7 @@ proof -
   qed
   also have "\<dots> = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) vs)"
     by (simp add: sum_list_sum_nth atLeast0LessThan)
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 text \<open>Kraus representation extracted from a psd Choi matrix: reshape each
@@ -6245,11 +6237,36 @@ lemma kraus_rep_of_psd_choi:
 proof -
   have P_car: "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
     by (simp add: choi_matrix_def)
+  (* Extract a length-aware psd factorisation of the Choi matrix.  We
+     spell out the existential elimination explicitly: obtain a
+     witness \<open>vs\<^sub>0\<close> from \<open>psd_kraus_decomp\<close>, decompose its
+     conjunctive predicate, and re-introduce \<open>vs\<close> with the three
+     named facts. *)
   obtain vs :: "complex Matrix.vec list"
     where vs_len: "length vs = n*d"
       and vs_dim: "\<forall>v \<in> set vs. dim_vec v = n*d"
       and vs_sum: "outer_sum (n*d) vs = choi_matrix n d \<Phi>"
-    using psd_kraus_decomp[OF P_car psdP] by blast
+  proof -
+    have ex_decomp:
+      "\<exists>vs :: complex Matrix.vec list.
+          length vs = n*d
+          \<and> (\<forall>v \<in> set vs. dim_vec v = n*d)
+          \<and> outer_sum (n*d) vs = choi_matrix n d \<Phi>"
+      using psd_kraus_decomp[OF P_car psdP] .
+    obtain vs\<^sub>0 :: "complex Matrix.vec list"
+      where vs\<^sub>0_props:
+        "length vs\<^sub>0 = n*d
+         \<and> (\<forall>v \<in> set vs\<^sub>0. dim_vec v = n*d)
+         \<and> outer_sum (n*d) vs\<^sub>0 = choi_matrix n d \<Phi>"
+      using ex_decomp by (elim exE)
+    from vs\<^sub>0_props
+    have len: "length vs\<^sub>0 = n*d"
+      and dim: "\<forall>v \<in> set vs\<^sub>0. dim_vec v = n*d"
+      and sum: "outer_sum (n*d) vs\<^sub>0 = choi_matrix n d \<Phi>"
+      by (rule conjunct1, rule conjunct1[OF conjunct2],
+          rule conjunct2[OF conjunct2])
+    show thesis using that[OF len dim sum] .
+  qed
   define Ws :: "complex Matrix.mat list" where
     "Ws = map (\<lambda>v. Matrix.mat d n (\<lambda>(i, a). v $ (a*d + i))) vs"
   have Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
@@ -6326,7 +6343,7 @@ proof -
       also have "\<dots> = kraus_map_dim d Ws (mat_unit a b n n) $$ (i, j)"
         using kraus_map_dim_entry_sum_list[OF Ws_c Eab_c i_lt j_lt] by simp
       finally show "\<Phi> (mat_unit a b n n) $$ (i, j) =
-                    kraus_map_dim d Ws (mat_unit a b n n) $$ (i, j)" .
+                    kraus_map_dim d Ws (mat_unit a b n n) $$ (i, j)".
     qed
   qed
 
@@ -6495,7 +6512,7 @@ next
             using W_eq Ws_c \<open>W \<in> set Ws\<close> by simp
           show "(W * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j) =
                 W $$ (i, a) * cnj (W $$ (j, b))"
-            using conjugation_mat_unit_entry[OF Wc_k a_lt b_lt i_lt j_lt] .
+            using conjugation_mat_unit_entry[OF Wc_k a_lt b_lt i_lt j_lt].
         qed
         have "sum_list (map (\<lambda>v. v $ (a*d + i) * cnj (v $ (b*d + j))) vs) =
               sum_list (map (\<lambda>W. W $$ (i, a) * cnj (W $$ (j, b))) Ws)"
@@ -6575,7 +6592,7 @@ next
 
   \<comment> \<open>Step 3: Transport CP from the Kraus representation back to \<open>\<Phi>\<close>.\<close>
   have kmd_cp: "completely_positive n d (kraus_map_dim d Ws)"
-    using kraus_cp_no_tp[OF Ws_c npos dpos] .
+    using kraus_cp_no_tp[OF Ws_c npos dpos].
   show "completely_positive n d \<Phi>"
     unfolding completely_positive_def p_positive_def
   proof (intro allI impI)
@@ -6605,7 +6622,7 @@ next
       have phi_kmd:
         "\<Phi> (block_of_mat n X (i div d) (j div d))
          = kraus_map_dim d Ws (block_of_mat n X (i div d) (j div d))"
-        using phi_eq[OF block_c] .
+        using phi_eq[OF block_c].
       show "amplification n d p \<Phi> X $$ (i, j) =
             amplification n d p (kraus_map_dim d Ws) X $$ (i, j)"
         using i_lt j_lt phi_kmd
@@ -6673,10 +6690,10 @@ next
   have WX_c: "W * \<rho> \<in> carrier_mat d n" using Wc X_c by auto
   have WXWd_c: "W * \<rho> * (W\<^sup>\<dagger>) \<in> carrier_mat d d" using WX_c Wdag_c by auto
   have km_c: "kraus_map_dim d Ws \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Ws_c' X_c] .
+    using kraus_map_dim_carrier[OF Ws_c' X_c].
   have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n" using Wdag_c Wc by auto
   have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
-    using sum_wdag_w_carrier[OF Ws_c'] .
+    using sum_wdag_w_carrier[OF Ws_c'].
   have sum_X_c: "sum_wdag_w n Ws * \<rho> \<in> carrier_mat n n"
     using sum_c X_c by auto
   have WdWX_c: "(W\<^sup>\<dagger>) * W * \<rho> \<in> carrier_mat n n"
@@ -6688,12 +6705,12 @@ next
     have "Tr (W * \<rho> * (W\<^sup>\<dagger>)) = Tr ((W\<^sup>\<dagger>) * (W * \<rho>))"
       using WX_c Wdag_c Wc X_c by (intro Tr_cyclic) auto
     also have "\<dots> = Tr ((W\<^sup>\<dagger>) * W * \<rho>)"
-      using Wdag_c Wc X_c by (simp add: assoc_mult_mat)
-    finally show ?thesis .
+      using Wdag_c Wc X_c by simp
+    finally show ?thesis.
   qed
 
   have IH: "Tr (kraus_map_dim d Ws \<rho>) = Tr (sum_wdag_w n Ws * \<rho>)"
-    using Cons.IH[OF Ws_c'] .
+    using Cons.IH[OF Ws_c'].
 
   have "Tr (kraus_map_dim d (W # Ws) \<rho>)
       = Tr (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)"
@@ -6731,10 +6748,10 @@ next
   have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d" using Wc by (rule dagger_carrier)
   have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n" using Wdag_c Wc by auto
   have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
-    using sum_wdag_w_carrier[OF Ws_c'] .
+    using sum_wdag_w_carrier[OF Ws_c'].
   have IH: "sum_wdag_w n Ws $$ (a, b) =
             sum_list (map (\<lambda>W. ((W\<^sup>\<dagger>) * W) $$ (a, b)) Ws)"
-    using Cons.IH[OF Ws_c'] .
+    using Cons.IH[OF Ws_c'].
   have "sum_wdag_w n (W # Ws) $$ (a, b)
       = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) $$ (a, b)"
     by (simp add: sum_wdag_w_Cons)
@@ -6781,7 +6798,7 @@ proof -
       show "Matrix.row M i $ k * Matrix.col ?E i $ k = M $$ (i, k) * ?E $$ (k, i)"
         using row col by simp
     qed
-    finally show "(M * ?E) $$ (i, i) = (\<Sum>k<n. M $$ (i, k) * ?E $$ (k, i))" .
+    finally show "(M * ?E) $$ (i, i) = (\<Sum>k<n. M $$ (i, k) * ?E $$ (k, i))".
   qed
   also have "\<dots> = (\<Sum>i<n.
         (\<Sum>k<n. M $$ (i, k) * (if k = a \<and> i = b then 1 else 0)))"
@@ -6797,7 +6814,7 @@ proof -
       case True
       have "(\<Sum>k<n. M $$ (i, k) * (if k = a \<and> i = b then 1 else 0))
           = (\<Sum>k<n. if k = a then M $$ (i, k) else 0)"
-        using True by (intro sum.cong refl) simp
+        using True by (intro sum.cong refl, simp)
       also have "\<dots> = M $$ (i, a)"
         using a_lt by simp
       finally show ?thesis using True by simp
@@ -6808,7 +6825,7 @@ proof -
   qed
   also have "\<dots> = M $$ (b, a)"
     using b_lt by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 theorem choi_kraus_cptp:
@@ -6885,12 +6902,12 @@ proof
     have "Tr (\<Phi> A) = Tr (kraus_map_dim d Ws A)"
       using phi_eq Ac by simp
     also have "\<dots> = Tr (sum_wdag_w n Ws * A)"
-      using Tr_kraus_map_dim_as_wdagw[OF Ws_c Ac] .
+      using Tr_kraus_map_dim_as_wdagw[OF Ws_c Ac].
     also have "\<dots> = Tr (1\<^sub>m n * A)"
       using Ws_sum by simp
     also have "\<dots> = Tr A"
       using Ac by simp
-    finally show "Tr (\<Phi> A) = Tr A" .
+    finally show "Tr (\<Phi> A) = Tr A".
   qed
 
   show "completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>"
@@ -6913,7 +6930,7 @@ next
   have sum_is_one: "sum_wdag_w n Ws = 1\<^sub>m n"
   proof (rule eq_matI)
     have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
-      using sum_wdag_w_carrier[OF Ws_c] .
+      using sum_wdag_w_carrier[OF Ws_c].
     show "dim_row (sum_wdag_w n Ws) = dim_row (1\<^sub>m n)"
       using sum_c by auto
     show "dim_col (sum_wdag_w n Ws) = dim_col (1\<^sub>m n)"
@@ -6926,7 +6943,7 @@ next
     let ?E = "mat_unit b a n n"
     have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
     have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
-      using sum_wdag_w_carrier[OF Ws_c] .
+      using sum_wdag_w_carrier[OF Ws_c].
     have one_c: "1\<^sub>m n \<in> carrier_mat n n" by simp
     \<comment> \<open>Pair both sides with the mat_unit (b,a) and compare through Tr.\<close>
     have lhs: "sum_wdag_w n Ws $$ (a, b) = Tr (sum_wdag_w n Ws * ?E)"
@@ -7081,7 +7098,7 @@ proof -
   also have "\<dots> = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}. (0 :: complex))"
     by (intro sum.cong refl) simp
   also have "\<dots> = 0" by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma hs_inner_prod_left_zero:
@@ -7097,7 +7114,7 @@ proof -
   also have "\<dots> = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}. (0 :: complex))"
     by (intro sum.cong refl) simp
   also have "\<dots> = 0" by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 (* Single-Kraus-term identity:
@@ -7235,7 +7252,7 @@ next
     using left_add by simp
   also have "\<dots> = \<langle>\<langle> kraus_adjoint_dim n (A # As) Y | X \<rangle>\<rangle>"
     by simp
-  finally show ?case .
+  finally show ?case.
 qed
 
 (* --------------------------------------------------------------------------
@@ -7288,7 +7305,7 @@ proof -
         "kraus_adjoint_dim n As (block_of_mat d X (i div n) (j div n)) =
          kraus_map_dim n Bs (block_of_mat d X (i div n) (j div n))"
         unfolding Bs_def
-        using kraus_adjoint_dim_as_kraus_map_dim[OF As_c B_c] .
+        using kraus_adjoint_dim_as_kraus_map_dim[OF As_c B_c].
       have lhs_index:
         "amplification d n p (kraus_adjoint_dim n As) X $$ (i,j)
            = (kraus_adjoint_dim n As)
