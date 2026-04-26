@@ -9349,8 +9349,22 @@ proof -
 qed
 
 
+(* ############################################################################
+   END OF PAULSEN'S NOTES (Day 34)
+
+   The original Quantum_Computing.thy contains lecture material up through
+   Day 34 (Knill-Laflamme conditions, mostly as `True` placeholders).
+   Everything from "Day 35" onward is NOT from Paulsen.  These sections
+   are bonus extensions written to exercise the developed machinery and
+   produce useful corollaries: standard quantum-information results
+   (channels, Pauli algebra, density-matrix preservation, etc.).  The
+   "Day NN" headers are continuation labels for our own organisation,
+   not Paulsen's lecture days.
+   ############################################################################ *)
+
+
 (* ============================================================================
-   DAY 35
+   DAY 35 (extension)
    Topic: Rank-One Projections from Unit Vectors
 
    For a unit vector \<psi> \<in> \<complex>\<^sup>n, the operator |\<psi>\<rangle>\<langle>\<psi>| =
