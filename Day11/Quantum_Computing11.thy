@@ -10509,4 +10509,84 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 47
+   Topic: Singleton Pauli lists are valid Kraus-operator lists
+
+   The singleton list [P], where P is a self-adjoint involution
+   (P^dagger = P, P^2 = I), satisfies the kraus_operators predicate
+   on M_2.  This recovers the Pauli channels' \<open>p = 1\<close> case as a
+   genuine Kraus map.
+   ============================================================================ *)
+
+lemma pauli_X_kraus_operators:
+  "kraus_operators 2 2 [pauli_X]"
+proof -
+  have X_c: "pauli_X \<in> carrier_mat 2 2" by simp
+  have X_dag: "pauli_X\<^sup>\<dagger> = pauli_X" by (rule pauli_X_dagger)
+  have X_sq: "pauli_X * pauli_X = 1\<^sub>m 2" by (rule pauli_X_squared)
+  have I_c: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
+  have all_in: "\<forall>W \<in> set [pauli_X]. W \<in> carrier_mat 2 2"
+    using X_c by simp
+  have step:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_X] (0\<^sub>m 2 2)
+       = pauli_X * pauli_X + 0\<^sub>m 2 2"
+    using X_dag by simp
+  also have "\<dots> = 1\<^sub>m 2 + 0\<^sub>m 2 2" using X_sq by simp
+  also have "\<dots> = 1\<^sub>m 2"
+    using I_c by (intro eq_matI) auto
+  finally have sum_eq:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_X] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
+  show ?thesis
+    unfolding kraus_operators_def
+    using all_in sum_eq by blast
+qed
+
+lemma pauli_Y_kraus_operators:
+  "kraus_operators 2 2 [pauli_Y]"
+proof -
+  have Y_c: "pauli_Y \<in> carrier_mat 2 2" by simp
+  have Y_dag: "pauli_Y\<^sup>\<dagger> = pauli_Y" by (rule pauli_Y_dagger)
+  have Y_sq: "pauli_Y * pauli_Y = 1\<^sub>m 2" by (rule pauli_Y_squared)
+  have I_c: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
+  have all_in: "\<forall>W \<in> set [pauli_Y]. W \<in> carrier_mat 2 2"
+    using Y_c by simp
+  have step:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Y] (0\<^sub>m 2 2)
+       = pauli_Y * pauli_Y + 0\<^sub>m 2 2"
+    using Y_dag by simp
+  also have "\<dots> = 1\<^sub>m 2 + 0\<^sub>m 2 2" using Y_sq by simp
+  also have "\<dots> = 1\<^sub>m 2"
+    using I_c by (intro eq_matI) auto
+  finally have sum_eq:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Y] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
+  show ?thesis
+    unfolding kraus_operators_def
+    using all_in sum_eq by blast
+qed
+
+lemma pauli_Z_kraus_operators:
+  "kraus_operators 2 2 [pauli_Z]"
+proof -
+  have Z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
+  have Z_dag: "pauli_Z\<^sup>\<dagger> = pauli_Z" by (rule pauli_Z_dagger)
+  have Z_sq: "pauli_Z * pauli_Z = 1\<^sub>m 2" by (rule pauli_Z_squared)
+  have I_c: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
+  have all_in: "\<forall>W \<in> set [pauli_Z]. W \<in> carrier_mat 2 2"
+    using Z_c by simp
+  have step:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Z] (0\<^sub>m 2 2)
+       = pauli_Z * pauli_Z + 0\<^sub>m 2 2"
+    using Z_dag by simp
+  also have "\<dots> = 1\<^sub>m 2 + 0\<^sub>m 2 2" using Z_sq by simp
+  also have "\<dots> = 1\<^sub>m 2"
+    using I_c by (intro eq_matI) auto
+  finally have sum_eq:
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Z] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
+  show ?thesis
+    unfolding kraus_operators_def
+    using all_in sum_eq by blast
+qed
+
+
 end
