@@ -3582,6 +3582,7 @@ theorem psd_kraus_decomp:
   assumes sq: "P \<in> carrier_mat n n"
       and pos: "psd P"
   shows "\<exists>vs :: complex Matrix.vec list.
+         length vs = n \<and>
          (\<forall>v \<in> set vs. dim_vec v = n) \<and>
          outer_sum n vs = P"
 proof -
@@ -3766,7 +3767,8 @@ proof -
       using P_eq by blast
     from stepA stepB show ?thesis by simp
   qed
-  show ?thesis using vs_dim decomp by blast
+  have vs_len: "length ?vs = n" by simp
+  show ?thesis using vs_len vs_dim decomp by blast
 qed
 (* Proof: By spectral theorem, P = U D U\<dagger> with D diagonal, real, non-negative entries.
    Set vᵢ = \<surd>(Dᵢᵢ) \<sqdot> Ueᵢ.  Then \<Sigma> |vᵢ\<rangle>\<langle>vᵢ| = U D U\<dagger> = P. *)

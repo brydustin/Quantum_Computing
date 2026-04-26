@@ -6239,13 +6239,15 @@ lemma kraus_rep_of_psd_choi:
       and dpos: "d > 0"
       and psdP: "psd (choi_matrix n d \<Phi>)"
   shows "\<exists>Ws :: complex Matrix.mat list.
+           length Ws = n * d \<and>
            (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
            (\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A)"
 proof -
   have P_car: "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
     by (simp add: choi_matrix_def)
   obtain vs :: "complex Matrix.vec list"
-    where vs_dim: "\<forall>v \<in> set vs. dim_vec v = n*d"
+    where vs_len: "length vs = n*d"
+      and vs_dim: "\<forall>v \<in> set vs. dim_vec v = n*d"
       and vs_sum: "outer_sum (n*d) vs = choi_matrix n d \<Phi>"
     using psd_kraus_decomp[OF P_car psdP] by blast
   define Ws :: "complex Matrix.mat list" where
@@ -6384,7 +6386,9 @@ proof -
       using lhs rhs comb_eq by simp
   qed
 
-  show ?thesis using Ws_c phi_eq by blast
+  have Ws_len: "length Ws = n * d"
+    using vs_len len_Ws by simp
+  show ?thesis using Ws_len Ws_c phi_eq by blast
 qed
 
 theorem choi_theorem:
@@ -6409,7 +6413,8 @@ next
   have P_car: "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
     by (simp add: choi_matrix_def)
   obtain vs :: "complex Matrix.vec list"
-    where vs_dim: "\<forall>v \<in> set vs. dim_vec v = n*d"
+    where vs_len: "length vs = n*d"
+      and vs_dim: "\<forall>v \<in> set vs. dim_vec v = n*d"
       and vs_sum: "outer_sum (n*d) vs = choi_matrix n d \<Phi>"
     using psd_kraus_decomp[OF P_car psdP] by blast
   define Ws :: "complex Matrix.mat list" where
@@ -7734,6 +7739,107 @@ definition choi_rank ::
 
 (* Choi-rank = rank(P_\<Phi>) is deferred; it relies on a matrix-rank predicate
    for complex matrices that has not been set up in this development. *)
+
+
+(* ============================================================================
+   DAY 21 \<mdash> 14 / Oct / 11
+   Topic: Kraus Rank Bound; Uniqueness of Minimal Kraus Representation
+   ============================================================================ *)
+
+(* --------------------------------------------------------------------------
+   1. Kraus rank bound.
+
+   For any CP map \<Phi>: M\<^sub>n \<rightarrow> M\<^sub>d, there is a Kraus representation with at
+   most \<open>n*d\<close> operators.  Indeed, \<open>P\<^sub>\<Phi> \<in> M\<^sub>n\<^sub>d\<close> is psd by
+   \<open>choi_theorem\<close>, hence factors as \<open>\<Sum>\<^sub>k v\<^sub>k v\<^sub>k\<^sup>\<dagger>\<close> with at most \<open>n*d\<close>
+   vectors (one per coordinate of an eigenbasis of P\<^sub>\<Phi>).  The
+   length-aware variants of \<open>psd_kraus_decomp\<close> and
+   \<open>kraus_rep_of_psd_choi\<close> directly give the bound.
+   -------------------------------------------------------------------------- *)
+
+corollary kraus_rank_bound:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n
+                      \<Longrightarrow> \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and cp:     "completely_positive n d \<Phi>"
+      and npos:   "0 < n"
+      and dpos:   "0 < d"
+  shows "\<exists>As :: complex Matrix.mat list.
+           length As \<le> n * d \<and>
+           (\<forall>A \<in> set As. A \<in> carrier_mat d n) \<and>
+           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X)"
+proof -
+  have psd_choi: "psd (choi_matrix n d \<Phi>)"
+    using choi_theorem[OF linear smult range npos dpos] cp by simp
+  obtain Ws :: "complex Matrix.mat list"
+    where Ws_len: "length Ws = n * d"
+      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Ws_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
+    using kraus_rep_of_psd_choi[OF linear smult range npos dpos psd_choi]
+    by blast
+  have Ws_len_le: "length Ws \<le> n * d" using Ws_len by simp
+  show ?thesis using Ws_len_le Ws_c Ws_eq by blast
+qed
+
+
+(* --------------------------------------------------------------------------
+   2. Trivial preservation: an injective linear map T : \<complex>\<^sup>r \<rightarrow> \<complex>\<^sup>m
+      gives an onto adjoint T\<^sup>\<dagger> : \<complex>\<^sup>m \<rightarrow> \<complex>\<^sup>r.
+
+   The Isabelle formalisation here is a thin wrapper: for any vector \<open>w\<close>
+   of dimension \<open>m\<close>, the value \<open>T\<^sup>\<dagger> w\<close> exists and lies in \<complex>\<^sup>r.
+   The deeper "onto" property (every \<open>h \<in> \<complex>\<^sup>r\<close> is hit) requires a
+   rank-nullity argument and is deferred.
+   -------------------------------------------------------------------------- *)
+
+lemma adjoint_image_in_dom:
+  fixes T :: "complex Matrix.mat"
+  assumes sq: "T \<in> carrier_mat m r"
+  shows "\<forall>w :: complex Matrix.vec. dim_vec w = m
+           \<longrightarrow> dim_vec (T\<^sup>\<dagger> *\<^sub>v w) = r"
+  using sq by auto
+
+
+(* --------------------------------------------------------------------------
+   3. Choi rank: bounded by \<open>n*d\<close>.
+
+   The set whose infimum defines \<open>choi_rank\<close> is non-empty (Day 21 above)
+   and consists of natural numbers, so the Inf is realised and bounded by
+   \<open>n*d\<close>.  This is the abstract content of the rank inequality
+   cr(\<Phi>) \<le> n d.
+   -------------------------------------------------------------------------- *)
+
+corollary choi_rank_le:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n
+                      \<Longrightarrow> \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and cp:     "completely_positive n d \<Phi>"
+      and npos:   "0 < n"
+      and dpos:   "0 < d"
+  shows "choi_rank n d \<Phi> \<le> n * d"
+proof -
+  obtain As where As_len: "length As \<le> n * d"
+              and As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+              and As_eq: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X"
+    using kraus_rank_bound[OF linear smult range cp npos dpos] by blast
+  have len_in:
+    "length As
+       \<in> { length Bs | Bs :: complex Matrix.mat list.
+              (\<forall>B \<in> set Bs. B \<in> carrier_mat d n)
+              \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Bs X) }"
+    using As_c As_eq by blast
+  have "Inf { length Bs | Bs :: complex Matrix.mat list.
+                 (\<forall>B \<in> set Bs. B \<in> carrier_mat d n)
+                 \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Bs X) }
+        \<le> length As"
+    using len_in by (intro cInf_lower) auto
+  also have "\<dots> \<le> n * d" using As_len .
+  finally show ?thesis unfolding choi_rank_def .
+qed
 
 
 end
