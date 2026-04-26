@@ -11255,7 +11255,7 @@ next
   show "(pauli_X * pauli_Y) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_Z) $$ (i, j)"
     using ij
     unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    sorry
+    by (cases i, cases j, (simp add: sumof2)+)
 qed
 
 lemma pauli_Y_times_pauli_Z: "pauli_Y * pauli_Z = \<i> \<cdot>\<^sub>m pauli_X"
@@ -11270,7 +11270,7 @@ next
   show "(pauli_Y * pauli_Z) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_X) $$ (i, j)"
     using ij
     unfolding pauli_Y_def pauli_Z_def pauli_X_def scalar_prod_def
-    sorry
+    by (cases i, cases j, (simp add: sumof2)+)
 qed
 
 lemma pauli_Z_times_pauli_X: "pauli_Z * pauli_X = \<i> \<cdot>\<^sub>m pauli_Y"
@@ -11285,7 +11285,7 @@ next
   show "(pauli_Z * pauli_X) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_Y) $$ (i, j)"
     using ij
     unfolding pauli_Z_def pauli_X_def pauli_Y_def scalar_prod_def
-    sorry
+    by (cases i, cases j, (simp add: sumof2)+)
 qed
 
 
