@@ -10047,4 +10047,83 @@ lemma identity_channel_compose_right:
   by (simp add: identity_channel_def)
 
 
+(* ============================================================================
+   DAY 42
+   Topic: More composition properties; unital composition
+
+   Building further on Day 41: unital channel composition, and the
+   identity-channel preservation properties.
+   ============================================================================ *)
+
+lemma compose_unital_map:
+  assumes F_un: "unital_map n n F"
+      and G_un: "unital_map n n G"
+  shows "unital_map n n (\<lambda>\<rho>. F (G \<rho>))"
+proof -
+  have G_one: "G (1\<^sub>m n) = 1\<^sub>m n"
+    using G_un by (simp add: unital_map_def)
+  have F_one: "F (1\<^sub>m n) = 1\<^sub>m n"
+    using F_un by (simp add: unital_map_def)
+  have "F (G (1\<^sub>m n)) = F (1\<^sub>m n)" using G_one by simp
+  also have "\<dots> = 1\<^sub>m n" using F_one by simp
+  finally show ?thesis by (simp add: unital_map_def)
+qed
+
+(* identity_channel is unital and trace-preserving. *)
+
+lemma identity_channel_unital: "unital_map n n identity_channel"
+  by (simp add: unital_map_def identity_channel_def)
+
+lemma identity_channel_trace_preserving_full:
+  "trace_preserving n identity_channel"
+  by (simp add: trace_preserving_def identity_channel_def)
+
+(* identity_channel is a UCP / CPTP map (taking its CP property as
+   self-evident from \<rho> \<mapsto> \<rho> being completely positive). *)
+
+lemma identity_channel_completely_positive:
+  assumes "0 < n"
+  shows "completely_positive n n identity_channel"
+proof -
+  have amp_eq:
+    "\<And>p X. 0 < p \<Longrightarrow> X \<in> carrier_mat (p*n) (p*n)
+      \<Longrightarrow> amplification n n p identity_channel X = X"
+  proof -
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume p_pos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+    show "amplification n n p identity_channel X = X"
+    proof (rule eq_matI)
+      show "dim_row (amplification n n p identity_channel X) = dim_row X"
+        using X_c by (simp add: amplification_def)
+      show "dim_col (amplification n n p identity_channel X) = dim_col X"
+        using X_c by (simp add: amplification_def)
+    next
+      fix i j
+      assume i: "i < dim_row X" and j: "j < dim_col X"
+      hence ij: "i < p*n" "j < p*n" using X_c by simp_all
+      have imodn: "i mod n < n" and jmodn: "j mod n < n"
+        using assms by simp_all
+      have iqn: "i div n < p" using ij(1) assms
+        by (simp add: less_mult_imp_div_less)
+      have jqn: "j div n < p" using ij(2) assms
+        by (simp add: less_mult_imp_div_less)
+      have idn: "i div n * n + i mod n = i" by simp
+      have jdn: "j div n * n + j mod n = j" by simp
+      have block_idx:
+        "block_of_mat n X (i div n) (j div n) $$ (i mod n, j mod n)
+         = X $$ (i, j)"
+        using imodn jmodn iqn jqn ij X_c
+        by (simp add: block_of_mat_def idn jdn)
+      show "amplification n n p identity_channel X $$ (i, j)
+              = X $$ (i, j)"
+        using ij block_idx
+        by (simp add: amplification_def identity_channel_def)
+    qed
+  qed
+  show ?thesis
+    unfolding completely_positive_def p_positive_def
+    using amp_eq by auto
+qed
+
+
 end
