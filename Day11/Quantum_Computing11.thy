@@ -10126,4 +10126,94 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 43
+   Topic: Kraus-map CP (without TP); unitary conjugation is CP
+
+   Extract a Kraus-map CP lemma without the trace-preserving condition
+   that \<open>kraus_is_cp\<close> imposes via \<open>kraus_operators\<close>.  Use it to give
+   single-Kraus-operator (\<rho> \<mapsto> U \<rho> U^dagger) CP, and assemble
+   identity_channel CPTP / UCP membership.
+   ============================================================================ *)
+
+lemma kraus_map_dim_is_cp:
+  fixes Ws :: "complex Matrix.mat list"
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "completely_positive n d (kraus_map_dim d Ws)"
+proof (unfold completely_positive_def p_positive_def, intro allI impI)
+  fix p :: nat and X :: "complex Matrix.mat"
+  assume ppos: "0 < p"
+     and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+     and X_psd: "psd X"
+  have lifted_c:
+    "\<forall>L \<in> set (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws). L \<in> carrier_mat (p*d) (p*n)"
+    using tensor_id_kraus_list_carrier[OF Ws_c] .
+  have amp_eq:
+    "amplification n d p (kraus_map_dim d Ws) X
+       = kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) X"
+    using amplification_kraus_map_dim[OF Ws_c X_c dpos npos] .
+  have psd_kr:
+    "psd (kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) X)"
+    using kraus_map_dim_psd[OF lifted_c X_c X_psd] .
+  show "psd (amplification n d p (kraus_map_dim d Ws) X)"
+    using amp_eq psd_kr by simp
+qed
+
+
+(* Single-operator conjugation \<rho> \<mapsto> U \<rho> U^dagger is CP. *)
+
+definition conjugation_channel ::
+  "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "conjugation_channel U \<rho> \<equiv> U * \<rho> * (U\<^sup>\<dagger>)"
+
+lemma conjugation_channel_eq_kraus:
+  assumes U_c: "U \<in> carrier_mat d n"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "conjugation_channel U \<rho> = kraus_map_dim d [U] \<rho>"
+proof -
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n d"
+    using U_c by (rule dagger_carrier)
+  have U\<rho>_c: "U * \<rho> \<in> carrier_mat d n"
+    using U_c \<rho>_c by (rule mult_carrier_mat)
+  have U\<rho>Ud_c: "U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat d d"
+    using U\<rho>_c Ud_c by (rule mult_carrier_mat)
+  have add_zero: "U * \<rho> * (U\<^sup>\<dagger>) + 0\<^sub>m d d = U * \<rho> * (U\<^sup>\<dagger>)"
+    using U\<rho>Ud_c by (intro eq_matI) auto
+  show ?thesis
+    unfolding conjugation_channel_def
+    by (simp add: add_zero)
+qed
+
+lemma conjugation_channel_cp:
+  assumes U_c: "U \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "completely_positive n d (kraus_map_dim d [U])"
+proof -
+  have Ws_c: "\<forall>W \<in> set [U]. W \<in> carrier_mat d n" using U_c by simp
+  show ?thesis using kraus_map_dim_is_cp[OF Ws_c npos dpos] .
+qed
+
+
+(* identity_channel is CPTP / UCP. *)
+
+lemma identity_channel_UCP:
+  assumes "0 < n"
+  shows "identity_channel \<in> UCP n n"
+  unfolding UCP_def
+  using identity_channel_completely_positive[OF assms]
+        identity_channel_unital
+  by simp
+
+lemma identity_channel_CPTP:
+  assumes "0 < n"
+  shows "identity_channel \<in> CPTP n n"
+  unfolding CPTP_def
+  using identity_channel_completely_positive[OF assms]
+        identity_channel_trace_preserving_full
+  by simp
+
+
 end
