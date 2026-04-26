@@ -9088,6 +9088,102 @@ definition shor_one :: "complex Matrix.vec" where
      (1 / (2 * sqrt 2) :: complex)
        \<cdot>\<^sub>v tensor_vec (tensor_vec v v) v"
 
+lemma shor_zero_dim [simp]: "dim_vec shor_zero = 8"
+  by (simp add: shor_zero_def Let_def, simp add: tensor_vec_dim)
+
+lemma shor_one_dim [simp]: "dim_vec shor_one = 8"
+  by (smt (verit, best) index_minus_vec(2) index_smult_vec(2) index_unit_vec(3) 
+      mult_2 mult_commute_abs numeral_Bit0 shor_one_def tensor_vec_dim)
+
+lemma shor_zero_carrier [simp]: "shor_zero \<in> carrier_vec 8"
+  by (simp add: carrier_dim_vec)
+
+lemma shor_one_carrier [simp]: "shor_one \<in> carrier_vec 8"
+  by (simp add: carrier_dim_vec)
+
+
+(* --------------------------------------------------------------------------
+   Projection operators.
+
+   A projection P on \<complex>\<^sup>n is a hermitian idempotent: P\<^sup>\<dagger> = P
+   and P * P = P.  These are the building blocks of the syndrome-recovery
+   construction (Days 33-34).
+   -------------------------------------------------------------------------- *)
+
+definition projection :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "projection n P \<equiv>
+     P \<in> carrier_mat n n \<and> hermitian P \<and> P * P = P"
+
+lemma projection_carrier:
+  "projection n P \<Longrightarrow> P \<in> carrier_mat n n"
+  by (simp add: projection_def)
+
+lemma projection_hermitian:
+  "projection n P \<Longrightarrow> hermitian P"
+  by (simp add: projection_def)
+
+lemma projection_idempotent:
+  "projection n P \<Longrightarrow> P * P = P"
+  by (simp add: projection_def)
+
+lemma projection_zero: "projection n (0\<^sub>m n n)"
+  by (auto simp: projection_def hermitian_def dagger_def)
+
+lemma projection_one: "projection n (1\<^sub>m n)"
+  by (auto simp: projection_def hermitian_def dagger_def)
+
+(* A projection is psd: it equals P\<^sup>\<dagger> P, which is psd by psd_MdagM. *)
+
+lemma projection_psd:
+  assumes "projection n P"
+  shows "psd P"
+proof -
+  have P_c: "P \<in> carrier_mat n n" using assms by (rule projection_carrier)
+  have P_h: "hermitian P" using assms by (rule projection_hermitian)
+  have P_idem: "P * P = P" using assms by (rule projection_idempotent)
+  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
+  have eq: "P = (P\<^sup>\<dagger>) * P" using P_dag P_idem by simp
+  have psd_PdP: "psd (P\<^sup>\<dagger> * P)"
+    using P_c by (rule psd_MdagM)
+  show ?thesis using eq psd_PdP by simp
+qed
+
+(* Complementary projection P0 = I - P, when P is a projection. *)
+
+lemma projection_complement_idempotent:
+  assumes "projection n P"
+  shows "(1\<^sub>m n - P) * (1\<^sub>m n - P) = 1\<^sub>m n - P"
+proof -
+  have P_c: "P \<in> carrier_mat n n"
+    using assms by (rule projection_carrier)
+
+  have P_idem: "P * P = P"
+    using assms by (rule projection_idempotent)
+
+  have P_one_l: "1\<^sub>m n * P = P"
+    using P_c by simp
+
+  have P_one_r: "P * 1\<^sub>m n = P"
+    using P_c by simp
+
+  have I_one: "(1\<^sub>m n :: complex Matrix.mat) * 1\<^sub>m n = 1\<^sub>m n"
+    by simp
+
+  have "(1\<^sub>m n - P) * (1\<^sub>m n - P) = (1\<^sub>m n) * (1\<^sub>m n - P) - P * (1\<^sub>m n - P)"
+    by (meson P_c minus_carrier_mat minus_mult_distrib_mat one_carrier_mat)
+  also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * P) - (P * (1\<^sub>m n) - P * P)"
+    by (metis P_c mult_minus_distrib_mat one_carrier_mat)
+  also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * P) - (P * (1\<^sub>m n)) + P * P"
+    using P_c by (simp add: algebra_simps, auto)
+  also have "... = (1\<^sub>m n - P) - P + P * P"
+    by (simp add: P_one_l P_one_r)
+  also have "... = (1\<^sub>m n - P) - P + P"
+    using P_idem by simp
+  also have "... = 1\<^sub>m n - P"
+    by auto
+  finally show ?thesis.
+qed
+
 
 (* --------------------------------------------------------------------------
    Bonus: classical-code helpers extending Day 29.
