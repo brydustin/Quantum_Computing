@@ -11029,4 +11029,103 @@ lemma maximally_mixed_state_density_matrix:
   by blast
 
 
+(* ============================================================================
+   DAY 56
+   Topic: unitary_conj_channel fixes commuting matrices; the
+   maximally mixed state is a fixed point of every unitary_conj_channel
+
+   Generalises the bit-flip / phase-flip commute fixed-point lemmas
+   to any unitary U on M_n.  Specialising to U I_n = I_n U (always)
+   shows that the maximally mixed state is preserved.
+   ============================================================================ *)
+
+lemma unitary_conj_commute:
+  fixes M :: "complex Matrix.mat"
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+      and M_c: "M \<in> carrier_mat n n"
+      and commute: "U * M = M * U"
+  shows "U * M * (U\<^sup>\<dagger>) = M"
+proof -
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using U_c by (rule dagger_carrier)
+  have UUd: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
+    using U_unit U_c by (auto simp: unitary_def)
+  have "U * M * (U\<^sup>\<dagger>) = (M * U) * (U\<^sup>\<dagger>)" using commute by simp
+  also have "\<dots> = M * (U * (U\<^sup>\<dagger>))"
+    using M_c U_c Ud_c by (metis assoc_mult_mat)
+  also have "\<dots> = M * (1\<^sub>m n)" using UUd by simp
+  also have "\<dots> = M" using M_c by simp
+  finally show ?thesis .
+qed
+
+lemma unitary_conj_channel_fixed_point_commute:
+  fixes p :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+      and M_c: "M \<in> carrier_mat n n"
+      and commute: "U * M = M * U"
+  shows "unitary_conj_channel U p M = M"
+proof -
+  have conj_eq: "U * M * (U\<^sup>\<dagger>) = M"
+    using unitary_conj_commute[OF U_c U_unit M_c commute] .
+  have "unitary_conj_channel U p M
+          = complex_of_real (1 - p) \<cdot>\<^sub>m M
+            + complex_of_real p \<cdot>\<^sub>m M"
+    unfolding unitary_conj_channel_def using conj_eq by simp
+  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) \<cdot>\<^sub>m M"
+    using M_c by (rule add_smult_distrib_right_mat[symmetric])
+  also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m M" by simp
+  also have "\<dots> = M" using M_c by (intro eq_matI) auto
+  finally show ?thesis .
+qed
+
+(* The maximally mixed state commutes with every U \<in> M_n: scalar
+   matrices commute with everything. *)
+
+lemma maximally_mixed_state_commutes:
+  fixes U :: "complex Matrix.mat"
+  assumes U_c: "U \<in> carrier_mat n n"
+  shows "U * maximally_mixed_state n = maximally_mixed_state n * U"
+proof -
+  let ?c = "complex_of_real (1 / real n)"
+  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+  have UI: "U * (1\<^sub>m n) = U" using U_c by simp
+  have IU: "(1\<^sub>m n) * U = U" using U_c by simp
+  have l: "U * maximally_mixed_state n = ?c \<cdot>\<^sub>m U"
+  proof -
+    have "U * maximally_mixed_state n = U * (?c \<cdot>\<^sub>m (1\<^sub>m n))"
+      by (simp add: maximally_mixed_state_def)
+    also have "\<dots> = ?c \<cdot>\<^sub>m (U * 1\<^sub>m n)"
+      using U_c I_c by (metis mult_smult_distrib)
+    also have "\<dots> = ?c \<cdot>\<^sub>m U" using UI by simp
+    finally show ?thesis .
+  qed
+  have r: "maximally_mixed_state n * U = ?c \<cdot>\<^sub>m U"
+  proof -
+    have "maximally_mixed_state n * U = (?c \<cdot>\<^sub>m (1\<^sub>m n)) * U"
+      by (simp add: maximally_mixed_state_def)
+    also have "\<dots> = ?c \<cdot>\<^sub>m ((1\<^sub>m n) * U)"
+      using I_c U_c by (metis mult_smult_assoc_mat)
+    also have "\<dots> = ?c \<cdot>\<^sub>m U" using IU by simp
+    finally show ?thesis .
+  qed
+  show ?thesis using l r by simp
+qed
+
+lemma unitary_conj_channel_fixes_max_mixed:
+  fixes p :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+  shows "unitary_conj_channel U p (maximally_mixed_state n)
+         = maximally_mixed_state n"
+proof -
+  have M_c: "maximally_mixed_state n \<in> carrier_mat n n" by simp
+  have commute:
+    "U * maximally_mixed_state n = maximally_mixed_state n * U"
+    using maximally_mixed_state_commutes[OF U_c] .
+  show ?thesis
+    using unitary_conj_channel_fixed_point_commute[OF U_c U_unit M_c commute] .
+qed
+
+
 end
