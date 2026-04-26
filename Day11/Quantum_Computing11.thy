@@ -8698,6 +8698,86 @@ proof -
   finally show ?thesis .
 qed
 
+(* The bit-flip channel preserves PSD: convex combination of two PSD
+   matrices, where X . rho . X^dagger is PSD via X^2 = I. *)
+
+lemma bit_flip_channel_psd:
+  fixes p :: real
+  assumes p_nn:    "0 \<le> p"
+      and p_le_1:  "p \<le> 1"
+      and \<rho>_c:    "\<rho> \<in> carrier_mat 2 2"
+      and \<rho>_psd:  "psd \<rho>"
+  shows "psd (bit_flip_channel p \<rho>)"
+proof -
+  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using x_c by (rule dagger_carrier)
+  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+    using x_c \<rho>_c by (rule mult_carrier_mat)
+  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using x\<rho>_c xd_c by (rule mult_carrier_mat)
+
+  have one_minus_nn: "0 \<le> 1 - p" using p_le_1 by simp
+
+  (* X . \<rho> . X^dagger is PSD: factor \<rho> = Q*Q via the psd-sqrt, then
+     X . Q*Q . X^dagger = (X Q) (X Q)^dagger which is psd by psd_MdagM. *)
+  have conj_psd: "psd (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+  proof -
+    obtain Q where Q_c:    "Q \<in> carrier_mat 2 2"
+               and Q_psd:  "psd Q"
+               and Q_sq:   "Q * Q = \<rho>"
+      using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
+    have Q_dagger: "Q\<^sup>\<dagger> = Q"
+      using Q_psd by (simp add: psd_def hermitian_def)
+    have XQ_c: "pauli_X * Q \<in> carrier_mat 2 2"
+      using x_c Q_c by (rule mult_carrier_mat)
+    have XQd_c: "(pauli_X * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
+      using XQ_c by (rule dagger_carrier)
+    have eq: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) = (pauli_X * Q) * ((pauli_X * Q)\<^sup>\<dagger>)"
+    proof -
+      have dim_eq: "dim_col pauli_X = dim_row Q"
+        using x_c Q_c by (metis carrier_matD)
+      have dagprod: "(pauli_X * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (pauli_X\<^sup>\<dagger>)"
+        using dim_eq by (rule dagger_of_prod)
+      hence dagprod': "(pauli_X * Q)\<^sup>\<dagger> = Q * (pauli_X\<^sup>\<dagger>)"
+        using Q_dagger by simp
+      have "(pauli_X * Q) * ((pauli_X * Q)\<^sup>\<dagger>)
+              = (pauli_X * Q) * (Q * (pauli_X\<^sup>\<dagger>))"
+        using dagprod' by simp
+      also have "\<dots> = pauli_X * Q * Q * (pauli_X\<^sup>\<dagger>)"
+        using x_c Q_c xd_c by (metis assoc_mult_mat mult_carrier_mat)
+      also have "\<dots> = pauli_X * (Q * Q) * (pauli_X\<^sup>\<dagger>)"
+        using x_c Q_c by (metis assoc_mult_mat)
+      also have "\<dots> = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+        using Q_sq by simp
+      finally show ?thesis by simp
+    qed
+    have psd_dd: "psd (((pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((pauli_X * Q)\<^sup>\<dagger>))"
+      using psd_MdagM[OF XQd_c] .
+    have dd_eq: "(pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger> = pauli_X * Q"
+      using XQ_c by (simp add: dagger_of_dagger_is_id)
+    have "psd ((pauli_X * Q) * ((pauli_X * Q)\<^sup>\<dagger>))"
+      using psd_dd dd_eq by simp
+    thus ?thesis using eq by simp
+  qed
+
+  have term1_psd: "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)"
+    using one_minus_nn \<rho>_psd \<rho>_c by (rule psd_smult_nonneg)
+  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+    using p_nn conj_psd x\<rho>xd_c by (rule psd_smult_nonneg)
+
+  have term1_c: "complex_of_real (1 - p) \<cdot>\<^sub>m \<rho> \<in> carrier_mat 2 2"
+    using \<rho>_c by simp
+  have term2_c: "complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))
+                   \<in> carrier_mat 2 2"
+    using x\<rho>xd_c by simp
+
+  have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
+              + complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+    using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
+  thus ?thesis by (simp add: bit_flip_channel_def)
+qed
+
 
 (* ============================================================================
    DAY 31 \<mdash> 11 / Nov / 11
