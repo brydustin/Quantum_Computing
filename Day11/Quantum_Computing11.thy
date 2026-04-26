@@ -7466,6 +7466,65 @@ qed
    \<langle>v | \<phi>\<^sup>(\<^sup>r\<^sup>)(P) v\<rangle> = \<phi>(Y\<^sup>* P Y) \<ge> 0.
    -------------------------------------------------------------------------- *)
 
+(* Linearity-over-double-sum: a linear map evaluated at a matrix M
+   produces an entry-wise double sum over the matrix-unit basis. *)
+
+lemma phi_entry_double_sum:
+  fixes \<phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes f_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
+                    \<Longrightarrow> \<phi> (X + Y) = \<phi> X + \<phi> Y"
+      and f_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> \<phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<phi> X"
+      and f_car: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<phi> X \<in> carrier_mat d d"
+      and M_c: "M \<in> carrier_mat n n"
+      and r_lt: "r < d" and c_lt: "c < d"
+      and npos: "0 < n" and dpos: "0 < d"
+  shows "\<phi> M $$ (r, c) =
+         (\<Sum>i<n. \<Sum>j<n. M $$ (i, j) * \<phi> (mat_unit i j n n) $$ (r, c))"
+proof -
+  have ps_valid: "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
+    using mat_unit_pairs_set by auto
+  have phi_pc: "\<phi> M = pair_comb \<phi> M n d (mat_unit_pairs n)"
+    using linear_eq_pair_comb[OF f_add f_smult f_car M_c npos dpos] .
+  have fE_car: "\<And>a b. a < n \<Longrightarrow> b < n
+                  \<Longrightarrow> \<phi> (mat_unit a b n n) \<in> carrier_mat d d"
+  proof -
+    fix a b :: nat
+    assume "a < n" "b < n"
+    have "mat_unit a b n n \<in> carrier_mat n n"
+      by (simp add: mat_unit_def)
+    thus "\<phi> (mat_unit a b n n) \<in> carrier_mat d d"
+      using f_car by blast
+  qed
+
+  let ?term = "\<lambda>p. M $$ p * \<phi> (mat_unit (fst p) (snd p) n n) $$ (r, c)"
+  have entry_eq:
+    "\<phi> M $$ (r, c) = (\<Sum>p \<leftarrow> mat_unit_pairs n. ?term p)"
+  proof -
+    have pc_entry:
+      "pair_comb \<phi> M n d (mat_unit_pairs n) $$ (r, c)
+         = (\<Sum>p \<leftarrow> mat_unit_pairs n. ?term p)"
+    proof (rule pair_comb_entry)
+      fix a b :: nat
+      assume "a < n" "b < n"
+      thus "\<phi> (mat_unit a b n n) \<in> carrier_mat d d"
+        using fE_car by blast
+    qed (use ps_valid r_lt c_lt in auto)
+    show ?thesis using pc_entry phi_pc by simp
+  qed
+  also have "\<dots> = (\<Sum>p \<in> set (mat_unit_pairs n). ?term p)"
+    using mat_unit_pairs_distinct
+    by (rule sum_list_distinct_conv_sum_set)
+  also have "\<dots> = (\<Sum>p \<in> {0..<n} \<times> {0..<n}. ?term p)"
+    using mat_unit_pairs_set
+    by (intro sum.cong) (auto)
+  also have "\<dots> = (\<Sum>i \<in> {0..<n}. \<Sum>j \<in> {0..<n}. ?term (i, j))"
+    by (simp add: sum.cartesian_product')
+  also have "\<dots> = (\<Sum>i<n. \<Sum>j<n.
+                    M $$ (i, j) * \<phi> (mat_unit i j n n) $$ (r, c))"
+    by (simp add: atLeast0LessThan)
+  finally show ?thesis.
+qed
+
 theorem positive_scalar_is_cp:
   fixes \<phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n
@@ -7475,9 +7534,188 @@ theorem positive_scalar_is_cp:
       and pos:    "positive_map n 1 \<phi>"
       and npos:   "0 < n"
   shows "completely_positive n 1 \<phi>"
-  sorry (* See comment block above; construction of Y and application of
-           positivity of \<phi>.  Needs a way to index into M\<^sub>r(M\<^sub>n) blocks \<mdash>
-           \<open>block_of_mat\<close> is already defined and can supply P\<^sub>i\<^sub>j. *)
+proof -
+  let ?P = "choi_matrix n 1 \<phi>"
+  have one_pos: "(0 :: nat) < 1" by simp
+  have P_n: "?P \<in> carrier_mat n n"
+    by (simp add: choi_matrix_def)
+  have P_entry: "\<And>a b. a < n \<Longrightarrow> b < n
+                    \<Longrightarrow> ?P $$ (a, b) = \<phi> (mat_unit a b n n) $$ (0, 0)"
+    by (simp add: choi_matrix_def)
+  have range': "\<And>A. A \<in> carrier_mat n n \<Longrightarrow> \<phi> A \<in> carrier_mat 1 1"
+    using range by blast
+
+  (* For arbitrary x \<in> \<complex>\<^sup>n, express \<langle>x | P x\<rangle> as \<phi>(\<rho>\<^sub>x) $$ (0,0)
+     where \<rho>\<^sub>x is rank-one psd. *)
+  have quad_real_nonneg:
+    "\<And>x :: complex Matrix.vec. dim_vec x = n \<Longrightarrow>
+       \<langle>x | ?P *\<^sub>v x\<rangle> \<in> \<real> \<and> Re (\<langle>x | ?P *\<^sub>v x\<rangle>) \<ge> 0"
+  proof -
+    fix x :: "complex Matrix.vec"
+    assume xdim: "dim_vec x = n"
+    let ?cx = "Matrix.vec n (\<lambda>i. cnj (x $ i))"
+    let ?Xx = "outer_sum n [?cx]"
+    have cx_dim: "dim_vec ?cx = n" by simp
+    have cx_set: "\<forall>v \<in> set [?cx]. dim_vec v = n" by simp
+    have Xx_c: "?Xx \<in> carrier_mat n n" by auto
+    have Xx_psd: "psd ?Xx"
+      using outer_sum_psd[where vs="[?cx]" and k=1 and n=n] cx_set by simp
+    have Xx_entry: "\<And>a b. a < n \<Longrightarrow> b < n
+                       \<Longrightarrow> ?Xx $$ (a, b) = cnj (x $ a) * x $ b"
+    proof -
+      fix a b assume a: "a < n" and b: "b < n"
+      have "?Xx $$ (a, b)
+              = sum_list (map (\<lambda>v. v $ a * cnj (v $ b)) [?cx])"
+        using outer_sum_entry_sum_list[OF cx_set a b] .
+      also have "\<dots> = ?cx $ a * cnj (?cx $ b)" by simp
+      also have "\<dots> = cnj (x $ a) * cnj (cnj (x $ b))"
+        using a b by simp
+      also have "\<dots> = cnj (x $ a) * x $ b" by simp
+      finally show "?Xx $$ (a, b) = cnj (x $ a) * x $ b" .
+    qed
+
+    have phiXx_c: "\<phi> ?Xx \<in> carrier_mat 1 1" using range' Xx_c by blast
+    have phiXx_psd: "psd (\<phi> ?Xx)"
+      using pos Xx_psd Xx_c by (auto simp: positive_map_def)
+
+    (* psd in M\<^sub>1: hermitian gives realness of (0,0) entry *)
+    have phiXx_real: "\<phi> ?Xx $$ (0, 0) \<in> \<real>"
+    proof -
+      have herm: "(\<phi> ?Xx)\<^sup>\<dagger> = \<phi> ?Xx"
+        using phiXx_psd by (simp add: psd_def hermitian_def)
+      have "(\<phi> ?Xx)\<^sup>\<dagger> $$ (0, 0) = cnj (\<phi> ?Xx $$ (0, 0))"
+        using phiXx_c by (simp add: dagger_def)
+      hence "cnj (\<phi> ?Xx $$ (0, 0)) = \<phi> ?Xx $$ (0, 0)" using herm by simp
+      thus ?thesis using Reals_cnj_iff by metis
+    qed
+
+    (* psd: \<langle>(1) | (\<phi> X\<^sub>x) (1)\<rangle> \<ge> 0 gives Re of (0,0) entry \<ge> 0 *)
+    have phiXx_nonneg: "Re (\<phi> ?Xx $$ (0, 0)) \<ge> 0"
+    proof -
+      let ?one = "Matrix.vec 1 (\<lambda>i. (1 :: complex))"
+      have one_dim: "dim_vec ?one = 1" by simp
+      have one_eq_dr: "dim_vec ?one = dim_row (\<phi> ?Xx)"
+        using phiXx_c by simp
+      have nn_quad: "Re (\<langle>?one | (\<phi> ?Xx) *\<^sub>v ?one\<rangle>) \<ge> 0"
+        using phiXx_psd one_eq_dr by (auto simp: psd_def)
+
+      (* \<langle>?one | M *_v ?one\<rangle> = M $$ (0,0) for M \<in> M\<^sub>1 *)
+      have prod_dim: "dim_vec ((\<phi> ?Xx) *\<^sub>v ?one) = 1"
+        using phiXx_c by simp
+      have prod_entry: "((\<phi> ?Xx) *\<^sub>v ?one) $ 0 = \<phi> ?Xx $$ (0, 0)"
+      proof -
+        have "((\<phi> ?Xx) *\<^sub>v ?one) $ 0
+                = (\<Sum>k<dim_col (\<phi> ?Xx). \<phi> ?Xx $$ (0, k) * ?one $ k)"
+          using phiXx_c
+          by (simp add: scalar_prod_def atLeast0LessThan)
+        also have "\<dots> = (\<Sum>k<1. \<phi> ?Xx $$ (0, k) * ?one $ k)"
+          using phiXx_c by simp
+        also have "\<dots> = \<phi> ?Xx $$ (0, 0) * ?one $ 0"
+          by simp
+        also have "\<dots> = \<phi> ?Xx $$ (0, 0)" by simp
+        finally show ?thesis .
+      qed
+      have inner_eq: "\<langle>?one | (\<phi> ?Xx) *\<^sub>v ?one\<rangle> = \<phi> ?Xx $$ (0, 0)"
+      proof -
+        have "\<langle>?one | (\<phi> ?Xx) *\<^sub>v ?one\<rangle>
+                = (\<Sum>i<dim_vec ((\<phi> ?Xx) *\<^sub>v ?one).
+                    cnj (?one $ i) * ((\<phi> ?Xx) *\<^sub>v ?one) $ i)"
+          by (simp add: inner_prod_def atLeast0LessThan)
+        also have "\<dots> = (\<Sum>i<1. cnj (?one $ i) * ((\<phi> ?Xx) *\<^sub>v ?one) $ i)"
+          using prod_dim by simp
+        also have "\<dots> = cnj (?one $ 0) * ((\<phi> ?Xx) *\<^sub>v ?one) $ 0" by simp
+        also have "\<dots> = \<phi> ?Xx $$ (0, 0)" using prod_entry by simp
+        finally show ?thesis .
+      qed
+      show ?thesis using nn_quad inner_eq by simp
+    qed
+
+    (* \<langle>x | P *\<^sub>v x\<rangle> equals \<phi>(\<rho>\<^sub>x) $$ (0,0) by linearity over the
+       matrix-unit basis. *)
+    have inner_lhs:
+      "\<langle>x | ?P *\<^sub>v x\<rangle>
+         = (\<Sum>i<n. \<Sum>j<n. cnj (x $ i) * x $ j * ?P $$ (i, j))"
+    proof -
+      have prod_dim: "dim_vec (?P *\<^sub>v x) = n" using P_n by simp
+      have "\<langle>x | ?P *\<^sub>v x\<rangle>
+              = (\<Sum>i<dim_vec (?P *\<^sub>v x).
+                   cnj (x $ i) * (?P *\<^sub>v x) $ i)"
+        by (simp add: inner_prod_def atLeast0LessThan)
+      also have "\<dots> = (\<Sum>i<n. cnj (x $ i) * (?P *\<^sub>v x) $ i)"
+        using prod_dim by simp
+      also have "\<dots> = (\<Sum>i<n. cnj (x $ i) *
+                          (\<Sum>j<n. ?P $$ (i, j) * x $ j))"
+      proof (intro sum.cong refl)
+        fix i assume i_in: "i \<in> {..<n}"
+        hence i_lt: "i < n" by simp
+        have "(?P *\<^sub>v x) $ i
+                = (\<Sum>j<dim_col ?P. ?P $$ (i, j) * x $ j)"
+          using i_lt P_n xdim
+          by (simp add: scalar_prod_def atLeast0LessThan)
+        also have "\<dots> = (\<Sum>j<n. ?P $$ (i, j) * x $ j)"
+          using P_n by simp
+        finally show "cnj (x $ i) * (?P *\<^sub>v x) $ i =
+                      cnj (x $ i) * (\<Sum>j<n. ?P $$ (i, j) * x $ j)" by simp
+      qed
+      also have "\<dots> = (\<Sum>i<n. \<Sum>j<n.
+                        cnj (x $ i) * x $ j * ?P $$ (i, j))"
+      proof (intro sum.cong refl)
+        fix i assume "i \<in> {..<n}"
+        have "cnj (x $ i) * (\<Sum>j<n. ?P $$ (i, j) * x $ j)
+                = (\<Sum>j<n. cnj (x $ i) * (?P $$ (i, j) * x $ j))"
+          by (simp add: sum_distrib_left)
+        also have "\<dots> = (\<Sum>j<n. cnj (x $ i) * x $ j * ?P $$ (i, j))"
+          by (metis (mono_tags, opaque_lifting) mult.commute mult.left_commute)
+        finally show "cnj (x $ i) * (\<Sum>j<n. ?P $$ (i, j) * x $ j)
+                       = (\<Sum>j<n. cnj (x $ i) * x $ j * ?P $$ (i, j))" .
+      qed
+      finally show ?thesis.
+    qed
+
+    have quad_eq: "\<langle>x | ?P *\<^sub>v x\<rangle> = \<phi> ?Xx $$ (0, 0)"
+    proof -
+      have phi_Xx_eq:
+        "\<phi> ?Xx $$ (0, 0) =
+           (\<Sum>i<n. \<Sum>j<n. ?Xx $$ (i, j) * \<phi> (mat_unit i j n n) $$ (0, 0))"
+        using phi_entry_double_sum[OF linear smult range' Xx_c
+                                       _ _ npos one_pos] by simp
+      have step:
+        "(\<Sum>i<n. \<Sum>j<n. cnj (x $ i) * x $ j * ?P $$ (i, j))
+         = (\<Sum>i<n. \<Sum>j<n. ?Xx $$ (i, j) * \<phi> (mat_unit i j n n) $$ (0, 0))"
+        using P_entry Xx_entry by (intro sum.cong refl, auto)        
+      show ?thesis using inner_lhs phi_Xx_eq step by simp
+    qed
+
+    show "\<langle>x | ?P *\<^sub>v x\<rangle> \<in> \<real> \<and> Re (\<langle>x | ?P *\<^sub>v x\<rangle>) \<ge> 0"
+      using quad_eq phiXx_real phiXx_nonneg by simp
+  qed
+
+  have psd_choi: "psd ?P"
+  proof -
+    have herm: "hermitian ?P"
+    proof -
+      have "\<forall>x :: complex Matrix.vec. dim_vec x = n
+              \<longrightarrow> \<langle>x | ?P *\<^sub>v x\<rangle> \<in> \<real>"
+        using quad_real_nonneg by blast
+      thus ?thesis
+        using P_n hermitian_iff_real_quad_form by metis
+    qed
+    have nonneg:
+      "\<forall>x :: complex Matrix.vec. dim_vec x = dim_row ?P
+         \<longrightarrow> Re (\<langle>x | ?P *\<^sub>v x\<rangle>) \<ge> 0"
+    proof (intro allI impI)
+      fix x :: "complex Matrix.vec"
+      assume "dim_vec x = dim_row ?P"
+      hence "dim_vec x = n" using P_n by simp
+      thus "Re (\<langle>x | ?P *\<^sub>v x\<rangle>) \<ge> 0"
+        using quad_real_nonneg by blast
+    qed
+    show ?thesis unfolding psd_def using herm nonneg P_n by simp
+  qed
+
+  show "completely_positive n 1 \<phi>"
+    using choi_theorem[OF linear smult range npos one_pos] psd_choi by simp
+qed
 
 (* --------------------------------------------------------------------------
    5. Choi rank.
