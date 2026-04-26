@@ -10920,4 +10920,46 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 54
+   Topic: unitary_conj_channel with U = I_n is trivial
+
+   The unitary-conjugation channel using the identity matrix is the
+   identity channel (regardless of p): both summands equal \<rho>, and
+   the convex coefficients sum to 1.
+   ============================================================================ *)
+
+lemma unitary_conj_channel_identity_op:
+  fixes p :: real
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "unitary_conj_channel (1\<^sub>m n) p \<rho> = \<rho>"
+proof -
+  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+  have I_dag: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m n"
+    by (intro eq_matI) (auto simp: dagger_def)
+  have I\<rho>I: "(1\<^sub>m n :: complex Matrix.mat) * \<rho> * ((1\<^sub>m n)\<^sup>\<dagger>) = \<rho>"
+    using \<rho>_c I_dag by simp
+  have "unitary_conj_channel (1\<^sub>m n) p \<rho>
+          = complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
+            + complex_of_real p \<cdot>\<^sub>m \<rho>"
+    unfolding unitary_conj_channel_def using I\<rho>I by simp
+  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) \<cdot>\<^sub>m \<rho>"
+    using \<rho>_c by (rule add_smult_distrib_right_mat[symmetric])
+  also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m \<rho>" by simp
+  also have "\<dots> = \<rho>" using \<rho>_c by (intro eq_matI) auto
+  finally show ?thesis .
+qed
+
+(* Corollary: as a function on M_n, unitary_conj_channel of I_n agrees
+   with identity_channel. *)
+
+lemma unitary_conj_channel_identity_op_eq:
+  fixes p :: real
+  shows "(\<lambda>\<rho>. if \<rho> \<in> carrier_mat n n
+              then unitary_conj_channel (1\<^sub>m n) p \<rho> else identity_channel \<rho>)
+         = identity_channel"
+  by (rule ext)
+     (simp add: unitary_conj_channel_identity_op identity_channel_def)
+
+
 end
