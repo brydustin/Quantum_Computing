@@ -10415,4 +10415,98 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 46
+   Topic: bit-flip, phase-flip, bit-phase-flip channels are CPTP / UCP
+
+   Each Pauli channel is a unitary_conj_channel applied to the
+   corresponding Pauli matrix.  Since X, Y, Z are all unitary in M_2,
+   the Day-45 result puts each in UCP 2 2 and CPTP 2 2 for p \<in> [0,1].
+   ============================================================================ *)
+
+lemma bit_flip_channel_eq:
+  "bit_flip_channel p = unitary_conj_channel pauli_X p"
+  by (rule ext) (simp add: bit_flip_eq_unitary_conj)
+
+lemma phase_flip_channel_eq:
+  "phase_flip_channel p = unitary_conj_channel pauli_Z p"
+  by (rule ext) (simp add: phase_flip_eq_unitary_conj)
+
+lemma bit_phase_flip_channel_eq:
+  "bit_phase_flip_channel p = unitary_conj_channel pauli_Y p"
+  by (rule ext) (simp add: bit_phase_flip_channel_def)
+
+lemma bit_flip_channel_UCP:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+  shows "bit_flip_channel p \<in> UCP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using unitary_conj_channel_in_UCP[OF pauli_X_carrier pauli_X_unitary
+                                         p_nn p_le npos]
+    by (simp add: bit_flip_channel_eq)
+qed
+
+lemma bit_flip_channel_CPTP:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+  shows "bit_flip_channel p \<in> CPTP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using unitary_conj_channel_in_CPTP[OF pauli_X_carrier pauli_X_unitary
+                                          p_nn p_le npos]
+    by (simp add: bit_flip_channel_eq)
+qed
+
+lemma phase_flip_channel_UCP:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+  shows "phase_flip_channel p \<in> UCP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using unitary_conj_channel_in_UCP[OF pauli_Z_carrier pauli_Z_unitary
+                                         p_nn p_le npos]
+    by (simp add: phase_flip_channel_eq)
+qed
+
+lemma phase_flip_channel_CPTP:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+  shows "phase_flip_channel p \<in> CPTP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using unitary_conj_channel_in_CPTP[OF pauli_Z_carrier pauli_Z_unitary
+                                          p_nn p_le npos]
+    by (simp add: phase_flip_channel_eq)
+qed
+
+lemma bit_phase_flip_channel_UCP:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+  shows "bit_phase_flip_channel p \<in> UCP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using unitary_conj_channel_in_UCP[OF pauli_Y_carrier pauli_Y_unitary
+                                         p_nn p_le npos]
+    by (simp add: bit_phase_flip_channel_eq)
+qed
+
+lemma bit_phase_flip_channel_CPTP:
+  fixes p :: real
+  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
+  shows "bit_phase_flip_channel p \<in> CPTP 2 2"
+proof -
+  have npos: "(0 :: nat) < 2" by simp
+  show ?thesis
+    using unitary_conj_channel_in_CPTP[OF pauli_Y_carrier pauli_Y_unitary
+                                          p_nn p_le npos]
+    by (simp add: bit_phase_flip_channel_eq)
+qed
+
+
 end
