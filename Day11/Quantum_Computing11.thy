@@ -10216,4 +10216,88 @@ lemma identity_channel_CPTP:
   by simp
 
 
+(* ============================================================================
+   DAY 44
+   Topic: Pure conjugation \<rho> \<mapsto> U \<rho> U^dagger is a CPTP map
+
+   We package the single-Kraus-operator conjugation channel as an
+   actual function and show it is CP and (for unitary U) trace-
+   preserving and unital.  This gives us a clean witness that the
+   building blocks of \<open>unitary_conj_channel\<close> are CPTP.
+   ============================================================================ *)
+
+(* The conjugation channel \<rho> \<mapsto> U \<rho> U^dagger is CP. *)
+
+lemma map_conj_cp:
+  assumes U_c: "U \<in> carrier_mat d n"
+      and U_range: "\<forall>\<rho>. \<rho> \<in> carrier_mat n n
+                       \<longrightarrow> U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat d d"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "completely_positive n d (\<lambda>\<rho>. U * \<rho> * (U\<^sup>\<dagger>))"
+proof -
+  have Ws_c: "\<forall>W \<in> set [U]. W \<in> carrier_mat d n" using U_c by simp
+  let ?F = "\<lambda>\<rho>. U * \<rho> * (U\<^sup>\<dagger>)"
+  let ?G = "kraus_map_dim d [U]"
+  have agree:
+    "\<And>\<rho>. \<rho> \<in> carrier_mat n n \<Longrightarrow> ?F \<rho> = ?G \<rho>"
+    using conjugation_channel_eq_kraus[OF U_c]
+    by (simp add: conjugation_channel_def)
+  have G_cp: "completely_positive n d ?G"
+    using kraus_map_dim_is_cp[OF Ws_c npos dpos] .
+  show ?thesis
+  proof (unfold completely_positive_def p_positive_def, intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+       and X_psd: "psd X"
+    have amp_eq:
+      "amplification n d p ?F X = amplification n d p ?G X"
+    proof (rule eq_matI)
+      show "dim_row (amplification n d p ?F X)
+              = dim_row (amplification n d p ?G X)"
+        by (simp add: amplification_def)
+      show "dim_col (amplification n d p ?F X)
+              = dim_col (amplification n d p ?G X)"
+        by (simp add: amplification_def)
+    next
+      fix i j
+      assume "i < dim_row (amplification n d p ?G X)"
+             "j < dim_col (amplification n d p ?G X)"
+      hence ij: "i < p*d" "j < p*d"
+        by (simp_all add: amplification_def)
+      have B_c: "block_of_mat n X (i div d) (j div d) \<in> carrier_mat n n"
+        by (simp add: block_of_mat_def)
+      have eq: "?F (block_of_mat n X (i div d) (j div d))
+                = ?G (block_of_mat n X (i div d) (j div d))"
+        using agree[OF B_c] .
+      show "amplification n d p ?F X $$ (i, j)
+              = amplification n d p ?G X $$ (i, j)"
+        using ij eq by (simp add: amplification_def)
+    qed
+    have psd_G: "psd (amplification n d p ?G X)"
+      using G_cp ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    show "psd (amplification n d p ?F X)"
+      using amp_eq psd_G by simp
+  qed
+qed
+
+(* For unitary U, conjugation is unital and trace-preserving. *)
+
+lemma map_conj_unital:
+  fixes U :: "complex Matrix.mat"
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+  shows "U * (1\<^sub>m n) * (U\<^sup>\<dagger>) = 1\<^sub>m n"
+proof -
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using U_c by (rule dagger_carrier)
+  have UI: "U * (1\<^sub>m n) = U" using U_c by simp
+  have UUd: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
+    using U_unit U_c by (auto simp: unitary_def)
+  have "U * (1\<^sub>m n) * (U\<^sup>\<dagger>) = U * (U\<^sup>\<dagger>)" using UI by simp
+  also have "\<dots> = 1\<^sub>m n" using UUd .
+  finally show ?thesis .
+qed
+
+
 end
