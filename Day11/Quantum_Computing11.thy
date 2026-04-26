@@ -9520,4 +9520,72 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 37
+   Topic: Bit-Flip Channel Boundary Cases
+
+   The bit-flip channel \<open>bit_flip_channel p\<close> at \<open>p = 0\<close> is the
+   identity (no errors), and at \<open>p = 1\<close> is the X-conjugation channel
+   (every qubit flipped).  Useful sanity checks and corner-case tools.
+   ============================================================================ *)
+
+lemma bit_flip_channel_zero:
+  assumes "\<rho> \<in> carrier_mat 2 2"
+  shows "bit_flip_channel 0 \<rho> = \<rho>"
+proof -
+  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using x_c by (rule dagger_carrier)
+  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+    using x_c assms by (rule mult_carrier_mat)
+  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using x\<rho>_c xd_c by (rule mult_carrier_mat)
+  have one_smul: "(1 :: complex) \<cdot>\<^sub>m \<rho> = \<rho>"
+    by (intro eq_matI) auto
+  have zero_smul: "(0 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))
+                    = 0\<^sub>m 2 2"
+    using x\<rho>xd_c by (intro eq_matI) auto
+  have rho_zero: "\<rho> + 0\<^sub>m 2 2 = \<rho>"
+    using assms by (intro eq_matI) auto
+  have "bit_flip_channel 0 \<rho>
+          = (1 :: complex) \<cdot>\<^sub>m \<rho>
+            + (0 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+    by (simp add: bit_flip_channel_def)
+  also have "\<dots> = \<rho> + 0\<^sub>m 2 2"
+    using one_smul zero_smul by simp
+  also have "\<dots> = \<rho>" using rho_zero .
+  finally show ?thesis .
+qed
+
+lemma bit_flip_channel_one:
+  assumes "\<rho> \<in> carrier_mat 2 2"
+  shows "bit_flip_channel 1 \<rho> = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+proof -
+  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using x_c by (rule dagger_carrier)
+  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+    using x_c assms by (rule mult_carrier_mat)
+  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using x\<rho>_c xd_c by (rule mult_carrier_mat)
+  have one_smul: "(1 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))
+                    = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+    by (intro eq_matI) auto
+  have zero_smul: "(0 :: complex) \<cdot>\<^sub>m \<rho> = 0\<^sub>m 2 2"
+    using assms by (intro eq_matI) auto
+  have zero_plus: "0\<^sub>m 2 2 + pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)
+                    = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+    using x\<rho>xd_c by (intro eq_matI) auto
+  have "bit_flip_channel 1 \<rho>
+          = (0 :: complex) \<cdot>\<^sub>m \<rho>
+            + (1 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+    by (simp add: bit_flip_channel_def)
+  also have "\<dots> = 0\<^sub>m 2 2 + pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+    using zero_smul one_smul by simp
+  also have "\<dots> = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+    using zero_plus .
+  finally show ?thesis .
+qed
+
+
 end
