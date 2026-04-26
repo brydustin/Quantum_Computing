@@ -9203,4 +9203,150 @@ lemma repetition_encode_binary:
   using assms by (auto simp: repetition_encode_def)
 
 
+(* ============================================================================
+   DAY 34 \<mdash> 18 / Nov / 11
+   Topic: Algebra of Projections (Building Blocks for Knill-Laflamme)
+
+   The standard algebraic facts about projections that underlie the
+   orthogonal-syndrome / Knill-Laflamme construction.  The full
+   Knill-Laflamme theorems remain deferred; they need eigenbasis
+   decomposition machinery beyond the current scope.
+   ============================================================================ *)
+
+(* The complementary projection \<open>1 - P\<close> is itself a projection. *)
+
+lemma projection_complement:
+  assumes "projection n P"
+  shows "projection n (1\<^sub>m n - P)"
+proof -
+  have P_c: "P \<in> carrier_mat n n" using assms by (rule projection_carrier)
+  have P_h: "hermitian P" using assms by (rule projection_hermitian)
+  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
+  have I_dag: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m n"
+    by (intro eq_matI) (auto simp: dagger_def)
+  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+  have IP_c: "(1\<^sub>m n - P) \<in> carrier_mat n n"
+    using P_c by (rule minus_carrier_mat)
+  have IP_dag: "(1\<^sub>m n - P)\<^sup>\<dagger> = 1\<^sub>m n - P"
+  proof (rule eq_matI)
+    show "dim_row ((1\<^sub>m n - P)\<^sup>\<dagger>) = dim_row (1\<^sub>m n - P)"
+      using P_c by simp
+    show "dim_col ((1\<^sub>m n - P)\<^sup>\<dagger>) = dim_col (1\<^sub>m n - P)"
+      using P_c by simp
+  next
+    fix i j
+    assume i: "i < dim_row (1\<^sub>m n - P)"
+       and j: "j < dim_col (1\<^sub>m n - P)"
+    hence ij: "i < n" "j < n" using P_c by simp_all
+    have P_swap: "P $$ (j, i) = cnj (P $$ (i, j))"
+    proof -
+      have "(P\<^sup>\<dagger>) $$ (i, j) = cnj (P $$ (j, i))"
+        using ij P_c by (simp add: dagger_def)
+      hence "P $$ (i, j) = cnj (P $$ (j, i))"
+        using P_dag by simp
+      thus ?thesis by (simp add: complex_cnj_cnj)
+    qed
+    have one_entry_self_cnj:
+      "(1\<^sub>m n :: complex Matrix.mat) $$ (j, i)
+        = cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (i, j))"
+      using ij by auto
+    show "((1\<^sub>m n - P)\<^sup>\<dagger>) $$ (i, j) = (1\<^sub>m n - P) $$ (i, j)"
+      using ij P_c P_swap one_entry_self_cnj
+      by (simp add: dagger_def index_minus_mat)
+  qed
+  have IP_h: "hermitian (1\<^sub>m n - P)" using IP_dag by (simp add: hermitian_def)
+  have IP_idem: "(1\<^sub>m n - P) * (1\<^sub>m n - P) = 1\<^sub>m n - P"
+    using assms by (rule projection_complement_idempotent)
+  show ?thesis
+    unfolding projection_def using IP_c IP_h IP_idem by blast
+qed
+
+(* Two projections are *orthogonal* if their product (in either order) is zero. *)
+
+definition orthogonal_projections ::
+  "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "orthogonal_projections n P Q \<equiv>
+     projection n P \<and> projection n Q \<and>
+     P * Q = 0\<^sub>m n n \<and> Q * P = 0\<^sub>m n n"
+
+lemma orthogonal_projections_carrier_left:
+  "orthogonal_projections n P Q \<Longrightarrow> P \<in> carrier_mat n n"
+  by (simp add: orthogonal_projections_def projection_def)
+
+lemma orthogonal_projections_carrier_right:
+  "orthogonal_projections n P Q \<Longrightarrow> Q \<in> carrier_mat n n"
+  by (simp add: orthogonal_projections_def projection_def)
+
+lemma orthogonal_projections_symm:
+  "orthogonal_projections n P Q \<longleftrightarrow> orthogonal_projections n Q P"
+  by (auto simp: orthogonal_projections_def)
+
+(* The sum of orthogonal projections is a projection. *)
+
+lemma orthogonal_projections_sum:
+  assumes opq: "orthogonal_projections n P Q"
+  shows "projection n (P + Q)"
+proof -
+  have P_proj: "projection n P"
+    using opq by (simp add: orthogonal_projections_def)
+  have Q_proj: "projection n Q"
+    using opq by (simp add: orthogonal_projections_def)
+  have PQ_zero: "P * Q = 0\<^sub>m n n"
+    using opq by (simp add: orthogonal_projections_def)
+  have QP_zero: "Q * P = 0\<^sub>m n n"
+    using opq by (simp add: orthogonal_projections_def)
+  have P_c: "P \<in> carrier_mat n n" using P_proj by (rule projection_carrier)
+  have Q_c: "Q \<in> carrier_mat n n" using Q_proj by (rule projection_carrier)
+  have P_idem: "P * P = P" using P_proj by (rule projection_idempotent)
+  have Q_idem: "Q * Q = Q" using Q_proj by (rule projection_idempotent)
+  have P_h: "hermitian P" using P_proj by (rule projection_hermitian)
+  have Q_h: "hermitian Q" using Q_proj by (rule projection_hermitian)
+  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
+  have Q_dag: "Q\<^sup>\<dagger> = Q" using Q_h by (simp add: hermitian_def)
+
+  have PQ_c: "P + Q \<in> carrier_mat n n" using P_c Q_c by simp
+
+  have PQ_dag: "(P + Q)\<^sup>\<dagger> = P + Q"
+  proof -
+    have "(P + Q)\<^sup>\<dagger> = (P\<^sup>\<dagger>) + (Q\<^sup>\<dagger>)"
+      using P_c Q_c
+      by (intro eq_matI) (auto simp: dagger_def index_add_mat)
+    also have "\<dots> = P + Q" using P_dag Q_dag by simp
+    finally show ?thesis .
+  qed
+  have PQ_h: "hermitian (P + Q)" using PQ_dag by (simp add: hermitian_def)
+
+  have PQ_idem: "(P + Q) * (P + Q) = P + Q"
+  proof -
+    have expand:
+      "(P + Q) * (P + Q) = P * P + P * Q + (Q * P + Q * Q)"
+      using P_c Q_c
+      by (smt (verit) add_carrier_mat add_mult_distrib_mat
+          mult_add_distrib_mat assoc_add_mat)
+    have "P * P + P * Q + (Q * P + Q * Q)
+            = P + 0\<^sub>m n n + (0\<^sub>m n n + Q)"
+      using P_idem Q_idem PQ_zero QP_zero by simp
+    also have "\<dots> = P + Q"
+      using P_c Q_c by (intro eq_matI) auto
+    finally show ?thesis using expand by simp
+  qed
+  show ?thesis unfolding projection_def using PQ_c PQ_h PQ_idem by blast
+qed
+
+(* Pythagorean decomposition: P + Q + (I - P - Q) = I when P, Q are
+   orthogonal projections.  Building block for the Day-33 syndrome
+   decomposition I = (sum P_i) + (I - sum P_i). *)
+
+lemma orthogonal_projections_decomp_id:
+  assumes "orthogonal_projections n P Q"
+  shows "P + Q + (1\<^sub>m n - P - Q) = 1\<^sub>m n"
+proof -
+  have P_c: "P \<in> carrier_mat n n"
+    using assms by (rule orthogonal_projections_carrier_left)
+  have Q_c: "Q \<in> carrier_mat n n"
+    using assms by (rule orthogonal_projections_carrier_right)
+  show ?thesis using P_c Q_c by (intro eq_matI) auto
+qed
+
+
 end
