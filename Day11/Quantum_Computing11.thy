@@ -8667,6 +8667,63 @@ lemma fidelity_def_eq:
   "fidelity \<psi> \<rho> = sqrt (Re (\<langle>\<psi> | \<rho> *\<^sub>v \<psi>\<rangle>))"
   by (simp add: fidelity_def)
 
+(* For a pure state \<rho> = |\<psi>'\<rangle>\<langle>\<psi>'|, fidelity = |\<langle>\<psi> | \<psi>'\<rangle>|. *)
+
+lemma fidelity_pure_states:
+  fixes \<psi> \<psi>' :: "complex Matrix.vec"
+  assumes \<psi>_qs:  "quantum_state n \<psi>"
+      and \<psi>'_qs: "quantum_state n \<psi>'"
+  shows "fidelity \<psi> ((mat_of_cols n [\<psi>']) * ((mat_of_cols n [\<psi>'])\<^sup>\<dagger>))
+           = cmod (\<langle>\<psi> | \<psi>'\<rangle>)"
+proof -
+  let ?\<rho> = "(mat_of_cols n [\<psi>']) * ((mat_of_cols n [\<psi>'])\<^sup>\<dagger>)"
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
+  have \<psi>'_dim: "dim_vec \<psi>' = n" using \<psi>'_qs by (simp add: quantum_state_def)
+
+  have rho_eq: "?\<rho> = outer_sum n [\<psi>']"
+    by (simp add: outer_sum_def)
+
+  (* ?\<rho> *_v \<psi> = \<langle>\<psi>'|\<psi>\<rangle> \<cdot>\<^sub>v \<psi>' *)
+  have \<rho>\<psi>: "?\<rho> *\<^sub>v \<psi> = \<langle>\<psi>' | \<psi>\<rangle> \<cdot>\<^sub>v \<psi>'"
+    using outer_sum_singleton_mult_vec[OF \<psi>'_dim \<psi>_dim] rho_eq by simp
+
+  (* \<langle>\<psi> | ?\<rho> *_v \<psi>\<rangle> = \<langle>\<psi>|\<psi>'\<rangle> * \<langle>\<psi>'|\<psi>\<rangle> = (cmod \<langle>\<psi>|\<psi>'\<rangle>)^2 *)
+  have inner_eq: "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = \<langle>\<psi> | \<psi>'\<rangle> * \<langle>\<psi>' | \<psi>\<rangle>"
+  proof -
+    have "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = \<langle>\<psi> | \<langle>\<psi>'|\<psi>\<rangle> \<cdot>\<^sub>v \<psi>'\<rangle>"
+      using \<rho>\<psi> by simp
+    also have "\<dots> = \<langle>\<psi>'|\<psi>\<rangle> * \<langle>\<psi> | \<psi>'\<rangle>"
+      by (rule inner_prod_right_smult')
+    finally show ?thesis by (simp add: mult.commute)
+  qed
+
+  have conj_swap: "\<langle>\<psi>' | \<psi>\<rangle> = cnj (\<langle>\<psi> | \<psi>'\<rangle>)"
+    by (metis \<psi>_dim \<psi>'_dim inner_prod_cnj)
+
+  have sq_real:
+    "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = complex_of_real ((cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2)"
+  proof -
+    have "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = \<langle>\<psi> | \<psi>'\<rangle> * cnj (\<langle>\<psi> | \<psi>'\<rangle>)"
+      using inner_eq conj_swap by simp
+    also have "\<dots> = complex_of_real ((cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2)"
+      by (simp add: complex_norm_square mult.commute, metis complex_norm_square of_real_power)
+    finally show ?thesis.
+  qed
+
+  have re_eq: "Re (\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle>) = (cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2"
+    using sq_real by simp
+
+  have nn: "0 \<le> cmod (\<langle>\<psi> | \<psi>'\<rangle>)" by simp
+
+  have "fidelity \<psi> ?\<rho> = sqrt (Re (\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle>))"
+    by (simp add: fidelity_def)
+  also have "\<dots> = sqrt ((cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2)"
+    using re_eq by simp
+  also have "\<dots> = cmod (\<langle>\<psi> | \<psi>'\<rangle>)"
+    using nn by simp
+  finally show ?thesis.
+qed
+
 
 (* ============================================================================
    DAY 32 \<mdash> 14 / Nov / 11
