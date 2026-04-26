@@ -11128,4 +11128,36 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 57
+   Topic: Pauli channels fix the maximally mixed state
+
+   Direct corollaries of Day 56 specialised to X, Y, Z.
+   ============================================================================ *)
+
+lemma bit_flip_channel_fixes_max_mixed:
+  fixes p :: real
+  shows "bit_flip_channel p (maximally_mixed_state 2)
+           = maximally_mixed_state 2"
+  using unitary_conj_channel_fixes_max_mixed[OF pauli_X_carrier
+                                                 pauli_X_unitary]
+  by (simp add: bit_flip_channel_eq)
+
+lemma phase_flip_channel_fixes_max_mixed:
+  fixes p :: real
+  shows "phase_flip_channel p (maximally_mixed_state 2)
+           = maximally_mixed_state 2"
+  using unitary_conj_channel_fixes_max_mixed[OF pauli_Z_carrier
+                                                 pauli_Z_unitary]
+  by (simp add: phase_flip_channel_eq)
+
+lemma bit_phase_flip_channel_fixes_max_mixed:
+  fixes p :: real
+  shows "bit_phase_flip_channel p (maximally_mixed_state 2)
+           = maximally_mixed_state 2"
+  using unitary_conj_channel_fixes_max_mixed[OF pauli_Y_carrier
+                                                 pauli_Y_unitary]
+  by (simp add: bit_phase_flip_channel_eq)
+
+
 end
