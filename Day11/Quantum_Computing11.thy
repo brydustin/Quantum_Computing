@@ -8449,4 +8449,193 @@ lemma hamming_dist_repetition_doubles:
   by (simp add: zip_append1 zip_append2 mult_2)
 
 
+(* ============================================================================
+   DAY 30 \<mdash> 9 / Nov / 11
+   Topic: Quantum Error Correction; Bit Flip and Phase Flip Codes
+   ============================================================================ *)
+
+(* --------------------------------------------------------------------------
+   The Pauli matrices.  We use the names \<open>pauli_X / Y / Z\<close> rather than
+   the imported \<open>X / Y / Z\<close> from Quantum.thy so they can serve as locally
+   stable, fixed-name constants in the rest of this development.  (The
+   imported \<open>X / Y / Z\<close> are the same matrices.)
+   -------------------------------------------------------------------------- *)
+
+definition pauli_X :: "complex Matrix.mat" where
+  "pauli_X \<equiv> Matrix.mat 2 2
+       (\<lambda>(i,j). if (i = 0 \<and> j = 1) \<or> (i = 1 \<and> j = 0) then 1 else 0)"
+
+definition pauli_Y :: "complex Matrix.mat" where
+  "pauli_Y \<equiv> Matrix.mat 2 2
+       (\<lambda>(i,j). if i = 0 \<and> j = 1 then \<i>
+                else if i = 1 \<and> j = 0 then -\<i> else 0)"
+
+definition pauli_Z :: "complex Matrix.mat" where
+  "pauli_Z \<equiv> Matrix.mat 2 2
+       (\<lambda>(i,j). if i = 0 \<and> j = 0 then 1
+                else if i = 1 \<and> j = 1 then -1 else 0)"
+
+lemma pauli_X_carrier [simp]: "pauli_X \<in> carrier_mat 2 2"
+  by (auto simp: pauli_X_def)
+
+lemma pauli_Y_carrier [simp]: "pauli_Y \<in> carrier_mat 2 2"
+  by (auto simp: pauli_Y_def)
+
+lemma pauli_Z_carrier [simp]: "pauli_Z \<in> carrier_mat 2 2"
+  by (auto simp: pauli_Z_def)
+
+lemma pauli_X_dagger: "pauli_X\<^sup>\<dagger> = pauli_X"
+proof (rule eq_matI)
+  show "dim_row (pauli_X\<^sup>\<dagger>) = dim_row pauli_X" by (simp add: pauli_X_def)
+  show "dim_col (pauli_X\<^sup>\<dagger>) = dim_col pauli_X" by (simp add: pauli_X_def)
+next
+  fix i j assume "i < dim_row pauli_X" "j < dim_col pauli_X"
+  thus "(pauli_X\<^sup>\<dagger>) $$ (i, j) = pauli_X $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: pauli_X_def dagger_def)
+qed
+
+lemma pauli_X_squared: "pauli_X * pauli_X = 1\<^sub>m 2"
+proof (rule eq_matI)
+  show "dim_row (pauli_X * pauli_X) = dim_row (1\<^sub>m 2)"
+    by (simp add: pauli_X_def)
+  show "dim_col (pauli_X * pauli_X) = dim_col (1\<^sub>m 2)"
+    by (simp add: pauli_X_def)
+next
+  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
+  hence ij: "i < 2" "j < 2" by auto
+  thus "(pauli_X * pauli_X) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    unfolding pauli_X_def scalar_prod_def
+    by (cases i, cases j, (simp add: sumof2)+)
+qed
+
+lemma pauli_X_unitary: "unitary pauli_X"
+  unfolding unitary_def
+  using pauli_X_dagger pauli_X_squared by (simp add: pauli_X_def)
+
+lemma pauli_Y_dagger: "pauli_Y\<^sup>\<dagger> = pauli_Y"
+proof (rule eq_matI)
+  show "dim_row (pauli_Y\<^sup>\<dagger>) = dim_row pauli_Y" by (simp add: pauli_Y_def)
+  show "dim_col (pauli_Y\<^sup>\<dagger>) = dim_col pauli_Y" by (simp add: pauli_Y_def)
+next
+  fix i j assume "i < dim_row pauli_Y" "j < dim_col pauli_Y"
+  thus "(pauli_Y\<^sup>\<dagger>) $$ (i, j) = pauli_Y $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: pauli_Y_def dagger_def)
+qed
+
+lemma pauli_Y_squared: "pauli_Y * pauli_Y = 1\<^sub>m 2"
+proof (rule eq_matI)
+  show "dim_row (pauli_Y * pauli_Y) = dim_row (1\<^sub>m 2)"
+    by (simp add: pauli_Y_def)
+  show "dim_col (pauli_Y * pauli_Y) = dim_col (1\<^sub>m 2)"
+    by (simp add: pauli_Y_def)
+next
+  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
+  hence ij: "i < 2" "j < 2" by auto
+  thus "(pauli_Y * pauli_Y) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    unfolding pauli_Y_def scalar_prod_def
+    by (cases i, cases j, (simp add: sumof2)+)
+qed
+
+lemma pauli_Y_unitary: "unitary pauli_Y"
+  unfolding unitary_def
+  using pauli_Y_dagger pauli_Y_squared by (simp add: pauli_Y_def)
+
+lemma pauli_Z_dagger: "pauli_Z\<^sup>\<dagger> = pauli_Z"
+proof (rule eq_matI)
+  show "dim_row (pauli_Z\<^sup>\<dagger>) = dim_row pauli_Z" by (simp add: pauli_Z_def)
+  show "dim_col (pauli_Z\<^sup>\<dagger>) = dim_col pauli_Z" by (simp add: pauli_Z_def)
+next
+  fix i j assume "i < dim_row pauli_Z" "j < dim_col pauli_Z"
+  thus "(pauli_Z\<^sup>\<dagger>) $$ (i, j) = pauli_Z $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: pauli_Z_def dagger_def)
+qed
+
+lemma pauli_Z_squared: "pauli_Z * pauli_Z = 1\<^sub>m 2"
+proof (rule eq_matI)
+  show "dim_row (pauli_Z * pauli_Z) = dim_row (1\<^sub>m 2)"
+    by (simp add: pauli_Z_def)
+  show "dim_col (pauli_Z * pauli_Z) = dim_col (1\<^sub>m 2)"
+    by (simp add: pauli_Z_def)
+next
+  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
+  hence ij: "i < 2" "j < 2" by auto
+  thus "(pauli_Z * pauli_Z) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    unfolding pauli_Z_def scalar_prod_def
+    by (cases i, cases j, (simp add: sumof2)+)
+qed
+
+lemma pauli_Z_unitary: "unitary pauli_Z"
+  unfolding unitary_def
+  using pauli_Z_dagger pauli_Z_squared by (simp add: pauli_Z_def)
+
+
+(* --------------------------------------------------------------------------
+   I, X, Y, Z form an orthogonal basis of M\<^sub>2 with respect to the
+   Hilbert-Schmidt inner product, each having squared norm 2.
+   -------------------------------------------------------------------------- *)
+
+proposition pauli_orthogonal:
+  shows "\<langle>\<langle> 1\<^sub>m 2 | pauli_X \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> 1\<^sub>m 2 | pauli_Y \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> 1\<^sub>m 2 | pauli_Z \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> pauli_X | pauli_Y \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> pauli_X | pauli_Z \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> pauli_Y | pauli_Z \<rangle>\<rangle> = 0"
+proof -
+  show "\<langle>\<langle> 1\<^sub>m 2 | pauli_X \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle> 1\<^sub>m 2 | pauli_Y \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> 1\<^sub>m 2 | pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> pauli_X | pauli_Y \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_X_def pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> pauli_X | pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_X_def pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> pauli_Y | pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def pauli_Y_def pauli_Z_def numeral_2_eq_2)
+qed
+
+proposition pauli_norm:
+  shows "\<langle>\<langle> 1\<^sub>m 2 | (1\<^sub>m 2 :: complex Matrix.mat) \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> pauli_X | pauli_X \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> pauli_Y | pauli_Y \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> pauli_Z | pauli_Z \<rangle>\<rangle> = 2"
+proof -
+  show "\<langle>\<langle> 1\<^sub>m 2 | (1\<^sub>m 2 :: complex Matrix.mat) \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def numeral_2_eq_2)
+  show "\<langle>\<langle> pauli_X | pauli_X \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle> pauli_Y | pauli_Y \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> pauli_Z | pauli_Z \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def pauli_Z_def numeral_2_eq_2)
+qed
+
+
+(* --------------------------------------------------------------------------
+   The bit-flip channel: with probability \<open>p\<close>, apply Pauli X.
+   -------------------------------------------------------------------------- *)
+
+definition bit_flip_channel ::
+  "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "bit_flip_channel p \<rho> \<equiv>
+     complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
+     + complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+
+lemma bit_flip_channel_carrier:
+  assumes "\<rho> \<in> carrier_mat 2 2"
+  shows "bit_flip_channel p \<rho> \<in> carrier_mat 2 2"
+proof -
+  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    using x_c by (rule dagger_carrier)
+  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+    using x_c assms by (rule mult_carrier_mat)
+  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+    using x\<rho>_c xd_c by (rule mult_carrier_mat)
+  show ?thesis
+    using assms x\<rho>xd_c by (auto simp: bit_flip_channel_def)
+qed
+
 end
