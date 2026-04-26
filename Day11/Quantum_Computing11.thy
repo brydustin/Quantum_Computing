@@ -8796,5 +8796,86 @@ proof -
   finally show ?thesis .
 qed
 
+(* |+\<rangle> and |-\<rangle> are eigenvectors of X with eigenvalues +1 and -1. *)
+
+lemma pauli_X_ket_plus: "pauli_X *\<^sub>v ket_plus = ket_plus"
+proof (rule eq_vecI)
+  show "dim_vec (pauli_X *\<^sub>v ket_plus) = dim_vec ket_plus"
+    by (simp add: pauli_X_def)
+next
+  fix i assume "i < dim_vec ket_plus"
+  hence i_lt: "i < 2" by simp
+  have "(pauli_X *\<^sub>v ket_plus) $ i =
+        (\<Sum>k = 0..<2. pauli_X $$ (i, k) * ket_plus $ k)"
+    using i_lt by (simp add: scalar_prod_def pauli_X_def)
+  also have "\<dots> = pauli_X $$ (i, 0) * ket_plus $ 0
+                  + pauli_X $$ (i, 1) * ket_plus $ 1"
+    by (simp add: numeral_2_eq_2)
+  also have "\<dots> = ket_plus $ i"
+    using i_lt
+    by (cases "i = 0";
+        simp add: pauli_X_def ket_plus_def)
+  finally show "(pauli_X *\<^sub>v ket_plus) $ i = ket_plus $ i" .
+qed
+
+lemma pauli_X_ket_minus: "pauli_X *\<^sub>v ket_minus = - ket_minus"
+proof (rule eq_vecI)
+  show "dim_vec (pauli_X *\<^sub>v ket_minus) = dim_vec (- ket_minus)"
+    by (simp add: pauli_X_def)
+next
+  fix i assume "i < dim_vec (- ket_minus)"
+  hence i_lt: "i < 2" by simp
+  have "(pauli_X *\<^sub>v ket_minus) $ i =
+        (\<Sum>k = 0..<2. pauli_X $$ (i, k) * ket_minus $ k)"
+    using i_lt by (simp add: scalar_prod_def pauli_X_def)
+  also have "\<dots> = pauli_X $$ (i, 0) * ket_minus $ 0
+                  + pauli_X $$ (i, 1) * ket_minus $ 1"
+    by (simp add: numeral_2_eq_2)
+  also have "\<dots> = (- ket_minus) $ i"
+    using i_lt
+    by (cases "i = 0";
+        simp add: pauli_X_def ket_minus_def)
+  finally show "(pauli_X *\<^sub>v ket_minus) $ i = (- ket_minus) $ i" .
+qed
+
+
+(* --------------------------------------------------------------------------
+   Shor 9-qubit logical states.
+
+   We package only the explicit vector-valued definitions; the recovery
+   theorem (Day 33) and Knill-Laflamme conditions (Day 34) are deep
+   results that lie beyond the current development.
+   -------------------------------------------------------------------------- *)
+
+definition shor_zero :: "complex Matrix.vec" where
+  "shor_zero \<equiv>
+     let v = unit_vec 2 0 + unit_vec 2 1 in
+     (1 / (2 * sqrt 2) :: complex)
+       \<cdot>\<^sub>v tensor_vec (tensor_vec v v) v"
+
+definition shor_one :: "complex Matrix.vec" where
+  "shor_one \<equiv>
+     let v = unit_vec 2 0 - unit_vec 2 1 in
+     (1 / (2 * sqrt 2) :: complex)
+       \<cdot>\<^sub>v tensor_vec (tensor_vec v v) v"
+
+
+(* --------------------------------------------------------------------------
+   Bonus: classical-code helpers extending Day 29.
+   -------------------------------------------------------------------------- *)
+
+lemma hamming_weight_append:
+  "hamming_weight (xs @ ys) = hamming_weight xs + hamming_weight ys"
+  by (simp add: hamming_weight_def)
+
+lemma hamming_weight_repetition_encode:
+  "hamming_weight (repetition_encode v) = 2 * hamming_weight v"
+  by (simp add: repetition_encode_def hamming_weight_append)
+
+lemma repetition_encode_binary:
+  assumes "\<forall>x \<in> set v. x < 2"
+  shows "\<forall>x \<in> set (repetition_encode v). x < 2"
+  using assms by (auto simp: repetition_encode_def)
+
 
 end
