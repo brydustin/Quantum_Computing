@@ -9751,4 +9751,169 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 39
+   Topic: General Unitary-Conjugation Channel
+
+   Abstract the bit-flip / phase-flip pattern: for a unitary \<open>U \<in> M\<^sub>n\<close>,
+   the channel \<open>\<rho> \<mapsto> (1-p) \<sqdot> \<rho> + p \<sqdot> U \<rho> U\<^sup>\<dagger>\<close> is
+   trace-preserving and PSD-preserving for \<open>0 \<le> p \<le> 1\<close>.
+   The bit-flip and phase-flip channels are immediate instances.
+   ============================================================================ *)
+
+definition unitary_conj_channel ::
+  "complex Matrix.mat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "unitary_conj_channel U p \<rho> \<equiv>
+     complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
+     + complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>))"
+
+lemma unitary_conj_channel_carrier:
+  assumes U_c: "U \<in> carrier_mat n n"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "unitary_conj_channel U p \<rho> \<in> carrier_mat n n"
+proof -
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using U_c by (rule dagger_carrier)
+  have U\<rho>_c: "U * \<rho> \<in> carrier_mat n n"
+    using U_c \<rho>_c by (rule mult_carrier_mat)
+  have U\<rho>Ud_c: "U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using U\<rho>_c Ud_c by (rule mult_carrier_mat)
+  show ?thesis
+    using \<rho>_c U\<rho>Ud_c by (auto simp: unitary_conj_channel_def)
+qed
+
+lemma unitary_conj_channel_trace_preserving:
+  fixes p :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "Tr (unitary_conj_channel U p \<rho>) = Tr \<rho>"
+proof -
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using U_c by (rule dagger_carrier)
+  have U\<rho>_c: "U * \<rho> \<in> carrier_mat n n"
+    using U_c \<rho>_c by (rule mult_carrier_mat)
+  have U\<rho>Ud_c: "U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using U\<rho>_c Ud_c by (rule mult_carrier_mat)
+  have UdU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n"
+    using U_unit U_c by (auto simp: unitary_def)
+
+  have tr_conj: "Tr (U * \<rho> * (U\<^sup>\<dagger>)) = Tr \<rho>"
+  proof -
+    have "Tr (U * \<rho> * (U\<^sup>\<dagger>)) = Tr (U\<^sup>\<dagger> * (U * \<rho>))"
+    proof (rule Tr_cyclic)
+      show "dim_col (U * \<rho>) = dim_row (U\<^sup>\<dagger>)"
+        using U\<rho>_c Ud_c by (metis carrier_matD)
+      show "dim_row (U * \<rho>) = dim_col (U\<^sup>\<dagger>)"
+        using U\<rho>_c Ud_c by (metis carrier_matD)
+    qed
+    also have "\<dots> = Tr ((U\<^sup>\<dagger> * U) * \<rho>)"
+      by (metis Ud_c U_c \<rho>_c assoc_mult_mat)
+    also have "\<dots> = Tr ((1\<^sub>m n) * \<rho>)" using UdU by simp
+    also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
+    finally show ?thesis .
+  qed
+
+  have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+                  = dim_row (complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
+    using \<rho>_c U\<rho>Ud_c by (metis carrier_matD index_smult_mat)
+  have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+                  = dim_col (complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
+    using \<rho>_c U\<rho>Ud_c by (metis carrier_matD index_smult_mat)
+  have "Tr (unitary_conj_channel U p \<rho>)
+          = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
+            + Tr (complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
+    unfolding unitary_conj_channel_def
+    using row_eq col_eq by (rule Tr_add)
+  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
+                  + complex_of_real p * Tr (U * \<rho> * (U\<^sup>\<dagger>))"
+    by (simp add: Tr_smult)
+  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
+                  + complex_of_real p * Tr \<rho>"
+    using tr_conj by simp
+  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) * Tr \<rho>"
+    by (simp add: ring_distribs)
+  also have "\<dots> = 1 * Tr \<rho>" by simp
+  also have "\<dots> = Tr \<rho>" by simp
+  finally show ?thesis .
+qed
+
+lemma unitary_conj_channel_psd:
+  fixes p :: real
+  assumes p_nn:    "0 \<le> p"
+      and p_le_1:  "p \<le> 1"
+      and U_c:    "U \<in> carrier_mat n n"
+      and \<rho>_c:    "\<rho> \<in> carrier_mat n n"
+      and \<rho>_psd:  "psd \<rho>"
+  shows "psd (unitary_conj_channel U p \<rho>)"
+proof -
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using U_c by (rule dagger_carrier)
+  have U\<rho>_c: "U * \<rho> \<in> carrier_mat n n"
+    using U_c \<rho>_c by (rule mult_carrier_mat)
+  have U\<rho>Ud_c: "U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
+    using U\<rho>_c Ud_c by (rule mult_carrier_mat)
+  have one_minus_nn: "0 \<le> 1 - p" using p_le_1 by simp
+
+  have conj_psd: "psd (U * \<rho> * (U\<^sup>\<dagger>))"
+  proof -
+    obtain Q where Q_c:    "Q \<in> carrier_mat n n"
+               and Q_psd:  "psd Q"
+               and Q_sq:   "Q * Q = \<rho>"
+      using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
+    have Q_dagger: "Q\<^sup>\<dagger> = Q"
+      using Q_psd by (simp add: psd_def hermitian_def)
+    have UQ_c: "U * Q \<in> carrier_mat n n"
+      using U_c Q_c by (rule mult_carrier_mat)
+    have UQd_c: "(U * Q)\<^sup>\<dagger> \<in> carrier_mat n n"
+      using UQ_c by (rule dagger_carrier)
+    have eq: "U * \<rho> * (U\<^sup>\<dagger>) = (U * Q) * ((U * Q)\<^sup>\<dagger>)"
+    proof -
+      have dim_eq: "dim_col U = dim_row Q"
+        using U_c Q_c by (metis carrier_matD)
+      have dagprod: "(U * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (U\<^sup>\<dagger>)"
+        using dim_eq by (rule dagger_of_prod)
+      hence dagprod': "(U * Q)\<^sup>\<dagger> = Q * (U\<^sup>\<dagger>)"
+        using Q_dagger by simp
+      have "(U * Q) * ((U * Q)\<^sup>\<dagger>) = (U * Q) * (Q * (U\<^sup>\<dagger>))"
+        using dagprod' by simp
+      also have "\<dots> = U * Q * Q * (U\<^sup>\<dagger>)"
+        using U_c Q_c Ud_c by (metis assoc_mult_mat mult_carrier_mat)
+      also have "\<dots> = U * (Q * Q) * (U\<^sup>\<dagger>)"
+        using U_c Q_c by (metis assoc_mult_mat)
+      also have "\<dots> = U * \<rho> * (U\<^sup>\<dagger>)" using Q_sq by simp
+      finally show ?thesis by simp
+    qed
+    have psd_dd: "psd (((U * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((U * Q)\<^sup>\<dagger>))"
+      using psd_MdagM[OF UQd_c] .
+    have dd_eq: "(U * Q)\<^sup>\<dagger>\<^sup>\<dagger> = U * Q"
+      using UQ_c by (simp add: dagger_of_dagger_is_id)
+    have "psd ((U * Q) * ((U * Q)\<^sup>\<dagger>))"
+      using psd_dd dd_eq by simp
+    thus ?thesis using eq by simp
+  qed
+
+  have term1_psd: "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)"
+    using one_minus_nn \<rho>_psd \<rho>_c by (rule psd_smult_nonneg)
+  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
+    using p_nn conj_psd U\<rho>Ud_c by (rule psd_smult_nonneg)
+  have term1_c: "complex_of_real (1 - p) \<cdot>\<^sub>m \<rho> \<in> carrier_mat n n"
+    using \<rho>_c by simp
+  have term2_c: "complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)) \<in> carrier_mat n n"
+    using U\<rho>Ud_c by simp
+  have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
+              + complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
+    using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
+  thus ?thesis by (simp add: unitary_conj_channel_def)
+qed
+
+(* The bit-flip and phase-flip channels are instances of the unitary-
+   conjugation channel for the Pauli matrices X and Z. *)
+
+lemma bit_flip_eq_unitary_conj:
+  "bit_flip_channel p \<rho> = unitary_conj_channel pauli_X p \<rho>"
+  by (simp add: bit_flip_channel_def unitary_conj_channel_def)
+
+lemma phase_flip_eq_unitary_conj:
+  "phase_flip_channel p \<rho> = unitary_conj_channel pauli_Z p \<rho>"
+  by (simp add: phase_flip_channel_def unitary_conj_channel_def)
+
+
 end
