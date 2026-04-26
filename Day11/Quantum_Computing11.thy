@@ -9916,4 +9916,99 @@ lemma phase_flip_eq_unitary_conj:
   by (simp add: phase_flip_channel_def unitary_conj_channel_def)
 
 
+(* ============================================================================
+   DAY 40
+   Topic: Bit-Phase-Flip (Y) Channel; Identity Channel
+
+   Two further channels assembled from the unitary-conjugation
+   framework of Day 39:
+     - The bit-phase-flip channel applies Pauli-Y with probability p.
+     - The identity channel is the unitary-conjugation channel with
+       p = 0 (or with U = I), trivially CPTP.
+   ============================================================================ *)
+
+definition bit_phase_flip_channel ::
+  "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "bit_phase_flip_channel p \<rho> \<equiv> unitary_conj_channel pauli_Y p \<rho>"
+
+lemma bit_phase_flip_channel_carrier:
+  assumes "\<rho> \<in> carrier_mat 2 2"
+  shows "bit_phase_flip_channel p \<rho> \<in> carrier_mat 2 2"
+  unfolding bit_phase_flip_channel_def
+  using pauli_Y_carrier assms
+  by (rule unitary_conj_channel_carrier)
+
+lemma bit_phase_flip_channel_trace_preserving:
+  fixes p :: real
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat 2 2"
+  shows "Tr (bit_phase_flip_channel p \<rho>) = Tr \<rho>"
+  unfolding bit_phase_flip_channel_def
+  using pauli_Y_carrier pauli_Y_unitary \<rho>_c
+  by (rule unitary_conj_channel_trace_preserving)
+
+lemma bit_phase_flip_channel_psd:
+  fixes p :: real
+  assumes p_nn:    "0 \<le> p"
+      and p_le_1:  "p \<le> 1"
+      and \<rho>_c:    "\<rho> \<in> carrier_mat 2 2"
+      and \<rho>_psd:  "psd \<rho>"
+  shows "psd (bit_phase_flip_channel p \<rho>)"
+  unfolding bit_phase_flip_channel_def
+  using p_nn p_le_1 pauli_Y_carrier \<rho>_c \<rho>_psd
+  by (rule unitary_conj_channel_psd)
+
+
+(* The identity channel is CPTP: trace and PSD preserved trivially. *)
+
+definition identity_channel ::
+  "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "identity_channel \<rho> \<equiv> \<rho>"
+
+lemma identity_channel_carrier:
+  "\<rho> \<in> carrier_mat n n \<Longrightarrow> identity_channel \<rho> \<in> carrier_mat n n"
+  by (simp add: identity_channel_def)
+
+lemma identity_channel_trace_preserving:
+  "\<rho> \<in> carrier_mat n n \<Longrightarrow> Tr (identity_channel \<rho>) = Tr \<rho>"
+  by (simp add: identity_channel_def)
+
+lemma identity_channel_psd:
+  "\<rho> \<in> carrier_mat n n \<Longrightarrow> psd \<rho> \<Longrightarrow> psd (identity_channel \<rho>)"
+  by (simp add: identity_channel_def)
+
+(* The identity channel is the unitary-conjugation channel with p = 0
+   (any U works, but the natural choice is U = 1\<^sub>m n). *)
+
+lemma identity_channel_eq_unitary_conj_zero:
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "identity_channel \<rho> = unitary_conj_channel (1\<^sub>m n) 0 \<rho>"
+proof -
+  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+  have Id_c: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> \<in> carrier_mat n n"
+    using I_c by (rule dagger_carrier)
+  have I\<rho>_c: "(1\<^sub>m n :: complex Matrix.mat) * \<rho> \<in> carrier_mat n n"
+    using I_c \<rho>_c by (rule mult_carrier_mat)
+  have I\<rho>Id_c: "(1\<^sub>m n :: complex Matrix.mat) * \<rho> * ((1\<^sub>m n)\<^sup>\<dagger>)
+                  \<in> carrier_mat n n"
+    using I\<rho>_c Id_c by (rule mult_carrier_mat)
+  have one_smul: "(1 :: complex) \<cdot>\<^sub>m \<rho> = \<rho>"
+    using \<rho>_c by (intro eq_matI) auto
+  have zero_smul: "(0 :: complex) \<cdot>\<^sub>m
+                     ((1\<^sub>m n :: complex Matrix.mat) * \<rho>
+                      * ((1\<^sub>m n)\<^sup>\<dagger>))
+                    = 0\<^sub>m n n"
+    using I\<rho>Id_c by (intro eq_matI) auto
+  have rho_zero: "\<rho> + 0\<^sub>m n n = \<rho>"
+    using \<rho>_c by (intro eq_matI) auto
+  have "unitary_conj_channel (1\<^sub>m n) 0 \<rho>
+          = (1 :: complex) \<cdot>\<^sub>m \<rho>
+            + (0 :: complex) \<cdot>\<^sub>m
+                ((1\<^sub>m n :: complex Matrix.mat) * \<rho> * ((1\<^sub>m n)\<^sup>\<dagger>))"
+    by (simp add: unitary_conj_channel_def)
+  also have "\<dots> = \<rho> + 0\<^sub>m n n" using one_smul zero_smul by simp
+  also have "\<dots> = \<rho>" using rho_zero .
+  finally show ?thesis by (simp add: identity_channel_def)
+qed
+
+
 end
