@@ -10300,4 +10300,119 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 45
+   Topic: Unitary conjugation belongs to UCP; unitary_conj_channel in UCP
+
+   Combine \<open>map_conj_cp\<close> (CP) and \<open>map_conj_unital\<close>
+   (unitality) to put unitary conjugation in UCP n n, then apply
+   UCP_convex to put \<open>unitary_conj_channel U p\<close> in UCP for any
+   p \<in> [0,1] and unitary U.
+   ============================================================================ *)
+
+lemma map_conj_in_UCP:
+  fixes U :: "complex Matrix.mat"
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+      and npos: "0 < n"
+  shows "(\<lambda>\<rho>. U * \<rho> * (U\<^sup>\<dagger>)) \<in> UCP n n"
+proof -
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using U_c by (rule dagger_carrier)
+  have range_full:
+    "\<forall>\<rho>. \<rho> \<in> carrier_mat n n \<longrightarrow> U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
+  proof (intro allI impI)
+    fix \<rho> :: "complex Matrix.mat" assume \<rho>_c: "\<rho> \<in> carrier_mat n n"
+    have U\<rho>_c: "U * \<rho> \<in> carrier_mat n n"
+      using U_c \<rho>_c by (rule mult_carrier_mat)
+    show "U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
+      using U\<rho>_c Ud_c by (rule mult_carrier_mat)
+  qed
+  have cp: "completely_positive n n (\<lambda>\<rho>. U * \<rho> * (U\<^sup>\<dagger>))"
+    using map_conj_cp[OF U_c range_full npos npos] .
+  have un: "unital_map n n (\<lambda>\<rho>. U * \<rho> * (U\<^sup>\<dagger>))"
+    using map_conj_unital[OF U_c U_unit]
+    by (simp add: unital_map_def)
+  show ?thesis using cp un by (simp add: UCP_def)
+qed
+
+lemma unitary_conj_channel_in_UCP:
+  fixes U :: "complex Matrix.mat" and p :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+      and p_nn: "0 \<le> p"
+      and p_le: "p \<le> 1"
+      and npos: "0 < n"
+  shows "unitary_conj_channel U p \<in> UCP n n"
+proof -
+  let ?Phi1 = "identity_channel :: complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  let ?Phi2 = "\<lambda>\<rho>. U * \<rho> * (U\<^sup>\<dagger>)"
+  let ?t = "1 - p"
+  have t_nn: "0 \<le> ?t" using p_le by simp
+  have t_le: "?t \<le> 1" using p_nn by simp
+  have Phi1_in: "?Phi1 \<in> UCP n n" using identity_channel_UCP[OF npos] .
+  have Phi2_in: "?Phi2 \<in> UCP n n"
+    using map_conj_in_UCP[OF U_c U_unit npos] .
+  have r1: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> ?Phi1 X \<in> carrier_mat n n"
+    by (simp add: identity_channel_def)
+  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using U_c by (rule dagger_carrier)
+  have r2: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> ?Phi2 X \<in> carrier_mat n n"
+  proof (intro allI impI)
+    fix X :: "complex Matrix.mat" assume X_c: "X \<in> carrier_mat n n"
+    have UX_c: "U * X \<in> carrier_mat n n"
+      using U_c X_c by (rule mult_carrier_mat)
+    show "U * X * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
+      using UX_c Ud_c by (rule mult_carrier_mat)
+  qed
+  have convex_ucp:
+    "(\<lambda>X. complex_of_real ?t \<cdot>\<^sub>m ?Phi1 X
+          + (1 - complex_of_real ?t) \<cdot>\<^sub>m ?Phi2 X) \<in> UCP n n"
+    using UCP_convex[OF t_nn t_le Phi1_in Phi2_in r1 r2 npos] .
+  (* Match the convex form to unitary_conj_channel. *)
+  have shift: "(1 :: complex) - complex_of_real (1 - p) = complex_of_real p"
+    by simp
+  have id_eq: "\<And>X. ?Phi1 X = X" by (simp add: identity_channel_def)
+  have func_eq:
+    "(\<lambda>X. complex_of_real ?t \<cdot>\<^sub>m ?Phi1 X
+          + (1 - complex_of_real ?t) \<cdot>\<^sub>m ?Phi2 X)
+       = unitary_conj_channel U p"
+  proof (rule ext)
+    fix X :: "complex Matrix.mat"
+    have "complex_of_real ?t \<cdot>\<^sub>m ?Phi1 X
+            + (1 - complex_of_real ?t) \<cdot>\<^sub>m ?Phi2 X
+          = complex_of_real (1 - p) \<cdot>\<^sub>m X
+            + complex_of_real p \<cdot>\<^sub>m (U * X * (U\<^sup>\<dagger>))"
+      using shift id_eq by simp
+    also have "\<dots> = unitary_conj_channel U p X"
+      by (simp add: unitary_conj_channel_def)
+    finally show "complex_of_real ?t \<cdot>\<^sub>m ?Phi1 X
+                    + (1 - complex_of_real ?t) \<cdot>\<^sub>m ?Phi2 X
+                  = unitary_conj_channel U p X" .
+  qed
+  show ?thesis using convex_ucp func_eq by simp
+qed
+
+(* unitary_conj_channel is therefore CPTP: CP from UCP, plus the
+   already-proved trace preservation. *)
+
+lemma unitary_conj_channel_in_CPTP:
+  fixes U :: "complex Matrix.mat" and p :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and U_unit: "unitary U"
+      and p_nn: "0 \<le> p"
+      and p_le: "p \<le> 1"
+      and npos: "0 < n"
+  shows "unitary_conj_channel U p \<in> CPTP n n"
+proof -
+  have ucp: "unitary_conj_channel U p \<in> UCP n n"
+    using unitary_conj_channel_in_UCP[OF U_c U_unit p_nn p_le npos] .
+  have cp: "completely_positive n n (unitary_conj_channel U p)"
+    using ucp by (simp add: UCP_def)
+  have tp: "trace_preserving n (unitary_conj_channel U p)"
+    unfolding trace_preserving_def
+    by (intro allI impI;
+        rule unitary_conj_channel_trace_preserving[OF U_c U_unit])
+  show ?thesis using cp tp by (simp add: CPTP_def)
+qed
+
+
 end
