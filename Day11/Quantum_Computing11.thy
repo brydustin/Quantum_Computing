@@ -10011,4 +10011,40 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 41
+   Topic: Channel Composition
+
+   The composition \<open>G \<circ> F\<close> of two trace-preserving maps is again
+   trace-preserving (subject to carrier-preservation of \<open>F\<close>).  The
+   identity channel is a left and right unit for composition.
+   ============================================================================ *)
+
+lemma compose_trace_preserving:
+  assumes F_tp:    "trace_preserving n F"
+      and G_tp:    "trace_preserving n G"
+      and F_range: "\<forall>\<rho>. \<rho> \<in> carrier_mat n n \<longrightarrow> F \<rho> \<in> carrier_mat n n"
+  shows "trace_preserving n (\<lambda>\<rho>. G (F \<rho>))"
+proof (unfold trace_preserving_def, intro allI impI)
+  fix \<rho> :: "complex Matrix.mat"
+  assume \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  have F\<rho>_c: "F \<rho> \<in> carrier_mat n n" using F_range \<rho>_c by blast
+  have "Tr (G (F \<rho>)) = Tr (F \<rho>)"
+    using G_tp F\<rho>_c by (simp add: trace_preserving_def)
+  also have "\<dots> = Tr \<rho>"
+    using F_tp \<rho>_c by (simp add: trace_preserving_def)
+  finally show "Tr (G (F \<rho>)) = Tr \<rho>" .
+qed
+
+(* The identity channel is a unit for composition. *)
+
+lemma identity_channel_compose_left:
+  "(\<lambda>\<rho>. identity_channel (F \<rho>)) = F"
+  by (simp add: identity_channel_def)
+
+lemma identity_channel_compose_right:
+  "(\<lambda>\<rho>. F (identity_channel \<rho>)) = F"
+  by (simp add: identity_channel_def)
+
+
 end
