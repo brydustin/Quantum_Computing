@@ -10589,4 +10589,44 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 48
+   Topic: kraus_map_dim from kraus_operators is trace-preserving;
+          combined with kraus_is_cp this gives CPTP.
+
+   For any \<open>kraus_operators n d Ws\<close> list, the corresponding
+   \<open>kraus_map_dim d Ws\<close> is trace-preserving (since
+   \<open>sum_wdag_w n Ws = I_n\<close>) and CP (already known via
+   \<open>kraus_is_cp\<close>).  Putting these together yields CPTP membership.
+   ============================================================================ *)
+
+lemma kraus_is_trace_preserving:
+  fixes Ws :: "complex Matrix.mat list"
+  assumes Ws: "kraus_operators n d Ws"
+  shows "trace_preserving n (kraus_map_dim d Ws)"
+proof (unfold trace_preserving_def, intro allI impI)
+  fix \<rho> :: "complex Matrix.mat"
+  assume \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  have Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+    using Ws by (simp add: kraus_operators_def)
+  have sum_eq: "sum_wdag_w n Ws = 1\<^sub>m n"
+    using Ws by (simp add: kraus_operators_altdef)
+  have "Tr (kraus_map_dim d Ws \<rho>) = Tr (sum_wdag_w n Ws * \<rho>)"
+    using Tr_kraus_map_dim_as_wdagw[OF Ws_c \<rho>_c] .
+  also have "\<dots> = Tr ((1\<^sub>m n) * \<rho>)" using sum_eq by simp
+  also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
+  finally show "Tr (kraus_map_dim d Ws \<rho>) = Tr \<rho>" .
+qed
+
+lemma kraus_is_cptp:
+  fixes Ws :: "complex Matrix.mat list"
+  assumes Ws: "kraus_operators n d Ws"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "kraus_map_dim d Ws \<in> CPTP n d"
+  unfolding CPTP_def
+  using kraus_is_cp[OF Ws npos dpos] kraus_is_trace_preserving[OF Ws]
+  by simp
+
+
 end
