@@ -8088,4 +8088,158 @@ proof -
 qed
 
 
+(* --------------------------------------------------------------------------
+   5. CPTP is convex.
+
+   The CP half re-uses the argument from \<open>UCP_convex\<close>; trace-preservation
+   reduces to \<open>Tr (\<Psi> X) = t \<sqdot> Tr X + (1-t) \<sqdot> Tr X = Tr X\<close> via
+   \<open>Tr_add\<close> and \<open>Tr_smult\<close>.
+   -------------------------------------------------------------------------- *)
+
+lemma CPTP_convex:
+  fixes t :: real
+  assumes t_nn:   "0 \<le> t"
+      and t_le:   "t \<le> 1"
+      and \<Phi>1_in:  "\<Phi>1 \<in> CPTP n d"
+      and \<Phi>2_in:  "\<Phi>2 \<in> CPTP n d"
+      and r1: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>1 X \<in> carrier_mat d d"
+      and r2: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>2 X \<in> carrier_mat d d"
+      and dpos: "0 < d"
+  shows "(\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+              + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X) \<in> CPTP n d"
+proof -
+  let ?\<Psi> = "\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+                + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X"
+  have cp1: "completely_positive n d \<Phi>1"
+    using \<Phi>1_in by (simp add: CPTP_def)
+  have cp2: "completely_positive n d \<Phi>2"
+    using \<Phi>2_in by (simp add: CPTP_def)
+  have tp1: "trace_preserving n \<Phi>1"
+    using \<Phi>1_in by (simp add: CPTP_def)
+  have tp2: "trace_preserving n \<Phi>2"
+    using \<Phi>2_in by (simp add: CPTP_def)
+
+  have one_minus_nn: "0 \<le> 1 - t" using t_le by simp
+
+  (* CP: copy of UCP_convex's CP half. *)
+  have \<Psi>_cp: "completely_positive n d ?\<Psi>"
+    unfolding completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+       and X_psd: "psd X"
+    have block_c: "\<And>a b. block_of_mat n X a b \<in> carrier_mat n n"
+      by (simp add: block_of_mat_def)
+    have F1_block: "\<And>a b. \<Phi>1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r1 block_c by blast
+    have F2_block: "\<And>a b. \<Phi>2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r2 block_c by blast
+    let ?F1 = "\<lambda>\<rho>. complex_of_real t \<cdot>\<^sub>m \<Phi>1 \<rho>"
+    let ?F2 = "\<lambda>\<rho>. (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 \<rho>"
+    have F1'_block: "\<And>a b. ?F1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F1_block by simp
+    have F2'_block: "\<And>a b. ?F2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F2_block by simp
+    have amp_eq:
+      "amplification n d p ?\<Psi> X
+         = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+           + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+    proof -
+      have step_add:
+        "amplification n d p (\<lambda>\<rho>. ?F1 \<rho> + ?F2 \<rho>) X
+           = amplification n d p ?F1 X + amplification n d p ?F2 X"
+        using amplification_add[where F = ?F1 and G = ?F2
+                                 and n = n and d = d and p = p and x = X,
+                                OF dpos F1'_block F2'_block] .
+      have step_s1:
+        "amplification n d p ?F1 X
+           = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X"
+        using amplification_smult[where F = \<Phi>1 and c = "complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F1_block] .
+      have step_s2:
+        "amplification n d p ?F2 X
+           = (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+        using amplification_smult[where F = \<Phi>2 and c = "1 - complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F2_block] .
+      show ?thesis using step_add step_s1 step_s2 by simp
+    qed
+    have amp1_psd: "psd (amplification n d p \<Phi>1 X)"
+      using cp1 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp2_psd: "psd (amplification n d p \<Phi>2 X)"
+      using cp2 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp1_c: "amplification n d p \<Phi>1 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have amp2_c: "amplification n d p \<Phi>2 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have term1_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X)"
+      using t_nn amp1_psd amp1_c by (rule psd_smult_nonneg)
+    have term2_psd:
+      "psd ((1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+    proof -
+      have prev: "psd (complex_of_real (1 - t)
+                          \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+        using one_minus_nn amp2_psd amp2_c by (rule psd_smult_nonneg)
+      have rew: "complex_of_real (1 - t) = 1 - complex_of_real t" by simp
+      show ?thesis using prev rew by metis
+    qed
+    have term1_c:
+      "complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp1_c by simp
+    have term2_c:
+      "(1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp2_c by simp
+    have psum_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+            + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+      using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
+    show "psd (amplification n d p ?\<Psi> X)"
+      using amp_eq psum_psd by simp
+  qed
+
+  (* Trace preservation: Tr(t Phi1 X + (1-t) Phi2 X) = Tr X. *)
+  have \<Psi>_tp: "trace_preserving n ?\<Psi>"
+  proof (unfold trace_preserving_def, intro allI impI)
+    fix X :: "complex Matrix.mat"
+    assume X_c: "X \<in> carrier_mat n n"
+    have \<Phi>1X_c: "\<Phi>1 X \<in> carrier_mat d d" using r1 X_c by blast
+    have \<Phi>2X_c: "\<Phi>2 X \<in> carrier_mat d d" using r2 X_c by blast
+    have Tr1: "Tr (\<Phi>1 X) = Tr X"
+      using tp1 X_c by (simp add: trace_preserving_def)
+    have Tr2: "Tr (\<Phi>2 X) = Tr X"
+      using tp2 X_c by (simp add: trace_preserving_def)
+    have row_eq:
+      "dim_row (complex_of_real t \<cdot>\<^sub>m \<Phi>1 X)
+       = dim_row ((1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X)"
+      using \<Phi>1X_c \<Phi>2X_c by simp
+    have col_eq:
+      "dim_col (complex_of_real t \<cdot>\<^sub>m \<Phi>1 X)
+       = dim_col ((1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X)"
+      using \<Phi>1X_c \<Phi>2X_c by simp
+    have "Tr (?\<Psi> X) = Tr (complex_of_real t \<cdot>\<^sub>m \<Phi>1 X)
+                       + Tr ((1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X)"
+      using row_eq col_eq by (rule Tr_add)
+    also have "\<dots> = complex_of_real t * Tr (\<Phi>1 X)
+                    + (1 - complex_of_real t) * Tr (\<Phi>2 X)"
+      by (simp add: Tr_smult)
+    also have "\<dots> = complex_of_real t * Tr X
+                    + (1 - complex_of_real t) * Tr X"
+      using Tr1 Tr2 by simp
+    also have "\<dots> = (complex_of_real t + (1 - complex_of_real t)) * Tr X"
+      by (simp add: ring_distribs)
+    also have "\<dots> = 1 * Tr X" by simp
+    also have "\<dots> = Tr X" by simp
+    finally show "Tr (?\<Psi> X) = Tr X" .
+  qed
+
+  show ?thesis using \<Psi>_cp \<Psi>_tp by (simp add: CPTP_def)
+qed
+
+
 end
