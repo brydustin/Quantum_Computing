@@ -10720,4 +10720,59 @@ proof -
 qed
 
 
+(* ============================================================================
+   DAY 51
+   Topic: sum_wdag_w distributes over list concatenation
+
+   For Ws and Vs each consisting of operators in M_{d,n},
+     sum_wdag_w n (Ws @ Vs) = sum_wdag_w n Ws + sum_wdag_w n Vs.
+
+   This is the building block for combining Kraus operators into
+   larger lists with predictable normalisation behaviour.
+   ============================================================================ *)
+
+lemma sum_wdag_w_append:
+  fixes Ws Vs :: "complex Matrix.mat list"
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+  shows "sum_wdag_w n (Ws @ Vs)
+         = sum_wdag_w n Ws + sum_wdag_w n Vs"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  have Vs_sum_c: "sum_wdag_w n Vs \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Vs_c] .
+  show ?case
+    using Vs_sum_c
+    by (intro eq_matI) (auto simp: sum_wdag_w_def)
+next
+  case (Cons W Ws)
+  hence W_c: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n" by auto
+  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using W_c by (rule dagger_carrier)
+  have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n"
+    using Wd_c W_c by (rule mult_carrier_mat)
+  have Ws_sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Ws_c'] .
+  have Vs_sum_c: "sum_wdag_w n Vs \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Vs_c] .
+  have IH: "sum_wdag_w n (Ws @ Vs)
+              = sum_wdag_w n Ws + sum_wdag_w n Vs"
+    using Cons.IH Ws_c' by simp
+
+  have "sum_wdag_w n ((W # Ws) @ Vs)
+          = (W\<^sup>\<dagger>) * W + sum_wdag_w n (Ws @ Vs)"
+    by (simp add: sum_wdag_w_Cons)
+  also have "\<dots> = (W\<^sup>\<dagger>) * W + (sum_wdag_w n Ws + sum_wdag_w n Vs)"
+    using IH by simp
+  also have "\<dots> = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) + sum_wdag_w n Vs"
+    using WdW_c Ws_sum_c Vs_sum_c
+    by (simp add: assoc_add_mat)
+  also have "\<dots> = sum_wdag_w n (W # Ws) + sum_wdag_w n Vs"
+    by (simp add: sum_wdag_w_Cons)
+  finally show ?case .
+qed
+
+
 end
