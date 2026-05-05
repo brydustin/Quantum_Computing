@@ -13063,7 +13063,7 @@ proof -
     also have "\<dots> = (if r mod n = r div n \<and> c mod n = c div n then 1 else 0)"
       using rmn cmn by simp
     also have "\<dots> = v $ r * cnj (v $ c)"
-      using rnn cnn by (auto simp: v_def)
+      using rnn cnn by (simp add: v_def)
     also have "\<dots> = ?V $$ (r,0) * (?V\<^sup>\<dagger>) $$ (0,c)"
       using V_idx[OF rnn] Vdag_idx[OF cnn] by simp
     also have "\<dots> = (\<Sum>l<1. ?V $$ (r,l) * (?V\<^sup>\<dagger>) $$ (l,c))"
