@@ -657,7 +657,7 @@ proof -
     proof -
       have "(\<Sum>k<?n. 2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
           = (\<Sum>k<?n. (if k = j then 2 * (w $ i) * cnj (w $ k) else 0))"
-        by (smt (verit, best) mult_cancel_left1 mult_cancel_right1 sum.cong)
+        by (rule sum.cong) auto
       also have "... = 2 * (w $ i) * cnj (w $ j)"
         using ij' by simp
       finally have "(\<Sum>k<?n. 2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
@@ -5021,7 +5021,7 @@ proof -
         cnj (h1 $ a * k1 $ b) * (h2 $ a * k2 $ b)) =
      (\<Sum>a = 0..<n. \<Sum>b = 0..<m.
         (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))"
-    by (smt (verit, best) complex_cnj_mult mult.commute semigroup_mult_class.mult.assoc sum.cong)
+    by (simp add: complex_cnj_mult mult_ac)
 
   have step5:
   "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
