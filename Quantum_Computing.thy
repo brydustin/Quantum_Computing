@@ -979,7 +979,7 @@ next
         using nz by (simp add: power2_eq_square)
       finally show ?thesis.
     qed
-    show ?thesis using step1 step2 step3 by simp
+    show ?thesis unfolding step1 step2 step3 by simp
   qed
   have "\<langle>x | z\<rangle> = cnj (\<langle>z | x\<rangle>)"
       using inner_prod_cnj[of z x] zdim xdim by simp
