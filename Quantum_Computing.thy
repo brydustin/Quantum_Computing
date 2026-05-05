@@ -4605,7 +4605,7 @@ proof -
       case True
       have row_top:
         "Matrix.row (four_block_mat T11 T12 T21 T22) i = Matrix.row T11 i @\<^sub>v Matrix.row T12 i"
-        using assms True row_four_block_mat[of T11 n1 k1 T12 k2 T21 n2 T22 i] by simp
+        by (rule row_four_block_mat(1)[OF assms(3) assms(4) assms(5) assms(6) True])
       have lhs_i:
         "(four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) $ i =
          Matrix.row T11 i \<bullet> v + Matrix.row T12 i \<bullet> w"
