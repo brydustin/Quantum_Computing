@@ -7089,7 +7089,7 @@ next
           (\<Sum>b = 0..<mc. B $$ (i mod mr, b) * w $ b)"
       by (simp add: sum_product)
     then show ?thesis
-      using lhs rhs by simp
+      unfolding lhs rhs .
   qed
 qed
 
