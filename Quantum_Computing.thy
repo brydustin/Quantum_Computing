@@ -4473,7 +4473,7 @@ proof -
         \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>"
         using Schur_quadratic_tail[OF xdim].
       show "0 \<le> Re \<langle>x | P *\<^sub>v x\<rangle>"
-        using square_nonneg S_nonneg q_decomp by simp
+        unfolding q_decomp using square_nonneg S_nonneg by simp
     qed
     show "psd P"
       unfolding psd_def using herm P_nonneg by simp
