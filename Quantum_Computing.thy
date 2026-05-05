@@ -4389,7 +4389,7 @@ proof -
 
     show "\<langle>?lift z y | P *\<^sub>v (?lift z y)\<rangle> =
         cnj (z + ?cross y / P $$ (0,0)) * (P $$ (0,0)) * (z + ?cross y / P $$ (0,0)) + \<langle>y | ?S *\<^sub>v y\<rangle>"
-      using full_quad Schur_quad square_expand by simp
+      unfolding full_quad Schur_quad square_expand by simp
   qed
 
   have Schur_quadratic_tail:
