@@ -8099,8 +8099,8 @@ proof -
         using tensor_vec_index[of "unit_vec d0 J" d0 "unit_vec 2 ?i1" 2 k] k d_eq by simp
       also have "\<dots> = (if k div 2 = J then 1 else 0) * (if k mod 2 = ?i1 then 1 else 0)"
         using J i1_lt d_eq k by auto
-      also have "\<dots> = (if k div 2 = J \<and> k mod 2 = ?i1 then 1 else 0)" 
-        by auto
+      also have "\<dots> = (if k div 2 = J \<and> k mod 2 = ?i1 then 1 else 0)"
+        by simp
       also have "\<dots> = (if k = J * 2 + ?i1 then 1 else 0)"
         using i1_lt by (auto simp: mult.commute, metis mult_div_mod_eq)
       finally show "?w $ k = (if k = J * 2 + ?i1 then 1 else 0)".
