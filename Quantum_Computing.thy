@@ -5032,11 +5032,11 @@ proof -
     have "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
             (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))
         = (\<Sum>a = 0..<n. (cnj (h1 $ a) * h2 $ a) * (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b))"
-      by (simp add: sum_distrib_left algebra_simps)
+      by (simp add: sum_distrib_left)
     also have "... =
         (\<Sum>a = 0..<n. cnj (h1 $ a) * h2 $ a) *
         (\<Sum>b = 0..<m. cnj (k1 $ b) * k2 $ b)"
-      by (simp add: sum_distrib_right algebra_simps)
+      by (simp add: sum_distrib_right)
     finally show ?thesis .
   qed
 
@@ -5810,7 +5810,7 @@ proof -
       using qq_expand by simp
     also have "... = ((1\<^sub>m n) $$ (r,c) - ((1\<^sub>m n) * ?P1) $$ (r,c) - (?P1 * (1\<^sub>m n)) $$ (r,c)
                      + (?P1 * ?P1) $$ (r,c))"
-      using rln cln P1car by(simp, smt (verit, ccfv_SIG) P1idem carrier_matD(1,2) diff_0 
+      using rln cln P1car by(simp, smt (verit, ccfv_SIG) P1idem carrier_matD(1,2) diff_0
           index_add_mat(1) index_minus_mat(1) index_one_mat(1) left_mult_one_mat right_mult_one_mat)
     also have "... = ((1\<^sub>m n) $$ (r,c) - ?P1 $$ (r,c) - ?P1 $$ (r,c) + (?P1 * ?P1) $$ (r,c))"
       using rln cln P1car
@@ -13065,7 +13065,7 @@ proof -
     also have "\<dots> = v $ r * cnj (v $ c)"
       using rnn cnn by (simp add: v_def)
     also have "\<dots> = ?V $$ (r,0) * (?V\<^sup>\<dagger>) $$ (0,c)"
-      using V_idx[OF rnn] Vdag_idx[OF cnn] by simp
+      unfolding V_idx[OF rnn] Vdag_idx[OF cnn] ..
     also have "\<dots> = (\<Sum>l<1. ?V $$ (r,l) * (?V\<^sup>\<dagger>) $$ (l,c))"
       by simp
     also have "\<dots> = (?V * (?V\<^sup>\<dagger>)) $$ (r,c)"
