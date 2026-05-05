@@ -10568,8 +10568,9 @@ proof -
       have recomb_b: "(b div p) * p + (b mod p) = b"
         by simp
       show "?G (?F x) $$ (a,b) = x $$ (a,b)"
+        unfolding operator_tensor_iso_inv_def operator_tensor_iso_map_def
         using a b row col div_row div_col mod_row mod_col recomb_a recomb_b
-        by (simp add: operator_tensor_iso_inv_def operator_tensor_iso_map_def)
+        by simp
     qed
   qed
 
@@ -10615,8 +10616,9 @@ proof -
       have recomb_s: "(s div p) * p + (s mod p) = s"
         by simp
       show "?F (?G y) $$ (r,s) = y $$ (r,s)"
+        unfolding operator_tensor_iso_inv_def operator_tensor_iso_map_def
         using r s row col div_row mod_row div_col mod_col recomb_r recomb_s
-        by (simp add: operator_tensor_iso_inv_def operator_tensor_iso_map_def)
+        by simp
     qed
   qed
 
@@ -11553,10 +11555,9 @@ next
     have a1: "(M * Q) * ((M * Q)\<^sup>\<dagger>) = (M * Q) * (Q * (M\<^sup>\<dagger>))"
       using dagprod' by simp
     have a2: "(M * Q) * (Q * (M\<^sup>\<dagger>)) = M * Q * Q * (M\<^sup>\<dagger>)"
-      using M_c Qc Mdag_c
-      by (metis assoc_mult_mat mult_carrier_mat)
+      by (rule assoc_mult_mat[OF MQ_c Qc Mdag_c, symmetric])
     have a3: "M * Q * Q * (M\<^sup>\<dagger>) = M * (Q * Q) * (M\<^sup>\<dagger>)"
-      using M_c Qc by (metis assoc_mult_mat)
+      by (simp add: assoc_mult_mat[OF M_c Qc Qc])
     have a4: "M * (Q * Q) * (M\<^sup>\<dagger>) = M * \<rho> * (M\<^sup>\<dagger>)" using QQ by simp
     show ?thesis using a1 a2 a3 a4 by simp
   qed
@@ -11774,9 +11775,9 @@ next
     have "(W * Q) * ((W * Q)\<^sup>\<dagger>) = (W * Q) * (Q * (W\<^sup>\<dagger>))"
       using dagprod' by simp
     also have "\<dots> = W * Q * Q * (W\<^sup>\<dagger>)"
-      using W_c Qc Wdag_c by (metis assoc_mult_mat mult_carrier_mat)
+      by (rule assoc_mult_mat[OF WQ_c Qc Wdag_c, symmetric])
     also have "\<dots> = W * (Q * Q) * (W\<^sup>\<dagger>)"
-      using W_c Qc by (metis assoc_mult_mat)
+      by (simp add: assoc_mult_mat[OF W_c Qc Qc])
     also have "\<dots> = W * \<rho> * (W\<^sup>\<dagger>)"
       using QQ by simp
     finally show ?thesis by simp
@@ -16203,9 +16204,9 @@ proof -
               = (pauli_X * Q) * (Q * (pauli_X\<^sup>\<dagger>))"
         using dagprod' by simp
       also have "\<dots> = pauli_X * Q * Q * (pauli_X\<^sup>\<dagger>)"
-        using x_c Q_c xd_c by (metis assoc_mult_mat mult_carrier_mat)
+        by (rule assoc_mult_mat[OF XQ_c Q_c xd_c, symmetric])
       also have "\<dots> = pauli_X * (Q * Q) * (pauli_X\<^sup>\<dagger>)"
-        using x_c Q_c by (metis assoc_mult_mat)
+        by (simp add: assoc_mult_mat[OF x_c Q_c Q_c])
       also have "\<dots> = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
         using Q_sq by simp
       finally show ?thesis by simp
@@ -17188,9 +17189,9 @@ proof -
               = (pauli_Z * Q) * (Q * (pauli_Z\<^sup>\<dagger>))"
         using dagprod' by simp
       also have "\<dots> = pauli_Z * Q * Q * (pauli_Z\<^sup>\<dagger>)"
-        using z_c Q_c zd_c by (metis assoc_mult_mat mult_carrier_mat)
+        by (rule assoc_mult_mat[OF ZQ_c Q_c zd_c, symmetric])
       also have "\<dots> = pauli_Z * (Q * Q) * (pauli_Z\<^sup>\<dagger>)"
-        using z_c Q_c by (metis assoc_mult_mat)
+        by (simp add: assoc_mult_mat[OF z_c Q_c Q_c])
       also have "\<dots> = pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)"
         using Q_sq by simp
       finally show ?thesis by simp
@@ -17346,9 +17347,9 @@ proof -
       have "(U * Q) * ((U * Q)\<^sup>\<dagger>) = (U * Q) * (Q * (U\<^sup>\<dagger>))"
         using dagprod' by simp
       also have "\<dots> = U * Q * Q * (U\<^sup>\<dagger>)"
-        using U_c Q_c Ud_c by (metis assoc_mult_mat mult_carrier_mat)
+        by (rule assoc_mult_mat[OF UQ_c Q_c Ud_c, symmetric])
       also have "\<dots> = U * (Q * Q) * (U\<^sup>\<dagger>)"
-        using U_c Q_c by (metis assoc_mult_mat)
+        by (simp add: assoc_mult_mat[OF U_c Q_c Q_c])
       also have "\<dots> = U * \<rho> * (U\<^sup>\<dagger>)" using Q_sq by simp
       finally show ?thesis by simp
     qed
