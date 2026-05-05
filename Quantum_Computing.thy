@@ -5227,7 +5227,7 @@ proof -
     also have "... =
         (if p div m = q div m then 1 else 0) *
         (if p mod m = q mod m then 1 else 0)"
-      using hs_ip[OF pd qd] ks_ip[OF pm qm] by simp
+      unfolding hs_ip[OF pd qd] ks_ip[OF pm qm] ..
     also have "... = (if p = q then 1 else 0)"
       using p_lt' q_lt' ks_len
       by (simp, metis div_mod_decomp)
