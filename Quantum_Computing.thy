@@ -2519,7 +2519,7 @@ proof -
                                   (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
               + cnj b * d * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
                                   (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))"
-    by (simp add: sum.distrib sum_distrib_left)
+    by (simp only: sum.distrib sum_distrib_left)
   also have "\<dots> = cnj a * c * T $$ (i, i) + cnj a * d * T $$ (i, j)
               + cnj b * c * T $$ (j, i) + cnj b * d * T $$ (j, j)"
     using sum_indicator_T_indicator[OF i i, of T]
