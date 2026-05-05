@@ -11641,7 +11641,7 @@ next
     have "Tr (M * \<rho> * (M\<^sup>\<dagger>)) = Tr ((M\<^sup>\<dagger>) * (M * \<rho>))"
       using M_c \<rho>_c Mdag_c by (intro Tr_cyclic) auto
     also have "\<dots> = Tr ((M\<^sup>\<dagger>) * M * \<rho>)"
-      using Mdag_c M_c \<rho>_c by (metis assoc_mult_mat)
+      by (simp add: assoc_mult_mat[OF Mdag_c M_c \<rho>_c])
     finally show ?thesis .
   qed
 
@@ -12529,7 +12529,7 @@ proof -
     also have "\<dots> = U * ((?D)\<^sup>\<dagger> * (U\<^sup>\<dagger>))" using prep1 by simp
     also have "\<dots> = U * (?D * (U\<^sup>\<dagger>))" using prep4 by simp
     also have "\<dots> = U * ?D * (U\<^sup>\<dagger>)"
-      using Uc D_c Udag_c by (metis assoc_mult_mat)
+      by (rule assoc_mult_mat[OF Uc D_c Udag_c, symmetric])
     finally show ?thesis sorry
   qed
 
@@ -12548,7 +12548,7 @@ proof -
     have step1: "?P *\<^sub>v x = U *\<^sub>v (?D *\<^sub>v ?y)"
     proof -
       have "?P *\<^sub>v x = (U * (?D * (U\<^sup>\<dagger>))) *\<^sub>v x"
-        using Uc D_c Udag_c by (metis assoc_mult_mat)
+        by (simp add: assoc_mult_mat[OF Uc D_c Udag_c])
       also have "\<dots> = U *\<^sub>v ((?D * (U\<^sup>\<dagger>)) *\<^sub>v x)"
         using Uc D_c Udag_c xcar
         by (intro assoc_mult_mat_vec) auto
@@ -16126,7 +16126,7 @@ proof -
         using x\<rho>_c xd_c by (metis carrier_matD)
     qed
     also have "\<dots> = Tr ((pauli_X\<^sup>\<dagger> * pauli_X) * \<rho>)"
-      by (metis xd_c x_c \<rho>_c assoc_mult_mat)
+      by (simp add: assoc_mult_mat[OF xd_c x_c \<rho>_c])
     also have "\<dots> = Tr ((1\<^sub>m 2) * \<rho>)" using xdx_eq by simp
     also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
     finally show ?thesis .
@@ -17116,7 +17116,7 @@ proof -
         using z\<rho>_c zd_c by (metis carrier_matD)
     qed
     also have "\<dots> = Tr ((pauli_Z\<^sup>\<dagger> * pauli_Z) * \<rho>)"
-      by (metis zd_c z_c \<rho>_c assoc_mult_mat)
+      by (simp add: assoc_mult_mat[OF zd_c z_c \<rho>_c])
     also have "\<dots> = Tr ((1\<^sub>m 2) * \<rho>)" using zdz_eq by simp
     also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
     finally show ?thesis .
@@ -17278,7 +17278,7 @@ proof -
         using U\<rho>_c Ud_c by (metis carrier_matD)
     qed
     also have "\<dots> = Tr ((U\<^sup>\<dagger> * U) * \<rho>)"
-      by (metis Ud_c U_c \<rho>_c assoc_mult_mat)
+      by (simp add: assoc_mult_mat[OF Ud_c U_c \<rho>_c])
     also have "\<dots> = Tr ((1\<^sub>m n) * \<rho>)" using UdU by simp
     also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
     finally show ?thesis.
@@ -18272,7 +18272,7 @@ proof -
     using x_dag by simp
   also have "\<dots> = (M * pauli_X) * pauli_X" using commute by simp
   also have "\<dots> = M * (pauli_X * pauli_X)"
-    using x_c M_c by (metis assoc_mult_mat)
+    by (rule assoc_mult_mat[OF M_c x_c x_c])
   also have "\<dots> = M * (1\<^sub>m 2)" using x_sq by simp
   also have "\<dots> = M" using M_c by simp
   finally show ?thesis.
@@ -18312,7 +18312,7 @@ proof -
     using z_dag by simp
   also have "\<dots> = (M * pauli_Z) * pauli_Z" using commute by simp
   also have "\<dots> = M * (pauli_Z * pauli_Z)"
-    using z_c M_c by (metis assoc_mult_mat)
+    by (rule assoc_mult_mat[OF M_c z_c z_c])
   also have "\<dots> = M * (1\<^sub>m 2)" using z_sq by simp
   also have "\<dots> = M" using M_c by simp
   finally show ?thesis.
@@ -18469,7 +18469,7 @@ proof -
     using U_unit U_c by (auto simp: unitary_def)
   have "U * M * (U\<^sup>\<dagger>) = (M * U) * (U\<^sup>\<dagger>)" using commute by simp
   also have "\<dots> = M * (U * (U\<^sup>\<dagger>))"
-    using M_c U_c Ud_c by (metis assoc_mult_mat)
+    by (rule assoc_mult_mat[OF M_c U_c Ud_c])
   also have "\<dots> = M * (1\<^sub>m n)" using UUd by simp
   also have "\<dots> = M" using M_c by simp
   finally show ?thesis.
