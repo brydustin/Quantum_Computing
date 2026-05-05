@@ -677,7 +677,7 @@ proof -
        - 2 * (w $ i) * cnj (w $ j)
        - 2 * (w $ i) * cnj (w $ j)
        + (4 * (w $ i) * cnj (w $ j) * (\<Sum>k<?n. w $ k * cnj (w $ k)))"
-      by (simp add: mult.commute)
+      by (simp add: mult_ac)
     also have "... =
          (if i = j then (1 :: complex) else 0)
        - 2 * (w $ i) * cnj (w $ j)
@@ -2719,7 +2719,7 @@ proof -
       = (\<Sum>i = 0..<m. \<Sum>j = 0..<n. cnj (x $ j) * M $$ (j,i) * y $ i)"
     by (rule sum.swap)
   thus ?thesis
-    using lhs rhs by simp
+    unfolding lhs rhs .
 qed
 
 (* Hermitian \<leftrightarrow> \<langle>x|Hx\<rangle> \<in> \<real> for all x *)
