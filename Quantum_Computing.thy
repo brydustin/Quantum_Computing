@@ -640,7 +640,7 @@ proof -
     proof -
       have "(\<Sum>k<?n. 2 * (if i = k then (1 :: complex) else 0) * (w $ k) * cnj (w $ j))
           = (\<Sum>k<?n. (if i = k then 2 * (w $ k) * cnj (w $ j) else 0))"
-        by (smt (verit) mult_cancel_left1 mult_cancel_right1 sum.cong)
+        by (rule sum.cong) auto
       also have "... = 2 * (w $ i) * cnj (w $ j)"
         using ij' by simp
       finally have "(\<Sum>k<?n. 2 * (if i = k then (1 :: complex) else 0) * (w $ k) * cnj (w $ j))
