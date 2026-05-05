@@ -7177,7 +7177,7 @@ proof -
     also have "... = \<langle>?u | ?u\<rangle> + \<langle>?u | ?v\<rangle> + \<langle>?v | ?u\<rangle> + \<langle>?v | ?v\<rangle>"
       by (simp add: algebra_simps)
     also have "... = 2"
-      using inner_uu inner_vv inner_uv inner_vu by simp
+      unfolding inner_uu inner_vv inner_uv inner_vu by simp
     finally show ?thesis.
   qed
   have sq_norm: "(\<parallel>?u + ?v\<parallel>)\<^sup>2 = 2"
