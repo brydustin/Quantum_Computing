@@ -2522,11 +2522,11 @@ proof -
     by (simp only: sum.distrib sum_distrib_left)
   also have "\<dots> = cnj a * c * T $$ (i, i) + cnj a * d * T $$ (i, j)
               + cnj b * c * T $$ (j, i) + cnj b * d * T $$ (j, j)"
-    using sum_indicator_T_indicator[OF i i, of T]
-          sum_indicator_T_indicator[OF i j, of T]
-          sum_indicator_T_indicator[OF j i, of T]
-          sum_indicator_T_indicator[OF j j, of T]
-    by simp
+    unfolding sum_indicator_T_indicator[OF i i, of T]
+              sum_indicator_T_indicator[OF i j, of T]
+              sum_indicator_T_indicator[OF j i, of T]
+              sum_indicator_T_indicator[OF j j, of T]
+    ..
   finally show ?thesis .
 qed
 
