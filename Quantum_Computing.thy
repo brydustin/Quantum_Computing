@@ -5218,7 +5218,7 @@ proof -
     have "\<langle>?ts ! p | ?ts ! q\<rangle>
         = \<langle>tensor_vec (hs ! (p div m)) (ks ! (p mod m))
            | tensor_vec (hs ! (q div m)) (ks ! (q mod m))\<rangle>"
-      using p_nth q_nth by simp
+      unfolding p_nth q_nth ..
     also have "... =
         \<langle>hs ! (p div m) | hs ! (q div m)\<rangle> *
         \<langle>ks ! (p mod m) | ks ! (q mod m)\<rangle>"
