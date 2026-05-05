@@ -11397,7 +11397,7 @@ proof -
     also have "\<dots> = (\<Sum>i < m. \<Sum>a < p. \<Sum>j < m. \<Sum>b < p.
                        (M \<Otimes> 1\<^sub>m p) $$ (i * p + a, j * p + b)
                        * \<rho> $$ (j * p + b, i * p + a))"
-      by (simp add: sum.cartesian_product[symmetric])
+      by (simp only: sum.cartesian_product[symmetric])
 
     also have "\<dots> = (\<Sum>i < m. \<Sum>a < p. \<Sum>j < m. \<Sum>b < p.
                        M $$ (i, j) * (1\<^sub>m p :: complex Matrix.mat) $$ (a, b)
