@@ -10568,9 +10568,9 @@ proof -
       have recomb_b: "(b div p) * p + (b mod p) = b"
         by simp
       show "?G (?F x) $$ (a,b) = x $$ (a,b)"
-        unfolding operator_tensor_iso_inv_def operator_tensor_iso_map_def
-        using a b row col div_row div_col mod_row mod_col recomb_a recomb_b
-        by simp
+        unfolding operator_tensor_iso_inv_entry[OF a b]
+                  operator_tensor_iso_map_entry[OF row col]
+                  div_row div_col mod_row mod_col recomb_a recomb_b ..
     qed
   qed
 
@@ -10616,9 +10616,9 @@ proof -
       have recomb_s: "(s div p) * p + (s mod p) = s"
         by simp
       show "?F (?G y) $$ (r,s) = y $$ (r,s)"
-        unfolding operator_tensor_iso_inv_def operator_tensor_iso_map_def
-        using r s row col div_row mod_row div_col mod_col recomb_r recomb_s
-        by simp
+        unfolding operator_tensor_iso_map_entry[OF r s]
+                  operator_tensor_iso_inv_entry[OF row col]
+                  div_row mod_row div_col mod_col recomb_r recomb_s ..
     qed
   qed
 
