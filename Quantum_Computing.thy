@@ -7175,7 +7175,7 @@ proof -
     also have "... = (\<langle>?u | ?u\<rangle> + \<langle>?u | ?v\<rangle>) + (\<langle>?v | ?u\<rangle> + \<langle>?v | ?v\<rangle>)"
       using du dv inner_prod_right_add' by presburger
     also have "... = \<langle>?u | ?u\<rangle> + \<langle>?u | ?v\<rangle> + \<langle>?v | ?u\<rangle> + \<langle>?v | ?v\<rangle>"
-      by (simp add: algebra_simps)
+      by (rule add.assoc[symmetric])
     also have "... = 2"
       unfolding inner_uu inner_vv inner_uv inner_vu by simp
     finally show ?thesis.
