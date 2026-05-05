@@ -7795,7 +7795,7 @@ proof
   also have "\<dots> = \<langle>U *\<^sub>v tensor_vec \<psi>\<^sub>1 \<phi> | U *\<^sub>v tensor_vec \<psi>\<^sub>2 \<phi>\<rangle>"
     using unitary_preserves_inner_prod[OF U_un] tv1_dim tv2_dim U_dc by simp
   also have "\<dots> = \<langle>tensor_vec \<psi>\<^sub>1 \<psi>\<^sub>1 | tensor_vec \<psi>\<^sub>2 \<psi>\<^sub>2\<rangle>"
-    using clone_\<psi>\<^sub>1 clone_\<psi>\<^sub>2 by simp
+    unfolding clone_\<psi>\<^sub>1 clone_\<psi>\<^sub>2 ..
   also have "\<dots> = \<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> * \<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle>"
     using tensor_inner_prod[OF \<psi>\<^sub>1_dim \<psi>\<^sub>2_dim \<psi>\<^sub>1_dim \<psi>\<^sub>2_dim].
   also have "\<dots> = c * c" by (simp add: c_def)
