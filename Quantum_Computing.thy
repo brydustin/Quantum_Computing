@@ -5786,8 +5786,9 @@ proof -
         using P1car by (meson Qcar minus_mult_distrib_mat one_carrier_mat)
       also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1)
                        - (?P1 * (1\<^sub>m n) - ?P1 * ?P1)"
-        using P1car by (simp add: right_diff_distrib,
-                        metis left_mult_one_mat mult_minus_distrib_mat one_carrier_mat)
+        using mult_minus_distrib_mat[OF one_carrier_mat one_carrier_mat P1car]
+              mult_minus_distrib_mat[OF P1car one_carrier_mat P1car]
+        by simp
       also have "... = ((1\<^sub>m n) * (1\<^sub>m n)) - ((1\<^sub>m n) * ?P1) - (?P1 * (1\<^sub>m n)) + (?P1 * ?P1)"
       proof -
         have "((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * ?P1)
@@ -7480,7 +7481,7 @@ proof -
       unfolding bell_basis_def
       unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
                 tensor_unit_vec_2_10 tensor_unit_vec_2_11
-      by (elim disjE; simp add: inner_prod_def unit_vec_def csqrt_two sqrt2_mult field_simps)
+      by (elim disjE; simp add: inner_prod_def unit_vec_def csqrt_two sqrt2_mult)
   qed
   show ?thesis
     unfolding orthonormal_list_def
