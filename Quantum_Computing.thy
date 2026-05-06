@@ -7111,9 +7111,9 @@ lemma composite_measurement_prob:
       and M_sq: "M \<in> carrier_mat n n"
   shows "meas_prob (M \<Otimes> 1\<^sub>m m) (tensor_vec \<psi> \<phi>) = meas_prob M \<psi>"
 proof -
-  have psi_dim: "dim_vec \<psi> = n" using psi_st by (auto simp: quantum_state_def)
-  have phi_dim: "dim_vec \<phi> = m" using phi_st by (auto simp: quantum_state_def)
-  have phi_norm: "\<parallel>\<phi>\<parallel> = 1" using phi_st by (auto simp: quantum_state_def)
+  have psi_dim: "dim_vec \<psi> = n" using psi_st by (simp add: quantum_state_def)
+  have phi_dim: "dim_vec \<phi> = m" using phi_st by (simp add: quantum_state_def)
+  have phi_norm: "\<parallel>\<phi>\<parallel> = 1" using phi_st by (simp add: quantum_state_def)
   (* Step 1: (M \<otimes> I_m)(\<psi> \<otimes> \<phi>) = (M\<psi>) \<otimes> \<phi> -- mixed product property *)
   have mix: "(M \<Otimes> 1\<^sub>m m) *\<^sub>v (tensor_vec \<psi> \<phi>) = tensor_vec (M *\<^sub>v \<psi>) \<phi>"
     using tensor_mat_vec_mult_right_id[OF M_sq psi_dim phi_dim] .
@@ -8238,8 +8238,8 @@ lemma pure_density_is_density_matrix:
 proof -
   (* pure_density \<psi> = |\<psi>\<rangle>\<langle>\<psi>|.  Hermitian: outer_sum_hermitian.
      PSD: outer_sum_psd.  Tr = \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>\<^sup>2 = 1. *)
-  have dim: "dim_vec \<psi> = n" using assms by (auto simp: quantum_state_def)
-  have norm: "\<parallel>\<psi>\<parallel> = 1" using assms by (auto simp: quantum_state_def)
+  have dim: "dim_vec \<psi> = n" using assms by (simp add: quantum_state_def)
+  have norm: "\<parallel>\<psi>\<parallel> = 1" using assms by (simp add: quantum_state_def)
   have psd: "psd (outer_sum n [\<psi>])"
     using dim by (intro outer_sum_psd) auto
   have tr: "Tr (outer_sum n [\<psi>]) = 1"
@@ -8824,9 +8824,9 @@ lemma ensemble_prob_trace:
   shows "Re (Tr ((M\<^sup>\<dagger>) * M * \<rho>)) \<ge> 0"
 proof -
   have M_carr: "M \<in> carrier_mat n n"
-    using ms Min by (auto simp: measurement_system_def)
-  have rho_carr: "\<rho> \<in> carrier_mat n n" using dm by (auto simp: density_matrix_def)
-  have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
+    using ms Min by (simp add: measurement_system_def)
+  have rho_carr: "\<rho> \<in> carrier_mat n n" using dm by (simp add: density_matrix_def)
+  have rho_psd: "psd \<rho>" using dm by (simp add: density_matrix_def)
 
   \<comment> \<open>Take a PSD square root of @{term \<rho>}.\<close>
   obtain Q where Qc: "Q \<in> carrier_mat n n" and Qpsd: "psd Q" and QQ: "Q * Q = \<rho>"
@@ -11026,9 +11026,9 @@ lemma partial_trace_B_is_density:
   shows "density_matrix m (partial_trace_B m p X)"
 proof -
   have Xsq: "X \<in> carrier_mat (m * p) (m * p)"
-    using dm by (auto simp: density_matrix_def)
+    using dm by (simp add: density_matrix_def)
   have Xpsd: "psd X"
-    using dm by (auto simp: density_matrix_def)
+    using dm by (simp add: density_matrix_def)
   have Xherm: "hermitian X"
     using Xpsd by (rule psd_hermitian)
   have carr: "partial_trace_B m p X \<in> carrier_mat m m"
@@ -11253,7 +11253,7 @@ proof -
   define M where M_def: "M = (meas\<^sup>\<dagger>) * meas"
 
   have rho_carr: "\<rho> \<in> carrier_mat (m * p) (m * p)"
-    using dm by (auto simp: density_matrix_def)
+    using dm by (simp add: density_matrix_def)
   have rho_row: "dim_row \<rho> = m * p" and rho_col: "dim_col \<rho> = m * p"
     using rho_carr by auto
 
@@ -11662,11 +11662,11 @@ lemma meas_map_density:
   shows "density_matrix n (meas_map Ms \<rho>)"
 proof -
   have rho_carr: "\<rho> \<in> carrier_mat n n"
-    using dm by (auto simp: density_matrix_def)
+    using dm by (simp add: density_matrix_def)
   have rho_psd: "psd \<rho>"
-    using dm by (auto simp: density_matrix_def)
+    using dm by (simp add: density_matrix_def)
   have rho_tr: "Tr \<rho> = 1"
-    using dm by (auto simp: density_matrix_def)
+    using dm by (simp add: density_matrix_def)
   have Ms_carr: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
     using ms by (simp add: measurement_system_def)
   have id_eq: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
