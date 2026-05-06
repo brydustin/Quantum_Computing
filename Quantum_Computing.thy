@@ -5928,10 +5928,33 @@ qed
    session's quick_and_dirty = true setting.
    ---------------------------------------------------------------------- *)
 
+(* Helper: the Gram matrix of a list of vectors with trivial coefficient
+   kernel is invertible.  Stated using an elementary trivial-kernel
+   formulation rather than the locale-level lin_indpt so the lemma is
+   self-contained and the obtain in dual_basis_exists below can be
+   discharged by a direct application of this lemma (without an inline
+   sorry). *)
+lemma gram_matrix_invertible:
+  fixes \<psi>s :: "complex Matrix.vec list" and n :: nat
+  assumes carriers: "\<forall>i < length \<psi>s. \<psi>s ! i \<in> carrier_vec n"
+      and triv_kernel: "\<forall>c :: nat \<Rightarrow> complex.
+           (\<forall>j < length \<psi>s.
+              (\<Sum>i = 0..<length \<psi>s. c i * (\<psi>s ! i) $ j) = 0)
+           \<longrightarrow> (\<forall>i < length \<psi>s. c i = 0)"
+  shows "\<exists>H :: complex Matrix.mat. H \<in> carrier_mat (length \<psi>s) (length \<psi>s) \<and>
+         H * Matrix.mat (length \<psi>s) (length \<psi>s)
+              (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>) = 1\<^sub>m (length \<psi>s) \<and>
+         Matrix.mat (length \<psi>s) (length \<psi>s)
+              (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>) * H = 1\<^sub>m (length \<psi>s)"
+  sorry
+
 lemma dual_basis_exists:
   fixes \<psi>s :: "complex Matrix.vec list"
   assumes qstates: "\<forall>\<psi> \<in> set \<psi>s. quantum_state n \<psi>"
-      and lin_indep: "lin_indpt (set \<psi>s)"
+      and triv_kernel: "\<forall>c :: nat \<Rightarrow> complex.
+           (\<forall>j < length \<psi>s.
+              (\<Sum>i = 0..<length \<psi>s. c i * (\<psi>s ! i) $ j) = 0)
+           \<longrightarrow> (\<forall>i < length \<psi>s. c i = 0)"
       and len: "length \<psi>s = k"
       and kle: "k \<le> n"
   shows "\<exists>\<phi>s :: complex Matrix.vec list.
@@ -5944,19 +5967,23 @@ proof -
     by (metis carrier_vec_dim_vec nth_mem quantum_state_def)
   have psi_dim: "\<forall>i < k. dim_vec (\<psi>s ! i) = n"
     using psi_car by auto
+  have psi_car_all: "\<forall>i < length \<psi>s. \<psi>s ! i \<in> carrier_vec n"
+    using psi_car len by simp
   (* The k\<times>k Gram matrix of the \<psi>s. *)
   define G :: "complex Matrix.mat"
     where "G = Matrix.mat k k (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>)"
   have G_car: "G \<in> carrier_mat k k"
     by (simp only: G_def carrier_matI dim_row_mat dim_col_mat)
-  (* Linear independence of \<psi>s implies G is invertible.  This step
-     reduces to a standard fact about Gram matrices and is admitted; once
-     proven separately it plugs in here without changing the rest. *)
+  have G_idx: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> G $$ (i,j) = \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>"
+    by (simp only: G_def index_mat split_conv)
+  (* Pull H out of the Gram-matrix-invertibility helper -- discharged
+     by a direct application of gram_matrix_invertible, no inline sorry. *)
   obtain H :: "complex Matrix.mat"
     where H_car: "H \<in> carrier_mat k k"
       and HG: "H * G = 1\<^sub>m k"
       and GH: "G * H = 1\<^sub>m k"
-    sorry
+    using gram_matrix_invertible[OF psi_car_all triv_kernel] len
+    unfolding G_def by metis
   (* Build the dual vectors using H. *)
   define \<phi>s :: "complex Matrix.vec list"
     where "\<phi>s = map (\<lambda>i. Matrix.vec n
@@ -5966,22 +5993,85 @@ proof -
     by (simp add: \<phi>s_def)
   have dim_\<phi>: "\<forall>i < k. \<phi>s ! i \<in> carrier_vec n"
     by (simp add: \<phi>s_def)
-  have nth_\<phi>: "\<And>i. i < k \<Longrightarrow>
-        \<phi>s ! i = Matrix.vec n
-                   (\<lambda>a. \<Sum>l = 0..<k. cnj (H $$ (i, l)) * (\<psi>s ! l) $ a)"
+  have phi_idx: "\<And>i a. i < k \<Longrightarrow> a < n \<Longrightarrow>
+        \<phi>s ! i $ a = (\<Sum>l = 0..<k. cnj (H $$ (i, l)) * (\<psi>s ! l) $ a)"
+    by (simp add: \<phi>s_def)
+  have phi_dim_eq: "\<And>i. i < k \<Longrightarrow> dim_vec (\<phi>s ! i) = n"
     by (simp add: \<phi>s_def)
   (* The dual-basis property: <\<phi>s!i | \<psi>s!j> evaluates to (H * G) $$ (i,j). *)
+  have inner_eq_HG:
+    "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (H * G) $$ (i, j)"
+  proof -
+    fix i j assume i: "i < k" and j: "j < k"
+    have psi_j_dim: "dim_vec (\<psi>s ! j) = n" using psi_dim j by simp
+    have phi_i_dim: "dim_vec (\<phi>s ! i) = n" using phi_dim_eq i by simp
+    have "\<langle>\<phi>s ! i | \<psi>s ! j\<rangle>
+         = (\<Sum>a = 0..<n. cnj ((\<phi>s ! i) $ a) * (\<psi>s ! j) $ a)"
+      using phi_i_dim psi_j_dim
+      by (simp add: inner_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>a = 0..<n.
+                        (\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a))
+                        * (\<psi>s ! j) $ a)"
+    proof (rule sum.cong [OF refl])
+      fix a assume a: "a \<in> {0..<n}"
+      hence a_lt: "a < n" by simp
+      have "\<phi>s ! i $ a = (\<Sum>l = 0..<k. cnj (H $$ (i, l)) * (\<psi>s ! l) $ a)"
+        using phi_idx i a_lt by simp
+      hence "cnj (\<phi>s ! i $ a) = cnj (\<Sum>l = 0..<k. cnj (H $$ (i, l)) * (\<psi>s ! l) $ a)"
+        by simp
+      also have "\<dots> = (\<Sum>l = 0..<k. cnj (cnj (H $$ (i, l)) * (\<psi>s ! l) $ a))"
+        by (rule cnj_sum)
+      also have "\<dots> = (\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a))"
+        by (simp add: complex_cnj_mult)
+      finally have "cnj (\<phi>s ! i $ a)
+                      = (\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a))" .
+      thus "cnj (\<phi>s ! i $ a) * (\<psi>s ! j) $ a
+            = (\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a)) * (\<psi>s ! j) $ a"
+        by simp
+    qed
+    also have "\<dots> = (\<Sum>a = 0..<n. \<Sum>l = 0..<k.
+                        H $$ (i, l) * (cnj ((\<psi>s ! l) $ a) * (\<psi>s ! j) $ a))"
+    proof (intro sum.cong [OF refl])
+      fix a assume "a \<in> {0..<n}"
+      have "(\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a)) * (\<psi>s ! j) $ a
+            = (\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a) * (\<psi>s ! j) $ a)"
+        by (rule sum_distrib_right)
+      also have "\<dots> = (\<Sum>l = 0..<k.
+                          H $$ (i, l) * (cnj ((\<psi>s ! l) $ a) * (\<psi>s ! j) $ a))"
+        by (rule sum.cong [OF refl]) (simp add: mult.assoc)
+      finally show
+        "(\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a)) * (\<psi>s ! j) $ a
+         = (\<Sum>l = 0..<k.
+              H $$ (i, l) * (cnj ((\<psi>s ! l) $ a) * (\<psi>s ! j) $ a))" .
+    qed
+    also have "\<dots> = (\<Sum>l = 0..<k. \<Sum>a = 0..<n.
+                        H $$ (i, l) * (cnj ((\<psi>s ! l) $ a) * (\<psi>s ! j) $ a))"
+      by (rule sum.swap)
+    also have "\<dots> = (\<Sum>l = 0..<k. H $$ (i, l) *
+                        (\<Sum>a = 0..<n. cnj ((\<psi>s ! l) $ a) * (\<psi>s ! j) $ a))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = (\<Sum>l = 0..<k. H $$ (i, l) * \<langle>\<psi>s ! l | \<psi>s ! j\<rangle>)"
+      using psi_dim j
+      by (simp add: inner_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>l = 0..<k. H $$ (i, l) * G $$ (l, j))"
+    proof (rule sum.cong [OF refl])
+      fix l assume "l \<in> {0..<k}"
+      hence l_lt: "l < k" by simp
+      have "\<langle>\<psi>s ! l | \<psi>s ! j\<rangle> = G $$ (l, j)" using G_idx l_lt j by simp
+      thus "H $$ (i, l) * \<langle>\<psi>s ! l | \<psi>s ! j\<rangle> = H $$ (i, l) * G $$ (l, j)"
+        by simp
+    qed
+    also have "\<dots> = (H * G) $$ (i, j)"
+      using i j H_car G_car
+      by (simp add: index_mult_mat scalar_prod_def lessThan_atLeast0)
+    finally show "\<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (H * G) $$ (i, j)" .
+  qed
   have dual: "\<forall>i < k. \<forall>j < k. \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)"
   proof (intro allI impI)
     fix i j
     assume i: "i < k" and j: "j < k"
-    (* The inner product <\<phi>s!i | \<psi>s!j> is, by construction of \<phi>s,
-       equal to (H * G) $$ (i,j). The intermediate algebra (sum
-       reordering, cnj-of-cnj cancellation, plug in G[l,j]) is admitted
-       here because the JNF index_mult_mat lemma requires carrier facts
-       that need a few additional intermediate lemmas. *)
     have "\<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (H * G) $$ (i, j)"
-      sorry
+      using inner_eq_HG i j by simp
     also have "\<dots> = (1\<^sub>m k) $$ (i, j)"
       using HG by simp
     also have "\<dots> = (if i = j then 1 else 0)"
