@@ -8087,10 +8087,10 @@ proof -
         using tensor_vec_index[of "unit_vec d0 J" d0 "unit_vec 2 i" 2 k] k d_eq
         by simp
       also have "\<dots> = (if k div 2 = J then 1 else 0) * (if k mod 2 = i then 1 else 0)"
-        using J i d_eq k by auto 
-      also have "\<dots> = (if k div 2 = J \<and> k mod 2 = i then 1 else 0)" by auto
+        using J i d_eq k by simp
+      also have "\<dots> = (if k div 2 = J \<and> k mod 2 = i then 1 else 0)" by simp
       also have "\<dots> = (if k = J * 2 + i then 1 else 0)"
-        using i by (auto simp: mult.commute)
+        using i by simp (metis (mono_tags, lifting) mult.commute mult_div_mod_eq)
       finally show "?v $ k = (if k = J * 2 + i then 1 else 0)".
     qed
 
