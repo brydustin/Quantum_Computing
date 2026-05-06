@@ -7510,7 +7510,7 @@ definition CCNOT :: "complex Matrix.mat" where
 lemma CCNOT_dagger [simp]:
   "CCNOT\<^sup>\<dagger> = CCNOT"
   unfolding CCNOT_def dagger_def
-  by (simp add: cong_mat)
+  by (rule cong_mat) auto
 
 lemma CCNOT_dim_row [simp]:
   "dim_row CCNOT = 8"
