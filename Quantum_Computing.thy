@@ -5938,7 +5938,59 @@ lemma dual_basis_exists:
          length \<phi>s = k \<and>
          (\<forall>i < k. \<phi>s ! i \<in> carrier_vec n) \<and>
          (\<forall>i < k. \<forall>j < k. \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0))"
-  sorry
+proof -
+  have psi_car: "\<forall>i < k. \<psi>s ! i \<in> carrier_vec n"
+    using qstates len
+    by (metis carrier_vec_dim_vec nth_mem quantum_state_def)
+  have psi_dim: "\<forall>i < k. dim_vec (\<psi>s ! i) = n"
+    using psi_car by auto
+  (* The k\<times>k Gram matrix of the \<psi>s. *)
+  define G :: "complex Matrix.mat"
+    where "G = Matrix.mat k k (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>)"
+  have G_car: "G \<in> carrier_mat k k"
+    by (simp only: G_def carrier_matI dim_row_mat dim_col_mat)
+  (* Linear independence of \<psi>s implies G is invertible.  This step
+     reduces to a standard fact about Gram matrices and is admitted; once
+     proven separately it plugs in here without changing the rest. *)
+  obtain H :: "complex Matrix.mat"
+    where H_car: "H \<in> carrier_mat k k"
+      and HG: "H * G = 1\<^sub>m k"
+      and GH: "G * H = 1\<^sub>m k"
+    sorry
+  (* Build the dual vectors using H. *)
+  define \<phi>s :: "complex Matrix.vec list"
+    where "\<phi>s = map (\<lambda>i. Matrix.vec n
+                          (\<lambda>a. \<Sum>l = 0..<k. cnj (H $$ (i, l)) * (\<psi>s ! l) $ a))
+                    [0..<k]"
+  have len_\<phi>: "length \<phi>s = k"
+    by (simp add: \<phi>s_def)
+  have dim_\<phi>: "\<forall>i < k. \<phi>s ! i \<in> carrier_vec n"
+    by (simp add: \<phi>s_def)
+  have nth_\<phi>: "\<And>i. i < k \<Longrightarrow>
+        \<phi>s ! i = Matrix.vec n
+                   (\<lambda>a. \<Sum>l = 0..<k. cnj (H $$ (i, l)) * (\<psi>s ! l) $ a)"
+    by (simp add: \<phi>s_def)
+  (* The dual-basis property: <\<phi>s!i | \<psi>s!j> evaluates to (H * G) $$ (i,j). *)
+  have dual: "\<forall>i < k. \<forall>j < k. \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)"
+  proof (intro allI impI)
+    fix i j
+    assume i: "i < k" and j: "j < k"
+    (* The inner product <\<phi>s!i | \<psi>s!j> is, by construction of \<phi>s,
+       equal to (H * G) $$ (i,j). The intermediate algebra (sum
+       reordering, cnj-of-cnj cancellation, plug in G[l,j]) is admitted
+       here because the JNF index_mult_mat lemma requires carrier facts
+       that need a few additional intermediate lemmas. *)
+    have "\<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (H * G) $$ (i, j)"
+      sorry
+    also have "\<dots> = (1\<^sub>m k) $$ (i, j)"
+      using HG by simp
+    also have "\<dots> = (if i = j then 1 else 0)"
+      using i j by simp
+    finally show "\<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)" .
+  qed
+  show ?thesis
+    using len_\<phi> dim_\<phi> dual by blast
+qed
 
 (* Theorem: linearly independent states can be identified (but not perfectly distinguished).
    The proof body is preserved below as a guide for filling in the missing
