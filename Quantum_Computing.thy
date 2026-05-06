@@ -3422,7 +3422,7 @@ lemma hermitian_spectral_decomp_right:
       and unit: "unitary U"
       and spec: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
   shows "P * U = U * diag_mat_of_real D"
-  by (smt (verit, best) hermitian_spectral_decomp_eq Pcar Uc assoc_mult_mat carrier_mat_triv 
+  by (smt (verit, best) hermitian_spectral_decomp_eq Pcar Uc assoc_mult_mat carrier_mat_triv
       dim_col_of_dagger unitary_def index_mult_mat(2,3) local.spec right_mult_one_mat unit)
 
 (* Direction \<rightarrow>: if P \<ge> 0 then P = \<Sigma> |vᵢ\<rangle>\<langle>vᵢ| (requires spectral theorem) *)
@@ -7570,7 +7570,7 @@ next
     using i j by (simp add: times_mat_def scalar_prod_def)
   also have "\<dots> = (\<Sum>k = 0..<8.
         (if k = p then (1::complex) else 0) * (if k = q then 1 else 0))"
-    using row_i col_j by auto
+    using row_i col_j by simp
   also have "\<dots> = (if p = q then 1 else 0)"
   proof (cases "p = q")
     case True
