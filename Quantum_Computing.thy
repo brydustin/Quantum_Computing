@@ -11161,9 +11161,8 @@ proof -
         have idx:
           "\<langle>wk k | X *\<^sub>v wk k\<rangle>
            = (\<Sum>a<m*p. \<Sum>b<m*p. cnj ((wk k) $ a) * X $$ (a,b) * ((wk k) $ b))"
-          unfolding inner_prod_def scalar_prod_def
-          using wk_dim[of k] Xsq inner_T_double_sum inner_prod_def lessThan_atLeast0
-          by auto
+          using inner_T_double_sum[OF Xsq wk_dim[of k] wk_dim[of k]]
+          by (simp add: lessThan_atLeast0)
 
         also have "\<dots> =
            (\<Sum>a \<in> ?B. \<Sum>b<m*p. cnj ((wk k) $ a) * X $$ (a,b) * ((wk k) $ b))"
