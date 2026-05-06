@@ -1144,18 +1144,13 @@ next
 
     have wnorm: "\<parallel>w\<parallel> = 1"
     proof -
-      have "\<parallel>w\<parallel> = cmod (1 / of_real (\<parallel>x\<parallel>)) * \<parallel>x\<parallel>"
-        by (metis Re_complex_of_real c_def cpx_vec_length_inner_prod cpx_vec_length_smult 
-            csqrt_of_real_nonneg divide_eq_eq_1 inner_prod_csqrt inner_prod_with_itself_Im 
-            inner_prod_with_itself_Re norm_divide norm_of_real real_sqrt_abs times_divide_eq_left 
-            times_divide_eq_right w_def x_nonzero xz_nonzero)
-      also have "... = (1 / \<parallel>x\<parallel>) * \<parallel>x\<parallel>"
-        by (simp add: norm_divide,
-            metis (full_types) Re_complex_of_real abs_abs cpx_vec_length_inner_prod csqrt_of_real' 
-            inner_prod_csqrt mult.right_neutral real_sqrt_abs' zero_compare_simps(12))   
-      also have "... = 1"
-        using x_nonzero by simp
-      finally show ?thesis.
+      have cvl_nn: "0 \<le> \<parallel>x - z\<parallel>"
+        by (simp add: cpx_vec_length_def sum_nonneg)
+      have "\<parallel>w\<parallel> = cmod c * \<parallel>x - z\<parallel>"
+        unfolding w_def by (rule cpx_vec_length_smult)
+      also have "cmod c = 1 / \<parallel>x - z\<parallel>"
+        unfolding c_def using cvl_nn by (simp add: norm_divide)
+      finally show ?thesis using xz_nonzero by simp
     qed
 
     have inner_wx: "\<langle>w | x\<rangle> = c * \<langle>x - z | x\<rangle>"
@@ -5021,7 +5016,7 @@ proof -
         cnj (h1 $ a * k1 $ b) * (h2 $ a * k2 $ b)) =
      (\<Sum>a = 0..<n. \<Sum>b = 0..<m.
         (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))"
-    by (simp add: complex_cnj_mult mult_ac)
+    by (simp only: complex_cnj_mult mult_ac)
 
   have step5:
   "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
