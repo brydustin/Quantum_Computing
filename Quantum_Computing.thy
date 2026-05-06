@@ -9016,7 +9016,7 @@ proof -
   have col_norm: "\<And>i. i < n \<Longrightarrow> \<parallel>Matrix.col U i\<parallel> = 1"
     using UU Uc unitary_unit_col by (metis carrier_matD(2))
   have col_qs: "\<And>i. i < n \<Longrightarrow> quantum_state n (Matrix.col U i)"
-    using col_dim col_norm by (auto simp: quantum_state_def)
+    using col_dim col_norm by (simp add: quantum_state_def)
   have col_ne: "\<And>i. i < n \<Longrightarrow> Matrix.col U i \<noteq> 0\<^sub>v n"
   proof -
     fix i assume i: "i < n"
@@ -9391,7 +9391,7 @@ next
   have col_norm: "\<And>i. i < n \<Longrightarrow> \<parallel>Matrix.col U i\<parallel> = 1"
     using UU Uc unitary_unit_col by (metis carrier_matD(2))
   have col_qs: "\<And>i. i < n \<Longrightarrow> quantum_state n (Matrix.col U i)"
-    using col_dim col_norm by (auto simp: quantum_state_def)
+    using col_dim col_norm by (simp add: quantum_state_def)
   have col_ne: "\<And>i. i < n \<Longrightarrow> Matrix.col U i \<noteq> 0\<^sub>v n"
   proof -
     fix i assume i: "i < n"
