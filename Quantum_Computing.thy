@@ -9707,7 +9707,7 @@ next
   obtain p \<psi>\<^sub>0 where a: "a = (p, \<psi>\<^sub>0)" by (cases a) auto
   have \<psi>\<^sub>0_dim: "dim_vec \<psi>\<^sub>0 = n" using Cons.prems a by auto
   have rest_dim: "\<forall>(p, \<psi>) \<in> set E'. dim_vec \<psi> = n"
-    using Cons.prems by auto
+    using Cons.prems by simp
   have IH: "\<langle>\<gamma> | ensemble_density n E' *\<^sub>v \<gamma>\<rangle> =
             (\<Sum>(q, \<phi>) \<leftarrow> E'. complex_of_real q * \<langle>\<phi>|\<gamma>\<rangle> * cnj \<langle>\<phi>|\<gamma>\<rangle>)"
     by (rule Cons.IH[OF rest_dim])
