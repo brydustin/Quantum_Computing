@@ -5931,14 +5931,26 @@ qed
 (* Helper: the Gram matrix of a list of vectors with trivial coefficient
    kernel is invertible.  Stated using an elementary trivial-kernel
    formulation rather than the locale-level lin_indpt so the lemma is
-   self-contained and the obtain in dual_basis_exists below can be
-   discharged by a direct application of this lemma (without an inline
-   sorry). *)
+   self-contained.
+
+   Proof outline:
+     (a) Suppose G \<cdot>\<^sub>v v = 0 for some v \<in> carrier_vec k.
+     (b) Take inner product with v on the left to get
+         v\<^sup>\<dagger> G v = 0.
+     (c) Re-arrange to (\<Sum>j |w \<close> j|\<^sup>2) = 0
+         where w = \<Sum>i v\$i \<cdot>\<^sub>v \<psi>s ! i.
+     (d) That forces every entry of w to vanish, hence the
+         coefficients v\$i form an annihilating coefficient list.
+     (e) The triv_kernel hypothesis then gives v\$i = 0 for all i,
+         so v = 0\<^sub>v k.
+     (f) Hence kernel of G is trivial, det G \<noteq> 0
+         (det_0_iff_vec_prod_zero_field), and G is invertible
+         (det_non_zero_imp_unit). *)
 lemma gram_matrix_invertible:
   fixes \<psi>s :: "complex Matrix.vec list" and n :: nat
   assumes carriers: "\<forall>i < length \<psi>s. \<psi>s ! i \<in> carrier_vec n"
       and triv_kernel: "\<forall>c :: nat \<Rightarrow> complex.
-           (\<forall>j < length \<psi>s.
+           (\<forall>j < n.
               (\<Sum>i = 0..<length \<psi>s. c i * (\<psi>s ! i) $ j) = 0)
            \<longrightarrow> (\<forall>i < length \<psi>s. c i = 0)"
   shows "\<exists>H :: complex Matrix.mat. H \<in> carrier_mat (length \<psi>s) (length \<psi>s) \<and>
@@ -5946,13 +5958,221 @@ lemma gram_matrix_invertible:
               (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>) = 1\<^sub>m (length \<psi>s) \<and>
          Matrix.mat (length \<psi>s) (length \<psi>s)
               (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>) * H = 1\<^sub>m (length \<psi>s)"
-  sorry
+proof -
+  let ?k = "length \<psi>s"
+  define G :: "complex Matrix.mat"
+    where "G = Matrix.mat ?k ?k (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>)"
+  have G_car: "G \<in> carrier_mat ?k ?k"
+    by (simp only: G_def carrier_matI dim_row_mat dim_col_mat)
+  have G_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> G $$ (i,j) = \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>"
+    by (simp only: G_def index_mat split_conv)
+  have psi_dim: "\<And>i. i < ?k \<Longrightarrow> dim_vec (\<psi>s ! i) = n"
+    using carriers by auto
+  (* (a)-(e): G has trivial kernel. *)
+  have triv_G: "\<And>v. v \<in> carrier_vec ?k \<Longrightarrow> G *\<^sub>v v = 0\<^sub>v ?k \<Longrightarrow> v = 0\<^sub>v ?k"
+  proof -
+    fix v assume v_car: "v \<in> carrier_vec ?k" and Gv: "G *\<^sub>v v = 0\<^sub>v ?k"
+    have v_dim: "dim_vec v = ?k" using v_car by auto
+    (* The combination w = \<Sum>i v\$i \<cdot> \<psi>s!i has all coordinates 0. *)
+    have w_zero: "\<forall>j < n. (\<Sum>i = 0..<?k. v $ i * (\<psi>s ! i) $ j) = 0"
+    proof (intro allI impI)
+      fix j assume jn: "j < n"
+      (* Extract from Gv = 0: <\<psi>s!i | \<Sum>l v\$l \<cdot> \<psi>s!l> = 0 for each i. *)
+      have row_zero: "\<And>i. i < ?k \<Longrightarrow>
+          (\<Sum>l = 0..<?k. v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>) = 0"
+      proof -
+        fix i assume i: "i < ?k"
+        from Gv have "(G *\<^sub>v v) $ i = 0\<^sub>v ?k $ i" by simp
+        hence Gvi: "(G *\<^sub>v v) $ i = 0" using i by simp
+        have "(G *\<^sub>v v) $ i = (\<Sum>l = 0..<?k. G $$ (i, l) * v $ l)"
+          using i G_car v_car
+          by (simp add: mult_mat_vec_def scalar_prod_def
+                        lessThan_atLeast0)
+        also have "\<dots> = (\<Sum>l = 0..<?k. \<langle>\<psi>s ! i | \<psi>s ! l\<rangle> * v $ l)"
+        proof (rule sum.cong [OF refl])
+          fix l assume "l \<in> {0..<?k}"
+          hence l: "l < ?k" by simp
+          show "G $$ (i, l) * v $ l = \<langle>\<psi>s ! i | \<psi>s ! l\<rangle> * v $ l"
+            using G_idx i l by simp
+        qed
+        also have "\<dots> = (\<Sum>l = 0..<?k. v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)"
+          by (simp add: mult.commute)
+        finally show "(\<Sum>l = 0..<?k. v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>) = 0"
+          using Gvi by simp
+      qed
+      (* Multiply each row equation by cnj(v\$i) and sum. *)
+      have step1: "(\<Sum>i = 0..<?k. cnj (v $ i) *
+              (\<Sum>l = 0..<?k. v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)) = 0"
+        using row_zero by (simp add: sum.neutral)
+      have rewrite_step:
+        "(\<Sum>i = 0..<?k. \<Sum>l = 0..<?k.
+            cnj (v $ i) * v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)
+          = (\<Sum>i = 0..<?k. cnj (v $ i) *
+              (\<Sum>l = 0..<?k. v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>))"
+      proof (rule sum.cong [OF refl])
+        fix i assume "i \<in> {0..<?k}"
+        have "(\<Sum>l = 0..<?k. cnj (v $ i) * v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)
+              = (\<Sum>l = 0..<?k. cnj (v $ i) *
+                                  (v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>))"
+          by (rule sum.cong [OF refl]) (simp add: mult.assoc)
+        also have "\<dots> = cnj (v $ i) *
+              (\<Sum>l = 0..<?k. v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)"
+          by (rule sum_distrib_left [symmetric])
+        finally show
+          "(\<Sum>l = 0..<?k. cnj (v $ i) * v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)
+           = cnj (v $ i) *
+                (\<Sum>l = 0..<?k. v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)" .
+      qed
+      have vGv_zero:
+        "(\<Sum>i = 0..<?k. \<Sum>l = 0..<?k.
+            cnj (v $ i) * v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>) = 0"
+        using rewrite_step step1 by simp
+      (* Re-write LHS as <w | w> where w_a = \<Sum>l v\$l (\<psi>s!l)\$a. *)
+      define w :: "complex Matrix.vec"
+        where "w = Matrix.vec n (\<lambda>a. \<Sum>l = 0..<?k. v $ l * (\<psi>s ! l) $ a)"
+      have w_dim: "dim_vec w = n" by (simp add: w_def)
+      have w_idx: "\<And>a. a < n \<Longrightarrow>
+        w $ a = (\<Sum>l = 0..<?k. v $ l * (\<psi>s ! l) $ a)"
+        by (simp add: w_def)
+      have ww_eq:
+        "(\<Sum>a = 0..<n. cnj (w $ a) * w $ a)
+         = (\<Sum>i = 0..<?k. \<Sum>l = 0..<?k.
+              cnj (v $ i) * v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)"
+      proof -
+        have "(\<Sum>a = 0..<n. cnj (w $ a) * w $ a)
+              = (\<Sum>a = 0..<n.
+                  (\<Sum>i = 0..<?k. cnj (v $ i) * cnj ((\<psi>s ! i) $ a)) *
+                  (\<Sum>l = 0..<?k. v $ l * (\<psi>s ! l) $ a))"
+        proof (rule sum.cong [OF refl])
+          fix a assume "a \<in> {0..<n}"
+          hence a: "a < n" by simp
+          have "cnj (w $ a)
+                = (\<Sum>i = 0..<?k. cnj (v $ i * (\<psi>s ! i) $ a))"
+            using w_idx[OF a] by (simp add: cnj_sum)
+          also have "\<dots> = (\<Sum>i = 0..<?k. cnj (v $ i) * cnj ((\<psi>s ! i) $ a))"
+            by (simp add: complex_cnj_mult)
+          finally have "cnj (w $ a)
+                        = (\<Sum>i = 0..<?k. cnj (v $ i) * cnj ((\<psi>s ! i) $ a))" .
+          thus "cnj (w $ a) * w $ a
+                = (\<Sum>i = 0..<?k. cnj (v $ i) * cnj ((\<psi>s ! i) $ a)) *
+                  (\<Sum>l = 0..<?k. v $ l * (\<psi>s ! l) $ a)"
+            using w_idx[OF a] by simp
+        qed
+        also have "\<dots> = (\<Sum>a = 0..<n. \<Sum>i = 0..<?k. \<Sum>l = 0..<?k.
+                          cnj (v $ i) * cnj ((\<psi>s ! i) $ a) *
+                          (v $ l * (\<psi>s ! l) $ a))"
+          by (simp add: sum_product)
+        also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>l = 0..<?k. \<Sum>a = 0..<n.
+                          cnj (v $ i) * cnj ((\<psi>s ! i) $ a) *
+                          (v $ l * (\<psi>s ! l) $ a))"
+          by (subst sum.swap [where A = "{0..<n}"]) (rule sum.cong [OF refl] sum.swap)+
+        also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>l = 0..<?k.
+                          cnj (v $ i) * v $ l *
+                          (\<Sum>a = 0..<n. cnj ((\<psi>s ! i) $ a) * (\<psi>s ! l) $ a))"
+        proof (intro sum.cong [OF refl])
+          fix i assume "i \<in> {0..<?k}"
+          fix l assume "l \<in> {0..<?k}"
+          show "(\<Sum>a = 0..<n.
+                  cnj (v $ i) * cnj ((\<psi>s ! i) $ a) *
+                  (v $ l * (\<psi>s ! l) $ a))
+                = cnj (v $ i) * v $ l *
+                  (\<Sum>a = 0..<n. cnj ((\<psi>s ! i) $ a) * (\<psi>s ! l) $ a)"
+            by (simp add: sum_distrib_left mult.commute mult.left_commute)
+        qed
+        also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>l = 0..<?k.
+                          cnj (v $ i) * v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>)"
+        proof (intro sum.cong [OF refl])
+          fix i assume i_in: "i \<in> {0..<?k}"
+          fix l assume l_in: "l \<in> {0..<?k}"
+          have i: "i < ?k" using i_in by simp
+          have l: "l < ?k" using l_in by simp
+          have "\<langle>\<psi>s ! i | \<psi>s ! l\<rangle>
+                = (\<Sum>a = 0..<n. cnj ((\<psi>s ! i) $ a) * (\<psi>s ! l) $ a)"
+            using psi_dim[OF i] psi_dim[OF l]
+            by (simp add: inner_prod_def lessThan_atLeast0)
+          thus "cnj (v $ i) * v $ l *
+                  (\<Sum>a = 0..<n. cnj ((\<psi>s ! i) $ a) * (\<psi>s ! l) $ a)
+                = cnj (v $ i) * v $ l * \<langle>\<psi>s ! i | \<psi>s ! l\<rangle>"
+            by simp
+        qed
+        finally show ?thesis .
+      qed
+      have ww_zero: "(\<Sum>a = 0..<n. cnj (w $ a) * w $ a) = 0"
+        using ww_eq vGv_zero by simp
+      (* Each entry of w is zero, since cnj x * x = (cmod x)\<^sup>2 \<ge> 0. *)
+      have w_a_zero: "\<And>a. a < n \<Longrightarrow> w $ a = 0"
+      proof -
+        have nonneg: "\<And>a. a < n \<Longrightarrow> 0 \<le> Re (cnj (w $ a) * w $ a)"
+          by (simp add: complex_mult_cnj)
+        have im_zero: "\<And>a. a < n \<Longrightarrow> Im (cnj (w $ a) * w $ a) = 0"
+          by (simp add: complex_mult_cnj)
+        have re_sum_zero:
+          "(\<Sum>a = 0..<n. Re (cnj (w $ a) * w $ a)) = 0"
+        proof -
+          have "(\<Sum>a = 0..<n. Re (cnj (w $ a) * w $ a))
+                = Re (\<Sum>a = 0..<n. cnj (w $ a) * w $ a)"
+            by (simp add: Re_sum)
+          also have "\<dots> = Re 0" using ww_zero by simp
+          also have "\<dots> = 0" by simp
+          finally show ?thesis .
+        qed
+        fix a assume a: "a < n"
+        have all_zero: "\<forall>b < n. Re (cnj (w $ b) * w $ b) = 0"
+        proof -
+          have all_in: "\<And>b. b \<in> {0..<n} \<Longrightarrow> 0 \<le> Re (cnj (w $ b) * w $ b)"
+            using nonneg by simp
+          have sum_eq:
+            "(\<Sum>b = 0..<n. Re (cnj (w $ b) * w $ b)) = 0"
+            using re_sum_zero .
+          have iff_eq: "((\<Sum>b = 0..<n. Re (cnj (w $ b) * w $ b)) = 0)
+                        \<longleftrightarrow> (\<forall>b \<in> {0..<n}. Re (cnj (w $ b) * w $ b) = 0)"
+            by (rule sum_nonneg_eq_0_iff[OF finite_atLeastLessThan all_in])
+          from iff_eq sum_eq
+          have "\<forall>b \<in> {0..<n}. Re (cnj (w $ b) * w $ b) = 0" by simp
+          thus "\<forall>b < n. Re (cnj (w $ b) * w $ b) = 0" by simp
+        qed
+        from all_zero a have re_z: "Re (cnj (w $ a) * w $ a) = 0" by simp
+        from im_zero a have im_z: "Im (cnj (w $ a) * w $ a) = 0" by simp
+        from re_z im_z have "cnj (w $ a) * w $ a = 0"
+          by (simp add: complex_eq_iff)
+        thus "w $ a = 0"
+          by (simp add: complex_mult_cnj power_eq_0_iff)
+      qed
+      from w_a_zero[OF jn] w_idx[OF jn]
+      show "(\<Sum>i = 0..<?k. v $ i * (\<psi>s ! i) $ j) = 0" by simp
+    qed
+    (* Now apply triv_kernel to conclude v\$i = 0 for all i. *)
+    have v_zero: "\<forall>i < ?k. v $ i = 0"
+      using triv_kernel w_zero by blast
+    show "v = 0\<^sub>v ?k"
+      using v_zero v_dim by (intro eq_vecI; simp)
+  qed
+  (* (f) Trivial kernel \<Longrightarrow> det G \<noteq> 0 \<Longrightarrow> G invertible. *)
+  have detG: "det G \<noteq> 0"
+  proof (rule ccontr)
+    assume "\<not> det G \<noteq> 0"
+    hence "det G = 0" by simp
+    from det_0_iff_vec_prod_zero_field[OF G_car, THEN iffD1, OF this]
+    obtain v where "v \<in> carrier_vec ?k" "v \<noteq> 0\<^sub>v ?k" "G *\<^sub>v v = 0\<^sub>v ?k" by blast
+    with triv_G show False by simp
+  qed
+  obtain H where H_unit: "H \<in> carrier_mat ?k ?k"
+             and HG: "H * G = 1\<^sub>m ?k"
+             and GH: "G * H = 1\<^sub>m ?k"
+    using det_non_zero_imp_unit[OF G_car detG, of "()"]
+    unfolding Units_def ring_mat_def by auto
+  have G_eq: "G = Matrix.mat (length \<psi>s) (length \<psi>s)
+                       (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>)"
+    by (simp only: G_def)
+  show ?thesis
+    using H_unit HG GH G_eq by metis
+qed
 
 lemma dual_basis_exists:
   fixes \<psi>s :: "complex Matrix.vec list"
   assumes qstates: "\<forall>\<psi> \<in> set \<psi>s. quantum_state n \<psi>"
       and triv_kernel: "\<forall>c :: nat \<Rightarrow> complex.
-           (\<forall>j < length \<psi>s.
+           (\<forall>j < n.
               (\<Sum>i = 0..<length \<psi>s. c i * (\<psi>s ! i) $ j) = 0)
            \<longrightarrow> (\<forall>i < length \<psi>s. c i = 0)"
       and len: "length \<psi>s = k"
@@ -6022,7 +6242,7 @@ proof -
       also have "\<dots> = (\<Sum>l = 0..<k. cnj (cnj (H $$ (i, l)) * (\<psi>s ! l) $ a))"
         by (rule cnj_sum)
       also have "\<dots> = (\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a))"
-        by (simp add: complex_cnj_mult)
+        by (simp only: complex_cnj_mult, simp)
       finally have "cnj (\<phi>s ! i $ a)
                       = (\<Sum>l = 0..<k. H $$ (i, l) * cnj ((\<psi>s ! l) $ a))" .
       thus "cnj (\<phi>s ! i $ a) * (\<psi>s ! j) $ a
@@ -6063,8 +6283,8 @@ proof -
     qed
     also have "\<dots> = (H * G) $$ (i, j)"
       using i j H_car G_car
-      by (simp add: index_mult_mat scalar_prod_def lessThan_atLeast0)
-    finally show "\<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (H * G) $$ (i, j)" .
+      by (simp add: scalar_prod_def lessThan_atLeast0)
+    finally show "\<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (H * G) $$ (i, j)".
   qed
   have dual: "\<forall>i < k. \<forall>j < k. \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)"
   proof (intro allI impI)
