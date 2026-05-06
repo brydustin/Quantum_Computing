@@ -7165,8 +7165,9 @@ proof -
     by (smt (verit) Suc_1 cpx_vec_length_inner_prod lessI of_real_1 power2_eq_square power_one tensor_inner_prod unit_cpx_vec_length)
   have inner_uv: "\<langle>?u | ?v\<rangle> = 0"
     by (smt (verit) One_nat_def index_unit_vec(3) lessI mult_zero_right numeral_2_eq_2 one_neq_zero orthogonal_unit_vec tensor_inner_prod zero_less_Suc)
+  have du_eq_dv: "dim_vec ?u = dim_vec ?v" using du dv by simp
   have inner_vu: "\<langle>?v | ?u\<rangle> = 0"
-    using inner_uv inner_prod_cnj[of ?u ?v] du dv by simp
+    unfolding inner_prod_cnj[OF du_eq_dv] inner_uv by simp
   have inner_sum: "\<langle>?u + ?v | ?u + ?v\<rangle> = 2"
   proof -
     have "\<langle>?u + ?v | ?u + ?v\<rangle>
