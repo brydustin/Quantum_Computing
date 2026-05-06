@@ -3241,8 +3241,8 @@ next
         using P_eq by simp
       also have "\<dots> = U * diag_mat_of_real D"
         using Uc Udag_c UdagU Dlen
-        by (smt (verit, del_insts) assoc_mult_mat carrier_mat_triv 
-            dim_col_diag_mat_of_real index_mult_mat(3) right_mult_one_mat) 
+        by (smt (verit, del_insts) assoc_mult_mat carrier_mat_triv
+            dim_col_diag_mat_of_real index_mult_mat(3) right_mult_one_mat)
       finally show ?thesis.
     qed
 
@@ -3450,7 +3450,7 @@ proof -
   have P_eq: "P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
     using hermitian_spectral_decomp_eq[OF Uc sq UU spec].   
   have PU_eq_UD: "P * U = U * diag_mat_of_real D"
-    using UU Uc hermitian_spectral_decomp_right local.spec sq by presburger
+    by (rule hermitian_spectral_decomp_right[OF Uc sq UU spec])
   
   have eig_nonneg:
     "\<forall>mu::complex. \<forall>v::complex Matrix.vec.
@@ -3848,7 +3848,7 @@ proof -
   have P_eq: "P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
     using hermitian_spectral_decomp_eq[OF Uc sq UU spec].
   have PU_eq_UD: "P * U = U * diag_mat_of_real D"
-    using UU Uc hermitian_spectral_decomp_right local.spec sq by presburger
+    by (rule hermitian_spectral_decomp_right[OF Uc sq UU spec])
   have eig_nonneg:
     "\<forall>mu::complex. \<forall>v::complex Matrix.vec.
        v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0"
