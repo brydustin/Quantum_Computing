@@ -7509,7 +7509,8 @@ lemma bell_basis_dim:
 (* Reusable arithmetic fact used in the diagonal entries. *)
 lemma sqrt2_complex_sq:
   "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = (2::complex)"
-  by (simp add: of_real_def complex_eq_iff)
+  by (simp only: of_real_mult [symmetric] real_sqrt_mult_self
+                 abs_numeral of_real_numeral)
 
 (* The orthonormality proof now does no tensor_vec / unit_vec unfolding
    at all: it expands the inner product to a sum over four entries and
