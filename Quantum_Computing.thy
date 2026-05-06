@@ -8104,7 +8104,7 @@ proof -
       also have "\<dots> = (if k div 2 = J \<and> k mod 2 = ?i1 then 1 else 0)"
         by simp
       also have "\<dots> = (if k = J * 2 + ?i1 then 1 else 0)"
-        using i1_lt by (auto simp: mult.commute, metis mult_div_mod_eq)
+        using i1_lt by simp (metis (mono_tags, lifting) mult.commute mult_div_mod_eq)
       finally show "?w $ k = (if k = J * 2 + ?i1 then 1 else 0)".
     qed
 
