@@ -7442,71 +7442,101 @@ qed
    four messages by applying I, Z, X, or iY to its qubit.
    Lab B can then identify the message by measuring in the Bell basis. *)
 
+(* The four Bell vectors written directly as 4-dim Matrix.vec values.
+   With this representation every entry is computable by a single
+   index_vec rewrite, so inner products evaluate to a four-term sum
+   without unfolding tensor_vec / unit_vec / list-Cons. *)
 definition bell_basis :: "complex Matrix.vec list" where
-  "bell_basis \<equiv>
-    [ (1/csqrt 2) \<cdot>\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0) +
-                        tensor_vec (unit_vec 2 1) (unit_vec 2 1)),
-      (1/csqrt 2) \<cdot>\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0) -
-                        tensor_vec (unit_vec 2 1) (unit_vec 2 1)),
-      (1/csqrt 2) \<cdot>\<^sub>v (tensor_vec (unit_vec 2 1) (unit_vec 2 0) +
-                        tensor_vec (unit_vec 2 0) (unit_vec 2 1)),
-      (1/csqrt 2) \<cdot>\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 1) -
-                        tensor_vec (unit_vec 2 1) (unit_vec 2 0)) ]"
+  "bell_basis =
+     [ Matrix.vec 4 (\<lambda>k. if k = 0 \<or> k = 3 then 1 / csqrt 2 else 0),
+       Matrix.vec 4 (\<lambda>k. if k = 0 then 1 / csqrt 2
+                          else if k = 3 then - (1 / csqrt 2) else 0),
+       Matrix.vec 4 (\<lambda>k. if k = 1 \<or> k = 2 then 1 / csqrt 2 else 0),
+       Matrix.vec 4 (\<lambda>k. if k = 1 then 1 / csqrt 2
+                          else if k = 2 then - (1 / csqrt 2) else 0) ]"
 
-(* Reusable arithmetic facts used inside every bell-basis inner product. *)
+(* Closed-form entry lemmas, one per Bell vector.  Note bb!1 is keyed
+   on Suc 0 (rather than the numeral 1) because that is the form that
+   the i = Suc 0 branch of the case-split below produces; this avoids
+   the simp normalisation problem where numerals and Suc 0 are
+   represented differently. *)
+lemma bell_basis_index_0:
+  "k < 4 \<Longrightarrow> bell_basis ! 0 $ k =
+              (if k = 0 \<or> k = 3 then 1 / csqrt 2 else 0)"
+  by (simp only: bell_basis_def nth_Cons_0 index_vec)
+
+lemma bell_basis_index_1:
+  "k < 4 \<Longrightarrow> bell_basis ! Suc 0 $ k =
+              (if k = 0 then 1 / csqrt 2
+               else if k = 3 then - (1 / csqrt 2) else 0)"
+  by (simp only: bell_basis_def nth_Cons_0 nth_Cons_Suc index_vec)
+
+lemma bell_basis_index_2:
+  "k < 4 \<Longrightarrow> bell_basis ! 2 $ k =
+              (if k = 1 \<or> k = 2 then 1 / csqrt 2 else 0)"
+  by (simp only: bell_basis_def numeral_2_eq_2 nth_Cons_0 nth_Cons_Suc index_vec)
+
+lemma bell_basis_index_3:
+  "k < 4 \<Longrightarrow> bell_basis ! 3 $ k =
+              (if k = 1 then 1 / csqrt 2
+               else if k = 2 then - (1 / csqrt 2) else 0)"
+  by (simp only: bell_basis_def numeral_3_eq_3 nth_Cons_0 nth_Cons_Suc index_vec)
+
+lemmas bell_basis_indices =
+  bell_basis_index_0 bell_basis_index_1 bell_basis_index_2 bell_basis_index_3
+
+(* Length and dimension are explicit numerals so we never unfold list_Cons
+   chains in clients of these lemmas. *)
+lemma bell_basis_length: "length bell_basis = 4"
+  by (simp only: bell_basis_def list.size add_0 add_Suc_right
+                 numeral_2_eq_2 numeral_3_eq_3 plus_1_eq_Suc One_nat_def)
+
+lemma bell_basis_dim_at: "k < 4 \<Longrightarrow> dim_vec (bell_basis ! k) = 4"
+proof -
+  assume "k < 4"
+  hence "k = 0 \<or> k = Suc 0 \<or> k = 2 \<or> k = 3" by auto
+  thus ?thesis
+    by (elim disjE)
+       (simp_all only: bell_basis_def nth_Cons_0 nth_Cons_Suc dim_vec
+                       numeral_2_eq_2 numeral_3_eq_3 One_nat_def)
+qed
+
+lemma bell_basis_dim:
+  "v \<in> set bell_basis \<Longrightarrow> dim_vec v = 4"
+  by (simp only: bell_basis_def set_simps insert_iff empty_iff)
+     (auto simp only: dim_vec)
+
+(* Reusable arithmetic fact used in the diagonal entries. *)
 lemma sqrt2_complex_sq:
   "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = (2::complex)"
   by (simp add: of_real_def complex_eq_iff)
 
-(* Each <bb!i | bb!j> as a separate lemma, so the orthonormality proof
-   only has to look them up.  Each individual proof here unfolds the same
-   simp set as before but for one concrete pair, so simp's matching cost
-   is at most a constant per lemma instead of 16x in one big elim disjE. *)
-lemma bell_basis_inner_diag:
-  "i < 4 \<Longrightarrow> \<langle>bell_basis ! i | bell_basis ! i\<rangle> = 1"
-proof -
-  assume "i < 4"
-  hence "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3" by auto
-  thus "\<langle>bell_basis ! i | bell_basis ! i\<rangle> = 1"
-    unfolding bell_basis_def
-    unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
-              tensor_unit_vec_2_10 tensor_unit_vec_2_11
-    by (elim disjE)
-       (simp_all add: inner_prod_def unit_vec_def csqrt_two sqrt2_complex_sq)
-qed
-
-lemma bell_basis_inner_off_diag:
-  "i < 4 \<Longrightarrow> j < 4 \<Longrightarrow> i \<noteq> j \<Longrightarrow> \<langle>bell_basis ! i | bell_basis ! j\<rangle> = 0"
-proof -
-  assume i: "i < 4" and j: "j < 4" and ne: "i \<noteq> j"
-  from i have ic: "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3" by auto
-  from j have jc: "j = 0 \<or> j = 1 \<or> j = 2 \<or> j = 3" by auto
-  from ic jc ne
-  show "\<langle>bell_basis ! i | bell_basis ! j\<rangle> = 0"
-    unfolding bell_basis_def
-    unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
-              tensor_unit_vec_2_10 tensor_unit_vec_2_11
-    by (elim disjE)
-       (simp_all add: inner_prod_def unit_vec_def csqrt_two sqrt2_complex_sq)
-qed
-
+(* The orthonormality proof now does no tensor_vec / unit_vec unfolding
+   at all: it expands the inner product to a sum over four entries and
+   plugs in the closed-form entry lemmas. *)
 lemma bell_basis_orthonormal: "orthonormal_list 4 bell_basis"
 proof -
   have dims: "\<forall>v \<in> set bell_basis. dim_vec v = 4"
-    unfolding bell_basis_def
-    unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
-              tensor_unit_vec_2_10 tensor_unit_vec_2_11
-    by simp
+    by (rule ballI) (rule bell_basis_dim)
   have ips: "\<forall>i < length bell_basis. \<forall>j < length bell_basis.
       \<langle>bell_basis ! i | bell_basis ! j\<rangle> = (if i = j then 1 else 0)"
   proof safe
     fix i j
     assume i: "i < length bell_basis" and j: "j < length bell_basis"
-    hence ilt: "i < 4" and jlt: "j < 4" unfolding bell_basis_def by simp_all
+    from i j have ilt: "i < 4" and jlt: "j < 4"
+      using bell_basis_length by simp_all
+    have inner_expand:
+      "\<langle>bell_basis ! i | bell_basis ! j\<rangle>
+        = (\<Sum>k = 0..<4. cnj (bell_basis ! i $ k) * (bell_basis ! j $ k))"
+      using bell_basis_dim_at[OF ilt] bell_basis_dim_at[OF jlt]
+      by (simp only: inner_prod_def lessThan_atLeast0)
+    have ic: "i = 0 \<or> i = Suc 0 \<or> i = 2 \<or> i = 3" using ilt by auto
+    have jc: "j = 0 \<or> j = Suc 0 \<or> j = 2 \<or> j = 3" using jlt by auto
     show "\<langle>bell_basis ! i | bell_basis ! j\<rangle> = (if i = j then 1 else 0)"
-      using ilt jlt bell_basis_inner_diag[OF ilt]
-            bell_basis_inner_off_diag[OF ilt jlt]
-      by (cases "i = j") simp_all
+      unfolding inner_expand
+      using ic jc
+      by (elim disjE)
+         (simp_all add: bell_basis_indices csqrt_two sqrt2_complex_sq)
   qed
   show ?thesis
     unfolding orthonormal_list_def
