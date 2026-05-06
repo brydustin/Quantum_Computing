@@ -7453,6 +7453,43 @@ definition bell_basis :: "complex Matrix.vec list" where
       (1/csqrt 2) \<cdot>\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 1) -
                         tensor_vec (unit_vec 2 1) (unit_vec 2 0)) ]"
 
+(* Reusable arithmetic facts used inside every bell-basis inner product. *)
+lemma sqrt2_complex_sq:
+  "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = (2::complex)"
+  by (simp add: of_real_def complex_eq_iff)
+
+(* Each <bb!i | bb!j> as a separate lemma, so the orthonormality proof
+   only has to look them up.  Each individual proof here unfolds the same
+   simp set as before but for one concrete pair, so simp's matching cost
+   is at most a constant per lemma instead of 16x in one big elim disjE. *)
+lemma bell_basis_inner_diag:
+  "i < 4 \<Longrightarrow> \<langle>bell_basis ! i | bell_basis ! i\<rangle> = 1"
+proof -
+  assume "i < 4"
+  hence "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3" by auto
+  thus "\<langle>bell_basis ! i | bell_basis ! i\<rangle> = 1"
+    unfolding bell_basis_def
+    unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
+              tensor_unit_vec_2_10 tensor_unit_vec_2_11
+    by (elim disjE)
+       (simp_all add: inner_prod_def unit_vec_def csqrt_two sqrt2_complex_sq)
+qed
+
+lemma bell_basis_inner_off_diag:
+  "i < 4 \<Longrightarrow> j < 4 \<Longrightarrow> i \<noteq> j \<Longrightarrow> \<langle>bell_basis ! i | bell_basis ! j\<rangle> = 0"
+proof -
+  assume i: "i < 4" and j: "j < 4" and ne: "i \<noteq> j"
+  from i have ic: "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3" by auto
+  from j have jc: "j = 0 \<or> j = 1 \<or> j = 2 \<or> j = 3" by auto
+  from ic jc ne
+  show "\<langle>bell_basis ! i | bell_basis ! j\<rangle> = 0"
+    unfolding bell_basis_def
+    unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
+              tensor_unit_vec_2_10 tensor_unit_vec_2_11
+    by (elim disjE)
+       (simp_all add: inner_prod_def unit_vec_def csqrt_two sqrt2_complex_sq)
+qed
+
 lemma bell_basis_orthonormal: "orthonormal_list 4 bell_basis"
 proof -
   have dims: "\<forall>v \<in> set bell_basis. dim_vec v = 4"
@@ -7460,24 +7497,16 @@ proof -
     unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
               tensor_unit_vec_2_10 tensor_unit_vec_2_11
     by simp
-  have sqrt2_mult: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = (2::complex)"
-    by (simp add: of_real_def complex_eq_iff)
   have ips: "\<forall>i < length bell_basis. \<forall>j < length bell_basis.
       \<langle>bell_basis ! i | bell_basis ! j\<rangle> = (if i = j then 1 else 0)"
   proof safe
     fix i j
     assume i: "i < length bell_basis" and j: "j < length bell_basis"
-    then have i_cases: "i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
-      unfolding bell_basis_def by auto
-    from i j have j_cases: "j = 0 \<or> j = 1 \<or> j = 2 \<or> j = 3"
-      unfolding bell_basis_def by auto
-    show "\<langle>bell_basis ! i | bell_basis ! j\<rangle> =
-        (if i = j then 1 else 0)"
-      using i_cases j_cases
-      unfolding bell_basis_def
-      unfolding tensor_unit_vec_2_00 tensor_unit_vec_2_01
-                tensor_unit_vec_2_10 tensor_unit_vec_2_11
-      by (elim disjE; simp add: inner_prod_def unit_vec_def csqrt_two sqrt2_mult)
+    hence ilt: "i < 4" and jlt: "j < 4" unfolding bell_basis_def by simp_all
+    show "\<langle>bell_basis ! i | bell_basis ! j\<rangle> = (if i = j then 1 else 0)"
+      using ilt jlt bell_basis_inner_diag[OF ilt]
+            bell_basis_inner_off_diag[OF ilt jlt]
+      by (cases "i = j") simp_all
   qed
   show ?thesis
     unfolding orthonormal_list_def
