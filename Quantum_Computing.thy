@@ -5300,8 +5300,8 @@ lemma measurement_probs_sum_one:
       and st: "quantum_state n \<psi>"
   shows "(\<Sum>M \<leftarrow> Ms. meas_prob M \<psi>) = 1"
 proof -
-  have psi_dim: "dim_vec \<psi> = n" using st by (auto simp: quantum_state_def)
-  have psi_norm: "\<parallel>\<psi>\<parallel> = 1" using st by (auto simp: quantum_state_def)
+  have psi_dim: "dim_vec \<psi> = n" using st by (simp add: quantum_state_def)
+  have psi_norm: "\<parallel>\<psi>\<parallel> = 1" using st by (simp add: quantum_state_def)
   have psi_car: "\<psi> \<in> carrier_vec n" using psi_dim
     by fastforce 
 
@@ -5316,7 +5316,7 @@ proof -
               Re (\<langle>\<psi> | (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)) *\<^sub>v \<psi>\<rangle>)"
   proof -
     have all_car: "\<And>M. M \<in> set Ms \<Longrightarrow> M \<in> carrier_mat n n"
-      using ms by (auto simp: measurement_system_def)
+      using ms by (simp add: measurement_system_def)
     have fold_car:
       "\<And>Ns. set Ns \<subseteq> set Ms \<Longrightarrow>
         foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ns (0\<^sub>m n n) \<in> carrier_mat n n"
@@ -5462,9 +5462,9 @@ lemma tensor_of_states_is_state:
   shows "quantum_state (n*m) (tensor_vec \<psi>1 \<psi>2)"
 proof -
   have d1: "dim_vec \<psi>1 = n" and d2: "dim_vec \<psi>2 = m"
-    using assms by (auto simp: quantum_state_def)
+    using assms by (simp_all add: quantum_state_def)
   have norm1: "\<parallel>\<psi>1\<parallel> = 1" and norm2: "\<parallel>\<psi>2\<parallel> = 1"
-    using assms by (auto simp: quantum_state_def)
+    using assms by (simp_all add: quantum_state_def)
   have dim: "dim_vec (tensor_vec \<psi>1 \<psi>2) = n * m"
     using d1 d2 by (rule tensor_vec_dim)
   (* From tensor_inner_prod: \<langle>\<psi>1\<otimes>\<psi>2 | \<psi>1\<otimes>\<psi>2\<rangle> = \<langle>\<psi>1|\<psi>1\<rangle>\<sqdot>\<langle>\<psi>2|\<psi>2\<rangle> = 1\<sqdot>1 = 1. *)
@@ -6913,9 +6913,9 @@ lemma povm_prob:
       and Pin: "P \<in> set Ps"
   shows "Re (\<langle>\<psi> | P *\<^sub>v \<psi>\<rangle>) \<ge> 0"
 proof -
-  have Ppsd: "psd P" using pv Pin by (auto simp: povm_def)
-  have Pcar: "P \<in> carrier_mat n n" using pv Pin by (auto simp: povm_def)
-  have psi_dim: "dim_vec \<psi> = n" using st by (auto simp: quantum_state_def)
+  have Ppsd: "psd P" using pv Pin by (simp add: povm_def)
+  have Pcar: "P \<in> carrier_mat n n" using pv Pin by (simp add: povm_def)
+  have psi_dim: "dim_vec \<psi> = n" using st by (simp add: quantum_state_def)
   show ?thesis
     using Ppsd Pcar psi_dim unfolding psd_def by simp
 qed
