@@ -1902,7 +1902,7 @@ proof -
     also have "(\<Sum>k<n. cnj ((ws ! i) $ k) * (ws ! j) $ k) = \<langle>ws ! i | ws ! j\<rangle>"
       using dim_j by (simp add: inner_prod_def lessThan_atLeast0)
     also have "\<dots> = 0" using wji_inner .
-    finally show "\<langle>vs ! i | vs ! j\<rangle> = 0" by simp
+    finally show "\<langle>vs ! i | vs ! j\<rangle> = 0" using wji_inner by simp
   qed
   (* orthonormality for i = j *)
   have diag_one: "\<And>i. i < n \<Longrightarrow> \<langle>vs ! i | vs ! i\<rangle> = 1"
