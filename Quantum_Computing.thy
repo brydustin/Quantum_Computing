@@ -8100,7 +8100,7 @@ proof -
       have "?w $ k = unit_vec d0 J $ (k div 2) * unit_vec 2 ?i1 $ (k mod 2)"
         using tensor_vec_index[of "unit_vec d0 J" d0 "unit_vec 2 ?i1" 2 k] k d_eq by simp
       also have "\<dots> = (if k div 2 = J then 1 else 0) * (if k mod 2 = ?i1 then 1 else 0)"
-        using J i1_lt d_eq k by auto
+        using J i1_lt d_eq k by simp
       also have "\<dots> = (if k div 2 = J \<and> k mod 2 = ?i1 then 1 else 0)"
         by simp
       also have "\<dots> = (if k = J * 2 + ?i1 then 1 else 0)"
