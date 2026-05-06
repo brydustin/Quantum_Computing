@@ -5903,11 +5903,49 @@ qed
 (* Construction: M₁ = |\<psi>₁\<rangle>\<langle>\<psi>₁|, M₂ = |\<psi>₂\<rangle>\<langle>\<psi>₂|,
    M₃ = I - M₁ - M₂ (projection onto {\<psi>₁,\<psi>₂}^\<bottom>). *)
 
+(* ----------------------------------------------------------------------
+   Step 1 of the linearly-independent-states distinguishability theorem,
+   extracted as a standalone lemma so the rest of the development can use
+   it without rebuilding it inline.
+
+   Given linearly independent vectors \<psi>s in C^n with k = |\<psi>s| \<le> n,
+   there is a dual basis \<phi>s of equal length such that
+       <\<phi>s ! i | \<psi>s ! j> = 1   if i = j,    0 otherwise.
+
+   Construction (standard linear algebra):
+     - Let G be the k x k Gram matrix G[i,j] = <\<psi>s!i | \<psi>s!j>.
+     - G is Hermitian and positive definite (psi's are linearly indep),
+       hence invertible; let H = G^{-1}.
+     - Set \<phi>s ! i = (sum_j H[i,j] \<cdot>\<^sub>v \<psi>s ! j)
+       (with the cnj absorbed into H = H^\<dagger> = H since H is Hermitian).
+     - Then <\<phi>s!i | \<psi>s!l> = (H G)[i,l] = I[i,l].
+
+   The construction goes through but the discharge of the two pure
+   linear-algebra obligations (G invertible from linear independence,
+   and (HG) = I) is admitted; once those become available in the JNF
+   library or as standalone lemmas, this proof completes by the
+   structure shown.  The lemma is admitted via sorry under the
+   session's quick_and_dirty = true setting.
+   ---------------------------------------------------------------------- *)
+
+lemma dual_basis_exists:
+  fixes \<psi>s :: "complex Matrix.vec list"
+  assumes qstates: "\<forall>\<psi> \<in> set \<psi>s. quantum_state n \<psi>"
+      and lin_indep: "lin_indpt (set \<psi>s)"
+      and len: "length \<psi>s = k"
+      and kle: "k \<le> n"
+  shows "\<exists>\<phi>s :: complex Matrix.vec list.
+         length \<phi>s = k \<and>
+         (\<forall>i < k. \<phi>s ! i \<in> carrier_vec n) \<and>
+         (\<forall>i < k. \<forall>j < k. \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0))"
+  sorry
+
 (* Theorem: linearly independent states can be identified (but not perfectly distinguished).
    The proof body is preserved below as a guide for filling in the missing
-   gaps (the dual-basis sorry at the start, plus the formula step that the
-   build can't yet parse).  In the meantime the statement is admitted so
-   that downstream development can rely on it. *)
+   gaps (the formula step that the build can't yet parse). The dual-basis
+   step is now factored into the dedicated dual_basis_exists lemma above.
+   In the meantime the statement is admitted so that downstream
+   development can rely on it. *)
 
 theorem linearly_independent_states_unambiguously_measurable:
   fixes \<psi>s :: "complex Matrix.vec list"
