@@ -13030,6 +13030,8 @@ proof -
   define v :: "complex Matrix.vec" where
     "v = Matrix.vec (n*n) (\<lambda>r. if r div n = r mod n then 1 else 0)"
   have v_dim: "dim_vec v = n*n" by (simp add: v_def)
+  have v_idx: "\<And>r. r < n*n \<Longrightarrow> v $ r = (if r div n = r mod n then 1 else 0)"
+    by (simp add: v_def)
   let ?V = "mat_of_cols (n*n) [v]"
   have V_car: "?V \<in> carrier_mat (n*n) 1"
     by (simp add: mat_of_cols_def)
@@ -13064,7 +13066,7 @@ proof -
     also have "\<dots> = (if r mod n = r div n \<and> c mod n = c div n then 1 else 0)"
       using rmn cmn by simp
     also have "\<dots> = v $ r * cnj (v $ c)"
-      using rnn cnn by (simp add: v_def)
+      unfolding v_idx[OF rnn] v_idx[OF cnn] by simp
     also have "\<dots> = ?V $$ (r,0) * (?V\<^sup>\<dagger>) $$ (0,c)"
       unfolding V_idx[OF rnn] Vdag_idx[OF cnn] ..
     also have "\<dots> = (\<Sum>l<1. ?V $$ (r,l) * (?V\<^sup>\<dagger>) $$ (l,c))"
