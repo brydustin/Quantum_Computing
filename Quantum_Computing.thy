@@ -6766,9 +6766,9 @@ proof -
         assume ij: "i < dim_row ?M" "j < dim_col ?M"
         have iln: "i < n" and jln: "j < n" using ij M_car by auto
         have "?M\<^sup>\<dagger> $$ (i,j) = cnj (?M $$ (j,i))"
-          using T_car dagger_def iln jln by fastforce
+          using T_car iln jln by (simp add: dagger_def)
         also have "... = cnj ((1\<^sub>m n) $$ (j,i) - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
-          using T_car iln jln by fastforce
+          using T_car iln jln by simp
         also have "... = cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
                          - cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
           by simp
@@ -6783,7 +6783,7 @@ proof -
         also have "cnj (of_real c :: complex) = (of_real c :: complex)"
           by simp
         also have "cnj (?T $$ (j,i)) = ?T $$ (i,j)"
-          using T_herm hermitian_index ij(1,2) by fastforce
+          using T_herm hermitian_index[of ?T j i] T_car iln jln by simp
         also have "(of_real c :: complex) * ?T $$ (i,j)
                  = ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
           using iln jln T_car by simp
@@ -6793,7 +6793,7 @@ proof -
           by simp
         have rhs: "?M $$ (i,j) = (1\<^sub>m n) $$ (i,j)
                                 - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
-          using T_herm hermitian_index ij(1,2) by fastforce
+          using T_car iln jln by simp
         show "?M\<^sup>\<dagger> $$ (i,j) = ?M $$ (i,j)"
           using eq_step rhs by simp
       qed
@@ -6925,8 +6925,10 @@ proof -
             = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)" .
 
         have "Re \<langle>x | M *\<^sub>v x\<rangle>
-            = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
-          using qf_eq by simp
+            = Re ((of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>))"
+          unfolding qf_eq ..
+        also have "\<dots> = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
+          by simp
         also have "... = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
         proof -
           have "cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle> = \<langle>\<phi>|x\<rangle> * cnj \<langle>\<phi>|x\<rangle>"
@@ -6942,7 +6944,7 @@ proof -
         finally have re_eq: "Re \<langle>x | M *\<^sub>v x\<rangle> = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2" .
 
         have "0 \<le> c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
-          using c_pos by auto
+          using c_pos by (simp add: zero_le_mult_iff)
         thus "0 \<le> Re \<langle>x | M *\<^sub>v x\<rangle>"
           using re_eq by simp
       qed
@@ -6989,7 +6991,7 @@ proof -
                 (map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) xs) (0\<^sub>m n n)
               = (of_real c :: complex) \<cdot>\<^sub>m
                   (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
-          by auto
+          by blast+
 
         have cons_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n)
                        \<in> carrier_mat n n"
