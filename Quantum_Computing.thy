@@ -16172,6 +16172,44 @@ lemma mat_lc_carrier:
   shows "mat_lc xs d n \<in> carrier_mat d n"
   using assms by (induction xs) auto
 
+(* Entry-wise expansion of mat_lc.  *)
+
+lemma mat_lc_index:
+  assumes "\<forall>(c, A) \<in> set xs. A \<in> carrier_mat d n"
+      and "a < d" and "b < n"
+  shows "(mat_lc xs d n) $$ (a, b)
+       = (\<Sum>(c, A) \<leftarrow> xs. c * A $$ (a, b))"
+  using assms
+proof (induction xs)
+  case Nil
+  show ?case by (simp add: \<open>a < d\<close> \<open>b < n\<close>)
+next
+  case (Cons cA xs)
+  obtain c A where cA_eq: "cA = (c, A)" by (cases cA) auto
+  have A_c: "A \<in> carrier_mat d n" using Cons.prems(1) cA_eq by simp
+  have xs_c: "\<forall>(c', A') \<in> set xs. A' \<in> carrier_mat d n"
+    using Cons.prems(1) by auto
+  have IH_eq: "(mat_lc xs d n) $$ (a, b)
+              = (\<Sum>(c, A) \<leftarrow> xs. c * A $$ (a, b))"
+    using Cons.IH[OF xs_c \<open>a < d\<close> \<open>b < n\<close>] .
+  have rest_c: "mat_lc xs d n \<in> carrier_mat d n"
+    using mat_lc_carrier[OF xs_c] .
+  have "(mat_lc (cA # xs) d n) $$ (a, b)
+       = (c \<cdot>\<^sub>m A + mat_lc xs d n) $$ (a, b)"
+    using cA_eq by simp
+  also have "\<dots> = (c \<cdot>\<^sub>m A) $$ (a, b) + (mat_lc xs d n) $$ (a, b)"
+    using A_c rest_c \<open>a < d\<close> \<open>b < n\<close>
+    by (simp add: index_add_mat)
+  also have "(c \<cdot>\<^sub>m A) $$ (a, b) = c * A $$ (a, b)"
+    using A_c \<open>a < d\<close> \<open>b < n\<close> by simp
+  also have "\<dots> + (mat_lc xs d n) $$ (a, b) = c * A $$ (a, b) +
+              (\<Sum>(c, A) \<leftarrow> xs. c * A $$ (a, b))"
+    using IH_eq by simp
+  also have "\<dots> = (\<Sum>(c, A) \<leftarrow> (cA # xs). c * A $$ (a, b))"
+    using cA_eq by simp
+  finally show ?case .
+qed
+
 (* The "i-th-coefficient row" of a Kraus list As, weighted by row i of Q^dag.
    We use cnj(Q $$ (i,j)) as the coefficient because we want
        \<Sum>_k W_k * X * W_k\<^sup>\<dagger>  =  \<Sum>_{i,j} (Q\<^sup>\<dagger> * Q) $$ (i,j) * A_i * X * A_j\<^sup>\<dagger>
@@ -16196,6 +16234,33 @@ proof -
   qed
   show ?thesis
     unfolding kraus_row_def using list_in by (rule mat_lc_carrier)
+qed
+
+lemma kraus_row_index:
+  assumes Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and "a < d" and "b < n"
+  shows "(kraus_row d n Q As i) $$ (a, b)
+       = (\<Sum>j = 0..<length As. cnj (Q $$ (i, j)) * (As ! j) $$ (a, b))"
+proof -
+  let ?xs = "map (\<lambda>j. (cnj (Q $$ (i,j)), As ! j)) [0..<length As]"
+  have xs_in: "\<forall>(c, A) \<in> set ?xs. A \<in> carrier_mat d n"
+  proof clarify
+    fix c :: complex and A :: "complex Matrix.mat"
+    assume "(c, A) \<in> set ?xs"
+    then obtain j where "j < length As" and "A = As ! j" by auto
+    thus "A \<in> carrier_mat d n" using Asc nth_mem by blast
+  qed
+  have "(kraus_row d n Q As i) $$ (a, b) = (mat_lc ?xs d n) $$ (a, b)"
+    by (simp add: kraus_row_def)
+  also have "\<dots> = (\<Sum>(c, A) \<leftarrow> ?xs. c * A $$ (a, b))"
+    using mat_lc_index[OF xs_in \<open>a < d\<close> \<open>b < n\<close>] .
+  also have "(\<Sum>(c, A) \<leftarrow> ?xs. c * A $$ (a, b))
+           = sum_list (map (\<lambda>j. cnj (Q $$ (i, j)) * (As ! j) $$ (a, b))
+                           [0..<length As])"
+    by (induction As) (simp_all add: comp_def)
+  also have "\<dots> = (\<Sum>j = 0..<length As. cnj (Q $$ (i, j)) * (As ! j) $$ (a, b))"
+    by (simp add: interv_sum_list_conv_sum_set_nat)
+  finally show ?thesis .
 qed
 
 (* The full perturbed Kraus list, one row per row of Q. *)
