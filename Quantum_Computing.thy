@@ -17349,12 +17349,10 @@ next
 qed
 
 (* ---- Norm-squared identity for unitary U expressed in the Pauli basis ----
-   The proof is straightforward in principle (compute Tr(U\<^sup>\<dagger> U) =
-   Tr(I) = 2, then expand Tr(U\<^sup>\<dagger> U) using the HS-orthogonality of
-   {I, X, Y, Z} above to get 2*(\<bar>a\<^sub>0\<bar>\<^sup>2 + \<dots> +
-   \<bar>a\<^sub>3\<bar>\<^sup>2)) but the trace expansion through nine
-   smult/add/dagger interactions on 2x2 entries is bookkeeping-heavy and
-   left as future work. *)
+   Strategy: read the four entries of U directly from the decomposition,
+   then compute Tr(U\<^sup>\<dagger> U) entry-by-entry. The parallelogram identity
+   \<bar>x+y\<bar>\<^sup>2 + \<bar>x-y\<bar>\<^sup>2 = 2\<bar>x\<bar>\<^sup>2 + 2\<bar>y\<bar>\<^sup>2
+   collapses the four cross-terms into 2 \<sqdot> sum-of-squares. *)
 
 lemma unitary_pauli_decomp_norm_sq:
   fixes a0 a1 a2 a3 :: complex
@@ -17363,7 +17361,119 @@ lemma unitary_pauli_decomp_norm_sq:
       and decomp: "U = a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m pauli_X
                        + a2 \<cdot>\<^sub>m pauli_Y + a3 \<cdot>\<^sub>m pauli_Z"
   shows "(cmod a0)\<^sup>2 + (cmod a1)\<^sup>2 + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2 = 1"
-  sorry
+proof -
+  (* Step 1: read off the four entries of U from the decomposition. *)
+  have U00: "U $$ (0,0) = a0 + a3"
+    using decomp by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  have U01: "U $$ (0,1) = a1 + \<i> * a2"
+    using decomp by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  have U10: "U $$ (1,0) = a1 - \<i> * a2"
+    using decomp by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  have U11: "U $$ (1,1) = a0 - a3"
+    using decomp by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+
+  (* Step 2: Tr(U\<^sup>\<dagger> U) = 2 from unitarity. *)
+  have UdU: "U\<^sup>\<dagger> * U = 1\<^sub>m 2"
+    using Uunit Uc by (auto simp: unitary_def)
+  have Tr_eq_2: "Tr (U\<^sup>\<dagger> * U) = 2"
+    using UdU Tr_id_2 by simp
+
+  (* Step 3: expand Tr(U\<^sup>\<dagger> U) = sum_i (U\<^sup>\<dagger> U)(i,i),
+     which by definition equals the sum of \<bar>U(i,j)\<bar>\<^sup>2. *)
+  have Udag_c: "U\<^sup>\<dagger> \<in> carrier_mat 2 2" using Uc by (rule dagger_carrier)
+  have UdU_c:  "U\<^sup>\<dagger> * U \<in> carrier_mat 2 2"
+    using Udag_c Uc by (rule mult_carrier_mat)
+
+  have UdU_00: "(U\<^sup>\<dagger> * U) $$ (0,0)
+              = cnj (U $$ (0,0)) * U $$ (0,0) + cnj (U $$ (1,0)) * U $$ (1,0)"
+    using Uc by (simp add: dagger_def scalar_prod_def numeral_2_eq_2)
+  have UdU_11: "(U\<^sup>\<dagger> * U) $$ (1,1)
+              = cnj (U $$ (0,1)) * U $$ (0,1) + cnj (U $$ (1,1)) * U $$ (1,1)"
+    using Uc by (simp add: dagger_def scalar_prod_def numeral_2_eq_2)
+
+  have UdU_dr: "dim_row (U\<^sup>\<dagger> * U) = 2" using UdU_c by (rule carrier_matD(1))
+  have UdU_dc: "dim_col (U\<^sup>\<dagger> * U) = 2" using UdU_c by (rule carrier_matD(2))
+  have Tr_split:
+    "Tr (U\<^sup>\<dagger> * U) = (U\<^sup>\<dagger> * U) $$ (0,0) + (U\<^sup>\<dagger> * U) $$ (1,1)"
+  proof -
+    have "Tr (U\<^sup>\<dagger> * U)
+            = (\<Sum>i<dim_col (U\<^sup>\<dagger> * U).
+                  if i < dim_row (U\<^sup>\<dagger> * U)
+                  then (U\<^sup>\<dagger> * U) $$ (i,i) else 0)"
+      by (simp add: Tr_def)
+    also have "\<dots> = (\<Sum>i<2.
+                       (U\<^sup>\<dagger> * U) $$ (i,i))"
+      using UdU_dr UdU_dc by simp
+    also have "\<dots> = (U\<^sup>\<dagger> * U) $$ (0,0) + (U\<^sup>\<dagger> * U) $$ (1,1)"
+      by (simp add: numeral_2_eq_2)
+    finally show ?thesis .
+  qed
+  have Tr_expand:
+    "Tr (U\<^sup>\<dagger> * U)
+       = cnj (U $$ (0,0)) * U $$ (0,0) + cnj (U $$ (1,0)) * U $$ (1,0)
+       + cnj (U $$ (0,1)) * U $$ (0,1) + cnj (U $$ (1,1)) * U $$ (1,1)"
+    using Tr_split UdU_00 UdU_11 by (simp add: ac_simps)
+
+  (* Step 4: use cnj z * z = of_real ((cmod z)\<^sup>2). *)
+  have cnj_self: "\<And>z :: complex. cnj z * z = complex_of_real ((cmod z)\<^sup>2)"
+    by (metis complex_norm_square mult.commute)
+
+  have abs_sum: "Tr (U\<^sup>\<dagger> * U)
+       = complex_of_real ((cmod (U $$ (0,0)))\<^sup>2)
+       + complex_of_real ((cmod (U $$ (1,0)))\<^sup>2)
+       + complex_of_real ((cmod (U $$ (0,1)))\<^sup>2)
+       + complex_of_real ((cmod (U $$ (1,1)))\<^sup>2)"
+    using Tr_expand cnj_self by simp
+
+  (* Step 5: substitute the entries from Step 1 and apply the
+     parallelogram identity \<bar>x+y\<bar>\<^sup>2 + \<bar>x-y\<bar>\<^sup>2
+     = 2\<bar>x\<bar>\<^sup>2 + 2\<bar>y\<bar>\<^sup>2. *)
+  have parallelogram:
+    "\<And>x y :: complex.
+       (cmod (x + y))\<^sup>2 + (cmod (x - y))\<^sup>2
+     = 2 * (cmod x)\<^sup>2 + 2 * (cmod y)\<^sup>2"
+    by (simp add: cmod_power2)
+       (simp add: power2_eq_square ring_distribs algebra_simps)
+
+  have step_a:
+    "(cmod (a0 + a3))\<^sup>2 + (cmod (a0 - a3))\<^sup>2
+   = 2 * (cmod a0)\<^sup>2 + 2 * (cmod a3)\<^sup>2"
+    by (rule parallelogram)
+  have step_b:
+    "(cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a1 - \<i> * a2))\<^sup>2
+   = 2 * (cmod a1)\<^sup>2 + 2 * (cmod (\<i> * a2))\<^sup>2"
+    by (rule parallelogram)
+  have ia2: "cmod (\<i> * a2) = cmod a2"
+    by (simp add: norm_mult)
+
+  (* Now we work with the real number obtained from Tr(U\<^sup>\<dagger> U). *)
+  have real_sum: "(cmod (a0 + a3))\<^sup>2 + (cmod (a1 - \<i> * a2))\<^sup>2
+                  + (cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a0 - a3))\<^sup>2
+                = 2 * ((cmod a0)\<^sup>2 + (cmod a1)\<^sup>2
+                       + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2)"
+    using step_a step_b ia2 by (simp add: algebra_simps)
+
+  have "complex_of_real ((cmod (a0 + a3))\<^sup>2)
+      + complex_of_real ((cmod (a1 - \<i> * a2))\<^sup>2)
+      + complex_of_real ((cmod (a1 + \<i> * a2))\<^sup>2)
+      + complex_of_real ((cmod (a0 - a3))\<^sup>2)
+      = Tr (U\<^sup>\<dagger> * U)"
+    using abs_sum U00 U01 U10 U11 by simp
+  also have "Tr (U\<^sup>\<dagger> * U) = 2" using Tr_eq_2 .
+  finally have complex_eq:
+    "complex_of_real ((cmod (a0 + a3))\<^sup>2 + (cmod (a1 - \<i> * a2))\<^sup>2
+                      + (cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a0 - a3))\<^sup>2)
+       = complex_of_real 2"
+    by (simp add: of_real_add)
+
+  hence "(cmod (a0 + a3))\<^sup>2 + (cmod (a1 - \<i> * a2))\<^sup>2
+       + (cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a0 - a3))\<^sup>2 = 2"
+    by (simp only: of_real_eq_iff)
+  with real_sum
+  have "2 * ((cmod a0)\<^sup>2 + (cmod a1)\<^sup>2 + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2) = 2"
+    by linarith
+  thus ?thesis by simp
+qed
 
 
 (* ============================================================================
