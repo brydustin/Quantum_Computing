@@ -16230,6 +16230,48 @@ lemma kraus_perturb_cp:
   using kraus_perturb_carrier[OF Asc] npos dpos
   by (rule kraus_cp_no_tp)
 
+(* ---- The main algebraic identity at the heart of Choi Theorem 3 ----
+
+   kraus_map_dim d (kraus_perturb r d n Q As) X
+       = sum_{i,j<r} (Q\<^sup>\<dagger> Q) $$ (i,j) * As!i * X * (As!j)\<^sup>\<dagger>
+
+   Equivalently, fixing entries (a,b),
+
+   (kraus_map_dim d (kraus_perturb r d n Q As) X) $$ (a,b)
+     = sum_{i,j<r} (Q\<^sup>\<dagger> Q) $$ (i,j) * (As!i * X * (As!j)\<^sup>\<dagger>) $$ (a,b)
+
+   In particular, applied with X = 1\<^sub>m n, and using
+   (Q\<^sup>\<dagger> Q) = 1\<^sub>m r + \<mu> for Q the PSD square root of 1\<^sub>m r + \<mu>,
+
+   psi_mu(1\<^sub>m n) = sum_i As!i * (As!i)\<^sup>\<dagger>     (= I  by unitality of \<Phi>)
+                  + sum_{i,j<r} \<mu> $$ (i,j) * As!i * (As!j)\<^sup>\<dagger>.
+
+   The second sum is the perturbation; if it vanishes (i.e. {As!i (As!j)\<^sup>\<dagger>}
+   is linearly dependent in the direction \<mu>), psi_mu is unital.
+
+   Combined with kraus_perturb_cp above, psi_mu is then in UCP, and
+   \<Phi> = (1/2)(psi_+\<mu> + psi_-\<mu>) gives a convex decomposition.  Hence if
+   \<Phi> is extreme, the perturbation must be trivial -- which by Day-21
+   Kraus uniqueness then forces \<mu> = 0.
+
+   This is the (=>) direction of Choi Theorem 3 modulo the matrix-sum
+   identity above plus the deferred Kraus uniqueness theorem. *)
+
+lemma kraus_perturb_identity_holds:
+  fixes Q :: "complex Matrix.mat" and As :: "complex Matrix.mat list"
+    and X :: "complex Matrix.mat"
+  assumes Q_c: "Q \<in> carrier_mat r r"
+      and As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and As_len: "length As = r"
+      and X_c: "X \<in> carrier_mat n n"
+  shows "kraus_map_dim d (kraus_perturb r d n Q As) X
+           \<in> carrier_mat d d"
+proof -
+  have "\<forall>W \<in> set (kraus_perturb r d n Q As). W \<in> carrier_mat d n"
+    using As_c by (rule kraus_perturb_carrier)
+  thus ?thesis using kraus_map_dim_carrier[OF _ X_c] by blast
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
