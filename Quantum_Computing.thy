@@ -6453,36 +6453,28 @@ proof -
         proof -
           let ?A = "outer_prod \<phi> \<phi>"
           let ?B = "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n)"
-          have "((?A + ?B)\<^sup>\<dagger>) = (?A\<^sup>\<dagger>) + (?B\<^sup>\<dagger>)"
+          have "(?A + ?B)\<^sup>\<dagger> = ?A + ?B"
           proof (rule eq_matI)
-            show "dim_row ((?A + ?B)\<^sup>\<dagger>) = dim_row ((?A\<^sup>\<dagger>) + (?B\<^sup>\<dagger>))"
-              using op_car IH_car by (simp add: dagger_def)
-            show "dim_col ((?A + ?B)\<^sup>\<dagger>) = dim_col (?A\<^sup>\<dagger> + (?B\<^sup>\<dagger>))"
-              using op_car IH_car by (simp add: dagger_def)
+            show "dim_row ((?A + ?B)\<^sup>\<dagger>) = dim_row (?A + ?B)"
+              using op_car IH_car by simp
+            show "dim_col ((?A + ?B)\<^sup>\<dagger>) = dim_col (?A + ?B)"
+              using op_car IH_car by simp
           next
             fix i j
-            assume i: "i < dim_row ((?A\<^sup>\<dagger>) + (?B\<^sup>\<dagger>))"
-               and j: "j < dim_col ((?A\<^sup>\<dagger>) + (?B\<^sup>\<dagger>))"
-            have iln: "i < n" and jln: "j < n"
-              using i j op_car IH_car by (auto simp: dagger_def)
-            have "(?A + ?B)\<^sup>\<dagger> $$ (i,j) = cnj ((?A + ?B) $$ (j,i))"
-              using iln jln op_car IH_car
+            assume "i < dim_row (?A + ?B)" "j < dim_col (?A + ?B)"
+            hence iln: "i < n" and jln: "j < n"
+              using op_car IH_car by simp_all
+            have iA: "i < dim_row ?A" "j < dim_col ?A" using op_car iln jln by auto
+            have iB: "i < dim_row ?B" "j < dim_col ?B" using IH_car iln jln by auto
+            have A_sym: "cnj (?A $$ (j,i)) = ?A $$ (i,j)"
+              using hermitian_index[OF op_herm iA(1) iA(2)] by simp
+            have B_sym: "cnj (?B $$ (j,i)) = ?B $$ (i,j)"
+              using hermitian_index[OF IH_herm iB(1) iB(2)] by simp
+            show "(?A + ?B)\<^sup>\<dagger> $$ (i,j) = (?A + ?B) $$ (i,j)"
+              using op_car IH_car iln jln A_sym B_sym
               by (simp add: dagger_def)
-            also have "... = cnj (?A $$ (j,i)) + cnj (?B $$ (j,i))"
-              using iln jln op_car IH_car
-              by simp
-            also have "... = (?A\<^sup>\<dagger>) $$ (i,j) + (?B\<^sup>\<dagger>) $$ (i,j)"
-              using iln jln op_car IH_car
-              by (metis (lifting) IH_herm carrier_matD(2) dim_row_of_dagger
-                  hermitian_def hermitian_index op_herm)
-            also have "... = ((?A\<^sup>\<dagger>) + (?B\<^sup>\<dagger>)) $$ (i,j)"
-              using iln jln op_car IH_car
-              by (simp add: dagger_def)
-            finally show "((?A + ?B)\<^sup>\<dagger>) $$ (i,j) = ((?A\<^sup>\<dagger>) + (?B\<^sup>\<dagger>)) $$ (i,j)" .
           qed
-          also have "... = ?A + ?B"
-            using op_herm IH_herm by (simp add: hermitian_def)
-          finally show ?thesis by (simp add: hermitian_def)
+          thus ?thesis by (simp add: hermitian_def)
         qed
         show ?case using cons_car sum_herm by simp
       qed
@@ -6765,37 +6757,11 @@ proof -
         fix i j
         assume ij: "i < dim_row ?M" "j < dim_col ?M"
         have iln: "i < n" and jln: "j < n" using ij M_car by auto
-        have "?M\<^sup>\<dagger> $$ (i,j) = cnj (?M $$ (j,i))"
-          using T_car iln jln by (simp add: dagger_def)
-        also have "... = cnj ((1\<^sub>m n) $$ (j,i) - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
-          using T_car iln jln by simp
-        also have "... = cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
-                         - cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
-          by simp
-        also have "cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
-                 = (1\<^sub>m n :: complex Matrix.mat) $$ (i,j)"
-          using iln jln by (cases "i = j") auto
-        also have "cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))
-                 = cnj ((of_real c :: complex) * ?T $$ (j,i))"
-          using iln jln T_car by simp
-        also have "... = cnj (of_real c :: complex) * cnj (?T $$ (j,i))"
-          by simp
-        also have "cnj (of_real c :: complex) = (of_real c :: complex)"
-          by simp
-        also have "cnj (?T $$ (j,i)) = ?T $$ (i,j)"
-          using T_herm hermitian_index[of ?T j i] T_car iln jln by simp
-        also have "(of_real c :: complex) * ?T $$ (i,j)
-                 = ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
-          using iln jln T_car by simp
-        finally have eq_step:
-          "?M\<^sup>\<dagger> $$ (i,j) = (1\<^sub>m n) $$ (i,j)
-                         - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
-          by simp
-        have rhs: "?M $$ (i,j) = (1\<^sub>m n) $$ (i,j)
-                                - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
-          using T_car iln jln by simp
+        have T_sym: "?T $$ (j,i) = cnj (?T $$ (i,j))"
+          using T_herm hermitian_index[of ?T i j] T_car iln jln by simp
         show "?M\<^sup>\<dagger> $$ (i,j) = ?M $$ (i,j)"
-          using eq_step rhs by simp
+          using T_car iln jln T_sym
+          by (simp add: dagger_def)
       qed
       thus ?thesis by (simp add: hermitian_def)
     qed
