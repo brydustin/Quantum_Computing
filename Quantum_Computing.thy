@@ -17035,18 +17035,58 @@ lemma operator_system_full:
 
 
 (* ============================================================================
-   DAY 25 \<mdash> 26 / Oct / 11
+   DAY 25 -- 26 / Oct / 11
    Topic: Arveson Correspondence, Hahn-Banach, Arveson Extension.
 
    The Arveson Correspondence is the bijection
-       \<Gamma> : UCP(M\<^sub>n, M\<^sub>d) \<rightarrow> CPTP(M\<^sub>d, M\<^sub>n)
-   given by \<Gamma>(\<Phi>) = \<Phi>\<^sup>* (the trace-pairing adjoint), satisfying
-       Tr(\<Phi>\<^sup>*(B) A) = Tr(B \<Phi>(A)).
-   The full statement of Arveson Extension --- that any UCP map on an
-   operator subsystem extends to UCP on the full M\<^sub>n --- requires the
-   Hahn-Banach theorem.  Both are deferred; the operator-system
-   definition above is the prerequisite they are stated in.
+       Gamma : UCP(M_n, M_d) -> CPTP(M_d, M_n)
+   given by Gamma(Phi) = Phi-adjoint (the trace-pairing adjoint), satisfying
+       Tr(Phi-adjoint(B) A) = Tr(B Phi(A)).
+   For Phi in Kraus form Phi(X) = kraus_map_dim d As X, the adjoint is
+   kraus_adjoint_dim n As Y; the codebase gives:
+
+     adjoint_cp_from_kraus  :  Phi-adjoint is completely positive
+     cp_unital_iff_adjoint_tp :  Phi unital iff Phi-adjoint trace-preserving
+
+   We combine them below into the Correspondence statement. The full
+   statement of Arveson EXTENSION --- that any UCP map on an operator
+   subsystem extends to UCP on the full M_n --- requires Hahn-Banach
+   and is deferred (DAY 26).
    ============================================================================ *)
+
+theorem arveson_correspondence:
+  fixes As :: "complex Matrix.mat list"
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "(completely_positive n d (kraus_map_dim d As)
+          \<and> unital_map n d (kraus_map_dim d As))
+       \<longleftrightarrow>
+         (completely_positive d n (kraus_adjoint_dim n As)
+          \<and> trace_preserving d (kraus_adjoint_dim n As))"
+proof -
+  have phi_cp: "completely_positive n d (kraus_map_dim d As)"
+    using kraus_cp_no_tp[OF As_c npos dpos] .
+  have phi_star_cp: "completely_positive d n (kraus_adjoint_dim n As)"
+    using adjoint_cp_from_kraus[OF As_c npos dpos] .
+  have unital_iff_tp:
+    "unital_map n d (kraus_map_dim d As)
+       \<longleftrightarrow> trace_preserving d (kraus_adjoint_dim n As)"
+    using cp_unital_iff_adjoint_tp[OF As_c npos dpos] .
+  show ?thesis using phi_cp phi_star_cp unital_iff_tp by blast
+qed
+
+(* The Correspondence as a UCP <-> CPTP bijection on Kraus-form maps. *)
+
+corollary arveson_correspondence_UCP_CPTP:
+  fixes As :: "complex Matrix.mat list"
+  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "kraus_map_dim d As \<in> UCP n d
+       \<longleftrightarrow> kraus_adjoint_dim n As \<in> CPTP d n"
+  using arveson_correspondence[OF As_c npos dpos]
+  by (simp add: UCP_def CPTP_def)
 
 
 (* ============================================================================
