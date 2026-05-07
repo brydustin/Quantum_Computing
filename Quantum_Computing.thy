@@ -16607,6 +16607,59 @@ proof -
   finally show ?thesis .
 qed
 
+(* Substituting kraus_row_index into kraus_quad_entry_double_sum
+   gives the perturbation entry for a single index s in terms of
+   the matrix entries of Q and the As list. *)
+
+lemma kraus_quad_kraus_row_expand:
+  fixes \<rho> :: "complex Matrix.mat"
+    and Q :: "complex Matrix.mat"
+    and As :: "complex Matrix.mat list"
+  assumes Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "kraus_quad_entry \<rho> a b (kraus_row d n Q As s)
+       = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            (\<Sum>i = 0..<length As. cnj (Q $$ (s,i)) * (As!i) $$ (a,c))
+            * \<rho> $$ (c,e)
+            * cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s,j)) * (As!j) $$ (b,e)))"
+proof -
+  let ?W = "kraus_row d n Q As s"
+  have W_c: "?W \<in> carrier_mat d n"
+    using Asc by (rule kraus_row_carrier)
+  have step1: "kraus_quad_entry \<rho> a b ?W
+             = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                  ?W $$ (a, c) * \<rho> $$ (c, e) * cnj (?W $$ (b, e)))"
+    by (rule kraus_quad_entry_double_sum[OF W_c rho_c a_lt b_lt])
+  have rewrite: "\<And>e c. e < n \<Longrightarrow> c < n \<Longrightarrow>
+       ?W $$ (a, c) * \<rho> $$ (c, e) * cnj (?W $$ (b, e))
+     = (\<Sum>i = 0..<length As. cnj (Q $$ (s,i)) * (As!i) $$ (a,c))
+       * \<rho> $$ (c,e)
+       * cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s,j)) * (As!j) $$ (b,e))"
+  proof -
+    fix e c assume e_lt: "e < n" and c_lt: "c < n"
+    have W_ac: "?W $$ (a, c)
+              = (\<Sum>i = 0..<length As. cnj (Q $$ (s, i)) * (As!i) $$ (a, c))"
+      using kraus_row_index[OF Asc a_lt c_lt] .
+    have W_be: "?W $$ (b, e)
+              = (\<Sum>j = 0..<length As. cnj (Q $$ (s, j)) * (As!j) $$ (b, e))"
+      using kraus_row_index[OF Asc b_lt e_lt] .
+    show "?W $$ (a, c) * \<rho> $$ (c, e) * cnj (?W $$ (b, e))
+        = (\<Sum>i = 0..<length As. cnj (Q $$ (s,i)) * (As!i) $$ (a,c))
+          * \<rho> $$ (c,e)
+          * cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s,j)) * (As!j) $$ (b,e))"
+      using W_ac W_be by simp
+  qed
+  have "(\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+          ?W $$ (a, c) * \<rho> $$ (c, e) * cnj (?W $$ (b, e)))
+      = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+          (\<Sum>i = 0..<length As. cnj (Q $$ (s,i)) * (As!i) $$ (a,c))
+          * \<rho> $$ (c,e)
+          * cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s,j)) * (As!j) $$ (b,e)))"
+    using rewrite by (intro sum.cong[OF refl] sum.cong[OF refl]) auto
+  thus ?thesis using step1 by simp
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
