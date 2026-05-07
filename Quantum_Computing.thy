@@ -16513,7 +16513,7 @@ proof -
 qed
 
 (* Same expansion but for two distinct matrices -- the version we need
-   for the cross-terms (As!i * \<rho> * (As!j)\<^sup>\<dagger>) $$ (a,b) inside
+   for the cross-terms ((As!i) * \<rho> * ((As!j)\<^sup>\<dagger>)) $$ (a,b) inside
    the perturbation identity. *)
 
 lemma cross_quad_entry_double_sum:
@@ -16752,6 +16752,178 @@ proof -
       by simp
   qed
   finally show ?thesis .
+qed
+
+(* The kraus_perturb identity: each entry of the perturbed Kraus
+   map equals the (Q\<^sup>\<dagger> Q)-weighted sum of the corresponding
+   cross-Kraus entries.  This is the algebraic core of Choi
+   Theorem 3's perturbation construction. *)
+
+lemma kraus_perturb_entry_eq:
+  fixes Q :: "complex Matrix.mat" and As :: "complex Matrix.mat list"
+    and \<rho> :: "complex Matrix.mat"
+  assumes Q_c: "Q \<in> carrier_mat r r"
+      and Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and As_len: "length As = r"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "(kraus_map_dim d (kraus_perturb r d n Q As) \<rho>) $$ (a, b)
+       = (\<Sum>i = 0..<r. \<Sum>j = 0..<r.
+            (Q\<^sup>\<dagger> * Q) $$ (i, j)
+            * ((As!i) * \<rho> * ((As!j)\<^sup>\<dagger>)) $$ (a, b))"
+proof -
+  let ?WW = "kraus_perturb r d n Q As"
+  have WW_c: "\<forall>W \<in> set ?WW. W \<in> carrier_mat d n"
+    by (rule kraus_perturb_carrier[OF Asc])
+  have step1: "(kraus_map_dim d ?WW \<rho>) $$ (a, b)
+             = sum_list (map (kraus_quad_entry \<rho> a b) ?WW)"
+    by (rule kraus_map_dim_index[OF WW_c rho_c a_lt b_lt])
+  have step2: "sum_list (map (kraus_quad_entry \<rho> a b) ?WW)
+             = (\<Sum>s = 0..<r.
+                 kraus_quad_entry \<rho> a b (kraus_row d n Q As s))"
+    by (simp add: kraus_perturb_def
+                  interv_sum_list_conv_sum_set_nat)
+  have step3: "\<And>s. kraus_quad_entry \<rho> a b (kraus_row d n Q As s)
+              = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                  (\<Sum>i = 0..<r. cnj (Q $$ (s, i)) * (As!i) $$ (a, c))
+                  * \<rho> $$ (c, e)
+                  * (\<Sum>j = 0..<r. Q $$ (s, j) * cnj ((As!j) $$ (b, e))))"
+    using kraus_quad_kraus_row_expand_cnj[OF Asc rho_c a_lt b_lt]
+    by (simp add: As_len)
+  have step4: "(\<Sum>s = 0..<r.
+                  kraus_quad_entry \<rho> a b (kraus_row d n Q As s))
+             = (\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>i = 0..<r. \<Sum>j = 0..<r.
+                  cnj (Q $$ (s, i)) * Q $$ (s, j)
+                  * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+  proof (rule sum.cong[OF refl])
+    fix s assume "s \<in> {0..<r}"
+    have step3_s: "kraus_quad_entry \<rho> a b (kraus_row d n Q As s)
+                = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                    (\<Sum>i = 0..<r. cnj (Q $$ (s, i)) * (As!i) $$ (a, c))
+                    * \<rho> $$ (c, e)
+                    * (\<Sum>j = 0..<r. Q $$ (s, j) * cnj ((As!j) $$ (b, e))))"
+      using step3 .
+    have inner: "\<And>e c. e < n \<Longrightarrow> c < n \<Longrightarrow>
+        (\<Sum>i = 0..<r. cnj (Q $$ (s, i)) * (As!i) $$ (a, c))
+        * \<rho> $$ (c, e)
+        * (\<Sum>j = 0..<r. Q $$ (s, j) * cnj ((As!j) $$ (b, e)))
+      = (\<Sum>i = 0..<r. \<Sum>j = 0..<r.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+    proof -
+      fix e c assume e_lt: "e < n" and c_lt: "c < n"
+      have "(\<Sum>i = 0..<r. cnj (Q $$ (s, i)) * (As!i) $$ (a, c))
+          * \<rho> $$ (c, e)
+          * (\<Sum>j = 0..<r. Q $$ (s, j) * cnj ((As!j) $$ (b, e)))
+          = (\<Sum>i = 0..<r. \<Sum>j = 0..<r.
+              (cnj (Q $$ (s, i)) * (As!i) $$ (a, c))
+              * \<rho> $$ (c, e)
+              * (Q $$ (s, j) * cnj ((As!j) $$ (b, e))))"
+        by (simp add: sum_distrib_left sum_distrib_right
+                      mult.commute mult.left_commute)
+      also have "\<dots> = (\<Sum>i = 0..<r. \<Sum>j = 0..<r.
+              cnj (Q $$ (s, i)) * Q $$ (s, j)
+              * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+        by (intro sum.cong[OF refl]) (simp add: mult.commute mult.left_commute)
+      finally show "(\<Sum>i = 0..<r. cnj (Q $$ (s, i)) * (As!i) $$ (a, c))
+          * \<rho> $$ (c, e)
+          * (\<Sum>j = 0..<r. Q $$ (s, j) * cnj ((As!j) $$ (b, e)))
+        = (\<Sum>i = 0..<r. \<Sum>j = 0..<r.
+              cnj (Q $$ (s, i)) * Q $$ (s, j)
+              * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))" .
+    qed
+    show "kraus_quad_entry \<rho> a b (kraus_row d n Q As s)
+        = (\<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>i = 0..<r. \<Sum>j = 0..<r.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      using step3_s inner by simp
+  qed
+  have step6: "(\<Sum>i = 0..<r. \<Sum>j = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                  cnj (Q $$ (s, i)) * Q $$ (s, j)
+                  * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))
+             = (\<Sum>i = 0..<r. \<Sum>j = 0..<r.
+                  (Q\<^sup>\<dagger> * Q) $$ (i, j)
+                  * ((As!i) * \<rho> * ((As!j)\<^sup>\<dagger>)) $$ (a, b))"
+  proof (intro sum.cong[OF refl])
+    fix i j assume "i \<in> {0..<r}" "j \<in> {0..<r}"
+    hence i_lt: "i < r" and j_lt: "j < r" by simp_all
+    have Ai_c: "As!i \<in> carrier_mat d n"
+      using Asc i_lt As_len by (simp add: nth_mem)
+    have Aj_c: "As!j \<in> carrier_mat d n"
+      using Asc j_lt As_len by (simp add: nth_mem)
+    have qq: "(Q\<^sup>\<dagger> * Q) $$ (i, j)
+            = (\<Sum>s = 0..<r. cnj (Q $$ (s, i)) * Q $$ (s, j))"
+      using Qdag_Q_index[OF Q_c i_lt j_lt] .
+    have cross: "((As!i) * \<rho> * ((As!j)\<^sup>\<dagger>)) $$ (a, b)
+              = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                   (As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e)))"
+      using cross_quad_entry_double_sum[OF Ai_c Aj_c rho_c a_lt b_lt] .
+    have "(\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))
+        = (\<Sum>s = 0..<r.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                 (As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = (\<Sum>s = 0..<r. cnj (Q $$ (s, i)) * Q $$ (s, j))
+                  * (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                       (As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e)))"
+      by (simp add: sum_distrib_right)
+    also have "\<dots> = (Q\<^sup>\<dagger> * Q) $$ (i, j)
+                  * ((As!i) * \<rho> * ((As!j)\<^sup>\<dagger>)) $$ (a, b)"
+      using qq cross by simp
+    finally show "(\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                    cnj (Q $$ (s, i)) * Q $$ (s, j)
+                    * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))
+                = (Q\<^sup>\<dagger> * Q) $$ (i, j)
+                  * ((As!i) * \<rho> * ((As!j)\<^sup>\<dagger>)) $$ (a, b)" .
+  qed
+  (* Step 5: swap nested sums to bring (i, j) outermost.
+     We move sum_i past sum_c, sum_e, sum_s (3 swaps); then move sum_j
+     past sum_c, sum_e, sum_s (3 more swaps). *)
+  have step5: "(\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>i = 0..<r. \<Sum>j = 0..<r.
+                  cnj (Q $$ (s, i)) * Q $$ (s, j)
+                  * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))
+             = (\<Sum>i = 0..<r. \<Sum>j = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                  cnj (Q $$ (s, i)) * Q $$ (s, j)
+                  * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+  proof -
+    (* Move sum_i out by 3 swaps. *)
+    have m1: "(\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>i = 0..<r. \<Sum>j = 0..<r.
+                cnj (Q $$ (s, i)) * Q $$ (s, j)
+                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))
+            = (\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>i = 0..<r. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
+                cnj (Q $$ (s, i)) * Q $$ (s, j)
+                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      by (rule sum.cong[OF refl])
+         (rule sum.cong[OF refl], rule sum.swap)
+    have m2: "\<dots> = (\<Sum>s = 0..<r. \<Sum>i = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
+                cnj (Q $$ (s, i)) * Q $$ (s, j)
+                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      by (rule sum.cong[OF refl]) (rule sum.swap)
+    have m3: "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
+                cnj (Q $$ (s, i)) * Q $$ (s, j)
+                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      by (rule sum.swap)
+    (* Now move sum_j out by 3 swaps. *)
+    have m4: "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>j = 0..<r. \<Sum>c = 0..<n.
+                cnj (Q $$ (s, i)) * Q $$ (s, j)
+                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      by (rule sum.cong[OF refl])
+         (rule sum.cong[OF refl], rule sum.cong[OF refl], rule sum.swap)
+    have m5: "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>j = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                cnj (Q $$ (s, i)) * Q $$ (s, j)
+                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      by (rule sum.cong[OF refl])
+         (rule sum.cong[OF refl], rule sum.swap)
+    have m6: "\<dots> = (\<Sum>i = 0..<r. \<Sum>j = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                cnj (Q $$ (s, i)) * Q $$ (s, j)
+                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+      by (rule sum.cong[OF refl]) (rule sum.swap)
+    show ?thesis using m1 m2 m3 m4 m5 m6 by simp
+  qed
+  show ?thesis using step1 step2 step4 step5 step6 by simp
 qed
 
 
