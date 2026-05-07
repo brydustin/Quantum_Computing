@@ -17095,6 +17095,278 @@ lemma repetition_encode_binary:
 
 
 (* ============================================================================
+   DAY 33 \<mdash> 16 / Nov / 11
+   Topic: "Pauli Magic" \<mdash> Hilbert-Schmidt orthogonality of {I, X, Y, Z}
+   in M\<^sub>2 and the decomposition of a unitary U as a\<^sub>0 I + a\<^sub>1 X
+   + a\<^sub>2 Y + a\<^sub>3 Z with \<bar>a\<^sub>0\<bar>\<^sup>2 + \<dots> + \<bar>a\<^sub>3\<bar>\<^sup>2 = 1.
+
+   These are the algebraic prerequisites for the recovery-map analysis of the
+   Shor 9-qubit code (the geometric / 9-qubit subspace facts from PDF
+   34.1-34.2 require a 2\<^sup>9-dimensional construction that is deferred).
+   ============================================================================ *)
+
+(* ---- Traces of the Pauli matrices and the 2x2 identity ---- *)
+
+lemma Tr_pauli_X: "Tr pauli_X = 0"
+  by (simp add: Tr_def pauli_X_def numeral_2_eq_2)
+
+lemma Tr_pauli_Y: "Tr pauli_Y = 0"
+  by (simp add: Tr_def pauli_Y_def numeral_2_eq_2)
+
+lemma Tr_pauli_Z: "Tr pauli_Z = 0"
+  by (simp add: Tr_def pauli_Z_def numeral_2_eq_2)
+
+lemma Tr_id_2: "Tr (1\<^sub>m 2 :: complex Matrix.mat) = 2"
+  by (simp add: Tr_def numeral_2_eq_2)
+
+(* ---- Pauli products needed for HS orthogonality ---- *)
+
+lemma pauli_X_pauli_Y: "pauli_X * pauli_Y = - \<i> \<cdot>\<^sub>m pauli_Z"
+proof (rule eq_matI)
+  show "dim_row (pauli_X * pauli_Y) = dim_row (- \<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col (pauli_X * pauli_Y) = dim_col (- \<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j assume "i < dim_row (- \<i> \<cdot>\<^sub>m pauli_Z)" "j < dim_col (- \<i> \<cdot>\<^sub>m pauli_Z)"
+  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Z_def)
+  thus "(pauli_X * pauli_Y) $$ (i,j) = (- \<i> \<cdot>\<^sub>m pauli_Z) $$ (i,j)"
+    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
+qed
+
+lemma pauli_Y_pauli_X: "pauli_Y * pauli_X = \<i> \<cdot>\<^sub>m pauli_Z"
+proof (rule eq_matI)
+  show "dim_row (pauli_Y * pauli_X) = dim_row (\<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col (pauli_Y * pauli_X) = dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Z)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
+  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Z_def)
+  thus "(pauli_Y * pauli_X) $$ (i,j) = (\<i> \<cdot>\<^sub>m pauli_Z) $$ (i,j)"
+    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
+qed
+
+lemma pauli_Y_pauli_Z: "pauli_Y * pauli_Z = - \<i> \<cdot>\<^sub>m pauli_X"
+proof (rule eq_matI)
+  show "dim_row (pauli_Y * pauli_Z) = dim_row (- \<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col (pauli_Y * pauli_Z) = dim_col (- \<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j assume "i < dim_row (- \<i> \<cdot>\<^sub>m pauli_X)" "j < dim_col (- \<i> \<cdot>\<^sub>m pauli_X)"
+  hence ij: "i < 2" "j < 2" by (auto simp: pauli_X_def)
+  thus "(pauli_Y * pauli_Z) $$ (i,j) = (- \<i> \<cdot>\<^sub>m pauli_X) $$ (i,j)"
+    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
+qed
+
+lemma pauli_Z_pauli_Y: "pauli_Z * pauli_Y = \<i> \<cdot>\<^sub>m pauli_X"
+proof (rule eq_matI)
+  show "dim_row (pauli_Z * pauli_Y) = dim_row (\<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col (pauli_Z * pauli_Y) = dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_X)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
+  hence ij: "i < 2" "j < 2" by (auto simp: pauli_X_def)
+  thus "(pauli_Z * pauli_Y) $$ (i,j) = (\<i> \<cdot>\<^sub>m pauli_X) $$ (i,j)"
+    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
+qed
+
+lemma pauli_Z_pauli_X: "pauli_Z * pauli_X = - \<i> \<cdot>\<^sub>m pauli_Y"
+proof (rule eq_matI)
+  show "dim_row (pauli_Z * pauli_X) = dim_row (- \<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col (pauli_Z * pauli_X) = dim_col (- \<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j assume "i < dim_row (- \<i> \<cdot>\<^sub>m pauli_Y)" "j < dim_col (- \<i> \<cdot>\<^sub>m pauli_Y)"
+  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Y_def)
+  thus "(pauli_Z * pauli_X) $$ (i,j) = (- \<i> \<cdot>\<^sub>m pauli_Y) $$ (i,j)"
+    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
+qed
+
+lemma pauli_X_pauli_Z: "pauli_X * pauli_Z = \<i> \<cdot>\<^sub>m pauli_Y"
+proof (rule eq_matI)
+  show "dim_row (pauli_X * pauli_Z) = dim_row (\<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col (pauli_X * pauli_Z) = dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Y)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
+  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Y_def)
+  thus "(pauli_X * pauli_Z) $$ (i,j) = (\<i> \<cdot>\<^sub>m pauli_Y) $$ (i,j)"
+    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
+qed
+
+(* ---- Hilbert-Schmidt inner products: \<langle>A | B\<rangle>\<^sub>HS = Tr(A\<^sup>\<dagger> * B) ----
+   Since X, Y, Z, I are Hermitian, A\<^sup>\<dagger> = A here, so we compute Tr(A * B). *)
+
+lemma Tr_smult_2:
+  fixes c :: complex
+  assumes "M \<in> carrier_mat 2 2"
+  shows "Tr (c \<cdot>\<^sub>m M) = c * Tr M"
+  using assms by (simp add: Tr_smult)
+
+lemma pauli_X_X_Tr: "Tr (pauli_X * pauli_X) = 2"
+  using pauli_X_squared Tr_id_2 by simp
+
+lemma pauli_Y_Y_Tr: "Tr (pauli_Y * pauli_Y) = 2"
+  using pauli_Y_squared Tr_id_2 by simp
+
+lemma pauli_Z_Z_Tr: "Tr (pauli_Z * pauli_Z) = 2"
+  using pauli_Z_squared Tr_id_2 by simp
+
+lemma pauli_I_I_Tr: "Tr ((1\<^sub>m 2 :: complex Matrix.mat) * 1\<^sub>m 2) = 2"
+  using Tr_id_2 by simp
+
+(* Off-diagonal HS inner products are zero *)
+
+lemma pauli_I_X_Tr: "Tr ((1\<^sub>m 2 :: complex Matrix.mat) * pauli_X) = 0"
+proof -
+  have "(1\<^sub>m 2 :: complex Matrix.mat) * pauli_X = pauli_X"
+    using pauli_X_carrier by (rule left_mult_one_mat)
+  thus ?thesis using Tr_pauli_X by simp
+qed
+
+lemma pauli_I_Y_Tr: "Tr ((1\<^sub>m 2 :: complex Matrix.mat) * pauli_Y) = 0"
+proof -
+  have "(1\<^sub>m 2 :: complex Matrix.mat) * pauli_Y = pauli_Y"
+    using pauli_Y_carrier by (rule left_mult_one_mat)
+  thus ?thesis using Tr_pauli_Y by simp
+qed
+
+lemma pauli_I_Z_Tr: "Tr ((1\<^sub>m 2 :: complex Matrix.mat) * pauli_Z) = 0"
+proof -
+  have "(1\<^sub>m 2 :: complex Matrix.mat) * pauli_Z = pauli_Z"
+    using pauli_Z_carrier by (rule left_mult_one_mat)
+  thus ?thesis using Tr_pauli_Z by simp
+qed
+
+lemma pauli_X_Y_Tr: "Tr (pauli_X * pauli_Y) = 0"
+proof -
+  have "Tr (pauli_X * pauli_Y) = Tr (- \<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_X_pauli_Y)
+  also have "\<dots> = - \<i> * Tr pauli_Z"
+    using pauli_Z_carrier by (rule Tr_smult_2)
+  also have "\<dots> = 0" using Tr_pauli_Z by simp
+  finally show ?thesis .
+qed
+
+lemma pauli_Y_X_Tr: "Tr (pauli_Y * pauli_X) = 0"
+proof -
+  have "Tr (pauli_Y * pauli_X) = Tr (\<i> \<cdot>\<^sub>m pauli_Z)"
+    by (simp add: pauli_Y_pauli_X)
+  also have "\<dots> = \<i> * Tr pauli_Z"
+    using pauli_Z_carrier by (rule Tr_smult_2)
+  also have "\<dots> = 0" using Tr_pauli_Z by simp
+  finally show ?thesis .
+qed
+
+lemma pauli_X_Z_Tr: "Tr (pauli_X * pauli_Z) = 0"
+proof -
+  have "Tr (pauli_X * pauli_Z) = Tr (\<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_X_pauli_Z)
+  also have "\<dots> = \<i> * Tr pauli_Y"
+    using pauli_Y_carrier by (rule Tr_smult_2)
+  also have "\<dots> = 0" using Tr_pauli_Y by simp
+  finally show ?thesis .
+qed
+
+lemma pauli_Z_X_Tr: "Tr (pauli_Z * pauli_X) = 0"
+proof -
+  have "Tr (pauli_Z * pauli_X) = Tr (- \<i> \<cdot>\<^sub>m pauli_Y)"
+    by (simp add: pauli_Z_pauli_X)
+  also have "\<dots> = - \<i> * Tr pauli_Y"
+    using pauli_Y_carrier by (rule Tr_smult_2)
+  also have "\<dots> = 0" using Tr_pauli_Y by simp
+  finally show ?thesis .
+qed
+
+lemma pauli_Y_Z_Tr: "Tr (pauli_Y * pauli_Z) = 0"
+proof -
+  have "Tr (pauli_Y * pauli_Z) = Tr (- \<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_Y_pauli_Z)
+  also have "\<dots> = - \<i> * Tr pauli_X"
+    using pauli_X_carrier by (rule Tr_smult_2)
+  also have "\<dots> = 0" using Tr_pauli_X by simp
+  finally show ?thesis .
+qed
+
+lemma pauli_Z_Y_Tr: "Tr (pauli_Z * pauli_Y) = 0"
+proof -
+  have "Tr (pauli_Z * pauli_Y) = Tr (\<i> \<cdot>\<^sub>m pauli_X)"
+    by (simp add: pauli_Z_pauli_Y)
+  also have "\<dots> = \<i> * Tr pauli_X"
+    using pauli_X_carrier by (rule Tr_smult_2)
+  also have "\<dots> = 0" using Tr_pauli_X by simp
+  finally show ?thesis .
+qed
+
+(* ---- Pauli decomposition of an arbitrary 2x2 matrix ----
+
+   The four matrices {I, X, Y, Z} form an HS-orthogonal basis of M\<^sub>2;
+   for any M \<in> carrier_mat 2 2 we can read off the coefficients of
+   that basis directly from the matrix entries. *)
+
+lemma pauli_decomposition:
+  fixes M :: "complex Matrix.mat"
+  assumes Mc: "M \<in> carrier_mat 2 2"
+  shows "M = (M $$ (0,0) + M $$ (1,1)) / 2 \<cdot>\<^sub>m 1\<^sub>m 2
+           + (M $$ (1,0) + M $$ (0,1)) / 2 \<cdot>\<^sub>m pauli_X
+           + \<i> * (M $$ (1,0) - M $$ (0,1)) / 2 \<cdot>\<^sub>m pauli_Y
+           + (M $$ (0,0) - M $$ (1,1)) / 2 \<cdot>\<^sub>m pauli_Z"
+proof (rule eq_matI)
+  let ?a0 = "(M $$ (0,0) + M $$ (1,1)) / 2"
+  let ?a1 = "(M $$ (1,0) + M $$ (0,1)) / 2"
+  let ?a2 = "\<i> * (M $$ (1,0) - M $$ (0,1)) / 2"
+  let ?a3 = "(M $$ (0,0) - M $$ (1,1)) / 2"
+  let ?R = "?a0 \<cdot>\<^sub>m 1\<^sub>m 2 + ?a1 \<cdot>\<^sub>m pauli_X
+            + ?a2 \<cdot>\<^sub>m pauli_Y + ?a3 \<cdot>\<^sub>m pauli_Z"
+  show "dim_row M = dim_row ?R"
+    using Mc by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_col M = dim_col ?R"
+    using Mc by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+next
+  fix i j
+  let ?a0 = "(M $$ (0,0) + M $$ (1,1)) / 2"
+  let ?a1 = "(M $$ (1,0) + M $$ (0,1)) / 2"
+  let ?a2 = "\<i> * (M $$ (1,0) - M $$ (0,1)) / 2"
+  let ?a3 = "(M $$ (0,0) - M $$ (1,1)) / 2"
+  let ?R = "?a0 \<cdot>\<^sub>m 1\<^sub>m 2 + ?a1 \<cdot>\<^sub>m pauli_X
+            + ?a2 \<cdot>\<^sub>m pauli_Y + ?a3 \<cdot>\<^sub>m pauli_Z"
+  assume i: "i < dim_row ?R" and j: "j < dim_col ?R"
+  hence ij: "i < 2" "j < 2" by (auto simp: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "M $$ (i,j) = ?R $$ (i,j)"
+    using ij Mc unfolding pauli_X_def pauli_Y_def pauli_Z_def
+    by (cases i; cases j; simp add: field_simps)
+qed
+
+(* ---- Norm-squared identity for unitary U expressed in the Pauli basis ----
+   The proof is straightforward in principle (compute Tr(U\<^sup>\<dagger> U) =
+   Tr(I) = 2, then expand Tr(U\<^sup>\<dagger> U) using the HS-orthogonality of
+   {I, X, Y, Z} above to get 2*(\<bar>a\<^sub>0\<bar>\<^sup>2 + \<dots> +
+   \<bar>a\<^sub>3\<bar>\<^sup>2)) but the trace expansion through nine
+   smult/add/dagger interactions on 2x2 entries is bookkeeping-heavy and
+   left as future work. *)
+
+lemma unitary_pauli_decomp_norm_sq:
+  fixes a0 a1 a2 a3 :: complex
+  assumes Uc:    "U \<in> carrier_mat 2 2"
+      and Uunit: "unitary U"
+      and decomp: "U = a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m pauli_X
+                       + a2 \<cdot>\<^sub>m pauli_Y + a3 \<cdot>\<^sub>m pauli_Z"
+  shows "(cmod a0)\<^sup>2 + (cmod a1)\<^sup>2 + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2 = 1"
+  sorry
+
+
+(* ============================================================================
    DAY 34 \<mdash> 18 / Nov / 11
    Topic: Algebra of Projections (Building Blocks for Knill-Laflamme)
 
