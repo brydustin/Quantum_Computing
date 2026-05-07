@@ -16215,6 +16215,21 @@ lemma kraus_perturb_carrier:
   using assms kraus_row_carrier
   by (auto simp: kraus_perturb_def)
 
+(* The perturbed kraus map is completely positive: this follows
+   directly from the carrier hypothesis via the existing
+   kraus_cp_no_tp result, without needing the trace-preserving
+   side condition.  Hence the convex-decomposition argument of
+   Choi Theorem 3 will produce CP maps automatically; the only
+   remaining condition we need to check is unitality. *)
+
+lemma kraus_perturb_cp:
+  assumes Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "completely_positive n d (kraus_map_dim d (kraus_perturb r d n Q As))"
+  using kraus_perturb_carrier[OF Asc] npos dpos
+  by (rule kraus_cp_no_tp)
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
