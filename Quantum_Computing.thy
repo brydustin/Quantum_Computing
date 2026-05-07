@@ -17118,9 +17118,162 @@ corollary arveson_correspondence_UCP_CPTP:
 
    A density matrix \<rho> on H\<^sub>A \<otimes> H\<^sub>B is separable iff for every
    entanglement witness W (Hermitian, Tr(W \<sigma>) \<ge> 0 for all separable
-   \<sigma>) we have Tr(W \<rho>) \<ge> 0.  The "iff" requires Hahn-Banach (one
-   direction is trivial); deferred.
+   \<sigma>) we have Tr(W \<rho>) \<ge> 0.  The "iff" requires Hahn-Banach;
+   here we record the easy (forward) direction together with the
+   underlying definitions of separability and witness.
    ============================================================================ *)
+
+fun sep_sum :: "nat \<Rightarrow> nat \<Rightarrow> (real \<times> complex Matrix.mat \<times> complex Matrix.mat) list
+                 \<Rightarrow> complex Matrix.mat" where
+  "sep_sum m p [] = 0\<^sub>m (m*p) (m*p)"
+| "sep_sum m p ((w, \<sigma>, \<tau>) # ts) =
+     complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + sep_sum m p ts"
+
+definition sep_decomp_valid ::
+  "nat \<Rightarrow> nat \<Rightarrow> (real \<times> complex Matrix.mat \<times> complex Matrix.mat) list \<Rightarrow> bool"
+where
+  "sep_decomp_valid m p ts \<equiv>
+     (\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+         w \<ge> 0
+         \<and> \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+         \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>)
+     \<and> sum_list (map (\<lambda>(w, _, _). w) ts) = 1"
+
+definition separable_density :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "separable_density m p \<rho> \<equiv>
+     \<exists>ts. sep_decomp_valid m p ts \<and> \<rho> = sep_sum m p ts"
+
+definition entanglement_witness ::
+  "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool"
+where
+  "entanglement_witness m p W \<equiv>
+     W \<in> carrier_mat (m*p) (m*p)
+     \<and> hermitian W
+     \<and> (\<forall>\<sigma> \<tau>. \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+                  \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>
+                  \<longrightarrow> Re (Tr (W * (\<sigma> \<Otimes> \<tau>))) \<ge> 0)"
+
+lemma sep_sum_carrier:
+  "sep_sum m p ts \<in> carrier_mat (m*p) (m*p)"
+proof (induction ts)
+  case Nil
+  show ?case by simp
+next
+  case (Cons t ts)
+  obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+  show ?case
+    using Cons.IH unfolding t_eq
+    by (simp add: add_carrier_mat)
+qed
+
+theorem separable_witness_nonneg:
+  fixes m p :: nat and \<rho> W :: "complex Matrix.mat"
+  assumes sep: "separable_density m p \<rho>"
+      and wit: "entanglement_witness m p W"
+  shows "Re (Tr (W * \<rho>)) \<ge> 0"
+proof -
+  obtain ts where ts_v: "sep_decomp_valid m p ts"
+              and \<rho>_eq: "\<rho> = sep_sum m p ts"
+    using sep unfolding separable_density_def by blast
+  have W_c: "W \<in> carrier_mat (m*p) (m*p)"
+    using wit unfolding entanglement_witness_def by simp
+  have step: "Re (Tr (W * sep_sum m p ts)) \<ge> 0"
+    if "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+           w \<ge> 0 \<and> \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+                 \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>"
+    for ts
+    using that
+  proof (induction ts)
+    case Nil
+    have W0: "W * 0\<^sub>m (m*p) (m*p) = 0\<^sub>m (m*p) (m*p)"
+      using W_c by (rule right_mult_zero_mat)
+    show ?case by (simp add: W0)
+  next
+    case (Cons t ts)
+    obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+    from Cons.prems t_eq have
+      w_nn: "w \<ge> 0" and
+      \<sigma>_c: "\<sigma> \<in> carrier_mat m m" and
+      \<sigma>_psd: "psd \<sigma>" and
+      \<tau>_c: "\<tau> \<in> carrier_mat p p" and
+      \<tau>_psd: "psd \<tau>"
+      by auto
+    from Cons.prems t_eq have ts_v':
+      "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+           w \<ge> 0 \<and> \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+                 \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>"
+      by auto
+    have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)"
+      using \<sigma>_c \<tau>_c by auto
+    have ws_c: "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) \<in> carrier_mat (m*p) (m*p)"
+      using st_c by auto
+    have rest_c: "sep_sum m p ts \<in> carrier_mat (m*p) (m*p)"
+      using sep_sum_carrier by simp
+    have W\<sigma>\<tau>_c: "W * (\<sigma> \<Otimes> \<tau>) \<in> carrier_mat (m*p) (m*p)"
+      using W_c st_c by auto
+    have Wts_c: "W * sep_sum m p ts \<in> carrier_mat (m*p) (m*p)"
+      using W_c rest_c by auto
+    have Wsmcc_c: "complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>)) \<in> carrier_mat (m*p) (m*p)"
+      using W\<sigma>\<tau>_c by auto
+    have step1:
+      "W * sep_sum m p (t#ts)
+         = W * (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) + W * sep_sum m p ts"
+      using W_c ws_c rest_c
+      by (simp add: t_eq mult_add_distrib_mat)
+    have step2:
+      "W * (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>))
+         = complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>))"
+      using W_c st_c by (simp add: mult_smult_distrib)
+    have W\<rho>_eq:
+      "W * sep_sum m p (t#ts)
+         = complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>)) + W * sep_sum m p ts"
+      using step1 step2 by simp
+    have Treq:
+      "Tr (W * sep_sum m p (t#ts))
+         = complex_of_real w * Tr (W * (\<sigma> \<Otimes> \<tau>)) + Tr (W * sep_sum m p ts)"
+    proof -
+      have "Tr (W * sep_sum m p (t#ts))
+              = Tr (complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>)) + W * sep_sum m p ts)"
+        using W\<rho>_eq by simp
+      also have "\<dots> = Tr (complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>))) + Tr (W * sep_sum m p ts)"
+      proof (rule Tr_add)
+        have dr1: "dim_row (complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>))) = m*p"
+          using Wsmcc_c by (rule carrier_matD(1))
+        have dr2: "dim_row (W * sep_sum m p ts) = m*p"
+          using Wts_c by (rule carrier_matD(1))
+        have dc1: "dim_col (complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>))) = m*p"
+          using Wsmcc_c by (rule carrier_matD(2))
+        have dc2: "dim_col (W * sep_sum m p ts) = m*p"
+          using Wts_c by (rule carrier_matD(2))
+        show "dim_row (complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>))) = dim_row (W * sep_sum m p ts)"
+          using dr1 dr2 by simp
+        show "dim_col (complex_of_real w \<cdot>\<^sub>m (W * (\<sigma> \<Otimes> \<tau>))) = dim_col (W * sep_sum m p ts)"
+          using dc1 dc2 by simp
+      qed
+      also have "\<dots> = complex_of_real w * Tr (W * (\<sigma> \<Otimes> \<tau>)) + Tr (W * sep_sum m p ts)"
+        by (simp add: Tr_smult)
+      finally show ?thesis .
+    qed
+    have wit_term: "Re (Tr (W * (\<sigma> \<Otimes> \<tau>))) \<ge> 0"
+      using wit \<sigma>_c \<sigma>_psd \<tau>_c \<tau>_psd
+      unfolding entanglement_witness_def by blast
+    have IH: "Re (Tr (W * sep_sum m p ts)) \<ge> 0"
+      using Cons.IH ts_v' by blast
+    have re_sum:
+      "Re (Tr (W * sep_sum m p (t#ts)))
+         = w * Re (Tr (W * (\<sigma> \<Otimes> \<tau>))) + Re (Tr (W * sep_sum m p ts))"
+      using Treq by simp
+    show ?case
+      using re_sum w_nn wit_term IH
+      by (simp add: mult_nonneg_nonneg)
+  qed
+  have ts_terms:
+    "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+        w \<ge> 0 \<and> \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+              \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>"
+    using ts_v unfolding sep_decomp_valid_def by blast
+  show ?thesis using step[OF ts_terms] \<rho>_eq by simp
+qed
 
 
 (* ============================================================================
