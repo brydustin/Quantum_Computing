@@ -6429,11 +6429,7 @@ proof -
          hermitian (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
       proof (induction xs)
         case Nil
-        have zero_car: "(0\<^sub>m n n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
-        have zero_herm: "hermitian (0\<^sub>m n n :: complex Matrix.mat)"
-          unfolding hermitian_def
-          by (rule eq_matI, auto simp: dagger_def)
-        show ?case using zero_car zero_herm by simp
+        show ?case unfolding hermitian_def by simp
       next
         case (Cons \<phi> xs)
         have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
@@ -6886,11 +6882,8 @@ proof -
         finally have qf_eq: "\<langle>x | M *\<^sub>v x\<rangle>
             = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)" .
 
-        have "Re \<langle>x | M *\<^sub>v x\<rangle> = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
-          by (subst qf_eq) simp
-        also have "... = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
-          by (simp add: complex_mult_cnj cmod_power2 mult.commute)
-        finally have re_eq: "Re \<langle>x | M *\<^sub>v x\<rangle> = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2" .
+        have re_eq: "Re \<langle>x | M *\<^sub>v x\<rangle> = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
+          by (subst qf_eq) (simp add: complex_mult_cnj cmod_power2 mult.commute)
 
         have "0 \<le> c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
           using c_pos by (simp add: zero_le_mult_iff)
@@ -6920,10 +6913,7 @@ proof -
              (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
       proof (induction xs)
         case Nil
-        have "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) [] (0\<^sub>m n n) = 0\<^sub>m n n" by simp
-        moreover have "(of_real c :: complex) \<cdot>\<^sub>m (0\<^sub>m n n) = 0\<^sub>m n n"
-          by auto
-        ultimately show ?case by simp
+        show ?case by simp
       next
         case (Cons \<phi> xs)
         have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
