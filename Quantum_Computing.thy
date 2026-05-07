@@ -6697,12 +6697,11 @@ proof -
               - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)
               = (U * 1\<^sub>m n
                  - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)) * (U\<^sup>\<dagger>)"
-            using UA_car UB_car Udag_c
-            by (simp add: minus_mult_distrib_mat)
+            by (rule minus_mult_distrib_mat[OF UA_car UB_car Udag_c, symmetric])
           also have "U * (1\<^sub>m n :: complex Matrix.mat)
                    - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)
                    = U * (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
-            by (metis Uc cD_car mult_minus_distrib_mat one_car)          
+            by (rule mult_minus_distrib_mat[OF Uc one_car cD_car, symmetric])
           finally show ?thesis.
         qed
         also have "... = U * diag_mat_of_real D' * (U\<^sup>\<dagger>)"
