@@ -16955,6 +16955,53 @@ proof -
     by (simp add: qq)
 qed
 
+(* The diagonal-only sum: sum over (i,j) with the identity matrix as
+   coefficient collapses to a sum over the diagonal i = j. *)
+
+lemma sum_pair_with_id_collapses:
+  fixes f :: "nat \<Rightarrow> nat \<Rightarrow> complex"
+  shows "(\<Sum>i = 0..<r. \<Sum>j = 0..<r. (1\<^sub>m r) $$ (i, j) * f i j)
+       = (\<Sum>i = 0..<r. f i i)"
+proof -
+  have inner: "\<And>i. i < r \<Longrightarrow>
+       (\<Sum>j = 0..<r. (1\<^sub>m r) $$ (i, j) * f i j) = f i i"
+  proof -
+    fix i assume i_lt: "i < r"
+    have rew: "\<And>j. j < r \<Longrightarrow>
+         (1\<^sub>m r) $$ (i, j) * f i j = (if j = i then f i j else 0)"
+      using i_lt by (simp add: index_one_mat)
+    have "(\<Sum>j = 0..<r. (1\<^sub>m r) $$ (i, j) * f i j)
+        = (\<Sum>j = 0..<r. if j = i then f i j else 0)"
+      using rew by (intro sum.cong[OF refl]) auto
+    also have "\<dots> = f i i" using i_lt by simp
+    finally show "(\<Sum>j = 0..<r. (1\<^sub>m r) $$ (i, j) * f i j) = f i i" .
+  qed
+  show ?thesis using inner by (intro sum.cong[OF refl]) simp
+qed
+
+(* The diagonal entries (As!i * rho * (As!i)\<^sup>\<dagger>) $$ (a, b) sum
+   to the corresponding entry of kraus_map_dim d As rho. *)
+
+lemma kraus_map_dim_entry_as_diag_sum:
+  fixes As :: "complex Matrix.mat list" and \<rho> :: "complex Matrix.mat"
+  assumes Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and As_len: "length As = r"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "(kraus_map_dim d As \<rho>) $$ (a, b)
+       = (\<Sum>i = 0..<r. ((As!i) * \<rho> * ((As!i)\<^sup>\<dagger>)) $$ (a, b))"
+proof -
+  have "(kraus_map_dim d As \<rho>) $$ (a, b)
+      = sum_list (map (kraus_quad_entry \<rho> a b) As)"
+    by (rule kraus_map_dim_index[OF Asc rho_c a_lt b_lt])
+  also have "\<dots> = (\<Sum>i = 0..<length As.
+                     kraus_quad_entry \<rho> a b (As ! i))"
+    by (simp add: sum_list_sum_nth atLeast0LessThan)
+  also have "\<dots> = (\<Sum>i = 0..<r. ((As!i) * \<rho> * ((As!i)\<^sup>\<dagger>)) $$ (a, b))"
+    using As_len by (simp add: kraus_quad_entry_def)
+  finally show ?thesis .
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
