@@ -10091,10 +10091,8 @@ next
   have "(outer_sum n [\<psi>] *\<^sub>v \<gamma>) $ i
         = (\<Sum>k = 0..<n. outer_sum n [\<psi>] $$ (i, k) * \<gamma> $ k)"
     using ilt \<gamma>_dim os_car by (simp add: scalar_prod_def)
-  also have "\<dots> = (\<Sum>k = 0..<n. \<psi> $ i * cnj (\<psi> $ k) * \<gamma> $ k)"
-    by (intro sum.cong refl) (simp add: outer_sum_singleton_index[OF ilt])
   also have "\<dots> = (\<Sum>k = 0..<n. \<psi> $ i * (cnj (\<psi> $ k) * \<gamma> $ k))"
-    by (intro sum.cong refl) (simp add: mult.assoc)
+    by (intro sum.cong refl) (simp add: outer_sum_singleton_index[OF ilt] mult.assoc)
   also have "\<dots> = \<psi> $ i * (\<Sum>k = 0..<n. cnj (\<psi> $ k) * \<gamma> $ k)"
     by (simp add: sum_distrib_left)
   also have "\<dots> = \<psi> $ i * \<langle>\<psi>|\<gamma>\<rangle>"
