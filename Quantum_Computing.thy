@@ -16172,38 +16172,48 @@ lemma mat_lc_carrier:
   shows "mat_lc xs d n \<in> carrier_mat d n"
   using assms by (induction xs) auto
 
-(* The "I-th-coefficient row" linear combo of a Kraus list As:
-   given the matrix Q, take the i-th row of Q as the coefficient vector. *)
+(* The "i-th-coefficient row" of a Kraus list As, weighted by row i of Q^dag.
+   We use cnj(Q $$ (i,j)) as the coefficient because we want
+       \<Sum>_k W_k * X * W_k\<^sup>\<dagger>  =  \<Sum>_{i,j} (Q\<^sup>\<dagger> * Q) $$ (i,j) * A_i * X * A_j\<^sup>\<dagger>
+   to come out to a clean (Q\<^sup>\<dagger> * Q) form. *)
 
-definition kraus_row :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat list
-    \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "kraus_row Q As i \<equiv>
-     mat_lc (map (\<lambda>j. (Q $$ (i,j), As ! j)) [0..<length As])
-            (if As = [] then 0 else dim_row (hd As))
-            (if As = [] then 0 else dim_col (hd As))"
+definition kraus_row :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat
+    \<Rightarrow> complex Matrix.mat list \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "kraus_row d n Q As i \<equiv>
+     mat_lc (map (\<lambda>j. (cnj (Q $$ (i,j)), As ! j)) [0..<length As]) d n"
 
 lemma kraus_row_carrier:
   assumes Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
-      and ne: "As \<noteq> []"
-  shows "kraus_row Q As i \<in> carrier_mat d n"
+  shows "kraus_row d n Q As i \<in> carrier_mat d n"
 proof -
-  have hd_dr: "dim_row (hd As) = d"
-    using Asc ne by (cases As) auto
-  have hd_dc: "dim_col (hd As) = n"
-    using Asc ne by (cases As) auto
-  have list_in: "\<forall>(c, A) \<in> set (map (\<lambda>j. (Q $$ (i,j), As ! j)) [0..<length As]).
+  have list_in: "\<forall>(c, A) \<in> set (map (\<lambda>j. (cnj (Q $$ (i,j)), As ! j)) [0..<length As]).
                    A \<in> carrier_mat d n"
   proof clarify
     fix c :: complex and A :: "complex Matrix.mat"
-    assume "(c, A) \<in> set (map (\<lambda>j. (Q $$ (i,j), As ! j)) [0..<length As])"
+    assume "(c, A) \<in> set (map (\<lambda>j. (cnj (Q $$ (i,j)), As ! j)) [0..<length As])"
     then obtain j where "j < length As" and "A = As ! j" by auto
     thus "A \<in> carrier_mat d n" using Asc nth_mem by blast
   qed
   show ?thesis
-    unfolding kraus_row_def
-    using list_in ne hd_dr hd_dc
-    by (simp add: mat_lc_carrier)
+    unfolding kraus_row_def using list_in by (rule mat_lc_carrier)
 qed
+
+(* The full perturbed Kraus list, one row per row of Q. *)
+
+definition kraus_perturb :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat
+    \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list" where
+  "kraus_perturb r d n Q As \<equiv>
+     map (kraus_row d n Q As) [0..<r]"
+
+lemma kraus_perturb_length [simp]:
+  "length (kraus_perturb r d n Q As) = r"
+  by (simp add: kraus_perturb_def)
+
+lemma kraus_perturb_carrier:
+  assumes "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+  shows "\<forall>W \<in> set (kraus_perturb r d n Q As). W \<in> carrier_mat d n"
+  using assms kraus_row_carrier
+  by (auto simp: kraus_perturb_def)
 
 
 (* ============================================================================
