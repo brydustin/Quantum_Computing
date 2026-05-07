@@ -16707,6 +16707,53 @@ proof -
   show ?thesis using base rew by simp
 qed
 
+(* The (i,j) entry of Q\<^sup>\<dagger> * Q expanded as a sum over s.
+   Standard: (Q\<^sup>\<dagger> * Q) $$ (i,j) = sum_s cnj Q_si * Q_sj. *)
+
+lemma Qdag_Q_index:
+  fixes Q :: "complex Matrix.mat"
+  assumes Q_c: "Q \<in> carrier_mat r r"
+      and i_lt: "i < r" and j_lt: "j < r"
+  shows "(Q\<^sup>\<dagger> * Q) $$ (i, j)
+       = (\<Sum>s = 0..<r. cnj (Q $$ (s, i)) * Q $$ (s, j))"
+proof -
+  have Qdag_c: "Q\<^sup>\<dagger> \<in> carrier_mat r r" using Q_c by (rule dagger_carrier)
+  have i_lt_Qd: "i < dim_row (Q\<^sup>\<dagger>)" using i_lt Qdag_c Q_c by simp
+  have j_lt_Q: "j < dim_col Q" using j_lt Q_c by simp
+  have "(Q\<^sup>\<dagger> * Q) $$ (i, j) = Matrix.row (Q\<^sup>\<dagger>) i \<bullet> Matrix.col Q j"
+    using i_lt_Qd j_lt_Q by (rule index_mult_mat(1))
+  also have "\<dots> = (\<Sum>s\<in>{0..<r}. (Matrix.row (Q\<^sup>\<dagger>) i) $ s
+                                  * (Matrix.col Q j) $ s)"
+  proof -
+    have col_dim: "dim_vec (Matrix.col Q j) = r" using Q_c by simp
+    show ?thesis unfolding scalar_prod_def using col_dim by simp
+  qed
+  also have "\<dots> = (\<Sum>s = 0..<r. (Q\<^sup>\<dagger>) $$ (i, s) * Q $$ (s, j))"
+  proof (rule sum.cong[OF refl])
+    fix s assume "s \<in> {0..<r}"
+    hence s_lt: "s < r" by simp
+    have s_lt_Qd: "s < dim_col (Q\<^sup>\<dagger>)" using s_lt Qdag_c Q_c by simp
+    have s_lt_Q: "s < dim_row Q" using s_lt Q_c by simp
+    have row_s: "(Matrix.row (Q\<^sup>\<dagger>) i) $ s = (Q\<^sup>\<dagger>) $$ (i, s)"
+      using index_row(1)[OF i_lt_Qd s_lt_Qd] .
+    have col_s: "(Matrix.col Q j) $ s = Q $$ (s, j)"
+      using index_col[OF s_lt_Q j_lt_Q] .
+    show "(Matrix.row (Q\<^sup>\<dagger>) i) $ s * (Matrix.col Q j) $ s
+        = (Q\<^sup>\<dagger>) $$ (i, s) * Q $$ (s, j)"
+      using row_s col_s by simp
+  qed
+  also have "\<dots> = (\<Sum>s = 0..<r. cnj (Q $$ (s, i)) * Q $$ (s, j))"
+  proof (rule sum.cong[OF refl])
+    fix s assume "s \<in> {0..<r}"
+    hence s_lt: "s < r" by simp
+    have "(Q\<^sup>\<dagger>) $$ (i, s) = cnj (Q $$ (s, i))"
+      using Q_c i_lt s_lt by (simp add: dagger_def)
+    thus "(Q\<^sup>\<dagger>) $$ (i, s) * Q $$ (s, j) = cnj (Q $$ (s, i)) * Q $$ (s, j)"
+      by simp
+  qed
+  finally show ?thesis .
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
