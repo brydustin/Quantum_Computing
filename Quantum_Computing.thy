@@ -16926,6 +16926,35 @@ proof -
   show ?thesis using step1 step2 step4 step5 step6 by simp
 qed
 
+(* When Q is a Hermitian PSD square root of  1\<^sub>m r + mu,  the
+   (Q\<^sup>\<dagger> Q) factor in the perturbation identity collapses to
+   1\<^sub>m r + mu. *)
+
+lemma kraus_perturb_entry_eq_psd_sqrt:
+  fixes Q :: "complex Matrix.mat" and As :: "complex Matrix.mat list"
+    and \<rho> \<mu> :: "complex Matrix.mat"
+  assumes Q_psd: "psd Q"
+      and Q_c:  "Q \<in> carrier_mat r r"
+      and Q_sq: "Q * Q = 1\<^sub>m r + \<mu>"
+      and \<mu>_c:  "\<mu> \<in> carrier_mat r r"
+      and Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and As_len: "length As = r"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "(kraus_map_dim d (kraus_perturb r d n Q As) \<rho>) $$ (a, b)
+       = (\<Sum>i = 0..<r. \<Sum>j = 0..<r.
+            (1\<^sub>m r + \<mu>) $$ (i, j)
+            * ((As!i) * \<rho> * ((As!j)\<^sup>\<dagger>)) $$ (a, b))"
+proof -
+  have Q_herm: "Q\<^sup>\<dagger> = Q"
+    using Q_psd by (simp add: psd_def hermitian_def)
+  have qq: "Q\<^sup>\<dagger> * Q = 1\<^sub>m r + \<mu>"
+    using Q_herm Q_sq by simp
+  show ?thesis
+    using kraus_perturb_entry_eq[OF Q_c Asc As_len rho_c a_lt b_lt]
+    by (simp add: qq)
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
