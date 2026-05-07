@@ -6759,10 +6759,8 @@ proof -
         using T_car by auto
       have "?M\<^sup>\<dagger> = ?M"
       proof (rule eq_matI)
-        show "dim_row (?M\<^sup>\<dagger>) = dim_row ?M"
-          by (simp add: T_eq_UDU)
-        show "dim_col (?M\<^sup>\<dagger>) = dim_col ?M"
-          by (simp add: T_eq_UDU)
+        show "dim_row (?M\<^sup>\<dagger>) = dim_row ?M" using T_car by simp
+        show "dim_col (?M\<^sup>\<dagger>) = dim_col ?M" using T_car by simp
       next
         fix i j
         assume ij: "i < dim_row ?M" "j < dim_col ?M"
@@ -6776,7 +6774,7 @@ proof -
           by simp
         also have "cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
                  = (1\<^sub>m n :: complex Matrix.mat) $$ (i,j)"
-          using iln jln by (cases "i = j") simp_all
+          using iln jln by (cases "i = j") auto
         also have "cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))
                  = cnj ((of_real c :: complex) * ?T $$ (j,i))"
           using iln jln T_car by simp
@@ -6922,11 +6920,8 @@ proof -
         finally have qf_eq: "\<langle>x | M *\<^sub>v x\<rangle>
             = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)" .
 
-        have "Re \<langle>x | M *\<^sub>v x\<rangle>
-            = Re ((of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>))"
-          unfolding qf_eq ..
-        also have "\<dots> = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
-          by simp
+        have "Re \<langle>x | M *\<^sub>v x\<rangle> = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
+          by (subst qf_eq) simp
         also have "... = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
         proof -
           have "cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle> = \<langle>\<phi>|x\<rangle> * cnj \<langle>\<phi>|x\<rangle>"
