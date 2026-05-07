@@ -6715,7 +6715,7 @@ proof -
         have D'car: "diag_mat_of_real D' \<in> carrier_mat n n"
           using D'len diag_mat_of_real_carrier by blast
         have inner_prod: "diag_mat_of_real D' * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
-          using D'car Udag_c by auto
+          using D'car Udag_c by simp
         have "(U * diag_mat_of_real D' * (U\<^sup>\<dagger>)) *\<^sub>v x
             = (U * (diag_mat_of_real D' * (U\<^sup>\<dagger>))) *\<^sub>v x"
           using Uc D'car Udag_c by (simp only: assoc_mult_mat)
