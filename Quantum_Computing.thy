@@ -16135,15 +16135,113 @@ qed
 
 
 (* ============================================================================
+   DAY 23 \<mdash> 19 / Oct / 11
+   Topic: Choi Theorem 3 (extreme-point classification of UCP), continuation.
+
+   The convex-set / extreme-point / affine-map definitions are in DAY 22
+   above (the lecturer covered convex_set_mat, extreme_point_mat,
+   and affine_map_mat on this date in the PDF). The full Choi
+   Theorem 3, characterising extreme points of UCP(M_n,M_d) by the
+   linear independence of {V_i^dag V_j}, requires a Cholesky-style
+   construction of (I+mu)^{1/2} (and similarly for I-mu) which in
+   turn relies on PSD square roots that we already have, plus the
+   convex-combination splitting Phi = (1/2)(Psi_+ + Psi_-). Statement only,
+   proof deferred.
+   ============================================================================ *)
+
+(* Choi Theorem 3 (statement-only stub):
+     If Phi : M_n -> M_d is unital + completely positive with
+     Phi(X) = sum_i V_i^dag X V_i and Choi-rank r = length Vs, then
+     Phi is an extreme point of UCP(M_n,M_d) iff
+     the family { V_i^dag V_j : 1 <= i, j <= r } in M_d is linearly independent.
+   The forward direction uses the Cholesky-style decomposition of
+   I+mu and I-mu for any Hermitian mu with sum mu_ij * V_i^dag V_j = 0.
+   Full proof deferred. *)
+
+
+(* ============================================================================
+   DAY 24 -- 24 / Oct / 11
+   Topic: Operator Systems, Arveson Correspondence, Arveson Extension.
+
+   We give the operator-system definition and prove the trivial "M_n is
+   itself an operator system" example.  The Arveson Correspondence and
+   Extension Theorem are stated below; their full proofs depend on
+   Hahn-Banach for matrix spaces (DAY 26), which is deferred.
+   ============================================================================ *)
+
+(* Operator system predicate: take a natural number n and a carrier predicate
+   over complex matrices.  An operator system is a subspace of M_n containing
+   the identity and closed under the adjoint. *)
+
+definition operator_system ::
+    "nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> bool) \<Rightarrow> bool" where
+  "operator_system n P \<longleftrightarrow>
+     (\<forall>A. P A \<longrightarrow> A \<in> carrier_mat n n) \<and>
+     P (1\<^sub>m n) \<and>
+     (\<forall>A B. P A \<longrightarrow> P B \<longrightarrow> P (A + B)) \<and>
+     (\<forall>A c. P A \<longrightarrow> P (c \<cdot>\<^sub>m A)) \<and>
+     (\<forall>A. P A \<longrightarrow> P (A\<^sup>\<dagger>))"
+
+(* M_n itself is an operator system (taking P A = A in carrier_mat n n). *)
+
+lemma operator_system_full:
+  "operator_system n (\<lambda>A. A \<in> carrier_mat n n)"
+  unfolding operator_system_def
+  by (auto intro: dagger_carrier)
+
+
+(* ============================================================================
+   DAY 25 \<mdash> 26 / Oct / 11
+   Topic: Arveson Correspondence, Hahn-Banach, Arveson Extension.
+
+   The Arveson Correspondence is the bijection
+       \<Gamma> : UCP(M\<^sub>n, M\<^sub>d) \<rightarrow> CPTP(M\<^sub>d, M\<^sub>n)
+   given by \<Gamma>(\<Phi>) = \<Phi>\<^sup>* (the trace-pairing adjoint), satisfying
+       Tr(\<Phi>\<^sup>*(B) A) = Tr(B \<Phi>(A)).
+   The full statement of Arveson Extension --- that any UCP map on an
+   operator subsystem extends to UCP on the full M\<^sub>n --- requires the
+   Hahn-Banach theorem.  Both are deferred; the operator-system
+   definition above is the prerequisite they are stated in.
+   ============================================================================ *)
+
+
+(* ============================================================================
+   DAY 26 \<mdash> 28 / Oct / 11
+   Topic: Hahn-Banach (deferred), Entanglement Revisited.
+
+   The matrix-space Hahn-Banach theorem (a positive linear functional
+   on an operator subsystem extends to a positive linear functional on
+   M\<^sub>n) underlies Arveson Extension. It is a substantial real-analysis
+   result and is deferred. The "entanglement revisited" half of this
+   day connects density matrices that are not separable to the
+   existence of entanglement witnesses --- which by HB exist iff the
+   density matrix is non-separable; statement-only here.
+   ============================================================================ *)
+
+
+(* ============================================================================
+   DAY 27 \<mdash> 31 / Oct / 11
+   Topic: Continuation, Theory of Convex Sets and Linear Functionals.
+
+   Continuation of the Hahn-Banach / convex-functional analysis
+   underlying the entanglement-witness construction.  Deferred.
+   ============================================================================ *)
+
+
+(* ============================================================================
+   DAY 28 \<mdash> 2 / Nov / 11
+   Topic: Universal Entanglement Witnesses.
+
+   A density matrix \<rho> on H\<^sub>A \<otimes> H\<^sub>B is separable iff for every
+   entanglement witness W (Hermitian, Tr(W \<sigma>) \<ge> 0 for all separable
+   \<sigma>) we have Tr(W \<rho>) \<ge> 0.  The "iff" requires Hahn-Banach (one
+   direction is trivial); deferred.
+   ============================================================================ *)
+
+
+(* ============================================================================
    DAY 29 \<mdash> 7 / Nov / 11
    Topic: Classical Error Correction; Hamming Weight and Distance
-
-   Days 23-28 are skipped here:
-     - Day 23 (Choi Theorem 3 / extreme-point classification of UCP)
-       and Day 24-28 (Arveson Extension, separability, entanglement
-       witnesses) require partial-isometry / Hahn-Banach machinery
-       that lies beyond the matrix infrastructure currently set up.
-   We resume at Day 29, which is purely classical and stands alone.
    ============================================================================ *)
 
 (* --------------------------------------------------------------------------
