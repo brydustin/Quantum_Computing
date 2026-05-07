@@ -10701,6 +10701,73 @@ proof -
 qed
 
 (* --------------------------------------------------------------------------
+   Adjoint distributes over the tensor product:
+       (A \<Otimes> B)\<^sup>\<dagger> = (A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>).
+   -------------------------------------------------------------------------- *)
+
+lemma tensor_mat_dagger:
+  fixes A B :: "complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat rA cA"
+      and Bc: "B \<in> carrier_mat rB cB"
+      and rA_pos: "0 < rA" and cA_pos: "0 < cA"
+      and rB_pos: "0 < rB" and cB_pos: "0 < cB"
+  shows "(A \<Otimes> B)\<^sup>\<dagger> = (A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>)"
+proof -
+  have A_dr: "dim_row A = rA" and A_dc: "dim_col A = cA" using Ac by auto
+  have B_dr: "dim_row B = rB" and B_dc: "dim_col B = cB" using Bc by auto
+  have Ad_dr: "dim_row (A\<^sup>\<dagger>) = cA" using Ac by (simp add: dagger_def)
+  have Ad_dc: "dim_col (A\<^sup>\<dagger>) = rA" using Ac by (simp add: dagger_def)
+  have Bd_dr: "dim_row (B\<^sup>\<dagger>) = cB" using Bc by (simp add: dagger_def)
+  have Bd_dc: "dim_col (B\<^sup>\<dagger>) = rB" using Bc by (simp add: dagger_def)
+  show ?thesis
+  proof (rule eq_matI)
+    show "dim_row ((A \<Otimes> B)\<^sup>\<dagger>) = dim_row ((A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>))"
+      using A_dr A_dc B_dr B_dc Ad_dr Bd_dr by (simp add: dagger_def)
+    show "dim_col ((A \<Otimes> B)\<^sup>\<dagger>) = dim_col ((A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>))"
+      using A_dr A_dc B_dr B_dc Ad_dc Bd_dc by (simp add: dagger_def)
+  next
+  fix i j
+  assume i_lt: "i < dim_row ((A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>))"
+     and j_lt: "j < dim_col ((A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>))"
+  from i_lt have i_lt': "i < cA * cB" using Ad_dr Bd_dr by simp
+  from j_lt have j_lt': "j < rA * rB" using Ad_dc Bd_dc by simp
+
+  have d1: "j div rB < rA"
+    using j_lt' less_mult_imp_div_less by blast
+  have d2: "i div cB < cA"
+    using i_lt' less_mult_imp_div_less by blast
+  have m1: "j mod rB < rB" using rB_pos by simp
+  have m2: "i mod cB < cB" using cB_pos by simp
+
+  have lhs1:
+    "((A \<Otimes> B)\<^sup>\<dagger>) $$ (i, j) = cnj ((A \<Otimes> B) $$ (j, i))"
+    using i_lt' j_lt' Ac Bc by (simp add: dagger_def)
+  have AB_idx:
+    "(A \<Otimes> B) $$ (j, i) = A $$ (j div rB, i div cB) * B $$ (j mod rB, i mod cB)"
+    using index_tensor_mat[OF A_dr A_dc B_dr B_dc j_lt' i_lt' cA_pos cB_pos] .
+  have lhs2:
+    "((A \<Otimes> B)\<^sup>\<dagger>) $$ (i, j)
+       = cnj (A $$ (j div rB, i div cB)) * cnj (B $$ (j mod rB, i mod cB))"
+    using lhs1 AB_idx by simp
+
+  have rhs1:
+    "((A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>)) $$ (i, j)
+       = (A\<^sup>\<dagger>) $$ (i div cB, j div rB) * (B\<^sup>\<dagger>) $$ (i mod cB, j mod rB)"
+    using index_tensor_mat[OF Ad_dr Ad_dc Bd_dr Bd_dc i_lt' j_lt' rA_pos rB_pos] .
+  have Ad_idx:
+    "(A\<^sup>\<dagger>) $$ (i div cB, j div rB) = cnj (A $$ (j div rB, i div cB))"
+    using d1 d2 Ac by (simp add: dagger_def)
+  have Bd_idx:
+    "(B\<^sup>\<dagger>) $$ (i mod cB, j mod rB) = cnj (B $$ (j mod rB, i mod cB))"
+    using m1 m2 Bc by (simp add: dagger_def)
+
+  show "((A \<Otimes> B)\<^sup>\<dagger>) $$ (i, j) = ((A\<^sup>\<dagger>) \<Otimes> (B\<^sup>\<dagger>)) $$ (i, j)"
+    using lhs2 rhs1 Ad_idx Bd_idx by simp
+  qed
+qed
+
+
+(* --------------------------------------------------------------------------
    Section 16.1 (cont'd).  The canonical map
        Gamma : L(H_A) tensor L(H_B) -> L(H_A tensor H_B),  R tensor T |-> R tensor T
    is a vector-space isomorphism in finite dimensions.  We record only the
