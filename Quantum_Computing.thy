@@ -17275,6 +17275,15 @@ proof -
   show ?thesis using step[OF ts_terms] \<rho>_eq by simp
 qed
 
+(* Contrapositive: a density matrix that violates a witness is non-separable. *)
+
+corollary nonseparable_from_witness:
+  fixes m p :: nat and \<rho> W :: "complex Matrix.mat"
+  assumes wit: "entanglement_witness m p W"
+      and neg: "Re (Tr (W * \<rho>)) < 0"
+    shows "\<not> separable_density m p \<rho>"
+  using separable_witness_nonneg[OF _ wit] neg by force
+
 
 (* ============================================================================
    DAY 29 \<mdash> 7 / Nov / 11
