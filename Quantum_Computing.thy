@@ -16512,6 +16512,101 @@ proof -
   finally show ?thesis using step2 by simp
 qed
 
+(* Same expansion but for two distinct matrices -- the version we need
+   for the cross-terms (As!i * \<rho> * (As!j)\<^sup>\<dagger>) $$ (a,b) inside
+   the perturbation identity. *)
+
+lemma cross_quad_entry_double_sum:
+  fixes \<rho> :: "complex Matrix.mat" and A B :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat d n"
+      and B_c: "B \<in> carrier_mat d n"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "(A * \<rho> * (B\<^sup>\<dagger>)) $$ (a, b)
+       = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            A $$ (a, c) * \<rho> $$ (c, e) * cnj (B $$ (b, e)))"
+proof -
+  have A_dr: "dim_row A = d" using A_c by simp
+  have A_dc: "dim_col A = n" using A_c by simp
+  have B_dr: "dim_row B = d" using B_c by simp
+  have B_dc: "dim_col B = n" using B_c by simp
+  have rho_dr: "dim_row \<rho> = n" using rho_c by simp
+  have rho_dc: "dim_col \<rho> = n" using rho_c by simp
+  have Bdag_c: "B\<^sup>\<dagger> \<in> carrier_mat n d" using B_c by (rule dagger_carrier)
+  have Arho_c: "A * \<rho> \<in> carrier_mat d n" using A_c rho_c by simp
+  have a_lt_Arho: "a < dim_row (A * \<rho>)" using a_lt Arho_c by auto
+  have b_lt_Bdag: "b < dim_col (B\<^sup>\<dagger>)" using b_lt Bdag_c by auto
+  have "(A * \<rho> * (B\<^sup>\<dagger>)) $$ (a, b)
+       = Matrix.row (A * \<rho>) a \<bullet> Matrix.col (B\<^sup>\<dagger>) b"
+    using a_lt_Arho b_lt_Bdag by (rule index_mult_mat(1))
+  also have "\<dots> = (\<Sum>e\<in>{0..<n}. (Matrix.row (A * \<rho>) a) $ e
+                                * (Matrix.col (B\<^sup>\<dagger>) b) $ e)"
+  proof -
+    have col_dim: "dim_vec (Matrix.col (B\<^sup>\<dagger>) b) = n"
+      using Bdag_c B_c by simp
+    show ?thesis unfolding scalar_prod_def using col_dim by simp
+  qed
+  also have "\<dots> = (\<Sum>e = 0..<n. (A * \<rho>) $$ (a, e) * (B\<^sup>\<dagger>) $$ (e, b))"
+  proof (rule sum.cong[OF refl])
+    fix e assume "e \<in> {0..<n}"
+    hence e_lt: "e < n" by simp
+    have e_lt_Arho: "e < dim_col (A * \<rho>)" using e_lt Arho_c by auto
+    have e_lt_Bdr: "e < dim_row (B\<^sup>\<dagger>)" using e_lt Bdag_c by auto
+    have row_e: "(Matrix.row (A * \<rho>) a) $ e = (A * \<rho>) $$ (a, e)"
+      using index_row(1)[OF a_lt_Arho e_lt_Arho] .
+    have col_e: "(Matrix.col (B\<^sup>\<dagger>) b) $ e = (B\<^sup>\<dagger>) $$ (e, b)"
+      using index_col[OF e_lt_Bdr b_lt_Bdag] .
+    show "(Matrix.row (A * \<rho>) a) $ e * (Matrix.col (B\<^sup>\<dagger>) b) $ e
+        = (A * \<rho>) $$ (a, e) * (B\<^sup>\<dagger>) $$ (e, b)"
+      using row_e col_e by simp
+  qed
+  also have "\<dots> = (\<Sum>e = 0..<n. (A * \<rho>) $$ (a, e) * cnj (B $$ (b, e)))"
+  proof (rule sum.cong[OF refl])
+    fix e assume "e \<in> {0..<n}"
+    hence e_lt: "e < n" by simp
+    have "(B\<^sup>\<dagger>) $$ (e, b) = cnj (B $$ (b, e))"
+      using B_c e_lt b_lt by (simp add: dagger_def)
+    thus "(A * \<rho>) $$ (a, e) * (B\<^sup>\<dagger>) $$ (e, b)
+        = (A * \<rho>) $$ (a, e) * cnj (B $$ (b, e))"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>e = 0..<n.
+                    (\<Sum>c = 0..<n. A $$ (a, c) * \<rho> $$ (c, e))
+                    * cnj (B $$ (b, e)))"
+  proof (rule sum.cong[OF refl])
+    fix e assume "e \<in> {0..<n}"
+    hence e_lt: "e < n" by simp
+    have e_lt_rho: "e < dim_col \<rho>" using e_lt rho_dc by simp
+    have a_lt_A: "a < dim_row A" using a_lt A_dr by simp
+    have "(A * \<rho>) $$ (a, e) = Matrix.row A a \<bullet> Matrix.col \<rho> e"
+      using a_lt_A e_lt_rho by (rule index_mult_mat(1))
+    also have "\<dots> = (\<Sum>c\<in>{0..<n}. (Matrix.row A a) $ c * (Matrix.col \<rho> e) $ c)"
+      unfolding scalar_prod_def using rho_dr by simp
+    also have "\<dots> = (\<Sum>c = 0..<n. A $$ (a, c) * \<rho> $$ (c, e))"
+    proof (rule sum.cong[OF refl])
+      fix c assume "c \<in> {0..<n}"
+      hence c_lt: "c < n" by simp
+      have c_lt_A: "c < dim_col A" using c_lt A_dc by simp
+      have c_lt_rho: "c < dim_row \<rho>" using c_lt rho_dr by simp
+      have row_c: "(Matrix.row A a) $ c = A $$ (a, c)"
+        using index_row(1)[OF a_lt_A c_lt_A] .
+      have col_c: "(Matrix.col \<rho> e) $ c = \<rho> $$ (c, e)"
+        using index_col[OF c_lt_rho e_lt_rho] .
+      show "(Matrix.row A a) $ c * (Matrix.col \<rho> e) $ c
+          = A $$ (a, c) * \<rho> $$ (c, e)"
+        using row_c col_c by simp
+    qed
+    finally show "(A * \<rho>) $$ (a, e) * cnj (B $$ (b, e))
+                = (\<Sum>c = 0..<n. A $$ (a, c) * \<rho> $$ (c, e))
+                  * cnj (B $$ (b, e))"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                     A $$ (a, c) * \<rho> $$ (c, e) * cnj (B $$ (b, e)))"
+    by (simp add: sum_distrib_right)
+  finally show ?thesis .
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
