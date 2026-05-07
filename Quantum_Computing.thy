@@ -16136,27 +16136,74 @@ qed
 
 (* ============================================================================
    DAY 23 \<mdash> 19 / Oct / 11
-   Topic: Choi Theorem 3 (extreme-point classification of UCP), continuation.
+   Topic: Choi Theorem 3 -- the perturbation construction.
 
-   The convex-set / extreme-point / affine-map definitions are in DAY 22
-   above (the lecturer covered convex_set_mat, extreme_point_mat,
-   and affine_map_mat on this date in the PDF). The full Choi
-   Theorem 3, characterising extreme points of UCP(M_n,M_d) by the
-   linear independence of {V_i^dag V_j}, requires a Cholesky-style
-   construction of (I+mu)^{1/2} (and similarly for I-mu) which in
-   turn relies on PSD square roots that we already have, plus the
-   convex-combination splitting Phi = (1/2)(Psi_+ + Psi_-). Statement only,
-   proof deferred.
+   Setup. Phi : M_n -> M_d is in Kraus form Phi X = kraus_map_dim d As X,
+   where As is a length-r list of d-by-n Kraus operators (As_i corresponds
+   to PDF's V_i-dagger).  For a Hermitian r-by-r matrix mu with -I <= mu <= I
+   and  sum_{i,j} mu_{ij} (As_i) (As_j)-dagger = 0_d,  the perturbed Kraus
+   map
+
+       psi_mu(X) := sum_{i,j} ((I + mu)_{ij}) * (As_i) * X * (As_j)-dagger
+
+   equals Phi(X) + (perturbation), is in UCP(M_n, M_d), and  Phi  is the
+   midpoint of psi_{+mu} and psi_{-mu}.  Hence if Phi is extreme then
+   the perturbation must be trivial.
+
+   The full (=>) direction of Theorem 3 -- that this forces mu = 0,
+   i.e. {As_i (As_j)-dagger} is linearly independent -- additionally requires
+   the Day-21 uniqueness-of-Kraus-rep theorem (deferred near choi_rank,
+   above).  We give the construction and the convex-decomposition fact
+   here, and state a precise (=>) version that takes the uniqueness
+   step as a hypothesis.
    ============================================================================ *)
 
-(* Choi Theorem 3 (statement-only stub):
-     If Phi : M_n -> M_d is unital + completely positive with
-     Phi(X) = sum_i V_i^dag X V_i and Choi-rank r = length Vs, then
-     Phi is an extreme point of UCP(M_n,M_d) iff
-     the family { V_i^dag V_j : 1 <= i, j <= r } in M_d is linearly independent.
-   The forward direction uses the Cholesky-style decomposition of
-   I+mu and I-mu for any Hermitian mu with sum mu_ij * V_i^dag V_j = 0.
-   Full proof deferred. *)
+(* ---- Linear combination of a list of d-by-n matrices via foldr.
+   We use foldr instead of HOL.\<Sum> because the codebase's Matrix.mat
+   does not instantiate comm_monoid_add at the top level. ---- *)
+
+fun mat_lc :: "(complex \<times> complex Matrix.mat) list
+    \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "mat_lc [] d n = 0\<^sub>m d n"
+| "mat_lc ((c, A) # rest) d n = c \<cdot>\<^sub>m A + mat_lc rest d n"
+
+lemma mat_lc_carrier:
+  assumes "\<forall>(c, A) \<in> set xs. A \<in> carrier_mat d n"
+  shows "mat_lc xs d n \<in> carrier_mat d n"
+  using assms by (induction xs) auto
+
+(* The "I-th-coefficient row" linear combo of a Kraus list As:
+   given the matrix Q, take the i-th row of Q as the coefficient vector. *)
+
+definition kraus_row :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat list
+    \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "kraus_row Q As i \<equiv>
+     mat_lc (map (\<lambda>j. (Q $$ (i,j), As ! j)) [0..<length As])
+            (if As = [] then 0 else dim_row (hd As))
+            (if As = [] then 0 else dim_col (hd As))"
+
+lemma kraus_row_carrier:
+  assumes Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and ne: "As \<noteq> []"
+  shows "kraus_row Q As i \<in> carrier_mat d n"
+proof -
+  have hd_dr: "dim_row (hd As) = d"
+    using Asc ne by (cases As) auto
+  have hd_dc: "dim_col (hd As) = n"
+    using Asc ne by (cases As) auto
+  have list_in: "\<forall>(c, A) \<in> set (map (\<lambda>j. (Q $$ (i,j), As ! j)) [0..<length As]).
+                   A \<in> carrier_mat d n"
+  proof clarify
+    fix c :: complex and A :: "complex Matrix.mat"
+    assume "(c, A) \<in> set (map (\<lambda>j. (Q $$ (i,j), As ! j)) [0..<length As])"
+    then obtain j where "j < length As" and "A = As ! j" by auto
+    thus "A \<in> carrier_mat d n" using Asc nth_mem by blast
+  qed
+  show ?thesis
+    unfolding kraus_row_def
+    using list_in ne hd_dr hd_dc
+    by (simp add: mat_lc_carrier)
+qed
 
 
 (* ============================================================================
