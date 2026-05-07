@@ -6889,17 +6889,7 @@ proof -
         have "Re \<langle>x | M *\<^sub>v x\<rangle> = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
           by (subst qf_eq) simp
         also have "... = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
-        proof -
-          have "cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle> = \<langle>\<phi>|x\<rangle> * cnj \<langle>\<phi>|x\<rangle>"
-            by (simp add: mult.commute)
-          also have "\<dots> = of_real (Re \<langle>\<phi>|x\<rangle> ^ 2 + Im \<langle>\<phi>|x\<rangle> ^ 2)"
-            by (rule complex_mult_cnj)
-          also have "\<dots> = of_real ((cmod \<langle>\<phi>|x\<rangle>)\<^sup>2)"
-            by (simp add: cmod_def power2_eq_square)
-          finally have "Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>) = (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
-            by simp
-          thus ?thesis by simp
-        qed
+          by (simp add: complex_mult_cnj cmod_power2 mult.commute)
         finally have re_eq: "Re \<langle>x | M *\<^sub>v x\<rangle> = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2" .
 
         have "0 \<le> c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
