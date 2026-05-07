@@ -6866,21 +6866,10 @@ proof -
         have op_action: "outer_prod \<phi> \<phi> *\<^sub>v x = \<langle>\<phi>|x\<rangle> \<cdot>\<^sub>v \<phi>"
           using outer_prod_mult_vec[of x \<phi> \<phi>] \<phi>_dim xn by simp
 
-        have "\<langle>x | M *\<^sub>v x\<rangle>
-            = \<langle>x | (of_real c :: complex) \<cdot>\<^sub>v (outer_prod \<phi> \<phi> *\<^sub>v x)\<rangle>"
-          using Mvx by simp
-        also have "... = (of_real c :: complex) * \<langle>x | outer_prod \<phi> \<phi> *\<^sub>v x\<rangle>"
-          by (rule inner_prod_right_smult')
-        also have "... = (of_real c :: complex) * \<langle>x | \<langle>\<phi>|x\<rangle> \<cdot>\<^sub>v \<phi>\<rangle>"
-          using op_action by simp
-        also have "... = (of_real c :: complex) * (\<langle>\<phi>|x\<rangle> * \<langle>x|\<phi>\<rangle>)"
-          by (simp add: inner_prod_right_smult')
-        also have "... = (of_real c :: complex) * (\<langle>\<phi>|x\<rangle> * cnj \<langle>\<phi>|x\<rangle>)"
-          using inner_prod_cnj[of \<phi> x] \<phi>_dim xn by simp
-        also have "... = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
-          by (simp add: mult.commute)
-        finally have qf_eq: "\<langle>x | M *\<^sub>v x\<rangle>
-            = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)" .
+        have qf_eq: "\<langle>x | M *\<^sub>v x\<rangle>
+            = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
+          using Mvx op_action inner_prod_cnj[of \<phi> x] \<phi>_dim xn
+          by (simp add: inner_prod_right_smult' mult.commute)
 
         have re_eq: "Re \<langle>x | M *\<^sub>v x\<rangle> = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
           by (subst qf_eq) (simp add: complex_mult_cnj cmod_power2 mult.commute)
