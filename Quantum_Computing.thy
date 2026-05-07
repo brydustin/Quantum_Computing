@@ -6048,9 +6048,9 @@ proof -
           hence a: "a < n" by simp
           have "cnj (w $ a)
                 = (\<Sum>i = 0..<?k. cnj (v $ i * (\<psi>s ! i) $ a))"
-            using w_idx[OF a] by (simp add: cnj_sum)
+            using w_idx[OF a] by (simp only: cnj_sum)
           also have "\<dots> = (\<Sum>i = 0..<?k. cnj (v $ i) * cnj ((\<psi>s ! i) $ a))"
-            by (simp add: complex_cnj_mult)
+            by (simp only: complex_cnj_mult)
           finally have "cnj (w $ a)
                         = (\<Sum>i = 0..<?k. cnj (v $ i) * cnj ((\<psi>s ! i) $ a))" .
           thus "cnj (w $ a) * w $ a
@@ -6111,7 +6111,7 @@ proof -
         proof -
           have "(\<Sum>a = 0..<n. Re (cnj (w $ a) * w $ a))
                 = Re (\<Sum>a = 0..<n. cnj (w $ a) * w $ a)"
-            by (simp add: Re_sum)
+            by (simp only: Re_sum)
           also have "\<dots> = Re 0" using ww_zero by simp
           also have "\<dots> = 0" by simp
           finally show ?thesis .
@@ -6136,7 +6136,7 @@ proof -
         from re_z im_z have "cnj (w $ a) * w $ a = 0"
           by (simp add: complex_eq_iff)
         thus "w $ a = 0"
-          by (simp add: complex_mult_cnj power_eq_0_iff)
+          by (simp add: complex_mult_cnj)
       qed
       from w_a_zero[OF jn] w_idx[OF jn]
       show "(\<Sum>i = 0..<?k. v $ i * (\<psi>s ! i) $ j) = 0" by simp
@@ -6638,7 +6638,7 @@ proof -
       have "D' ! i = 1 - c * D ! i"
         using Dil unfolding D'_def by simp
       hence lhs_val: "diag_mat_of_real D' $$ (i,i) = 1 - of_real c * of_real (D ! i)"
-        using lhs by (simp add: of_real_diff of_real_mult)
+        using lhs by simp
       have rhs_diag: "diag_mat_of_real D $$ (i,i) = of_real (D ! i)"
         using Dil by simp
       have "(1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,i)
@@ -7053,7 +7053,7 @@ proof -
           = M + (foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc)"
         using cons_eq IH2 by simp
       also have "... = (M + foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n)) + acc"
-        using M_car IH0_car acc_car by (simp add: assoc_add_mat)
+        using M_car IH0_car acc_car by (simp only: assoc_add_mat)
       also have "... = foldr (\<lambda>M rest. M + rest) (M # xs) (0\<^sub>m n n) + acc"
         by simp
       finally show ?case using cons_car by simp
@@ -7106,7 +7106,7 @@ proof -
 
   obtain Ms :: "complex Matrix.mat list"
     where ms: "measurement_system n Ms"
-      and ms_induces: "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
+      and ms_induces: "map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms = Ps"
   proof -
     have psd_each: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P"
       using Ps_car Ps_psd by blast
@@ -7151,12 +7151,12 @@ proof -
       have "Ps ! i = map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms ! i"
         using ms_induces by simp
       also have "... = (?M\<^sup>\<dagger>) * ?M"
-        using i Ms_len by (simp add: nth_map)
+        using i Ms_len by (simp only: nth_map)
       finally show ?thesis ..
     qed
 
     have M_in_set: "?M \<in> set Ms"
-      using i Ms_len by (simp add: nth_mem)
+      using i Ms_len by (simp only: nth_mem)
     have M_car: "?M \<in> carrier_mat n n"
       using ms M_in_set by (simp add: measurement_system_def)
     have Mv_dim: "dim_vec (?M *\<^sub>v ?\<psi>) = n" using M_car \<psi>car by simp
@@ -7165,8 +7165,7 @@ proof -
     proof -
       have A: "\<langle>?\<psi> | (?M\<^sup>\<dagger> * ?M) *\<^sub>v ?\<psi>\<rangle> = \<langle>?\<psi> | ?M\<^sup>\<dagger> *\<^sub>v (?M *\<^sub>v ?\<psi>)\<rangle>"
         using M_car \<psi>car
-        by (metis assoc_mult_mat_vec carrier_matD(1) carrier_vec_dim_vec
-            dagger_def mat_carrier)
+        by (metis assoc_mult_mat_vec carrier_matD(1) dagger_def mat_carrier)
       have B: "\<langle>?\<psi> | ?M\<^sup>\<dagger> *\<^sub>v (?M *\<^sub>v ?\<psi>)\<rangle> = \<langle>(?M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v ?\<psi> | ?M *\<^sub>v ?\<psi>\<rangle>"
         using M_car Mv_dim \<psi>dim
         by (metis carrier_matD(2) dagger_of_dagger_is_id dim_col_of_dagger
