@@ -6302,6 +6302,12 @@ proof -
     using len_\<phi> dim_\<phi> dual by blast
 qed
 
+lemma outer_prod_self_carrier:
+  assumes "v \<in> carrier_vec n"
+  shows "outer_prod v v \<in> carrier_mat n n"
+  using assms
+  by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def carrier_matI)
+
 lemma psd_sqrt_measurement_factor:
   assumes Pcar: "P \<in> carrier_mat n n"
       and Ppsd: "psd P"
@@ -6401,9 +6407,7 @@ proof -
         have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
         have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
         have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
-          using \<phi>_dim
-          by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
-              carrier_matI)
+          using \<phi>_car by (rule outer_prod_self_carrier)
         have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
           using Cons by simp
         show ?case using op_car IH_car by simp
@@ -6435,9 +6439,7 @@ proof -
         have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
         have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
         have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
-          using \<phi>_dim
-          by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
-              carrier_matI)
+          using \<phi>_car by (rule outer_prod_self_carrier)
         have op_herm: "hermitian (outer_prod \<phi> \<phi>)"
           unfolding hermitian_def using outer_proj_hermitian[OF \<phi>_dim] .
         have xs_all: "\<forall>\<phi>' \<in> set xs. \<phi>' \<in> carrier_vec n" using Cons.prems by simp
@@ -6774,7 +6776,7 @@ proof -
           by simp
         also have "cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
                  = (1\<^sub>m n :: complex Matrix.mat) $$ (i,j)"
-          using iln jln by (cases "i = j") auto
+          using iln jln by (cases "i = j") simp_all
         also have "cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))
                  = cnj ((of_real c :: complex) * ?T $$ (j,i))"
           using iln jln T_car by simp
@@ -6831,9 +6833,7 @@ proof -
         using \<phi>s_carrier \<phi>_in \<phi>s_len by (metis in_set_conv_nth)
       hence \<phi>_dim: "dim_vec \<phi> = n" by simp
       have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
-        using \<phi>_dim
-        by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
-            carrier_matI)
+        using \<phi>_car by (rule outer_prod_self_carrier)
       thus "M \<in> carrier_mat n n"
         using M_eq by auto
     qed
@@ -6870,9 +6870,7 @@ proof -
         using \<phi>s_all_car \<phi>_in by blast
       have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
       have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
-        using \<phi>_dim
-        by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
-            carrier_matI)
+        using \<phi>_car by (rule outer_prod_self_carrier)
       have M_car: "M \<in> carrier_mat n n"
         using M_eq op_car by auto
 
@@ -6981,9 +6979,7 @@ proof -
         have xs_all: "\<forall>\<phi>' \<in> set xs. \<phi>' \<in> carrier_vec n" using Cons.prems by simp
         have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
         have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
-          using \<phi>_dim
-          by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
-              carrier_matI)
+          using \<phi>_car by (rule outer_prod_self_carrier)
         from Cons.IH[OF xs_all]
         have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
           and IH_eq:
