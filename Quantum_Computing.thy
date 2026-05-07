@@ -6302,17 +6302,66 @@ proof -
     using len_\<phi> dim_\<phi> dual by blast
 qed
 
-(* Theorem: linearly independent states can be identified (but not perfectly distinguished).
-   The proof body is preserved below as a guide for filling in the missing
-   gaps (the formula step that the build can't yet parse). The dual-basis
-   step is now factored into the dedicated dual_basis_exists lemma above.
-   In the meantime the statement is admitted so that downstream
-   development can rely on it. *)
+lemma psd_sqrt_measurement_factor:
+  assumes Pcar: "P \<in> carrier_mat n n"
+      and Ppsd: "psd P"
+  shows "\<exists>M. M \<in> carrier_mat n n \<and> (M\<^sup>\<dagger>) * M = P"
+proof -
+  obtain Q where Qcar: "Q \<in> carrier_mat n n"
+    and Qpsd: "psd Q"
+    and QQ: "Q * Q = P"
+    using psd_sqrt_exists[OF Pcar Ppsd] by blast
+  have Qdag: "Q\<^sup>\<dagger> = Q"
+    using psd_hermitian[OF Qpsd]
+    unfolding hermitian_def by simp
+  have "Q\<^sup>\<dagger> * Q = P"
+    using Qdag QQ by simp
+  thus ?thesis
+    using Qcar by blast
+qed
+
+lemma psd_sqrt_measurement_factors:
+  assumes Ps: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P"
+  shows "\<exists>Ms. (\<forall>M \<in> set Ms. M \<in> carrier_mat n n) \<and>
+               map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms = Ps"
+  using Ps
+proof (induction Ps)
+  case Nil
+  show ?case by simp
+next
+  case (Cons P Ps)
+  have Pcar: "P \<in> carrier_mat n n"
+    using Cons.prems by simp
+  have Ppsd: "psd P"
+    using Cons.prems by simp
+  obtain M where Mcar: "M \<in> carrier_mat n n"
+    and M_factor: "M\<^sup>\<dagger> * M = P"
+    using psd_sqrt_measurement_factor[OF Pcar Ppsd] by blast
+  obtain Ms where Mscar: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
+    and Ms_factor: "map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms = Ps"
+    using Cons.IH Cons.prems by simp blast
+  have "(\<forall>N \<in> set (M # Ms). N \<in> carrier_mat n n) \<and>
+        map (\<lambda>N. (N\<^sup>\<dagger>) * N) (M # Ms) = P # Ps"
+    using Mcar M_factor Mscar Ms_factor by simp
+  thus ?case
+    by meson
+qed
+
+(* Theorem: linearly independent states can be unambiguously measured
+   (POVM-distinguished, but not perfectly distinguished).
+   The hypothesis is the elementary trivial-kernel form of linear
+   independence (rather than the locale-level lin_indpt, which Isabelle
+   parses as a free predicate in this scope and so produces
+   "OF: multiple unifiers" when used downstream).
+*)
 
 theorem linearly_independent_states_unambiguously_measurable:
   fixes \<psi>s :: "complex Matrix.vec list"
   assumes qstates: "\<forall>\<psi> \<in> set \<psi>s. quantum_state n \<psi>"
-      and lin_indep: "lin_indpt (set \<psi>s)"
+      and triv_kernel: "\<forall>c :: nat \<Rightarrow> complex.
+           (\<forall>j < n.
+              (\<Sum>i = 0..<length \<psi>s. c i * (\<psi>s ! i) $ j) = 0)
+           \<longrightarrow> (\<forall>i < length \<psi>s. c i = 0)"
       and len: "length \<psi>s = k"
       and kle: "k \<le> n"
   shows "\<exists>Ms :: complex Matrix.mat list.
@@ -6320,37 +6369,18 @@ theorem linearly_independent_states_unambiguously_measurable:
          length Ms = k + 1 \<and>
          (\<forall>i < k. \<forall>j < k. i \<noteq> j \<longrightarrow> meas_prob (Ms ! i) (\<psi>s ! j) = 0) \<and>
          (\<forall>i < k. 0 < meas_prob (Ms ! i) (\<psi>s ! i))"
-  sorry
-
-(*  Original proof skeleton - kept as commentary for future work.  The
-    \<open>define maxD :: real where "maxD = Max ...\<close> step inside this
-    block triggers \<open>Illegal reference to implicit structure\<close> in the
-    current \<open>Quantum_Computing\<close> context (the \<open>Max\<close> sublocale alias
-    needs disambiguation in this scope), and there is also a parsing
-    failure further down at the \<open>U * U\<^sup>\<dagger> = 1\<^sub>m n\<close> step.
-    The original "sorry" at step (1) (existence of a dual basis from
-    linear independence) is also still required.
-
 proof -
-  (* \<psi>s carriers, implied by quantum_state *)
   have \<psi>s_carrier: "\<forall>i < k. \<psi>s ! i \<in> carrier_vec n"
     using qstates len
     by (metis carrier_vec_dim_vec nth_mem quantum_state_def)
 
-  (* Step 1: dual basis \<phi>s with \<langle>\<phi>s!i | \<psi>s!j\<rangle> = \<delta>_ij.
-     Exists because \<psi>s is linearly independent: restrict to span(\<psi>s),
-     invert the k\<times>k Gram matrix, and lift back to C^n. *)
+  (* Step 1: dual basis from dual_basis_exists. *)
   obtain \<phi>s :: "complex Matrix.vec list"
     where \<phi>s_len: "length \<phi>s = k"
       and \<phi>s_carrier: "\<forall>i < k. \<phi>s ! i \<in> carrier_vec n"
       and dual: "\<forall>i < k. \<forall>j < k. \<langle>\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)"
-    sorry
+    using dual_basis_exists[OF qstates triv_kernel len kle] by blast
 
-  (* Step 2: pick a positive scale c small enough that
-     I - c \<Sum>i |\<phi>i\<rangle>\<langle>\<phi>i| is positive semidefinite. Possible because
-     \<Sum>i |\<phi>i\<rangle>\<langle>\<phi>i| is hermitian: spectral-decomp it and choose c below
-     1 / (1 + max eigenvalue), so every entry of I - c \<cdot>\<^sub>m ?T has
-     non-negative eigenvalue. *)
   let ?T = "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) \<phi>s (0\<^sub>m n n)"
 
   have \<phi>s_all_car: "\<forall>\<phi> \<in> set \<phi>s. \<phi> \<in> carrier_vec n"
@@ -6417,7 +6447,6 @@ proof -
           by auto
         have cons_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n) \<in> carrier_mat n n"
           using op_car IH_car by simp
-        (* sum of hermitians is hermitian *)
         have sum_herm: "hermitian (outer_prod \<phi> \<phi> + foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
         proof -
           let ?A = "outer_prod \<phi> \<phi>"
@@ -6442,9 +6471,8 @@ proof -
               by simp
             also have "... = (?A\<^sup>\<dagger>) $$ (i,j) + (?B\<^sup>\<dagger>) $$ (i,j)"
               using iln jln op_car IH_car
-              by (metis (lifting) IH_herm carrier_matD(2) dim_row_of_dagger 
+              by (metis (lifting) IH_herm carrier_matD(2) dim_row_of_dagger
                   hermitian_def hermitian_index op_herm)
-
             also have "... = ((?A\<^sup>\<dagger>) + (?B\<^sup>\<dagger>)) $$ (i,j)"
               using iln jln op_car IH_car
               by (simp add: dagger_def)
@@ -6460,23 +6488,82 @@ proof -
     from aux[OF \<phi>s_all_car] show ?thesis by blast
   qed
 
-  (* Use hermitian_spectral_decomp on ?T to find c. *)
   obtain U :: "complex Matrix.mat" and D :: "real list"
     where Uc: "U \<in> carrier_mat n n"
       and UU: "unitary U"
       and Dlen: "length D = n"
-      and specD: "U\<^sup>\<dagger> * ?T * U = diag_mat_of_real D"
+      and specD: "(U\<^sup>\<dagger>) * ?T * U = diag_mat_of_real D"
     using hermitian_spectral_decomp[OF T_car T_herm] by blast
 
-  define maxD :: real where "maxD = Max (insert (0::real) (set D))"
-  define c :: real where "c = 1 / (1 + maxD)"
+  (* Pick a non-negative upper bound on every entry of D.  We compute
+     it via fold max rather than Lattices_Big.Max because Max in this
+     file's import context triggers the "Illegal reference to implicit
+     structure" parser error. *)
+  define maxD :: real where "maxD \<equiv> fold max D 0"
+  define c :: real where "c \<equiv> 1 / (1 + maxD)"
+
+  have fold_max_lower:
+    "\<And>xs::real list. \<And>a::real. a \<le> fold max xs a"
+  proof -
+    fix xs :: "real list" and a :: real
+    show "a \<le> fold max xs a"
+    proof (induction xs arbitrary: a)
+      case Nil show ?case by simp
+    next
+      case (Cons x xs)
+      have step: "a \<le> max x a" by simp
+      have "max x a \<le> fold max xs (max x a)" by (rule Cons.IH)
+      with step show ?case by simp
+    qed
+  qed
+  have fold_max_mono:
+    "\<And>xs::real list. \<And>a b::real. a \<le> b \<Longrightarrow> fold max xs a \<le> fold max xs b"
+  proof -
+    fix xs :: "real list" and a b :: real
+    assume "a \<le> b"
+    thus "fold max xs a \<le> fold max xs b"
+    proof (induction xs arbitrary: a b)
+      case Nil show ?case using Nil.prems by simp
+    next
+      case (Cons x xs)
+      have "max x a \<le> max x b" using Cons.prems by simp
+      thus ?case using Cons.IH by simp
+    qed
+  qed
+  have fold_max_ge_nth:
+    "\<And>i. i < length D \<Longrightarrow> D ! i \<le> fold max D 0"
+  proof -
+    fix i assume i: "i < length D"
+    show "D ! i \<le> fold max D 0"
+      using i
+    proof (induction D arbitrary: i)
+      case Nil thus ?case by simp
+    next
+      case (Cons x xs)
+      show ?case
+      proof (cases i)
+        case 0
+        have "x \<le> max x 0" by simp
+        also have "max x 0 \<le> fold max xs (max x 0)" by (rule fold_max_lower)
+        finally show ?thesis using 0 by simp
+      next
+        case (Suc m)
+        have m_lt: "m < length xs" using Cons.prems Suc by simp
+        have IH: "xs ! m \<le> fold max xs 0" using Cons.IH[OF m_lt] .
+        have mono: "fold max xs 0 \<le> fold max xs (max x 0)"
+          by (rule fold_max_mono) simp
+        from IH mono have "xs ! m \<le> fold max xs (max x 0)" by simp
+        thus ?thesis using Suc by simp
+      qed
+    qed
+  qed
 
   have maxD_ge_0: "0 \<le> maxD"
-    unfolding maxD_def by simp
+    unfolding maxD_def using fold_max_lower by blast
   have c_pos: "0 < c"
     unfolding c_def using maxD_ge_0 by simp
   have D_bounded: "\<forall>i < length D. D ! i \<le> maxD"
-    unfolding maxD_def by simp
+    unfolding maxD_def using fold_max_ge_nth by blast
   have c_Dbound: "\<forall>i < length D. c * (D ! i) \<le> 1"
   proof (intro allI impI)
     fix i assume i: "i < length D"
@@ -6491,24 +6578,21 @@ proof -
     finally show "c * (D ! i) \<le> 1" .
   qed
 
-  (* Spectral derivation of c_bound. *)
-  have Udag_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by auto
-  have UUdag: "U * U\<^sup>\<dagger> = 1\<^sub>m n"
+  have Udag_c: "(U\<^sup>\<dagger>) \<in> carrier_mat n n" using Uc by auto
+  have UUdag: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
     using unitary_left_right(2)[OF UU] Uc by (metis carrier_matD(1))
-  have UdagU: "U\<^sup>\<dagger> * U = 1\<^sub>m n"
+  have UdagU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n"
     using unitary_left_right(1)[OF UU] Uc by (metis carrier_matD(2))
   have D_car: "diag_mat_of_real D \<in> carrier_mat n n"
-    using Dlen by simp
+    using Dlen by (metis diag_mat_of_real_carrier)
 
-  have T_eq_UDU: "?T = U * (diag_mat_of_real D) * U\<^sup>\<dagger>"
+  have T_eq_UDU: "?T = U * (diag_mat_of_real D) * (U\<^sup>\<dagger>)"
   proof -
-    have "U * (U\<^sup>\<dagger> * ?T * U) * U\<^sup>\<dagger> = U * (diag_mat_of_real D) * U\<^sup>\<dagger>"
+    have "U * ((U\<^sup>\<dagger>) * ?T * U) * (U\<^sup>\<dagger>) = U * (diag_mat_of_real D) * (U\<^sup>\<dagger>)"
       using specD by simp
-    moreover have "U * (U\<^sup>\<dagger> * ?T * U) * U\<^sup>\<dagger> = ?T"
+    moreover have "U * ((U\<^sup>\<dagger>) * ?T * U) * (U\<^sup>\<dagger>) = ?T"
     proof -
-      have UU_dag: "U \<in> carrier_mat n n" by (rule Uc)
-      have T_c: "?T \<in> carrier_mat n n" by (rule T_car)
-      have "U * (U\<^sup>\<dagger> * ?T * U) * U\<^sup>\<dagger> = (U * U\<^sup>\<dagger>) * ?T * (U * U\<^sup>\<dagger>)"
+      have "U * ((U\<^sup>\<dagger>) * ?T * U) * (U\<^sup>\<dagger>) = (U * (U\<^sup>\<dagger>)) * ?T * (U * (U\<^sup>\<dagger>))"
         using Uc Udag_c T_car
         by (smt (verit, ccfv_SIG) assoc_mult_mat carrier_mat_triv mult_carrier_mat)
       also have "... = 1\<^sub>m n * ?T * 1\<^sub>m n"
@@ -6526,7 +6610,6 @@ proof -
   have D'nonneg: "\<forall>i < n. 0 \<le> D' ! i"
     using c_Dbound Dlen unfolding D'_def by auto
 
-  (* Entrywise: diag(D') = 1\<^sub>m n - c \<cdot>\<^sub>m diag(D) *)
   have diag_D'_eq: "diag_mat_of_real D'
                   = 1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D"
   proof (rule eq_matI)
@@ -6540,7 +6623,7 @@ proof -
     fix i j
     assume ij: "i < dim_row (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
                "j < dim_col (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
-    have iln: "i < n" and jln: "j < n" using ij by auto
+    have iln: "i < n" and jln: "j < n" using ij Dlen by auto
     have Dil: "i < length D" and Djl: "j < length D"
       using iln jln Dlen by auto
     have D'il: "i < length D'" using iln D'len by simp
@@ -6557,11 +6640,8 @@ proof -
       have rhs_diag: "diag_mat_of_real D $$ (i,i) = of_real (D ! i)"
         using Dil by simp
       have "(1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,i)
-          = (1\<^sub>m n) $$ (i,i) - ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,i)"
-        using iln D_car
-        by (metis carrier_matD(1,2) index_minus_mat(1))
-      also have "... = 1 - (of_real c :: complex) * diag_mat_of_real D $$ (i,i)"
-        using iln D_car by simp
+           = 1 - (of_real c :: complex) * diag_mat_of_real D $$ (i,i)"
+        by (simp add: Dlen iln)
       also have "... = 1 - (of_real c :: complex) * of_real (D ! i)"
         using rhs_diag by simp
       finally have rhs_val:
@@ -6575,11 +6655,8 @@ proof -
       have rhs1: "diag_mat_of_real D $$ (i,j) = 0"
         using Dil Djl False by simp
       have "(1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,j)
-          = (1\<^sub>m n) $$ (i,j) - ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) $$ (i,j)"
-        using iln jln D_car
-        by (metis carrier_matD(1,2) index_minus_mat(1))
-      also have "... = 0 - (of_real c :: complex) * diag_mat_of_real D $$ (i,j)"
-        using iln jln False D_car by simp
+           = 0 - (of_real c :: complex) * diag_mat_of_real D $$ (i,j)"
+        by (simp add: Dil Djl False iln jln)
       also have "... = 0"
         using rhs1 by simp
       finally have rhs_val:
@@ -6588,7 +6665,6 @@ proof -
     qed
   qed
 
-  (* Quadratic form non-negativity of ?M via U diag(D') U\<^sup>\<dagger> *)
   have c_bound: "psd (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m ?T)"
   proof -
     let ?M = "1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m ?T"
@@ -6601,25 +6677,23 @@ proof -
       assume "dim_vec x = dim_row ?M"
       hence xdim: "dim_vec x = n" using M_car by auto
       have xcar: "x \<in> carrier_vec n" using xdim by auto
-      let ?y = "U\<^sup>\<dagger> *\<^sub>v x"
+      let ?y = "(U\<^sup>\<dagger>) *\<^sub>v x"
       have ydim: "dim_vec ?y = n"
-        using Udag_c xdim by simp
-      have ycar: "?y \<in> carrier_vec n" using ydim by auto
-
-      have Mx_step1: "?M *\<^sub>v x = (U * diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x"
+        using Uc by auto
+      have ycar: "?y \<in> carrier_vec n"
+        using Udag_c xcar by simp 
+      have Mx_step1: "?M *\<^sub>v x = (U * diag_mat_of_real D' * (U\<^sup>\<dagger>)) *\<^sub>v x"
       proof -
-        have "?M = 1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m (U * diag_mat_of_real D * U\<^sup>\<dagger>)"
+        have "?M = 1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m (U * diag_mat_of_real D * (U\<^sup>\<dagger>))"
           using T_eq_UDU by simp
-        (* = U U\<^sup>\<dagger> - c \<cdot>\<^sub>m (U diag(D) U\<^sup>\<dagger>) = U (1 - c \<cdot>\<^sub>m diag(D)) U\<^sup>\<dagger> = U diag(D') U\<^sup>\<dagger> *)
-        also have "... = U * 1\<^sub>m n * U\<^sup>\<dagger>
-                        - (of_real c :: complex) \<cdot>\<^sub>m (U * diag_mat_of_real D * U\<^sup>\<dagger>)"
+        also have "... = U * 1\<^sub>m n * (U\<^sup>\<dagger>)
+                        - (of_real c :: complex) \<cdot>\<^sub>m (U * diag_mat_of_real D * (U\<^sup>\<dagger>))"
           using UUdag Uc Udag_c
-          by (metis left_mult_one_mat right_mult_one_mat)
-        also have "... = U * 1\<^sub>m n * U\<^sup>\<dagger>
-                        - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * U\<^sup>\<dagger>"
-          using Uc Udag_c D_car
-          by (metis mult_smult_assoc_mat mult_smult_distrib)
-        also have "... = U * (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * U\<^sup>\<dagger>"
+          by (metis right_mult_one_mat)
+        also have "... = U * 1\<^sub>m n * (U\<^sup>\<dagger>)
+                        - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)"
+          by (metis D_car Uc Udag_c mult_carrier_mat mult_smult_assoc_mat mult_smult_distrib)
+        also have "... = U * (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)"
         proof -
           have one_car: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
           have cD_car: "(of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D \<in> carrier_mat n n"
@@ -6628,50 +6702,46 @@ proof -
             using Uc one_car by auto
           have UB_car: "U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) \<in> carrier_mat n n"
             using Uc cD_car by auto
-          have "U * 1\<^sub>m n * U\<^sup>\<dagger>
-              - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * U\<^sup>\<dagger>
+          have "U * 1\<^sub>m n * (U\<^sup>\<dagger>)
+              - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)
               = (U * 1\<^sub>m n
-                 - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)) * U\<^sup>\<dagger>"
+                 - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)) * (U\<^sup>\<dagger>)"
             using UA_car UB_car Udag_c
             by (simp add: minus_mult_distrib_mat)
           also have "U * (1\<^sub>m n :: complex Matrix.mat)
                    - U * ((of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)
                    = U * (1\<^sub>m n - (of_real c :: complex) \<cdot>\<^sub>m diag_mat_of_real D)"
-            using Uc one_car cD_car
-            by (simp add: mult_minus_distrib_mat)
-          finally show ?thesis .
+            by (metis Uc cD_car mult_minus_distrib_mat one_car)          
+          finally show ?thesis.
         qed
-        also have "... = U * diag_mat_of_real D' * U\<^sup>\<dagger>"
+        also have "... = U * diag_mat_of_real D' * (U\<^sup>\<dagger>)"
           using diag_D'_eq by simp
         finally show ?thesis by simp
       qed
 
-      have Mx_step2: "(U * diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x
+      have Mx_step2: "(U * diag_mat_of_real D' * (U\<^sup>\<dagger>)) *\<^sub>v x
                     = U *\<^sub>v (diag_mat_of_real D' *\<^sub>v ?y)"
       proof -
         have D'car: "diag_mat_of_real D' \<in> carrier_mat n n"
-          using D'len by simp
-        have inner_prod: "diag_mat_of_real D' * U\<^sup>\<dagger> \<in> carrier_mat n n"
+          using D'len diag_mat_of_real_carrier by blast
+        have inner_prod: "diag_mat_of_real D' * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
           using D'car Udag_c by auto
-        have "(U * diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x
-            = (U * (diag_mat_of_real D' * U\<^sup>\<dagger>)) *\<^sub>v x"
-          using Uc D'car Udag_c by (simp add: assoc_mult_mat)
-        also have "... = U *\<^sub>v ((diag_mat_of_real D' * U\<^sup>\<dagger>) *\<^sub>v x)"
-          using Uc inner_prod xcar by (simp add: assoc_mult_mat_vec)
-        also have "... = U *\<^sub>v (diag_mat_of_real D' *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v x))"
-          using D'car Udag_c xcar by (simp add: assoc_mult_mat_vec)
-        finally show ?thesis .
+        have "(U * diag_mat_of_real D' * (U\<^sup>\<dagger>)) *\<^sub>v x
+            = (U * (diag_mat_of_real D' * (U\<^sup>\<dagger>))) *\<^sub>v x"
+          using Uc D'car Udag_c by (simp only: assoc_mult_mat)
+        also have "... = U *\<^sub>v ((diag_mat_of_real D' * (U\<^sup>\<dagger>)) *\<^sub>v x)"
+          using Uc inner_prod xcar by (simp only: assoc_mult_mat_vec)
+        also have "... = U *\<^sub>v (diag_mat_of_real D' *\<^sub>v ((U\<^sup>\<dagger>) *\<^sub>v x))"
+          using D'car Udag_c xcar by (simp only: assoc_mult_mat_vec)
+        finally show ?thesis.
       qed
 
       have Mx_eq: "?M *\<^sub>v x = U *\<^sub>v (diag_mat_of_real D' *\<^sub>v ?y)"
         using Mx_step1 Mx_step2 by simp
 
       have qf_swap: "\<langle>x | U *\<^sub>v (diag_mat_of_real D' *\<^sub>v ?y)\<rangle>
-                   = \<langle>U\<^sup>\<dagger> *\<^sub>v x | diag_mat_of_real D' *\<^sub>v ?y\<rangle>"
-        using Uc xdim ydim
-        by (metis D'len carrier_matD(2) diag_mat_of_real_carrier
-            dim_mult_mat_vec inner_prod_adjoint_swap)
-
+                   = \<langle>(U\<^sup>\<dagger>) *\<^sub>v x | diag_mat_of_real D' *\<^sub>v ?y\<rangle>"
+        using D'len Uc inner_prod_adjoint_swap xdim by auto        
       have "\<langle>x | ?M *\<^sub>v x\<rangle> = \<langle>?y | diag_mat_of_real D' *\<^sub>v ?y\<rangle>"
         using Mx_eq qf_swap by simp
       moreover have "0 \<le> Re \<langle>?y | diag_mat_of_real D' *\<^sub>v ?y\<rangle>"
@@ -6688,21 +6758,17 @@ proof -
       have "?M\<^sup>\<dagger> = ?M"
       proof (rule eq_matI)
         show "dim_row (?M\<^sup>\<dagger>) = dim_row ?M"
-          using M_car by (simp add: dagger_def)
+          by (simp add: T_eq_UDU)
         show "dim_col (?M\<^sup>\<dagger>) = dim_col ?M"
-          using M_car by (simp add: dagger_def)
+          by (simp add: T_eq_UDU)
       next
         fix i j
         assume ij: "i < dim_row ?M" "j < dim_col ?M"
         have iln: "i < n" and jln: "j < n" using ij M_car by auto
-        have ji_bound: "j < dim_row ?M" "i < dim_col ?M"
-          using jln iln M_car by auto
         have "?M\<^sup>\<dagger> $$ (i,j) = cnj (?M $$ (j,i))"
-          using iln jln M_car
-          by (simp add: dagger_def)
+          using T_car dagger_def iln jln by fastforce
         also have "... = cnj ((1\<^sub>m n) $$ (j,i) - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
-          using iln jln cT_car
-          by (metis carrier_matD(1,2) index_minus_mat(1))
+          using T_car iln jln by fastforce
         also have "... = cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (j,i))
                          - cnj (((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (j,i))"
           by simp
@@ -6717,8 +6783,7 @@ proof -
         also have "cnj (of_real c :: complex) = (of_real c :: complex)"
           by simp
         also have "cnj (?T $$ (j,i)) = ?T $$ (i,j)"
-          using iln jln T_herm T_car
-          by (metis carrier_matD(1,2) hermitian_index)
+          using T_herm hermitian_index ij(1,2) by fastforce
         also have "(of_real c :: complex) * ?T $$ (i,j)
                  = ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
           using iln jln T_car by simp
@@ -6728,8 +6793,7 @@ proof -
           by simp
         have rhs: "?M $$ (i,j) = (1\<^sub>m n) $$ (i,j)
                                 - ((of_real c :: complex) \<cdot>\<^sub>m ?T) $$ (i,j)"
-          using iln jln cT_car
-          by (metis carrier_matD(1,2) index_minus_mat(1))
+          using T_herm hermitian_index ij(1,2) by fastforce
         show "?M\<^sup>\<dagger> $$ (i,j) = ?M $$ (i,j)"
           using eq_step rhs by simp
       qed
@@ -6752,9 +6816,11 @@ proof -
   have len_Ps: "length Ps = k + 1"
     using \<phi>s_len unfolding Ps_def Mpre_def by simp
 
-  have povm_Ps: "povm n Ps"
+  have Ps_facts:
+      "(\<forall>P \<in> set Ps. P \<in> carrier_mat n n) \<and>
+       (\<forall>P \<in> set Ps. psd P) \<and>
+       foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
   proof -
-    (* Carriers *)
     have Mpre_car: "\<forall>M \<in> set Mpre. M \<in> carrier_mat n n"
     proof
       fix M assume "M \<in> set Mpre"
@@ -6794,7 +6860,6 @@ proof -
     have Ps_car: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n"
       unfolding Ps_def using Mpre_car Mlast_car by auto
 
-    (* PSD of each Mpre element *)
     have Mpre_psd: "\<forall>M \<in> set Mpre. psd M"
     proof
       fix M assume "M \<in> set Mpre"
@@ -6811,27 +6876,21 @@ proof -
       have M_car: "M \<in> carrier_mat n n"
         using M_eq op_car by auto
 
-      (* Hermitian: (c \<cdot>\<^sub>m outer_prod \<phi> \<phi>)\<^sup>\<dagger> = c \<cdot>\<^sub>m outer_prod \<phi> \<phi> *)
       have M_herm: "hermitian M"
       proof -
         have op_herm_dag: "(outer_prod \<phi> \<phi>)\<^sup>\<dagger> = outer_prod \<phi> \<phi>"
-          by (metis \<phi>_dim bra_bra_vec dagger_of_ket_is_bra dagger_of_prod
-              dim_col_of_dagger index_one_mat(3) ket_vec_col
-              outer_prod_index op_car carrier_matD(1) carrier_matD(2)
-              hermitian_def hermitian_index eq_matI
-              outer_proj_hermitian[of \<phi> n, unfolded hermitian_def])
-        have "M\<^sup>\<dagger> = (cnj (of_real c :: complex)) \<cdot>\<^sub>m (outer_prod \<phi> \<phi>)\<^sup>\<dagger>"
+          by (metis \<phi>_dim outer_proj_hermitian[of \<phi> n, unfolded hermitian_def])
+        have "(M\<^sup>\<dagger>) = (cnj (of_real c :: complex)) \<cdot>\<^sub>m ((outer_prod \<phi> \<phi>)\<^sup>\<dagger>)"
           using M_eq dagger_of_smult by simp
         also have "cnj (of_real c :: complex) = of_real c"
           by simp
-        also have "(of_real c :: complex) \<cdot>\<^sub>m (outer_prod \<phi> \<phi>)\<^sup>\<dagger>
+        also have "(of_real c :: complex) \<cdot>\<^sub>m ((outer_prod \<phi> \<phi>)\<^sup>\<dagger>)
                  = (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>"
           using op_herm_dag by simp
         also have "... = M" using M_eq by simp
         finally show ?thesis by (simp add: hermitian_def)
       qed
 
-      (* Quadratic form is real non-negative *)
       have M_qf_nonneg: "\<forall>x. dim_vec x = dim_row M
                            \<longrightarrow> 0 \<le> Re \<langle>x | M *\<^sub>v x\<rangle>"
       proof (intro allI impI)
@@ -6859,7 +6918,7 @@ proof -
         also have "... = (of_real c :: complex) * (\<langle>\<phi>|x\<rangle> * \<langle>x|\<phi>\<rangle>)"
           by (simp add: inner_prod_right_smult')
         also have "... = (of_real c :: complex) * (\<langle>\<phi>|x\<rangle> * cnj \<langle>\<phi>|x\<rangle>)"
-          by (simp add: inner_prod_cnj)
+          using inner_prod_cnj[of \<phi> x] \<phi>_dim xn by simp
         also have "... = (of_real c :: complex) * (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
           by (simp add: mult.commute)
         finally have qf_eq: "\<langle>x | M *\<^sub>v x\<rangle>
@@ -6869,7 +6928,17 @@ proof -
             = c * Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>)"
           using qf_eq by simp
         also have "... = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
-          by (simp add: complex_mult_cnj complex_norm_square)
+        proof -
+          have "cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle> = \<langle>\<phi>|x\<rangle> * cnj \<langle>\<phi>|x\<rangle>"
+            by (simp add: mult.commute)
+          also have "\<dots> = of_real (Re \<langle>\<phi>|x\<rangle> ^ 2 + Im \<langle>\<phi>|x\<rangle> ^ 2)"
+            by (rule complex_mult_cnj)
+          also have "\<dots> = of_real ((cmod \<langle>\<phi>|x\<rangle>)\<^sup>2)"
+            by (simp add: cmod_def power2_eq_square)
+          finally have "Re (cnj \<langle>\<phi>|x\<rangle> * \<langle>\<phi>|x\<rangle>) = (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
+            by simp
+          thus ?thesis by simp
+        qed
         finally have re_eq: "Re \<langle>x | M *\<^sub>v x\<rangle> = c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2" .
 
         have "0 \<le> c * (cmod \<langle>\<phi>|x\<rangle>)\<^sup>2"
@@ -6881,10 +6950,6 @@ proof -
       show "psd M"
         unfolding psd_def using M_herm M_qf_nonneg by blast
     qed
-
-    (* Slast = c \<cdot>\<^sub>m ?T (scalar factored out of fold) *)
-    have \<phi>s_all_car: "\<forall>\<phi> \<in> set \<phi>s. \<phi> \<in> carrier_vec n"
-      using \<phi>s_carrier \<phi>s_len by (metis in_set_conv_nth)
 
     have slast_aux:
       "\<And>xs. (\<forall>\<phi> \<in> set xs. \<phi> \<in> carrier_vec n) \<Longrightarrow>
@@ -6960,59 +7025,50 @@ proof -
     have Ps_psd: "\<forall>P \<in> set Ps. psd P"
       unfolding Ps_def using Mpre_psd Mlast_psd by auto
 
-    (* Helper: foldr of + over Mpre, with any carrier_mat acc, shifts out *)
-    have fold_aux: "\<And>xs acc. (\<forall>M \<in> set xs. M \<in> carrier_mat n n) \<Longrightarrow>
-                             acc \<in> carrier_mat n n \<Longrightarrow>
+    have fold_aux:
+      "(\<forall>M \<in> set xs. M \<in> carrier_mat n n) \<Longrightarrow> acc \<in> carrier_mat n n \<Longrightarrow>
         foldr (\<lambda>M rest. M + rest) xs acc \<in> carrier_mat n n \<and>
         foldr (\<lambda>M rest. M + rest) xs acc
           = foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc"
-    proof -
-      fix xs :: "complex Matrix.mat list" and acc :: "complex Matrix.mat"
-      assume h1: "\<forall>M \<in> set xs. M \<in> carrier_mat n n" and h2: "acc \<in> carrier_mat n n"
-      from h1 h2 show
-        "foldr (\<lambda>M rest. M + rest) xs acc \<in> carrier_mat n n \<and>
-         foldr (\<lambda>M rest. M + rest) xs acc
-           = foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc"
-      proof (induction xs)
-        case Nil
-        hence "foldr (\<lambda>M rest. M + rest) [] acc = acc" by simp
-        moreover have "foldr (\<lambda>M rest. M + rest) [] (0\<^sub>m n n) + acc = 0\<^sub>m n n + acc"
-          by simp
-        moreover have "0\<^sub>m n n + acc = acc"
-          using Nil by auto
-        ultimately show ?case using Nil by auto
-      next
-        case (Cons M xs)
-        have M_car: "M \<in> carrier_mat n n" using Cons.prems by simp
-        have xs_all: "\<forall>M' \<in> set xs. M' \<in> carrier_mat n n" using Cons.prems by simp
-        from Cons.IH[OF xs_all Cons.prems(2)]
-        have IH1: "foldr (\<lambda>M rest. M + rest) xs acc \<in> carrier_mat n n"
-          and IH2: "foldr (\<lambda>M rest. M + rest) xs acc
-                   = foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc"
-          by auto
-        (* carrier for fold with 0\<^sub>m n n acc *)
-        from Cons.IH[OF xs_all] have IH0_car:
-          "foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) \<in> carrier_mat n n"
-          by auto
-        have cons_eq: "foldr (\<lambda>M rest. M + rest) (M # xs) acc
-                      = M + foldr (\<lambda>M rest. M + rest) xs acc" by simp
-        hence cons_car: "foldr (\<lambda>M rest. M + rest) (M # xs) acc \<in> carrier_mat n n"
-          using M_car IH1 by simp
-        have "foldr (\<lambda>M rest. M + rest) (M # xs) acc
-            = M + (foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc)"
-          using cons_eq IH2 by simp
-        also have "... = (M + foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n)) + acc"
-          using M_car IH0_car Cons.prems(2) by (simp add: assoc_add_mat)
-        also have "... = foldr (\<lambda>M rest. M + rest) (M # xs) (0\<^sub>m n n) + acc"
-          by simp
-        finally show ?case using cons_car by simp
-      qed
+      for xs :: "complex Matrix.mat list" and acc :: "complex Matrix.mat"
+    proof (induction xs arbitrary: acc)
+      case Nil
+      have "foldr (\<lambda>M rest. M + rest) [] acc = acc" by simp
+      moreover have "foldr (\<lambda>M rest. M + rest) [] (0\<^sub>m n n) + acc = 0\<^sub>m n n + acc"
+        by simp
+      moreover have "0\<^sub>m n n + acc = acc"
+        using Nil.prems(2) by auto
+      ultimately show ?case using Nil.prems(2) by auto
+    next
+      case (Cons M xs)
+      have M_car: "M \<in> carrier_mat n n" using Cons.prems(1) by simp
+      have xs_all: "\<forall>M' \<in> set xs. M' \<in> carrier_mat n n" using Cons.prems(1) by simp
+      have acc_car: "acc \<in> carrier_mat n n" using Cons.prems(2) .
+      from Cons.IH[OF xs_all acc_car]
+      have IH1: "foldr (\<lambda>M rest. M + rest) xs acc \<in> carrier_mat n n"
+        and IH2: "foldr (\<lambda>M rest. M + rest) xs acc
+                 = foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc"
+        by auto
+      from Cons.IH[OF xs_all zero_carrier_mat]
+      have IH0_car: "foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+        by auto
+      have cons_eq: "foldr (\<lambda>M rest. M + rest) (M # xs) acc
+                    = M + foldr (\<lambda>M rest. M + rest) xs acc" by simp
+      hence cons_car: "foldr (\<lambda>M rest. M + rest) (M # xs) acc \<in> carrier_mat n n"
+        using M_car IH1 by simp
+      have "foldr (\<lambda>M rest. M + rest) (M # xs) acc
+          = M + (foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n) + acc)"
+        using cons_eq IH2 by simp
+      also have "... = (M + foldr (\<lambda>M rest. M + rest) xs (0\<^sub>m n n)) + acc"
+        using M_car IH0_car acc_car by (simp add: assoc_add_mat)
+      also have "... = foldr (\<lambda>M rest. M + rest) (M # xs) (0\<^sub>m n n) + acc"
+        by simp
+      finally show ?case using cons_car by simp
     qed
 
     have Slast_expand: "Slast = foldr (\<lambda>P acc. P + acc) Mpre (0\<^sub>m n n)"
       unfolding Slast_def ..
 
-    (* Sum = I: foldr over (Mpre @ [Mlast]) = foldr over Mpre with Mlast as acc *)
     have Ps_sum: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
     proof -
       have step1: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n)
@@ -7038,27 +7094,47 @@ proof -
         assume i: "i < dim_row (1\<^sub>m n)" and j: "j < dim_col (1\<^sub>m n)"
         then have iln: "i < n" and jln: "j < n" by auto
         show "(Slast + (1\<^sub>m n - Slast)) $$ (i,j) = (1\<^sub>m n) $$ (i,j)"
-          using iln jln Slast_car
-          by (metis add.commute add_diff_cancel_left' carrier_matD(1,2)
-              index_add_mat(1) index_minus_mat(1))
+          using Slast_car iln jln by auto
+          
       qed
       finally show ?thesis .
     qed
 
     show ?thesis
-      unfolding povm_def using Ps_car Ps_psd Ps_sum by auto
+      using Ps_car Ps_psd Ps_sum by blast
   qed
 
-  (* Square-root lift: get a measurement_system Ms with Ms_i\<^sup>\<dagger>Ms_i = Ps_i. *)
+  have Ps_car: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n"
+    using Ps_facts by blast
+  have Ps_psd: "\<forall>P \<in> set Ps. psd P"
+    using Ps_facts by blast
+  have Ps_sum: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
+    using Ps_facts by blast
+
   obtain Ms :: "complex Matrix.mat list"
     where ms: "measurement_system n Ms"
       and ms_induces: "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
-    using povm_from_sqrt[OF povm_Ps] by blast
+  proof -
+    have psd_each: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P"
+      using Ps_car Ps_psd by blast
+    obtain Ms0 where Ms0_car: "\<forall>M \<in> set Ms0. M \<in> carrier_mat n n"
+      and Ms0_factor: "map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms0 = Ps"
+      using psd_sqrt_measurement_factors[OF psd_each] by blast
+    have foldr_eq: "\<And>Qs. map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms0 = Qs \<Longrightarrow>
+        foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms0 (0\<^sub>m n n)
+          = foldr (\<lambda>P acc. P + acc) Qs (0\<^sub>m n n)"
+      by (induction Ms0 arbitrary: Qs) auto
+    have meas_sum:
+      "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms0 (0\<^sub>m n n) = 1\<^sub>m n"
+      using foldr_eq[OF Ms0_factor] Ps_sum by simp
+    have ms0: "measurement_system n Ms0"
+      unfolding measurement_system_def using Ms0_car meas_sum by simp
+    show thesis using that[OF ms0 Ms0_factor] .
+  qed
 
   have len_Ms: "length Ms = k + 1"
     using ms_induces len_Ps by (metis length_map)
 
-  (* meas_prob Ms!i \<psi>s!j = c |\<langle>\<phi>i | \<psi>s!j\<rangle>|\<^sup>2. *)
   have meas_eq: "\<forall>i < k. \<forall>j < k. meas_prob (Ms ! i) (\<psi>s ! j)
                      = c * (cmod (\<langle>\<phi>s ! i | \<psi>s ! j\<rangle>))\<^sup>2"
   proof (intro allI impI)
@@ -7077,9 +7153,14 @@ proof -
       using i Mpre_len \<phi>s_len unfolding Ps_def Mpre_def
       by (simp add: nth_append)
 
-    have MtM_eq_Ps: "?M\<^sup>\<dagger> * ?M = Ps ! i"
-      using ms_induces i Ms_len
-      by (metis nth_map)
+    have MtM_eq_Ps: "(?M\<^sup>\<dagger>) * ?M = Ps ! i"
+    proof -
+      have "Ps ! i = map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms ! i"
+        using ms_induces by simp
+      also have "... = (?M\<^sup>\<dagger>) * ?M"
+        using i Ms_len by (simp add: nth_map)
+      finally show ?thesis ..
+    qed
 
     have M_in_set: "?M \<in> set Ms"
       using i Ms_len by (simp add: nth_mem)
@@ -7103,9 +7184,8 @@ proof -
     qed
 
     have meas_MtM: "meas_prob ?M ?\<psi> = Re \<langle>?\<psi> | (?M\<^sup>\<dagger> * ?M) *\<^sub>v ?\<psi>\<rangle>"
-      using qf Mv_dim inner_prod_with_itself_Re
-      by (simp add: meas_prob_def)
-
+      by (metis Re_complex_of_real cpx_vec_length_inner_prod meas_prob_def qf)
+     
     have opxx_car: "outer_prod ?\<phi> ?\<phi> \<in> carrier_mat n n"
       using \<phi>dim
       by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def
@@ -7133,10 +7213,10 @@ proof -
       also have "... = (of_real c :: complex) * (\<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<psi>|?\<phi>\<rangle>)"
         by (simp add: inner_prod_right_smult')
       also have "... = (of_real c :: complex) * (\<langle>?\<phi>|?\<psi>\<rangle> * cnj \<langle>?\<phi>|?\<psi>\<rangle>)"
-        by (simp add: inner_prod_cnj)
+        using \<phi>dim \<psi>dim inner_prod_cnj by fastforce
       also have "... = (of_real c :: complex) * (cnj \<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<phi>|?\<psi>\<rangle>)"
         by (simp add: mult.commute)
-      finally show ?thesis .
+      finally show ?thesis.
     qed
 
     have "meas_prob ?M ?\<psi>
@@ -7145,8 +7225,8 @@ proof -
     also have "... = c * Re (cnj \<langle>?\<phi>|?\<psi>\<rangle> * \<langle>?\<phi>|?\<psi>\<rangle>)"
       by simp
     also have "... = c * (cmod \<langle>?\<phi>|?\<psi>\<rangle>)\<^sup>2"
-      by (simp add: complex_mult_cnj complex_norm_square)
-    finally show "meas_prob ?M ?\<psi> = c * (cmod \<langle>?\<phi>|?\<psi>\<rangle>)\<^sup>2" .
+      by (simp add: cmod_power2 complex_mult_cnj mult.commute)
+    finally show "meas_prob ?M ?\<psi> = c * (cmod \<langle>?\<phi>|?\<psi>\<rangle>)\<^sup>2".
   qed
 
   have orth_meas: "\<forall>i < k. \<forall>j < k. i \<noteq> j \<longrightarrow> meas_prob (Ms ! i) (\<psi>s ! j) = 0"
@@ -7158,13 +7238,12 @@ proof -
   show ?thesis
     using ms len_Ms orth_meas pos_meas by blast
 qed
-*)
+
 
 (* --------------------------------------------------------------------------
    Positive Operator-Valued Measures (POVMs)
    -------------------------------------------------------------------------- *)
 
-(* end of guide block for linearly_independent_states_unambiguously_measurable *)
 
 definition povm :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool" where
   "povm n Ps \<equiv>
@@ -7247,51 +7326,6 @@ proof -
 qed
 
 (* Every POVM comes from a measurement system via P_m = (P_m)^{1/2} *)
-
-lemma psd_sqrt_measurement_factor:
-  assumes Pcar: "P \<in> carrier_mat n n"
-      and Ppsd: "psd P"
-  shows "\<exists>M. M \<in> carrier_mat n n \<and> (M\<^sup>\<dagger>) * M = P"
-proof -
-  obtain Q where Qcar: "Q \<in> carrier_mat n n"
-    and Qpsd: "psd Q"
-    and QQ: "Q * Q = P"
-    using psd_sqrt_exists[OF Pcar Ppsd] by blast
-  have Qdag: "Q\<^sup>\<dagger> = Q"
-    using psd_hermitian[OF Qpsd]
-    unfolding hermitian_def by simp
-  have "Q\<^sup>\<dagger> * Q = P"
-    using Qdag QQ by simp
-  thus ?thesis
-    using Qcar by blast
-qed
-
-lemma psd_sqrt_measurement_factors:
-  assumes Ps: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P"
-  shows "\<exists>Ms. (\<forall>M \<in> set Ms. M \<in> carrier_mat n n) \<and>
-               map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms = Ps"
-  using Ps
-proof (induction Ps)
-  case Nil
-  show ?case by simp
-next
-  case (Cons P Ps)
-  have Pcar: "P \<in> carrier_mat n n"
-    using Cons.prems by simp
-  have Ppsd: "psd P"
-    using Cons.prems by simp
-  obtain M where Mcar: "M \<in> carrier_mat n n"
-    and M_factor: "M\<^sup>\<dagger> * M = P"
-    using psd_sqrt_measurement_factor[OF Pcar Ppsd] by blast
-  obtain Ms where Mscar: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
-    and Ms_factor: "map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms = Ps"
-    using Cons.IH Cons.prems by simp blast
-  have "(\<forall>N \<in> set (M # Ms). N \<in> carrier_mat n n) \<and>
-        map (\<lambda>N. (N\<^sup>\<dagger>) * N) (M # Ms) = P # Ps"
-    using Mcar M_factor Mscar Ms_factor by simp
-  thus ?case
-    by meson
-qed
 
 lemma povm_from_sqrt:
   assumes pv: "povm n Ps"
@@ -12997,12 +13031,12 @@ proof -
       by (simp add: hermitian_def)
     have "(?P)\<^sup>\<dagger> = ((U\<^sup>\<dagger>)\<^sup>\<dagger>) * ((U * ?D)\<^sup>\<dagger>)" using prep2
       using hermitian_def by blast 
-    also have "\<dots> = U * ((U * ?D)\<^sup>\<dagger>)" sorry
+    also have "\<dots> = U * ((U * ?D)\<^sup>\<dagger>)" using prep3 by simp
     also have "\<dots> = U * ((?D)\<^sup>\<dagger> * (U\<^sup>\<dagger>))" using prep1 by simp
     also have "\<dots> = U * (?D * (U\<^sup>\<dagger>))" using prep4 by simp
     also have "\<dots> = U * ?D * (U\<^sup>\<dagger>)"
       by (rule assoc_mult_mat[OF Uc D_c Udag_c, symmetric])
-    finally show ?thesis sorry
+    finally show ?thesis by (simp add: hermitian_def)
   qed
 
   have nn: "\<forall>x :: complex Matrix.vec.
