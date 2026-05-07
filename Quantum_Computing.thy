@@ -16446,6 +16446,72 @@ proof -
   finally show ?thesis by (simp add: kraus_quad_entry_def)
 qed
 
+(* The (a,b) entry of W * \<rho> * W\<^sup>\<dagger> as a double sum over e<n, c<n.
+   This expands the (W * \<rho>) $$ (a, e) factor using the matrix-product
+   index expansion. *)
+
+lemma kraus_quad_entry_double_sum:
+  fixes \<rho> :: "complex Matrix.mat" and W :: "complex Matrix.mat"
+  assumes W_c: "W \<in> carrier_mat d n"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "kraus_quad_entry \<rho> a b W
+       = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            W $$ (a, c) * \<rho> $$ (c, e) * cnj (W $$ (b, e)))"
+proof -
+  have rho_dr: "dim_row \<rho> = n" using rho_c by simp
+  have rho_dc: "dim_col \<rho> = n" using rho_c by simp
+  have W_dc: "dim_col W = n" using W_c by simp
+  have W_dr: "dim_row W = d" using W_c by simp
+  have step1: "kraus_quad_entry \<rho> a b W
+              = (\<Sum>e = 0..<n. (W * \<rho>) $$ (a, e) * cnj (W $$ (b, e)))"
+    by (rule kraus_quad_entry_one_sum[OF W_c rho_c a_lt b_lt])
+  have a_lt_W: "a < dim_row W" using a_lt W_dr by simp
+  have inner: "\<And>e. e < n \<Longrightarrow>
+      (W * \<rho>) $$ (a, e)
+       = (\<Sum>c = 0..<n. W $$ (a, c) * \<rho> $$ (c, e))"
+  proof -
+    fix e assume e_lt: "e < n"
+    have e_lt_rho: "e < dim_col \<rho>" using e_lt rho_c by simp
+    have "(W * \<rho>) $$ (a, e) = Matrix.row W a \<bullet> Matrix.col \<rho> e"
+      using a_lt_W e_lt_rho by (rule index_mult_mat(1))
+    also have "\<dots> = (\<Sum>c\<in>{0..<n}. (Matrix.row W a) $ c * (Matrix.col \<rho> e) $ c)"
+      unfolding scalar_prod_def using rho_dr by simp
+    also have "\<dots> = (\<Sum>c = 0..<n. W $$ (a, c) * \<rho> $$ (c, e))"
+    proof (rule sum.cong[OF refl])
+      fix c assume "c \<in> {0..<n}"
+      hence c_lt: "c < n" by simp
+      have c_lt_W: "c < dim_col W" using c_lt W_dc by simp
+      have c_lt_rho_dr: "c < dim_row \<rho>" using c_lt rho_dr by simp
+      have row_c: "(Matrix.row W a) $ c = W $$ (a, c)"
+        using index_row(1)[OF a_lt_W c_lt_W] .
+      have col_c: "(Matrix.col \<rho> e) $ c = \<rho> $$ (c, e)"
+        using index_col[OF c_lt_rho_dr e_lt_rho] .
+      show "(Matrix.row W a) $ c * (Matrix.col \<rho> e) $ c
+          = W $$ (a, c) * \<rho> $$ (c, e)"
+        using row_c col_c by simp
+    qed
+    finally show "(W * \<rho>) $$ (a, e)
+                = (\<Sum>c = 0..<n. W $$ (a, c) * \<rho> $$ (c, e))" .
+  qed
+  have step2: "kraus_quad_entry \<rho> a b W
+       = (\<Sum>e = 0..<n.
+            (\<Sum>c = 0..<n. W $$ (a, c) * \<rho> $$ (c, e))
+            * cnj (W $$ (b, e)))"
+  proof -
+    have "(\<Sum>e = 0..<n. (W * \<rho>) $$ (a, e) * cnj (W $$ (b, e)))
+        = (\<Sum>e = 0..<n.
+             (\<Sum>c = 0..<n. W $$ (a, c) * \<rho> $$ (c, e))
+             * cnj (W $$ (b, e)))"
+      by (rule sum.cong[OF refl]) (simp add: inner)
+    thus ?thesis using step1 by simp
+  qed
+  also have "\<dots> = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+                     W $$ (a, c) * \<rho> $$ (c, e) * cnj (W $$ (b, e)))"
+    by (simp add: sum_distrib_right)
+  finally show ?thesis using step2 by simp
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
