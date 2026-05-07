@@ -124,8 +124,8 @@ lemma unitary_preserves_inner_prod:
    -------------------------------------------------------------------------- *)
 
 abbreviation outer_prod :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat"
-    (infixr "\<circledcirc>" 75)
-  where "v \<circledcirc> w \<equiv> |v\<rangle> * bra_vec w"
+    (infixr "\<oslash>" 75)
+  where "v \<oslash> w \<equiv> |v\<rangle> * bra_vec w"
 
 lemma bra_vec_index_0:
   assumes j: "j < dim_vec w"
@@ -136,7 +136,7 @@ lemma outer_prod_index:
   fixes v w :: "complex Matrix.vec"
   assumes i: "i < dim_vec v"
       and j: "j < dim_vec w"
-  shows "(v \<circledcirc> w) $$ (i,j) = (v $ i) * cnj (w $ j)"
+  shows "(v \<oslash> w) $$ (i,j) = (v $ i) * cnj (w $ j)"
 proof -
   have row_index_0: "Matrix.row (ket_vec v) i $ 0 = v $ i"
     using i by (simp add: Matrix.row_def ket_vec_def)
@@ -165,7 +165,7 @@ lemma outer_prod_mult_vec_index:
   fixes v w x :: "complex Matrix.vec"
   assumes xdim: "dim_vec x = dim_vec w"
       and i: "i < dim_vec v"
-  shows "((v \<circledcirc> w) *\<^sub>v x) $ i = (v $ i) * \<langle>w | x\<rangle>"
+  shows "((v \<oslash> w) *\<^sub>v x) $ i = (v $ i) * \<langle>w | x\<rangle>"
 proof -
   have ket_rows: "dim_row (ket_vec v) = dim_vec v"
     by (simp add: ket_vec_def)
@@ -196,20 +196,20 @@ qed
 lemma outer_prod_mult_vec:
   fixes v w x :: "complex Matrix.vec"
   assumes xdim: "dim_vec x = dim_vec w"
-  shows "(v \<circledcirc> w) *\<^sub>v x = \<langle>w | x\<rangle> \<cdot>\<^sub>v v"
+  shows "(v \<oslash> w) *\<^sub>v x = \<langle>w | x\<rangle> \<cdot>\<^sub>v v"
 proof (rule eq_vecI)
-  show "dim_vec ((v \<circledcirc> w) *\<^sub>v x) = dim_vec (\<langle>w | x\<rangle> \<cdot>\<^sub>v v)"
+  show "dim_vec ((v \<oslash> w) *\<^sub>v x) = dim_vec (\<langle>w | x\<rangle> \<cdot>\<^sub>v v)"
     by (simp add: ket_vec_def)
 next
   fix i
   assume i: "i < dim_vec (\<langle>w | x\<rangle> \<cdot>\<^sub>v v)"
   then have iv: "i < dim_vec v"
     by simp
-  have "((v \<circledcirc> w) *\<^sub>v x) $ i = (v $ i) * \<langle>w | x\<rangle>"
+  have "((v \<oslash> w) *\<^sub>v x) $ i = (v $ i) * \<langle>w | x\<rangle>"
     using outer_prod_mult_vec_index[OF xdim iv] .
   also have "\<dots> = (\<langle>w | x\<rangle> \<cdot>\<^sub>v v) $ i"
     using iv by (simp add: algebra_simps)
-  finally show "((v \<circledcirc> w) *\<^sub>v x) $ i = (\<langle>w | x\<rangle> \<cdot>\<^sub>v v) $ i" .
+  finally show "((v \<oslash> w) *\<^sub>v x) $ i = (\<langle>w | x\<rangle> \<cdot>\<^sub>v v) $ i" .
 qed
 
 lemma smult_mat_mult_vec:
@@ -405,18 +405,18 @@ lemma householder_index:
   using assms by (simp add: householder_def)
 
 lemma householder_outer_prod:
-  "householder w = 1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<circledcirc> w)"
+  "householder w = 1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w)"
 proof (rule eq_matI)
   show "dim_row (householder w) =
-        dim_row (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<circledcirc> w))"
+        dim_row (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w))"
     by (simp add: householder_def ket_vec_def)
   show "dim_col (householder w) =
-        dim_col (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<circledcirc> w))"
+        dim_col (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w))"
     by (simp add: householder_def bra_vec_def row_vec_def cpx_mat_cnj_def)
 next
   fix i j
-  assume i: "i < dim_row (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<circledcirc> w))"
-  assume j: "j < dim_col (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<circledcirc> w))"
+  assume i: "i < dim_row (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w))"
+  assume j: "j < dim_col (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w))"
   then have ij: "i < dim_vec w" "j < dim_vec w"
     using i by (simp_all add: ket_vec_def bra_vec_def row_vec_def cpx_mat_cnj_def)
 
@@ -424,12 +424,12 @@ next
         (if i = j then (1 :: complex) else 0) - 2 * (w $ i) * cnj (w $ j)"
     using householder_index[OF ij] .
   also have "\<dots> = (if i = j then (1 :: complex) else 0) -
-        2 * ((w \<circledcirc> w) $$ (i,j))"
+        2 * ((w \<oslash> w) $$ (i,j))"
     using outer_prod_index[OF ij] by simp
-  also have "\<dots> = (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<circledcirc> w)) $$ (i,j)"
+  also have "\<dots> = (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w)) $$ (i,j)"
     using ij by (simp add: ket_vec_def bra_vec_def row_vec_def cpx_mat_cnj_def)
   finally show "householder w $$ (i,j) =
-        (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<circledcirc> w)) $$ (i,j)" .
+        (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w)) $$ (i,j)" .
 qed
 
 (* U_w is self-adjoint: (U_w)\<dagger> = U_w *)
