@@ -6446,7 +6446,7 @@ proof -
         from Cons.IH[OF xs_all]
         have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
           and IH_herm: "hermitian (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
-          by auto
+          by blast+
         have cons_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n) \<in> carrier_mat n n"
           using op_car IH_car by simp
         have sum_herm: "hermitian (outer_prod \<phi> \<phi> + foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
