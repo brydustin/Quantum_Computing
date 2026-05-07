@@ -16381,6 +16381,71 @@ next
   finally show ?case by simp
 qed
 
+(* The (a,b) entry of (W * \<rho> * W\<^sup>\<dagger>) as a single sum over e<n.
+   The double-sum form is left as a TODO comment below; the matrix
+   product expansion under sum.cong demands explicit row/col index
+   facts that I don't yet have a clean proof of. *)
+
+lemma kraus_quad_entry_one_sum:
+  fixes \<rho> :: "complex Matrix.mat" and W :: "complex Matrix.mat"
+  assumes W_c: "W \<in> carrier_mat d n"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "kraus_quad_entry \<rho> a b W
+       = (\<Sum>e = 0..<n. (W * \<rho>) $$ (a, e) * cnj (W $$ (b, e)))"
+proof -
+  have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d" using W_c by (rule dagger_carrier)
+  have Wrho_c: "W * \<rho> \<in> carrier_mat d n" using W_c rho_c by simp
+  have a_lt_wr: "a < dim_row (W * \<rho>)" using a_lt Wrho_c by auto
+  have b_lt_wd: "b < dim_col (W\<^sup>\<dagger>)" using b_lt Wdag_c by auto
+  have "(W * \<rho> * (W\<^sup>\<dagger>)) $$ (a, b)
+       = Matrix.row (W * \<rho>) a \<bullet> Matrix.col (W\<^sup>\<dagger>) b"
+    using a_lt_wr b_lt_wd by (rule index_mult_mat(1))
+  also have "\<dots> = (\<Sum>e<n. (W * \<rho>) $$ (a, e) * (W\<^sup>\<dagger>) $$ (e, b))"
+  proof -
+    have rho_dc: "dim_col \<rho> = n" using rho_c by simp
+    have wdag_dr: "dim_row (W\<^sup>\<dagger>) = n" using Wdag_c W_c by simp
+    have w_dc: "dim_col W = n" using W_c by simp
+    have row_dim: "dim_vec (Matrix.row (W * \<rho>) a) = n"
+      using Wrho_c rho_dc by simp
+    have col_dim: "dim_vec (Matrix.col (W\<^sup>\<dagger>) b) = n"
+      using Wdag_c wdag_dr by simp
+    have "Matrix.row (W * \<rho>) a \<bullet> Matrix.col (W\<^sup>\<dagger>) b
+         = (\<Sum>e\<in>{0..<n}. (Matrix.row (W * \<rho>) a) $ e * (Matrix.col (W\<^sup>\<dagger>) b) $ e)"
+      unfolding scalar_prod_def using col_dim by simp
+    also have "\<dots> = (\<Sum>e<n. (Matrix.row (W * \<rho>) a) $ e * (Matrix.col (W\<^sup>\<dagger>) b) $ e)"
+      by (simp add: lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>e<n. (W * \<rho>) $$ (a, e) * (W\<^sup>\<dagger>) $$ (e, b))"
+    proof (rule sum.cong[OF refl])
+      fix e assume "e \<in> {..<n}"
+      hence e_lt: "e < n" by simp
+      have e_lt_wrc: "e < dim_col (W * \<rho>)" using e_lt Wrho_c by auto
+      have e_lt_wdr: "e < dim_row (W\<^sup>\<dagger>)" using e_lt Wdag_c by auto
+      have row_e: "(Matrix.row (W * \<rho>) a) $ e = (W * \<rho>) $$ (a, e)"
+        using a_lt_wr e_lt_wrc by simp
+      have col_e: "(Matrix.col (W\<^sup>\<dagger>) b) $ e = (W\<^sup>\<dagger>) $$ (e, b)"
+        using index_col[OF e_lt_wdr b_lt_wd] .
+      show "(Matrix.row (W * \<rho>) a) $ e * (Matrix.col (W\<^sup>\<dagger>) b) $ e
+          = (W * \<rho>) $$ (a, e) * (W\<^sup>\<dagger>) $$ (e, b)"
+        using row_e col_e by simp
+    qed
+    finally show ?thesis .
+  qed
+  also have "\<dots> = (\<Sum>e<n. (W * \<rho>) $$ (a, e) * cnj (W $$ (b, e)))"
+  proof (rule sum.cong[OF refl])
+    fix e assume "e \<in> {..<n}"
+    hence e_lt: "e < n" by simp
+    have "(W\<^sup>\<dagger>) $$ (e, b) = cnj (W $$ (b, e))"
+      using W_c e_lt b_lt by (simp add: dagger_def)
+    thus "(W * \<rho>) $$ (a, e) * (W\<^sup>\<dagger>) $$ (e, b)
+        = (W * \<rho>) $$ (a, e) * cnj (W $$ (b, e))"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>e = 0..<n. (W * \<rho>) $$ (a, e) * cnj (W $$ (b, e)))"
+    by (simp add: lessThan_atLeast0)
+  finally show ?thesis by (simp add: kraus_quad_entry_def)
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
