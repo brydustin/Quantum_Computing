@@ -16660,6 +16660,53 @@ proof -
   thus ?thesis using step1 by simp
 qed
 
+(* Distribute cnj through the inner sum that defines the cnj-of-W
+   factor: cnj(sum_j cnj(Q_sj) * A_j$$(b,e)) = sum_j Q_sj * cnj(A_j$$(b,e)). *)
+
+lemma cnj_kraus_row_factor:
+  fixes Q :: "complex Matrix.mat" and As :: "complex Matrix.mat list"
+  shows "cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s, j)) * (As!j) $$ (b, e))
+       = (\<Sum>j = 0..<length As. Q $$ (s, j) * cnj ((As!j) $$ (b, e)))"
+proof -
+  have "cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s, j)) * (As!j) $$ (b, e))
+      = (\<Sum>j = 0..<length As. cnj (cnj (Q $$ (s, j)) * (As!j) $$ (b, e)))"
+    by (rule cnj_sum)
+  also have "\<dots> = (\<Sum>j = 0..<length As.
+                     cnj (cnj (Q $$ (s, j))) * cnj ((As!j) $$ (b, e)))"
+    by (rule sum.cong[OF refl]) (simp add: complex_cnj_mult)
+  also have "\<dots> = (\<Sum>j = 0..<length As. Q $$ (s, j) * cnj ((As!j) $$ (b, e)))"
+    by (rule sum.cong[OF refl]) simp
+  finally show ?thesis .
+qed
+
+(* Combining the previous two: the perturbation entry expanded with
+   the cnj distributed into the inner sum. *)
+
+lemma kraus_quad_kraus_row_expand_cnj:
+  fixes \<rho> :: "complex Matrix.mat"
+    and Q :: "complex Matrix.mat"
+    and As :: "complex Matrix.mat list"
+  assumes Asc: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+      and rho_c: "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "kraus_quad_entry \<rho> a b (kraus_row d n Q As s)
+       = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            (\<Sum>i = 0..<length As. cnj (Q $$ (s, i)) * (As!i) $$ (a, c))
+            * \<rho> $$ (c, e)
+            * (\<Sum>j = 0..<length As. Q $$ (s, j) * cnj ((As!j) $$ (b, e))))"
+proof -
+  have base: "kraus_quad_entry \<rho> a b (kraus_row d n Q As s)
+       = (\<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            (\<Sum>i = 0..<length As. cnj (Q $$ (s,i)) * (As!i) $$ (a,c))
+            * \<rho> $$ (c,e)
+            * cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s,j)) * (As!j) $$ (b,e)))"
+    by (rule kraus_quad_kraus_row_expand[OF Asc rho_c a_lt b_lt])
+  have rew: "\<And>e. cnj (\<Sum>j = 0..<length As. cnj (Q $$ (s,j)) * (As!j) $$ (b,e))
+              = (\<Sum>j = 0..<length As. Q $$ (s,j) * cnj ((As!j) $$ (b,e)))"
+    by (rule cnj_kraus_row_factor)
+  show ?thesis using base rew by simp
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
