@@ -6439,10 +6439,11 @@ proof -
         have op_herm: "hermitian (outer_prod \<phi> \<phi>)"
           unfolding hermitian_def using outer_proj_hermitian[OF \<phi>_dim] .
         have xs_all: "\<forall>\<phi>' \<in> set xs. \<phi>' \<in> carrier_vec n" using Cons.prems by simp
-        from Cons.IH[OF xs_all]
+        note IH = Cons.IH[OF xs_all]
         have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
-          and IH_herm: "hermitian (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
-          by blast+
+          using IH[THEN conjunct1] .
+        have IH_herm: "hermitian (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
+          using IH[THEN conjunct2] .
         have cons_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n) \<in> carrier_mat n n"
           using op_car IH_car by simp
         have sum_herm: "hermitian (outer_prod \<phi> \<phi> + foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
@@ -6910,14 +6911,15 @@ proof -
         have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
         have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
           using \<phi>_car by (rule outer_prod_self_carrier)
-        from Cons.IH[OF xs_all]
+        note IH = Cons.IH[OF xs_all]
         have IH_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
-          and IH_eq:
+          using IH[THEN conjunct1] .
+        have IH_eq:
              "foldr (\<lambda>M rest. M + rest)
                 (map (\<lambda>\<phi>. (of_real c :: complex) \<cdot>\<^sub>m outer_prod \<phi> \<phi>) xs) (0\<^sub>m n n)
               = (of_real c :: complex) \<cdot>\<^sub>m
                   (foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) xs (0\<^sub>m n n))"
-          by blast+
+          using IH[THEN conjunct2] .
 
         have cons_car: "foldr (\<lambda>\<phi> acc. outer_prod \<phi> \<phi> + acc) (\<phi> # xs) (0\<^sub>m n n)
                        \<in> carrier_mat n n"
