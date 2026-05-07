@@ -6193,7 +6193,7 @@ proof -
   define G :: "complex Matrix.mat"
     where "G = Matrix.mat k k (\<lambda>(i,j). \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>)"
   have G_car: "G \<in> carrier_mat k k"
-    by (simp only: G_def carrier_matI dim_row_mat dim_col_mat)
+    unfolding G_def by simp
   have G_idx: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> G $$ (i,j) = \<langle>\<psi>s ! i | \<psi>s ! j\<rangle>"
     by (simp only: G_def index_mat split_conv)
   (* Pull H out of the Gram-matrix-invertibility helper -- discharged
