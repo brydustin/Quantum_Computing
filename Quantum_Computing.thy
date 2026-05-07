@@ -6907,7 +6907,6 @@ proof -
         case (Cons \<phi> xs)
         have \<phi>_car: "\<phi> \<in> carrier_vec n" using Cons.prems by simp
         have xs_all: "\<forall>\<phi>' \<in> set xs. \<phi>' \<in> carrier_vec n" using Cons.prems by simp
-        have \<phi>_dim: "dim_vec \<phi> = n" using \<phi>_car by simp
         have op_car: "outer_prod \<phi> \<phi> \<in> carrier_mat n n"
           using \<phi>_car by (rule outer_prod_self_carrier)
         note IH = Cons.IH[OF xs_all]
