@@ -16337,6 +16337,50 @@ proof -
   thus ?thesis using kraus_map_dim_carrier[OF _ X_c] by blast
 qed
 
+(* Entry expansion of kraus_map_dim itself -- summation over the
+   list of Kraus operators of the (a,b)-entry of W * X * W\<^sup>\<dagger>. *)
+
+definition kraus_quad_entry ::
+  "complex Matrix.mat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex"
+  where
+  "kraus_quad_entry rho a b W \<equiv> (W * rho * (W\<^sup>\<dagger>)) $$ (a, b)"
+
+lemma kraus_map_dim_index:
+  fixes \<rho> :: "complex Matrix.mat" and Ws :: "complex Matrix.mat list"
+  assumes Ws_c: "\<forall>U \<in> set Ws. U \<in> carrier_mat d n"
+      and rho_c:  "\<rho> \<in> carrier_mat n n"
+      and a_lt: "a < d" and b_lt: "b < d"
+  shows "(kraus_map_dim d Ws \<rho>) $$ (a, b)
+       = sum_list (map (kraus_quad_entry \<rho> a b) Ws)"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  show ?case using a_lt b_lt by simp
+next
+  case (Cons U Ws')
+  have U_c: "U \<in> carrier_mat d n" using Cons.prems by simp
+  have Ws'_c: "\<forall>U' \<in> set Ws'. U' \<in> carrier_mat d n"
+    using Cons.prems by simp
+  have UX_c: "U * \<rho> \<in> carrier_mat d n" using U_c rho_c by simp
+  have Udag_c: "U\<^sup>\<dagger> \<in> carrier_mat n d" using U_c by (rule dagger_carrier)
+  have term_c: "U * \<rho> * (U\<^sup>\<dagger>) \<in> carrier_mat d d" using UX_c Udag_c by simp
+  have rest_c: "kraus_map_dim d Ws' \<rho> \<in> carrier_mat d d"
+    using kraus_map_dim_carrier[OF Ws'_c rho_c] .
+  have IH: "(kraus_map_dim d Ws' \<rho>) $$ (a, b)
+           = sum_list (map (kraus_quad_entry \<rho> a b) Ws')"
+    using Cons.IH[OF Ws'_c] .
+  have "(kraus_map_dim d (U # Ws') \<rho>) $$ (a, b)
+       = (U * \<rho> * (U\<^sup>\<dagger>) + kraus_map_dim d Ws' \<rho>) $$ (a, b)"
+    by simp
+  also have "\<dots> = (U * \<rho> * (U\<^sup>\<dagger>)) $$ (a, b)
+                  + (kraus_map_dim d Ws' \<rho>) $$ (a, b)"
+    using term_c rest_c a_lt b_lt by (simp add: index_add_mat)
+  also have "\<dots> = kraus_quad_entry \<rho> a b U
+                  + sum_list (map (kraus_quad_entry \<rho> a b) Ws')"
+    using IH by (simp add: kraus_quad_entry_def)
+  finally show ?case by simp
+qed
+
 
 (* ============================================================================
    DAY 24 -- 24 / Oct / 11
