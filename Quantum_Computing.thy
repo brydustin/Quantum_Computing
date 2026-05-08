@@ -17601,6 +17601,32 @@ proof -
 qed
 
 
+(* ---- Operator systems are complex-linear subspaces.  Combined with
+   the bounded-functional Hahn-Banach corollary below, this means the
+   matrix Hahn-Banach theorem applies to bounded clinear functionals
+   on any operator system. ---- *)
+
+lemma operator_system_imp_cmat_subspace:
+  assumes "operator_system n P"
+  shows "cmat_subspace n P"
+proof -
+  have car: "\<forall>A. P A \<longrightarrow> A \<in> carrier_mat n n"
+    and one: "P (1\<^sub>m n)"
+    and add: "\<forall>A B. P A \<longrightarrow> P B \<longrightarrow> P (A + B)"
+    and smult: "\<forall>A c. P A \<longrightarrow> P (c \<cdot>\<^sub>m A)"
+    using assms unfolding operator_system_def by blast+
+  have zero: "P (0\<^sub>m n n)"
+  proof -
+    have "P (0 \<cdot>\<^sub>m (1\<^sub>m n))" using one smult by blast
+    moreover have "(0 :: complex) \<cdot>\<^sub>m (1\<^sub>m n :: complex Matrix.mat) = 0\<^sub>m n n"
+      by (intro eq_matI) (auto simp: zero_mat_def)
+    ultimately show ?thesis by simp
+  qed
+  show ?thesis
+    unfolding cmat_subspace_def using car zero add smult by blast
+qed
+
+
 (* ---- Existence-only form: from \<open>bounded_clinear_functional V g\<close>
    plus a complex-linear subspace V at dimension \<open>CARD('m)\<close>, conclude
    the existence of a bounded complex-linear extension on the full
@@ -17633,6 +17659,31 @@ proof -
     unfolding bounded_clinear_functional_def funct_hs_bound_def
     using f_clin f_C C_nn by blast
   show ?thesis using f_clin f_ext f_bnd by blast
+qed
+
+
+(* ---- Hahn-Banach for operator systems.  This is the form the
+   Arveson Extension Theorem invokes: any bounded clinear functional
+   on an operator system extends to a bounded clinear functional on
+   the full matrix space, with the same explicit bound. ---- *)
+
+corollary operator_system_hahn_banach:
+  fixes S :: "complex Matrix.mat \<Rightarrow> bool"
+      and g :: "complex Matrix.mat \<Rightarrow> complex"
+      and C :: real
+  assumes S_op: "operator_system (CARD('m :: finite)) S"
+      and g_clin: "clinear_functional S g"
+      and g_C: "\<forall>A. S A \<longrightarrow> cmod (g A) \<le> C * hs_norm A"
+      and C_nn: "0 \<le> C"
+  shows "\<exists>f. clinear_functional (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f
+            \<and> (\<forall>A. S A \<longrightarrow> f A = g A)
+            \<and> (\<forall>A. A \<in> carrier_mat (CARD('m)) (CARD('m))
+                    \<longrightarrow> cmod (f A) \<le> C * hs_norm A)"
+proof -
+  have S_csub: "cmat_subspace (CARD('m)) S"
+    by (rule operator_system_imp_cmat_subspace[OF S_op])
+  show ?thesis
+    using matrix_hahn_banach_cmod_bound[OF S_csub g_clin g_C C_nn] .
 qed
 
 
