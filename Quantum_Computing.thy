@@ -18162,16 +18162,63 @@ lemma separable_density_imp_separable_cone:
   assumes "separable_density m p \<rho>"
       and "0 < m" and "0 < p"
   shows "separable_cone m p \<rho>"
-  sorry
+proof -
+  obtain ts where ts_v: "sep_decomp_valid m p ts"
+              and \<rho>_eq: "\<rho> = sep_sum m p ts"
+    using assms(1) unfolding separable_density_def by blast
+  have ts_cone: "sep_cone_valid m p ts"
+    using ts_v unfolding sep_decomp_valid_def sep_cone_valid_def by blast
+  have \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+    using \<rho>_eq sep_sum_carrier by simp
+  show ?thesis
+    unfolding separable_cone_def
+    using \<rho>_c ts_cone \<rho>_eq by blast
+qed
 
 (* Step 2: every element of the separable cone is PSD. *)
 
 lemma separable_cone_psd:
   fixes m p :: nat and \<rho> :: "complex Matrix.mat"
-  assumes "separable_cone m p \<rho>"
-      and "0 < m" and "0 < p"
+  assumes \<rho>_cone: "separable_cone m p \<rho>"
+      and m_pos: "0 < m" and p_pos: "0 < p"
   shows "psd \<rho>"
-  sorry
+proof -
+  obtain ts where ts_v: "sep_cone_valid m p ts"
+              and \<rho>_eq: "\<rho> = sep_sum m p ts"
+    using \<rho>_cone unfolding separable_cone_def by blast
+  have psd_sum: "psd (sep_sum m p ts)"
+    if "sep_cone_valid m p ts" for ts using that
+  proof (induction ts)
+    case Nil
+    show ?case using m_pos p_pos by simp
+  next
+    case (Cons t ts)
+    obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+    from Cons.prems t_eq have
+      w_nn: "0 \<le> w" and
+      \<sigma>_c: "\<sigma> \<in> carrier_mat m m" and \<sigma>_psd: "psd \<sigma>" and
+      \<tau>_c: "\<tau> \<in> carrier_mat p p" and \<tau>_psd: "psd \<tau>"
+      unfolding sep_cone_valid_def by auto
+    from Cons.prems t_eq have ts_v': "sep_cone_valid m p ts"
+      unfolding sep_cone_valid_def by auto
+    have st_psd: "psd (\<sigma> \<Otimes> \<tau>)"
+      by (rule tensor_psd[OF \<sigma>_c \<sigma>_psd \<tau>_c \<tau>_psd m_pos p_pos])
+    have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)"
+      using \<sigma>_c \<tau>_c by auto
+    have wstm_psd: "psd (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>))"
+      by (rule psd_smult_nonneg[OF w_nn st_psd st_c])
+    have wstm_c: "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) \<in> carrier_mat (m*p) (m*p)"
+      using st_c by auto
+    have IH_psd: "psd (sep_sum m p ts)"
+      using Cons.IH ts_v' by blast
+    have IH_c: "sep_sum m p ts \<in> carrier_mat (m*p) (m*p)"
+      using sep_sum_carrier by simp
+    have "psd (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + sep_sum m p ts)"
+      using wstm_psd IH_psd wstm_c IH_c by (rule psd_add_psd)
+    thus ?case using t_eq by simp
+  qed
+  show "psd \<rho>" using \<rho>_eq psd_sum[OF ts_v] by simp
+qed
 
 (* Step 3: separable_density implies psd (corollary of steps 1, 2). *)
 
@@ -18180,22 +18227,72 @@ lemma separable_density_psd:
   assumes "separable_density m p \<rho>"
       and "0 < m" and "0 < p"
   shows "psd \<rho>"
-  sorry
+  using separable_density_imp_separable_cone[OF assms]
+        separable_cone_psd[OF _ assms(2,3)]
+  by blast
 
 (* Step 4: closure under non-negative scaling and addition. *)
 
+lemma sep_sum_smult:
+  fixes m p :: nat and c :: real
+      and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  shows "complex_of_real c \<cdot>\<^sub>m sep_sum m p ts
+         = sep_sum m p (map (\<lambda>(w,\<sigma>,\<tau>). (c * w, \<sigma>, \<tau>)) ts)"
+  sorry
+
 lemma separable_cone_smult:
   fixes m p :: nat and \<rho> :: "complex Matrix.mat" and c :: real
-  assumes "separable_cone m p \<rho>" and "0 \<le> c"
-      and "0 < m" and "0 < p"
+  assumes \<rho>_cone: "separable_cone m p \<rho>" and c_nn: "0 \<le> c"
+      and m_pos: "0 < m" and p_pos: "0 < p"
   shows "separable_cone m p (complex_of_real c \<cdot>\<^sub>m \<rho>)"
+proof -
+  obtain ts where ts_v: "sep_cone_valid m p ts"
+              and \<rho>_eq: "\<rho> = sep_sum m p ts"
+              and \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+    using \<rho>_cone unfolding separable_cone_def by blast
+  let ?ts' = "map (\<lambda>(w,\<sigma>,\<tau>). (c * w, \<sigma>, \<tau>)) ts"
+  have ts'_v: "sep_cone_valid m p ?ts'"
+    using ts_v c_nn unfolding sep_cone_valid_def
+    by (force simp: case_prod_beta mult_nonneg_nonneg)
+  have eq: "complex_of_real c \<cdot>\<^sub>m \<rho> = sep_sum m p ?ts'"
+    using \<rho>_eq sep_sum_smult by simp
+  have c_carr: "complex_of_real c \<cdot>\<^sub>m \<rho> \<in> carrier_mat (m*p) (m*p)"
+    using \<rho>_c by auto
+  show ?thesis
+    unfolding separable_cone_def using c_carr ts'_v eq by blast
+qed
+
+lemma sep_sum_append:
+  fixes m p :: nat
+      and ts\<^sub>1 ts\<^sub>2 :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  shows "sep_sum m p (ts\<^sub>1 @ ts\<^sub>2)
+         = sep_sum m p ts\<^sub>1 + sep_sum m p ts\<^sub>2"
   sorry
 
 lemma separable_cone_add:
   fixes m p :: nat and \<rho>\<^sub>1 \<rho>\<^sub>2 :: "complex Matrix.mat"
-  assumes "separable_cone m p \<rho>\<^sub>1" and "separable_cone m p \<rho>\<^sub>2"
+  assumes \<rho>\<^sub>1_cone: "separable_cone m p \<rho>\<^sub>1"
+      and \<rho>\<^sub>2_cone: "separable_cone m p \<rho>\<^sub>2"
   shows "separable_cone m p (\<rho>\<^sub>1 + \<rho>\<^sub>2)"
-  sorry
+proof -
+  obtain ts\<^sub>1 where ts\<^sub>1_v: "sep_cone_valid m p ts\<^sub>1"
+               and \<rho>\<^sub>1_eq: "\<rho>\<^sub>1 = sep_sum m p ts\<^sub>1"
+               and \<rho>\<^sub>1_c: "\<rho>\<^sub>1 \<in> carrier_mat (m*p) (m*p)"
+    using \<rho>\<^sub>1_cone unfolding separable_cone_def by blast
+  obtain ts\<^sub>2 where ts\<^sub>2_v: "sep_cone_valid m p ts\<^sub>2"
+               and \<rho>\<^sub>2_eq: "\<rho>\<^sub>2 = sep_sum m p ts\<^sub>2"
+               and \<rho>\<^sub>2_c: "\<rho>\<^sub>2 \<in> carrier_mat (m*p) (m*p)"
+    using \<rho>\<^sub>2_cone unfolding separable_cone_def by blast
+  let ?ts = "ts\<^sub>1 @ ts\<^sub>2"
+  have ts_v: "sep_cone_valid m p ?ts"
+    using ts\<^sub>1_v ts\<^sub>2_v unfolding sep_cone_valid_def by auto
+  have eq: "\<rho>\<^sub>1 + \<rho>\<^sub>2 = sep_sum m p ?ts"
+    using \<rho>\<^sub>1_eq \<rho>\<^sub>2_eq sep_sum_append by simp
+  have c_carr: "\<rho>\<^sub>1 + \<rho>\<^sub>2 \<in> carrier_mat (m*p) (m*p)"
+    using \<rho>\<^sub>1_c \<rho>\<^sub>2_c by simp
+  show ?thesis
+    unfolding separable_cone_def using c_carr ts_v eq by blast
+qed
 
 (* Step 5: closed-cone separation in finite-dim Hilbert space.
    This is the geometric Hahn-Banach used by PDF Section 29.1.
@@ -18230,7 +18327,47 @@ lemma cone_separator_is_witness:
                               \<longrightarrow> 0 \<le> Re (Tr (W * \<sigma>))"
       and m_pos: "0 < m" and p_pos: "0 < p"
   shows "entanglement_witness m p W"
-  sorry
+proof -
+  have witness_bound:
+    "\<forall>\<sigma> \<tau>. \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+              \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>
+              \<longrightarrow> 0 \<le> Re (Tr (W * (\<sigma> \<Otimes> \<tau>)))"
+  proof (intro allI impI)
+    fix \<sigma> \<tau>
+    assume h: "\<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+                \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>"
+    have \<sigma>_c: "\<sigma> \<in> carrier_mat m m" using h by simp
+    have \<sigma>_psd: "psd \<sigma>" using h by simp
+    have \<tau>_c: "\<tau> \<in> carrier_mat p p" using h by simp
+    have \<tau>_psd: "psd \<tau>" using h by simp
+    text \<open>The single product \<open>\<sigma> \<otimes> \<tau>\<close> with weight 1 is in the
+    separable cone.\<close>
+    let ?ts = "[(1::real, \<sigma>, \<tau>)]"
+    have ts_v: "sep_cone_valid m p ?ts"
+      using \<sigma>_c \<sigma>_psd \<tau>_c \<tau>_psd
+      unfolding sep_cone_valid_def by simp
+    have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)"
+      using \<sigma>_c \<tau>_c by auto
+    have ts_eq: "sep_sum m p ?ts = \<sigma> \<Otimes> \<tau>"
+    proof -
+      have step1: "sep_sum m p ?ts
+                    = complex_of_real 1 \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + sep_sum m p []"
+        by simp
+      also have "\<dots> = (\<sigma> \<Otimes> \<tau>) + 0\<^sub>m (m*p) (m*p)"
+        using st_c by (intro eq_matI) auto
+      also have "\<dots> = \<sigma> \<Otimes> \<tau>"
+        using st_c by simp
+      finally show ?thesis .
+    qed
+    have st_cone: "separable_cone m p (\<sigma> \<Otimes> \<tau>)"
+      unfolding separable_cone_def using st_c ts_v ts_eq by force
+    show "0 \<le> Re (Tr (W * (\<sigma> \<Otimes> \<tau>)))"
+      using W_cone_nonneg st_cone by blast
+  qed
+  show ?thesis
+    unfolding entanglement_witness_def
+    using W_c W_h witness_bound by blast
+qed
 
 (* Step 7: a density matrix is Hermitian. *)
 
@@ -18238,7 +18375,8 @@ lemma density_matrix_hermitian:
   fixes \<rho> :: "complex Matrix.mat" and n :: nat
   assumes "density_matrix n \<rho>"
   shows "hermitian \<rho>"
-  sorry
+  using assms unfolding density_matrix_def
+  by (blast dest: psd_hermitian)
 
 (* Main theorem: hard direction of universal entanglement witnesses. *)
 
@@ -18497,9 +18635,7 @@ next
 qed
 
 lemma pauli_X_squared: "pauli_X * pauli_X = 1\<^sub>m 2"
-  apply (simp add: pauli_X_def times_mat_def one_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp add: pauli_X_def times_mat_def one_mat_def, rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_X_unitary: "unitary pauli_X"
   unfolding unitary_def
@@ -18516,9 +18652,7 @@ next
 qed
 
 lemma pauli_Y_squared: "pauli_Y * pauli_Y = 1\<^sub>m 2"
-  apply (simp add: pauli_Y_def times_mat_def one_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp add: pauli_Y_def times_mat_def one_mat_def, rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_Y_unitary: "unitary pauli_Y"
   unfolding unitary_def
@@ -18535,9 +18669,7 @@ next
 qed
 
 lemma pauli_Z_squared: "pauli_Z * pauli_Z = 1\<^sub>m 2"
-  apply (simp add: pauli_Z_def times_mat_def one_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp add: pauli_Z_def times_mat_def one_mat_def, rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_Z_unitary: "unitary pauli_Z"
   unfolding unitary_def
@@ -18703,7 +18835,7 @@ proof -
                and Q_sq:   "Q * Q = \<rho>"
       using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
     have Q_dagger: "Q\<^sup>\<dagger> = Q"
-      using Q_psd by (simp add: psd_def hermitian_def)
+      using Q_psd by (simp only: psd_def hermitian_def)
     have XQ_c: "pauli_X * Q \<in> carrier_mat 2 2"
       using x_c Q_c by (rule mult_carrier_mat)
     have XQd_c: "(pauli_X * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
@@ -18730,7 +18862,7 @@ proof -
     have psd_dd: "psd (((pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((pauli_X * Q)\<^sup>\<dagger>))"
       using psd_MdagM[OF XQd_c] .
     have dd_eq: "(pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger> = pauli_X * Q"
-      using XQ_c by (simp add: dagger_of_dagger_is_id)
+      using XQ_c by (simp only: dagger_of_dagger_is_id)
     have "psd ((pauli_X * Q) * ((pauli_X * Q)\<^sup>\<dagger>))"
       using psd_dd dd_eq by simp
     thus ?thesis using eq by simp
@@ -18750,7 +18882,7 @@ proof -
   have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
               + complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
     using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
-  thus ?thesis by (simp add: bit_flip_channel_def)
+  thus ?thesis by (simp only: bit_flip_channel_def)
 qed
 
 
@@ -18796,7 +18928,7 @@ proof -
   have \<psi>'_dim: "dim_vec \<psi>' = n" using \<psi>'_qs by (simp add: quantum_state_def)
 
   have rho_eq: "?\<rho> = outer_sum n [\<psi>']"
-    by (simp add: outer_sum_def)
+    by (simp only: outer_sum_def)
 
   (* ?\<rho> *_v \<psi> = \<langle>\<psi>'|\<psi>\<rangle> \<cdot>\<^sub>v \<psi>' *)
   have \<rho>\<psi>: "?\<rho> *\<^sub>v \<psi> = \<langle>\<psi>' | \<psi>\<rangle> \<cdot>\<^sub>v \<psi>'"
@@ -18809,7 +18941,7 @@ proof -
       using \<rho>\<psi> by simp
     also have "\<dots> = \<langle>\<psi>'|\<psi>\<rangle> * \<langle>\<psi> | \<psi>'\<rangle>"
       by (rule inner_prod_right_smult')
-    finally show ?thesis by (simp add: mult.commute)
+    finally show ?thesis by (simp only: mult.commute)
   qed
 
   have conj_swap: "\<langle>\<psi>' | \<psi>\<rangle> = cnj (\<langle>\<psi> | \<psi>'\<rangle>)"
@@ -19064,7 +19196,7 @@ definition shor_one :: "complex Matrix.vec" where
        \<cdot>\<^sub>v tensor_vec (tensor_vec v v) v"
 
 lemma shor_zero_dim [simp]: "dim_vec shor_zero = 8"
-  by (simp add: shor_zero_def Let_def, simp add: tensor_vec_dim)
+  by (simp only: shor_zero_def Let_def, simp add: tensor_vec_dim)
 
 lemma shor_one_dim [simp]: "dim_vec shor_one = 8"
   by (simp add: shor_one_def Let_def tensor_vec_dim)
@@ -19090,15 +19222,15 @@ definition projection :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> boo
 
 lemma projection_carrier:
   "projection n P \<Longrightarrow> P \<in> carrier_mat n n"
-  by (simp add: projection_def)
+  by (simp only: projection_def)
 
 lemma projection_hermitian:
   "projection n P \<Longrightarrow> hermitian P"
-  by (simp add: projection_def)
+  by (simp only: projection_def)
 
 lemma projection_idempotent:
   "projection n P \<Longrightarrow> P * P = P"
-  by (simp add: projection_def)
+  by (simp only: projection_def)
 
 lemma projection_zero: "projection n (0\<^sub>m n n)"
   by (auto simp: projection_def hermitian_def dagger_def)
@@ -19169,7 +19301,7 @@ lemma hamming_weight_append:
 
 lemma hamming_weight_repetition_encode:
   "hamming_weight (repetition_encode v) = 2 * hamming_weight v"
-  by (simp add: repetition_encode_def hamming_weight_append)
+  by (simp only: repetition_encode_def hamming_weight_append)
 
 lemma repetition_encode_binary:
   assumes "\<forall>x \<in> set v. x < 2"
@@ -19205,40 +19337,28 @@ lemma Tr_id_2: "Tr (1\<^sub>m 2 :: complex Matrix.mat) = 2"
 (* ---- Pauli products needed for HS orthogonality ---- *)
 
 lemma pauli_X_pauli_Y: "pauli_X * pauli_Y = - \<i> \<cdot>\<^sub>m pauli_Z"
-  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
-                   times_mat_def smult_mat_def map_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp only: pauli_X_def pauli_Y_def pauli_Z_def times_mat_def smult_mat_def map_mat_def,
+                   rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_Y_pauli_X: "pauli_Y * pauli_X = \<i> \<cdot>\<^sub>m pauli_Z"
-  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
-                   times_mat_def smult_mat_def map_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp only: pauli_X_def pauli_Y_def pauli_Z_def times_mat_def smult_mat_def map_mat_def,
+                   rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_Y_pauli_Z: "pauli_Y * pauli_Z = - \<i> \<cdot>\<^sub>m pauli_X"
-  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
-                   times_mat_def smult_mat_def map_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp only: pauli_X_def pauli_Y_def pauli_Z_def times_mat_def smult_mat_def map_mat_def,
+                   rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_Z_pauli_Y: "pauli_Z * pauli_Y = \<i> \<cdot>\<^sub>m pauli_X"
-  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
-                   times_mat_def smult_mat_def map_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp only: pauli_X_def pauli_Y_def pauli_Z_def times_mat_def smult_mat_def map_mat_def,
+                   rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_Z_pauli_X: "pauli_Z * pauli_X = - \<i> \<cdot>\<^sub>m pauli_Y"
-  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
-                   times_mat_def smult_mat_def map_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp only: pauli_X_def pauli_Y_def pauli_Z_def times_mat_def smult_mat_def map_mat_def,
+                   rule cong_mat, auto simp: scalar_prod_def)
 
 lemma pauli_X_pauli_Z: "pauli_X * pauli_Z = \<i> \<cdot>\<^sub>m pauli_Y"
-  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
-                   times_mat_def smult_mat_def map_mat_def)
-  apply (rule cong_mat)
-  by (auto simp: scalar_prod_def)
+  by (simp only: pauli_X_def pauli_Y_def pauli_Z_def times_mat_def smult_mat_def map_mat_def,
+                   rule cong_mat, auto simp: scalar_prod_def)
 
 (* ---- Hilbert-Schmidt inner products: \<langle>A | B\<rangle>\<^sub>HS = Tr(A\<^sup>\<dagger> * B) ----
    Since X, Y, Z, I are Hermitian, A\<^sup>\<dagger> = A here, so we compute Tr(A * B). *)
@@ -19247,7 +19367,7 @@ lemma Tr_smult_2:
   fixes c :: complex
   assumes "M \<in> carrier_mat 2 2"
   shows "Tr (c \<cdot>\<^sub>m M) = c * Tr M"
-  using assms by (simp add: Tr_smult)
+  using assms by (simp only: Tr_smult)
 
 lemma pauli_X_X_Tr: "Tr (pauli_X * pauli_X) = 2"
   using pauli_X_squared Tr_id_2 by simp
@@ -19291,7 +19411,7 @@ proof -
   also have "\<dots> = - \<i> * Tr pauli_Z"
     using pauli_Z_carrier by (rule Tr_smult_2)
   also have "\<dots> = 0" using Tr_pauli_Z by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma pauli_Y_X_Tr: "Tr (pauli_Y * pauli_X) = 0"
@@ -19301,7 +19421,7 @@ proof -
   also have "\<dots> = \<i> * Tr pauli_Z"
     using pauli_Z_carrier by (rule Tr_smult_2)
   also have "\<dots> = 0" using Tr_pauli_Z by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma pauli_X_Z_Tr: "Tr (pauli_X * pauli_Z) = 0"
@@ -19311,13 +19431,13 @@ proof -
   also have "\<dots> = \<i> * Tr pauli_Y"
     using pauli_Y_carrier by (rule Tr_smult_2)
   also have "\<dots> = 0" using Tr_pauli_Y by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma pauli_Z_X_Tr: "Tr (pauli_Z * pauli_X) = 0"
 proof -
   have "Tr (pauli_Z * pauli_X) = Tr (- \<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_Z_pauli_X)
+    by (simp only: pauli_Z_pauli_X)
   also have "\<dots> = - \<i> * Tr pauli_Y"
     using pauli_Y_carrier by (rule Tr_smult_2)
   also have "\<dots> = 0" using Tr_pauli_Y by simp
@@ -19327,7 +19447,7 @@ qed
 lemma pauli_Y_Z_Tr: "Tr (pauli_Y * pauli_Z) = 0"
 proof -
   have "Tr (pauli_Y * pauli_Z) = Tr (- \<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_Y_pauli_Z)
+    by (simp only: pauli_Y_pauli_Z)
   also have "\<dots> = - \<i> * Tr pauli_X"
     using pauli_X_carrier by (rule Tr_smult_2)
   also have "\<dots> = 0" using Tr_pauli_X by simp
@@ -19337,7 +19457,7 @@ qed
 lemma pauli_Z_Y_Tr: "Tr (pauli_Z * pauli_Y) = 0"
 proof -
   have "Tr (pauli_Z * pauli_Y) = Tr (\<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_Z_pauli_Y)
+    by (simp only: pauli_Z_pauli_Y)
   also have "\<dots> = \<i> * Tr pauli_X"
     using pauli_X_carrier by (rule Tr_smult_2)
   also have "\<dots> = 0" using Tr_pauli_X by simp
@@ -19447,7 +19567,7 @@ proof -
     "Tr (U\<^sup>\<dagger> * U)
        = cnj (U $$ (0,0)) * U $$ (0,0) + cnj (U $$ (1,0)) * U $$ (1,0)
        + cnj (U $$ (0,1)) * U $$ (0,1) + cnj (U $$ (1,1)) * U $$ (1,1)"
-    using Tr_split UdU_00 UdU_11 by (simp add: ac_simps)
+    using Tr_split UdU_00 UdU_11 by (simp only: ac_simps)
 
   (* Step 4: use cnj z * z = of_real ((cmod z)\<^sup>2). *)
   have cnj_self: "\<And>z :: complex. cnj z * z = complex_of_real ((cmod z)\<^sup>2)"
@@ -19486,7 +19606,7 @@ proof -
                   + (cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a0 - a3))\<^sup>2
                 = 2 * ((cmod a0)\<^sup>2 + (cmod a1)\<^sup>2
                        + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2)"
-    using step_a step_b ia2 by (simp add: algebra_simps)
+    using step_a step_b ia2 by (simp only: algebra_simps)
 
   have "complex_of_real ((cmod (a0 + a3))\<^sup>2)
       + complex_of_real ((cmod (a1 - \<i> * a2))\<^sup>2)
@@ -19529,7 +19649,7 @@ lemma projection_complement:
 proof -
   have P_c: "P \<in> carrier_mat n n" using assms by (rule projection_carrier)
   have P_h: "hermitian P" using assms by (rule projection_hermitian)
-  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
+  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp only: hermitian_def)
   have I_dag: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m n"
     by (intro eq_matI) (auto simp: dagger_def)
   have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
@@ -19579,11 +19699,11 @@ definition orthogonal_projections ::
 
 lemma orthogonal_projections_carrier_left:
   "orthogonal_projections n P Q \<Longrightarrow> P \<in> carrier_mat n n"
-  by (simp add: orthogonal_projections_def projection_def)
+  by (simp only: orthogonal_projections_def projection_def)
 
 lemma orthogonal_projections_carrier_right:
   "orthogonal_projections n P Q \<Longrightarrow> Q \<in> carrier_mat n n"
-  by (simp add: orthogonal_projections_def projection_def)
+  by (simp only: orthogonal_projections_def projection_def)
 
 lemma orthogonal_projections_symm:
   "orthogonal_projections n P Q \<longleftrightarrow> orthogonal_projections n Q P"
@@ -19609,8 +19729,8 @@ proof -
   have Q_idem: "Q * Q = Q" using Q_proj by (rule projection_idempotent)
   have P_h: "hermitian P" using P_proj by (rule projection_hermitian)
   have Q_h: "hermitian Q" using Q_proj by (rule projection_hermitian)
-  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
-  have Q_dag: "Q\<^sup>\<dagger> = Q" using Q_h by (simp add: hermitian_def)
+  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp only: hermitian_def)
+  have Q_dag: "Q\<^sup>\<dagger> = Q" using Q_h by (simp only: hermitian_def)
 
   have PQ_c: "P + Q \<in> carrier_mat n n" using P_c Q_c by simp
 
@@ -19622,7 +19742,7 @@ proof -
     also have "\<dots> = P + Q" using P_dag Q_dag by simp
     finally show ?thesis.
   qed
-  have PQ_h: "hermitian (P + Q)" using PQ_dag by (simp add: hermitian_def)
+  have PQ_h: "hermitian (P + Q)" using PQ_dag by (simp only: hermitian_def)
 
   have PQ_idem: "(P + Q) * (P + Q) = P + Q"
   proof -
@@ -19711,8 +19831,8 @@ lemma outer_sum_singleton_idempotent:
   assumes \<psi>_qs: "quantum_state n \<psi>"
   shows "outer_sum n [\<psi>] * outer_sum n [\<psi>] = outer_sum n [\<psi>]"
 proof -
-  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
-  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp add: quantum_state_def)
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp only: quantum_state_def)
+  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp only: quantum_state_def)
   have inner_self: "\<langle>\<psi> | \<psi>\<rangle> = 1"
   proof -
     have "\<langle>\<psi> | \<psi>\<rangle> = complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2)"
@@ -19745,10 +19865,10 @@ proof -
       by (intro sum.cong refl) (simp add: ac_simps)
     also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)
                     * (\<Sum>k = 0..<n. cnj (\<psi> $ k) * \<psi> $ k)"
-      by (simp add: sum_distrib_left)
+      by (simp only: sum_distrib_left)
     also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j) * \<langle>\<psi> | \<psi>\<rangle>"
       using \<psi>_dim
-      by (simp add: inner_prod_def lessThan_atLeast0)
+      by (simp only: inner_prod_def lessThan_atLeast0)
     also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)"
       using inner_self by simp
     also have "\<dots> = ?M $$ (i, j)"
@@ -19762,11 +19882,11 @@ lemma rank1_projection:
   assumes \<psi>_qs: "quantum_state n \<psi>"
   shows "projection n (outer_sum n [\<psi>])"
 proof -
-  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp only: quantum_state_def)
   have c: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
   have h: "hermitian (outer_sum n [\<psi>])"
     using outer_sum_singleton_hermitian
-    by (simp add: hermitian_def)
+    by (simp only: hermitian_def)
   have idem: "outer_sum n [\<psi>] * outer_sum n [\<psi>] = outer_sum n [\<psi>]"
     using outer_sum_singleton_idempotent[OF \<psi>_qs] .
   show ?thesis unfolding projection_def using c h idem by blast
@@ -19789,8 +19909,8 @@ lemma rank1_projection_acts_identity:
   assumes \<psi>_qs: "quantum_state n \<psi>"
   shows "outer_sum n [\<psi>] *\<^sub>v \<psi> = \<psi>"
 proof -
-  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
-  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp add: quantum_state_def)
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp only: quantum_state_def)
+  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp only: quantum_state_def)
   have inner_self: "\<langle>\<psi> | \<psi>\<rangle> = 1"
   proof -
     have "\<langle>\<psi> | \<psi>\<rangle> = complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2)"
@@ -19830,8 +19950,8 @@ lemma rank1_projection_trace_one:
   assumes \<psi>_qs: "quantum_state n \<psi>"
   shows "Tr (outer_sum n [\<psi>]) = 1"
 proof -
-  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
-  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp add: quantum_state_def)
+  have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp only: quantum_state_def)
+  have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp only: quantum_state_def)
   have "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
     using rank1_projection_trace_inner[OF \<psi>_dim] .
   also have "\<dots> = complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2)"
@@ -20069,7 +20189,7 @@ proof -
   have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
               + complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
     using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
-  thus ?thesis by (simp add: phase_flip_channel_def)
+  thus ?thesis by (simp only: phase_flip_channel_def)
 qed
 
 
@@ -20231,11 +20351,11 @@ qed
 
 lemma bit_flip_eq_unitary_conj:
   "bit_flip_channel p \<rho> = unitary_conj_channel pauli_X p \<rho>"
-  by (simp add: bit_flip_channel_def unitary_conj_channel_def)
+  by (simp only: bit_flip_channel_def unitary_conj_channel_def)
 
 lemma phase_flip_eq_unitary_conj:
   "phase_flip_channel p \<rho> = unitary_conj_channel pauli_Z p \<rho>"
-  by (simp add: phase_flip_channel_def unitary_conj_channel_def)
+  by (simp only: phase_flip_channel_def unitary_conj_channel_def)
 
 
 (* ============================================================================
@@ -20329,7 +20449,7 @@ proof -
     by (simp add: unitary_conj_channel_def)
   also have "\<dots> = \<rho> + 0\<^sub>m n n" using one_smul zero_smul by simp
   also have "\<dots> = \<rho>" using rho_zero .
-  finally show ?thesis by (simp add: identity_channel_def)
+  finally show ?thesis by (simp only: identity_channel_def)
 qed
 
 
@@ -20352,9 +20472,9 @@ proof (unfold trace_preserving_def, intro allI impI)
   assume \<rho>_c: "\<rho> \<in> carrier_mat n n"
   have F\<rho>_c: "F \<rho> \<in> carrier_mat n n" using F_range \<rho>_c by blast
   have "Tr (G (F \<rho>)) = Tr (F \<rho>)"
-    using G_tp F\<rho>_c by (simp add: trace_preserving_def)
+    using G_tp F\<rho>_c by (simp only: trace_preserving_def)
   also have "\<dots> = Tr \<rho>"
-    using F_tp \<rho>_c by (simp add: trace_preserving_def)
+    using F_tp \<rho>_c by (simp only: trace_preserving_def)
   finally show "Tr (G (F \<rho>)) = Tr \<rho>" .
 qed
 
@@ -20388,7 +20508,7 @@ proof -
     using F_un by (simp add: unital_map_def)
   have "F (G (1\<^sub>m n)) = F (1\<^sub>m n)" using G_one by simp
   also have "\<dots> = 1\<^sub>m n" using F_one by simp
-  finally show ?thesis by (simp add: unital_map_def)
+  finally show ?thesis by (simp only: unital_map_def)
 qed
 
 (* identity_channel is unital and trace-preserving. *)
@@ -20653,7 +20773,7 @@ proof -
     using map_conj_cp[OF U_c range_full npos npos] .
   have un: "unital_map n n (\<lambda>\<rho>. U * \<rho> * (U\<^sup>\<dagger>))"
     using map_conj_unital[OF U_c U_unit]
-    by (simp add: unital_map_def)
+    by (simp only: unital_map_def)
   show ?thesis using cp un by (simp add: UCP_def)
 qed
 
@@ -20705,7 +20825,7 @@ proof -
             + complex_of_real p \<cdot>\<^sub>m (U * X * (U\<^sup>\<dagger>))"
       using shift id_eq by simp
     also have "\<dots> = unitary_conj_channel U p X"
-      by (simp add: unitary_conj_channel_def)
+      by (simp only: unitary_conj_channel_def)
     finally show "complex_of_real ?t \<cdot>\<^sub>m ?Phi1 X
                     + (1 - complex_of_real ?t) \<cdot>\<^sub>m ?Phi2 X
                   = unitary_conj_channel U p X" .
@@ -20748,15 +20868,15 @@ qed
 
 lemma bit_flip_channel_eq:
   "bit_flip_channel p = unitary_conj_channel pauli_X p"
-  by (rule ext) (simp add: bit_flip_eq_unitary_conj)
+  by (rule ext) (simp only: bit_flip_eq_unitary_conj)
 
 lemma phase_flip_channel_eq:
   "phase_flip_channel p = unitary_conj_channel pauli_Z p"
-  by (rule ext) (simp add: phase_flip_eq_unitary_conj)
+  by (rule ext) (simp only: phase_flip_eq_unitary_conj)
 
 lemma bit_phase_flip_channel_eq:
   "bit_phase_flip_channel p = unitary_conj_channel pauli_Y p"
-  by (rule ext) (simp add: bit_phase_flip_channel_def)
+  by (rule ext) (simp only: bit_phase_flip_channel_def)
 
 lemma bit_flip_channel_UCP:
   fixes p :: real
@@ -20767,7 +20887,7 @@ proof -
   show ?thesis
     using unitary_conj_channel_in_UCP[OF pauli_X_carrier pauli_X_unitary
                                          p_nn p_le npos]
-    by (simp add: bit_flip_channel_eq)
+    by (simp only: bit_flip_channel_eq)
 qed
 
 lemma bit_flip_channel_CPTP:
@@ -20779,7 +20899,7 @@ proof -
   show ?thesis
     using unitary_conj_channel_in_CPTP[OF pauli_X_carrier pauli_X_unitary
                                           p_nn p_le npos]
-    by (simp add: bit_flip_channel_eq)
+    by (simp only: bit_flip_channel_eq)
 qed
 
 lemma phase_flip_channel_UCP:
@@ -20791,7 +20911,7 @@ proof -
   show ?thesis
     using unitary_conj_channel_in_UCP[OF pauli_Z_carrier pauli_Z_unitary
                                          p_nn p_le npos]
-    by (simp add: phase_flip_channel_eq)
+    by (simp only: phase_flip_channel_eq)
 qed
 
 lemma phase_flip_channel_CPTP:
@@ -20803,7 +20923,7 @@ proof -
   show ?thesis
     using unitary_conj_channel_in_CPTP[OF pauli_Z_carrier pauli_Z_unitary
                                           p_nn p_le npos]
-    by (simp add: phase_flip_channel_eq)
+    by (simp only: phase_flip_channel_eq)
 qed
 
 lemma bit_phase_flip_channel_UCP:
@@ -20815,7 +20935,7 @@ proof -
   show ?thesis
     using unitary_conj_channel_in_UCP[OF pauli_Y_carrier pauli_Y_unitary
                                          p_nn p_le npos]
-    by (simp add: bit_phase_flip_channel_eq)
+    by (simp only: bit_phase_flip_channel_eq)
 qed
 
 lemma bit_phase_flip_channel_CPTP:
@@ -20827,7 +20947,7 @@ proof -
   show ?thesis
     using unitary_conj_channel_in_CPTP[OF pauli_Y_carrier pauli_Y_unitary
                                           p_nn p_le npos]
-    by (simp add: bit_phase_flip_channel_eq)
+    by (simp only: bit_phase_flip_channel_eq)
 qed
 
 
@@ -20984,7 +21104,7 @@ proof -
   also have "\<dots> = \<rho> + 0\<^sub>m n n" using I\<rho>I by simp
   also have "\<dots> = \<rho>" using rho_zero .
   finally show ?thesis
-    by (simp add: identity_channel_def)
+    by (simp only: identity_channel_def)
 qed
 
 
@@ -21265,7 +21385,7 @@ proof -
           = complex_of_real (1 / real n) * Tr (1\<^sub>m n :: complex Matrix.mat)"
     unfolding maximally_mixed_state_def by (rule Tr_smult)
   also have "\<dots> = complex_of_real (1 / real n) * of_nat n"
-    by (simp add: Tr_one_mat)
+    by (simp only: Tr_one_mat)
   also have "\<dots> = complex_of_real (1 / real n * real n)"
     by simp
   also have "\<dots> = complex_of_real 1"
@@ -21281,7 +21401,7 @@ proof -
   have I_psd: "psd (1\<^sub>m n :: complex Matrix.mat)"
     using projection_psd[OF projection_one] .
   have nn: "(0 :: real) \<le> 1 / real n"
-    by (cases n) auto
+    by (cases n, auto)
   show ?thesis
     unfolding maximally_mixed_state_def
     using nn I_psd I_c by (rule psd_smult_nonneg)
@@ -21408,7 +21528,7 @@ lemma bit_flip_channel_fixes_max_mixed:
            = maximally_mixed_state 2"
   using unitary_conj_channel_fixes_max_mixed[OF pauli_X_carrier
                                                  pauli_X_unitary]
-  by (simp add: bit_flip_channel_eq)
+  by (simp only: bit_flip_channel_eq)
 
 lemma phase_flip_channel_fixes_max_mixed:
   fixes p :: real
@@ -21416,7 +21536,7 @@ lemma phase_flip_channel_fixes_max_mixed:
            = maximally_mixed_state 2"
   using unitary_conj_channel_fixes_max_mixed[OF pauli_Z_carrier
                                                  pauli_Z_unitary]
-  by (simp add: phase_flip_channel_eq)
+  by (simp only: phase_flip_channel_eq)
 
 lemma bit_phase_flip_channel_fixes_max_mixed:
   fixes p :: real
@@ -21424,7 +21544,7 @@ lemma bit_phase_flip_channel_fixes_max_mixed:
            = maximally_mixed_state 2"
   using unitary_conj_channel_fixes_max_mixed[OF pauli_Y_carrier
                                                  pauli_Y_unitary]
-  by (simp add: bit_phase_flip_channel_eq)
+  by (simp only: bit_phase_flip_channel_eq)
 
 
 (* ============================================================================
@@ -21465,7 +21585,7 @@ lemma bit_flip_channel_preserves_density_matrix:
   shows "density_matrix 2 (bit_flip_channel p \<rho>)"
   using unitary_conj_channel_preserves_density_matrix
           [OF pauli_X_carrier pauli_X_unitary p_nn p_le dm]
-  by (simp add: bit_flip_channel_eq)
+  by (simp only: bit_flip_channel_eq)
 
 lemma phase_flip_channel_preserves_density_matrix:
   fixes p :: real
@@ -21474,7 +21594,7 @@ lemma phase_flip_channel_preserves_density_matrix:
   shows "density_matrix 2 (phase_flip_channel p \<rho>)"
   using unitary_conj_channel_preserves_density_matrix
           [OF pauli_Z_carrier pauli_Z_unitary p_nn p_le dm]
-  by (simp add: phase_flip_channel_eq)
+  by (simp only: phase_flip_channel_eq)
 
 lemma bit_phase_flip_channel_preserves_density_matrix:
   fixes p :: real
@@ -21483,7 +21603,7 @@ lemma bit_phase_flip_channel_preserves_density_matrix:
   shows "density_matrix 2 (bit_phase_flip_channel p \<rho>)"
   using unitary_conj_channel_preserves_density_matrix
           [OF pauli_Y_carrier pauli_Y_unitary p_nn p_le dm]
-  by (simp add: bit_phase_flip_channel_eq)
+  by (simp only: bit_phase_flip_channel_eq)
 
 
 (* ============================================================================

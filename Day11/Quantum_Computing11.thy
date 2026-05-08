@@ -2429,7 +2429,7 @@ proof -
     by auto
 
   have terms_nn: "\<forall>(q, \<phi>) \<in> set E. 0 \<le> q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2"
-    using E_p_nn by (auto simp: mult_nonneg_nonneg)
+    using E_p_nn by (auto simp:)
 
   have each_zero: "\<forall>(q, \<phi>) \<in> set E. q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2 = 0"
   proof -
@@ -2941,9 +2941,8 @@ qed
 lemma operator_tensor_iso_map_zero:
   assumes p_pos: "0 < p"
   shows "operator_tensor_iso_map m p (0\<^sub>m (m*m) (p*p)) = 0\<^sub>m (m*p) (m*p)"
-  by (auto simp: operator_tensor_iso_map_def intro!: eq_matI index_zero_mat(1)
-      intro: operator_tensor_iso_map_row_bound[OF p_pos]
-             operator_tensor_iso_map_col_bound[OF p_pos])
+  by (smt (verit) add_inv_exists_mat assoc_add_mat operator_tensor_iso_map_add 
+      operator_tensor_iso_map_carrier p_pos right_add_zero_mat zero_carrier_mat)  
 
 lemma operator_tensor_iso_map_smult:
   assumes p_pos: "0 < p"
@@ -2996,9 +2995,9 @@ qed
 lemma operator_tensor_iso_inv_zero:
   assumes m_pos: "0 < m" and p_pos: "0 < p"
   shows "operator_tensor_iso_inv m p (0\<^sub>m (m*p) (m*p)) = 0\<^sub>m (m*m) (p*p)"
-  by (auto simp: operator_tensor_iso_inv_def intro!: eq_matI index_zero_mat(1)
-      intro: operator_tensor_iso_inv_row_bound[OF m_pos p_pos]
-             operator_tensor_iso_inv_col_bound[OF m_pos p_pos])
+  by (smt (verit) add_inv_exists_mat assoc_add_mat m_pos operator_tensor_iso_inv_add 
+      operator_tensor_iso_inv_carrier p_pos right_add_zero_mat zero_carrier_mat)
+ 
 
 lemma operator_tensor_iso_inv_smult:
   assumes m_pos: "0 < m"
@@ -3508,7 +3507,7 @@ proof -
         have Xdag: "X\<^sup>\<dagger> = X"
           using herm by (simp add: hermitian_def)
         have "X $$ (i * p + k, j * p + k) =
-              X\<^sup>\<dagger> $$ (i * p + k, j * p + k)"
+              (X\<^sup>\<dagger> $$ (i * p + k, j * p + k))"
           using Xdag by simp
         also have "\<dots> = cnj (X $$ (j * p + k, i * p + k))"
           using Xrow Xcol row_lt col_lt by (simp add: dagger_def)
@@ -3672,7 +3671,7 @@ proof -
           have x_eq: "x = (x div p) * p + k"
             using x_mod by (metis div_mult_mod_eq)
           from div_lt x_eq show "x \<in> (\<lambda>i. i * p + k) ` {..<m}"
-            by (auto intro!: image_eqI)
+            by (auto intro!:)
         qed
 
         let ?B = "{a. a < m * p \<and> a mod p = k}"
@@ -3777,7 +3776,7 @@ theorem partial_trace_measurement:
   shows "Tr (((meas\<^sup>\<dagger> * meas) \<Otimes> 1\<^sub>m p) * \<rho>) =
          Tr (meas\<^sup>\<dagger> * meas * partial_trace_B m p \<rho>)"
 proof -
-  define M where M_def: "M = meas\<^sup>\<dagger> * meas"
+  define M where M_def: "M = (meas\<^sup>\<dagger>) * meas"
 
   have rho_carr: "\<rho> \<in> carrier_mat (m * p) (m * p)"
     using dm by (auto simp: density_matrix_def)
@@ -3954,7 +3953,7 @@ proof -
                                   else 0))"
         by (intro sum.cong refl) auto
       also have "\<dots> = M $$ (i, j) * \<rho> $$ (j * p + a, i * p + a)"
-        using a_lt by (simp add: sum.delta)
+        using a_lt by simp
       finally show "(\<Sum>b < p. M $$ (i, j) * (1\<^sub>m p :: complex Matrix.mat) $$ (a, b)
                        * \<rho> $$ (j * p + b, i * p + a))
                     = M $$ (i, j) * \<rho> $$ (j * p + a, i * p + a)".
@@ -4543,7 +4542,7 @@ proof -
   also have "\<dots> = (\<Sum>q < p. if a = q then (\<Sum>r < n. f r) else 0)"
     by (intro sum.cong refl) simp
   also have "\<dots> = (\<Sum>r < n. f r)"
-    using a by (simp add: sum.delta)
+    using a by simp
   finally show ?thesis .
 qed
 
@@ -5611,7 +5610,7 @@ proof -
       by simp
     also have "\<dots> = (?V * (?V\<^sup>\<dagger>)) $$ (r,c)"
       using rnn cnn V_car Vdag_car
-      by (simp add: index_mult_mat(1))
+      by simp
     also have "\<dots> = outer_sum (n*n) [v] $$ (r,c)"
       by (simp add: outer_sum_def)
     finally show "choi_seed n $$ (r,c) = outer_sum (n*n) [v] $$ (r,c)" .
@@ -5774,9 +5773,9 @@ next
   have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
     using Wc by (rule dagger_carrier)
   have W0: "W * (0\<^sub>m n n) = 0\<^sub>m d n"
-    using Wc by (metis right_mult_zero_mat carrier_matD(2))
+    using Wc by (metis right_mult_zero_mat)
   have term_zero: "W * (0\<^sub>m n n) * (W\<^sup>\<dagger>) = 0\<^sub>m d d"
-    using W0 Wdag by (metis left_mult_zero_mat carrier_matD)
+    using W0 Wdag by (metis left_mult_zero_mat)
   have IH: "kraus_map_dim d Ws (0\<^sub>m n n) = 0\<^sub>m d d" using Cons.IH[OF Ws_c'] .
   have "kraus_map_dim d (W # Ws) (0\<^sub>m n n) =
         W * (0\<^sub>m n n) * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (0\<^sub>m n n)"
@@ -6679,7 +6678,7 @@ proof (induction Ws)
   hence lhs: "Tr (kraus_map_dim d [] \<rho>) = 0" by simp
   have "sum_wdag_w n [] * \<rho> = 0\<^sub>m n n * \<rho>" by simp
   also have "\<dots> = 0\<^sub>m n n"
-    using X_c by (metis carrier_matD(1) left_mult_zero_mat)
+    using X_c by (metis left_mult_zero_mat)
   finally have "Tr (sum_wdag_w n [] * \<rho>) = 0" by simp
   thus ?case using lhs by simp
 next
@@ -7033,7 +7032,7 @@ lemma kraus_adjoint_dim_as_kraus_map_dim:
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
       and Y_c: "Y \<in> carrier_mat d d"
   shows "kraus_adjoint_dim n As Y =
-           kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
+           kraus_map_dim n (map (\<lambda>A. (A\<^sup>\<dagger>)) As) Y"
   using As_c
 proof (induction As)
   case Nil
@@ -7046,10 +7045,10 @@ next
   have dd_eq: "(A\<^sup>\<dagger>)\<^sup>\<dagger> = A"
     using A_c by (simp add: dagger_of_dagger_is_id)
   have IH: "kraus_adjoint_dim n As Y
-              = kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) As) Y"
+              = kraus_map_dim n (map (\<lambda>A. (A\<^sup>\<dagger>)) As) Y"
     using Cons.IH As_c' by blast
   show "kraus_adjoint_dim n (A # As) Y  
-      = kraus_map_dim n (map (\<lambda>A. A\<^sup>\<dagger>) (A # As)) Y"
+      = kraus_map_dim n (map (\<lambda>A. (A\<^sup>\<dagger>)) (A # As)) Y"
     using dd_eq IH by simp
 qed
 
@@ -7269,7 +7268,7 @@ theorem adjoint_cp_from_kraus:
       and dpos: "0 < d"
   shows "completely_positive d n (kraus_adjoint_dim n As)"
 proof -
-  define Bs where "Bs = map (\<lambda>A. A\<^sup>\<dagger>) As"
+  define Bs where "Bs = map (\<lambda>A. (A\<^sup>\<dagger>)) As"
   have Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n d"
     using As_c by (auto simp: Bs_def dagger_carrier)
 
@@ -7326,14 +7325,14 @@ proof -
     (* Reduce to PSD-ness of an amplified Kraus map (no TP needed). *)
     have lifted_c:
       "\<forall>L \<in> set (map (\<lambda>B. 1\<^sub>m p \<Otimes> B) Bs). L \<in> carrier_mat (p*n) (p*d)"
-      using tensor_id_kraus_list_carrier[OF Bs_c] .
+      using tensor_id_kraus_list_carrier[OF Bs_c].
     have amp_kr:
       "amplification d n p (kraus_map_dim n Bs) X =
          kraus_map_dim (p*n) (map (\<lambda>B. 1\<^sub>m p \<Otimes> B) Bs) X"
-      using amplification_kraus_map_dim[OF Bs_c X_c npos dpos] .
+      using amplification_kraus_map_dim[OF Bs_c X_c npos dpos].
     have psd_kr:
       "psd (kraus_map_dim (p*n) (map (\<lambda>B. 1\<^sub>m p \<Otimes> B) Bs) X)"
-      using kraus_map_dim_psd[OF lifted_c X_c X_psd] .
+      using kraus_map_dim_psd[OF lifted_c X_c X_psd].
     show "psd (amplification d n p (kraus_adjoint_dim n As) X)"
       using amp_eq amp_kr psd_kr by simp
   qed
@@ -7346,7 +7345,7 @@ lemma kraus_map_dim_one_eq_sum_wdag_w_dagger:
   fixes As :: "complex Matrix.mat list"
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
   shows "kraus_map_dim d As (1\<^sub>m n)
-         = sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+         = sum_wdag_w d (map (\<lambda>A. (A\<^sup>\<dagger>)) As)"
   using As_c
 proof (induction As)
   case Nil
@@ -7360,21 +7359,21 @@ next
   have ddag: "(A\<^sup>\<dagger>)\<^sup>\<dagger> = A"
     using A_c by (simp add: dagger_of_dagger_is_id)
   have IH: "kraus_map_dim d As (1\<^sub>m n)
-              = sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+              = sum_wdag_w d (map (\<lambda>A. (A\<^sup>\<dagger>)) As)"
     using Cons.IH As_c' .
   have "kraus_map_dim d (A # As) (1\<^sub>m n)
           = A * 1\<^sub>m n * (A\<^sup>\<dagger>) + kraus_map_dim d As (1\<^sub>m n)"
     by simp
-  also have "\<dots> = A * (A\<^sup>\<dagger>) + sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+  also have "\<dots> = A * (A\<^sup>\<dagger>) + sum_wdag_w d (map (\<lambda>A. (A\<^sup>\<dagger>)) As)"
     using A_one IH by simp
   also have "\<dots> = ((A\<^sup>\<dagger>)\<^sup>\<dagger>) * (A\<^sup>\<dagger>)
-                  + sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) As)"
+                  + sum_wdag_w d (map (\<lambda>A. (A\<^sup>\<dagger>)) As)"
     using ddag by simp
-  also have "\<dots> = sum_wdag_w d (A\<^sup>\<dagger> # map (\<lambda>A. A\<^sup>\<dagger>) As)"
+  also have "\<dots> = sum_wdag_w d ((A\<^sup>\<dagger>) # map (\<lambda>A. (A\<^sup>\<dagger>)) As)"
     by (simp add: sum_wdag_w_Cons)
-  also have "\<dots> = sum_wdag_w d (map (\<lambda>A. A\<^sup>\<dagger>) (A # As))"
+  also have "\<dots> = sum_wdag_w d (map (\<lambda>A. (A\<^sup>\<dagger>)) (A # As))"
     by simp
-  finally show ?case .
+  finally show ?case.
 qed
 
 theorem cp_unital_iff_adjoint_tp:
@@ -7384,12 +7383,12 @@ theorem cp_unital_iff_adjoint_tp:
   shows "unital_map n d (kraus_map_dim d As)
          \<longleftrightarrow> trace_preserving d (kraus_adjoint_dim n As)"
 proof -
-  define Bs where "Bs = map (\<lambda>A. A\<^sup>\<dagger>) As"
+  define Bs where "Bs = map (\<lambda>A. (A\<^sup>\<dagger>)) As"
   have Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n d"
     using As_c by (auto simp: Bs_def dagger_carrier)
   let ?M = "sum_wdag_w d Bs"
   have M_c: "?M \<in> carrier_mat d d"
-    using sum_wdag_w_carrier[OF Bs_c] .
+    using sum_wdag_w_carrier[OF Bs_c].
 
   (* Unital: \<Phi>(I_n) = \<Sum> A A\<^sup>\<dagger> = ?M, so unital iff ?M = I_d *)
   have unital_iff:
@@ -7397,7 +7396,7 @@ proof -
   proof -
     have eq: "kraus_map_dim d As (1\<^sub>m n) = ?M"
       unfolding Bs_def
-      using kraus_map_dim_one_eq_sum_wdag_w_dagger[OF As_c] .
+      using kraus_map_dim_one_eq_sum_wdag_w_dagger[OF As_c].
     show ?thesis unfolding unital_map_def using eq by simp
   qed
 
@@ -7410,7 +7409,7 @@ proof -
     assume Y_c: "Y \<in> carrier_mat d d"
     have step1: "kraus_adjoint_dim n As Y = kraus_map_dim n Bs Y"
       unfolding Bs_def
-      using kraus_adjoint_dim_as_kraus_map_dim[OF As_c Y_c] .
+      using kraus_adjoint_dim_as_kraus_map_dim[OF As_c Y_c].
     have step2: "Tr (kraus_map_dim n Bs Y) = Tr (?M * Y)"
       using Tr_kraus_map_dim_as_wdagw[OF Bs_c Y_c] .
     show "Tr (kraus_adjoint_dim n As Y) = Tr (?M * Y)"
@@ -7441,11 +7440,11 @@ proof -
       have E_c: "?E \<in> carrier_mat d d"
         by (simp add: mat_unit_def)
       have Tr_ME: "Tr (?M * ?E) = ?M $$ (i, j)"
-        using Tr_mult_mat_unit[OF M_c jd id] .
+        using Tr_mult_mat_unit[OF M_c jd id].
       have Tr_E: "Tr ?E = (if j = i then 1 else 0)"
-        using Tr_mat_unit[OF jd id] .
+        using Tr_mat_unit[OF jd id].
       have eq: "Tr (?M * ?E) = Tr ?E"
-        using Tr_eq[OF E_c] .
+        using Tr_eq[OF E_c].
       have M_ij: "?M $$ (i, j) = (if j = i then 1 else 0)"
         using Tr_ME Tr_E eq by simp
       have one_ij: "(1\<^sub>m d) $$ (i, j) = (if i = j then 1 else 0)"
@@ -8675,10 +8674,10 @@ proof -
 
   have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_row (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
-    using \<rho>_c x\<rho>xd_c by (metis carrier_matD index_smult_mat)
+    using \<rho>_c x\<rho>xd_c by (metis carrier_matD(1) index_smult_mat(2))
   have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_col (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
-    using \<rho>_c x\<rho>xd_c by (metis carrier_matD index_smult_mat)
+    using \<rho>_c x\<rho>xd_c by (metis carrier_matD(2) index_smult_mat(3))
   have "Tr (bit_flip_channel p \<rho>)
           = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
             + Tr (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
@@ -8695,7 +8694,7 @@ proof -
   also have "\<dots> = 1 * Tr \<rho>"
     by simp
   also have "\<dots> = Tr \<rho>" by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 (* The bit-flip channel preserves PSD: convex combination of two PSD
@@ -9244,7 +9243,7 @@ proof -
         using ij P_c by (simp add: dagger_def)
       hence "P $$ (i, j) = cnj (P $$ (j, i))"
         using P_dag by simp
-      thus ?thesis by (simp add: complex_cnj_cnj)
+      thus ?thesis by simp
     qed
     have one_entry_self_cnj:
       "(1\<^sub>m n :: complex Matrix.mat) $$ (j, i)
@@ -9252,7 +9251,7 @@ proof -
       using ij by auto
     show "((1\<^sub>m n - P)\<^sup>\<dagger>) $$ (i, j) = (1\<^sub>m n - P) $$ (i, j)"
       using ij P_c P_swap one_entry_self_cnj
-      by (simp add: dagger_def index_minus_mat)
+      by (simp add: dagger_def)
   qed
   have IP_h: "hermitian (1\<^sub>m n - P)" using IP_dag by (simp add: hermitian_def)
   have IP_idem: "(1\<^sub>m n - P) * (1\<^sub>m n - P) = 1\<^sub>m n - P"
@@ -9310,9 +9309,9 @@ proof -
   proof -
     have "(P + Q)\<^sup>\<dagger> = (P\<^sup>\<dagger>) + (Q\<^sup>\<dagger>)"
       using P_c Q_c
-      by (intro eq_matI) (auto simp: dagger_def index_add_mat)
+      by (intro eq_matI, auto simp: dagger_def)
     also have "\<dots> = P + Q" using P_dag Q_dag by simp
-    finally show ?thesis .
+    finally show ?thesis.
   qed
   have PQ_h: "hermitian (P + Q)" using PQ_dag by (simp add: hermitian_def)
 
@@ -9327,7 +9326,7 @@ proof -
             = P + 0\<^sub>m n n + (0\<^sub>m n n + Q)"
       using P_idem Q_idem PQ_zero QP_zero by simp
     also have "\<dots> = P + Q"
-      using P_c Q_c by (intro eq_matI) auto
+      using P_c Q_c by (intro eq_matI, auto)
     finally show ?thesis using expand by simp
   qed
   show ?thesis unfolding projection_def using PQ_c PQ_h PQ_idem by blast
@@ -9391,11 +9390,11 @@ next
   also have "\<dots> = cnj (\<psi> $ j * cnj (\<psi> $ i))"
     using outer_sum_singleton_index[OF ij(2) ij(1)] by simp
   also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)"
-    by (simp add: complex_cnj_cnj complex_cnj_mult mult.commute)
+    by simp
   also have "\<dots> = (outer_sum n [\<psi>]) $$ (i, j)"
     using outer_sum_singleton_index[OF ij(1) ij(2)] by simp
   finally show "(outer_sum n [\<psi>])\<^sup>\<dagger> $$ (i, j)
-                  = (outer_sum n [\<psi>]) $$ (i, j)" .
+                  = (outer_sum n [\<psi>]) $$ (i, j)".
 qed
 
 lemma outer_sum_singleton_idempotent:
@@ -9667,11 +9666,11 @@ proof -
   have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_row (complex_of_real p
                               \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
-    using \<rho>_c z\<rho>zd_c by (metis carrier_matD index_smult_mat)
+    using \<rho>_c z\<rho>zd_c by (metis carrier_matD(1) index_smult_mat(2))
   have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_col (complex_of_real p
                               \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
-    using \<rho>_c z\<rho>zd_c by (metis carrier_matD index_smult_mat)
+    using \<rho>_c z\<rho>zd_c by (metis carrier_matD(2) index_smult_mat(3))
   have "Tr (phase_flip_channel p \<rho>)
           = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
             + Tr (complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
@@ -9823,15 +9822,15 @@ proof -
       by (metis Ud_c U_c \<rho>_c assoc_mult_mat)
     also have "\<dots> = Tr ((1\<^sub>m n) * \<rho>)" using UdU by simp
     also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
-    finally show ?thesis .
+    finally show ?thesis.
   qed
 
   have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_row (complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
-    using \<rho>_c U\<rho>Ud_c by (metis carrier_matD index_smult_mat)
+    using \<rho>_c U\<rho>Ud_c by (metis carrier_matD(1) index_smult_mat(2))
   have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_col (complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
-    using \<rho>_c U\<rho>Ud_c by (metis carrier_matD index_smult_mat)
+    using \<rho>_c U\<rho>Ud_c by (metis carrier_matD(2) index_smult_mat(3))
   have "Tr (unitary_conj_channel U p \<rho>)
           = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
             + Tr (complex_of_real p \<cdot>\<^sub>m (U * \<rho> * (U\<^sup>\<dagger>)))"
@@ -9847,7 +9846,7 @@ proof -
     by (simp add: ring_distribs)
   also have "\<dots> = 1 * Tr \<rho>" by simp
   also have "\<dots> = Tr \<rho>" by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma unitary_conj_channel_psd:
@@ -10782,10 +10781,10 @@ next
     using IH by simp
   also have "\<dots> = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) + sum_wdag_w n Vs"
     using WdW_c Ws_sum_c Vs_sum_c
-    by (simp add: assoc_add_mat)
+    by simp
   also have "\<dots> = sum_wdag_w n (W # Ws) + sum_wdag_w n Vs"
     by (simp add: sum_wdag_w_Cons)
-  finally show ?case .
+  finally show ?case.
 qed
 
 
@@ -10839,10 +10838,10 @@ next
     using IH by simp
   also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)
                   + kraus_map_dim d Vs \<rho>"
-    using W\<rho>Wd_c Ws_km_c Vs_km_c by (simp add: assoc_add_mat)
+    using W\<rho>Wd_c Ws_km_c Vs_km_c by simp
   also have "\<dots> = kraus_map_dim d (W # Ws) \<rho> + kraus_map_dim d Vs \<rho>"
     by simp
-  finally show ?case .
+  finally show ?case.
 qed
 
 
@@ -10871,7 +10870,7 @@ proof -
     using x_c M_c by (metis assoc_mult_mat)
   also have "\<dots> = M * (1\<^sub>m 2)" using x_sq by simp
   also have "\<dots> = M" using M_c by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma bit_flip_channel_fixed_point_commute:
@@ -10881,7 +10880,7 @@ lemma bit_flip_channel_fixed_point_commute:
   shows "bit_flip_channel p M = M"
 proof -
   have conj_eq: "pauli_X * M * (pauli_X\<^sup>\<dagger>) = M"
-    using pauli_X_conj_commute[OF M_c commute] .
+    using pauli_X_conj_commute[OF M_c commute].
   have "bit_flip_channel p M
           = complex_of_real (1 - p) \<cdot>\<^sub>m M
             + complex_of_real p \<cdot>\<^sub>m M"
@@ -10889,7 +10888,7 @@ proof -
   also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) \<cdot>\<^sub>m M"
     using M_c by (rule add_smult_distrib_right_mat[symmetric])
   also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m M" by simp
-  also have "\<dots> = M" using M_c by (intro eq_matI) auto
+  also have "\<dots> = M" using M_c by (intro eq_matI, auto)
   finally show ?thesis .
 qed
 
@@ -10911,7 +10910,7 @@ proof -
     using z_c M_c by (metis assoc_mult_mat)
   also have "\<dots> = M * (1\<^sub>m 2)" using z_sq by simp
   also have "\<dots> = M" using M_c by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma phase_flip_channel_fixed_point_commute:
@@ -10921,7 +10920,7 @@ lemma phase_flip_channel_fixed_point_commute:
   shows "phase_flip_channel p M = M"
 proof -
   have conj_eq: "pauli_Z * M * (pauli_Z\<^sup>\<dagger>) = M"
-    using pauli_Z_conj_commute[OF M_c commute] .
+    using pauli_Z_conj_commute[OF M_c commute].
   have "phase_flip_channel p M
           = complex_of_real (1 - p) \<cdot>\<^sub>m M
             + complex_of_real p \<cdot>\<^sub>m M"
@@ -10930,7 +10929,7 @@ proof -
     using M_c by (rule add_smult_distrib_right_mat[symmetric])
   also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m M" by simp
   also have "\<dots> = M" using M_c by (intro eq_matI) auto
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 
@@ -10950,7 +10949,7 @@ lemma unitary_conj_channel_identity_op:
 proof -
   have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
   have I_dag: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m n"
-    by (intro eq_matI) (auto simp: dagger_def)
+    by (intro eq_matI, auto simp: dagger_def)
   have I\<rho>I: "(1\<^sub>m n :: complex Matrix.mat) * \<rho> * ((1\<^sub>m n)\<^sup>\<dagger>) = \<rho>"
     using \<rho>_c I_dag by simp
   have "unitary_conj_channel (1\<^sub>m n) p \<rho>
@@ -10960,8 +10959,8 @@ proof -
   also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) \<cdot>\<^sub>m \<rho>"
     using \<rho>_c by (rule add_smult_distrib_right_mat[symmetric])
   also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m \<rho>" by simp
-  also have "\<dots> = \<rho>" using \<rho>_c by (intro eq_matI) auto
-  finally show ?thesis .
+  also have "\<dots> = \<rho>" using \<rho>_c by (intro eq_matI, auto)
+  finally show ?thesis.
 qed
 
 (* Corollary: as a function on M_n, unitary_conj_channel of I_n agrees
@@ -10972,8 +10971,7 @@ lemma unitary_conj_channel_identity_op_eq:
   shows "(\<lambda>\<rho>. if \<rho> \<in> carrier_mat n n
               then unitary_conj_channel (1\<^sub>m n) p \<rho> else identity_channel \<rho>)
          = identity_channel"
-  by (rule ext)
-     (simp add: unitary_conj_channel_identity_op identity_channel_def)
+  by (rule ext, simp add: unitary_conj_channel_identity_op identity_channel_def)
 
 
 (* ============================================================================
@@ -11001,7 +10999,7 @@ proof -
     by (simp add: Tr_def)
   also have "\<dots> = (\<Sum>r < n. (1 :: complex))" by simp
   also have "\<dots> = of_nat n" by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma maximally_mixed_state_trace:
@@ -11014,11 +11012,11 @@ proof -
   also have "\<dots> = complex_of_real (1 / real n) * of_nat n"
     by (simp add: Tr_one_mat)
   also have "\<dots> = complex_of_real (1 / real n * real n)"
-    by (simp add: of_real_mult)
+    by simp
   also have "\<dots> = complex_of_real 1"
     using npos by simp
   also have "\<dots> = 1" by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma maximally_mixed_state_psd:
@@ -11069,7 +11067,7 @@ proof -
     using M_c U_c Ud_c by (metis assoc_mult_mat)
   also have "\<dots> = M * (1\<^sub>m n)" using UUd by simp
   also have "\<dots> = M" using M_c by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma unitary_conj_channel_fixed_point_commute:
@@ -11081,7 +11079,7 @@ lemma unitary_conj_channel_fixed_point_commute:
   shows "unitary_conj_channel U p M = M"
 proof -
   have conj_eq: "U * M * (U\<^sup>\<dagger>) = M"
-    using unitary_conj_commute[OF U_c U_unit M_c commute] .
+    using unitary_conj_commute[OF U_c U_unit M_c commute].
   have "unitary_conj_channel U p M
           = complex_of_real (1 - p) \<cdot>\<^sub>m M
             + complex_of_real p \<cdot>\<^sub>m M"
@@ -11090,7 +11088,7 @@ proof -
     using M_c by (rule add_smult_distrib_right_mat[symmetric])
   also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m M" by simp
   also have "\<dots> = M" using M_c by (intro eq_matI) auto
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 (* The maximally mixed state commutes with every U \<in> M_n: scalar
@@ -11243,49 +11241,58 @@ lemma bit_phase_flip_channel_preserves_density_matrix:
    Each is a direct 2x2 computation.
    ============================================================================ *)
 
-lemma pauli_X_times_pauli_Y: "pauli_X * pauli_Y = \<i> \<cdot>\<^sub>m pauli_Z"
+lemma pauli_X_times_pauli_Y: "pauli_X * pauli_Y = -\<i> \<cdot>\<^sub>m pauli_Z"
 proof (rule eq_matI)
-  show "dim_row (pauli_X * pauli_Y) = dim_row (\<i> \<cdot>\<^sub>m pauli_Z)"
+  show "dim_row (pauli_X * pauli_Y) = dim_row (-\<i> \<cdot>\<^sub>m pauli_Z)"
     by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_X * pauli_Y) = dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
+  show "dim_col (pauli_X * pauli_Y) = dim_col (-\<i> \<cdot>\<^sub>m pauli_Z)"
     by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
 next
-  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Z)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
-  hence ij: "i < 2" "j < 2" by (simp_all add: pauli_Z_def)
-  show "(pauli_X * pauli_Y) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_Z) $$ (i, j)"
+  fix i j
+  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_Z)"
+     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_Z)"
+  hence ij: "i < 2" "j < 2"
+    by (simp_all add: pauli_Z_def)
+  show "(pauli_X * pauli_Y) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_Z) $$ (i, j)"
     using ij
     unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2)+)
+    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
-lemma pauli_Y_times_pauli_Z: "pauli_Y * pauli_Z = \<i> \<cdot>\<^sub>m pauli_X"
+lemma pauli_Y_times_pauli_Z: "pauli_Y * pauli_Z = -\<i> \<cdot>\<^sub>m pauli_X"
 proof (rule eq_matI)
-  show "dim_row (pauli_Y * pauli_Z) = dim_row (\<i> \<cdot>\<^sub>m pauli_X)"
+  show "dim_row (pauli_Y * pauli_Z) = dim_row (-\<i> \<cdot>\<^sub>m pauli_X)"
     by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
-  show "dim_col (pauli_Y * pauli_Z) = dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
+  show "dim_col (pauli_Y * pauli_Z) = dim_col (-\<i> \<cdot>\<^sub>m pauli_X)"
     by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
 next
-  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_X)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
-  hence ij: "i < 2" "j < 2" by (simp_all add: pauli_X_def)
-  show "(pauli_Y * pauli_Z) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_X) $$ (i, j)"
+  fix i j
+  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_X)"
+     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_X)"
+  hence ij: "i < 2" "j < 2"
+    by (simp_all add: pauli_X_def)
+  show "(pauli_Y * pauli_Z) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_X) $$ (i, j)"
     using ij
     unfolding pauli_Y_def pauli_Z_def pauli_X_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2)+)
+    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
-lemma pauli_Z_times_pauli_X: "pauli_Z * pauli_X = \<i> \<cdot>\<^sub>m pauli_Y"
+lemma pauli_Z_times_pauli_X: "pauli_Z * pauli_X = -\<i> \<cdot>\<^sub>m pauli_Y"
 proof (rule eq_matI)
-  show "dim_row (pauli_Z * pauli_X) = dim_row (\<i> \<cdot>\<^sub>m pauli_Y)"
+  show "dim_row (pauli_Z * pauli_X) = dim_row (-\<i> \<cdot>\<^sub>m pauli_Y)"
     by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
-  show "dim_col (pauli_Z * pauli_X) = dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
+  show "dim_col (pauli_Z * pauli_X) = dim_col (-\<i> \<cdot>\<^sub>m pauli_Y)"
     by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
 next
-  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Y)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
-  hence ij: "i < 2" "j < 2" by (simp_all add: pauli_Y_def)
-  show "(pauli_Z * pauli_X) $$ (i, j) = (\<i> \<cdot>\<^sub>m pauli_Y) $$ (i, j)"
+  fix i j
+  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_Y)"
+     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_Y)"
+  hence ij: "i < 2" "j < 2"
+    by (simp_all add: pauli_Y_def)
+  show "(pauli_Z * pauli_X) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_Y) $$ (i, j)"
     using ij
     unfolding pauli_Z_def pauli_X_def pauli_Y_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2)+)
+    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
 

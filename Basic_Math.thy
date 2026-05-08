@@ -14,6 +14,65 @@ theory Basic_Math
     Quantum_Fourier_Transform.QFT
 begin
 
+(* ============================================================================
+   ABSTRACT LINEAR-SPACE ISOMORPHISMS
+   ============================================================================
+
+   Matrix spaces in this development are represented as carrier predicates over
+   the single type @{typ "complex Matrix.mat"}, rather than as separate HOL
+   types.  These lightweight records give a focused notion of linear
+   isomorphism over explicit carriers and operations.  The definition includes
+   an explicit inverse linear map, so it can later be shown to imply any more
+   general categorical notion of isomorphism without changing project proofs.
+   ============================================================================ *)
+
+record ('a, 'v) linear_structure =
+  ls_carrier :: "'v set"
+  ls_zero :: "'v"
+  ls_add :: "'v \<Rightarrow> 'v \<Rightarrow> 'v"
+  ls_smul :: "'a \<Rightarrow> 'v \<Rightarrow> 'v"
+
+definition linear_structure_map ::
+  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> ('v \<Rightarrow> 'w) \<Rightarrow> bool" where
+  "linear_structure_map V W f \<equiv>
+     f (ls_zero V) = ls_zero W \<and>
+     (\<forall>x \<in> ls_carrier V. f x \<in> ls_carrier W) \<and>
+     (\<forall>x \<in> ls_carrier V. \<forall>y \<in> ls_carrier V.
+        f (ls_add V x y) = ls_add W (f x) (f y)) \<and>
+     (\<forall>c x. x \<in> ls_carrier V \<longrightarrow>
+        f (ls_smul V c x) = ls_smul W c (f x))"
+
+definition is_isomorphism_between ::
+  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> ('v \<Rightarrow> 'w) \<Rightarrow> bool" where
+  "is_isomorphism_between V W f \<equiv>
+     linear_structure_map V W f \<and>
+     (\<exists>g. linear_structure_map W V g \<and>
+          (\<forall>x \<in> ls_carrier V. g (f x) = x) \<and>
+          (\<forall>y \<in> ls_carrier W. f (g y) = y))"
+
+definition is_isomorphic_to ::
+  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> bool" where
+  "is_isomorphic_to V W \<equiv> \<exists>f. is_isomorphism_between V W f"
+
+lemma is_isomorphism_betweenD_map:
+  assumes "is_isomorphism_between V W f"
+  shows "linear_structure_map V W f"
+  using assms by (simp add: is_isomorphism_between_def)
+
+lemma is_isomorphism_betweenD_inverse:
+  assumes "is_isomorphism_between V W f"
+  obtains g where "linear_structure_map W V g"
+    and "\<And>x. x \<in> ls_carrier V \<Longrightarrow> g (f x) = x"
+    and "\<And>y. y \<in> ls_carrier W \<Longrightarrow> f (g y) = y"
+  using assms by (auto simp: is_isomorphism_between_def)
+
+definition mat_linear_structure :: "nat \<Rightarrow> nat \<Rightarrow> (complex, complex Matrix.mat) linear_structure" where
+  "mat_linear_structure m n \<equiv>
+     \<lparr> ls_carrier = carrier_mat m n,
+       ls_zero = 0\<^sub>m m n,
+       ls_add = (\<lambda>x y. x + y),
+       ls_smul = (\<lambda>c x. c \<cdot>\<^sub>m x) \<rparr>"
+
 (*Day 1*)
 
 (* ============================================================================
