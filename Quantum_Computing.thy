@@ -17264,9 +17264,24 @@ definition bounded_clinear_functional ::
    step on the HS inner product is in scope.
 
    The current development records the precise statement and a proof
-   for the trivial case V = M\<^sub>n; the general case requires Gram-Schmidt
-   on M\<^sub>n which is a standalone undertaking and is left as the
-   remaining DAY-26 task. ---- *)
+   for the trivial case V = M\<^sub>n.
+
+   PLAN (Path B \<mdash> reduction to HOL/Hahn_Banach): the next step is to
+   apply Isabelle/HOL's real-vector-space norm_Hahn_Banach to our
+   matrix setup, by:
+     (1) instantiating HOL's `vectorspace` locale on (carrier_mat n n)
+         viewed as a real vector space, with real scalar multiplication
+         given by `(\<cdot>\<^sub>m) \<circ> complex_of_real`;
+     (2) instantiating `subspace` for any cmat_subspace V;
+     (3) instantiating `seminorm` and `normed_vectorspace` for hs_norm;
+     (4) instantiating `linearform` and `continuous` for the real part
+         Re \<circ> g of a bounded clinear functional;
+     (5) applying HOL's `norm_Hahn_Banach` to obtain a real-linear
+         norm-preserving extension Re(f) of Re(g);
+     (6) defining the complex-linear extension f via the standard
+         Bohnenblust-Sobczyk recipe f(A) = Re(f)(A) - i \<cdot> Re(f)(\<i> \<cdot>\<^sub>m A);
+     (7) verifying f is complex-linear, extends g, and \<bar>\<bar>f\<bar>\<bar> = \<bar>\<bar>g\<bar>\<bar>.
+   ---- *)
 
 theorem matrix_hahn_banach_full_space:
   fixes n :: nat and g :: "complex Matrix.mat \<Rightarrow> complex"
