@@ -1194,14 +1194,138 @@ proof -
 qed
 
 
-text \<open>The explicit-bound form of the matrix Hahn-Banach theorem
-(verbatim transfer of an \<open>\<bar>Re \<circ> g\<bar> \<le> C \<cdot> \<parallel>x\<parallel>\<close> bound to
-\<open>\<bar>f x\<bar> \<le> C \<cdot> \<parallel>x\<parallel>\<close>) is reachable from the tight-bound infrastructure
-above (\<open>bs_complex_extension_tight_bound\<close>), modulo extracting the
-norm-preservation conclusion of HOL/Hahn_Banach's
-\<open>norm_Hahn_Banach\<close> as an explicit \<open>\<bar>F x\<bar> \<le> C \<cdot> \<parallel>x\<parallel>\<close> for the
-real-linear extension \<open>F\<close>. That extraction expands the locale-local
-\<open>fn_norm\<close> notation to its \<open>Sup\<close>-based definition and is left
-to a separate development.\<close>
+text \<open>The explicit-bound form of the matrix Hahn-Banach theorem:
+any \<open>C\<close>-bound on \<open>\<bar>Re \<circ> g\<bar>\<close> over the subspace \<open>V\<close> lifts
+verbatim to a \<open>C\<close>-bound on \<open>cmod \<circ> f\<close> over the whole space.
+
+The proof unfolds HOL/Hahn_Banach's locale-local \<open>fn_norm\<close>
+to its \<open>Sup\<close>-based definition, bounds the supremum on the
+subspace side by \<open>C\<close> via \<open>g_re_C\<close>, transports the bound to
+the extension side via \<open>norm_Hahn_Banach\<close>'s norm-preservation
+conclusion, then uses \<open>bs_complex_extension_tight_bound\<close> to
+turn the bound on the real extension into a bound on the
+complex extension.\<close>
+
+theorem matrix_hahn_banach_lmat_with_bound:
+  fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
+      and g :: "(complex, 'm, 'n) lmat \<Rightarrow> complex"
+      and C :: real
+  assumes V_csub: "cmat_subspace_lmat V"
+      and g_clin: "clinear_functional_on V g"
+      and g_re_C: "\<forall>x \<in> V. \<bar>Re (g x)\<bar> \<le> C * hs_norm_lmat x"
+      and C_nn: "0 \<le> C"
+  shows "\<exists>f :: (complex, 'm, 'n) lmat \<Rightarrow> complex.
+            clinear_functional_on UNIV f
+          \<and> (\<forall>x \<in> V. f x = g x)
+          \<and> (\<forall>x. cmod (f x) \<le> C * hs_norm_lmat x)"
+proof -
+  have V_sub: "Subspace.subspace V (UNIV :: (complex, 'm, 'n) lmat set)"
+    using V_csub by (rule subspace_of_cmat_subspace_lmat)
+  have V_clos_i: "\<forall>x \<in> V. cmult_lmat \<i> x \<in> V"
+    using V_csub unfolding cmat_subspace_lmat_def cmult_lmat_def by simp
+  have re_lin: "linearform V (re_part_lmat g)"
+    using V_sub g_clin by (rule linearform_re_part_lmat)
+  have re_C: "\<And>x. x \<in> V \<Longrightarrow> \<bar>re_part_lmat g x\<bar> \<le> C * hs_norm_lmat x"
+    using g_re_C unfolding re_part_lmat_def by simp
+  have re_cont: "continuous V (re_part_lmat g) hs_norm_lmat"
+    using re_lin re_C by (rule continuousI)
+  have nv: "normed_vectorspace UNIV hs_norm_lmat"
+    by (rule normed_vectorspace_UNIV_lmat)
+
+  text \<open>Interpret HOL/Hahn_Banach's
+\<open>normed_vectorspace_with_fn_norm\<close> locale on our setting. Inside
+the interpretation we get \<open>fn_norm_le_cong\<close> (\<open>\<bar>F x\<bar> \<le>
+\<parallel>F\<parallel> \<cdot> \<parallel>x\<parallel>\<close>) and \<open>fn_norm_leastB\<close>
+(\<open>\<parallel>F\<parallel> \<le> y\<close> from a uniform bound on \<open>B\<close>).\<close>
+
+  interpret nvfn_E: normed_vectorspace_with_fn_norm
+    "UNIV :: (complex, 'm, 'n) lmat set" hs_norm_lmat
+    "\<lambda>V f. {0::real} \<union>
+            {\<bar>f x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V}"
+    "\<lambda>f V. \<Squnion>({0::real} \<union>
+              {\<bar>f x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V})"
+    using nv
+    by (intro_locales)
+       (auto dest: normed_vectorspace.axioms norm.axioms)
+
+  have nv_V: "normed_vectorspace V hs_norm_lmat"
+    using V_sub nv by (rule subspace_normed_vs)
+  interpret nvfn_V: normed_vectorspace_with_fn_norm
+    V hs_norm_lmat
+    "\<lambda>V f. {0::real} \<union>
+            {\<bar>f x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V}"
+    "\<lambda>f V. \<Squnion>({0::real} \<union>
+              {\<bar>f x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V})"
+    using nv_V
+    by (intro_locales)
+       (auto dest: normed_vectorspace.axioms norm.axioms)
+
+  obtain F where
+      F_lin: "linearform UNIV F"
+    and F_cont: "continuous UNIV F hs_norm_lmat"
+    and F_ext_V: "\<forall>x \<in> V. F x = re_part_lmat g x"
+    and F_fn_eq:
+      "\<Squnion>({0::real} \<union>
+          {\<bar>F x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> (UNIV :: (complex, 'm, 'n) lmat set)})
+       = \<Squnion>({0::real} \<union>
+              {\<bar>re_part_lmat g x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V})"
+    using norm_Hahn_Banach[OF nv V_sub re_lin re_cont] by blast
+
+  let ?B_F = "{0::real} \<union>
+              {\<bar>F x\<bar> / hs_norm_lmat x | x. x \<noteq> 0
+                                          \<and> x \<in> (UNIV :: (complex, 'm, 'n) lmat set)}"
+  let ?B_re = "{0::real} \<union>
+                {\<bar>re_part_lmat g x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V}"
+
+  text \<open>Bound the subspace-side fn_norm by \<open>C\<close>.\<close>
+  have re_fn_le_C: "\<Squnion>(?B_re) \<le> C"
+  proof (rule nvfn_V.fn_norm_leastB[OF re_cont])
+    fix b assume "b \<in> {0} \<union>
+                  {\<bar>re_part_lmat g x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V}"
+    then consider "b = 0" |
+                  x where "b = \<bar>re_part_lmat g x\<bar> / hs_norm_lmat x"
+                          "x \<noteq> 0" "x \<in> V"
+      by blast
+    thus "b \<le> C"
+    proof cases
+      case 1 thus ?thesis using C_nn by simp
+    next
+      case (2 x)
+      have h_pos: "0 < hs_norm_lmat x"
+        using \<open>x \<noteq> 0\<close> hs_norm_lmat_zero_iff hs_norm_lmat_nonneg[of x]
+        by (smt (verit, best))
+      have re_bnd: "\<bar>re_part_lmat g x\<bar> \<le> C * hs_norm_lmat x"
+        using re_C \<open>x \<in> V\<close> by blast
+      have "b = \<bar>re_part_lmat g x\<bar> / hs_norm_lmat x" using 2 by simp
+      also have "\<dots> \<le> C"
+        using re_bnd h_pos by (auto simp: divide_le_eq)
+      finally show ?thesis .
+    qed
+  qed
+  have F_fn_le_C: "\<Squnion>(?B_F) \<le> C" using F_fn_eq re_fn_le_C by simp
+
+  text \<open>Use \<open>fn_norm_le_cong\<close> to extract the explicit \<open>C\<close> bound on
+  \<open>F\<close>.\<close>
+  have F_C: "\<And>x. \<bar>F x\<bar> \<le> C * hs_norm_lmat x"
+  proof -
+    fix x :: "(complex, 'm, 'n) lmat"
+    have h_nn: "0 \<le> hs_norm_lmat x" by (rule hs_norm_lmat_nonneg)
+    have step1: "\<bar>F x\<bar> \<le> \<Squnion>(?B_F) * hs_norm_lmat x"
+      using F_cont F_lin
+      by (intro nvfn_E.fn_norm_le_cong) auto
+    also have "\<dots> \<le> C * hs_norm_lmat x"
+      using F_fn_le_C h_nn by (rule mult_right_mono)
+    finally show "\<bar>F x\<bar> \<le> C * hs_norm_lmat x" .
+  qed
+
+  let ?f = "bs_complex_extension F"
+  have f_clin: "clinear_functional_on UNIV ?f"
+    by (rule bs_complex_extension_clinear[OF F_lin])
+  have f_C: "\<forall>x. cmod (?f x) \<le> C * hs_norm_lmat x"
+    using bs_complex_extension_tight_bound[OF F_lin F_C] by simp
+  have f_ext: "\<forall>x \<in> V. ?f x = g x"
+    by (rule bs_complex_extension_extends[OF g_clin V_clos_i F_ext_V])
+  show ?thesis using f_clin f_ext f_C by blast
+qed
 
 end
