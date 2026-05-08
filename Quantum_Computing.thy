@@ -18121,6 +18121,137 @@ qed
 
 
 (* ============================================================================
+   DAY 28 (continued): Hard direction of Universal Entanglement Witnesses.
+
+   PDF Section 29.1 derives the contrapositive of the easy direction
+   from the closed-cone separation theorem: if the Hermitian
+   matrix \<open>\<rho>\<close> is outside the closure of the separable cone, then
+   there is a real-linear functional separating \<open>\<rho>\<close> from the
+   cone.  The complex linear extension via \<open>X = H + iK\<close> + Riesz
+   representation on the HS inner product produces a Hermitian
+   witness \<open>W\<close> with \<open>Re Tr (W \<rho>) < 0\<close>.
+
+   Below we set up the structure: predicates, lemmas, and the main
+   theorem, with each non-trivial step admitted via \<open>sorry\<close>.
+   Subsequent commits discharge them.
+   ============================================================================ *)
+
+(* Cone of separable PSD matrices: same shape as
+   \<open>sep_decomp_valid\<close> but without the trace-1 normalisation.
+   This is the closed convex cone the separation theorem operates on. *)
+
+definition sep_cone_valid ::
+  "nat \<Rightarrow> nat \<Rightarrow> (real \<times> complex Matrix.mat \<times> complex Matrix.mat) list \<Rightarrow> bool"
+where
+  "sep_cone_valid m p ts \<equiv>
+     (\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+         w \<ge> 0
+         \<and> \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+         \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>)"
+
+definition separable_cone :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "separable_cone m p \<rho> \<equiv>
+     \<rho> \<in> carrier_mat (m*p) (m*p)
+     \<and> (\<exists>ts. sep_cone_valid m p ts \<and> \<rho> = sep_sum m p ts)"
+
+(* Step 1: \<open>separable_density\<close> implies \<open>separable_cone\<close> -- the
+   trace-1 normalisation is one constraint on top of the cone. *)
+
+lemma separable_density_imp_separable_cone:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes "separable_density m p \<rho>"
+      and "0 < m" and "0 < p"
+  shows "separable_cone m p \<rho>"
+  sorry
+
+(* Step 2: every element of the separable cone is PSD. *)
+
+lemma separable_cone_psd:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes "separable_cone m p \<rho>"
+      and "0 < m" and "0 < p"
+  shows "psd \<rho>"
+  sorry
+
+(* Step 3: separable_density implies psd (corollary of steps 1, 2). *)
+
+lemma separable_density_psd:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes "separable_density m p \<rho>"
+      and "0 < m" and "0 < p"
+  shows "psd \<rho>"
+  sorry
+
+(* Step 4: closure under non-negative scaling and addition. *)
+
+lemma separable_cone_smult:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat" and c :: real
+  assumes "separable_cone m p \<rho>" and "0 \<le> c"
+      and "0 < m" and "0 < p"
+  shows "separable_cone m p (complex_of_real c \<cdot>\<^sub>m \<rho>)"
+  sorry
+
+lemma separable_cone_add:
+  fixes m p :: nat and \<rho>\<^sub>1 \<rho>\<^sub>2 :: "complex Matrix.mat"
+  assumes "separable_cone m p \<rho>\<^sub>1" and "separable_cone m p \<rho>\<^sub>2"
+  shows "separable_cone m p (\<rho>\<^sub>1 + \<rho>\<^sub>2)"
+  sorry
+
+(* Step 5: closed-cone separation in finite-dim Hilbert space.
+   This is the geometric Hahn-Banach used by PDF Section 29.1.
+   Given \<open>\<rho>\<close> Hermitian and outside the (closed) separable cone,
+   there is a Hermitian \<open>W\<close> with \<open>Re Tr (W \<sigma>) \<ge> 0\<close> for every
+   \<open>\<sigma>\<close> in the cone and \<open>Re Tr (W \<rho>) < 0\<close>.
+
+   The proof embeds the Hermitian matrices into a real Euclidean
+   space via \<open>HS\<close>-coordinates and applies HOL-Analysis's
+   \<open>separating_hyperplane_closed_point\<close>. *)
+
+lemma separable_cone_separating_hyperplane:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+      and \<rho>_h: "hermitian \<rho>"
+      and \<rho>_nonsep: "\<not> separable_cone m p \<rho>"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "\<exists>W. W \<in> carrier_mat (m*p) (m*p) \<and> hermitian W
+            \<and> (\<forall>\<sigma>. separable_cone m p \<sigma>
+                    \<longrightarrow> 0 \<le> Re (Tr (W * \<sigma>)))
+            \<and> Re (Tr (W * \<rho>)) < 0"
+  sorry
+
+(* Step 6: a Hermitian \<open>W\<close> non-negative on the cone is an
+   entanglement witness in the sense of \<open>entanglement_witness\<close>. *)
+
+lemma cone_separator_is_witness:
+  fixes m p :: nat and W :: "complex Matrix.mat"
+  assumes W_c: "W \<in> carrier_mat (m*p) (m*p)"
+      and W_h: "hermitian W"
+      and W_cone_nonneg: "\<forall>\<sigma>. separable_cone m p \<sigma>
+                              \<longrightarrow> 0 \<le> Re (Tr (W * \<sigma>))"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "entanglement_witness m p W"
+  sorry
+
+(* Step 7: a density matrix is Hermitian. *)
+
+lemma density_matrix_hermitian:
+  fixes \<rho> :: "complex Matrix.mat" and n :: nat
+  assumes "density_matrix n \<rho>"
+  shows "hermitian \<rho>"
+  sorry
+
+(* Main theorem: hard direction of universal entanglement witnesses. *)
+
+theorem nonseparable_implies_witness:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes \<rho>_dm: "density_matrix (m*p) \<rho>"
+      and \<rho>_nonsep: "\<not> separable_density m p \<rho>"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "\<exists>W. entanglement_witness m p W \<and> Re (Tr (W * \<rho>)) < 0"
+  sorry
+
+
+(* ============================================================================
    DAY 29 \<mdash> 7 / Nov / 11
    Topic: Classical Error Correction; Hamming Weight and Distance
    ============================================================================ *)
