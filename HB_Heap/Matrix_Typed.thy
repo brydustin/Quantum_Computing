@@ -12,6 +12,7 @@ theory Matrix_Typed
     "HOL-Hahn_Banach.Hahn_Banach"
     "Jordan_Normal_Form.Matrix"
     "HOL-Library.Cardinality"
+    "Vern_Paulsen_QC_3_10.Basic_Math"
 begin
 
 section \<open>Typed-dimension matrix wrapper\<close>
@@ -209,7 +210,7 @@ text \<open>Every \<open>(complex, 'm, 'n) lmat\<close> with the universe set is
 vector space in HOL/Hahn_Banach's sense.\<close>
 
 lemma vectorspace_UNIV_lmat:
-  "vectorspace (UNIV :: (complex, 'm :: finite, 'n :: finite) lmat set)"
+  "Vector_Space.vectorspace (UNIV :: (complex, 'm :: finite, 'n :: finite) lmat set)"
 proof (unfold_locales)
   fix x y z :: "(complex, 'm, 'n) lmat" and a b :: real
   show "(UNIV :: (complex, 'm, 'n) lmat set) \<noteq> {}" by simp
@@ -284,6 +285,374 @@ proof (unfold_locales)
   qed
   show "x - y = x + - y"
     by (simp only: diff_conv_add_uminus)
+qed
+
+
+section \<open>The Hilbert-Schmidt norm on \<open>(complex, 'm, 'n) lmat\<close>\<close>
+
+text \<open>The HS / Frobenius norm: \<open>\<parallel>M\<parallel>\<^sub>HS = sqrt (Re \<langle>\<langle>M | M\<rangle>\<rangle>)\<close>.
+We define it on \<open>(complex, 'm, 'n) lmat\<close> using the underlying matrix's
+HS inner product from \<open>Basic_Math\<close>.\<close>
+
+definition hs_norm_lmat ::
+    "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+where
+  "hs_norm_lmat M = sqrt (Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>))"
+
+lemma hs_norm_lmat_nonneg: "0 \<le> hs_norm_lmat M"
+  unfolding hs_norm_lmat_def
+  by (rule real_sqrt_ge_zero) (rule hs_inner_prod_self_nonneg)
+
+lemma hs_norm_lmat_sq:
+  "(hs_norm_lmat M)\<^sup>2 = Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>)"
+proof -
+  have nn: "Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>) \<ge> 0"
+    by (rule hs_inner_prod_self_nonneg)
+  have "(hs_norm_lmat M)\<^sup>2
+        = (sqrt (Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>)))\<^sup>2"
+    by (simp add: hs_norm_lmat_def)
+  also have "\<dots> = Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>)"
+    using nn by (rule real_sqrt_pow2)
+  finally show ?thesis .
+qed
+
+lemma hs_norm_lmat_smult:
+  "hs_norm_lmat (Vector_Space.prod a M) = \<bar>a\<bar> * hs_norm_lmat M"
+proof -
+  let ?ca = "complex_of_real a"
+  have hs_smult:
+    "\<langle>\<langle> ?ca \<cdot>\<^sub>m unwrap_lm M | ?ca \<cdot>\<^sub>m unwrap_lm M \<rangle>\<rangle>
+     = (cnj ?ca * ?ca) * \<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>"
+    by (simp add: hs_inner_prod_left_smult hs_inner_prod_right_smult ac_simps)
+  have cnj_real: "cnj ?ca * ?ca = complex_of_real (a\<^sup>2)"
+    by (simp add: complex_eq_iff power2_eq_square)
+  have re_mul:
+    "Re (complex_of_real (a\<^sup>2) * \<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>)
+     = a\<^sup>2 * Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>)"
+    by simp
+  have nn: "Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>) \<ge> 0"
+    by (rule hs_inner_prod_self_nonneg)
+  have a2_nn: "0 \<le> a\<^sup>2" by simp
+  have "hs_norm_lmat (Vector_Space.prod a M)
+        = sqrt (Re (\<langle>\<langle> ?ca \<cdot>\<^sub>m unwrap_lm M | ?ca \<cdot>\<^sub>m unwrap_lm M \<rangle>\<rangle>))"
+    by (simp add: hs_norm_lmat_def)
+  also have "\<dots> = sqrt (a\<^sup>2 * Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>))"
+    using hs_smult cnj_real re_mul by simp
+  also have "\<dots> = sqrt (a\<^sup>2) * sqrt (Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>))"
+    by (rule real_sqrt_mult)
+  also have "\<dots> = \<bar>a\<bar> * hs_norm_lmat M"
+    by (simp only: hs_norm_lmat_def real_sqrt_abs)
+  finally show ?thesis .
+qed
+
+
+section \<open>Triangle inequality for the HS norm\<close>
+
+text \<open>Cauchy-Schwarz on the HS inner product (real form), used in
+the triangle inequality proof.\<close>
+
+lemma hs_inner_prod_real_self:
+  "\<langle>\<langle> A | A \<rangle>\<rangle> = complex_of_real (Re (\<langle>\<langle> A | A \<rangle>\<rangle>))"
+  using hs_inner_prod_self_real
+  by (metis Reals_cases of_real_Re)
+
+lemma hs_inner_prod_left_add:
+  assumes "dim_row A1 = dim_row B" and "dim_col A1 = dim_col B"
+      and "dim_row A2 = dim_row B" and "dim_col A2 = dim_col B"
+  shows "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
+proof -
+  have dims:
+    "dim_row (A1 + A2) = dim_row B" "dim_col (A1 + A2) = dim_col B"
+    using assms by auto
+  have "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = cnj (\<langle>\<langle> B | A1 + A2 \<rangle>\<rangle>)"
+    using dims by (intro hs_inner_prod_cnj) auto
+  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle> + \<langle>\<langle> B | A2 \<rangle>\<rangle>)"
+    using assms by (simp add: hs_inner_prod_right_add)
+  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle>) + cnj (\<langle>\<langle> B | A2 \<rangle>\<rangle>)"
+    by simp
+  also have "\<dots> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
+    by (metis assms(1,2,3,4) hs_inner_prod_cnj)    
+  finally show ?thesis.
+qed
+
+lemma hs_cauchy_schwarz_re:
+  fixes A B :: "complex Matrix.mat"
+  assumes dr: "dim_row A = dim_row B" and dc: "dim_col A = dim_col B"
+  shows "(Re (\<langle>\<langle> A | B \<rangle>\<rangle>))\<^sup>2 \<le> Re (\<langle>\<langle> A | A \<rangle>\<rangle>) * Re (\<langle>\<langle> B | B \<rangle>\<rangle>)"
+proof -
+  let ?aa = "Re (\<langle>\<langle> A | A \<rangle>\<rangle>)"
+  let ?bb = "Re (\<langle>\<langle> B | B \<rangle>\<rangle>)"
+  let ?ab = "Re (\<langle>\<langle> A | B \<rangle>\<rangle>)"
+  let ?ba = "Re (\<langle>\<langle> B | A \<rangle>\<rangle>)"
+  have aa_nn: "?aa \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+  have bb_nn: "?bb \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+  have ab_eq_ba: "?ab = ?ba"
+    by (metis cnj.sel(1) dc dr hs_inner_prod_cnj)
+
+  have quad_nn:
+    "\<And>t :: real. 0 \<le> ?aa + 2 * t * ?ab + t\<^sup>2 * ?bb"
+  proof -
+    fix t :: real
+    let ?CR = "complex_of_real"
+    have dim_tB_row: "dim_row (?CR t \<cdot>\<^sub>m B) = dim_row B" by simp
+    have dim_tB_col: "dim_col (?CR t \<cdot>\<^sub>m B) = dim_col B" by simp
+    have dim_AtB_row: "dim_row (A + ?CR t \<cdot>\<^sub>m B) = dim_row B" using dr by simp
+    have dim_AtB_col: "dim_col (A + ?CR t \<cdot>\<^sub>m B) = dim_col B" using dc by simp
+
+    have ip_self_nn:
+      "0 \<le> Re (\<langle>\<langle> A + ?CR t \<cdot>\<^sub>m B | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_self_nonneg)
+
+    have left_split:
+      "\<langle>\<langle> A + ?CR t \<cdot>\<^sub>m B | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>
+       = \<langle>\<langle> A | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>
+         + \<langle>\<langle> ?CR t \<cdot>\<^sub>m B | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>"
+      using dr dc by (intro hs_inner_prod_left_add) auto
+    have AaB:
+      "\<langle>\<langle> A | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>
+       = \<langle>\<langle> A | A \<rangle>\<rangle> + \<langle>\<langle> A | ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>"
+      using dr dc by (intro hs_inner_prod_right_add) auto
+    have tBaB:
+      "\<langle>\<langle> ?CR t \<cdot>\<^sub>m B | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>
+       = \<langle>\<langle> ?CR t \<cdot>\<^sub>m B | A \<rangle>\<rangle> + \<langle>\<langle> ?CR t \<cdot>\<^sub>m B | ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>"
+      using dr dc by (intro hs_inner_prod_right_add) auto
+    have AtB: "\<langle>\<langle> A | ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle> = ?CR t * \<langle>\<langle> A | B \<rangle>\<rangle>"
+      using dc dr hs_inner_prod_right_smult by presburger
+    have tBA: "\<langle>\<langle> ?CR t \<cdot>\<^sub>m B | A \<rangle>\<rangle> = cnj (?CR t) * \<langle>\<langle> B | A \<rangle>\<rangle>"
+      using dc dr hs_inner_prod_left_smult by blast
+    have tBtB:
+      "\<langle>\<langle> ?CR t \<cdot>\<^sub>m B | ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle> = cnj (?CR t) * (?CR t * \<langle>\<langle> B | B \<rangle>\<rangle>)"
+      by (simp add: hs_inner_prod_left_smult hs_inner_prod_right_smult)
+
+    have expand:
+      "\<langle>\<langle> A + ?CR t \<cdot>\<^sub>m B | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>
+       = \<langle>\<langle> A | A \<rangle>\<rangle>
+         + ?CR t * \<langle>\<langle> A | B \<rangle>\<rangle>
+         + ?CR t * \<langle>\<langle> B | A \<rangle>\<rangle>
+         + ?CR (t\<^sup>2) * \<langle>\<langle> B | B \<rangle>\<rangle>"
+      using left_split AaB tBaB AtB tBA tBtB
+      by (simp add: power2_eq_square)
+
+    have re_expand:
+      "Re (\<langle>\<langle> A + ?CR t \<cdot>\<^sub>m B | A + ?CR t \<cdot>\<^sub>m B \<rangle>\<rangle>)
+       = ?aa + t * ?ab + t * ?ba + t\<^sup>2 * ?bb"
+      using expand by simp
+    also have "\<dots> = ?aa + 2 * t * ?ab + t\<^sup>2 * ?bb"
+      using ab_eq_ba by (simp add: algebra_simps)
+    finally show "0 \<le> ?aa + 2 * t * ?ab + t\<^sup>2 * ?bb"
+      using ip_self_nn by simp
+  qed
+
+  show ?thesis
+  proof (cases "?bb = 0")
+    case True
+    then have bb0: "?bb = 0" .
+    have "?ab = 0"
+    proof (rule ccontr)
+      assume "?ab \<noteq> 0"
+      then obtain s where s_def: "s = - (?aa + 1) / (2 * ?ab)" and s_nz: "True"
+        by simp
+      have "?aa + 2 * s * ?ab + s\<^sup>2 * ?bb = ?aa + 2 * s * ?ab"
+        using bb0 by simp
+      also have "\<dots> = ?aa - (?aa + 1)"
+        using \<open>?ab \<noteq> 0\<close> by (simp add: s_def field_simps)
+      also have "\<dots> = - 1" by simp
+      finally have "?aa + 2 * s * ?ab + s\<^sup>2 * ?bb = - 1" .
+      with quad_nn[of s] show False by simp
+    qed
+    thus ?thesis using bb0 by simp
+  next
+    case False
+    hence bb_pos: "?bb > 0" using bb_nn by simp
+    let ?t = "- ?ab / ?bb"
+    have ineq: "0 \<le> ?aa + 2 * ?t * ?ab + ?t\<^sup>2 * ?bb"
+      by (rule quad_nn)
+    have "?aa + 2 * ?t * ?ab + ?t\<^sup>2 * ?bb
+          = ?aa - 2 * ?ab\<^sup>2 / ?bb + ?ab\<^sup>2 / ?bb"
+      using bb_pos by (simp add: field_simps power2_eq_square)
+    also have "\<dots> = ?aa - ?ab\<^sup>2 / ?bb"
+      by (simp add: field_simps)
+    finally have "0 \<le> ?aa - ?ab\<^sup>2 / ?bb" using ineq by simp
+    hence "?ab\<^sup>2 / ?bb \<le> ?aa" by simp
+    hence "?ab\<^sup>2 \<le> ?aa * ?bb"
+      using bb_pos by (simp add: field_simps)
+    thus ?thesis by simp
+  qed
+qed
+
+lemma hs_norm_lmat_triangle:
+  fixes M N :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "hs_norm_lmat (M + N) \<le> hs_norm_lmat M + hs_norm_lmat N"
+proof -
+  let ?A = "unwrap_lm M"
+  let ?B = "unwrap_lm N"
+  have dr: "dim_row ?A = dim_row ?B" by simp
+  have dc: "dim_col ?A = dim_col ?B" by simp
+  let ?aa = "Re (\<langle>\<langle> ?A | ?A \<rangle>\<rangle>)"
+  let ?bb = "Re (\<langle>\<langle> ?B | ?B \<rangle>\<rangle>)"
+  let ?ab = "Re (\<langle>\<langle> ?A | ?B \<rangle>\<rangle>)"
+  have aa_nn: "?aa \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+  have bb_nn: "?bb \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+
+  have ab_eq_ba: "?ab = Re (\<langle>\<langle> ?B | ?A \<rangle>\<rangle>)"
+    by (metis cnj.sel(1) dc dr hs_inner_prod_cnj)
+  have unwrap_sum: "unwrap_lm (M + N) = ?A + ?B" by simp
+  have ip_sum:
+    "\<langle>\<langle> ?A + ?B | ?A + ?B \<rangle>\<rangle>
+     = \<langle>\<langle> ?A | ?A \<rangle>\<rangle> + \<langle>\<langle> ?A | ?B \<rangle>\<rangle> + \<langle>\<langle> ?B | ?A \<rangle>\<rangle> + \<langle>\<langle> ?B | ?B \<rangle>\<rangle>"
+  proof -
+    have "\<langle>\<langle> ?A + ?B | ?A + ?B \<rangle>\<rangle>
+          = \<langle>\<langle> ?A | ?A + ?B \<rangle>\<rangle> + \<langle>\<langle> ?B | ?A + ?B \<rangle>\<rangle>"
+      using dr dc by (intro hs_inner_prod_left_add) auto
+    also have "\<langle>\<langle> ?A | ?A + ?B \<rangle>\<rangle> = \<langle>\<langle> ?A | ?A \<rangle>\<rangle> + \<langle>\<langle> ?A | ?B \<rangle>\<rangle>"
+      using dr dc by (intro hs_inner_prod_right_add) auto
+    moreover have "\<langle>\<langle> ?B | ?A + ?B \<rangle>\<rangle> = \<langle>\<langle> ?B | ?A \<rangle>\<rangle> + \<langle>\<langle> ?B | ?B \<rangle>\<rangle>"
+      using dr dc by (intro hs_inner_prod_right_add) auto
+    ultimately show ?thesis by (simp add: ac_simps)
+  qed
+  have re_sum:
+    "Re (\<langle>\<langle> ?A + ?B | ?A + ?B \<rangle>\<rangle>) = ?aa + 2 * ?ab + ?bb"
+    using ip_sum ab_eq_ba by simp
+
+  have cs: "?ab\<^sup>2 \<le> ?aa * ?bb"
+    using hs_cauchy_schwarz_re[OF dr dc] .
+  have ab_le: "?ab \<le> sqrt ?aa * sqrt ?bb"
+  proof -
+    have aa_bb_nn: "0 \<le> ?aa * ?bb" using aa_nn bb_nn by simp
+    have "?ab \<le> \<bar>?ab\<bar>" by simp
+    also have "\<bar>?ab\<bar> = sqrt (?ab\<^sup>2)" by simp
+    also have "\<dots> \<le> sqrt (?aa * ?bb)"
+      using cs by (rule real_sqrt_le_mono)
+    also have "\<dots> = sqrt ?aa * sqrt ?bb"
+      by (rule real_sqrt_mult)
+    finally show ?thesis.
+  qed
+
+  have target_sq:
+    "(hs_norm_lmat (M + N))\<^sup>2 \<le> (hs_norm_lmat M + hs_norm_lmat N)\<^sup>2"
+  proof -
+    have lhs: "(hs_norm_lmat (M + N))\<^sup>2 = ?aa + 2 * ?ab + ?bb"
+      using hs_norm_lmat_sq[of "M + N"] re_sum unwrap_sum by simp
+    have rhs:
+      "(hs_norm_lmat M + hs_norm_lmat N)\<^sup>2
+       = ?aa + 2 * (sqrt ?aa * sqrt ?bb) + ?bb"
+    proof -
+      have eA: "(hs_norm_lmat M)\<^sup>2 = ?aa"
+        by (rule hs_norm_lmat_sq)
+      have eB: "(hs_norm_lmat N)\<^sup>2 = ?bb"
+        by (rule hs_norm_lmat_sq)
+      have hA: "hs_norm_lmat M = sqrt ?aa"
+        by (simp add: hs_norm_lmat_def)
+      have hB: "hs_norm_lmat N = sqrt ?bb"
+        by (simp add: hs_norm_lmat_def)
+      have "(hs_norm_lmat M + hs_norm_lmat N)\<^sup>2
+            = (sqrt ?aa + sqrt ?bb)\<^sup>2"
+        by (simp add: hA hB)
+      also have "\<dots> = (sqrt ?aa)\<^sup>2 + 2 * (sqrt ?aa * sqrt ?bb) + (sqrt ?bb)\<^sup>2"
+        by (simp add: power2_sum)
+      also have "\<dots> = ?aa + 2 * (sqrt ?aa * sqrt ?bb) + ?bb"
+        using aa_nn bb_nn by simp
+      finally show ?thesis .
+    qed
+    show ?thesis
+      using lhs rhs ab_le by (simp add: algebra_simps)
+  qed
+
+  have lhs_nn: "0 \<le> hs_norm_lmat (M + N)" by (rule hs_norm_lmat_nonneg)
+  have rhs_nn: "0 \<le> hs_norm_lmat M + hs_norm_lmat N"
+    using hs_norm_lmat_nonneg[of M] hs_norm_lmat_nonneg[of N] by simp
+  show ?thesis
+    using target_sq lhs_nn rhs_nn power2_le_imp_le by blast
+qed
+
+
+section \<open>Subspace, seminorm, normed-vectorspace instances\<close>
+
+text \<open>HS norm is a seminorm on the whole real vector space of
+\<open>(complex, 'm, 'n) lmat\<close>.\<close>
+
+lemma seminorm_UNIV_hs_norm_lmat:
+  "seminorm (UNIV :: (complex, 'm :: finite, 'n :: finite) lmat set) hs_norm_lmat"
+proof
+  fix x y :: "(complex, 'm, 'n) lmat" and a :: real
+  show "0 \<le> hs_norm_lmat x" by (rule hs_norm_lmat_nonneg)
+  show "hs_norm_lmat (Vector_Space.prod a x) = \<bar>a\<bar> * hs_norm_lmat x"
+    by (rule hs_norm_lmat_smult)
+  show "hs_norm_lmat (x + y) \<le> hs_norm_lmat x + hs_norm_lmat y"
+    by (rule hs_norm_lmat_triangle)
+qed
+
+text \<open>HS norm is a (real) norm: it vanishes only on the zero matrix.\<close>
+
+lemma hs_norm_lmat_zero_iff:
+  fixes M :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "(hs_norm_lmat M = 0) \<longleftrightarrow> (M = 0)"
+proof
+  assume "hs_norm_lmat M = 0"
+  hence sq_zero: "Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>) = 0"
+    using hs_norm_lmat_sq[of M] by simp
+  have re_in_R: "\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle> \<in> \<real>"
+    by (rule hs_inner_prod_self_real)
+  hence im_zero: "Im (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>) = 0"
+    by (simp add: complex_is_Real_iff)
+  have ip_zero: "\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle> = 0"
+    using sq_zero im_zero by (simp add: complex_eq_iff)
+  have entries:
+    "\<And>i j. i < CARD('m) \<Longrightarrow> j < CARD('n) \<Longrightarrow> (unwrap_lm M) $$ (i, j) = 0"
+    using ip_zero hs_inner_prod_eq_zero_imp by force
+  have unwrap_zero: "unwrap_lm M = 0\<^sub>m (CARD('m)) (CARD('n))"
+    by (intro eq_matI) (auto simp: zero_mat_def entries)
+  have "unwrap_lm M = unwrap_lm (0 :: (complex, 'm, 'n) lmat)"
+    using unwrap_zero by simp
+  thus "M = 0" by (simp only: unwrap_lm_inject)
+next
+  assume "M = 0"
+  thus "hs_norm_lmat M = 0"
+    by (simp add: hs_norm_lmat_def hs_inner_prod_def zero_mat_def)
+qed
+
+lemma norm_UNIV_hs_norm_lmat:
+  "Normed_Space.norm
+     (UNIV :: (complex, 'm :: finite, 'n :: finite) lmat set) hs_norm_lmat"
+  using seminorm_UNIV_hs_norm_lmat hs_norm_lmat_zero_iff
+  by (auto simp: Normed_Space.norm_def Normed_Space.norm_axioms_def)
+
+lemma normed_vectorspace_UNIV_lmat:
+  "normed_vectorspace
+     (UNIV :: (complex, 'm :: finite, 'n :: finite) lmat set) hs_norm_lmat"
+  using vectorspace_UNIV_lmat norm_UNIV_hs_norm_lmat
+  by (rule normed_vectorspace.intro)
+
+text \<open>A complex-linear subspace V of \<open>(complex, 'm, 'n) lmat\<close>
+(i.e.\ nonempty, closed under addition and complex-scalar
+multiplication) is in particular a real-linear subspace, hence a
+\<open>subspace\<close> of \<open>UNIV\<close> in HOL/Hahn_Banach's sense.\<close>
+
+definition cmat_subspace_lmat ::
+    "(complex, 'm :: finite, 'n :: finite) lmat set \<Rightarrow> bool"
+where
+  "cmat_subspace_lmat V \<equiv>
+     V \<noteq> {} \<and>
+     (\<forall>x \<in> V. \<forall>y \<in> V. x + y \<in> V) \<and>
+     (\<forall>x \<in> V. \<forall>c :: complex.
+        wrap_lm (c \<cdot>\<^sub>m unwrap_lm x) \<in> V)"
+
+lemma subspace_of_cmat_subspace_lmat:
+  fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
+  assumes "cmat_subspace_lmat V"
+  shows "Subspace.subspace V (UNIV :: (complex, 'm, 'n) lmat set)"
+proof
+  show "V \<noteq> {}"
+    using assms unfolding cmat_subspace_lmat_def by simp
+  show "V \<subseteq> UNIV" by simp
+  fix x y :: "(complex, 'm, 'n) lmat" and a :: real
+  assume xV: "x \<in> V" and yV: "y \<in> V"
+  show "x + y \<in> V"
+    using assms xV yV unfolding cmat_subspace_lmat_def by blast
+  have "Vector_Space.prod a x = wrap_lm (complex_of_real a \<cdot>\<^sub>m unwrap_lm x)"
+    by (simp add: prod_lmat_def)
+  thus "Vector_Space.prod a x \<in> V"
+    using assms xV unfolding cmat_subspace_lmat_def by simp
 qed
 
 end
