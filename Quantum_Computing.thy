@@ -16965,39 +16965,40 @@ proof -
                   cnj (Q $$ (s, i)) * Q $$ (s, j)
                   * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
   proof -
-    (* Move sum_i out by 3 swaps. *)
-    have m1: "(\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>i = 0..<r. \<Sum>j = 0..<r.
-                cnj (Q $$ (s, i)) * Q $$ (s, j)
-                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))
-            = (\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>i = 0..<r. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
-                cnj (Q $$ (s, i)) * Q $$ (s, j)
-                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+    (* Two passes of three swaps each: pull sum_i out, then pull sum_j
+       out.  Calculational chain so each step uses transitivity directly
+       rather than going through simp on six big equations. *)
+    have "(\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>i = 0..<r. \<Sum>j = 0..<r.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))
+        = (\<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>i = 0..<r. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
       by (rule sum.cong[OF refl])
          (rule sum.cong[OF refl], rule sum.swap)
-    have m2: "\<dots> = (\<Sum>s = 0..<r. \<Sum>i = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
-                cnj (Q $$ (s, i)) * Q $$ (s, j)
-                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+    also have "\<dots> = (\<Sum>s = 0..<r. \<Sum>i = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
       by (rule sum.cong[OF refl]) (rule sum.swap)
-    have m3: "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
-                cnj (Q $$ (s, i)) * Q $$ (s, j)
-                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+    also have "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n. \<Sum>j = 0..<r.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
       by (rule sum.swap)
-    (* Now move sum_j out by 3 swaps. *)
-    have m4: "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>j = 0..<r. \<Sum>c = 0..<n.
-                cnj (Q $$ (s, i)) * Q $$ (s, j)
-                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+    also have "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>j = 0..<r. \<Sum>c = 0..<n.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
       by (rule sum.cong[OF refl])
          (rule sum.cong[OF refl], rule sum.cong[OF refl], rule sum.swap)
-    have m5: "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>j = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
-                cnj (Q $$ (s, i)) * Q $$ (s, j)
-                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+    also have "\<dots> = (\<Sum>i = 0..<r. \<Sum>s = 0..<r. \<Sum>j = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
       by (rule sum.cong[OF refl])
          (rule sum.cong[OF refl], rule sum.swap)
-    have m6: "\<dots> = (\<Sum>i = 0..<r. \<Sum>j = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
-                cnj (Q $$ (s, i)) * Q $$ (s, j)
-                * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
+    also have "\<dots> = (\<Sum>i = 0..<r. \<Sum>j = 0..<r. \<Sum>s = 0..<r. \<Sum>e = 0..<n. \<Sum>c = 0..<n.
+            cnj (Q $$ (s, i)) * Q $$ (s, j)
+            * ((As!i) $$ (a, c) * \<rho> $$ (c, e) * cnj ((As!j) $$ (b, e))))"
       by (rule sum.cong[OF refl]) (rule sum.swap)
-    show ?thesis using m1 m2 m3 m4 m5 m6 by simp
+    finally show ?thesis .
   qed
   show ?thesis using step1 step2 step4 step5 step6 by simp
 qed
