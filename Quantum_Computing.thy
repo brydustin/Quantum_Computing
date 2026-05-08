@@ -18363,9 +18363,314 @@ qed
    there is a Hermitian \<open>W\<close> with \<open>Re Tr (W \<sigma>) \<ge> 0\<close> for every
    \<open>\<sigma>\<close> in the cone and \<open>Re Tr (W \<rho>) < 0\<close>.
 
-   The proof embeds the Hermitian matrices into a real Euclidean
-   space via \<open>HS\<close>-coordinates and applies HOL-Analysis's
-   \<open>separating_hyperplane_closed_point\<close>. *)
+   We split the proof into structural sub-lemmas:
+     5a. \<open>separable_cone\<close> contains 0 (cone basepoint).
+     5b. \<open>separable_cone\<close> is convex.
+     5c. \<open>separable_cone\<close> is closed in HS-norm topology
+         (the heavy compactness step).
+     5d. closed convex set + external point \<Rightarrow> closest point exists.
+     5e. closest-point geometry gives a separating element \<open>a\<close>.
+     5f. for cones the threshold collapses to 0:
+         \<open>0 \<le> Re \<langle>\<langle>a|\<sigma>\<rangle>\<rangle>\<close> for all \<sigma> in cone.
+     5g. taking the Hermitian part of \<open>a\<close> preserves \<open>Re Tr (\<cdot> \<sigma>)\<close>
+         on hermitian \<sigma>; the resulting \<open>W\<close> is the witness. *)
+
+(* Step 5a: zero matrix is in the separable cone. *)
+
+lemma separable_cone_zero:
+  fixes m p :: nat
+  shows "separable_cone m p (0\<^sub>m (m*p) (m*p))"
+proof -
+  have eq: "(0\<^sub>m (m*p) (m*p) :: complex Matrix.mat) = sep_sum m p []"
+    by simp
+  have v: "sep_cone_valid m p []"
+    unfolding sep_cone_valid_def by simp
+  have c: "(0\<^sub>m (m*p) (m*p) :: complex Matrix.mat) \<in> carrier_mat (m*p) (m*p)"
+    by simp
+  show ?thesis
+    unfolding separable_cone_def using c v eq by blast
+qed
+
+(* Step 5b: separable cone is convex. (Convex combination of cone
+   elements is in the cone.) *)
+
+lemma separable_cone_convex:
+  fixes \<sigma>\<^sub>1 \<sigma>\<^sub>2 :: "complex Matrix.mat" and t :: real
+  assumes \<sigma>\<^sub>1_cone: "separable_cone m p \<sigma>\<^sub>1"
+      and \<sigma>\<^sub>2_cone: "separable_cone m p \<sigma>\<^sub>2"
+      and t_nn: "0 \<le> t" and t_le: "t \<le> 1"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "separable_cone m p
+           (complex_of_real t \<cdot>\<^sub>m \<sigma>\<^sub>1 + complex_of_real (1 - t) \<cdot>\<^sub>m \<sigma>\<^sub>2)"
+proof -
+  have one_t_nn: "0 \<le> 1 - t" using t_le by simp
+  have part1: "separable_cone m p (complex_of_real t \<cdot>\<^sub>m \<sigma>\<^sub>1)"
+    by (rule separable_cone_smult[OF \<sigma>\<^sub>1_cone t_nn m_pos p_pos])
+  have part2: "separable_cone m p (complex_of_real (1 - t) \<cdot>\<^sub>m \<sigma>\<^sub>2)"
+    by (rule separable_cone_smult[OF \<sigma>\<^sub>2_cone one_t_nn m_pos p_pos])
+  show ?thesis by (rule separable_cone_add[OF part1 part2])
+qed
+
+(* Step 5c: separable cone is closed in HS-norm topology.
+   This is the heart of the geometric argument: the cone equals the
+   conical hull of the compact set \<open>{\<sigma>\<otimes>\<tau> : \<sigma>\<in>DM_m, \<tau>\<in>DM_p}\<close>, and
+   the conical hull of a compact set not containing 0 is closed.
+   Pending full embedding into a HOL-Analysis Euclidean space. *)
+
+lemma separable_cone_HS_closed:
+  fixes m p :: nat
+  assumes m_pos: "0 < m" and p_pos: "0 < p"
+  shows "\<forall>(\<rho>\<^sub>n :: nat \<Rightarrow> complex Matrix.mat) \<rho>.
+            (\<forall>n. separable_cone m p (\<rho>\<^sub>n n))
+            \<and> \<rho> \<in> carrier_mat (m*p) (m*p)
+            \<and> (\<lambda>n. hs_norm (\<rho>\<^sub>n n - \<rho>)) \<longlonglongrightarrow> 0
+          \<longrightarrow> separable_cone m p \<rho>"
+  sorry
+
+(* Step 5d: in a closed convex subset of finite-dim matrix space,
+   a closest point to any external matrix exists.
+
+   This uses HS-norm completeness of matrix space and the convex
+   parallelogram argument: the minimising sequence is HS-Cauchy. *)
+
+lemma exists_closest_point_in_separable_cone:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "\<exists>p_star. separable_cone m p p_star
+            \<and> (\<forall>q. separable_cone m p q
+                    \<longrightarrow> hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q))"
+  sorry
+
+(* Step 5e: given a closest point p_star \<in> cone to external point \<rho>,
+   the matrix \<open>p_star - \<rho>\<close> separates: \<open>Re \<langle>\<langle>p_star-\<rho> | \<sigma>\<rangle>\<rangle> \<ge> Re \<langle>\<langle>p_star-\<rho> | p_star\<rangle>\<rangle>\<close>
+   for all \<sigma> in the (closed convex) cone, and the value at \<rho> is
+   strictly smaller (by \<open>\<parallel>p_star-\<rho>\<parallel>\<^sup>2\<close>). *)
+
+lemma cone_separator_from_closest_point:
+  fixes m p :: nat and \<rho> p_star :: "complex Matrix.mat"
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+      and \<rho>_nonsep: "\<not> separable_cone m p \<rho>"
+      and p_star_cone: "separable_cone m p p_star"
+      and p_star_min: "\<forall>q. separable_cone m p q
+                          \<longrightarrow> hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q)"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "\<exists>a. a \<in> carrier_mat (m*p) (m*p)
+            \<and> Re (\<langle>\<langle> a | \<rho> \<rangle>\<rangle>) < 0
+            \<and> (\<forall>\<sigma>. separable_cone m p \<sigma>
+                    \<longrightarrow> 0 \<le> Re (\<langle>\<langle> a | \<sigma> \<rangle>\<rangle>))"
+  sorry
+
+(* Step 5g: Hermitian part of an arbitrary matrix \<open>A\<close> is
+   \<open>(A + A\<^sup>\<dagger>)/2\<close>; for Hermitian \<sigma>, \<open>Re Tr (A \<sigma>) = Re Tr (Aherm \<sigma>)\<close>. *)
+
+definition hermitian_part :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "hermitian_part A
+     = complex_of_real (1/2) \<cdot>\<^sub>m A + complex_of_real (1/2) \<cdot>\<^sub>m (A\<^sup>\<dagger>)"
+
+lemma hermitian_part_carrier:
+  assumes "A \<in> carrier_mat n n"
+  shows "hermitian_part A \<in> carrier_mat n n"
+  using assms unfolding hermitian_part_def by auto
+
+lemma hermitian_part_hermitian:
+  assumes A_c: "A \<in> carrier_mat n n"
+  shows "hermitian (hermitian_part A)"
+proof -
+  have dr: "dim_row A = n" and dc: "dim_col A = n" using A_c by auto
+  have d_dr: "dim_row (A\<^sup>\<dagger>) = n" using A_c by auto
+  have d_dc: "dim_col (A\<^sup>\<dagger>) = n" using A_c by auto
+  have hp_dr: "dim_row (hermitian_part A) = n"
+    unfolding hermitian_part_def using dr d_dr by simp
+  have hp_dc: "dim_col (hermitian_part A) = n"
+    unfolding hermitian_part_def using dc d_dc by simp
+  show ?thesis
+    unfolding hermitian_def
+  proof (intro eq_matI)
+    show "dim_row ((hermitian_part A)\<^sup>\<dagger>) = dim_row (hermitian_part A)"
+      using hp_dr hp_dc by simp
+    show "dim_col ((hermitian_part A)\<^sup>\<dagger>) = dim_col (hermitian_part A)"
+      using hp_dr hp_dc by simp
+    fix i j
+    assume i: "i < dim_row (hermitian_part A)"
+    assume j: "j < dim_col (hermitian_part A)"
+    have iN: "i < n" using i hp_dr by simp
+    have jN: "j < n" using j hp_dc by simp
+    have lhs: "(hermitian_part A)\<^sup>\<dagger> $$ (i, j)
+                 = cnj ((hermitian_part A) $$ (j, i))"
+      using iN jN hp_dr hp_dc unfolding dagger_def by simp
+    also have "(hermitian_part A) $$ (j, i)
+                 = complex_of_real (1/2) * A $$ (j, i)
+                   + complex_of_real (1/2) * (A\<^sup>\<dagger>) $$ (j, i)"
+      unfolding hermitian_part_def using iN jN dr dc d_dr d_dc by simp
+    also have "(A\<^sup>\<dagger>) $$ (j, i) = cnj (A $$ (i, j))"
+      using iN jN dr dc unfolding dagger_def by simp
+    finally have lhs2: "(hermitian_part A)\<^sup>\<dagger> $$ (i, j)
+                          = complex_of_real (1/2) * cnj (A $$ (j, i))
+                            + complex_of_real (1/2) * A $$ (i, j)"
+      by simp
+    have rhs: "(hermitian_part A) $$ (i, j)
+                = complex_of_real (1/2) * A $$ (i, j)
+                  + complex_of_real (1/2) * (A\<^sup>\<dagger>) $$ (i, j)"
+      unfolding hermitian_part_def using iN jN dr dc d_dr d_dc by simp
+    also have "(A\<^sup>\<dagger>) $$ (i, j) = cnj (A $$ (j, i))"
+      using iN jN dr dc unfolding dagger_def by simp
+    finally have rhs2: "(hermitian_part A) $$ (i, j)
+                          = complex_of_real (1/2) * A $$ (i, j)
+                            + complex_of_real (1/2) * cnj (A $$ (j, i))" .
+    show "(hermitian_part A)\<^sup>\<dagger> $$ (i, j) = (hermitian_part A) $$ (i, j)"
+      using lhs2 rhs2 by (simp add: add.commute)
+  qed
+qed
+
+(* Helper: Tr of dagger is conjugate of Tr (for square matrices). *)
+
+lemma Tr_dagger:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat n n"
+  shows "Tr (M\<^sup>\<dagger>) = cnj (Tr M)"
+proof -
+  have dr: "dim_row M = n" and dc: "dim_col M = n" using M_c by auto
+  have d_dr: "dim_row (M\<^sup>\<dagger>) = n" using dc by simp
+  have d_dc: "dim_col (M\<^sup>\<dagger>) = n" using dr by simp
+  have "Tr (M\<^sup>\<dagger>) = (\<Sum>r<n. (M\<^sup>\<dagger>) $$ (r,r))"
+    unfolding Tr_def using d_dr d_dc by simp
+  also have "\<dots> = (\<Sum>r<n. cnj (M $$ (r,r)))"
+    using dr dc unfolding dagger_def by simp
+  also have "\<dots> = cnj (\<Sum>r<n. M $$ (r,r))" by simp
+  also have "\<dots> = cnj (Tr M)"
+    unfolding Tr_def using dr dc by simp
+  finally show ?thesis .
+qed
+
+(* Helper: trace of a product (X) * c·M = c * Tr(X * M) for square X, M. *)
+
+lemma Tr_smult_mat:
+  fixes M :: "complex Matrix.mat" and c :: complex
+  assumes M_c: "M \<in> carrier_mat n n"
+  shows "Tr (c \<cdot>\<^sub>m M) = c * Tr M"
+proof -
+  have dr: "dim_row M = n" and dc: "dim_col M = n" using M_c by auto
+  have "Tr (c \<cdot>\<^sub>m M) = (\<Sum>r<n. (c \<cdot>\<^sub>m M) $$ (r,r))"
+    unfolding Tr_def using dr dc by simp
+  also have "\<dots> = (\<Sum>r<n. c * M $$ (r,r))"
+    using dr dc by (intro sum.cong refl) simp
+  also have "\<dots> = c * (\<Sum>r<n. M $$ (r,r))"
+    by (simp add: sum_distrib_left)
+  also have "\<dots> = c * Tr M"
+    unfolding Tr_def using dr dc by simp
+  finally show ?thesis .
+qed
+
+lemma Re_Tr_hermitian_part_eq:
+  fixes A \<sigma> :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat n n"
+      and \<sigma>_c: "\<sigma> \<in> carrier_mat n n"
+      and \<sigma>_h: "hermitian \<sigma>"
+  shows "Re (Tr (hermitian_part A * \<sigma>)) = Re (Tr (A * \<sigma>))"
+proof -
+  let ?Ad = "A\<^sup>\<dagger>"
+  have Ad_c: "?Ad \<in> carrier_mat n n" using A_c by auto
+  have A\<sigma>_c: "A * \<sigma> \<in> carrier_mat n n" using A_c \<sigma>_c by auto
+  have Ad\<sigma>_c: "?Ad * \<sigma> \<in> carrier_mat n n" using Ad_c \<sigma>_c by auto
+  have h2A_c: "complex_of_real (1/2) \<cdot>\<^sub>m A \<in> carrier_mat n n" using A_c by auto
+  have h2Ad_c: "complex_of_real (1/2) \<cdot>\<^sub>m ?Ad \<in> carrier_mat n n" using Ad_c by auto
+  text \<open>Step 1: distribute hermitian_part * \<sigma>.\<close>
+  have step1: "hermitian_part A * \<sigma>
+                  = complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>)
+                    + complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>)"
+  proof -
+    have part1: "(complex_of_real (1/2) \<cdot>\<^sub>m A
+                   + complex_of_real (1/2) \<cdot>\<^sub>m ?Ad) * \<sigma>
+                   = complex_of_real (1/2) \<cdot>\<^sub>m A * \<sigma>
+                     + complex_of_real (1/2) \<cdot>\<^sub>m ?Ad * \<sigma>"
+      using h2A_c h2Ad_c \<sigma>_c by (rule add_mult_distrib_mat)
+    have part2: "complex_of_real (1/2) \<cdot>\<^sub>m A * \<sigma>
+                   = complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>)"
+      by (rule mult_smult_assoc_mat[OF A_c \<sigma>_c])
+    have part3: "complex_of_real (1/2) \<cdot>\<^sub>m ?Ad * \<sigma>
+                   = complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>)"
+      by (rule mult_smult_assoc_mat[OF Ad_c \<sigma>_c])
+    show ?thesis
+      using part1 part2 part3 unfolding hermitian_part_def by simp
+  qed
+  text \<open>Step 2: trace is linear over the sum.\<close>
+  have step2: "Tr (hermitian_part A * \<sigma>)
+                  = complex_of_real (1/2) * Tr (A * \<sigma>)
+                    + complex_of_real (1/2) * Tr (?Ad * \<sigma>)"
+  proof -
+    have h2A\<sigma>_c: "complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>) \<in> carrier_mat n n"
+      using A\<sigma>_c by auto
+    have h2Ad\<sigma>_c: "complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>) \<in> carrier_mat n n"
+      using Ad\<sigma>_c by auto
+    have d1r: "dim_row (complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>)) = n" using h2A\<sigma>_c by auto
+    have d1c: "dim_col (complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>)) = n" using h2A\<sigma>_c by auto
+    have d2r: "dim_row (complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>)) = n" using h2Ad\<sigma>_c by auto
+    have d2c: "dim_col (complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>)) = n" using h2Ad\<sigma>_c by auto
+    have add_eq: "Tr (complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>)
+                       + complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>))
+                    = Tr (complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>))
+                      + Tr (complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>))"
+      unfolding Tr_def using d1r d1c d2r d2c by (simp add: sum.distrib)
+    have smult_eq1: "Tr (complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>))
+                       = complex_of_real (1/2) * Tr (A * \<sigma>)"
+      by (rule Tr_smult_mat[OF A\<sigma>_c])
+    have smult_eq2: "Tr (complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>))
+                       = complex_of_real (1/2) * Tr (?Ad * \<sigma>)"
+      by (rule Tr_smult_mat[OF Ad\<sigma>_c])
+    have "Tr (hermitian_part A * \<sigma>)
+            = Tr (complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>)
+                   + complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>))"
+      using step1 by simp
+    also have "\<dots> = Tr (complex_of_real (1/2) \<cdot>\<^sub>m (A * \<sigma>))
+                    + Tr (complex_of_real (1/2) \<cdot>\<^sub>m (?Ad * \<sigma>))"
+      using add_eq .
+    also have "\<dots> = complex_of_real (1/2) * Tr (A * \<sigma>)
+                    + complex_of_real (1/2) * Tr (?Ad * \<sigma>)"
+      unfolding smult_eq1 smult_eq2 ..
+    finally show ?thesis .
+  qed
+  text \<open>Step 3: \<open>Tr(A\<^sup>\<dagger> \<sigma>) = cnj (Tr(A \<sigma>))\<close> for hermitian \<sigma>.\<close>
+  have step3: "Tr (?Ad * \<sigma>) = cnj (Tr (A * \<sigma>))"
+  proof -
+    have dim_match: "dim_col A = dim_row \<sigma>" using A_c \<sigma>_c by auto
+    have "(A * \<sigma>)\<^sup>\<dagger> = \<sigma>\<^sup>\<dagger> * ?Ad"
+      by (rule dagger_of_prod[OF dim_match])
+    also have "\<sigma>\<^sup>\<dagger> = \<sigma>" using \<sigma>_h unfolding hermitian_def by simp
+    finally have dag_eq: "(A * \<sigma>)\<^sup>\<dagger> = \<sigma> * ?Ad" .
+    have cyc: "Tr (\<sigma> * ?Ad) = Tr (?Ad * \<sigma>)"
+    proof (rule Tr_cyclic)
+      show "dim_col \<sigma> = dim_row ?Ad" using \<sigma>_c Ad_c by auto
+      show "dim_row \<sigma> = dim_col ?Ad" using \<sigma>_c Ad_c by auto
+    qed
+    have "Tr (?Ad * \<sigma>) = Tr (\<sigma> * ?Ad)" using cyc by simp
+    also have "\<dots> = Tr ((A * \<sigma>)\<^sup>\<dagger>)" using dag_eq by simp
+    also have "\<dots> = cnj (Tr (A * \<sigma>))" by (rule Tr_dagger[OF A\<sigma>_c])
+    finally show ?thesis .
+  qed
+  text \<open>Step 4: combine.\<close>
+  have "Re (Tr (hermitian_part A * \<sigma>))
+           = Re (complex_of_real (1/2) * Tr (A * \<sigma>)
+                  + complex_of_real (1/2) * Tr (?Ad * \<sigma>))"
+    using step2 by simp
+  also have "\<dots> = (1/2) * Re (Tr (A * \<sigma>)) + (1/2) * Re (Tr (?Ad * \<sigma>))"
+    by simp
+  also have "\<dots> = (1/2) * Re (Tr (A * \<sigma>)) + (1/2) * Re (cnj (Tr (A * \<sigma>)))"
+    using step3 by simp
+  also have "\<dots> = Re (Tr (A * \<sigma>))" by simp
+  finally show ?thesis .
+qed
+
+(* Step 5h: relate Re \<langle>\<langle>a|\<sigma>\<rangle>\<rangle> to Re Tr(W * \<sigma>) for Hermitian W. *)
+
+lemma Re_hs_inner_eq_Re_Tr_dagger:
+  fixes A B :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat n n"
+      and B_c: "B \<in> carrier_mat n n"
+  shows "Re (\<langle>\<langle> A | B \<rangle>\<rangle>) = Re (Tr ((A\<^sup>\<dagger>) * B))"
+  using A_c B_c hs_inner_prod_as_trace by auto
+
+(* Assembly of the geometric Hahn-Banach. *)
 
 lemma separable_cone_separating_hyperplane:
   fixes m p :: nat and \<rho> :: "complex Matrix.mat"
@@ -18377,7 +18682,52 @@ lemma separable_cone_separating_hyperplane:
             \<and> (\<forall>\<sigma>. separable_cone m p \<sigma>
                     \<longrightarrow> 0 \<le> Re (Tr (W * \<sigma>)))
             \<and> Re (Tr (W * \<rho>)) < 0"
-  sorry
+proof -
+  obtain p_star where p_star_cone: "separable_cone m p p_star"
+              and p_star_min: "\<forall>q. separable_cone m p q
+                              \<longrightarrow> hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q)"
+    using exists_closest_point_in_separable_cone[OF \<rho>_c m_pos p_pos] by blast
+  obtain a where a_c: "a \<in> carrier_mat (m*p) (m*p)"
+             and a_neg: "Re (\<langle>\<langle> a | \<rho> \<rangle>\<rangle>) < 0"
+             and a_pos: "\<forall>\<sigma>. separable_cone m p \<sigma>
+                              \<longrightarrow> 0 \<le> Re (\<langle>\<langle> a | \<sigma> \<rangle>\<rangle>)"
+    using cone_separator_from_closest_point
+            [OF \<rho>_c \<rho>_nonsep p_star_cone p_star_min m_pos p_pos]
+    by blast
+  let ?A = "a\<^sup>\<dagger>"
+  have A_c: "?A \<in> carrier_mat (m*p) (m*p)" using a_c by auto
+  let ?W = "hermitian_part ?A"
+  have W_c: "?W \<in> carrier_mat (m*p) (m*p)"
+    by (rule hermitian_part_carrier[OF A_c])
+  have W_h: "hermitian ?W"
+    by (rule hermitian_part_hermitian[OF A_c])
+  text \<open>Translate the inner-product inequalities to \<open>Re Tr (?W \<cdot>)\<close>.\<close>
+  have W_pos: "\<forall>\<sigma>. separable_cone m p \<sigma>
+                  \<longrightarrow> 0 \<le> Re (Tr (?W * \<sigma>))"
+  proof (intro allI impI)
+    fix \<sigma> assume \<sigma>_cone: "separable_cone m p \<sigma>"
+    from \<sigma>_cone have \<sigma>_c: "\<sigma> \<in> carrier_mat (m*p) (m*p)"
+      unfolding separable_cone_def by auto
+    have \<sigma>_psd: "psd \<sigma>"
+      by (rule separable_cone_psd[OF \<sigma>_cone m_pos p_pos])
+    have \<sigma>_h: "hermitian \<sigma>" by (rule psd_hermitian[OF \<sigma>_psd])
+    have eq1: "Re (\<langle>\<langle> a | \<sigma> \<rangle>\<rangle>) = Re (Tr (?A * \<sigma>))"
+      by (rule Re_hs_inner_eq_Re_Tr_dagger[OF a_c \<sigma>_c])
+    have eq2: "Re (Tr (?A * \<sigma>)) = Re (Tr (?W * \<sigma>))"
+      using Re_Tr_hermitian_part_eq[OF A_c \<sigma>_c \<sigma>_h] by simp
+    show "0 \<le> Re (Tr (?W * \<sigma>))"
+      using a_pos[rule_format, OF \<sigma>_cone] eq1 eq2 by simp
+  qed
+  have W_neg: "Re (Tr (?W * \<rho>)) < 0"
+  proof -
+    have eq1: "Re (\<langle>\<langle> a | \<rho> \<rangle>\<rangle>) = Re (Tr (?A * \<rho>))"
+      by (rule Re_hs_inner_eq_Re_Tr_dagger[OF a_c \<rho>_c])
+    have eq2: "Re (Tr (?A * \<rho>)) = Re (Tr (?W * \<rho>))"
+      using Re_Tr_hermitian_part_eq[OF A_c \<rho>_c \<rho>_h] by simp
+    show ?thesis using a_neg eq1 eq2 by simp
+  qed
+  show ?thesis using W_c W_h W_pos W_neg by blast
+qed
 
 (* Step 6: a Hermitian \<open>W\<close> non-negative on the cone is an
    entanglement witness in the sense of \<open>entanglement_witness\<close>. *)
