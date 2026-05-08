@@ -18,6 +18,7 @@
 
 theory Quantum_Computing
   imports Basic_Math Jordan_Normal_Form.Schur_Decomposition
+          "HOL-Hahn_Banach.Hahn_Banach"
 begin
 
 (* ============================================================================
