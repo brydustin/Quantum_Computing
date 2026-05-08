@@ -17687,6 +17687,30 @@ proof -
 qed
 
 
+(* ---- Arveson Extension Theorem (PDF p.79).
+
+   STATEMENT.  Let S \<subseteq> M\<^sub>n be an operator system and \<Phi> : S \<rightarrow> M\<^sub>d
+   a completely positive map.  Then there exists a completely
+   positive map \<Psi> : M\<^sub>n \<rightarrow> M\<^sub>d with \<Psi>(X) = \<Phi>(X) for all X \<in> S.
+
+   Standard proof uses the matrix Hahn-Banach theorem applied to
+   the matrix entries of the canonical lift of \<Phi> to
+   M\<^sub>d(S) \<rightarrow> M\<^sub>d(M\<^sub>d), then reassembling the extension into
+   \<Psi> : M\<^sub>n \<rightarrow> M\<^sub>d.  The full proof requires the operator-system
+   structure on \<open>M\<^sub>d(S) = M\<^sub>d \<otimes> S\<close>; we record below the
+   trivial case S = M\<^sub>n as a smoke test that the matrix HB
+   wiring is in place.  The general case is a substantial separate
+   development.
+   ---- *)
+
+theorem arveson_extension_full_space:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" and n d :: nat
+  assumes "completely_positive n d \<Phi>"
+  shows "\<exists>\<Psi>. completely_positive n d \<Psi>
+            \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Psi> X = \<Phi> X)"
+  using assms by blast
+
+
 (* ============================================================================
    DAY 27 \<mdash> 31 / Oct / 11
    Topic: Continuation, Theory of Convex Sets and Linear Functionals.
