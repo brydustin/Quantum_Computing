@@ -18236,9 +18236,41 @@ lemma separable_density_psd:
 lemma sep_sum_smult:
   fixes m p :: nat and c :: real
       and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes "sep_cone_valid m p ts"
   shows "complex_of_real c \<cdot>\<^sub>m sep_sum m p ts
          = sep_sum m p (map (\<lambda>(w,\<sigma>,\<tau>). (c * w, \<sigma>, \<tau>)) ts)"
-  sorry
+  using assms
+proof (induction ts)
+  case Nil
+  have z_c: "(0\<^sub>m (m*p) (m*p) :: complex Matrix.mat) \<in> carrier_mat (m*p) (m*p)"
+    by simp
+  show ?case by (intro eq_matI) (auto simp: zero_mat_def)
+next
+  case (Cons t ts)
+  obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+  from Cons.prems t_eq have \<sigma>_c: "\<sigma> \<in> carrier_mat m m"
+                       and \<tau>_c: "\<tau> \<in> carrier_mat p p"
+    unfolding sep_cone_valid_def by auto
+  from Cons.prems t_eq have ts_v: "sep_cone_valid m p ts"
+    unfolding sep_cone_valid_def by auto
+  have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)"
+    using \<sigma>_c \<tau>_c by auto
+  let ?S = "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+  let ?R = "sep_sum m p ts"
+  have S_c: "?S \<in> carrier_mat (m*p) (m*p)" using st_c by auto
+  have R_c: "?R \<in> carrier_mat (m*p) (m*p)" by (rule sep_sum_carrier)
+  have "complex_of_real c \<cdot>\<^sub>m sep_sum m p ((w, \<sigma>, \<tau>) # ts)
+        = complex_of_real c \<cdot>\<^sub>m (?S + ?R)" by simp
+  also have "\<dots> = complex_of_real c \<cdot>\<^sub>m ?S + complex_of_real c \<cdot>\<^sub>m ?R"
+    by (rule add_smult_distrib_left_mat[OF S_c R_c])
+  also have "complex_of_real c \<cdot>\<^sub>m ?S
+              = complex_of_real (c * w) \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+    by (intro eq_matI) (auto simp: ac_simps)
+  also have "complex_of_real c \<cdot>\<^sub>m ?R
+              = sep_sum m p (map (\<lambda>(w,\<sigma>,\<tau>). (c * w, \<sigma>, \<tau>)) ts)"
+    using Cons.IH ts_v by blast
+  finally show ?case by (simp add: t_eq)
+qed
 
 lemma separable_cone_smult:
   fixes m p :: nat and \<rho> :: "complex Matrix.mat" and c :: real
@@ -18255,7 +18287,7 @@ proof -
     using ts_v c_nn unfolding sep_cone_valid_def
     by (force simp: case_prod_beta mult_nonneg_nonneg)
   have eq: "complex_of_real c \<cdot>\<^sub>m \<rho> = sep_sum m p ?ts'"
-    using \<rho>_eq sep_sum_smult by simp
+    using \<rho>_eq sep_sum_smult[OF ts_v] by simp
   have c_carr: "complex_of_real c \<cdot>\<^sub>m \<rho> \<in> carrier_mat (m*p) (m*p)"
     using \<rho>_c by auto
   show ?thesis
@@ -18265,9 +18297,40 @@ qed
 lemma sep_sum_append:
   fixes m p :: nat
       and ts\<^sub>1 ts\<^sub>2 :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes "sep_cone_valid m p ts\<^sub>1"
   shows "sep_sum m p (ts\<^sub>1 @ ts\<^sub>2)
          = sep_sum m p ts\<^sub>1 + sep_sum m p ts\<^sub>2"
-  sorry
+  using assms
+proof (induction ts\<^sub>1)
+  case Nil
+  have R\<^sub>2_c: "sep_sum m p ts\<^sub>2 \<in> carrier_mat (m*p) (m*p)"
+    by (rule sep_sum_carrier)
+  show ?case using R\<^sub>2_c by (intro eq_matI) auto
+next
+  case (Cons t ts)
+  obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+  from Cons.prems t_eq have \<sigma>_c: "\<sigma> \<in> carrier_mat m m"
+                       and \<tau>_c: "\<tau> \<in> carrier_mat p p"
+    unfolding sep_cone_valid_def by auto
+  from Cons.prems t_eq have ts_v: "sep_cone_valid m p ts"
+    unfolding sep_cone_valid_def by auto
+  have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)"
+    using \<sigma>_c \<tau>_c by auto
+  let ?S = "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+  let ?R\<^sub>1 = "sep_sum m p ts"
+  let ?R\<^sub>2 = "sep_sum m p ts\<^sub>2"
+  have S_c: "?S \<in> carrier_mat (m*p) (m*p)" using st_c by auto
+  have R\<^sub>1_c: "?R\<^sub>1 \<in> carrier_mat (m*p) (m*p)" by (rule sep_sum_carrier)
+  have R\<^sub>2_c: "?R\<^sub>2 \<in> carrier_mat (m*p) (m*p)" by (rule sep_sum_carrier)
+  have "sep_sum m p (((w, \<sigma>, \<tau>) # ts) @ ts\<^sub>2)
+        = ?S + sep_sum m p (ts @ ts\<^sub>2)" by simp
+  also have "\<dots> = ?S + (?R\<^sub>1 + ?R\<^sub>2)"
+    using Cons.IH ts_v by simp
+  also have "\<dots> = (?S + ?R\<^sub>1) + ?R\<^sub>2"
+    by (rule assoc_add_mat[OF S_c R\<^sub>1_c R\<^sub>2_c, symmetric])
+  also have "\<dots> = sep_sum m p ((w, \<sigma>, \<tau>) # ts) + ?R\<^sub>2" by simp
+  finally show ?case by (simp add: t_eq)
+qed
 
 lemma separable_cone_add:
   fixes m p :: nat and \<rho>\<^sub>1 \<rho>\<^sub>2 :: "complex Matrix.mat"
@@ -18287,7 +18350,7 @@ proof -
   have ts_v: "sep_cone_valid m p ?ts"
     using ts\<^sub>1_v ts\<^sub>2_v unfolding sep_cone_valid_def by auto
   have eq: "\<rho>\<^sub>1 + \<rho>\<^sub>2 = sep_sum m p ?ts"
-    using \<rho>\<^sub>1_eq \<rho>\<^sub>2_eq sep_sum_append by simp
+    using \<rho>\<^sub>1_eq \<rho>\<^sub>2_eq sep_sum_append[OF ts\<^sub>1_v] by simp
   have c_carr: "\<rho>\<^sub>1 + \<rho>\<^sub>2 \<in> carrier_mat (m*p) (m*p)"
     using \<rho>\<^sub>1_c \<rho>\<^sub>2_c by simp
   show ?thesis
@@ -18378,6 +18441,18 @@ lemma density_matrix_hermitian:
   using assms unfolding density_matrix_def
   by (blast dest: psd_hermitian)
 
+(* Step 8: for trace-1 ρ in the separable cone, normalising weights
+   gives a separable density decomposition. (Cone form of a density
+   matrix collapses to convex form.) *)
+
+lemma separable_cone_density_imp_separable_density:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes \<rho>_cone: "separable_cone m p \<rho>"
+      and \<rho>_dm: "density_matrix (m*p) \<rho>"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "separable_density m p \<rho>"
+  sorry
+
 (* Main theorem: hard direction of universal entanglement witnesses. *)
 
 theorem nonseparable_implies_witness:
@@ -18386,7 +18461,27 @@ theorem nonseparable_implies_witness:
       and \<rho>_nonsep: "\<not> separable_density m p \<rho>"
       and m_pos: "0 < m" and p_pos: "0 < p"
   shows "\<exists>W. entanglement_witness m p W \<and> Re (Tr (W * \<rho>)) < 0"
-  sorry
+proof -
+  have \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+    using \<rho>_dm unfolding density_matrix_def by simp
+  have \<rho>_h: "hermitian \<rho>"
+    by (rule density_matrix_hermitian[OF \<rho>_dm])
+  have \<rho>_noncone: "\<not> separable_cone m p \<rho>"
+    using \<rho>_nonsep
+    using separable_cone_density_imp_separable_density[OF _ \<rho>_dm m_pos p_pos]
+    by blast
+  obtain W where W_c: "W \<in> carrier_mat (m*p) (m*p)"
+             and W_h: "hermitian W"
+             and W_pos: "\<forall>\<sigma>. separable_cone m p \<sigma>
+                              \<longrightarrow> 0 \<le> Re (Tr (W * \<sigma>))"
+             and W_neg: "Re (Tr (W * \<rho>)) < 0"
+    using separable_cone_separating_hyperplane
+            [OF \<rho>_c \<rho>_h \<rho>_noncone m_pos p_pos]
+    by blast
+  have W_wit: "entanglement_witness m p W"
+    by (rule cone_separator_is_witness[OF W_c W_h W_pos m_pos p_pos])
+  show ?thesis using W_wit W_neg by blast
+qed
 
 
 (* ============================================================================
