@@ -18766,6 +18766,96 @@ next
   qed
 qed
 
+(* Helper: trace of sep_sum is the (complex-of-real) sum of weighted
+   trace products w_i * Re(Tr σ_i) * Re(Tr τ_i). *)
+
+lemma Tr_sep_sum_real:
+  fixes m p :: nat
+      and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes ts_v: "sep_cone_valid m p ts"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "Tr (sep_sum m p ts)
+          = complex_of_real (\<Sum>(w, \<sigma>, \<tau>) \<leftarrow> ts. w * Re (Tr \<sigma>) * Re (Tr \<tau>))"
+  using ts_v
+proof (induction ts)
+  case Nil
+  show ?case by (simp add: Tr_def zero_mat_def)
+next
+  case (Cons t ts)
+  obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+  from Cons.prems t_eq have \<sigma>_c: "\<sigma> \<in> carrier_mat m m"
+                       and \<sigma>_psd: "psd \<sigma>"
+                       and \<tau>_c: "\<tau> \<in> carrier_mat p p"
+                       and \<tau>_psd: "psd \<tau>"
+    unfolding sep_cone_valid_def by auto
+  from Cons.prems t_eq have ts_v': "sep_cone_valid m p ts"
+    unfolding sep_cone_valid_def by auto
+  have IH: "Tr (sep_sum m p ts)
+              = complex_of_real (\<Sum>(w, \<sigma>, \<tau>) \<leftarrow> ts. w * Re (Tr \<sigma>) * Re (Tr \<tau>))"
+    using Cons.IH ts_v' by blast
+  have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)" using \<sigma>_c \<tau>_c by auto
+  have w\<sigma>\<tau>_c: "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) \<in> carrier_mat (m*p) (m*p)"
+    using st_c by auto
+  have R_c: "sep_sum m p ts \<in> carrier_mat (m*p) (m*p)" by (rule sep_sum_carrier)
+  have Tr\<sigma>_real: "Tr \<sigma> = complex_of_real (Re (Tr \<sigma>))"
+    by (rule Tr_hermitian_real[OF psd_hermitian[OF \<sigma>_psd] \<sigma>_c])
+  have Tr\<tau>_real: "Tr \<tau> = complex_of_real (Re (Tr \<tau>))"
+    by (rule Tr_hermitian_real[OF psd_hermitian[OF \<tau>_psd] \<tau>_c])
+  have Tr_st: "Tr (\<sigma> \<Otimes> \<tau>) = Tr \<sigma> * Tr \<tau>"
+    by (rule trace_tensor[OF \<sigma>_c \<tau>_c m_pos p_pos])
+  have Tr_smult_st:
+    "Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = complex_of_real w * Tr (\<sigma> \<Otimes> \<tau>)"
+  proof -
+    have dr: "dim_row (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = m * p" using st_c by auto
+    have dc: "dim_col (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = m * p" using st_c by auto
+    have st_dr: "dim_row (\<sigma> \<Otimes> \<tau>) = m * p" using st_c by auto
+    have st_dc: "dim_col (\<sigma> \<Otimes> \<tau>) = m * p" using st_c by auto
+    have "Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>))
+            = (\<Sum>r<m*p. (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) $$ (r,r))"
+      unfolding Tr_def using dr dc by simp
+    also have "\<dots> = (\<Sum>r<m*p. complex_of_real w * (\<sigma> \<Otimes> \<tau>) $$ (r,r))"
+      using st_dr st_dc by (intro sum.cong refl) simp
+    also have "\<dots> = complex_of_real w * (\<Sum>r<m*p. (\<sigma> \<Otimes> \<tau>) $$ (r,r))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = complex_of_real w * Tr (\<sigma> \<Otimes> \<tau>)"
+      unfolding Tr_def using st_dr st_dc by simp
+    finally show ?thesis .
+  qed
+  have Tr_w_st: "Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>))
+                  = complex_of_real (w * Re (Tr \<sigma>) * Re (Tr \<tau>))"
+  proof -
+    have "Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = complex_of_real w * Tr (\<sigma> \<Otimes> \<tau>)"
+      by (rule Tr_smult_st)
+    also have "\<dots> = complex_of_real w * (Tr \<sigma> * Tr \<tau>)" using Tr_st by simp
+    also have "\<dots> = complex_of_real w * (complex_of_real (Re (Tr \<sigma>))
+                                          * complex_of_real (Re (Tr \<tau>)))"
+      using Tr\<sigma>_real Tr\<tau>_real by simp
+    also have "\<dots> = complex_of_real (w * Re (Tr \<sigma>) * Re (Tr \<tau>))"
+      by (simp add: of_real_mult mult.assoc)
+    finally show ?thesis .
+  qed
+  have add_split: "Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + sep_sum m p ts)
+                    = Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) + Tr (sep_sum m p ts)"
+  proof -
+    have dr1: "dim_row (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = m * p" using w\<sigma>\<tau>_c by auto
+    have dc1: "dim_col (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = m * p" using w\<sigma>\<tau>_c by auto
+    have dr2: "dim_row (sep_sum m p ts) = m * p" using R_c by auto
+    have dc2: "dim_col (sep_sum m p ts) = m * p" using R_c by auto
+    show ?thesis
+      unfolding Tr_def using dr1 dc1 dr2 dc2 by (simp add: sum.distrib)
+  qed
+  have "Tr (sep_sum m p ((w, \<sigma>, \<tau>) # ts))
+          = Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + sep_sum m p ts)" by simp
+  also have "\<dots> = Tr (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) + Tr (sep_sum m p ts)"
+    by (rule add_split)
+  also have "\<dots> = complex_of_real (w * Re (Tr \<sigma>) * Re (Tr \<tau>))
+                  + complex_of_real (\<Sum>(w, \<sigma>, \<tau>) \<leftarrow> ts. w * Re (Tr \<sigma>) * Re (Tr \<tau>))"
+    using Tr_w_st IH by simp
+  also have "\<dots> = complex_of_real (\<Sum>(w', \<sigma>', \<tau>') \<leftarrow> ((w, \<sigma>, \<tau>) # ts). w' * Re (Tr \<sigma>') * Re (Tr \<tau>'))"
+    by (simp add: of_real_add)
+  finally show ?case using t_eq by simp
+qed
+
 (* Sub-helper 8e: renormalised list is sep_decomp_valid when the
    total trace of the original sum is 1. *)
 
@@ -18776,7 +18866,113 @@ lemma sep_renorm_valid:
       and Tr_one: "Tr (sep_sum m p ts) = 1"
       and m_pos: "0 < m" and p_pos: "0 < p"
   shows "sep_decomp_valid m p (sep_renorm ts)"
-  sorry
+proof -
+  let ?wt = "\<lambda>(w::real, \<sigma>::complex Matrix.mat, \<tau>::complex Matrix.mat).
+                w * Re (Tr \<sigma>) * Re (Tr \<tau>)"
+  let ?wt' = "\<lambda>(w::real, _::complex Matrix.mat, _::complex Matrix.mat). w"
+  let ?keep = "\<lambda>(w::real, \<sigma>::complex Matrix.mat, \<tau>::complex Matrix.mat).
+                  0 < Re (Tr \<sigma>) \<and> 0 < Re (Tr \<tau>)"
+  let ?ren = "\<lambda>(w::real, \<sigma>::complex Matrix.mat, \<tau>::complex Matrix.mat).
+                  (w * Re (Tr \<sigma>) * Re (Tr \<tau>),
+                   complex_of_real (1 / Re (Tr \<sigma>)) \<cdot>\<^sub>m \<sigma>,
+                   complex_of_real (1 / Re (Tr \<tau>)) \<cdot>\<^sub>m \<tau>)"
+  have ren_def: "sep_renorm ts = map ?ren (filter ?keep ts)"
+    unfolding sep_renorm_def by simp
+
+  text \<open>Element-wise validity: each surviving renormalised triple
+  has nonneg weight and unit-trace PSD factors of the right size.\<close>
+  have valid_elt:
+    "\<forall>x \<in> set (sep_renorm ts).
+        case x of (w, \<sigma>, \<tau>) \<Rightarrow>
+          w \<ge> 0
+          \<and> \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+          \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>"
+  proof (intro ballI)
+    fix x assume x_in: "x \<in> set (sep_renorm ts)"
+    from x_in obtain w0 \<sigma>0 \<tau>0 where
+      orig_in: "(w0, \<sigma>0, \<tau>0) \<in> set ts"
+      and keep0: "?keep (w0, \<sigma>0, \<tau>0)"
+      and x_eq: "x = ?ren (w0, \<sigma>0, \<tau>0)"
+      unfolding ren_def by auto
+    from ts_v orig_in have w0_nn: "w0 \<ge> 0"
+                       and \<sigma>0_c: "\<sigma>0 \<in> carrier_mat m m"
+                       and \<sigma>0_psd: "psd \<sigma>0"
+                       and \<tau>0_c: "\<tau>0 \<in> carrier_mat p p"
+                       and \<tau>0_psd: "psd \<tau>0"
+      unfolding sep_cone_valid_def by auto
+    have s_pos: "0 < Re (Tr \<sigma>0)" using keep0 by auto
+    have t_pos: "0 < Re (Tr \<tau>0)" using keep0 by auto
+    have w'_nn: "w0 * Re (Tr \<sigma>0) * Re (Tr \<tau>0) \<ge> 0"
+      using w0_nn s_pos t_pos by simp
+    have \<sigma>'_c: "complex_of_real (1 / Re (Tr \<sigma>0)) \<cdot>\<^sub>m \<sigma>0 \<in> carrier_mat m m"
+      using \<sigma>0_c by auto
+    have inv_s_nn: "0 \<le> 1 / Re (Tr \<sigma>0)" using s_pos by simp
+    have inv_t_nn: "0 \<le> 1 / Re (Tr \<tau>0)" using t_pos by simp
+    have \<sigma>'_psd: "psd (complex_of_real (1 / Re (Tr \<sigma>0)) \<cdot>\<^sub>m \<sigma>0)"
+      by (rule psd_smult_nonneg[OF inv_s_nn \<sigma>0_psd \<sigma>0_c])
+    have \<tau>'_c: "complex_of_real (1 / Re (Tr \<tau>0)) \<cdot>\<^sub>m \<tau>0 \<in> carrier_mat p p"
+      using \<tau>0_c by auto
+    have \<tau>'_psd: "psd (complex_of_real (1 / Re (Tr \<tau>0)) \<cdot>\<^sub>m \<tau>0)"
+      by (rule psd_smult_nonneg[OF inv_t_nn \<tau>0_psd \<tau>0_c])
+    have x_eq': "x = (w0 * Re (Tr \<sigma>0) * Re (Tr \<tau>0),
+                       complex_of_real (1 / Re (Tr \<sigma>0)) \<cdot>\<^sub>m \<sigma>0,
+                       complex_of_real (1 / Re (Tr \<tau>0)) \<cdot>\<^sub>m \<tau>0)"
+      using x_eq by simp
+    show "case x of (w, \<sigma>, \<tau>) \<Rightarrow>
+            w \<ge> 0
+            \<and> \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+            \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>"
+      unfolding x_eq'
+      using w'_nn \<sigma>'_c \<sigma>'_psd \<tau>'_c \<tau>'_psd by simp
+  qed
+
+  text \<open>Weight sum: filtered triples contribute the same as all
+  triples (dropped terms have a zero factor), and that sum equals
+  Re (Tr (sep_sum ts)) = 1.\<close>
+  have keep_unfilt:
+    "(\<Sum>x\<leftarrow>filter ?keep ts. ?wt x) = (\<Sum>x\<leftarrow>ts. ?wt x)"
+  proof -
+    have drop_zero: "\<And>x. x \<in> set ts \<Longrightarrow> \<not> ?keep x \<Longrightarrow> ?wt x = 0"
+    proof -
+      fix x assume xs: "x \<in> set ts" and nk: "\<not> ?keep x"
+      obtain w0 \<sigma>0 \<tau>0 where x_eq: "x = (w0, \<sigma>0, \<tau>0)" by (cases x)
+      from ts_v xs x_eq have \<sigma>0_c: "\<sigma>0 \<in> carrier_mat m m"
+                         and \<sigma>0_psd: "psd \<sigma>0"
+                         and \<tau>0_c: "\<tau>0 \<in> carrier_mat p p"
+                         and \<tau>0_psd: "psd \<tau>0"
+        unfolding sep_cone_valid_def by auto
+      have s_nn: "0 \<le> Re (Tr \<sigma>0)" by (rule Tr_psd_Re_nonneg[OF \<sigma>0_psd \<sigma>0_c])
+      have t_nn: "0 \<le> Re (Tr \<tau>0)" by (rule Tr_psd_Re_nonneg[OF \<tau>0_psd \<tau>0_c])
+      have "Re (Tr \<sigma>0) \<le> 0 \<or> Re (Tr \<tau>0) \<le> 0" using nk x_eq by auto
+      hence "Re (Tr \<sigma>0) = 0 \<or> Re (Tr \<tau>0) = 0" using s_nn t_nn by linarith
+      thus "?wt x = 0" using x_eq by auto
+    qed
+    have "(\<Sum>x\<leftarrow>ts. ?wt x)
+            = (\<Sum>x\<leftarrow>filter ?keep ts. ?wt x)
+              + (\<Sum>x\<leftarrow>filter (\<lambda>x. \<not> ?keep x) ts. ?wt x)"
+      by (induction ts) auto
+    moreover have "(\<Sum>x\<leftarrow>filter (\<lambda>x. \<not> ?keep x) ts. ?wt x) = 0"
+      using drop_zero
+      by (induction ts) auto
+    ultimately show ?thesis by simp
+  qed
+
+  have Tr_eq: "Tr (sep_sum m p ts) = complex_of_real (\<Sum>x\<leftarrow>ts. ?wt x)"
+    by (rule Tr_sep_sum_real[OF ts_v m_pos p_pos])
+  hence sum_real: "(\<Sum>x\<leftarrow>ts. ?wt x) = 1" using Tr_one by (simp add: of_real_eq_iff)
+
+  have map_wt:
+    "(\<Sum>(w, \<sigma>, \<tau>)\<leftarrow>sep_renorm ts. w)
+       = (\<Sum>x\<leftarrow>filter ?keep ts. ?wt x)"
+    unfolding ren_def by (simp add: case_prod_beta map_concat o_def)
+
+  have weight_sum: "(\<Sum>(w, \<sigma>, \<tau>)\<leftarrow>sep_renorm ts. w) = 1"
+    using map_wt keep_unfilt sum_real by simp
+
+  show ?thesis
+    unfolding sep_decomp_valid_def
+    using valid_elt weight_sum by auto
+qed
 
 lemma separable_cone_density_imp_separable_density:
   fixes m p :: nat and \<rho> :: "complex Matrix.mat"
