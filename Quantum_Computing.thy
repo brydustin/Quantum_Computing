@@ -18443,7 +18443,64 @@ lemma density_matrix_hermitian:
 
 (* Step 8: for trace-1 ρ in the separable cone, normalising weights
    gives a separable density decomposition. (Cone form of a density
-   matrix collapses to convex form.) *)
+   matrix collapses to convex form.)
+
+   Strategy: rescale each (w, σ, τ) so σ and τ become unit-trace,
+   absorbing Tr σ * Tr τ into the weight; drop terms whose σ or τ
+   has trace 0 (such PSD terms must be the zero matrix). *)
+
+(* Sub-helper 8a: a hermitian matrix has real trace. *)
+
+lemma Tr_hermitian_real:
+  assumes A_h: "hermitian A"
+      and A_c: "A \<in> carrier_mat n n"
+  shows "Tr A = complex_of_real (Re (Tr A))"
+  sorry
+
+(* Sub-helper 8b: a PSD matrix with vanishing trace is the zero matrix. *)
+
+lemma psd_Tr_zero_imp_zero:
+  assumes P_psd: "psd P"
+      and P_c: "P \<in> carrier_mat n n"
+      and P_Tr: "Tr P = 0"
+  shows "P = 0\<^sub>m n n"
+  sorry
+
+(* Sub-helper 8c: renormalised list. Drops terms with zero-trace σ or
+   τ, rescales surviving terms so σ', τ' are unit-trace. *)
+
+definition sep_renorm ::
+    "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list
+       \<Rightarrow> (real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+where
+  "sep_renorm ts =
+     map (\<lambda>(w, \<sigma>, \<tau>).
+            (w * Re (Tr \<sigma>) * Re (Tr \<tau>),
+             complex_of_real (1 / Re (Tr \<sigma>)) \<cdot>\<^sub>m \<sigma>,
+             complex_of_real (1 / Re (Tr \<tau>)) \<cdot>\<^sub>m \<tau>))
+         (filter (\<lambda>(w, \<sigma>, \<tau>). 0 < Re (Tr \<sigma>) \<and> 0 < Re (Tr \<tau>)) ts)"
+
+(* Sub-helper 8d: rescaling preserves the sum (zero-trace summands
+   contribute 0 because PSD with trace 0 vanishes). *)
+
+lemma sep_sum_renorm:
+  fixes m p :: nat
+      and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes "sep_cone_valid m p ts"
+  shows "sep_sum m p ts = sep_sum m p (sep_renorm ts)"
+  sorry
+
+(* Sub-helper 8e: renormalised list is sep_decomp_valid when the
+   total trace of the original sum is 1. *)
+
+lemma sep_renorm_valid:
+  fixes m p :: nat
+      and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes ts_v: "sep_cone_valid m p ts"
+      and Tr_one: "Tr (sep_sum m p ts) = 1"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "sep_decomp_valid m p (sep_renorm ts)"
+  sorry
 
 lemma separable_cone_density_imp_separable_density:
   fixes m p :: nat and \<rho> :: "complex Matrix.mat"
@@ -18451,7 +18508,22 @@ lemma separable_cone_density_imp_separable_density:
       and \<rho>_dm: "density_matrix (m*p) \<rho>"
       and m_pos: "0 < m" and p_pos: "0 < p"
   shows "separable_density m p \<rho>"
-  sorry
+proof -
+  obtain ts where ts_v: "sep_cone_valid m p ts"
+              and \<rho>_eq: "\<rho> = sep_sum m p ts"
+    using \<rho>_cone unfolding separable_cone_def by blast
+  have Tr_\<rho>: "Tr \<rho> = 1"
+    using \<rho>_dm unfolding density_matrix_def by simp
+  have Tr_sum: "Tr (sep_sum m p ts) = 1"
+    using \<rho>_eq Tr_\<rho> by simp
+  let ?ts' = "sep_renorm ts"
+  have eq: "\<rho> = sep_sum m p ?ts'"
+    using \<rho>_eq sep_sum_renorm[OF ts_v] by simp
+  have ts'_v: "sep_decomp_valid m p ?ts'"
+    by (rule sep_renorm_valid[OF ts_v Tr_sum m_pos p_pos])
+  show ?thesis
+    unfolding separable_density_def using ts'_v eq by blast
+qed
 
 (* Main theorem: hard direction of universal entanglement witnesses. *)
 
