@@ -18522,15 +18522,249 @@ where
              complex_of_real (1 / Re (Tr \<tau>)) \<cdot>\<^sub>m \<tau>))
          (filter (\<lambda>(w, \<sigma>, \<tau>). 0 < Re (Tr \<sigma>) \<and> 0 < Re (Tr \<tau>)) ts)"
 
+(* Helper: smult absorbs through tensor product on either side. *)
+
+lemma tensor_mat_smult_left:
+  fixes A B :: "complex Matrix.mat" and c :: complex
+  assumes A_c: "A \<in> carrier_mat ra ca"
+      and B_c: "B \<in> carrier_mat rb cb"
+      and ra_pos: "0 < ra" and ca_pos: "0 < ca"
+      and rb_pos: "0 < rb" and cb_pos: "0 < cb"
+  shows "(c \<cdot>\<^sub>m A) \<Otimes> B = c \<cdot>\<^sub>m (A \<Otimes> B)"
+proof (intro eq_matI)
+  show "dim_row ((c \<cdot>\<^sub>m A) \<Otimes> B) = dim_row (c \<cdot>\<^sub>m (A \<Otimes> B))" using A_c B_c by simp
+  show "dim_col ((c \<cdot>\<^sub>m A) \<Otimes> B) = dim_col (c \<cdot>\<^sub>m (A \<Otimes> B))" using A_c B_c by simp
+  fix i j
+  assume i: "i < dim_row (c \<cdot>\<^sub>m (A \<Otimes> B))"
+  assume j: "j < dim_col (c \<cdot>\<^sub>m (A \<Otimes> B))"
+  have i_lt: "i < ra * rb" using i A_c B_c by simp
+  have j_lt: "j < ca * cb" using j A_c B_c by simp
+  have idiv: "i div rb < ra" using i_lt rb_pos
+    by (simp add: less_mult_imp_div_less)
+  have jdiv: "j div cb < ca" using j_lt cb_pos
+    by (simp add: less_mult_imp_div_less)
+  have imod: "i mod rb < rb" using rb_pos by simp
+  have jmod: "j mod cb < cb" using cb_pos by simp
+  have lhs: "((c \<cdot>\<^sub>m A) \<Otimes> B) $$ (i,j)
+                = (c \<cdot>\<^sub>m A) $$ (i div rb, j div cb)
+                  * B $$ (i mod rb, j mod cb)"
+    using A_c B_c i_lt j_lt ca_pos cb_pos by simp
+  also have "\<dots> = c * A $$ (i div rb, j div cb) * B $$ (i mod rb, j mod cb)"
+    using idiv jdiv A_c by simp
+  finally have lhs': "((c \<cdot>\<^sub>m A) \<Otimes> B) $$ (i,j)
+                       = c * A $$ (i div rb, j div cb) * B $$ (i mod rb, j mod cb)" .
+  have rhs: "(c \<cdot>\<^sub>m (A \<Otimes> B)) $$ (i,j)
+                = c * (A \<Otimes> B) $$ (i,j)"
+    using i j by simp
+  also have "\<dots> = c * (A $$ (i div rb, j div cb) * B $$ (i mod rb, j mod cb))"
+    using A_c B_c i_lt j_lt ca_pos cb_pos by simp
+  finally have rhs': "(c \<cdot>\<^sub>m (A \<Otimes> B)) $$ (i,j)
+                       = c * (A $$ (i div rb, j div cb) * B $$ (i mod rb, j mod cb))" .
+  show "((c \<cdot>\<^sub>m A) \<Otimes> B) $$ (i,j) = (c \<cdot>\<^sub>m (A \<Otimes> B)) $$ (i,j)"
+    using lhs' rhs' by (simp add: mult.assoc)
+qed
+
+lemma tensor_mat_smult_right:
+  fixes A B :: "complex Matrix.mat" and c :: complex
+  assumes A_c: "A \<in> carrier_mat ra ca"
+      and B_c: "B \<in> carrier_mat rb cb"
+      and ra_pos: "0 < ra" and ca_pos: "0 < ca"
+      and rb_pos: "0 < rb" and cb_pos: "0 < cb"
+  shows "A \<Otimes> (c \<cdot>\<^sub>m B) = c \<cdot>\<^sub>m (A \<Otimes> B)"
+proof (intro eq_matI)
+  show "dim_row (A \<Otimes> (c \<cdot>\<^sub>m B)) = dim_row (c \<cdot>\<^sub>m (A \<Otimes> B))" using A_c B_c by simp
+  show "dim_col (A \<Otimes> (c \<cdot>\<^sub>m B)) = dim_col (c \<cdot>\<^sub>m (A \<Otimes> B))" using A_c B_c by simp
+  fix i j
+  assume i: "i < dim_row (c \<cdot>\<^sub>m (A \<Otimes> B))"
+  assume j: "j < dim_col (c \<cdot>\<^sub>m (A \<Otimes> B))"
+  have i_lt: "i < ra * rb" using i A_c B_c by simp
+  have j_lt: "j < ca * cb" using j A_c B_c by simp
+  have idiv: "i div rb < ra" using i_lt rb_pos
+    by (simp add: less_mult_imp_div_less)
+  have jdiv: "j div cb < ca" using j_lt cb_pos
+    by (simp add: less_mult_imp_div_less)
+  have imod: "i mod rb < rb" using rb_pos by simp
+  have jmod: "j mod cb < cb" using cb_pos by simp
+  have lhs: "(A \<Otimes> (c \<cdot>\<^sub>m B)) $$ (i,j)
+                = A $$ (i div rb, j div cb)
+                  * (c \<cdot>\<^sub>m B) $$ (i mod rb, j mod cb)"
+    using A_c B_c i_lt j_lt ca_pos cb_pos by simp
+  also have "\<dots> = A $$ (i div rb, j div cb) * (c * B $$ (i mod rb, j mod cb))"
+    using imod jmod B_c by simp
+  finally have lhs': "(A \<Otimes> (c \<cdot>\<^sub>m B)) $$ (i,j)
+                       = A $$ (i div rb, j div cb) * (c * B $$ (i mod rb, j mod cb))" .
+  have rhs: "(c \<cdot>\<^sub>m (A \<Otimes> B)) $$ (i,j)
+                = c * (A \<Otimes> B) $$ (i,j)"
+    using i j by simp
+  also have "\<dots> = c * (A $$ (i div rb, j div cb) * B $$ (i mod rb, j mod cb))"
+    using A_c B_c i_lt j_lt ca_pos cb_pos by simp
+  finally have rhs': "(c \<cdot>\<^sub>m (A \<Otimes> B)) $$ (i,j)
+                       = c * (A $$ (i div rb, j div cb) * B $$ (i mod rb, j mod cb))" .
+  show "(A \<Otimes> (c \<cdot>\<^sub>m B)) $$ (i,j) = (c \<cdot>\<^sub>m (A \<Otimes> B)) $$ (i,j)"
+    using lhs' rhs' by (simp add: mult.assoc mult.left_commute)
+qed
+
 (* Sub-helper 8d: rescaling preserves the sum (zero-trace summands
    contribute 0 because PSD with trace 0 vanishes). *)
 
 lemma sep_sum_renorm:
   fixes m p :: nat
       and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
-  assumes "sep_cone_valid m p ts"
+  assumes ts_v: "sep_cone_valid m p ts"
+      and m_pos: "0 < m" and p_pos: "0 < p"
   shows "sep_sum m p ts = sep_sum m p (sep_renorm ts)"
-  sorry
+  using ts_v
+proof (induction ts)
+  case Nil
+  show ?case unfolding sep_renorm_def by simp
+next
+  case (Cons t ts)
+  obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+  from Cons.prems t_eq have w_nn: "w \<ge> 0"
+                       and \<sigma>_c: "\<sigma> \<in> carrier_mat m m"
+                       and \<sigma>_psd: "psd \<sigma>"
+                       and \<tau>_c: "\<tau> \<in> carrier_mat p p"
+                       and \<tau>_psd: "psd \<tau>"
+    unfolding sep_cone_valid_def by auto
+  from Cons.prems t_eq have ts_v': "sep_cone_valid m p ts"
+    unfolding sep_cone_valid_def by auto
+  have IH: "sep_sum m p ts = sep_sum m p (sep_renorm ts)"
+    using Cons.IH ts_v' by blast
+  have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)" using \<sigma>_c \<tau>_c by auto
+  have R_c: "sep_sum m p ts \<in> carrier_mat (m*p) (m*p)" by (rule sep_sum_carrier)
+  have R'_c: "sep_sum m p (sep_renorm ts) \<in> carrier_mat (m*p) (m*p)"
+    by (rule sep_sum_carrier)
+  have \<sigma>_h: "hermitian \<sigma>" by (rule psd_hermitian[OF \<sigma>_psd])
+  have \<tau>_h: "hermitian \<tau>" by (rule psd_hermitian[OF \<tau>_psd])
+  have Tr\<sigma>_real: "Tr \<sigma> = complex_of_real (Re (Tr \<sigma>))"
+    by (rule Tr_hermitian_real[OF \<sigma>_h \<sigma>_c])
+  have Tr\<tau>_real: "Tr \<tau> = complex_of_real (Re (Tr \<tau>))"
+    by (rule Tr_hermitian_real[OF \<tau>_h \<tau>_c])
+  have Tr\<sigma>_nn: "0 \<le> Re (Tr \<sigma>)" by (rule Tr_psd_Re_nonneg[OF \<sigma>_psd \<sigma>_c])
+  have Tr\<tau>_nn: "0 \<le> Re (Tr \<tau>)" by (rule Tr_psd_Re_nonneg[OF \<tau>_psd \<tau>_c])
+  show ?case
+  proof (cases "0 < Re (Tr \<sigma>) \<and> 0 < Re (Tr \<tau>)")
+    case True
+    define s where "s = Re (Tr \<sigma>)"
+    define t where "t = Re (Tr \<tau>)"
+    have s_pos: "0 < s" using True s_def by simp
+    have t_pos: "0 < t" using True t_def by simp
+    have s_neq: "s \<noteq> 0" using s_pos by simp
+    have t_neq: "t \<noteq> 0" using t_pos by simp
+    define \<sigma>' where "\<sigma>' = complex_of_real (1/s) \<cdot>\<^sub>m \<sigma>"
+    define \<tau>' where "\<tau>' = complex_of_real (1/t) \<cdot>\<^sub>m \<tau>"
+    have \<sigma>'_c: "\<sigma>' \<in> carrier_mat m m" using \<sigma>_c \<sigma>'_def by auto
+    have \<tau>'_c: "\<tau>' \<in> carrier_mat p p" using \<tau>_c \<tau>'_def by auto
+    define w' where "w' = w * s * t"
+    have ren_step: "sep_renorm ((w, \<sigma>, \<tau>) # ts)
+                     = (w', \<sigma>', \<tau>') # sep_renorm ts"
+      using True unfolding sep_renorm_def s_def t_def \<sigma>'_def \<tau>'_def w'_def
+      by simp
+    have step1: "\<sigma>' \<Otimes> \<tau>' = complex_of_real (1/(s*t)) \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+    proof -
+      have "\<sigma>' \<Otimes> \<tau>'
+              = complex_of_real (1/s) \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>')"
+        unfolding \<sigma>'_def
+        by (rule tensor_mat_smult_left[OF \<sigma>_c \<tau>'_c m_pos m_pos p_pos p_pos])
+      also have "\<sigma> \<Otimes> \<tau>'
+                  = complex_of_real (1/t) \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+        unfolding \<tau>'_def
+        by (rule tensor_mat_smult_right[OF \<sigma>_c \<tau>_c m_pos m_pos p_pos p_pos])
+      finally have "\<sigma>' \<Otimes> \<tau>'
+                      = complex_of_real (1/s) \<cdot>\<^sub>m (complex_of_real (1/t)
+                          \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>))" .
+      also have "\<dots> = complex_of_real (1/(s*t)) \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+        by (intro eq_matI) (auto simp: of_real_mult mult.assoc)
+      finally show ?thesis .
+    qed
+    have summand_eq: "complex_of_real w' \<cdot>\<^sub>m (\<sigma>' \<Otimes> \<tau>')
+                       = complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+    proof -
+      have "complex_of_real w' \<cdot>\<^sub>m (\<sigma>' \<Otimes> \<tau>')
+              = complex_of_real w' \<cdot>\<^sub>m (complex_of_real (1/(s*t))
+                                          \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>))"
+        using step1 by simp
+      also have "\<dots> = complex_of_real (w' * (1/(s*t))) \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+        by (intro eq_matI) (auto simp: of_real_mult mult.assoc)
+      also have "w' * (1/(s*t)) = w"
+        unfolding w'_def using s_neq t_neq by simp
+      finally show ?thesis by simp
+    qed
+    have "sep_sum m p ((w, \<sigma>, \<tau>) # ts)
+            = complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + sep_sum m p ts" by simp
+    also have "\<dots> = complex_of_real w' \<cdot>\<^sub>m (\<sigma>' \<Otimes> \<tau>')
+                     + sep_sum m p (sep_renorm ts)"
+      using summand_eq IH by simp
+    also have "\<dots> = sep_sum m p ((w', \<sigma>', \<tau>') # sep_renorm ts)" by simp
+    also have "\<dots> = sep_sum m p (sep_renorm ((w, \<sigma>, \<tau>) # ts))"
+      using ren_step by simp
+    finally show ?thesis using t_eq by simp
+  next
+    case False
+    have "Re (Tr \<sigma>) \<le> 0 \<or> Re (Tr \<tau>) \<le> 0" using False by linarith
+    then have st_zero: "\<sigma> \<Otimes> \<tau> = 0\<^sub>m (m*p) (m*p)"
+    proof
+      assume "Re (Tr \<sigma>) \<le> 0"
+      hence "Re (Tr \<sigma>) = 0" using Tr\<sigma>_nn by simp
+      hence "Tr \<sigma> = 0" using Tr\<sigma>_real by simp
+      hence \<sigma>_zero: "\<sigma> = 0\<^sub>m m m" by (rule psd_Tr_zero_imp_zero[OF \<sigma>_psd \<sigma>_c])
+      show "\<sigma> \<Otimes> \<tau> = 0\<^sub>m (m*p) (m*p)"
+      proof (intro eq_matI)
+        show "dim_row (\<sigma> \<Otimes> \<tau>) = dim_row (0\<^sub>m (m*p) (m*p))" using \<sigma>_c \<tau>_c by simp
+        show "dim_col (\<sigma> \<Otimes> \<tau>) = dim_col (0\<^sub>m (m*p) (m*p))" using \<sigma>_c \<tau>_c by simp
+        fix i j
+        assume i: "i < dim_row (0\<^sub>m (m*p) (m*p))" and j: "j < dim_col (0\<^sub>m (m*p) (m*p))"
+        have i_lt: "i < m*p" using i by simp
+        have j_lt: "j < m*p" using j by simp
+        have idiv: "i div p < m" using i_lt p_pos by (simp add: less_mult_imp_div_less)
+        have jdiv: "j div p < m" using j_lt p_pos by (simp add: less_mult_imp_div_less)
+        have "(\<sigma> \<Otimes> \<tau>) $$ (i, j)
+                = \<sigma> $$ (i div p, j div p) * \<tau> $$ (i mod p, j mod p)"
+          using \<sigma>_c \<tau>_c i_lt j_lt m_pos p_pos by simp
+        also have "\<sigma> $$ (i div p, j div p) = 0"
+          using \<sigma>_zero idiv jdiv by simp
+        finally show "(\<sigma> \<Otimes> \<tau>) $$ (i, j) = 0\<^sub>m (m*p) (m*p) $$ (i, j)"
+          using i j by simp
+      qed
+    next
+      assume "Re (Tr \<tau>) \<le> 0"
+      hence "Re (Tr \<tau>) = 0" using Tr\<tau>_nn by simp
+      hence "Tr \<tau> = 0" using Tr\<tau>_real by simp
+      hence \<tau>_zero: "\<tau> = 0\<^sub>m p p" by (rule psd_Tr_zero_imp_zero[OF \<tau>_psd \<tau>_c])
+      show "\<sigma> \<Otimes> \<tau> = 0\<^sub>m (m*p) (m*p)"
+      proof (intro eq_matI)
+        show "dim_row (\<sigma> \<Otimes> \<tau>) = dim_row (0\<^sub>m (m*p) (m*p))" using \<sigma>_c \<tau>_c by simp
+        show "dim_col (\<sigma> \<Otimes> \<tau>) = dim_col (0\<^sub>m (m*p) (m*p))" using \<sigma>_c \<tau>_c by simp
+        fix i j
+        assume i: "i < dim_row (0\<^sub>m (m*p) (m*p))" and j: "j < dim_col (0\<^sub>m (m*p) (m*p))"
+        have i_lt: "i < m*p" using i by simp
+        have j_lt: "j < m*p" using j by simp
+        have imod: "i mod p < p" using p_pos by simp
+        have jmod: "j mod p < p" using p_pos by simp
+        have "(\<sigma> \<Otimes> \<tau>) $$ (i, j)
+                = \<sigma> $$ (i div p, j div p) * \<tau> $$ (i mod p, j mod p)"
+          using \<sigma>_c \<tau>_c i_lt j_lt m_pos p_pos by simp
+        also have "\<tau> $$ (i mod p, j mod p) = 0"
+          using \<tau>_zero imod jmod by simp
+        finally show "(\<sigma> \<Otimes> \<tau>) $$ (i, j) = 0\<^sub>m (m*p) (m*p) $$ (i, j)"
+          using i j by simp
+      qed
+    qed
+    have summand_zero: "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) = 0\<^sub>m (m*p) (m*p)"
+      using st_zero by (intro eq_matI) auto
+    have ren_step: "sep_renorm ((w, \<sigma>, \<tau>) # ts) = sep_renorm ts"
+      using False unfolding sep_renorm_def by simp
+    have "sep_sum m p ((w, \<sigma>, \<tau>) # ts)
+            = complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + sep_sum m p ts" by simp
+    also have "\<dots> = 0\<^sub>m (m*p) (m*p) + sep_sum m p ts"
+      using summand_zero by simp
+    also have "\<dots> = sep_sum m p ts" using R_c by auto
+    also have "\<dots> = sep_sum m p (sep_renorm ts)" using IH .
+    also have "\<dots> = sep_sum m p (sep_renorm ((w, \<sigma>, \<tau>) # ts))"
+      using ren_step by simp
+    finally show ?thesis using t_eq by simp
+  qed
+qed
 
 (* Sub-helper 8e: renormalised list is sep_decomp_valid when the
    total trace of the original sum is 1. *)
@@ -18560,7 +18794,7 @@ proof -
     using \<rho>_eq Tr_\<rho> by simp
   let ?ts' = "sep_renorm ts"
   have eq: "\<rho> = sep_sum m p ?ts'"
-    using \<rho>_eq sep_sum_renorm[OF ts_v] by simp
+    using \<rho>_eq sep_sum_renorm[OF ts_v m_pos p_pos] by simp
   have ts'_v: "sep_decomp_valid m p ?ts'"
     by (rule sep_renorm_valid[OF ts_v Tr_sum m_pos p_pos])
   show ?thesis
