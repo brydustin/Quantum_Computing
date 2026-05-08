@@ -18508,6 +18508,122 @@ proof -
   thus ?thesis by simp
 qed
 
+(* Helper: HS-norm-squared of \<open>U + (-t) ⋅ V\<close> expanded over the
+   bilinear structure.  We extract this into a stand-alone lemma so
+   the lemma's parameter names do not clash with let-bound names in
+   the calling context. *)
+
+lemma hs_norm_sq_diff_expand:
+  fixes U V :: "complex Matrix.mat" and t :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and V_c: "V \<in> carrier_mat n n"
+  shows "(hs_norm (U + complex_of_real (-t) \<cdot>\<^sub>m V))\<^sup>2
+          = Re (\<langle>\<langle> U | U \<rangle>\<rangle>) - 2 * t * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+            + t\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+proof -
+  let ?tV = "complex_of_real (-t) \<cdot>\<^sub>m V"
+  let ?Z = "U + ?tV"
+  have tV_c: "?tV \<in> carrier_mat n n" using V_c by auto
+  have Z_c: "?Z \<in> carrier_mat n n" using U_c tV_c by auto
+  have U_dr: "dim_row U = n" using U_c by auto
+  have U_dc: "dim_col U = n" using U_c by auto
+  have V_dr: "dim_row V = n" using V_c by auto
+  have V_dc: "dim_col V = n" using V_c by auto
+  have tV_dr: "dim_row ?tV = n" using tV_c by auto
+  have tV_dc: "dim_col ?tV = n" using tV_c by auto
+  have Z_dr: "dim_row ?Z = n" using Z_c by auto
+  have Z_dc: "dim_col ?Z = n" using Z_c by auto
+  have ZZ_split: "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle> = \<langle>\<langle> U | ?Z \<rangle>\<rangle> + \<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>"
+  proof -
+    have d1: "dim_row ?Z = dim_row U" using Z_dr U_dr by simp
+    have d2: "dim_col ?Z = dim_col U" using Z_dc U_dc by simp
+    have d1': "dim_row ?Z = dim_row ?tV" using Z_dr tV_dr by simp
+    have d2': "dim_col ?Z = dim_col ?tV" using Z_dc tV_dc by simp
+    text \<open>Use conjugate-symmetric form to avoid an OF-unification clash
+    on the schematic left-add lemma.\<close>
+    have step1: "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle> = cnj (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_cnj[OF refl refl])
+    have rhs_split: "\<langle>\<langle> ?Z | U + ?tV \<rangle>\<rangle>
+                       = \<langle>\<langle> ?Z | U \<rangle>\<rangle> + \<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>"
+      by (rule hs_inner_prod_right_add)
+         (use Z_dr Z_dc U_dr U_dc tV_dr tV_dc in auto)
+    have ZZ_eq: "?Z = U + ?tV" by simp
+    have IP1: "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>
+                  = \<langle>\<langle> ?Z | U \<rangle>\<rangle> + \<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>"
+      using rhs_split ZZ_eq by simp
+    text \<open>Now transpose each \<open>\<langle>\<langle>?Z|x\<rangle>\<rangle>\<close> via conjugate symmetry.\<close>
+    have e1: "\<langle>\<langle> ?Z | U \<rangle>\<rangle> = cnj (\<langle>\<langle> U | ?Z \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_cnj) (use U_dr U_dc Z_dr Z_dc in auto)
+    have e2: "\<langle>\<langle> ?Z | ?tV \<rangle>\<rangle> = cnj (\<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_cnj) (use tV_dr tV_dc Z_dr Z_dc in auto)
+    text \<open>Self-IP is real, so its conjugate equals itself.\<close>
+    have ZZ_real: "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle> = cnj (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)"
+      using hs_inner_prod_self_real by (metis Reals_cnj_iff)
+    have "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle> = cnj (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)" by (rule ZZ_real)
+    also have "cnj (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)
+                = cnj (\<langle>\<langle> ?Z | U \<rangle>\<rangle> + \<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>)"
+      using IP1 by simp
+    also have "\<dots> = cnj (\<langle>\<langle> ?Z | U \<rangle>\<rangle>) + cnj (\<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>)"
+      by simp
+    also have "\<dots> = cnj (cnj (\<langle>\<langle> U | ?Z \<rangle>\<rangle>))
+                    + cnj (cnj (\<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>))"
+      using e1 e2 by simp
+    also have "\<dots> = \<langle>\<langle> U | ?Z \<rangle>\<rangle> + \<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>"
+      by simp
+    finally show ?thesis .
+  qed
+  have UZ_split: "\<langle>\<langle> U | ?Z \<rangle>\<rangle> = \<langle>\<langle> U | U \<rangle>\<rangle> + \<langle>\<langle> U | ?tV \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_add)
+       (use U_dr U_dc tV_dr tV_dc in auto)
+  have tVZ_split: "\<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>
+                    = \<langle>\<langle> ?tV | U \<rangle>\<rangle> + \<langle>\<langle> ?tV | ?tV \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_add)
+       (use U_dr U_dc tV_dr tV_dc in auto)
+  have UtV_smult: "\<langle>\<langle> U | ?tV \<rangle>\<rangle>
+                    = complex_of_real (-t) * \<langle>\<langle> U | V \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_smult)
+       (use U_dr U_dc V_dr V_dc in auto)
+  have tVU_smult: "\<langle>\<langle> ?tV | U \<rangle>\<rangle>
+                    = cnj (complex_of_real (-t)) * \<langle>\<langle> V | U \<rangle>\<rangle>"
+    by (rule hs_inner_prod_left_smult)
+       (use U_dr U_dc V_dr V_dc in auto)
+  have tVtV_smult: "\<langle>\<langle> ?tV | ?tV \<rangle>\<rangle>
+                     = cnj (complex_of_real (-t)) * \<langle>\<langle> V | ?tV \<rangle>\<rangle>"
+    by (rule hs_inner_prod_left_smult)
+       (use V_dr V_dc tV_dr tV_dc in auto)
+  have VtV_smult: "\<langle>\<langle> V | ?tV \<rangle>\<rangle>
+                    = complex_of_real (-t) * \<langle>\<langle> V | V \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_smult)
+       (use V_dr V_dc in auto)
+  have full:
+    "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>
+       = \<langle>\<langle> U | U \<rangle>\<rangle>
+         + complex_of_real (-t) * \<langle>\<langle> U | V \<rangle>\<rangle>
+         + (cnj (complex_of_real (-t)) * \<langle>\<langle> V | U \<rangle>\<rangle>
+             + cnj (complex_of_real (-t))
+                 * (complex_of_real (-t) * \<langle>\<langle> V | V \<rangle>\<rangle>))"
+    using ZZ_split UZ_split tVZ_split
+          UtV_smult tVU_smult tVtV_smult VtV_smult
+    by simp
+  have re_eq:
+    "Re (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)
+        = Re (\<langle>\<langle> U | U \<rangle>\<rangle>)
+          - t * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+          - t * Re (\<langle>\<langle> V | U \<rangle>\<rangle>)
+          + t\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+    using full by (simp add: power2_eq_square)
+  have swap: "Re (\<langle>\<langle> V | U \<rangle>\<rangle>) = Re (\<langle>\<langle> U | V \<rangle>\<rangle>)"
+  proof -
+    have d1: "dim_row V = dim_row U" using V_dr U_dr by simp
+    have d2: "dim_col V = dim_col U" using V_dc U_dc by simp
+    have "\<langle>\<langle> V | U \<rangle>\<rangle> = cnj (\<langle>\<langle> U | V \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_cnj[OF d1 d2])
+    thus ?thesis by simp
+  qed
+  have "(hs_norm ?Z)\<^sup>2 = Re (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)" by (rule hs_norm_sq)
+  thus ?thesis using re_eq swap by simp
+qed
+
 (* Cone separator from closest point.
 
    Pure inner-product geometry: for σ in cone, the ray
@@ -18516,10 +18632,7 @@ qed
    \<open>Re \<langle>\<langle>\<rho>-p_star | \<sigma>-p_star\<rangle>\<rangle> \<le> 0\<close>.  Specialising to \<sigma> = 0 and
    \<sigma> = 2 p_star then gives \<open>Re \<langle>\<langle>\<rho>-p_star | p_star\<rangle>\<rangle> = 0\<close>, and
    \<open>Re \<langle>\<langle>\<rho>-p_star | \<rho>\<rangle>\<rangle> = \<parallel>\<rho>-p_star\<parallel>\<^sup>2 > 0\<close>.  Setting \<open>a = p_star - \<rho>\<close>
-   flips the signs to the desired form.
-
-   The full inner-product expansion of \<open>\<parallel>X - tY\<parallel>\<^sup>2\<close> in matrix form is
-   tedious to push through without typeclass support; deferred. *)
+   flips the signs to the desired form. *)
 
 lemma cone_separator_from_closest_point:
   fixes m p :: nat and \<rho> p_star :: "complex Matrix.mat"
@@ -18533,18 +18646,319 @@ lemma cone_separator_from_closest_point:
             \<and> Re (\<langle>\<langle> a | \<rho> \<rangle>\<rangle>) < 0
             \<and> (\<forall>\<sigma>. separable_cone m p \<sigma>
                     \<longrightarrow> 0 \<le> Re (\<langle>\<langle> a | \<sigma> \<rangle>\<rangle>))"
-  sorry
+proof -
+  have p_star_c: "p_star \<in> carrier_mat (m*p) (m*p)"
+    using p_star_cone unfolding separable_cone_def by auto
+  let ?Xdiff = "\<rho> - p_star"
+  let ?aSep = "p_star - \<rho>"
+  have Xdiff_c: "?Xdiff \<in> carrier_mat (m*p) (m*p)" using \<rho>_c p_star_c by auto
+  have aSep_c: "?aSep \<in> carrier_mat (m*p) (m*p)" using \<rho>_c p_star_c by auto
 
-(* Note: the proof of cone_separator_from_closest_point follows the
-   classical closest-point argument: set \<open>a = p_star - \<rho>\<close>; for any \<sigma>
-   in the (convex) cone, the convex combination
-   \<open>p_star + t(\<sigma> - p_star)\<close> is in the cone for \<open>t \<in> [0,1]\<close>; expanding
-   \<open>\<parallel>\<rho> - p_star - t(\<sigma> - p_star)\<parallel>\<^sup>2 \<ge> \<parallel>\<rho> - p_star\<parallel>\<^sup>2\<close> and dividing by
-   small \<open>t > 0\<close> forces \<open>Re \<langle>\<langle>\<rho>-p_star | \<sigma>-p_star\<rangle>\<rangle> \<le> 0\<close>; specialising
-   \<sigma> = 0 and \<sigma> = 2 p_star gives \<open>Re \<langle>\<langle>\<rho>-p_star | p_star\<rangle>\<rangle> = 0\<close>; hence
-   \<open>Re \<langle>\<langle>a | \<sigma>\<rangle>\<rangle> \<ge> 0\<close> on the cone and \<open>Re \<langle>\<langle>a | \<rho>\<rangle>\<rangle> = -\<parallel>X\<parallel>\<^sup>2 < 0\<close>.
-   The technical hurdle is expanding \<open>\<langle>\<langle>X - tY | X - tY\<rangle>\<rangle>\<close> via
-   \<open>hs_inner_prod_left_add\<close>; deferred. *)
+  text \<open>Key inequality from minimality: for any \<sigma> in cone,
+  \<open>Re \<langle>\<langle>?Xdiff | \<sigma> - p_star\<rangle>\<rangle> \<le> 0\<close>.\<close>
+  have key: "\<And>\<sigma>. separable_cone m p \<sigma>
+              \<Longrightarrow> Re (\<langle>\<langle> ?Xdiff | \<sigma> - p_star \<rangle>\<rangle>) \<le> 0"
+  proof -
+    fix \<sigma> assume \<sigma>_cone: "separable_cone m p \<sigma>"
+    have \<sigma>_c: "\<sigma> \<in> carrier_mat (m*p) (m*p)"
+      using \<sigma>_cone unfolding separable_cone_def by auto
+    let ?Ydiff = "\<sigma> - p_star"
+    have Ydiff_c: "?Ydiff \<in> carrier_mat (m*p) (m*p)"
+      using \<sigma>_c p_star_c by auto
+    let ?nval = "Re (\<langle>\<langle> ?Ydiff | ?Ydiff \<rangle>\<rangle>)"
+    let ?cval = "Re (\<langle>\<langle> ?Xdiff | ?Ydiff \<rangle>\<rangle>)"
+    have nval_nn: "0 \<le> ?nval" by (rule hs_inner_prod_self_nonneg)
+
+    text \<open>Convex combinations \<open>q\<^sub>t = (1-t) p_star + t \<sigma>\<close> are in the
+    cone for \<open>t \<in> [0,1]\<close>.\<close>
+    have qt_cone: "\<And>t. 0 \<le> t \<Longrightarrow> t \<le> 1
+                    \<Longrightarrow> separable_cone m p
+                          (complex_of_real t \<cdot>\<^sub>m \<sigma>
+                            + complex_of_real (1-t) \<cdot>\<^sub>m p_star)"
+    proof -
+      fix t :: real assume t_nn: "0 \<le> t" and t_le: "t \<le> 1"
+      have part1: "separable_cone m p (complex_of_real t \<cdot>\<^sub>m \<sigma>)"
+        by (rule separable_cone_smult[OF \<sigma>_cone t_nn m_pos p_pos])
+      have one_t_nn: "0 \<le> 1 - t" using t_le by simp
+      have part2: "separable_cone m p (complex_of_real (1-t) \<cdot>\<^sub>m p_star)"
+        by (rule separable_cone_smult[OF p_star_cone one_t_nn m_pos p_pos])
+      show "separable_cone m p (complex_of_real t \<cdot>\<^sub>m \<sigma>
+                                + complex_of_real (1-t) \<cdot>\<^sub>m p_star)"
+        by (rule separable_cone_add[OF part1 part2])
+    qed
+
+    text \<open>Expand \<open>\<rho> - q\<^sub>t = ?Xdiff + (-t) \<cdot>\<^sub>m ?Ydiff\<close>.\<close>
+    have rho_minus_qt:
+      "\<And>t. \<rho> - (complex_of_real t \<cdot>\<^sub>m \<sigma>
+                  + complex_of_real (1-t) \<cdot>\<^sub>m p_star)
+           = ?Xdiff + complex_of_real (-t) \<cdot>\<^sub>m ?Ydiff"
+    proof -
+      fix t :: real
+      show "\<rho> - (complex_of_real t \<cdot>\<^sub>m \<sigma>
+                  + complex_of_real (1-t) \<cdot>\<^sub>m p_star)
+           = ?Xdiff + complex_of_real (-t) \<cdot>\<^sub>m ?Ydiff"
+      proof (intro eq_matI)
+        show "dim_row (\<rho> - (complex_of_real t \<cdot>\<^sub>m \<sigma>
+                              + complex_of_real (1-t) \<cdot>\<^sub>m p_star))
+                = dim_row (?Xdiff + complex_of_real (-t) \<cdot>\<^sub>m ?Ydiff)"
+          using \<rho>_c \<sigma>_c p_star_c by auto
+        show "dim_col (\<rho> - (complex_of_real t \<cdot>\<^sub>m \<sigma>
+                              + complex_of_real (1-t) \<cdot>\<^sub>m p_star))
+                = dim_col (?Xdiff + complex_of_real (-t) \<cdot>\<^sub>m ?Ydiff)"
+          using \<rho>_c \<sigma>_c p_star_c by auto
+        fix i j
+        assume hi: "i < dim_row (?Xdiff + complex_of_real (-t) \<cdot>\<^sub>m ?Ydiff)"
+        assume hj: "j < dim_col (?Xdiff + complex_of_real (-t) \<cdot>\<^sub>m ?Ydiff)"
+        have i: "i < m*p" using hi Xdiff_c Ydiff_c by auto
+        have j: "j < m*p" using hj Xdiff_c Ydiff_c by auto
+        show "(\<rho> - (complex_of_real t \<cdot>\<^sub>m \<sigma>
+                       + complex_of_real (1-t) \<cdot>\<^sub>m p_star)) $$ (i, j)
+                = (?Xdiff + complex_of_real (-t) \<cdot>\<^sub>m ?Ydiff) $$ (i, j)"
+          using i j \<rho>_c \<sigma>_c p_star_c
+          by (simp add: minus_mat_def algebra_simps)
+      qed
+    qed
+
+    text \<open>Constraint from minimality of \<open>p_star\<close>.\<close>
+    have constraint: "\<And>t. 0 \<le> t \<Longrightarrow> t \<le> 1 \<Longrightarrow> 2*t*?cval \<le> t\<^sup>2*?nval"
+    proof -
+      fix t :: real assume t_nn: "0 \<le> t" and t_le: "t \<le> 1"
+      let ?qt = "complex_of_real t \<cdot>\<^sub>m \<sigma>
+                  + complex_of_real (1-t) \<cdot>\<^sub>m p_star"
+      have qt_cone': "separable_cone m p ?qt"
+        using qt_cone t_nn t_le by simp
+      have norm_ineq: "hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - ?qt)"
+        using p_star_min qt_cone' by simp
+      have nn1: "0 \<le> hs_norm (\<rho> - p_star)" by (simp add: hs_norm_nonneg)
+      have sq_le: "(hs_norm (\<rho> - p_star))\<^sup>2 \<le> (hs_norm (\<rho> - ?qt))\<^sup>2"
+        using norm_ineq nn1 by (simp add: power_mono)
+      have eq1: "(hs_norm (\<rho> - p_star))\<^sup>2 = Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>)"
+        by (rule hs_norm_sq)
+      have eq2: "(hs_norm (\<rho> - ?qt))\<^sup>2
+                  = Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>) - 2*t*?cval + t\<^sup>2*?nval"
+        using rho_minus_qt[of t]
+              hs_norm_sq_diff_expand[OF Xdiff_c Ydiff_c, of t]
+        by simp
+      from sq_le eq1 eq2 show "2*t*?cval \<le> t\<^sup>2*?nval" by simp
+    qed
+
+    text \<open>Conclude \<open>?cval \<le> 0\<close> by choosing a small \<open>t\<close>.\<close>
+    show "?cval \<le> 0"
+    proof (rule ccontr)
+      assume "\<not> ?cval \<le> 0"
+      then have c_pos: "0 < ?cval" by simp
+      let ?t = "min 1 (?cval / (?nval + 1))"
+      have nn1_pos: "0 < ?nval + 1" using nval_nn by simp
+      have t_pos: "0 < ?t" using c_pos nn1_pos by (simp add: min_def)
+      have t_nn: "0 \<le> ?t" using t_pos by simp
+      have t_le: "?t \<le> 1" by (simp add: min_def)
+      from constraint[OF t_nn t_le] have ineq: "2*?t*?cval \<le> ?t\<^sup>2*?nval" .
+      have t_le_c_n1: "?t \<le> ?cval / (?nval + 1)" by simp
+      have step_a: "?t * ?nval \<le> ?cval"
+      proof -
+        have a1: "?t * ?nval \<le> (?cval / (?nval + 1)) * ?nval"
+          by (rule mult_right_mono[OF t_le_c_n1 nval_nn])
+        have a2: "(?cval / (?nval + 1)) * ?nval
+                    = ?cval * (?nval / (?nval + 1))" by simp
+        have ratio_le_1: "?nval / (?nval + 1) \<le> 1"
+          using nval_nn nn1_pos by (simp add: divide_le_eq_1)
+        have a3a: "?cval * (?nval / (?nval + 1)) \<le> ?cval * 1"
+          using ratio_le_1 c_pos
+          by (intro mult_left_mono) (simp_all add: less_imp_le)
+        have a3b: "?cval * 1 = ?cval" by simp
+        from a1 a2 a3a a3b show ?thesis by linarith
+      qed
+      have sq_eq: "?t\<^sup>2 * ?nval = ?t * (?t * ?nval)"
+        by (simp add: power2_eq_square)
+      have sq_le: "?t * (?t * ?nval) \<le> ?t * ?cval"
+        using step_a t_nn by (rule mult_left_mono)
+      have chain1: "?t\<^sup>2 * ?nval \<le> ?t * ?cval"
+      proof -
+        have "?t\<^sup>2 * ?nval = ?t * (?t * ?nval)" by (rule sq_eq)
+        also have "?t * (?t * ?nval) \<le> ?t * ?cval" by (rule sq_le)
+        finally show ?thesis .
+      qed
+      have chain2: "2 * ?t * ?cval \<le> ?t * ?cval"
+        using ineq chain1 by linarith
+      have small: "?t * ?cval \<le> 0" using chain2 by linarith
+      have big: "0 < ?t * ?cval" using t_pos c_pos by simp
+      from small big show False by linarith
+    qed
+  qed
+
+  text \<open>Set \<open>?bval = Re \<langle>\<langle>?Xdiff | p_star\<rangle>\<rangle>\<close>; show \<open>?bval = 0\<close>.\<close>
+  let ?bval = "Re (\<langle>\<langle> ?Xdiff | p_star \<rangle>\<rangle>)"
+  have apply_zero:
+    "Re (\<langle>\<langle> ?Xdiff | (0\<^sub>m (m*p) (m*p) :: complex Matrix.mat) - p_star \<rangle>\<rangle>)
+        \<le> 0"
+    using key[OF separable_cone_zero] by simp
+  have b_ge: "0 \<le> ?bval"
+  proof -
+    have eq: "(0\<^sub>m (m*p) (m*p) :: complex Matrix.mat) - p_star
+                = complex_of_real (-1) \<cdot>\<^sub>m p_star"
+      using p_star_c by (intro eq_matI) (auto simp: minus_mat_def)
+    have "Re (\<langle>\<langle> ?Xdiff | (0\<^sub>m (m*p) (m*p) :: complex Matrix.mat) - p_star \<rangle>\<rangle>)
+            = Re (\<langle>\<langle> ?Xdiff | complex_of_real (-1) \<cdot>\<^sub>m p_star \<rangle>\<rangle>)"
+      using eq by simp
+    also have "\<dots> = (-1) * ?bval"
+      by (rule Re_hs_inner_prod_right_smult_real)
+         (use Xdiff_c p_star_c in auto)
+    finally have "(-1) * ?bval \<le> 0" using apply_zero by simp
+    thus ?thesis by simp
+  qed
+  have two_p_cone: "separable_cone m p (complex_of_real 2 \<cdot>\<^sub>m p_star)"
+    by (rule separable_cone_smult[OF p_star_cone _ m_pos p_pos]) simp
+  have b_le: "?bval \<le> 0"
+  proof -
+    have eq: "complex_of_real 2 \<cdot>\<^sub>m p_star - p_star = p_star"
+      using p_star_c by (intro eq_matI) (auto simp: minus_mat_def)
+    have "Re (\<langle>\<langle> ?Xdiff | complex_of_real 2 \<cdot>\<^sub>m p_star - p_star \<rangle>\<rangle>) \<le> 0"
+      using key[OF two_p_cone] .
+    thus ?thesis using eq by simp
+  qed
+  have b_eq: "?bval = 0" using b_ge b_le by linarith
+
+  text \<open>Conclude positivity of \<open>?aSep\<close> on cone.\<close>
+  have a_pos: "\<forall>\<sigma>. separable_cone m p \<sigma>
+                  \<longrightarrow> 0 \<le> Re (\<langle>\<langle> ?aSep | \<sigma> \<rangle>\<rangle>)"
+  proof (intro allI impI)
+    fix \<sigma> assume \<sigma>_cone: "separable_cone m p \<sigma>"
+    have \<sigma>_c: "\<sigma> \<in> carrier_mat (m*p) (m*p)"
+      using \<sigma>_cone unfolding separable_cone_def by auto
+    have IP_split: "\<langle>\<langle> ?Xdiff | \<sigma> - p_star \<rangle>\<rangle>
+                     = \<langle>\<langle> ?Xdiff | \<sigma> \<rangle>\<rangle> + \<langle>\<langle> ?Xdiff | - p_star \<rangle>\<rangle>"
+    proof -
+      have d1r: "dim_row \<sigma> = dim_row ?Xdiff" using \<sigma>_c Xdiff_c by auto
+      have d1c: "dim_col \<sigma> = dim_col ?Xdiff" using \<sigma>_c Xdiff_c by auto
+      have d2r: "dim_row (- p_star) = dim_row ?Xdiff" using p_star_c Xdiff_c by auto
+      have d2c: "dim_col (- p_star) = dim_col ?Xdiff" using p_star_c Xdiff_c by auto
+      have eq_minus: "\<sigma> - p_star = \<sigma> + (- p_star)"
+        by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def)
+      have "\<langle>\<langle> ?Xdiff | \<sigma> - p_star \<rangle>\<rangle> = \<langle>\<langle> ?Xdiff | \<sigma> + (- p_star) \<rangle>\<rangle>"
+        using eq_minus by simp
+      also have "\<dots> = \<langle>\<langle> ?Xdiff | \<sigma> \<rangle>\<rangle> + \<langle>\<langle> ?Xdiff | - p_star \<rangle>\<rangle>"
+        by (rule hs_inner_prod_right_add[OF d1r d1c d2r d2c])
+      finally show ?thesis .
+    qed
+    have IP_neg: "\<langle>\<langle> ?Xdiff | - p_star \<rangle>\<rangle>
+                    = - \<langle>\<langle> ?Xdiff | p_star \<rangle>\<rangle>"
+    proof -
+      have eq_smult: "- p_star = complex_of_real (-1) \<cdot>\<^sub>m p_star"
+        using p_star_c by (intro eq_matI) (auto simp: uminus_mat_def)
+      have "\<langle>\<langle> ?Xdiff | - p_star \<rangle>\<rangle>
+              = \<langle>\<langle> ?Xdiff | complex_of_real (-1) \<cdot>\<^sub>m p_star \<rangle>\<rangle>"
+        using eq_smult by simp
+      also have "\<dots> = complex_of_real (-1) * \<langle>\<langle> ?Xdiff | p_star \<rangle>\<rangle>"
+        by (intro hs_inner_prod_right_smult)
+           (use Xdiff_c p_star_c in auto)
+      finally show ?thesis by simp
+    qed
+    have step_eq: "Re (\<langle>\<langle> ?Xdiff | \<sigma> - p_star \<rangle>\<rangle>)
+                     = Re (\<langle>\<langle> ?Xdiff | \<sigma> \<rangle>\<rangle>) - ?bval"
+      using IP_split IP_neg by simp
+    have key_use: "Re (\<langle>\<langle> ?Xdiff | \<sigma> - p_star \<rangle>\<rangle>) \<le> 0"
+      by (rule key[OF \<sigma>_cone])
+    have X_le: "Re (\<langle>\<langle> ?Xdiff | \<sigma> \<rangle>\<rangle>) \<le> 0"
+      using step_eq key_use b_eq by simp
+    have a_eq: "Re (\<langle>\<langle> ?aSep | \<sigma> \<rangle>\<rangle>) = - Re (\<langle>\<langle> ?Xdiff | \<sigma> \<rangle>\<rangle>)"
+    proof -
+      have a_eq_smult: "?aSep = complex_of_real (-1) \<cdot>\<^sub>m ?Xdiff"
+        using \<rho>_c p_star_c
+        by (intro eq_matI)
+           (auto simp: minus_mat_def uminus_mat_def)
+      have "Re (\<langle>\<langle> ?aSep | \<sigma> \<rangle>\<rangle>)
+              = Re (\<langle>\<langle> complex_of_real (-1) \<cdot>\<^sub>m ?Xdiff | \<sigma> \<rangle>\<rangle>)"
+        using a_eq_smult by simp
+      also have "\<dots> = Re (cnj (complex_of_real (-1)) * \<langle>\<langle> ?Xdiff | \<sigma> \<rangle>\<rangle>)"
+        using Xdiff_c \<sigma>_c
+        by (subst hs_inner_prod_left_smult) auto
+      finally show ?thesis by simp
+    qed
+    show "0 \<le> Re (\<langle>\<langle> ?aSep | \<sigma> \<rangle>\<rangle>)" using a_eq X_le by simp
+  qed
+
+  text \<open>Strict negativity at \<rho>: \<open>Re \<langle>\<langle>?aSep | \<rho>\<rangle>\<rangle> = -\<parallel>?Xdiff\<parallel>\<^sup>2 < 0\<close>.\<close>
+  have X_nz: "?Xdiff \<noteq> 0\<^sub>m (m*p) (m*p)"
+  proof
+    assume zero: "?Xdiff = 0\<^sub>m (m*p) (m*p)"
+    have ps_dr: "dim_row p_star = m*p" using p_star_c by auto
+    have ps_dc: "dim_col p_star = m*p" using p_star_c by auto
+    have rho_dr: "dim_row \<rho> = m*p" using \<rho>_c by auto
+    have rho_dc: "dim_col \<rho> = m*p" using \<rho>_c by auto
+    have "\<rho> = p_star"
+    proof (intro eq_matI)
+      show "dim_row \<rho> = dim_row p_star" using rho_dr ps_dr by simp
+      show "dim_col \<rho> = dim_col p_star" using rho_dc ps_dc by simp
+      fix i j
+      assume i: "i < dim_row p_star" and j: "j < dim_col p_star"
+      have im: "i < m*p" using i ps_dr by simp
+      have jm: "j < m*p" using j ps_dc by simp
+      have "?Xdiff $$ (i,j) = \<rho> $$ (i,j) - p_star $$ (i,j)"
+        using im jm \<rho>_c p_star_c by (simp add: minus_mat_def)
+      moreover have "?Xdiff $$ (i,j) = 0"
+        using zero im jm by simp
+      ultimately show "\<rho> $$ (i,j) = p_star $$ (i,j)" by simp
+    qed
+    thus False using \<rho>_nonsep p_star_cone by simp
+  qed
+  have X_self_pos: "0 < Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>)"
+  proof -
+    have X_dr: "dim_row ?Xdiff = m*p" using Xdiff_c by auto
+    have X_dc: "dim_col ?Xdiff = m*p" using Xdiff_c by auto
+    have nn: "0 \<le> Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>)" by (rule hs_inner_prod_self_nonneg)
+    have neq_zero: "\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle> \<noteq> 0"
+    proof
+      assume "\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle> = 0"
+      hence "?Xdiff = 0\<^sub>m (dim_row ?Xdiff) (dim_col ?Xdiff)"
+        using hs_inner_prod_self_zero_iff by simp
+      hence "?Xdiff = 0\<^sub>m (m*p) (m*p)" using X_dr X_dc by simp
+      thus False using X_nz by simp
+    qed
+    have "Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>) \<noteq> 0"
+    proof
+      assume re_zero: "Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>) = 0"
+      have e1: "\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>
+                  = complex_of_real (Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>))"
+        by (rule hs_inner_prod_self_eq_of_real)
+      from e1 re_zero have "\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle> = 0" by simp
+      thus False using neq_zero by simp
+    qed
+    thus ?thesis using nn by linarith
+  qed
+  have a_neg: "Re (\<langle>\<langle> ?aSep | \<rho> \<rangle>\<rangle>) < 0"
+  proof -
+    have rho_eq: "\<rho> = ?Xdiff + p_star"
+      using \<rho>_c p_star_c
+      by (intro eq_matI) (auto simp: minus_mat_def)
+    have d1r: "dim_row ?Xdiff = dim_row ?Xdiff" by simp
+    have d1c: "dim_col ?Xdiff = dim_col ?Xdiff" by simp
+    have d2r: "dim_row p_star = dim_row ?Xdiff" using p_star_c Xdiff_c by auto
+    have d2c: "dim_col p_star = dim_col ?Xdiff" using p_star_c Xdiff_c by auto
+    have "\<langle>\<langle> ?Xdiff | \<rho> \<rangle>\<rangle> = \<langle>\<langle> ?Xdiff | ?Xdiff + p_star \<rangle>\<rangle>"
+      using rho_eq by simp
+    also have "\<dots> = \<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle> + \<langle>\<langle> ?Xdiff | p_star \<rangle>\<rangle>"
+      by (rule hs_inner_prod_right_add[OF d1r d1c d2r d2c])
+    finally have "Re (\<langle>\<langle> ?Xdiff | \<rho> \<rangle>\<rangle>) = Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>) + ?bval"
+      by simp
+    hence X_rho: "Re (\<langle>\<langle> ?Xdiff | \<rho> \<rangle>\<rangle>) = Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>)"
+      using b_eq by simp
+    have a_eq_smult: "?aSep = complex_of_real (-1) \<cdot>\<^sub>m ?Xdiff"
+      using \<rho>_c p_star_c
+      by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def)
+    have "Re (\<langle>\<langle> ?aSep | \<rho> \<rangle>\<rangle>)
+            = Re (\<langle>\<langle> complex_of_real (-1) \<cdot>\<^sub>m ?Xdiff | \<rho> \<rangle>\<rangle>)"
+      using a_eq_smult by simp
+    also have "\<dots> = Re (cnj (complex_of_real (-1)) * \<langle>\<langle> ?Xdiff | \<rho> \<rangle>\<rangle>)"
+      using Xdiff_c \<rho>_c
+      by (subst hs_inner_prod_left_smult) auto
+    also have "\<dots> = - Re (\<langle>\<langle> ?Xdiff | \<rho> \<rangle>\<rangle>)" by simp
+    finally have "Re (\<langle>\<langle> ?aSep | \<rho> \<rangle>\<rangle>) = - Re (\<langle>\<langle> ?Xdiff | ?Xdiff \<rangle>\<rangle>)"
+      using X_rho by simp
+    thus ?thesis using X_self_pos by simp
+  qed
+
+  show ?thesis using aSep_c a_neg a_pos by blast
+qed
 
 (* Step 5g: Hermitian part of an arbitrary matrix \<open>A\<close> is
    \<open>(A + A\<^sup>\<dagger>)/2\<close>; for Hermitian \<sigma>, \<open>Re Tr (A \<sigma>) = Re Tr (Aherm \<sigma>)\<close>. *)
