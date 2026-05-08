@@ -17000,7 +17000,9 @@ proof -
       by (rule sum.cong[OF refl]) (rule sum.swap)
     finally show ?thesis .
   qed
-  show ?thesis using step1 step2 step4 step5 step6 by simp
+  show ?thesis using step1[THEN trans, OF step2[THEN trans,
+                                  OF step4[THEN trans,
+                                       OF step5[THEN trans, OF step6]]]] .
 qed
 
 (* When Q is a Hermitian PSD square root of  1\<^sub>m r + mu,  the
