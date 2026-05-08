@@ -18447,6 +18447,80 @@ lemma exists_closest_point_in_separable_cone:
    for all \<sigma> in the (closed convex) cone, and the value at \<rho> is
    strictly smaller (by \<open>\<parallel>p_star-\<rho>\<parallel>\<^sup>2\<close>). *)
 
+(* Helper: HS-self inner product is real, so equals of_real of its Re. *)
+
+lemma hs_inner_prod_self_eq_of_real:
+  "\<langle>\<langle> A | A \<rangle>\<rangle> = complex_of_real (Re (\<langle>\<langle> A | A \<rangle>\<rangle>))"
+  using hs_inner_prod_self_real complex_eq_iff
+  by (metis Reals_cases of_real_Re)
+
+(* Helper: HS-self inner product equals zero iff the matrix is zero. *)
+
+lemma hs_inner_prod_self_zero_iff:
+  fixes A :: "complex Matrix.mat"
+  shows "\<langle>\<langle> A | A \<rangle>\<rangle> = 0 \<longleftrightarrow> A = 0\<^sub>m (dim_row A) (dim_col A)"
+proof
+  assume h: "\<langle>\<langle> A | A \<rangle>\<rangle> = 0"
+  have entries_zero: "\<And>i j. i < dim_row A \<Longrightarrow> j < dim_col A
+                            \<Longrightarrow> A $$ (i,j) = 0"
+    using hs_inner_prod_eq_zero_imp[OF h] by simp
+  show "A = 0\<^sub>m (dim_row A) (dim_col A)"
+    by (intro eq_matI) (auto simp: entries_zero)
+next
+  assume eq: "A = 0\<^sub>m (dim_row A) (dim_col A)"
+  have entries_zero:
+    "\<And>i j. i < dim_row A \<Longrightarrow> j < dim_col A \<Longrightarrow> A $$ (i,j) = 0"
+  proof -
+    fix i j assume i: "i < dim_row A" and j: "j < dim_col A"
+    have "A $$ (i,j) = (0\<^sub>m (dim_row A) (dim_col A)) $$ (i,j)"
+      using eq by simp
+    also have "\<dots> = 0" using i j by simp
+    finally show "A $$ (i,j) = 0" .
+  qed
+  show "\<langle>\<langle> A | A \<rangle>\<rangle> = 0"
+    unfolding hs_inner_prod_def
+    by (intro sum.neutral ballI) (simp add: entries_zero)
+qed
+
+(* Helper: Re of HS inner product is bilinear over real-scaled matrices. *)
+
+lemma Re_hs_inner_prod_right_smult_real:
+  fixes A B :: "complex Matrix.mat" and t :: real
+  assumes "dim_row A = dim_row B" and "dim_col A = dim_col B"
+  shows "Re (\<langle>\<langle> A | complex_of_real t \<cdot>\<^sub>m B \<rangle>\<rangle>) = t * Re (\<langle>\<langle> A | B \<rangle>\<rangle>)"
+proof -
+  have d1: "dim_row B = dim_row A" using assms by simp
+  have d2: "dim_col B = dim_col A" using assms by simp
+  have "\<langle>\<langle> A | complex_of_real t \<cdot>\<^sub>m B \<rangle>\<rangle> = complex_of_real t * \<langle>\<langle> A | B \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_smult[OF d1 d2])
+  thus ?thesis by simp
+qed
+
+(* Helper: Re of HS inner product, conjugate symmetry. *)
+
+lemma Re_hs_inner_prod_swap:
+  fixes A B :: "complex Matrix.mat"
+  assumes "dim_row A = dim_row B" and "dim_col A = dim_col B"
+  shows "Re (\<langle>\<langle> A | B \<rangle>\<rangle>) = Re (\<langle>\<langle> B | A \<rangle>\<rangle>)"
+proof -
+  have "\<langle>\<langle> A | B \<rangle>\<rangle> = cnj (\<langle>\<langle> B | A \<rangle>\<rangle>)"
+    by (rule hs_inner_prod_cnj[OF assms])
+  thus ?thesis by simp
+qed
+
+(* Cone separator from closest point.
+
+   Pure inner-product geometry: for σ in cone, the ray
+   \<open>p_star + t(σ - p_star)\<close> is in the cone for \<open>t \<in> [0,1]\<close>;
+   the closest-point inequality at any \<open>t > 0\<close> forces
+   \<open>Re \<langle>\<langle>\<rho>-p_star | \<sigma>-p_star\<rangle>\<rangle> \<le> 0\<close>.  Specialising to \<sigma> = 0 and
+   \<sigma> = 2 p_star then gives \<open>Re \<langle>\<langle>\<rho>-p_star | p_star\<rangle>\<rangle> = 0\<close>, and
+   \<open>Re \<langle>\<langle>\<rho>-p_star | \<rho>\<rangle>\<rangle> = \<parallel>\<rho>-p_star\<parallel>\<^sup>2 > 0\<close>.  Setting \<open>a = p_star - \<rho>\<close>
+   flips the signs to the desired form.
+
+   The full inner-product expansion of \<open>\<parallel>X - tY\<parallel>\<^sup>2\<close> in matrix form is
+   tedious to push through without typeclass support; deferred. *)
+
 lemma cone_separator_from_closest_point:
   fixes m p :: nat and \<rho> p_star :: "complex Matrix.mat"
   assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
@@ -18460,6 +18534,17 @@ lemma cone_separator_from_closest_point:
             \<and> (\<forall>\<sigma>. separable_cone m p \<sigma>
                     \<longrightarrow> 0 \<le> Re (\<langle>\<langle> a | \<sigma> \<rangle>\<rangle>))"
   sorry
+
+(* Note: the proof of cone_separator_from_closest_point follows the
+   classical closest-point argument: set \<open>a = p_star - \<rho>\<close>; for any \<sigma>
+   in the (convex) cone, the convex combination
+   \<open>p_star + t(\<sigma> - p_star)\<close> is in the cone for \<open>t \<in> [0,1]\<close>; expanding
+   \<open>\<parallel>\<rho> - p_star - t(\<sigma> - p_star)\<parallel>\<^sup>2 \<ge> \<parallel>\<rho> - p_star\<parallel>\<^sup>2\<close> and dividing by
+   small \<open>t > 0\<close> forces \<open>Re \<langle>\<langle>\<rho>-p_star | \<sigma>-p_star\<rangle>\<rangle> \<le> 0\<close>; specialising
+   \<sigma> = 0 and \<sigma> = 2 p_star gives \<open>Re \<langle>\<langle>\<rho>-p_star | p_star\<rangle>\<rangle> = 0\<close>; hence
+   \<open>Re \<langle>\<langle>a | \<sigma>\<rangle>\<rangle> \<ge> 0\<close> on the cone and \<open>Re \<langle>\<langle>a | \<rho>\<rangle>\<rangle> = -\<parallel>X\<parallel>\<^sup>2 < 0\<close>.
+   The technical hurdle is expanding \<open>\<langle>\<langle>X - tY | X - tY\<rangle>\<rangle>\<close> via
+   \<open>hs_inner_prod_left_add\<close>; deferred. *)
 
 (* Step 5g: Hermitian part of an arbitrary matrix \<open>A\<close> is
    \<open>(A + A\<^sup>\<dagger>)/2\<close>; for Hermitian \<sigma>, \<open>Re Tr (A \<sigma>) = Re Tr (Aherm \<sigma>)\<close>. *)
