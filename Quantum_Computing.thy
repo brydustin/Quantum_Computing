@@ -17570,6 +17570,37 @@ proof -
 qed
 
 
+(* ---- Corollary: cmod-form bound preservation.  The hypothesis
+   form \<open>\<bar>Re (g A)\<bar> \<le> C \<cdot> \<parallel>A\<parallel>\<close> required by
+   \<open>matrix_hahn_banach_typed_dim\<close> follows immediately from the more
+   natural \<open>cmod (g A) \<le> C \<cdot> \<parallel>A\<parallel>\<close> via \<open>\<bar>Re z\<bar> \<le> cmod z\<close>.
+   This is the form most subsequent applications want. ---- *)
+
+corollary matrix_hahn_banach_cmod_bound:
+  fixes V :: "complex Matrix.mat \<Rightarrow> bool"
+      and g :: "complex Matrix.mat \<Rightarrow> complex"
+      and C :: real
+  assumes V_csub: "cmat_subspace (CARD('m :: finite)) V"
+      and g_clin: "clinear_functional V g"
+      and g_C: "\<forall>A. V A \<longrightarrow> cmod (g A) \<le> C * hs_norm A"
+      and C_nn: "0 \<le> C"
+  shows "\<exists>f. clinear_functional (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f
+            \<and> (\<forall>A. V A \<longrightarrow> f A = g A)
+            \<and> (\<forall>A. A \<in> carrier_mat (CARD('m)) (CARD('m))
+                    \<longrightarrow> cmod (f A) \<le> C * hs_norm A)"
+proof -
+  have re_C: "\<forall>A. V A \<longrightarrow> \<bar>Re (g A)\<bar> \<le> C * hs_norm A"
+  proof (intro allI impI)
+    fix A assume "V A"
+    hence "cmod (g A) \<le> C * hs_norm A" using g_C by blast
+    moreover have "\<bar>Re (g A)\<bar> \<le> cmod (g A)" by (rule abs_Re_le_cmod)
+    ultimately show "\<bar>Re (g A)\<bar> \<le> C * hs_norm A" by linarith
+  qed
+  show ?thesis
+    using matrix_hahn_banach_typed_dim[OF V_csub g_clin re_C C_nn] .
+qed
+
+
 (* ============================================================================
    DAY 27 \<mdash> 31 / Oct / 11
    Topic: Continuation, Theory of Convex Sets and Linear Functionals.
