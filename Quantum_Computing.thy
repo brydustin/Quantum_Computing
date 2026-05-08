@@ -17601,6 +17601,41 @@ proof -
 qed
 
 
+(* ---- Existence-only form: from \<open>bounded_clinear_functional V g\<close>
+   plus a complex-linear subspace V at dimension \<open>CARD('m)\<close>, conclude
+   the existence of a bounded complex-linear extension on the full
+   matrix space \<open>carrier_mat (CARD('m)) (CARD('m))\<close>. ---- *)
+
+corollary bounded_clinear_extension:
+  fixes V :: "complex Matrix.mat \<Rightarrow> bool"
+      and g :: "complex Matrix.mat \<Rightarrow> complex"
+  assumes V_csub: "cmat_subspace (CARD('m :: finite)) V"
+      and g_clin: "clinear_functional V g"
+      and g_bnd: "bounded_clinear_functional V g"
+  shows "\<exists>f. clinear_functional (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f
+            \<and> (\<forall>A. V A \<longrightarrow> f A = g A)
+            \<and> bounded_clinear_functional
+                 (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f"
+proof -
+  obtain C where C_nn: "0 \<le> C"
+             and C_bnd: "funct_hs_bound V g C"
+    using g_bnd unfolding bounded_clinear_functional_def by blast
+  have g_C: "\<forall>A. V A \<longrightarrow> cmod (g A) \<le> C * hs_norm A"
+    using C_bnd unfolding funct_hs_bound_def by blast
+  obtain f where
+      f_clin: "clinear_functional (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f"
+    and f_ext: "\<forall>A. V A \<longrightarrow> f A = g A"
+    and f_C: "\<forall>A. A \<in> carrier_mat (CARD('m)) (CARD('m))
+                  \<longrightarrow> cmod (f A) \<le> C * hs_norm A"
+    using matrix_hahn_banach_cmod_bound[OF V_csub g_clin g_C C_nn] by blast
+  have f_bnd: "bounded_clinear_functional
+                 (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f"
+    unfolding bounded_clinear_functional_def funct_hs_bound_def
+    using f_clin f_C C_nn by blast
+  show ?thesis using f_clin f_ext f_bnd by blast
+qed
+
+
 (* ============================================================================
    DAY 27 \<mdash> 31 / Oct / 11
    Topic: Continuation, Theory of Convex Sets and Linear Functionals.
