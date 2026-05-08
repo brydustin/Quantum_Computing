@@ -17893,6 +17893,61 @@ corollary nonseparable_from_witness:
   using separable_witness_nonneg[OF _ wit] neg by force
 
 
+(* ---- Building block for the converse direction: tensor product of
+   PSD matrices is PSD.  Proof: take square roots, use the mixed
+   product law \<open>(A \<Otimes> B) (C \<Otimes> D) = (AC) \<Otimes> (BD)\<close>
+   (\<open>mult_distr_tensor\<close>) and tensor adjoint
+   (\<open>tensor_mat_dagger\<close>) to write \<open>\<sigma> \<Otimes> \<tau>\<close> as
+   \<open>(Q \<Otimes> R)\<^sup>\<dagger> (Q \<Otimes> R)\<close> for square roots Q, R; then
+   \<open>psd_MdagM\<close> closes. ---- *)
+
+lemma tensor_psd:
+  fixes \<sigma> \<tau> :: "complex Matrix.mat" and m p :: nat
+  assumes \<sigma>_c: "\<sigma> \<in> carrier_mat m m" and \<sigma>_psd: "psd \<sigma>"
+      and \<tau>_c: "\<tau> \<in> carrier_mat p p" and \<tau>_psd: "psd \<tau>"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "psd (\<sigma> \<Otimes> \<tau>)"
+proof -
+  obtain Q where Q_c: "Q \<in> carrier_mat m m" and Q_psd: "psd Q"
+             and Q_sq: "Q * Q = \<sigma>"
+    using psd_sqrt_exists[OF \<sigma>_c \<sigma>_psd] by blast
+  obtain R where R_c: "R \<in> carrier_mat p p" and R_psd: "psd R"
+             and R_sq: "R * R = \<tau>"
+    using psd_sqrt_exists[OF \<tau>_c \<tau>_psd] by blast
+  have Q_h: "Q\<^sup>\<dagger> = Q"
+    using psd_hermitian[OF Q_psd] unfolding hermitian_def by simp
+  have R_h: "R\<^sup>\<dagger> = R"
+    using psd_hermitian[OF R_psd] unfolding hermitian_def by simp
+  have Q_dc: "dim_col Q = m" using Q_c by simp
+  have Q_dr: "dim_row Q = m" using Q_c by simp
+  have R_dc: "dim_col R = p" using R_c by simp
+  have R_dr: "dim_row R = p" using R_c by simp
+
+  have mixed:
+    "(Q * Q) \<Otimes> (R * R) = (Q \<Otimes> R) * (Q \<Otimes> R)"
+    using Q_dc Q_dr R_dc R_dr m_pos p_pos
+    by (intro mult_distr_tensor) auto
+  have st_eq: "\<sigma> \<Otimes> \<tau> = (Q \<Otimes> R) * (Q \<Otimes> R)"
+    using mixed Q_sq R_sq by simp
+
+  have QR_c: "Q \<Otimes> R \<in> carrier_mat (m*p) (m*p)"
+    using Q_c R_c by simp
+  have QR_dag_c: "(Q \<Otimes> R)\<^sup>\<dagger> \<in> carrier_mat (m*p) (m*p)"
+    using QR_c by (rule dagger_carrier)
+  have QR_dag_eq: "(Q \<Otimes> R)\<^sup>\<dagger> = Q \<Otimes> R"
+  proof -
+    have "(Q \<Otimes> R)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) \<Otimes> (R\<^sup>\<dagger>)"
+      by (rule tensor_mat_dagger[OF Q_c R_c m_pos m_pos p_pos p_pos])
+    also have "\<dots> = Q \<Otimes> R" using Q_h R_h by simp
+    finally show ?thesis .
+  qed
+  have st_psd: "psd ((Q \<Otimes> R)\<^sup>\<dagger> * (Q \<Otimes> R))"
+    by (rule psd_MdagM[OF QR_c])
+  show "psd (\<sigma> \<Otimes> \<tau>)"
+    using st_eq st_psd QR_dag_eq by simp
+qed
+
+
 (* ============================================================================
    DAY 29 \<mdash> 7 / Nov / 11
    Topic: Classical Error Correction; Hamming Weight and Distance
