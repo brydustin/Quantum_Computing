@@ -18455,7 +18455,26 @@ lemma Tr_hermitian_real:
   assumes A_h: "hermitian A"
       and A_c: "A \<in> carrier_mat n n"
   shows "Tr A = complex_of_real (Re (Tr A))"
-  sorry
+proof -
+  have dr: "dim_row A = n" and dc: "dim_col A = n" using A_c by auto
+  have diag_eq: "\<And>i. i < n \<Longrightarrow> A $$ (i,i) = cnj (A $$ (i,i))"
+  proof -
+    fix i assume i: "i < n"
+    have "A $$ (i,i) = (A\<^sup>\<dagger>) $$ (i,i)" using A_h unfolding hermitian_def by simp
+    also have "\<dots> = cnj (A $$ (i,i))"
+      using i dr dc unfolding dagger_def by simp
+    finally show "A $$ (i,i) = cnj (A $$ (i,i))" .
+  qed
+  have Im_diag: "\<And>i. i < n \<Longrightarrow> Im (A $$ (i,i)) = 0"
+    using diag_eq by (simp add: complex_eq_iff)
+  have "Tr A = (\<Sum>r<n. A $$ (r,r))"
+    unfolding Tr_def using dr dc by simp
+  hence "Im (Tr A) = (\<Sum>r<n. Im (A $$ (r,r)))"
+    by (simp add: Im_sum)
+  also have "\<dots> = 0" using Im_diag by simp
+  finally have Im_Tr: "Im (Tr A) = 0" .
+  show ?thesis by (simp add: complex_eq_iff Im_Tr)
+qed
 
 (* Sub-helper 8b: a PSD matrix with vanishing trace is the zero matrix. *)
 
@@ -18464,7 +18483,30 @@ lemma psd_Tr_zero_imp_zero:
       and P_c: "P \<in> carrier_mat n n"
       and P_Tr: "Tr P = 0"
   shows "P = 0\<^sub>m n n"
-  sorry
+proof -
+  obtain Q where Q_c: "Q \<in> carrier_mat n n"
+             and Q_psd: "psd Q"
+             and Q_sq: "Q * Q = P"
+    using psd_sqrt_exists[OF P_c P_psd] by blast
+  have Q_h: "hermitian Q" by (rule psd_hermitian[OF Q_psd])
+  have Q_dag: "Q\<^sup>\<dagger> = Q" using Q_h unfolding hermitian_def by simp
+  have hs_eq: "\<langle>\<langle> Q | Q \<rangle>\<rangle> = Tr (Q\<^sup>\<dagger> * Q)"
+    by (rule hs_inner_prod_self_as_trace)
+  also have "\<dots> = Tr (Q * Q)" using Q_dag by simp
+  also have "\<dots> = Tr P" using Q_sq by simp
+  also have "\<dots> = 0" using P_Tr .
+  finally have hs_zero: "\<langle>\<langle> Q | Q \<rangle>\<rangle> = 0" .
+  have Q_dr: "dim_row Q = n" and Q_dc: "dim_col Q = n" using Q_c by auto
+  have Q_entries_zero:
+    "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> Q $$ (i,j) = 0"
+    using hs_inner_prod_eq_zero_imp[OF hs_zero] Q_dr Q_dc by simp
+  have Q_zero: "Q = 0\<^sub>m n n"
+    by (intro eq_matI) (auto simp: Q_dr Q_dc Q_entries_zero)
+  have "P = Q * Q" using Q_sq by simp
+  also have "\<dots> = 0\<^sub>m n n * 0\<^sub>m n n" using Q_zero by simp
+  also have "\<dots> = 0\<^sub>m n n" by simp
+  finally show ?thesis .
+qed
 
 (* Sub-helper 8c: renormalised list. Drops terms with zero-trace σ or
    τ, rescales surviving terms so σ', τ' are unit-trace. *)
