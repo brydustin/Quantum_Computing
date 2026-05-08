@@ -18008,6 +18008,118 @@ proof -
 qed
 
 
+(* Trace of the product of two PSD matrices has non-negative real
+   part.  Standard proof: \<open>X = Q\<^sup>2\<close> with Q PSD; cyclic
+   trace gives \<open>Tr (W X) = Tr (Q W Q)\<close>, and
+   \<open>Q W Q = (R Q)\<^sup>\<dagger> (R Q)\<close> for the PSD square root R of
+   W; conclude via \<open>psd_MdagM\<close> + \<open>Re_Tr_psd_nonneg\<close>. *)
+
+lemma Re_Tr_psd_psd_nonneg:
+  fixes W X :: "complex Matrix.mat" and n :: nat
+  assumes W_c: "W \<in> carrier_mat n n" and W_psd: "psd W"
+      and X_c: "X \<in> carrier_mat n n" and X_psd: "psd X"
+  shows "0 \<le> Re (Tr (W * X))"
+proof -
+  obtain Q where Q_c: "Q \<in> carrier_mat n n" and Q_psd: "psd Q"
+             and Q_sq: "Q * Q = X"
+    using psd_sqrt_exists[OF X_c X_psd] by blast
+  obtain R where R_c: "R \<in> carrier_mat n n" and R_psd: "psd R"
+             and R_sq: "R * R = W"
+    using psd_sqrt_exists[OF W_c W_psd] by blast
+  have Q_h: "Q\<^sup>\<dagger> = Q"
+    using psd_hermitian[OF Q_psd] unfolding hermitian_def by simp
+  have R_h: "R\<^sup>\<dagger> = R"
+    using psd_hermitian[OF R_psd] unfolding hermitian_def by simp
+  have W_Q_c: "W * Q \<in> carrier_mat n n" using W_c Q_c by simp
+  have R_Q_c: "R * Q \<in> carrier_mat n n" using R_c Q_c by simp
+
+  have Tr_eq: "Tr (W * X) = Tr (Q * W * Q)"
+  proof -
+    have "Tr (W * X) = Tr (W * (Q * Q))" using Q_sq by simp
+    also have "\<dots> = Tr ((W * Q) * Q)"
+      using assoc_mult_mat[OF W_c Q_c Q_c] by simp
+    also have "\<dots> = Tr (Q * (W * Q))"
+    proof (rule Tr_cyclic)
+      show "dim_col (W * Q) = dim_row Q" using W_c Q_c by simp
+      show "dim_row (W * Q) = dim_col Q" using W_c Q_c by simp
+    qed
+    also have "\<dots> = Tr (Q * W * Q)"
+      using assoc_mult_mat[OF Q_c W_c Q_c] by simp
+    finally show ?thesis .
+  qed
+
+  have QWQ_eq: "Q * W * Q = (R * Q)\<^sup>\<dagger> * (R * Q)"
+  proof -
+    have RQ_dim: "dim_col R = dim_row Q" using R_c Q_c by simp
+    have "(R * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (R\<^sup>\<dagger>)"
+      by (rule dagger_of_prod[OF RQ_dim])
+    also have "\<dots> = Q * R" using Q_h R_h by simp
+    finally have dag_RQ: "(R * Q)\<^sup>\<dagger> = Q * R" .
+    have RQ_c: "R * Q \<in> carrier_mat n n" using R_c Q_c by simp
+    have RR_c: "R * R \<in> carrier_mat n n" using R_c by simp
+    have "(R * Q)\<^sup>\<dagger> * (R * Q) = (Q * R) * (R * Q)"
+      using dag_RQ by simp
+    also have "\<dots> = Q * (R * (R * Q))"
+      by (rule assoc_mult_mat[OF Q_c R_c RQ_c])
+    also have "\<dots> = Q * ((R * R) * Q)"
+    proof -
+      have "R * (R * Q) = (R * R) * Q"
+        by (rule assoc_mult_mat[OF R_c R_c Q_c, symmetric])
+      thus ?thesis by simp
+    qed
+    also have "\<dots> = (Q * (R * R)) * Q"
+      by (rule assoc_mult_mat[OF Q_c RR_c Q_c, symmetric])
+    also have "\<dots> = Q * W * Q"
+      using R_sq by simp
+    finally show ?thesis by (rule sym)
+  qed
+
+  have QWQ_c: "Q * W * Q \<in> carrier_mat n n"
+    using Q_c W_c by simp
+  have QWQ_psd: "psd (Q * W * Q)"
+    using QWQ_eq psd_MdagM[OF R_Q_c] by simp
+
+  have "0 \<le> Re (Tr (Q * W * Q))"
+    by (rule Re_Tr_psd_nonneg[OF QWQ_c QWQ_psd])
+  thus "0 \<le> Re (Tr (W * X))" using Tr_eq by simp
+qed
+
+
+(* Every PSD matrix in M_{m*p} is an entanglement witness.  Combines
+   tensor_psd (\<sigma> \<otimes> \<tau> is PSD) with Re_Tr_psd_psd_nonneg
+   (Re Tr of PSD-PSD is non-negative). *)
+
+lemma psd_is_entanglement_witness:
+  fixes W :: "complex Matrix.mat" and m p :: nat
+  assumes W_c: "W \<in> carrier_mat (m*p) (m*p)" and W_psd: "psd W"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "entanglement_witness m p W"
+proof -
+  have W_h: "hermitian W" by (rule psd_hermitian[OF W_psd])
+  have witness_bound: "\<forall>\<sigma> \<tau>. \<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+                            \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>
+                            \<longrightarrow> 0 \<le> Re (Tr (W * (\<sigma> \<Otimes> \<tau>)))"
+  proof (intro allI impI)
+    fix \<sigma> \<tau>
+    assume h: "\<sigma> \<in> carrier_mat m m \<and> psd \<sigma>
+                \<and> \<tau> \<in> carrier_mat p p \<and> psd \<tau>"
+    have \<sigma>_c: "\<sigma> \<in> carrier_mat m m" using h by simp
+    have \<sigma>_psd: "psd \<sigma>" using h by simp
+    have \<tau>_c: "\<tau> \<in> carrier_mat p p" using h by simp
+    have \<tau>_psd: "psd \<tau>" using h by simp
+    have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)"
+      using \<sigma>_c \<tau>_c by auto
+    have st_psd: "psd (\<sigma> \<Otimes> \<tau>)"
+      by (rule tensor_psd[OF \<sigma>_c \<sigma>_psd \<tau>_c \<tau>_psd m_pos p_pos])
+    show "0 \<le> Re (Tr (W * (\<sigma> \<Otimes> \<tau>)))"
+      by (rule Re_Tr_psd_psd_nonneg[OF W_c W_psd st_c st_psd])
+  qed
+  show ?thesis
+    unfolding entanglement_witness_def
+    using W_c W_h witness_bound by blast
+qed
+
+
 (* ============================================================================
    DAY 29 \<mdash> 7 / Nov / 11
    Topic: Classical Error Correction; Hamming Weight and Distance
