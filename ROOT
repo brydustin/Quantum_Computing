@@ -17,6 +17,7 @@ session Vern_Paulsen_QC_3_10_HB in HB_Heap = Vern_Paulsen_QC_3_10 +
     "HOL-Hahn_Banach"
   theories
     "HOL-Hahn_Banach.Hahn_Banach"
+    Matrix_Typed
 
 session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_HB +
   options [document = false, quick_and_dirty = true, timeout = 3600]
