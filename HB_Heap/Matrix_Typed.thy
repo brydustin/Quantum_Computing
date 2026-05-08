@@ -677,6 +677,78 @@ lemma cmult_lmat_real:
   "cmult_lmat (complex_of_real a) M = Vector_Space.prod a M"
   by (simp add: cmult_lmat_def prod_lmat_def)
 
+lemma cmult_lmat_add:
+  fixes x y :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "cmult_lmat c (x + y) = cmult_lmat c x + cmult_lmat c y"
+proof -
+  have c1: "unwrap_lm x \<in> carrier_mat (CARD('m)) (CARD('n))" by simp
+  have c2: "unwrap_lm y \<in> carrier_mat (CARD('m)) (CARD('n))" by simp
+  have unwrap_eq:
+    "unwrap_lm (cmult_lmat c (x + y))
+       = unwrap_lm (cmult_lmat c x + cmult_lmat c y)"
+    using add_smult_distrib_left_mat[OF c1 c2] by simp
+  show ?thesis
+    by (rule iffD1[OF unwrap_lm_inject unwrap_eq])
+qed
+
+lemma cmult_lmat_scalar_add:
+  fixes x :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "cmult_lmat (c + d) x = cmult_lmat c x + cmult_lmat d x"
+proof -
+  have cx: "unwrap_lm x \<in> carrier_mat (CARD('m)) (CARD('n))" by simp
+  have unwrap_eq:
+    "unwrap_lm (cmult_lmat (c + d) x)
+       = unwrap_lm (cmult_lmat c x + cmult_lmat d x)"
+    using add_smult_distrib_right_mat[OF cx] by simp
+  show ?thesis
+    by (rule iffD1[OF unwrap_lm_inject unwrap_eq])
+qed
+
+lemma cmult_lmat_scalar_mult:
+  fixes x :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "cmult_lmat (c * d) x = cmult_lmat c (cmult_lmat d x)"
+proof -
+  have mat_eq: "(c * d) \<cdot>\<^sub>m unwrap_lm x = c \<cdot>\<^sub>m (d \<cdot>\<^sub>m unwrap_lm x)"
+    by (intro eq_matI) (auto simp: ac_simps)
+  have unwrap_eq:
+    "unwrap_lm (cmult_lmat (c * d) x)
+       = unwrap_lm (cmult_lmat c (cmult_lmat d x))"
+    using mat_eq by simp
+  show ?thesis
+    by (rule iffD1[OF unwrap_lm_inject unwrap_eq])
+qed
+
+lemma cmult_lmat_one:
+  fixes x :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "cmult_lmat 1 x = x"
+proof -
+  have one_smult: "(1 :: complex) \<cdot>\<^sub>m unwrap_lm x = unwrap_lm x"
+    by (intro eq_matI) auto
+  have unwrap_eq: "unwrap_lm (cmult_lmat 1 x) = unwrap_lm x"
+    using one_smult by simp
+  show ?thesis
+    by (rule iffD1[OF unwrap_lm_inject unwrap_eq])
+qed
+
+lemma cmult_lmat_uminus_one:
+  fixes x :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "cmult_lmat (- 1) x = - x"
+proof -
+  have cx: "unwrap_lm x \<in> carrier_mat (CARD('m)) (CARD('n))" by simp
+  have m1_eq: "(- 1 :: complex) \<cdot>\<^sub>m unwrap_lm x = - unwrap_lm x"
+    using cx by (intro eq_matI) (auto simp: uminus_mat_def)
+  have unwrap_eq: "unwrap_lm (cmult_lmat (- 1) x) = unwrap_lm (- x)"
+    using m1_eq by simp
+  show ?thesis
+    by (rule iffD1[OF unwrap_lm_inject unwrap_eq])
+qed
+
+lemma cmult_lmat_i_sq:
+  fixes x :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "cmult_lmat \<i> (cmult_lmat \<i> x) = - x"
+  using cmult_lmat_scalar_mult[symmetric, of \<i> \<i> x] cmult_lmat_uminus_one[of x]
+  by (simp add: i_squared)
+
 
 section \<open>Bounded complex-linear functionals on lmat\<close>
 
@@ -804,5 +876,201 @@ definition bs_complex_extension ::
 where
   "bs_complex_extension F x =
      complex_of_real (F x) - \<i> * complex_of_real (F (cmult_lmat \<i> x))"
+
+lemma bs_complex_extension_add:
+  fixes F :: "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+  assumes F_lin: "linearform UNIV F"
+  shows "bs_complex_extension F (x + y)
+         = bs_complex_extension F x + bs_complex_extension F y"
+proof -
+  interpret F_int: linearform UNIV F using F_lin .
+  have F_xy: "F (x + y) = F x + F y" by simp
+  have ixy: "cmult_lmat \<i> (x + y) = cmult_lmat \<i> x + cmult_lmat \<i> y"
+    by (rule cmult_lmat_add)
+  have F_ixy: "F (cmult_lmat \<i> (x + y)) = F (cmult_lmat \<i> x) + F (cmult_lmat \<i> y)"
+    using ixy by simp
+  show ?thesis
+    unfolding bs_complex_extension_def
+    by (simp only: F_xy F_ixy algebra_simps of_real_add)
+qed
+
+lemma bs_complex_extension_real_smult:
+  fixes F :: "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+  assumes F_lin: "linearform UNIV F"
+  shows "bs_complex_extension F (Vector_Space.prod a x)
+         = complex_of_real a * bs_complex_extension F x"
+proof -
+  interpret F_int: linearform UNIV F using F_lin .
+  have F_ax: "F (Vector_Space.prod a x) = a * F x" by simp
+  have swap: "cmult_lmat \<i> (Vector_Space.prod a x)
+              = Vector_Space.prod a (cmult_lmat \<i> x)"
+  proof -
+    have "cmult_lmat \<i> (Vector_Space.prod a x)
+          = cmult_lmat \<i> (cmult_lmat (complex_of_real a) x)"
+      by (simp add: cmult_lmat_real)
+    also have "\<dots> = cmult_lmat (\<i> * complex_of_real a) x"
+      by (rule cmult_lmat_scalar_mult[symmetric])
+    also have "\<dots> = cmult_lmat (complex_of_real a * \<i>) x"
+      by (simp add: ac_simps)
+    also have "\<dots> = cmult_lmat (complex_of_real a) (cmult_lmat \<i> x)"
+      by (rule cmult_lmat_scalar_mult)
+    also have "\<dots> = Vector_Space.prod a (cmult_lmat \<i> x)"
+      by (simp add: cmult_lmat_real)
+    finally show ?thesis .
+  qed
+  have F_iax:
+    "F (cmult_lmat \<i> (Vector_Space.prod a x)) = a * F (cmult_lmat \<i> x)"
+    using swap by simp
+  show ?thesis
+    unfolding bs_complex_extension_def
+    by (simp add: F_ax F_iax algebra_simps)
+qed
+
+lemma bs_complex_extension_i_smult:
+  fixes F :: "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+  assumes F_lin: "linearform UNIV F"
+  shows "bs_complex_extension F (cmult_lmat \<i> x)
+         = \<i> * bs_complex_extension F x"
+proof -
+  interpret F_int: linearform UNIV F using F_lin .
+  have vs: "Vector_Space.vectorspace (UNIV :: (complex, 'm, 'n) lmat set)"
+    by (rule vectorspace_UNIV_lmat)
+  have ii_x: "cmult_lmat \<i> (cmult_lmat \<i> x) = - x"
+    by (rule cmult_lmat_i_sq)
+  have F_neg: "F (- x) = - F x"
+    using vs by (simp add: F_int.neg)
+  have F_ix2: "F (cmult_lmat \<i> (cmult_lmat \<i> x)) = - F x"
+    using ii_x F_neg by simp
+  show ?thesis
+    unfolding bs_complex_extension_def
+    using F_ix2 by (simp add: algebra_simps power2_eq_square)
+qed
+
+lemma bs_complex_extension_csmult:
+  fixes F :: "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+  assumes F_lin: "linearform UNIV F"
+  shows "bs_complex_extension F (cmult_lmat c x)
+         = c * bs_complex_extension F x"
+proof -
+  let ?a = "Re c"
+  let ?b = "Im c"
+  have c_eq: "c = complex_of_real ?a + \<i> * complex_of_real ?b"
+    by (simp add: complex_eq_iff)
+  have decomp:
+    "cmult_lmat c x
+       = Vector_Space.prod ?a x
+         + cmult_lmat \<i> (Vector_Space.prod ?b x)"
+  proof -
+    have step1:
+      "cmult_lmat c x
+         = cmult_lmat (complex_of_real ?a) x
+           + cmult_lmat (\<i> * complex_of_real ?b) x"
+      using cmult_lmat_scalar_add[of "complex_of_real ?a" "\<i> * complex_of_real ?b" x]
+            c_eq by simp
+    have step2: "cmult_lmat (complex_of_real ?a) x = Vector_Space.prod ?a x"
+      by (rule cmult_lmat_real)
+    have step3:
+      "cmult_lmat (\<i> * complex_of_real ?b) x
+         = cmult_lmat \<i> (Vector_Space.prod ?b x)"
+      by (simp add: cmult_lmat_scalar_mult cmult_lmat_real)
+    show ?thesis using step1 step2 step3 by simp
+  qed
+  have "bs_complex_extension F (cmult_lmat c x)
+        = bs_complex_extension F (Vector_Space.prod ?a x
+                                  + cmult_lmat \<i> (Vector_Space.prod ?b x))"
+    using decomp by simp
+  also have "\<dots> = bs_complex_extension F (Vector_Space.prod ?a x)
+                  + bs_complex_extension F
+                      (cmult_lmat \<i> (Vector_Space.prod ?b x))"
+    by (rule bs_complex_extension_add[OF F_lin])
+  also have "\<dots> = complex_of_real ?a * bs_complex_extension F x
+                  + \<i> * bs_complex_extension F (Vector_Space.prod ?b x)"
+    by (simp add: bs_complex_extension_real_smult[OF F_lin]
+                  bs_complex_extension_i_smult[OF F_lin])
+  also have "\<dots> = complex_of_real ?a * bs_complex_extension F x
+                  + \<i> * (complex_of_real ?b * bs_complex_extension F x)"
+    by (simp add: bs_complex_extension_real_smult[OF F_lin])
+  also have "\<dots> = (complex_of_real ?a + \<i> * complex_of_real ?b)
+                  * bs_complex_extension F x"
+    by (simp add: algebra_simps)
+  also have "\<dots> = c * bs_complex_extension F x"
+    using c_eq by simp
+  finally show ?thesis .
+qed
+
+lemma bs_complex_extension_clinear:
+  fixes F :: "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+  assumes F_lin: "linearform UNIV F"
+  shows "clinear_functional_on UNIV (bs_complex_extension F)"
+  unfolding clinear_functional_on_def
+  using bs_complex_extension_add[OF F_lin]
+        bs_complex_extension_csmult[OF F_lin]
+  by blast
+
+lemma bs_complex_extension_extends:
+  fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
+      and g :: "(complex, 'm, 'n) lmat \<Rightarrow> complex"
+      and F :: "(complex, 'm, 'n) lmat \<Rightarrow> real"
+  assumes g_clin: "clinear_functional_on V g"
+      and V_clos_i: "\<forall>x \<in> V. cmult_lmat \<i> x \<in> V"
+      and F_ext: "\<forall>x \<in> V. F x = re_part_lmat g x"
+  shows "\<forall>x \<in> V. bs_complex_extension F x = g x"
+proof
+  fix x assume xV: "x \<in> V"
+  have ixV: "cmult_lmat \<i> x \<in> V" using V_clos_i xV by simp
+  have Fx: "F x = Re (g x)"
+    using F_ext xV by (simp add: re_part_lmat_def)
+  have g_ix: "g (cmult_lmat \<i> x) = \<i> * g x"
+    using g_clin xV unfolding clinear_functional_on_def by simp
+  have Fix: "F (cmult_lmat \<i> x) = Re (\<i> * g x)"
+    using F_ext ixV g_ix by (simp add: re_part_lmat_def)
+  have re_i: "Re (\<i> * g x) = - Im (g x)" by simp
+  have "bs_complex_extension F x
+        = complex_of_real (Re (g x))
+          - \<i> * complex_of_real (- Im (g x))"
+    unfolding bs_complex_extension_def using Fx Fix re_i by simp
+  also have "\<dots> = complex_of_real (Re (g x)) + \<i> * complex_of_real (Im (g x))"
+    by simp
+  also have "\<dots> = g x"
+    by (simp add: complex_eq_iff)
+  finally show "bs_complex_extension F x = g x" .
+qed
+
+
+section \<open>The matrix-space Hahn-Banach theorem\<close>
+
+text \<open>Combine all the steps: a bounded complex-linear functional on
+a complex-linear subspace V of \<open>(complex, 'm, 'n) lmat\<close> extends to a
+bounded complex-linear functional on all of \<open>(complex, 'm, 'n) lmat\<close>
+(without claiming norm preservation; for the application to Arveson
+Extension this is enough together with the bound chase).\<close>
+
+theorem matrix_hahn_banach_lmat:
+  fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
+      and g :: "(complex, 'm, 'n) lmat \<Rightarrow> complex"
+  assumes V_csub: "cmat_subspace_lmat V"
+      and g_bnd: "bounded_clinear_functional_on V g"
+  shows "\<exists>f :: (complex, 'm, 'n) lmat \<Rightarrow> complex.
+            clinear_functional_on UNIV f
+          \<and> (\<forall>x \<in> V. f x = g x)"
+proof -
+  have V_sub: "Subspace.subspace V (UNIV :: (complex, 'm, 'n) lmat set)"
+    using V_csub by (rule subspace_of_cmat_subspace_lmat)
+  have V_clos_i: "\<forall>x \<in> V. cmult_lmat \<i> x \<in> V"
+    using V_csub unfolding cmat_subspace_lmat_def cmult_lmat_def by simp
+  have g_clin: "clinear_functional_on V g"
+    using g_bnd unfolding bounded_clinear_functional_on_def by simp
+  obtain F where
+      F_lin: "linearform UNIV F"
+    and F_cont: "continuous UNIV F hs_norm_lmat"
+    and F_ext: "\<forall>x \<in> V. F x = re_part_lmat g x"
+    using hahn_banach_re_part_lmat[OF V_sub g_bnd] by blast
+  let ?f = "bs_complex_extension F"
+  have f_clin: "clinear_functional_on UNIV ?f"
+    by (rule bs_complex_extension_clinear[OF F_lin])
+  have f_ext: "\<forall>x \<in> V. ?f x = g x"
+    by (rule bs_complex_extension_extends[OF g_clin V_clos_i F_ext])
+  show ?thesis using f_clin f_ext by blast
+qed
 
 end
