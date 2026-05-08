@@ -749,6 +749,40 @@ lemma cmult_lmat_i_sq:
   using cmult_lmat_scalar_mult[symmetric, of \<i> \<i> x] cmult_lmat_uminus_one[of x]
   by (simp add: i_squared)
 
+lemma hs_norm_lmat_cmult:
+  fixes M :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "hs_norm_lmat (cmult_lmat c M) = cmod c * hs_norm_lmat M"
+proof -
+  have ip_smult:
+    "\<langle>\<langle> c \<cdot>\<^sub>m unwrap_lm M | c \<cdot>\<^sub>m unwrap_lm M \<rangle>\<rangle>
+     = (cnj c * c) * \<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>"
+    by (simp add: hs_inner_prod_left_smult hs_inner_prod_right_smult ac_simps)
+  have cnj_c: "cnj c * c = complex_of_real ((cmod c)\<^sup>2)"
+    by (metis complex_norm_square mult.commute)
+  have re_eq:
+    "Re (\<langle>\<langle> c \<cdot>\<^sub>m unwrap_lm M | c \<cdot>\<^sub>m unwrap_lm M \<rangle>\<rangle>)
+     = (cmod c)\<^sup>2 * Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>)"
+    using ip_smult cnj_c by simp
+  have nn: "Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>) \<ge> 0"
+    by (rule hs_inner_prod_self_nonneg)
+  have cmod2_nn: "0 \<le> (cmod c)\<^sup>2" by simp
+  have "hs_norm_lmat (cmult_lmat c M)
+        = sqrt (Re (\<langle>\<langle> c \<cdot>\<^sub>m unwrap_lm M | c \<cdot>\<^sub>m unwrap_lm M \<rangle>\<rangle>))"
+    by (simp add: hs_norm_lmat_def)
+  also have "\<dots> = sqrt ((cmod c)\<^sup>2 * Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>))"
+    using re_eq by simp
+  also have "\<dots> = sqrt ((cmod c)\<^sup>2) * sqrt (Re (\<langle>\<langle> unwrap_lm M | unwrap_lm M \<rangle>\<rangle>))"
+    by (rule real_sqrt_mult)
+  also have "\<dots> = cmod c * hs_norm_lmat M"
+    by (simp add: hs_norm_lmat_def real_sqrt_abs)
+  finally show ?thesis .
+qed
+
+lemma hs_norm_lmat_cmult_i [simp]:
+  fixes M :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "hs_norm_lmat (cmult_lmat \<i> M) = hs_norm_lmat M"
+  by (simp add: hs_norm_lmat_cmult)
+
 
 section \<open>Bounded complex-linear functionals on lmat\<close>
 
@@ -972,7 +1006,7 @@ proof -
     have step3:
       "cmult_lmat (\<i> * complex_of_real ?b) x
          = cmult_lmat \<i> (Vector_Space.prod ?b x)"
-      by (simp add: cmult_lmat_scalar_mult cmult_lmat_real)
+      by (simp only: cmult_lmat_scalar_mult cmult_lmat_real)
     show ?thesis using step1 step2 step3 by simp
   qed
   have "bs_complex_extension F (cmult_lmat c x)
@@ -985,17 +1019,17 @@ proof -
     by (rule bs_complex_extension_add[OF F_lin])
   also have "\<dots> = complex_of_real ?a * bs_complex_extension F x
                   + \<i> * bs_complex_extension F (Vector_Space.prod ?b x)"
-    by (simp add: bs_complex_extension_real_smult[OF F_lin]
+    by (simp only: bs_complex_extension_real_smult[OF F_lin]
                   bs_complex_extension_i_smult[OF F_lin])
   also have "\<dots> = complex_of_real ?a * bs_complex_extension F x
                   + \<i> * (complex_of_real ?b * bs_complex_extension F x)"
-    by (simp add: bs_complex_extension_real_smult[OF F_lin])
+    by (simp only: bs_complex_extension_real_smult[OF F_lin])
   also have "\<dots> = (complex_of_real ?a + \<i> * complex_of_real ?b)
                   * bs_complex_extension F x"
-    by (simp add: algebra_simps)
+    by (simp only: algebra_simps)
   also have "\<dots> = c * bs_complex_extension F x"
     using c_eq by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma bs_complex_extension_clinear:
@@ -1006,6 +1040,88 @@ lemma bs_complex_extension_clinear:
   using bs_complex_extension_add[OF F_lin]
         bs_complex_extension_csmult[OF F_lin]
   by blast
+
+text \<open>The exact Bohnenblust-Sobczyk bound: any \<open>C\<close> bound on \<open>F\<close> lifts
+verbatim to a bound on \<open>bs_complex_extension F\<close>. This is the standard
+\<open>e^{-i\<theta>}\<close>-rotation argument used to prove the complex
+Hahn-Banach theorem from the real one.\<close>
+
+lemma bs_complex_extension_tight_bound:
+  fixes F :: "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+  assumes F_lin: "linearform UNIV F"
+      and F_C: "\<And>x. \<bar>F x\<bar> \<le> C * hs_norm_lmat x"
+  shows "cmod (bs_complex_extension F x) \<le> C * hs_norm_lmat x"
+proof (cases "bs_complex_extension F x = 0")
+  case True
+  have h_nn: "0 \<le> hs_norm_lmat x" by (rule hs_norm_lmat_nonneg)
+  have "\<bar>F x\<bar> \<le> C * hs_norm_lmat x" by (rule F_C)
+  hence "0 \<le> C * hs_norm_lmat x" by (smt (verit) abs_ge_zero)
+  thus ?thesis using True by simp
+next
+  case False
+  let ?z = "bs_complex_extension F x"
+  let ?c = "cnj (sgn ?z)"
+  have c_mod: "cmod ?c = 1"
+    using False by (simp add: norm_sgn)
+  have nz: "cmod ?z \<noteq> 0" using False by simp
+  have cz: "?c * ?z = complex_of_real (cmod ?z)"
+  proof -
+    have "?c * ?z = (cnj ?z / complex_of_real (cmod ?z)) * ?z"
+      by (simp add: sgn_eq)
+    also have "\<dots> = (cnj ?z * ?z) / complex_of_real (cmod ?z)"
+      by simp
+    also have "\<dots> = complex_of_real ((cmod ?z)\<^sup>2) / complex_of_real (cmod ?z)"
+      by (metis complex_norm_square mult.commute)
+    also have "\<dots> = complex_of_real (cmod ?z)"
+      using nz by (simp add: power2_eq_square)
+    finally show ?thesis .
+  qed
+  let ?y = "cmult_lmat ?c x"
+  have h_y: "hs_norm_lmat ?y = hs_norm_lmat x"
+    using c_mod by (simp add: hs_norm_lmat_cmult)
+  have f_y: "bs_complex_extension F ?y = ?c * ?z"
+    using bs_complex_extension_csmult[OF F_lin, of ?c x] .
+  have f_y_real: "bs_complex_extension F ?y = complex_of_real (cmod ?z)"
+    using f_y cz by simp
+  have F_y: "F ?y = cmod ?z"
+  proof -
+    have "Re (bs_complex_extension F ?y) = F ?y"
+      unfolding bs_complex_extension_def by simp
+    moreover have "Re (bs_complex_extension F ?y) = cmod ?z"
+      using f_y_real by simp
+    ultimately show ?thesis by simp
+  qed
+  have "cmod ?z = F ?y" using F_y by simp
+  also have "\<dots> \<le> \<bar>F ?y\<bar>" by simp
+  also have "\<dots> \<le> C * hs_norm_lmat ?y" by (rule F_C)
+  also have "\<dots> = C * hs_norm_lmat x" using h_y by simp
+  finally show ?thesis .
+qed
+
+lemma bs_complex_extension_bounded:
+  fixes F :: "(complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real"
+  assumes F_lin: "linearform UNIV F"
+      and F_cont: "continuous UNIV F hs_norm_lmat"
+  shows "\<exists>C \<ge> 0. \<forall>x. cmod (bs_complex_extension F x) \<le> C * hs_norm_lmat x"
+proof -
+  obtain c where c_bnd: "\<forall>x \<in> UNIV. \<bar>F x\<bar> \<le> c * hs_norm_lmat x"
+    using F_cont continuous.bounded by blast
+  let ?C = "\<bar>c\<bar>"
+  have C_nn: "?C \<ge> 0" by simp
+  have F_C: "\<And>x. \<bar>F x\<bar> \<le> ?C * hs_norm_lmat x"
+  proof -
+    fix x :: "(complex, 'm, 'n) lmat"
+    have h_nn: "0 \<le> hs_norm_lmat x" by (rule hs_norm_lmat_nonneg)
+    have "\<bar>F x\<bar> \<le> c * hs_norm_lmat x" using c_bnd by simp
+    also have "\<dots> \<le> ?C * hs_norm_lmat x"
+      using h_nn by (simp add: mult_right_mono)
+    finally show "\<bar>F x\<bar> \<le> ?C * hs_norm_lmat x" .
+  qed
+  have main_bnd:
+    "\<And>x. cmod (bs_complex_extension F x) \<le> ?C * hs_norm_lmat x"
+    using bs_complex_extension_tight_bound[OF F_lin F_C] by simp
+  show ?thesis using C_nn main_bnd by blast
+qed
 
 lemma bs_complex_extension_extends:
   fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
@@ -1051,7 +1167,7 @@ theorem matrix_hahn_banach_lmat:
   assumes V_csub: "cmat_subspace_lmat V"
       and g_bnd: "bounded_clinear_functional_on V g"
   shows "\<exists>f :: (complex, 'm, 'n) lmat \<Rightarrow> complex.
-            clinear_functional_on UNIV f
+            bounded_clinear_functional_on UNIV f
           \<and> (\<forall>x \<in> V. f x = g x)"
 proof -
   have V_sub: "Subspace.subspace V (UNIV :: (complex, 'm, 'n) lmat set)"
@@ -1068,9 +1184,24 @@ proof -
   let ?f = "bs_complex_extension F"
   have f_clin: "clinear_functional_on UNIV ?f"
     by (rule bs_complex_extension_clinear[OF F_lin])
+  have f_bnd: "\<exists>C \<ge> 0. \<forall>x \<in> UNIV. cmod (?f x) \<le> C * hs_norm_lmat x"
+    using bs_complex_extension_bounded[OF F_lin F_cont] by blast
+  have f_bclin: "bounded_clinear_functional_on UNIV ?f"
+    using f_clin f_bnd unfolding bounded_clinear_functional_on_def by blast
   have f_ext: "\<forall>x \<in> V. ?f x = g x"
     by (rule bs_complex_extension_extends[OF g_clin V_clos_i F_ext])
-  show ?thesis using f_clin f_ext by blast
+  show ?thesis using f_bclin f_ext by blast
 qed
+
+
+text \<open>The explicit-bound form of the matrix Hahn-Banach theorem
+(verbatim transfer of an \<open>\<bar>Re \<circ> g\<bar> \<le> C \<cdot> \<parallel>x\<parallel>\<close> bound to
+\<open>\<bar>f x\<bar> \<le> C \<cdot> \<parallel>x\<parallel>\<close>) is reachable from the tight-bound infrastructure
+above (\<open>bs_complex_extension_tight_bound\<close>), modulo extracting the
+norm-preservation conclusion of HOL/Hahn_Banach's
+\<open>norm_Hahn_Banach\<close> as an explicit \<open>\<bar>F x\<bar> \<le> C \<cdot> \<parallel>x\<parallel>\<close> for the
+real-linear extension \<open>F\<close>. That extraction expands the locale-local
+\<open>fn_norm\<close> notation to its \<open>Sup\<close>-based definition and is left
+to a separate development.\<close>
 
 end
