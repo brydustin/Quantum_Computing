@@ -3113,6 +3113,66 @@ notation pd  ("_ >\<^sub>M 0")
 lemma psd_hermitian: "psd P \<Longrightarrow> hermitian P"
   by (simp add: psd_def)
 
+(* Diagonal entries of a PSD matrix have non-negative real part.
+   Picking the standard basis vector \<open>e\<^sub>i\<close> in
+   \<open>\<langle>x | P x\<rangle> \<ge> 0\<close> reduces to \<open>P\<^sub>i\<^sub>i \<ge> 0\<close>. *)
+
+lemma psd_diag_re_nonneg:
+  fixes P :: "complex Matrix.mat" and n i :: nat
+  assumes P_c: "P \<in> carrier_mat n n" and P_psd: "psd P" and i_lt: "i < n"
+  shows "0 \<le> Re (P $$ (i, i))"
+proof -
+  let ?e = "unit_vec n i :: complex Matrix.vec"
+  have dim_e: "dim_vec ?e = dim_row P" using P_c by simp
+  have psd_use: "0 \<le> Re (\<langle>?e | P *\<^sub>v ?e\<rangle>)"
+    using P_psd dim_e unfolding psd_def by blast
+  have inner_eq: "\<langle>?e | P *\<^sub>v ?e\<rangle> = P $$ (i, i)"
+  proof -
+    have Pe_dim: "dim_vec (P *\<^sub>v ?e) = n" using P_c by simp
+    have Pe_at: "\<And>k. k < n \<Longrightarrow> (P *\<^sub>v ?e) $ k = P $$ (k, i)"
+    proof -
+      fix k assume k_lt: "k < n"
+      have "(P *\<^sub>v ?e) $ k = (\<Sum>j<n. P $$ (k, j) * ?e $ j)"
+        using k_lt P_c
+        by (simp add: scalar_prod_def atLeast0LessThan)
+      also have "\<dots> = (\<Sum>j<n. if j = i then P $$ (k, j) else 0)"
+        using i_lt by (intro sum.cong refl) simp
+      also have "\<dots> = P $$ (k, i)" using i_lt by simp
+      finally show "(P *\<^sub>v ?e) $ k = P $$ (k, i)" .
+    qed
+    have "\<langle>?e | P *\<^sub>v ?e\<rangle>
+            = (\<Sum>k = 0..<n. cnj (?e $ k) * (P *\<^sub>v ?e) $ k)"
+      unfolding inner_prod_def using Pe_dim by simp
+    also have "\<dots> = (\<Sum>k = 0..<n. cnj (?e $ k) * P $$ (k, i))"
+      by (intro sum.cong refl) (simp add: Pe_at)
+    also have "\<dots> = (\<Sum>k = 0..<n. (if k = i then 1 else 0) * P $$ (k, i))"
+      by (intro sum.cong refl) (simp add: i_lt)
+    also have "\<dots> = (\<Sum>k = 0..<n. if k = i then P $$ (k, i) else 0)"
+      by (intro sum.cong refl) simp
+    also have "\<dots> = P $$ (i, i)" using i_lt by simp
+    finally show ?thesis .
+  qed
+  show ?thesis using psd_use inner_eq by simp
+qed
+
+(* Real part of trace of a PSD matrix is non-negative.  Just sum
+   the diagonal entries via Tr_def and apply \<open>psd_diag_re_nonneg\<close>. *)
+
+lemma Re_Tr_psd_nonneg:
+  fixes P :: "complex Matrix.mat" and n :: nat
+  assumes P_c: "P \<in> carrier_mat n n" and P_psd: "psd P"
+  shows "0 \<le> Re (Tr P)"
+proof -
+  have "Tr P = (\<Sum>i<n. P $$ (i, i))"
+    using P_c by (auto simp: Tr_def)
+  hence "Re (Tr P) = (\<Sum>i<n. Re (P $$ (i, i)))"
+    by simp
+  also have "\<dots> \<ge> 0"
+    by (intro sum_nonneg)
+       (auto intro: psd_diag_re_nonneg[OF P_c P_psd])
+  finally show ?thesis .
+qed
+
 lemma psd_MdagM:
   assumes M: "M \<in> carrier_mat n m"
   shows "psd (M\<^sup>\<dagger> * M)"
