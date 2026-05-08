@@ -655,4 +655,154 @@ proof
     using assms xV unfolding cmat_subspace_lmat_def by simp
 qed
 
+
+section \<open>Complex scalar multiplication on lmat\<close>
+
+text \<open>Complex scalar multiplication on \<open>(complex, 'm, 'n) lmat\<close>,
+extending the \<open>Vector_Space.prod\<close> overload (which is only by reals).\<close>
+
+definition cmult_lmat ::
+    "complex \<Rightarrow> (complex, 'm :: finite, 'n :: finite) lmat
+              \<Rightarrow> (complex, 'm, 'n) lmat"
+where
+  "cmult_lmat c M = wrap_lm (c \<cdot>\<^sub>m unwrap_lm M)"
+
+lemma unwrap_lm_cmult [simp]:
+  "unwrap_lm (cmult_lmat c (M :: (complex, 'm :: finite, 'n :: finite) lmat))
+     = c \<cdot>\<^sub>m unwrap_lm M"
+  unfolding cmult_lmat_def
+  by (subst wrap_lm_inverse) simp_all
+
+lemma cmult_lmat_real:
+  "cmult_lmat (complex_of_real a) M = Vector_Space.prod a M"
+  by (simp add: cmult_lmat_def prod_lmat_def)
+
+
+section \<open>Bounded complex-linear functionals on lmat\<close>
+
+definition clinear_functional_on ::
+    "(complex, 'm :: finite, 'n :: finite) lmat set
+     \<Rightarrow> ((complex, 'm, 'n) lmat \<Rightarrow> complex) \<Rightarrow> bool"
+where
+  "clinear_functional_on V g \<equiv>
+     (\<forall>x \<in> V. \<forall>y \<in> V. g (x + y) = g x + g y) \<and>
+     (\<forall>x \<in> V. \<forall>c. g (cmult_lmat c x) = c * g x)"
+
+definition bounded_clinear_functional_on ::
+    "(complex, 'm :: finite, 'n :: finite) lmat set
+     \<Rightarrow> ((complex, 'm, 'n) lmat \<Rightarrow> complex) \<Rightarrow> bool"
+where
+  "bounded_clinear_functional_on V g \<equiv>
+     clinear_functional_on V g \<and>
+     (\<exists>C \<ge> 0. \<forall>x \<in> V. cmod (g x) \<le> C * hs_norm_lmat x)"
+
+
+section \<open>Real-part functional and linearform/continuous instances\<close>
+
+definition re_part_lmat ::
+    "((complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> complex)
+     \<Rightarrow> ((complex, 'm, 'n) lmat \<Rightarrow> real)"
+where
+  "re_part_lmat g x = Re (g x)"
+
+lemma linearform_re_part_lmat:
+  fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
+      and g :: "(complex, 'm, 'n) lmat \<Rightarrow> complex"
+  assumes V_sub: "Subspace.subspace V UNIV"
+      and g_clin: "clinear_functional_on V g"
+  shows "linearform V (re_part_lmat g)"
+proof
+  fix x y :: "(complex, 'm, 'n) lmat" and a :: real
+  assume xV: "x \<in> V" and yV: "y \<in> V"
+  show "re_part_lmat g (x + y) = re_part_lmat g x + re_part_lmat g y"
+    using g_clin xV yV
+    unfolding clinear_functional_on_def re_part_lmat_def
+    by simp
+next
+  fix x :: "(complex, 'm, 'n) lmat" and a :: real
+  assume xV: "x \<in> V"
+  have prod_as_cmult: "Vector_Space.prod a x = cmult_lmat (complex_of_real a) x"
+    by (simp add: cmult_lmat_real)
+  have "g (Vector_Space.prod a x) = complex_of_real a * g x"
+    using g_clin xV prod_as_cmult
+    unfolding clinear_functional_on_def by simp
+  thus "re_part_lmat g (Vector_Space.prod a x) = a * re_part_lmat g x"
+    unfolding re_part_lmat_def by simp
+qed
+
+lemma continuous_re_part_lmat:
+  fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
+      and g :: "(complex, 'm, 'n) lmat \<Rightarrow> complex"
+  assumes V_sub: "Subspace.subspace V UNIV"
+      and g_bnd: "bounded_clinear_functional_on V g"
+  shows "continuous V (re_part_lmat g) hs_norm_lmat"
+proof -
+  have lin: "linearform V (re_part_lmat g)"
+    using V_sub g_bnd
+    unfolding bounded_clinear_functional_on_def
+    by (intro linearform_re_part_lmat) auto
+  obtain C where C_nn: "C \<ge> 0"
+            and C_bnd: "\<forall>x \<in> V. cmod (g x) \<le> C * hs_norm_lmat x"
+    using g_bnd unfolding bounded_clinear_functional_on_def by blast
+  have re_bnd: "\<And>x. x \<in> V \<Longrightarrow> \<bar>re_part_lmat g x\<bar> \<le> C * hs_norm_lmat x"
+  proof -
+    fix x assume xV: "x \<in> V"
+    have "\<bar>re_part_lmat g x\<bar> = \<bar>Re (g x)\<bar>"
+      unfolding re_part_lmat_def by simp
+    also have "\<dots> \<le> cmod (g x)"
+      by (rule abs_Re_le_cmod)
+    also have "\<dots> \<le> C * hs_norm_lmat x"
+      using C_bnd xV by simp
+    finally show "\<bar>re_part_lmat g x\<bar> \<le> C * hs_norm_lmat x" .
+  qed
+  show ?thesis using lin re_bnd by (rule continuousI)
+qed
+
+
+section \<open>Application of HOL/Hahn_Banach (norm-preserving extension)\<close>
+
+text \<open>Apply HOL/Hahn_Banach to extend the real-linearform
+\<open>re_part_lmat g\<close> to all of UNIV preserving the function norm.\<close>
+
+theorem hahn_banach_re_part_lmat:
+  fixes V :: "(complex, 'm :: finite, 'n :: finite) lmat set"
+      and g :: "(complex, 'm, 'n) lmat \<Rightarrow> complex"
+  assumes V_sub: "Subspace.subspace V (UNIV :: (complex, 'm, 'n) lmat set)"
+      and g_bnd: "bounded_clinear_functional_on V g"
+  shows
+    "\<exists>F :: (complex, 'm, 'n) lmat \<Rightarrow> real.
+        linearform UNIV F
+      \<and> continuous UNIV F hs_norm_lmat
+      \<and> (\<forall>x \<in> V. F x = re_part_lmat g x)"
+proof -
+  have nv: "normed_vectorspace UNIV hs_norm_lmat"
+    by (rule normed_vectorspace_UNIV_lmat)
+  have lin: "linearform V (re_part_lmat g)"
+    using V_sub g_bnd
+    unfolding bounded_clinear_functional_on_def
+    by (intro linearform_re_part_lmat) auto
+  have cont: "continuous V (re_part_lmat g) hs_norm_lmat"
+    by (rule continuous_re_part_lmat[OF V_sub g_bnd])
+  obtain F where
+      F_lin: "linearform UNIV F"
+    and F_cont: "continuous UNIV F hs_norm_lmat"
+    and F_ext: "\<forall>x \<in> V. F x = re_part_lmat g x"
+    using norm_Hahn_Banach[OF nv V_sub lin cont] by blast
+  show ?thesis using F_lin F_cont F_ext by blast
+qed
+
+
+section \<open>Bohnenblust-Sobczyk: complex extension from real extension\<close>
+
+text \<open>Given a real-linear extension \<open>F\<close> of \<open>re_part_lmat g\<close> on
+all of UNIV, define the complex-linear extension
+\<open>f x = F x - i \<cdot> F (i \<cdot> x)\<close>.\<close>
+
+definition bs_complex_extension ::
+    "((complex, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real)
+     \<Rightarrow> ((complex, 'm, 'n) lmat \<Rightarrow> complex)"
+where
+  "bs_complex_extension F x =
+     complex_of_real (F x) - \<i> * complex_of_real (F (cmult_lmat \<i> x))"
+
 end
