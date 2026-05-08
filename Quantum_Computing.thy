@@ -17302,6 +17302,271 @@ theorem matrix_hahn_banach_full_space:
   using lin bnd by blast
 
 
+(* ---- Wired Matrix Hahn-Banach via Matrix_Typed.thy ----
+
+   The matrix-space Hahn-Banach theorem proven on the typed
+   wrapper @{type lmat} of @{type \<open>complex Matrix.mat\<close>} is now
+   available at the matrix level for any concrete dimension
+   represented by a finite type \<open>'m\<close> with \<open>n = CARD('m)\<close>.
+   The wiring transports a complex-linear subspace of
+   \<open>carrier_mat n n\<close> and a bounded clinear functional on it
+   through the typed setting and back. *)
+
+definition lift_to_lmat ::
+    "(complex Matrix.mat \<Rightarrow> bool) \<Rightarrow> (complex, 'm :: finite, 'm) lmat set"
+where
+  "lift_to_lmat V \<equiv> {M. V (unwrap_lm M)}"
+
+definition lift_g_to_lmat ::
+    "(complex Matrix.mat \<Rightarrow> complex) \<Rightarrow> (complex, 'm :: finite, 'm) lmat \<Rightarrow> complex"
+where
+  "lift_g_to_lmat g M \<equiv> g (unwrap_lm M)"
+
+lemma hs_norm_lmat_via_hs_norm:
+  fixes M :: "(complex, 'm :: finite, 'm) lmat"
+  shows "hs_norm_lmat M = hs_norm (unwrap_lm M)"
+  by (simp add: hs_norm_lmat_def hs_norm_def)
+
+lemma lift_to_lmat_cmat_subspace:
+  fixes V :: "complex Matrix.mat \<Rightarrow> bool"
+  assumes V_sub: "cmat_subspace (CARD('m :: finite)) V"
+  shows "cmat_subspace_lmat (lift_to_lmat V :: (complex, 'm, 'm) lmat set)"
+proof -
+  have V_zero: "V (0\<^sub>m (CARD('m)) (CARD('m)))"
+    using V_sub unfolding cmat_subspace_def by blast
+  have V_carr: "\<And>A. V A \<Longrightarrow> A \<in> carrier_mat (CARD('m)) (CARD('m))"
+    using V_sub unfolding cmat_subspace_def by blast
+  have V_add: "\<And>A B. V A \<Longrightarrow> V B \<Longrightarrow> V (A + B)"
+    using V_sub unfolding cmat_subspace_def by blast
+  have V_smult: "\<And>A c. V A \<Longrightarrow> V (c \<cdot>\<^sub>m A)"
+    using V_sub unfolding cmat_subspace_def by blast
+  have nonempty: "(lift_to_lmat V :: (complex, 'm, 'm) lmat set) \<noteq> {}"
+  proof -
+    have "0 \<in> (lift_to_lmat V :: (complex, 'm, 'm) lmat set)"
+      using V_zero by (simp add: lift_to_lmat_def)
+    thus ?thesis by blast
+  qed
+  have closed_add:
+    "\<And>x y. x \<in> (lift_to_lmat V :: (complex, 'm, 'm) lmat set)
+       \<Longrightarrow> y \<in> lift_to_lmat V \<Longrightarrow> x + y \<in> lift_to_lmat V"
+    by (simp add: lift_to_lmat_def V_add)
+  have closed_cmult:
+    "\<And>x c. x \<in> (lift_to_lmat V :: (complex, 'm, 'm) lmat set)
+       \<Longrightarrow> (wrap_lm (c \<cdot>\<^sub>m unwrap_lm x) :: (complex, 'm, 'm) lmat) \<in> lift_to_lmat V"
+  proof -
+    fix x :: "(complex, 'm, 'm) lmat" and c :: complex
+    assume xV: "x \<in> lift_to_lmat V"
+    hence Vx: "V (unwrap_lm x)" by (simp add: lift_to_lmat_def)
+    have ux_carr: "unwrap_lm x \<in> carrier_mat (CARD('m)) (CARD('m))" by simp
+    have V_cx: "V (c \<cdot>\<^sub>m unwrap_lm x)" using Vx V_smult by blast
+    have cx_carr: "c \<cdot>\<^sub>m unwrap_lm x \<in> carrier_mat (CARD('m)) (CARD('m))"
+      using ux_carr by auto
+    have unwrap_eq:
+      "unwrap_lm (wrap_lm (c \<cdot>\<^sub>m unwrap_lm x) :: (complex, 'm, 'm) lmat)
+         = c \<cdot>\<^sub>m unwrap_lm x"
+      using cx_carr by (subst wrap_lm_inverse) auto
+    show "(wrap_lm (c \<cdot>\<^sub>m unwrap_lm x) :: (complex, 'm, 'm) lmat) \<in> lift_to_lmat V"
+      using V_cx unwrap_eq by (simp add: lift_to_lmat_def)
+  qed
+  show ?thesis
+    unfolding cmat_subspace_lmat_def
+    using nonempty closed_add closed_cmult by blast
+qed
+
+lemma lift_g_to_lmat_clinear:
+  fixes V :: "complex Matrix.mat \<Rightarrow> bool" and g :: "complex Matrix.mat \<Rightarrow> complex"
+  assumes V_sub: "cmat_subspace (CARD('m :: finite)) V"
+      and g_clin: "clinear_functional V g"
+  shows "clinear_functional_on (lift_to_lmat V :: (complex, 'm, 'm) lmat set)
+                                (lift_g_to_lmat g)"
+proof -
+  have g_add: "\<And>A B. V A \<Longrightarrow> V B \<Longrightarrow> g (A + B) = g A + g B"
+    using g_clin unfolding clinear_functional_def by blast
+  have g_smult: "\<And>A c. V A \<Longrightarrow> g (c \<cdot>\<^sub>m A) = c * g A"
+    using g_clin unfolding clinear_functional_def by blast
+  have add:
+    "\<And>x y. x \<in> (lift_to_lmat V :: (complex, 'm, 'm) lmat set)
+       \<Longrightarrow> y \<in> lift_to_lmat V
+       \<Longrightarrow> lift_g_to_lmat g (x + y)
+            = lift_g_to_lmat g x + lift_g_to_lmat g y"
+    by (simp add: lift_to_lmat_def lift_g_to_lmat_def g_add)
+  have smult:
+    "\<And>x c. x \<in> (lift_to_lmat V :: (complex, 'm, 'm) lmat set)
+       \<Longrightarrow> lift_g_to_lmat g (cmult_lmat c x) = c * lift_g_to_lmat g x"
+  proof -
+    fix x :: "(complex, 'm, 'm) lmat" and c
+    assume xV: "x \<in> lift_to_lmat V"
+    hence Vx: "V (unwrap_lm x)" by (simp add: lift_to_lmat_def)
+    show "lift_g_to_lmat g (cmult_lmat c x) = c * lift_g_to_lmat g x"
+      by (simp add: lift_g_to_lmat_def g_smult Vx)
+  qed
+  show ?thesis
+    unfolding clinear_functional_on_def using add smult by blast
+qed
+
+theorem matrix_hahn_banach_typed_dim:
+  fixes V :: "complex Matrix.mat \<Rightarrow> bool"
+      and g :: "complex Matrix.mat \<Rightarrow> complex"
+      and C :: real
+  assumes V_csub: "cmat_subspace (CARD('m :: finite)) V"
+      and g_clin: "clinear_functional V g"
+      and g_re_C: "\<forall>A. V A \<longrightarrow> \<bar>Re (g A)\<bar> \<le> C * hs_norm A"
+      and C_nn: "0 \<le> C"
+  shows "\<exists>f. clinear_functional (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f
+            \<and> (\<forall>A. V A \<longrightarrow> f A = g A)
+            \<and> (\<forall>A. A \<in> carrier_mat (CARD('m)) (CARD('m))
+                    \<longrightarrow> cmod (f A) \<le> C * hs_norm A)"
+proof -
+  let ?V_lmat = "(lift_to_lmat V :: (complex, 'm, 'm) lmat set)"
+  let ?g_lmat = "lift_g_to_lmat g :: (complex, 'm, 'm) lmat \<Rightarrow> complex"
+  have V_csub': "cmat_subspace_lmat ?V_lmat"
+    by (rule lift_to_lmat_cmat_subspace[OF V_csub])
+  have g_clin': "clinear_functional_on ?V_lmat ?g_lmat"
+    by (rule lift_g_to_lmat_clinear[OF V_csub g_clin])
+  have re_C':
+    "\<forall>x \<in> ?V_lmat. \<bar>Re (?g_lmat x)\<bar> \<le> C * hs_norm_lmat x"
+  proof
+    fix x :: "(complex, 'm, 'm) lmat"
+    assume xV: "x \<in> ?V_lmat"
+    hence "V (unwrap_lm x)" by (simp add: lift_to_lmat_def)
+    hence "\<bar>Re (g (unwrap_lm x))\<bar> \<le> C * hs_norm (unwrap_lm x)"
+      using g_re_C by blast
+    thus "\<bar>Re (?g_lmat x)\<bar> \<le> C * hs_norm_lmat x"
+      by (simp add: lift_g_to_lmat_def hs_norm_lmat_via_hs_norm)
+  qed
+  obtain f_lmat where
+      f_clin: "clinear_functional_on UNIV f_lmat"
+    and f_ext: "\<forall>x \<in> ?V_lmat. f_lmat x = ?g_lmat x"
+    and f_C: "\<forall>x. cmod (f_lmat x) \<le> C * hs_norm_lmat x"
+    using matrix_hahn_banach_lmat_with_bound[OF V_csub' g_clin' re_C' C_nn]
+    by blast
+  define f :: "complex Matrix.mat \<Rightarrow> complex" where
+    "f A = (if A \<in> carrier_mat (CARD('m)) (CARD('m))
+              then f_lmat (wrap_lm A) else 0)" for A
+  have wrap_unwrap_id:
+    "\<And>A. A \<in> carrier_mat (CARD('m)) (CARD('m))
+         \<Longrightarrow> unwrap_lm (wrap_lm A :: (complex, 'm, 'm) lmat) = A"
+    by (subst wrap_lm_inverse) auto
+  have f_clin_mat:
+    "clinear_functional (\<lambda>A. A \<in> carrier_mat (CARD('m)) (CARD('m))) f"
+  proof -
+    have add_law:
+      "\<And>A B. A \<in> carrier_mat (CARD('m)) (CARD('m))
+         \<Longrightarrow> B \<in> carrier_mat (CARD('m)) (CARD('m))
+         \<Longrightarrow> f (A + B) = f A + f B"
+    proof -
+      fix A B :: "complex Matrix.mat"
+      assume Ac: "A \<in> carrier_mat (CARD('m)) (CARD('m))"
+         and Bc: "B \<in> carrier_mat (CARD('m)) (CARD('m))"
+      have AB_carr: "A + B \<in> carrier_mat (CARD('m)) (CARD('m))"
+        using Ac Bc by simp
+      have wrap_AB:
+        "(wrap_lm (A + B) :: (complex, 'm, 'm) lmat)
+           = wrap_lm A + wrap_lm B"
+      proof -
+        have unwrap_lhs:
+          "unwrap_lm (wrap_lm (A + B) :: (complex, 'm, 'm) lmat) = A + B"
+          using AB_carr by (rule wrap_unwrap_id)
+        have unwrap_rhs:
+          "unwrap_lm ((wrap_lm A :: (complex, 'm, 'm) lmat) + wrap_lm B)
+             = A + B"
+          using Ac Bc by (simp add: wrap_unwrap_id)
+        have ueq:
+          "unwrap_lm (wrap_lm (A + B) :: (complex, 'm, 'm) lmat)
+             = unwrap_lm ((wrap_lm A :: (complex, 'm, 'm) lmat) + wrap_lm B)"
+          using unwrap_lhs unwrap_rhs by simp
+        show "(wrap_lm (A + B) :: (complex, 'm, 'm) lmat)
+                 = wrap_lm A + wrap_lm B"
+          by (rule iffD1[OF unwrap_lm_inject ueq])
+      qed
+      have "f (A + B) = f_lmat (wrap_lm (A + B))"
+        using AB_carr by (simp add: f_def)
+      also have "\<dots> = f_lmat (wrap_lm A + wrap_lm B)"
+        using wrap_AB by simp
+      also have "\<dots> = f_lmat (wrap_lm A) + f_lmat (wrap_lm B)"
+        using f_clin unfolding clinear_functional_on_def by blast
+      also have "\<dots> = f A + f B"
+        using Ac Bc by (simp add: f_def)
+      finally show "f (A + B) = f A + f B" .
+    qed
+    have smult_law:
+      "\<And>A c. A \<in> carrier_mat (CARD('m)) (CARD('m))
+         \<Longrightarrow> f (c \<cdot>\<^sub>m A) = c * f A"
+    proof -
+      fix A :: "complex Matrix.mat" and c :: complex
+      assume Ac: "A \<in> carrier_mat (CARD('m)) (CARD('m))"
+      have cA_carr: "c \<cdot>\<^sub>m A \<in> carrier_mat (CARD('m)) (CARD('m))"
+        using Ac by auto
+      have wrap_cA:
+        "(wrap_lm (c \<cdot>\<^sub>m A) :: (complex, 'm, 'm) lmat)
+           = cmult_lmat c (wrap_lm A)"
+      proof -
+        have unwrap_lhs:
+          "unwrap_lm (wrap_lm (c \<cdot>\<^sub>m A) :: (complex, 'm, 'm) lmat)
+             = c \<cdot>\<^sub>m A"
+          using cA_carr by (rule wrap_unwrap_id)
+        have unwrap_rhs:
+          "unwrap_lm (cmult_lmat c (wrap_lm A :: (complex, 'm, 'm) lmat))
+             = c \<cdot>\<^sub>m A"
+          using Ac by (simp add: wrap_unwrap_id)
+        have ueq:
+          "unwrap_lm (wrap_lm (c \<cdot>\<^sub>m A) :: (complex, 'm, 'm) lmat)
+             = unwrap_lm (cmult_lmat c (wrap_lm A :: (complex, 'm, 'm) lmat))"
+          using unwrap_lhs unwrap_rhs by simp
+        show "(wrap_lm (c \<cdot>\<^sub>m A) :: (complex, 'm, 'm) lmat)
+                 = cmult_lmat c (wrap_lm A)"
+          by (rule iffD1[OF unwrap_lm_inject ueq])
+      qed
+      have "f (c \<cdot>\<^sub>m A) = f_lmat (wrap_lm (c \<cdot>\<^sub>m A))"
+        using cA_carr by (simp add: f_def)
+      also have "\<dots> = f_lmat (cmult_lmat c (wrap_lm A))"
+        using wrap_cA by simp
+      also have "\<dots> = c * f_lmat (wrap_lm A)"
+        using f_clin unfolding clinear_functional_on_def by blast
+      also have "\<dots> = c * f A"
+        using Ac by (simp add: f_def)
+      finally show "f (c \<cdot>\<^sub>m A) = c * f A" .
+    qed
+    show ?thesis
+      unfolding clinear_functional_def using add_law smult_law by blast
+  qed
+  have f_extends:
+    "\<forall>A. V A \<longrightarrow> f A = g A"
+  proof (intro allI impI)
+    fix A :: "complex Matrix.mat"
+    assume VA: "V A"
+    have Ac: "A \<in> carrier_mat (CARD('m)) (CARD('m))"
+      using V_csub VA unfolding cmat_subspace_def by blast
+    have wrap_in_lift:
+      "(wrap_lm A :: (complex, 'm, 'm) lmat) \<in> ?V_lmat"
+      using VA Ac by (simp add: lift_to_lmat_def wrap_unwrap_id)
+    have "f A = f_lmat (wrap_lm A)"
+      using Ac by (simp add: f_def)
+    also have "\<dots> = ?g_lmat (wrap_lm A)"
+      using f_ext wrap_in_lift by blast
+    also have "\<dots> = g (unwrap_lm (wrap_lm A :: (complex, 'm, 'm) lmat))"
+      by (simp add: lift_g_to_lmat_def)
+    also have "\<dots> = g A" using Ac by (simp add: wrap_unwrap_id)
+    finally show "f A = g A" .
+  qed
+  have f_bnd:
+    "\<forall>A. A \<in> carrier_mat (CARD('m)) (CARD('m))
+          \<longrightarrow> cmod (f A) \<le> C * hs_norm A"
+  proof (intro allI impI)
+    fix A :: "complex Matrix.mat"
+    assume Ac: "A \<in> carrier_mat (CARD('m)) (CARD('m))"
+    have "cmod (f A) = cmod (f_lmat (wrap_lm A))"
+      using Ac by (simp add: f_def)
+    also have "\<dots> \<le> C * hs_norm_lmat (wrap_lm A :: (complex, 'm, 'm) lmat)"
+      using f_C by blast
+    also have "\<dots> = C * hs_norm A"
+      using Ac by (simp add: hs_norm_lmat_via_hs_norm wrap_unwrap_id)
+    finally show "cmod (f A) \<le> C * hs_norm A" .
+  qed
+  show ?thesis using f_clin_mat f_extends f_bnd by blast
+qed
+
+
 (* ============================================================================
    DAY 27 \<mdash> 31 / Oct / 11
    Topic: Continuation, Theory of Convex Sets and Linear Functionals.
