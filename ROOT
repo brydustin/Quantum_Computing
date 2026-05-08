@@ -12,7 +12,8 @@ session Vern_Paulsen_QC_3_10 in "." = Isabelle_Marries_Dirac +
    Vern_Paulsen_QC_3_10, so downstream theories can import HB without
    paying for its compilation each time. *)
 session Vern_Paulsen_QC_3_10_HB in HB_Heap = Vern_Paulsen_QC_3_10 +
-  options [document = false, quick_and_dirty = true, timeout = 3600]
+  options [document = false, quick_and_dirty = true, timeout = 3600,
+           record_proofs = 0, build_timing_threshold = 0.005]
   sessions
     "HOL-Hahn_Banach"
   theories

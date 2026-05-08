@@ -65,7 +65,7 @@ instantiation lmat :: (plus, finite, finite) plus
 begin
 lift_definition plus_lmat ::
   "('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> ('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> ('a, 'm :: finite, 'n :: finite) lmat"
-  is "(+)" by (auto simp: plus_mat_def)
+  is "(+)" by (simp add: plus_mat_def)
 instance ..
 end
 
@@ -78,7 +78,7 @@ instantiation lmat :: (uminus, finite, finite) uminus
 begin
 lift_definition uminus_lmat ::
   "('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> ('a, 'm :: finite, 'n :: finite) lmat"
-  is "uminus" by (auto simp: uminus_mat_def)
+  is "uminus" by (simp add: uminus_mat_def)
 instance ..
 end
 
@@ -91,7 +91,7 @@ instantiation lmat :: (minus, finite, finite) minus
 begin
 lift_definition minus_lmat ::
   "('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> ('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> ('a, 'm :: finite, 'n :: finite) lmat"
-  is "(-)" by (auto simp: minus_mat_def)
+  is "(-)" by (simp add: minus_mat_def)
 instance ..
 end
 
@@ -109,21 +109,11 @@ proof
   show "a + b + c = a + (b + c)"
   proof (transfer)
     fix A B C :: "'a Matrix.mat"
-    assume "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
-      and  "dim_row B = CARD('m) \<and> dim_col B = CARD('n)"
-      and  "dim_row C = CARD('m) \<and> dim_col C = CARD('n)"
-    then have A: "A \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-       and B: "B \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-       and C: "C \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-      by simp_all
-    have Ac: "A \<in> carrier_mat (CARD('m)) (CARD('n))"
-      using A by blast 
-    have Bc: "B \<in> carrier_mat (CARD('m)) (CARD('n))"
-      using B by blast
-    have Cc: "C \<in> carrier_mat (CARD('m)) (CARD('n))"
-      using C by blast
+    assume da: "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
+      and  db: "dim_row B = CARD('m) \<and> dim_col B = CARD('n)"
+      and  dc: "dim_row C = CARD('m) \<and> dim_col C = CARD('n)"
     show "A + B + C = A + (B + C)"
-      using Ac Bc Cc by (intro eq_matI) (auto simp: ac_simps)
+      using da db dc by (intro eq_matI) (auto simp: ac_simps)
   qed
 qed
 
@@ -133,15 +123,10 @@ proof
   show "a + b = b + a"
   proof (transfer)
     fix A B :: "'a Matrix.mat"
-    assume "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
-       and "dim_row B = CARD('m) \<and> dim_col B = CARD('n)"
-    then have "A \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-       and "B \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-      by simp_all
-    hence "A \<in> carrier_mat (CARD('m)) (CARD('n))"
-          "B \<in> carrier_mat (CARD('m)) (CARD('n))"
-      by auto 
-    thus "A + B = B + A" by (intro eq_matI) (auto simp: ac_simps)
+    assume da: "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
+      and  db: "dim_row B = CARD('m) \<and> dim_col B = CARD('n)"
+    show "A + B = B + A"
+      using da db by (intro eq_matI) (auto simp: ac_simps)
   qed
 qed
 
@@ -151,30 +136,21 @@ proof
   show "0 + a = a"
   proof (transfer)
     fix A :: "'a Matrix.mat"
-    assume "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
-    then have "A \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-      by simp
-    hence Ac: "A \<in> carrier_mat (CARD('m)) (CARD('n))" by auto
+    assume A: "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
     show "0\<^sub>m (CARD('m)) (CARD('n)) + A = A"
-      using Ac by simp
+      using A by auto
   qed
   show "a + 0 = a"
   proof (transfer)
     fix A :: "'a Matrix.mat"
-    assume "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
-    then have "A \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-      by simp
-    hence Ac: "A \<in> carrier_mat (CARD('m)) (CARD('n))" by auto
+    assume A: "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
     show "A + 0\<^sub>m (CARD('m)) (CARD('n)) = A"
-      using Ac by simp
+      using A by auto
   qed
 qed
 
 instance lmat :: (comm_monoid_add, finite, finite) comm_monoid_add
-proof
-  fix a :: "('a, 'm :: finite, 'n :: finite) lmat"
-  show "0 + a = a" by simp
-qed
+  by standard simp
 
 instance lmat :: (group_add, finite, finite) group_add
 proof
@@ -182,34 +158,22 @@ proof
   show "- a + a = 0"
   proof (transfer)
     fix A :: "'a Matrix.mat"
-    assume "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
-    then have "A \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-      by simp
-    hence Ac: "A \<in> carrier_mat (CARD('m)) (CARD('n))" by auto
+    assume da: "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
     show "- A + A = 0\<^sub>m (CARD('m)) (CARD('n))"
-      using Ac by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def)
+      using da by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def)
   qed
   show "a + - b = a - b"
   proof (transfer)
     fix A B :: "'a Matrix.mat"
-    assume "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
-       and "dim_row B = CARD('m) \<and> dim_col B = CARD('n)"
-    then have "A \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-       and "B \<in> {M. dim_row M = CARD('m) \<and> dim_col M = CARD('n)}"
-      by simp_all
-    hence Ac: "A \<in> carrier_mat (CARD('m)) (CARD('n))"
-          and Bc: "B \<in> carrier_mat (CARD('m)) (CARD('n))" by auto
+    assume da: "dim_row A = CARD('m) \<and> dim_col A = CARD('n)"
+      and  db: "dim_row B = CARD('m) \<and> dim_col B = CARD('n)"
     show "A + - B = A - B"
-      using Ac Bc by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def plus_mat_def)
+      using da db by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def plus_mat_def)
   qed
 qed
 
 instance lmat :: (ab_group_add, finite, finite) ab_group_add
-proof
-  fix a b :: "('a, 'm :: finite, 'n :: finite) lmat"
-  show "- a + a = 0" by (rule left_minus)
-  show "a - b = a + - b" by (rule diff_conv_add_uminus)
-qed
+  by standard (rule left_minus, rule diff_conv_add_uminus)
 
 
 section \<open>Real scalar multiplication and Hahn-Banach overloading\<close>
