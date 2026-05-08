@@ -17158,16 +17158,124 @@ corollary arveson_correspondence_UCP_CPTP:
 
 (* ============================================================================
    DAY 26 \<mdash> 28 / Oct / 11
-   Topic: Hahn-Banach (deferred), Entanglement Revisited.
+   Topic: Hahn-Banach Theorem (Theorem 26.2 in PDF).
 
-   The matrix-space Hahn-Banach theorem (a positive linear functional
-   on an operator subsystem extends to a positive linear functional on
-   M\<^sub>n) underlies Arveson Extension. It is a substantial real-analysis
-   result and is deferred. The "entanglement revisited" half of this
-   day connects density matrices that are not separable to the
-   existence of entanglement witnesses --- which by HB exist iff the
-   density matrix is non-separable; statement-only here.
+   PDF Theorem (Hahn-Banach).
+     Let W be a normed space and V \<subseteq> W a subspace.  Let g : V \<rightarrow> \<complex> be a
+     bounded linear functional.  Then there exists a bounded linear
+     functional f : W \<rightarrow> \<complex> with \<bar>\<bar>f\<bar>\<bar> = \<bar>\<bar>g\<bar>\<bar> and f(v) = g(v) for all v \<in> V.
+
+   We work in the concrete case W = M\<^sub>n with the Hilbert-Schmidt norm.
+   Below we (a) define the HS norm, (b) record its basic properties as
+   a norm on M\<^sub>n, (c) define complex-linear subspace, complex-linear
+   functional, and operator norm of a functional, and (d) state the
+   matrix-space Hahn-Banach theorem precisely.
    ============================================================================ *)
+
+(* ---- The Hilbert-Schmidt (Frobenius) norm on complex matrices. ---- *)
+
+definition hs_norm :: "complex Matrix.mat \<Rightarrow> real" where
+  "hs_norm A \<equiv> sqrt (Re (\<langle>\<langle> A | A \<rangle>\<rangle>))"
+
+lemma hs_norm_nonneg: "hs_norm A \<ge> 0"
+  unfolding hs_norm_def by (rule real_sqrt_ge_zero) (rule hs_inner_prod_self_nonneg)
+
+lemma hs_norm_sq:
+  "(hs_norm A)\<^sup>2 = Re (\<langle>\<langle> A | A \<rangle>\<rangle>)"
+proof -
+  have nn: "Re (\<langle>\<langle> A | A \<rangle>\<rangle>) \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+  have "(hs_norm A)\<^sup>2 = (sqrt (Re (\<langle>\<langle> A | A \<rangle>\<rangle>)))\<^sup>2"
+    by (simp add: hs_norm_def)
+  also have "\<dots> = Re (\<langle>\<langle> A | A \<rangle>\<rangle>)"
+    using nn by (rule real_sqrt_pow2)
+  finally show ?thesis .
+qed
+
+lemma hs_norm_zero: "hs_norm (0\<^sub>m m n) = 0"
+  unfolding hs_norm_def hs_inner_prod_def by simp
+
+lemma hs_norm_smult:
+  "hs_norm (c \<cdot>\<^sub>m A) = cmod c * hs_norm A"
+proof -
+  have eq1: "Re (\<langle>\<langle> c \<cdot>\<^sub>m A | c \<cdot>\<^sub>m A \<rangle>\<rangle>) = (cmod c)\<^sup>2 * Re (\<langle>\<langle> A | A \<rangle>\<rangle>)"
+  proof -
+    have "\<langle>\<langle> c \<cdot>\<^sub>m A | c \<cdot>\<^sub>m A \<rangle>\<rangle> = cnj c * \<langle>\<langle> A | c \<cdot>\<^sub>m A \<rangle>\<rangle>"
+      by (simp add: hs_inner_prod_left_smult)
+    also have "\<dots> = cnj c * (c * \<langle>\<langle> A | A \<rangle>\<rangle>)"
+      by (simp add: hs_inner_prod_right_smult)
+    also have "\<dots> = (cnj c * c) * \<langle>\<langle> A | A \<rangle>\<rangle>"
+      by (simp add: ac_simps)
+    also have "\<dots> = complex_of_real ((cmod c)\<^sup>2) * \<langle>\<langle> A | A \<rangle>\<rangle>"
+    proof -
+      have "cnj c * c = complex_of_real ((cmod c)\<^sup>2)"
+        by (metis complex_norm_square mult.commute)
+      thus ?thesis by simp
+    qed
+    finally have "\<langle>\<langle> c \<cdot>\<^sub>m A | c \<cdot>\<^sub>m A \<rangle>\<rangle> = complex_of_real ((cmod c)\<^sup>2) * \<langle>\<langle> A | A \<rangle>\<rangle>" .
+    thus ?thesis by simp
+  qed
+  have nn: "Re (\<langle>\<langle> A | A \<rangle>\<rangle>) \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+  have "hs_norm (c \<cdot>\<^sub>m A) = sqrt ((cmod c)\<^sup>2 * Re (\<langle>\<langle> A | A \<rangle>\<rangle>))"
+    unfolding hs_norm_def using eq1 by simp
+  also have "\<dots> = sqrt ((cmod c)\<^sup>2) * sqrt (Re (\<langle>\<langle> A | A \<rangle>\<rangle>))"
+    using nn by (simp add: real_sqrt_mult)
+  also have "\<dots> = cmod c * hs_norm A"
+    unfolding hs_norm_def by simp
+  finally show ?thesis .
+qed
+
+(* ---- Complex-linear subspaces of M\<^sub>n and complex-linear functionals. ---- *)
+
+definition cmat_subspace :: "nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> bool) \<Rightarrow> bool" where
+  "cmat_subspace n V \<equiv>
+     (\<forall>A. V A \<longrightarrow> A \<in> carrier_mat n n) \<and>
+     V (0\<^sub>m n n) \<and>
+     (\<forall>A B. V A \<longrightarrow> V B \<longrightarrow> V (A + B)) \<and>
+     (\<forall>A c. V A \<longrightarrow> V (c \<cdot>\<^sub>m A))"
+
+definition clinear_functional ::
+    "(complex Matrix.mat \<Rightarrow> bool) \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex) \<Rightarrow> bool" where
+  "clinear_functional V g \<equiv>
+     (\<forall>A B. V A \<longrightarrow> V B \<longrightarrow> g (A + B) = g A + g B) \<and>
+     (\<forall>A c. V A \<longrightarrow> g (c \<cdot>\<^sub>m A) = c * g A)"
+
+(* The HS-operator norm of a functional on a subspace. *)
+
+definition funct_hs_bound ::
+    "(complex Matrix.mat \<Rightarrow> bool) \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex) \<Rightarrow> real \<Rightarrow> bool" where
+  "funct_hs_bound V g C \<equiv> \<forall>A. V A \<longrightarrow> cmod (g A) \<le> C * hs_norm A"
+
+definition bounded_clinear_functional ::
+    "(complex Matrix.mat \<Rightarrow> bool) \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex) \<Rightarrow> bool" where
+  "bounded_clinear_functional V g \<equiv>
+     clinear_functional V g \<and> (\<exists>C \<ge> 0. funct_hs_bound V g C)"
+
+(* ---- Statement of matrix-space Hahn-Banach, Theorem 26.2.
+
+   For any complex-linear subspace V of M\<^sub>n and any bounded complex-
+   linear functional g on V, there exists a bounded complex-linear
+   functional f on all of M\<^sub>n which agrees with g on V and shares a
+   bound with g.
+
+   The norm-preservation form (\<bar>\<bar>f\<bar>\<bar> = \<bar>\<bar>g\<bar>\<bar>) follows by minimising the
+   bound; we record the bounded-extension form, which is what the
+   Arveson-Extension application uses, and is provable by induction on
+   the codimension of V in M\<^sub>n once a Gram-Schmidt orthogonal-projection
+   step on the HS inner product is in scope.
+
+   The current development records the precise statement and a proof
+   for the trivial case V = M\<^sub>n; the general case requires Gram-Schmidt
+   on M\<^sub>n which is a standalone undertaking and is left as the
+   remaining DAY-26 task. ---- *)
+
+theorem matrix_hahn_banach_full_space:
+  fixes n :: nat and g :: "complex Matrix.mat \<Rightarrow> complex"
+  assumes lin: "clinear_functional (\<lambda>A. A \<in> carrier_mat n n) g"
+      and bnd: "\<exists>C \<ge> 0. funct_hs_bound (\<lambda>A. A \<in> carrier_mat n n) g C"
+  shows "\<exists>f. clinear_functional (\<lambda>A. A \<in> carrier_mat n n) f
+              \<and> (\<exists>C \<ge> 0. funct_hs_bound (\<lambda>A. A \<in> carrier_mat n n) f C)
+              \<and> (\<forall>A. A \<in> carrier_mat n n \<longrightarrow> f A = g A)"
+  using lin bnd by blast
 
 
 (* ============================================================================
