@@ -19,6 +19,7 @@
 theory Quantum_Computing
   imports Basic_Math Jordan_Normal_Form.Schur_Decomposition
           "HOL-Hahn_Banach.Hahn_Banach"
+          Matrix_Typed
 begin
 
 (* ============================================================================
@@ -500,8 +501,18 @@ proof -
     = (\<Sum>k<?n.
          (((if i = k then (1 :: complex) else 0) - 2 * (w $ i) * cnj (w $ k)) *
           (((if k = j then (1 :: complex) else 0) - 2 * (w $ k) * cnj (w $ j)))))"
-      using ij'
-      by (simp add: householder_def)
+    proof -
+      have U_car: "?U \<in> carrier_mat ?n ?n"
+        by (simp add: householder_def)
+      have "((?U) * (?U)) $$ (i,j) = (\<Sum>k<?n. ?U $$ (i, k) * ?U $$ (k, j))"
+        by (metis (no_types, lifting) U_car carrier_matD(2) dims(1) ij'(1,2) index_matrix_prod sum.cong)
+      also have "... =
+        (\<Sum>k<?n.
+           (((if i = k then (1 :: complex) else 0) - 2 * (w $ i) * cnj (w $ k)) *
+            (((if k = j then (1 :: complex) else 0) - 2 * (w $ k) * cnj (w $ j)))))"
+        by (rule sum.cong) (use ij' in \<open>auto simp: householder_index\<close>)
+      finally show ?thesis .
+    qed
     also have "... =
       (\<Sum>k<?n.
          (if i = k then (1 :: complex) else 0) * (if k = j then (1 :: complex) else 0)
@@ -3562,7 +3573,8 @@ proof -
         then have rlt: "r < n" and clt: "c < n"
           using Dlen by auto
         have "(?S * (?S\<^sup>\<dagger>)) $$ (r, c) = (\<Sum>j = 0..<n. ?S $$ (r, j) * (?S\<^sup>\<dagger>) $$ (j, c))"
-          using S_car sqrtDlen rlt clt by (simp add: scalar_prod_def lessThan_atLeast0)
+          by (metis (lifting) ext Dlen atLeast0LessThan clt dim_col_diag_mat_of_real length_map
+              dim_col_of_dagger dim_row_diag_mat_of_real dim_row_of_dagger index_matrix_prod rlt)
         also have "\<dots> =
               (\<Sum>j = 0..<n.
                  (if r = j \<and> j = c
@@ -10570,7 +10582,7 @@ proof -
     proof -
       fix k assume k_lt: "k < n"
       have "(A * ?V) $$ (k, i) = (\<Sum>j<n. A $$ (k, j) * ?V $$ (j, i))"
-        using Arow Acol Vrow Vcol k_lt i_lt by simp
+        by (metis (no_types, lifting) Acol Arow Vcol Vrow i_lt index_matrix_prod k_lt sum.cong)
       also have "\<dots> = (\<Sum>j<n. A $$ (k, j) * (vs ! i) $ j)"
         using full i_lt by (intro sum.cong refl) (simp add: mat_of_cols_def)
       also have "\<dots> = (A *\<^sub>v vs ! i) $ k"
@@ -10583,7 +10595,8 @@ proof -
           ((?V\<^sup>\<dagger> * (A * ?V)) $$ (i, i))"
       using sq Vrow Vcol by (metis Vrow assoc_mult_mat carrier_mat_triv dim_col_of_dagger)
     also have "\<dots> = (\<Sum>k<n. (?V\<^sup>\<dagger>) $$ (i, k) * (A * ?V) $$ (k, i))"
-      using Arow Acol Vrow Vcol i_lt by simp
+      by (metis (no_types, lifting) Arow Vcol Vrow dim_col_of_dagger dim_row_of_dagger i_lt 
+          index_matrix_prod index_mult_mat(2,3) sum.cong)
     also have "\<dots> = (\<Sum>k<n. cnj ((vs ! i) $ k) * (A *\<^sub>v vs ! i) $ k)"
       using full i_lt by (intro sum.cong refl, metis AV_entry Vcol case_prod_conv dagger_def 
                           index_mat(1) lessThan_iff mat_of_cols_carrier(2) mat_of_cols_def) 
@@ -13564,17 +13577,11 @@ proof -
     also have "\<dots> = (if r mod n = r div n \<and> c mod n = c div n then 1 else 0)"
       using rmn cmn by simp
     also have "\<dots> = v $ r * cnj (v $ c)"
-      unfolding v_idx[OF rnn] v_idx[OF cnn] by simp
-    also have "\<dots> = ?V $$ (r,0) * (?V\<^sup>\<dagger>) $$ (0,c)"
-      unfolding V_idx[OF rnn] Vdag_idx[OF cnn] ..
-    also have "\<dots> = (\<Sum>l<1. ?V $$ (r,l) * (?V\<^sup>\<dagger>) $$ (l,c))"
-      by simp
+      unfolding v_idx[OF rnn] v_idx[OF cnn] by simp    
     also have "\<dots> = (?V * (?V\<^sup>\<dagger>)) $$ (r,c)"
-      using rnn cnn V_car Vdag_car
-      by simp
-    also have "\<dots> = outer_sum (n*n) [v] $$ (r,c)"
-      by (simp add: outer_sum_def)
-    finally show "choi_seed n $$ (r,c) = outer_sum (n*n) [v] $$ (r,c)" .
+      using cnn outer_sum_def outer_sum_singleton_index rnn by presburger      
+    ultimately show "choi_seed n $$ (r,c) = outer_sum (n*n) [v] $$ (r,c)"
+      using outer_sum_def by presburger 
   qed
   have seed_psd: "psd (choi_seed n)"
     using os_psd seed_eq by simp
@@ -14159,7 +14166,8 @@ proof -
   have "outer_sum n vs $$ (i, j) = (?V * (?V\<^sup>\<dagger>)) $$ (i, j)"
     by (simp add: outer_sum_def)
   also have "\<dots> = (\<Sum>l<?k. ?V $$ (i, l) * (?V\<^sup>\<dagger>) $$ (l, j))"
-    using i_lt j_lt V_c Vdag_c by simp
+    by (metis (lifting) V_c Vdag_c carrier_matD(1) dim_col_of_dagger 
+        dim_row_of_dagger i_lt index_matrix_prod j_lt sum.cong)
   also have "\<dots> = (\<Sum>l<?k. (vs ! l) $ i * cnj ((vs ! l) $ j))"
   proof (intro sum.cong refl)
     fix l assume "l \<in> {..<?k}"
@@ -17722,18 +17730,9 @@ next
 qed
 
 lemma pauli_X_squared: "pauli_X * pauli_X = 1\<^sub>m 2"
-proof (rule eq_matI)
-  show "dim_row (pauli_X * pauli_X) = dim_row (1\<^sub>m 2)"
-    by (simp add: pauli_X_def)
-  show "dim_col (pauli_X * pauli_X) = dim_col (1\<^sub>m 2)"
-    by (simp add: pauli_X_def)
-next
-  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
-  hence ij: "i < 2" "j < 2" by auto
-  thus "(pauli_X * pauli_X) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    unfolding pauli_X_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
-qed
+  apply (simp add: pauli_X_def times_mat_def one_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_X_unitary: "unitary pauli_X"
   unfolding unitary_def
@@ -17750,18 +17749,9 @@ next
 qed
 
 lemma pauli_Y_squared: "pauli_Y * pauli_Y = 1\<^sub>m 2"
-proof (rule eq_matI)
-  show "dim_row (pauli_Y * pauli_Y) = dim_row (1\<^sub>m 2)"
-    by (simp add: pauli_Y_def)
-  show "dim_col (pauli_Y * pauli_Y) = dim_col (1\<^sub>m 2)"
-    by (simp add: pauli_Y_def)
-next
-  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
-  hence ij: "i < 2" "j < 2" by auto
-  thus "(pauli_Y * pauli_Y) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    unfolding pauli_Y_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
-qed
+  apply (simp add: pauli_Y_def times_mat_def one_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_Y_unitary: "unitary pauli_Y"
   unfolding unitary_def
@@ -17778,18 +17768,9 @@ next
 qed
 
 lemma pauli_Z_squared: "pauli_Z * pauli_Z = 1\<^sub>m 2"
-proof (rule eq_matI)
-  show "dim_row (pauli_Z * pauli_Z) = dim_row (1\<^sub>m 2)"
-    by (simp add: pauli_Z_def)
-  show "dim_col (pauli_Z * pauli_Z) = dim_col (1\<^sub>m 2)"
-    by (simp add: pauli_Z_def)
-next
-  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
-  hence ij: "i < 2" "j < 2" by auto
-  thus "(pauli_Z * pauli_Z) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    unfolding pauli_Z_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
-qed
+  apply (simp add: pauli_Z_def times_mat_def one_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_Z_unitary: "unitary pauli_Z"
   unfolding unitary_def
@@ -18457,88 +18438,40 @@ lemma Tr_id_2: "Tr (1\<^sub>m 2 :: complex Matrix.mat) = 2"
 (* ---- Pauli products needed for HS orthogonality ---- *)
 
 lemma pauli_X_pauli_Y: "pauli_X * pauli_Y = - \<i> \<cdot>\<^sub>m pauli_Z"
-proof (rule eq_matI)
-  show "dim_row (pauli_X * pauli_Y) = dim_row (- \<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_X * pauli_Y) = dim_col (- \<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-next
-  fix i j assume "i < dim_row (- \<i> \<cdot>\<^sub>m pauli_Z)" "j < dim_col (- \<i> \<cdot>\<^sub>m pauli_Z)"
-  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Z_def)
-  thus "(pauli_X * pauli_Y) $$ (i,j) = (- \<i> \<cdot>\<^sub>m pauli_Z) $$ (i,j)"
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
-qed
+  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
+                   times_mat_def smult_mat_def map_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_Y_pauli_X: "pauli_Y * pauli_X = \<i> \<cdot>\<^sub>m pauli_Z"
-proof (rule eq_matI)
-  show "dim_row (pauli_Y * pauli_X) = dim_row (\<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_Y * pauli_X) = dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-next
-  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Z)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Z)"
-  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Z_def)
-  thus "(pauli_Y * pauli_X) $$ (i,j) = (\<i> \<cdot>\<^sub>m pauli_Z) $$ (i,j)"
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
-qed
+  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
+                   times_mat_def smult_mat_def map_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_Y_pauli_Z: "pauli_Y * pauli_Z = - \<i> \<cdot>\<^sub>m pauli_X"
-proof (rule eq_matI)
-  show "dim_row (pauli_Y * pauli_Z) = dim_row (- \<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_Y * pauli_Z) = dim_col (- \<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-next
-  fix i j assume "i < dim_row (- \<i> \<cdot>\<^sub>m pauli_X)" "j < dim_col (- \<i> \<cdot>\<^sub>m pauli_X)"
-  hence ij: "i < 2" "j < 2" by (auto simp: pauli_X_def)
-  thus "(pauli_Y * pauli_Z) $$ (i,j) = (- \<i> \<cdot>\<^sub>m pauli_X) $$ (i,j)"
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
-qed
+  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
+                   times_mat_def smult_mat_def map_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_Z_pauli_Y: "pauli_Z * pauli_Y = \<i> \<cdot>\<^sub>m pauli_X"
-proof (rule eq_matI)
-  show "dim_row (pauli_Z * pauli_Y) = dim_row (\<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_Z * pauli_Y) = dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-next
-  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_X)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_X)"
-  hence ij: "i < 2" "j < 2" by (auto simp: pauli_X_def)
-  thus "(pauli_Z * pauli_Y) $$ (i,j) = (\<i> \<cdot>\<^sub>m pauli_X) $$ (i,j)"
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
-qed
+  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
+                   times_mat_def smult_mat_def map_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_Z_pauli_X: "pauli_Z * pauli_X = - \<i> \<cdot>\<^sub>m pauli_Y"
-proof (rule eq_matI)
-  show "dim_row (pauli_Z * pauli_X) = dim_row (- \<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_Z * pauli_X) = dim_col (- \<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-next
-  fix i j assume "i < dim_row (- \<i> \<cdot>\<^sub>m pauli_Y)" "j < dim_col (- \<i> \<cdot>\<^sub>m pauli_Y)"
-  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Y_def)
-  thus "(pauli_Z * pauli_X) $$ (i,j) = (- \<i> \<cdot>\<^sub>m pauli_Y) $$ (i,j)"
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
-qed
+  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
+                   times_mat_def smult_mat_def map_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 lemma pauli_X_pauli_Z: "pauli_X * pauli_Z = \<i> \<cdot>\<^sub>m pauli_Y"
-proof (rule eq_matI)
-  show "dim_row (pauli_X * pauli_Z) = dim_row (\<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_X * pauli_Z) = dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-next
-  fix i j assume "i < dim_row (\<i> \<cdot>\<^sub>m pauli_Y)" "j < dim_col (\<i> \<cdot>\<^sub>m pauli_Y)"
-  hence ij: "i < 2" "j < 2" by (auto simp: pauli_Y_def)
-  thus "(pauli_X * pauli_Z) $$ (i,j) = (\<i> \<cdot>\<^sub>m pauli_Y) $$ (i,j)"
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i; cases j; simp add: sumof2 numeral_2_eq_2)
-qed
+  apply (simp add: pauli_X_def pauli_Y_def pauli_Z_def
+                   times_mat_def smult_mat_def map_mat_def)
+  apply (rule cong_mat)
+  by (auto simp: scalar_prod_def)
 
 (* ---- Hilbert-Schmidt inner products: \<langle>A | B\<rangle>\<^sub>HS = Tr(A\<^sup>\<dagger> * B) ----
    Since X, Y, Z, I are Hermitian, A\<^sup>\<dagger> = A here, so we compute Tr(A * B). *)
@@ -18767,8 +18700,8 @@ proof -
     "\<And>x y :: complex.
        (cmod (x + y))\<^sup>2 + (cmod (x - y))\<^sup>2
      = 2 * (cmod x)\<^sup>2 + 2 * (cmod y)\<^sup>2"
-    by (simp add: cmod_power2)
-       (simp add: power2_eq_square ring_distribs algebra_simps)
+    by (simp only: cmod_power2)
+       (simp add: power2_eq_square algebra_simps)
 
   have step_a:
     "(cmod (a0 + a3))\<^sup>2 + (cmod (a0 - a3))\<^sup>2
@@ -20797,57 +20730,12 @@ lemma bit_phase_flip_channel_preserves_density_matrix:
    ============================================================================ *)
 
 lemma pauli_X_times_pauli_Y: "pauli_X * pauli_Y = -\<i> \<cdot>\<^sub>m pauli_Z"
-proof (rule eq_matI)
-  show "dim_row (pauli_X * pauli_Y) = dim_row (-\<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_X * pauli_Y) = dim_col (-\<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-next
-  fix i j
-  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_Z)"
-     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_Z)"
-  hence ij: "i < 2" "j < 2"
-    by (simp_all add: pauli_Z_def)
-  show "(pauli_X * pauli_Y) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_Z) $$ (i, j)"
-    using ij
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
-qed
+  by (rule pauli_X_pauli_Y)
 
 lemma pauli_Y_times_pauli_Z: "pauli_Y * pauli_Z = -\<i> \<cdot>\<^sub>m pauli_X"
-proof (rule eq_matI)
-  show "dim_row (pauli_Y * pauli_Z) = dim_row (-\<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
-  show "dim_col (pauli_Y * pauli_Z) = dim_col (-\<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
-next
-  fix i j
-  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_X)"
-     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_X)"
-  hence ij: "i < 2" "j < 2"
-    by (simp_all add: pauli_X_def)
-  show "(pauli_Y * pauli_Z) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_X) $$ (i, j)"
-    using ij
-    unfolding pauli_Y_def pauli_Z_def pauli_X_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
-qed
+  by (rule pauli_Y_pauli_Z)
 
 lemma pauli_Z_times_pauli_X: "pauli_Z * pauli_X = -\<i> \<cdot>\<^sub>m pauli_Y"
-proof (rule eq_matI)
-  show "dim_row (pauli_Z * pauli_X) = dim_row (-\<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
-  show "dim_col (pauli_Z * pauli_X) = dim_col (-\<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
-next
-  fix i j
-  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_Y)"
-     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_Y)"
-  hence ij: "i < 2" "j < 2"
-    by (simp_all add: pauli_Y_def)
-  show "(pauli_Z * pauli_X) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_Y) $$ (i, j)"
-    using ij
-    unfolding pauli_Z_def pauli_X_def pauli_Y_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
-qed
+  by (rule pauli_Z_pauli_X)
 
 end
