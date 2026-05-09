@@ -11,6 +11,9 @@ theory Separable_Cone
     Vern_Paulsen_QC_3_10.Quantum_Computing_3_10
     Isabelle_Marries_Dirac.Tensor
     "HOL-Analysis.Convex"
+    "HOL-Analysis.Convex_Euclidean_Space"
+    "HOL-Analysis.Polytope"
+    "HOL-Analysis.Starlike"
 begin
 
 text \<open>HOL-Hahn_Banach defines a locale also called \<open>continuous\<close>.
@@ -581,10 +584,47 @@ The infrastructure for all of these steps is now available
 via the euclidean_space + heine_borel instances).
 \<close>
 
+text \<open>The convex cone hulls of \<open>separable_lmat_gen\<close> and \<open>Sprime\<close>
+coincide: every \<open>tensor_lmat \<sigma> \<tau>\<close> with \<open>\<sigma>, \<tau>\<close> PSD can be rescaled
+into \<open>Sprime\<close> by dividing by traces (when nonzero) or replaced by
+0 when a trace is zero.\<close>
+
+lemma convex_cone_hull_separable_eq_Sprime:
+  "(convex_cone hull
+      (separable_lmat_gen
+         :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))
+   = convex_cone hull Sprime"
+  sorry
+
 theorem separable_cone_lmat_closed:
   "closed (separable_cone_lmat
             :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)"
-  sorry
+proof -
+  let ?S' = "Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set"
+  have hull_eq:
+    "separable_cone_lmat
+       = (conic hull (convex hull ?S'))"
+  proof -
+    have nonempty: "?S' \<noteq> {}"
+      sorry
+    have "separable_cone_lmat
+        = convex_cone hull (separable_lmat_gen
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+      unfolding separable_cone_lmat_def ..
+    also have "\<dots> = convex_cone hull ?S'"
+      using convex_cone_hull_separable_eq_Sprime .
+    also have "\<dots> = conic hull (convex hull ?S')"
+      using nonempty by (rule convex_cone_hull_separate_nonempty)
+    finally show ?thesis .
+  qed
+  have compact_convhull: "compact (convex hull ?S')"
+    using compact_Sprime by (rule compact_convex_hull)
+  have zero_not_in: "0 \<notin> convex hull ?S'"
+    sorry
+  show ?thesis
+    unfolding hull_eq
+    by (rule closed_conic_hull) (use compact_convhull zero_not_in in blast)
+qed
 
 
 end
