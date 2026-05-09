@@ -10,6 +10,7 @@ session Vern_Paulsen_QC_3_10 in "." = Isabelle_Marries_Dirac +
     Quantum_Computing_3_10
     "HOL-Hahn_Banach.Hahn_Banach"
     Matrix_Typed
+    Essential_Functional_Analysis
 
 session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10 +
   options [document = false, quick_and_dirty = true, timeout = 3600]
