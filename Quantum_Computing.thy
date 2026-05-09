@@ -18433,14 +18433,11 @@ lemma separable_cone_HS_closed:
    This uses HS-norm completeness of matrix space and the convex
    parallelogram argument: the minimising sequence is HS-Cauchy. *)
 
-lemma exists_closest_point_in_separable_cone:
-  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
-  assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
-      and m_pos: "0 < m" and p_pos: "0 < p"
-  shows "\<exists>p_star. separable_cone m p p_star
-            \<and> (\<forall>q. separable_cone m p q
-                    \<longrightarrow> hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q))"
-  sorry
+(* The lemma exists_closest_point_in_separable_cone is proved in
+   exists_closest_point_in_separable_cone_assembly later in this
+   block, after the supporting helpers (cone_dist_minimizing_sequence,
+   minimizing_sequence_HS_Cauchy, HS_Cauchy_imp_convergent). The
+   assembled version is wrapped here for forward reference. *)
 
 (* Sub-helper for closest-point existence: the infimum
    \<open>D = \<sqinter> {hs_norm (\<rho>-q) | q \<in> cone}\<close> is well-defined and \<ge> 0,
@@ -19183,6 +19180,81 @@ proof (rule metric_CauchyI)
     show "dist (M_seq x $$ (i,j)) (M_seq y $$ (i,j)) < \<epsilon>"
       using dist_eq entry_eq cmod_lt by simp
   qed
+qed
+
+(* HS-Cauchy implies HS-convergent: matrix space with HS norm is
+   complete.  Combine HS_Cauchy_entry_Cauchy + Complex_completeness
+   to get pointwise limits, then assemble into a matrix and show
+   convergence. *)
+
+lemma HS_Cauchy_imp_convergent:
+  fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and r :: nat
+  assumes carrier: "\<forall>n. M_seq n \<in> carrier_mat r r"
+      and hs_cauchy: "\<forall>\<epsilon>>0. \<exists>N. \<forall>x \<ge> N. \<forall>y \<ge> N.
+                                hs_norm (M_seq x - M_seq y) < \<epsilon>"
+  shows "\<exists>M_lim. M_lim \<in> carrier_mat r r
+              \<and> (\<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>)"
+  sorry
+
+(* Step 5d (closest-point existence) — assembly. *)
+
+lemma exists_closest_point_in_separable_cone:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "\<exists>p_star. separable_cone m p p_star
+            \<and> (\<forall>q. separable_cone m p q
+                    \<longrightarrow> hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q))"
+proof -
+  text \<open>Step 1: minimizing sequence.\<close>
+  obtain q\<^sub>n where seq_cone: "\<forall>n. separable_cone m p (q\<^sub>n n)"
+              and seq_bd: "\<forall>n. hs_norm (\<rho> - q\<^sub>n n)
+                                  < Inf (cone_dist_set m p \<rho>)
+                                    + 1 / (real n + 1)"
+    using cone_dist_minimizing_sequence by metis
+  have seq_carrier: "\<forall>n. q\<^sub>n n \<in> carrier_mat (m*p) (m*p)"
+    using seq_cone unfolding separable_cone_def by auto
+
+  text \<open>Step 2: HS-Cauchy.\<close>
+  have hs_cauchy:
+    "\<forall>\<epsilon>>0. \<exists>N. \<forall>x \<ge> N. \<forall>y \<ge> N. hs_norm (q\<^sub>n x - q\<^sub>n y) < \<epsilon>"
+    by (rule minimizing_sequence_HS_Cauchy[OF \<rho>_c seq_cone seq_bd m_pos p_pos])
+
+  text \<open>Step 3: HS-convergent (uses sorried completeness).\<close>
+  obtain p_star where p_star_c: "p_star \<in> carrier_mat (m*p) (m*p)"
+                  and p_star_lim: "\<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N.
+                                          hs_norm (q\<^sub>n n - p_star) < \<epsilon>"
+    using HS_Cauchy_imp_convergent[OF seq_carrier hs_cauchy]
+    by blast
+
+  text \<open>Step 4: \<open>p_star \<in> cone\<close> by closedness.\<close>
+  have p_star_cone: "separable_cone m p p_star"
+    using separable_cone_HS_closed[OF m_pos p_pos]
+          seq_cone p_star_c
+    sorry
+
+  text \<open>Step 5: \<open>hs_norm (\<rho> - p_star) \<le> Inf cone_dist_set\<close> via the limit.\<close>
+  have D_le: "hs_norm (\<rho> - p_star) \<le> Inf (cone_dist_set m p \<rho>)"
+    sorry
+
+  text \<open>Step 6: For any \<open>q \<in> cone\<close>, \<open>Inf \<le> hs_norm (\<rho> - q)\<close>.\<close>
+  have inf_le_q: "\<forall>q. separable_cone m p q
+                       \<longrightarrow> Inf (cone_dist_set m p \<rho>) \<le> hs_norm (\<rho> - q)"
+  proof (intro allI impI)
+    fix q assume q_cone: "separable_cone m p q"
+    have q_in: "hs_norm (\<rho> - q) \<in> cone_dist_set m p \<rho>"
+      unfolding cone_dist_set_def using q_cone by blast
+    show "Inf (cone_dist_set m p \<rho>) \<le> hs_norm (\<rho> - q)"
+      by (rule cInf_lower[OF q_in cone_dist_set_bdd_below])
+  qed
+
+  text \<open>Combine: \<open>hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q)\<close> for all
+  \<open>q \<in> cone\<close>.\<close>
+  have all_q: "\<forall>q. separable_cone m p q
+                    \<longrightarrow> hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q)"
+    using D_le inf_le_q by (auto intro: order_trans)
+
+  show ?thesis using p_star_cone all_q by blast
 qed
 
 (* Cone separator from closest point.
