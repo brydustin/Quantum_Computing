@@ -550,5 +550,15 @@ proof -
     by (subst lmat_eq_iff_entries) (auto simp: entry_zero)
 qed
 
+lemma zero_inner_Basis_lmat:
+  fixes u :: "('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat"
+  shows "inner (0 :: ('a, 'm, 'n) lmat) u = 0"
+  by simp
+
+lemma Basis_lmat_perp_zero:
+  fixes x :: "('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat"
+  shows "(\<forall>u \<in> Basis_lmat_set. inner x u = 0) \<longleftrightarrow> x = 0"
+  using Basis_lmat_perp_imp_zero zero_inner_Basis_lmat by metis
+
 
 end
