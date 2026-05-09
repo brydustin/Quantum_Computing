@@ -18816,6 +18816,140 @@ next
     by (simp add: hs_norm_def)
 qed
 
+(* Triangle inequality for the raw HS norm.  Adapts the lmat-level
+   proof using \<open>hs_cauchy_schwarz_re\<close>. *)
+
+lemma hs_norm_triangle:
+  fixes A B :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat n n"
+      and B_c: "B \<in> carrier_mat n n"
+  shows "hs_norm (A + B) \<le> hs_norm A + hs_norm B"
+proof -
+  have dr: "dim_row A = dim_row B" using A_c B_c by auto
+  have dc: "dim_col A = dim_col B" using A_c B_c by auto
+  let ?aa = "Re (\<langle>\<langle> A | A \<rangle>\<rangle>)"
+  let ?bb = "Re (\<langle>\<langle> B | B \<rangle>\<rangle>)"
+  let ?ab = "Re (\<langle>\<langle> A | B \<rangle>\<rangle>)"
+  have aa_nn: "?aa \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+  have bb_nn: "?bb \<ge> 0" by (rule hs_inner_prod_self_nonneg)
+  have ab_eq_ba: "?ab = Re (\<langle>\<langle> B | A \<rangle>\<rangle>)"
+    by (metis cnj.sel(1) dc dr hs_inner_prod_cnj)
+
+  have ip_sum:
+    "\<langle>\<langle> A + B | A + B \<rangle>\<rangle>
+       = \<langle>\<langle> A | A \<rangle>\<rangle> + \<langle>\<langle> A | B \<rangle>\<rangle> + \<langle>\<langle> B | A \<rangle>\<rangle> + \<langle>\<langle> B | B \<rangle>\<rangle>"
+  proof -
+    text \<open>Right-add expansion of \<open>\<langle>\<langle> A | A + B \<rangle>\<rangle>\<close>.\<close>
+    have d5: "dim_row A = dim_row A" by simp
+    have d6: "dim_col A = dim_col A" by simp
+    have d7: "dim_row B = dim_row A" using dr by simp
+    have d8: "dim_col B = dim_col A" using dc by simp
+    have step2: "\<langle>\<langle> A | A + B \<rangle>\<rangle> = \<langle>\<langle> A | A \<rangle>\<rangle> + \<langle>\<langle> A | B \<rangle>\<rangle>"
+      using hs_inner_prod_right_add[OF d5 d6 d7 d8] .
+    have d9: "dim_row A = dim_row B" using dr by simp
+    have d10: "dim_col A = dim_col B" using dc by simp
+    have d11: "dim_row B = dim_row B" by simp
+    have d12: "dim_col B = dim_col B" by simp
+    have step3: "\<langle>\<langle> B | A + B \<rangle>\<rangle> = \<langle>\<langle> B | A \<rangle>\<rangle> + \<langle>\<langle> B | B \<rangle>\<rangle>"
+      using hs_inner_prod_right_add[OF d9 d10 d11 d12] .
+    text \<open>Left-add via conjugate symmetry to avoid the
+    \<open>hs_inner_prod_left_add\<close> OF-clash.\<close>
+    have AB_dr: "dim_row (A + B) = dim_row B" using B_c by auto
+    have AB_dc: "dim_col (A + B) = dim_col B" using B_c by auto
+    have self_real: "\<langle>\<langle> A + B | A + B \<rangle>\<rangle>
+                       = cnj (\<langle>\<langle> A + B | A + B \<rangle>\<rangle>)"
+      using hs_inner_prod_self_real by (metis Reals_cnj_iff)
+    have flip: "\<langle>\<langle> A + B | A + B \<rangle>\<rangle> = \<langle>\<langle> A + B | A + B \<rangle>\<rangle>" ..
+    text \<open>Use right-add on \<open>\<langle>\<langle> A + B | A + B \<rangle>\<rangle>\<close>.\<close>
+    have e1: "dim_row (A + B) = dim_row (A + B)" by simp
+    have e2: "dim_col (A + B) = dim_col (A + B)" by simp
+    have step1_rev: "\<langle>\<langle> A + B | A + B \<rangle>\<rangle>
+                      = \<langle>\<langle> A + B | A \<rangle>\<rangle> + \<langle>\<langle> A + B | B \<rangle>\<rangle>"
+    proof -
+      have h1: "dim_row A = dim_row (A + B)" using dr by simp
+      have h2: "dim_col A = dim_col (A + B)" using dc by simp
+      have h3: "dim_row B = dim_row (A + B)" using dr by simp
+      have h4: "dim_col B = dim_col (A + B)" using dc by simp
+      show ?thesis
+        using hs_inner_prod_right_add[OF h1 h2 h3 h4] .
+    qed
+    text \<open>Convert each \<open>\<langle>\<langle> A+B | X \<rangle>\<rangle>\<close> via conjugate symmetry.\<close>
+    have flipA: "\<langle>\<langle> A + B | A \<rangle>\<rangle> = cnj (\<langle>\<langle> A | A + B \<rangle>\<rangle>)"
+      using AB_dr AB_dc dr dc
+      by (intro hs_inner_prod_cnj) auto
+    have flipB: "\<langle>\<langle> A + B | B \<rangle>\<rangle> = cnj (\<langle>\<langle> B | A + B \<rangle>\<rangle>)"
+      using AB_dr AB_dc dr dc
+      by (intro hs_inner_prod_cnj) auto
+    text \<open>Compute the right-add expansions of \<open>cnj(...)\<close> via step2/step3.\<close>
+    have flipA_eq: "cnj (\<langle>\<langle> A | A + B \<rangle>\<rangle>)
+                      = cnj (\<langle>\<langle> A | A \<rangle>\<rangle>) + cnj (\<langle>\<langle> A | B \<rangle>\<rangle>)"
+      using step2 by simp
+    have flipB_eq: "cnj (\<langle>\<langle> B | A + B \<rangle>\<rangle>)
+                      = cnj (\<langle>\<langle> B | A \<rangle>\<rangle>) + cnj (\<langle>\<langle> B | B \<rangle>\<rangle>)"
+      using step3 by simp
+    text \<open>And then \<open>cnj\<close> on \<open>\<langle>\<langle>X|X\<rangle>\<rangle>\<close> gives the swap.\<close>
+    have AA_real: "cnj (\<langle>\<langle> A | A \<rangle>\<rangle>) = \<langle>\<langle> A | A \<rangle>\<rangle>"
+      using hs_inner_prod_self_real by (metis Reals_cnj_iff)
+    have BB_real: "cnj (\<langle>\<langle> B | B \<rangle>\<rangle>) = \<langle>\<langle> B | B \<rangle>\<rangle>"
+      using hs_inner_prod_self_real by (metis Reals_cnj_iff)
+    have cnj_AB: "cnj (\<langle>\<langle> A | B \<rangle>\<rangle>) = \<langle>\<langle> B | A \<rangle>\<rangle>"
+      using hs_inner_prod_cnj[OF d9 d10] by simp
+    have cnj_BA: "cnj (\<langle>\<langle> B | A \<rangle>\<rangle>) = \<langle>\<langle> A | B \<rangle>\<rangle>"
+      using hs_inner_prod_cnj[OF d7 d8] by simp
+    have flipA_full: "\<langle>\<langle> A + B | A \<rangle>\<rangle>
+                        = \<langle>\<langle> A | A \<rangle>\<rangle> + \<langle>\<langle> B | A \<rangle>\<rangle>"
+      using flipA flipA_eq AA_real cnj_AB by simp
+    have flipB_full: "\<langle>\<langle> A + B | B \<rangle>\<rangle>
+                        = \<langle>\<langle> A | B \<rangle>\<rangle> + \<langle>\<langle> B | B \<rangle>\<rangle>"
+      using flipB flipB_eq BB_real cnj_BA by simp
+    show ?thesis using step1_rev flipA_full flipB_full by (simp add: ac_simps)
+  qed
+  have re_sum: "Re (\<langle>\<langle> A + B | A + B \<rangle>\<rangle>) = ?aa + 2 * ?ab + ?bb"
+    using ip_sum ab_eq_ba by simp
+
+  have cs: "?ab\<^sup>2 \<le> ?aa * ?bb"
+    using hs_cauchy_schwarz_re[OF dr dc] .
+  have ab_le: "?ab \<le> sqrt ?aa * sqrt ?bb"
+  proof -
+    have aa_bb_nn: "0 \<le> ?aa * ?bb" using aa_nn bb_nn by simp
+    have "?ab \<le> \<bar>?ab\<bar>" by simp
+    also have "\<bar>?ab\<bar> = sqrt (?ab\<^sup>2)" by simp
+    also have "\<dots> \<le> sqrt (?aa * ?bb)"
+      using cs by (rule real_sqrt_le_mono)
+    also have "\<dots> = sqrt ?aa * sqrt ?bb"
+      by (rule real_sqrt_mult)
+    finally show ?thesis .
+  qed
+
+  have target_sq:
+    "(hs_norm (A + B))\<^sup>2 \<le> (hs_norm A + hs_norm B)\<^sup>2"
+  proof -
+    have lhs: "(hs_norm (A + B))\<^sup>2 = ?aa + 2 * ?ab + ?bb"
+      using hs_norm_sq[of "A + B"] re_sum by simp
+    have hA: "hs_norm A = sqrt ?aa" by (simp add: hs_norm_def)
+    have hB: "hs_norm B = sqrt ?bb" by (simp add: hs_norm_def)
+    have rhs:
+      "(hs_norm A + hs_norm B)\<^sup>2
+         = ?aa + 2 * (sqrt ?aa * sqrt ?bb) + ?bb"
+    proof -
+      have "(hs_norm A + hs_norm B)\<^sup>2 = (sqrt ?aa + sqrt ?bb)\<^sup>2"
+        by (simp add: hA hB)
+      also have "\<dots> = (sqrt ?aa)\<^sup>2 + 2 * (sqrt ?aa * sqrt ?bb) + (sqrt ?bb)\<^sup>2"
+        by (simp add: power2_sum)
+      also have "\<dots> = ?aa + 2 * (sqrt ?aa * sqrt ?bb) + ?bb"
+        using aa_nn bb_nn by simp
+      finally show ?thesis .
+    qed
+    show ?thesis using lhs rhs ab_le by (simp add: algebra_simps)
+  qed
+
+  have lhs_nn: "0 \<le> hs_norm (A + B)" by (rule hs_norm_nonneg)
+  have rhs_nn: "0 \<le> hs_norm A + hs_norm B"
+    using hs_norm_nonneg[of A] hs_norm_nonneg[of B] by simp
+  show ?thesis
+    using target_sq lhs_nn rhs_nn power2_le_imp_le by blast
+qed
+
 (* Quantitative parallelogram identity for matrices: writes the
    distance \<open>\<parallel>q\<^sub>2 - q\<^sub>1\<parallel>\<^sup>2\<close> in terms of distances of \<open>q\<^sub>1\<close>, \<open>q\<^sub>2\<close>
    to a reference point \<open>\<rho>\<close> and the midpoint distance.
