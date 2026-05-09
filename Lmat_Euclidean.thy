@@ -722,4 +722,37 @@ proof -
 qed
 
 
+section \<open>Component-wise bounds via the L2 norm\<close>
+
+lemma norm_lmat_index_le:
+  fixes M :: "('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat"
+  assumes "i < CARD('m)" "j < CARD('n)"
+  shows "norm (unwrap_lm M $$ (i, j)) \<le> norm M"
+proof -
+  have ij_mem: "(i, j) \<in> {0..<CARD('m)} \<times> {0..<CARD('n)}" using assms by auto
+  have "norm (unwrap_lm M $$ (i, j))
+        = (\<lambda>(i, j). norm (unwrap_lm M $$ (i, j))) (i, j)" by simp
+  also have "\<dots> \<le> L2_set (\<lambda>(i, j). norm (unwrap_lm M $$ (i, j)))
+                          ({0..<CARD('m)} \<times> {0..<CARD('n)})"
+    using ij_mem by (intro member_le_L2_set) simp_all
+  also have "\<dots> = norm M" unfolding norm_lmat_def ..
+  finally show ?thesis .
+qed
+
+lemma dist_lmat_index_le:
+  fixes M N :: "('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat"
+  assumes "i < CARD('m)" "j < CARD('n)"
+  shows "dist (unwrap_lm M $$ (i, j)) (unwrap_lm N $$ (i, j)) \<le> dist M N"
+proof -
+  have "dist (unwrap_lm M $$ (i, j)) (unwrap_lm N $$ (i, j))
+      = norm (unwrap_lm M $$ (i, j) - unwrap_lm N $$ (i, j))"
+    by (simp add: dist_norm)
+  also have "\<dots> = norm (unwrap_lm (M - N) $$ (i, j))"
+    using assms by simp
+  also have "\<dots> \<le> norm (M - N)" using norm_lmat_index_le[OF assms] .
+  also have "\<dots> = dist M N" by (simp add: dist_norm)
+  finally show ?thesis .
+qed
+
+
 end
