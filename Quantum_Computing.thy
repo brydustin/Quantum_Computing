@@ -18659,6 +18659,68 @@ proof -
   show ?thesis using minus_norm plus_norm by simp
 qed
 
+(* Helper: every entry's modulus squared is bounded by HS norm squared. *)
+
+lemma cmod_entry_sq_le_hs_norm_sq:
+  fixes A :: "complex Matrix.mat" and i j :: nat
+  assumes A_c: "A \<in> carrier_mat n n"
+      and i_lt: "i < n" and j_lt: "j < n"
+  shows "(cmod (A $$ (i,j)))\<^sup>2 \<le> (hs_norm A)\<^sup>2"
+proof -
+  have dr: "dim_row A = n" using A_c by auto
+  have dc: "dim_col A = n" using A_c by auto
+  let ?term = "\<lambda>i' j'. (cmod (A $$ (i',j')))\<^sup>2"
+  have entry_re:
+    "\<And>i' j'. Re (cnj (A $$ (i',j')) * A $$ (i',j')) = ?term i' j'"
+  proof -
+    fix i' j'
+    let ?z = "A $$ (i',j')"
+    have eq1: "cnj ?z * ?z = ?z * cnj ?z" by (simp add: mult.commute)
+    have eq2: "?z * cnj ?z = complex_of_real ((cmod ?z)\<^sup>2)"
+      using complex_norm_square[of ?z, symmetric] by simp
+    have eq3: "Re (complex_of_real ((cmod ?z)\<^sup>2)) = (cmod ?z)\<^sup>2" by simp
+    show "Re (cnj ?z * ?z) = (cmod ?z)\<^sup>2"
+      using eq1 eq2 eq3 by simp
+  qed
+  have hs_eq: "(hs_norm A)\<^sup>2
+                 = (\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}. ?term i' j')"
+  proof -
+    have step1: "(hs_norm A)\<^sup>2 = Re (\<langle>\<langle> A | A \<rangle>\<rangle>)" by (rule hs_norm_sq)
+    have step2: "Re (\<langle>\<langle> A | A \<rangle>\<rangle>)
+                  = Re (\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}.
+                          cnj (A $$ (i',j')) * A $$ (i',j'))"
+      unfolding hs_inner_prod_def using dr dc by simp
+    have step3: "Re (\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}.
+                          cnj (A $$ (i',j')) * A $$ (i',j'))
+                   = (\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}.
+                          Re (cnj (A $$ (i',j')) * A $$ (i',j')))"
+      by (simp add: Re_sum)
+    have step4: "(\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}.
+                     Re (cnj (A $$ (i',j')) * A $$ (i',j')))
+                   = (\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}. ?term i' j')"
+    proof (intro sum.cong refl)
+      fix i' j'
+      show "Re (cnj (A $$ (i',j')) * A $$ (i',j')) = ?term i' j'"
+        by (rule entry_re)
+    qed
+    show ?thesis using step1 step2 step3 step4 by simp
+  qed
+  have one_term_le_double_sum:
+    "?term i j \<le> (\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}. ?term i' j')"
+  proof -
+    have inner_bd: "?term i j \<le> (\<Sum>j'\<in>{0..<n}. ?term i j')"
+      using j_lt
+      by (intro member_le_sum) (auto simp: zero_le_power2)
+    have outer_bd:
+      "(\<Sum>j'\<in>{0..<n}. ?term i j')
+         \<le> (\<Sum>i'\<in>{0..<n}. \<Sum>j'\<in>{0..<n}. ?term i' j')"
+      using i_lt
+      by (intro member_le_sum) (auto intro: sum_nonneg simp: zero_le_power2)
+    show ?thesis using inner_bd outer_bd by linarith
+  qed
+  show ?thesis using hs_eq one_term_le_double_sum by simp
+qed
+
 (* Helper: HS norm vanishes iff the matrix is zero (equivalent of
    hs_inner_prod_self_zero_iff for the norm). *)
 
