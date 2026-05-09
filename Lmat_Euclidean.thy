@@ -315,4 +315,50 @@ lemma lmat_axis_index [simp]:
   using assms by simp
 
 
+text \<open>Inner product against a single matrix-unit basis vector picks out
+one matrix entry.\<close>
+
+lemma inner_lmat_axis:
+  fixes u :: "'a :: real_inner"
+    and M :: "('a, 'm :: finite, 'n :: finite) lmat"
+  assumes ij: "i < CARD('m)" "j < CARD('n)"
+  shows "inner M (lmat_axis i j u :: ('a, 'm, 'n) lmat)
+           = inner (unwrap_lm M $$ (i, j)) u"
+proof -
+  let ?S = "{0..<CARD('m)} \<times> {0..<CARD('n)}"
+  have ij_mem: "(i, j) \<in> ?S" using ij by auto
+  have step: "inner M (lmat_axis i j u :: ('a, 'm, 'n) lmat)
+            = (\<Sum>p \<in> ?S. (if p = (i, j) then inner (unwrap_lm M $$ (i, j)) u else 0))"
+    unfolding inner_lmat_def
+  proof (rule sum.cong, simp)
+    fix p assume p_in: "p \<in> ?S"
+    obtain r s where p_eq: "p = (r, s)" by (cases p)
+    from p_in p_eq have rs: "r < CARD('m)" "s < CARD('n)" by auto
+    show "(case p of (k, l) \<Rightarrow> inner (unwrap_lm M $$ (k, l))
+                          (unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (k, l)))
+        = (if p = (i, j) then inner (unwrap_lm M $$ (i, j)) u else 0)"
+    proof (cases "(r, s) = (i, j)")
+      case True
+      hence r_eq: "r = i" and s_eq: "s = j" by auto
+      show ?thesis
+        unfolding p_eq prod.case r_eq s_eq
+        using ij by simp
+    next
+      case False
+      hence cond: "\<not> (r = i \<and> s = j)" by auto
+      have ax_form: "unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (r, s)
+                   = (if r = i \<and> s = j then u else 0)"
+        using rs by simp
+      have ax0: "unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (r, s) = 0"
+        using ax_form cond by simp
+      show ?thesis unfolding p_eq prod.case
+        using ax0 False cond by force
+    qed
+  qed
+  also have "\<dots> = inner (unwrap_lm M $$ (i, j)) u"
+    using ij_mem by (subst sum.delta) auto
+  finally show ?thesis .
+qed
+
+
 end
