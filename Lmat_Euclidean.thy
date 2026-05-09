@@ -519,5 +519,36 @@ proof -
     using step2 mem_i unfolding Basis_lmat_set_def by blast
 qed
 
+lemma Basis_lmat_perp_imp_zero:
+  fixes x :: "('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat"
+  assumes *: "\<forall>u \<in> Basis_lmat_set. inner x u = 0"
+  shows "x = 0"
+proof -
+  have entry_zero: "\<And>i j. i < CARD('m) \<Longrightarrow> j < CARD('n)
+                         \<Longrightarrow> unwrap_lm x $$ (i, j) = 0"
+  proof -
+    fix i j
+    assume i_lt: "i < CARD('m)"
+    assume j_lt: "j < CARD('n)"
+    have basis_perp: "\<forall>u :: 'a \<in> Basis. inner (unwrap_lm x $$ (i, j)) u = 0"
+    proof
+      fix u :: 'a assume uB: "u \<in> Basis"
+      have axis_mem: "(lmat_axis i j u :: ('a, 'm, 'n) lmat) \<in> Basis_lmat_set"
+        using axis_mem_Basis_lmat_set[OF i_lt j_lt uB] .
+      have axis_perp: "inner x (lmat_axis i j u :: ('a, 'm, 'n) lmat) = 0"
+        using * axis_mem by blast
+      have axis_pick: "inner x (lmat_axis i j u :: ('a, 'm, 'n) lmat)
+                     = inner (unwrap_lm x $$ (i, j)) u"
+        using inner_lmat_axis[OF i_lt j_lt] .
+      from axis_perp axis_pick
+      show "inner (unwrap_lm x $$ (i, j)) u = 0" by simp
+    qed
+    thus "unwrap_lm x $$ (i, j) = 0"
+      using euclidean_all_zero_iff by blast
+  qed
+  show ?thesis
+    by (subst lmat_eq_iff_entries) (auto simp: entry_zero)
+qed
+
 
 end
