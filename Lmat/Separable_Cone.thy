@@ -381,15 +381,31 @@ section \<open>Trace on lmat (sorried)\<close>
 definition Tr_lmat :: "(complex, 'k :: finite, 'k) lmat \<Rightarrow> complex" where
   "Tr_lmat M = (\<Sum>i = 0..<CARD('k). unwrap_lm M $$ (i, i))"
 
-text \<open>Continuity proof via term-wise continuity + sum continuity.
-Currently sorried because the \<open>intro\<close> step on
-\<open>continuous_on_unwrap_lm_index\<close> with \<open>'m = 'n = 'k\<close> hangs the
-build.\<close>
-
 lemma continuous_on_Tr_lmat:
   fixes S :: "(complex, 'k :: finite, 'k) lmat set"
   shows "continuous_on S Tr_lmat"
-  sorry
+proof -
+  have term_cont:
+    "\<And>i. i < CARD('k)
+       \<Longrightarrow> continuous_on S (\<lambda>M :: (complex, 'k, 'k) lmat. unwrap_lm M $$ (i, i))"
+  proof -
+    fix i :: nat
+    assume i_lt: "i < CARD('k)"
+    show "continuous_on S (\<lambda>M :: (complex, 'k, 'k) lmat. unwrap_lm M $$ (i, i))"
+      using continuous_on_unwrap_lm_index[OF i_lt i_lt] .
+  qed
+  have sum_cont:
+    "continuous_on S
+       (\<lambda>M :: (complex, 'k, 'k) lmat.
+          \<Sum>i = 0..<CARD('k). unwrap_lm M $$ (i, i))"
+  proof (rule continuous_on_sum)
+    fix i assume "i \<in> {0..<CARD('k)}"
+    hence i_lt: "i < CARD('k)" by simp
+    show "continuous_on S (\<lambda>M :: (complex, 'k, 'k) lmat. unwrap_lm M $$ (i, i))"
+      by (rule term_cont [OF i_lt])
+  qed
+  show ?thesis using sum_cont unfolding Tr_lmat_def by simp
+qed
 
 lemma closed_unit_trace_lmat:
   "closed {M :: (complex, 'k :: finite, 'k) lmat. Tr_lmat M = 1}"
