@@ -294,4 +294,25 @@ qed
 end
 
 
+section \<open>Basis: matrix units carrying a basis vector\<close>
+
+definition lmat_axis :: "nat \<Rightarrow> nat \<Rightarrow> 'a :: zero
+                       \<Rightarrow> ('a, 'm :: finite, 'n :: finite) lmat" where
+  "lmat_axis i j u = wrap_lm (Matrix.mat (CARD('m)) (CARD('n))
+                              (\<lambda>(r, s). if r = i \<and> s = j then u else 0))"
+
+lemma unwrap_lmat_axis [simp]:
+  "unwrap_lm (lmat_axis i j u :: ('a :: zero, 'm :: finite, 'n :: finite) lmat)
+     = Matrix.mat (CARD('m)) (CARD('n))
+                   (\<lambda>(r, s). if r = i \<and> s = j then u else 0)"
+  unfolding lmat_axis_def by (subst wrap_lm_inverse) auto
+
+lemma lmat_axis_index [simp]:
+  fixes u :: "'a :: zero"
+  assumes "r < CARD('m :: finite)" "s < CARD('n :: finite)"
+  shows "unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (r, s)
+           = (if r = i \<and> s = j then u else 0)"
+  using assms by simp
+
+
 end
