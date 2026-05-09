@@ -899,18 +899,16 @@ proof -
   let ?S' = "Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set"
   have hull_eq:
     "separable_cone_lmat
-       = (conic hull (convex hull ?S'))"
+       = insert 0 (conic hull (convex hull ?S'))"
   proof -
-    have nonempty: "?S' \<noteq> {}"
-      sorry
     have "separable_cone_lmat
         = convex_cone hull (separable_lmat_gen
                               :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
       unfolding separable_cone_lmat_def ..
     also have "\<dots> = convex_cone hull ?S'"
       using convex_cone_hull_separable_eq_Sprime .
-    also have "\<dots> = conic hull (convex hull ?S')"
-      using nonempty by (rule convex_cone_hull_separate_nonempty)
+    also have "\<dots> = insert 0 (conic hull (convex hull ?S'))"
+      by (rule convex_cone_hull_separate)
     finally show ?thesis .
   qed
   have compact_convhull: "compact (convex hull ?S')"
@@ -960,9 +958,15 @@ proof -
     qed
     from tr_zero tr_one show False by simp
   qed
+  have closed_inner: "closed (conic hull (convex hull ?S'))"
+    by (rule closed_conic_hull) (use compact_convhull zero_not_in in blast)
+  have closed_zero: "closed ({0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat})"
+    by simp
+  have closed_union: "closed ({0} \<union> conic hull (convex hull ?S'))"
+    using closed_zero closed_inner by (rule closed_Un)
   show ?thesis
     unfolding hull_eq
-    by (rule closed_conic_hull) (use compact_convhull zero_not_in in blast)
+    using closed_union by simp
 qed
 
 
