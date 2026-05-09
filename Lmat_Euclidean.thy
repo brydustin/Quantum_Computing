@@ -1,15 +1,46 @@
 (*
   Title:    Lmat_Euclidean.thy
   Purpose:  Equip the typed-dimension matrix wrapper lmat with the
-            HOL-Analysis typeclass tower:
-              real_vector \<subseteq> real_normed_vector \<subseteq> real_inner
-              \<subseteq> euclidean_space \<subseteq> heine_borel.
+            full HOL-Analysis typeclass tower so that convex, closed,
+            compactness, and Caratheodory results apply directly.
 
-  Status:   Stage 1 (real_vector) is complete and verified to build.
-            The remaining instances (real_normed_vector, real_inner,
-            euclidean_space, heine_borel) are work-in-progress; they
-            will be added in subsequent commits, each independently
-            verified to build clean before being committed.
+  Status:   COMPLETE.
+
+    Typeclass instances on (\<^typ>\<open>('a, 'm :: finite, 'n :: finite) lmat\<close>):
+
+      scaleR                  (for 'a :: real_vector)
+      real_vector             (for 'a :: real_vector)
+      dist                    (for 'a :: metric_space)
+      uniformity_dist         (for 'a :: metric_space)
+      metric_space            (for 'a :: metric_space)
+      norm                    (for 'a :: real_normed_vector)
+      sgn                     (for 'a :: real_normed_vector)
+      real_normed_vector      (for 'a :: real_normed_vector)
+      inner                   (for 'a :: real_inner)
+      real_inner              (for 'a :: real_inner)
+      Basis                   (for 'a :: euclidean_space)
+      euclidean_space         (for 'a :: euclidean_space)
+      heine_borel             (free; for 'a :: euclidean_space)
+
+    Specialisation: when 'a = complex, every (complex, 'm, 'n) lmat
+    is a finite-dimensional real Hilbert space, with dimension
+    \<open>2 * CARD('m) * CARD('n)\<close> (via DIM_lmat).  The norm/inner-product
+    are the Hilbert-Schmidt norm/Re-inner-product.
+
+    Useful technical lemmas:
+      lmat_eq_iff_entries          – pointwise equality test
+      lmat_axis                    – matrix-unit basis vector
+      lmat_axis_eq_iff             – equality criterion for axis vectors
+      inner_lmat_axis              – inner with axis picks one entry
+      inner_lmat_axis_axis         – axis inner product
+      Basis_lmat_set / Basis_lmat  – basis enumeration
+      Basis_lmat_orthonormal       – basis is orthonormal
+      Basis_lmat_perp_zero         – x \<perp> Basis \<Longleftrightarrow> x = 0
+      DIM_lmat                     – dimension formula
+      norm_lmat_index_le           – entry norm \<le> total norm
+      dist_lmat_index_le           – entry distance \<le> total distance
+      tendsto_unwrap_lm_index      – lmat convergence \<Longrightarrow> entry convergence
+      LIMSEQ_unwrap_lm_index       – sequential variant
 *)
 
 theory Lmat_Euclidean
