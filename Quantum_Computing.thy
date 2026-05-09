@@ -19653,9 +19653,72 @@ proof -
     using separable_cone_HS_closed[OF m_pos p_pos] seq_cone p_star_c lim_zero
     by blast
 
-  text \<open>Step 5: \<open>hs_norm (\<rho> - p_star) \<le> Inf cone_dist_set\<close> via the limit.\<close>
+  text \<open>Step 5: \<open>hs_norm (\<rho> - p_star) \<le> Inf cone_dist_set\<close>.
+  For each \<open>\<epsilon> > 0\<close>, pick \<open>n\<close> large enough that
+  \<open>hs_norm (q\<^sub>n n - p_star) < \<epsilon>/2\<close> and \<open>1/(n+1) < \<epsilon>/2\<close>;
+  triangle inequality gives
+  \<open>hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q\<^sub>n n)
+                          + hs_norm (q\<^sub>n n - p_star) < D + \<epsilon>\<close>.
+  Taking \<open>\<epsilon> \<to> 0\<close> closes.\<close>
   have D_le: "hs_norm (\<rho> - p_star) \<le> Inf (cone_dist_set m p \<rho>)"
-    sorry
+  proof (rule field_le_epsilon)
+    fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+    let ?D = "Inf (cone_dist_set m p \<rho>)"
+    obtain N1 where N1_bd:
+      "\<forall>n \<ge> N1. hs_norm (q\<^sub>n n - p_star) < \<epsilon>/2"
+      using p_star_lim \<epsilon>_pos by (auto dest: spec[where x="\<epsilon>/2"])
+    obtain N2 where N2_big: "real N2 > 2/\<epsilon>"
+      using reals_Archimedean2[of "2/\<epsilon>"] by blast
+    have N2_plus1_big: "real N2 + 1 > 2/\<epsilon>" using N2_big by linarith
+    have N2_recip: "1 / (real N2 + 1) < \<epsilon>/2"
+    proof -
+      have N2_pos: "0 < real N2 + 1" by simp
+      have ratio_pos: "0 < 2 / \<epsilon>" using \<epsilon>_pos by simp
+      have "(real N2 + 1) * \<epsilon> > 2"
+        using N2_plus1_big \<epsilon>_pos
+        by (simp add: pos_divide_less_eq mult.commute)
+      hence "1 / (real N2 + 1) < \<epsilon> / 2"
+        using N2_pos \<epsilon>_pos
+        by (simp add: less_divide_eq pos_less_divide_eq field_simps)
+      thus ?thesis .
+    qed
+    let ?n = "max N1 N2"
+    have qn_close: "hs_norm (q\<^sub>n ?n - p_star) < \<epsilon>/2"
+      using N1_bd by simp
+    have rho_qn_close: "hs_norm (\<rho> - q\<^sub>n ?n) < ?D + \<epsilon>/2"
+    proof -
+      have "hs_norm (\<rho> - q\<^sub>n ?n) < ?D + 1 / (real ?n + 1)"
+        using seq_bd by simp
+      moreover have "1 / (real ?n + 1) \<le> 1 / (real N2 + 1)"
+        by (auto simp: divide_left_mono)
+      ultimately have "hs_norm (\<rho> - q\<^sub>n ?n) < ?D + 1 / (real N2 + 1)"
+        by linarith
+      thus ?thesis using N2_recip by linarith
+    qed
+    text \<open>Triangle: \<open>\<rho> - p_star = (\<rho> - q\<^sub>n ?n) + (q\<^sub>n ?n - p_star)\<close>.\<close>
+    let ?qN = "q\<^sub>n ?n"
+    have qN_c: "?qN \<in> carrier_mat (m*p) (m*p)" using seq_carrier by simp
+    have rho_minus_pstar_eq:
+      "\<rho> - p_star = (\<rho> - ?qN) + (?qN - p_star)"
+      using \<rho>_c qN_c p_star_c
+      by (intro eq_matI) (auto simp: minus_mat_def)
+    have triangle: "hs_norm (\<rho> - p_star)
+                      \<le> hs_norm (\<rho> - ?qN) + hs_norm (?qN - p_star)"
+    proof -
+      have rho_qN_c: "\<rho> - ?qN \<in> carrier_mat (m*p) (m*p)"
+        by (rule minus_carrier_mat[OF qN_c])
+      have qN_p_c: "?qN - p_star \<in> carrier_mat (m*p) (m*p)"
+        by (rule minus_carrier_mat[OF p_star_c])
+      have "hs_norm (\<rho> - p_star)
+              = hs_norm ((\<rho> - ?qN) + (?qN - p_star))"
+        using rho_minus_pstar_eq by simp
+      also have "\<dots> \<le> hs_norm (\<rho> - ?qN) + hs_norm (?qN - p_star)"
+        by (rule hs_norm_triangle[OF rho_qN_c qN_p_c])
+      finally show ?thesis .
+    qed
+    show "hs_norm (\<rho> - p_star) \<le> ?D + \<epsilon>"
+      using triangle rho_qn_close qn_close by linarith
+  qed
 
   text \<open>Step 6: For any \<open>q \<in> cone\<close>, \<open>Inf \<le> hs_norm (\<rho> - q)\<close>.\<close>
   have inf_le_q: "\<forall>q. separable_cone m p q
