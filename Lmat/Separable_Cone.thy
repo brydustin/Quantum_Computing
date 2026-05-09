@@ -376,6 +376,36 @@ proof -
 qed
 
 
+section \<open>Trace on lmat (sorried)\<close>
+
+definition Tr_lmat :: "(complex, 'k :: finite, 'k) lmat \<Rightarrow> complex" where
+  "Tr_lmat M = (\<Sum>i = 0..<CARD('k). unwrap_lm M $$ (i, i))"
+
+text \<open>Continuity proof via term-wise continuity + sum continuity.
+Currently sorried because the \<open>intro\<close> step on
+\<open>continuous_on_unwrap_lm_index\<close> with \<open>'m = 'n = 'k\<close> hangs the
+build.\<close>
+
+lemma continuous_on_Tr_lmat:
+  fixes S :: "(complex, 'k :: finite, 'k) lmat set"
+  shows "continuous_on S Tr_lmat"
+  sorry
+
+lemma closed_unit_trace_lmat:
+  "closed {M :: (complex, 'k :: finite, 'k) lmat. Tr_lmat M = 1}"
+proof -
+  have eq: "{M :: (complex, 'k, 'k) lmat. Tr_lmat M = 1} = Tr_lmat -` {1}" by auto
+  show ?thesis
+    unfolding eq
+  proof (rule continuous_closed_vimage)
+    show "closed {1::complex}" by simp
+    fix M :: "(complex, 'k, 'k) lmat"
+    show "continuous (at M) Tr_lmat"
+      using continuous_on_Tr_lmat continuous_on_eq_continuous_at by blast
+  qed
+qed
+
+
 section \<open>Closedness of the separable cone\<close>
 
 text \<open>
