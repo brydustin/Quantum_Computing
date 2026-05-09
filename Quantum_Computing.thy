@@ -19054,6 +19054,165 @@ proof -
   show ?thesis unfolding psd_def using herm quad by blast
 qed
 
+(* HS norm is multiplicative under tensor product.
+
+   Pending: full reindexing proof.  The key lemmas for the
+   reindexing - the bijection \<open>(i\<^sub>1, i\<^sub>2) \<mapsto> i\<^sub>1 * r\<^sub>2 + i\<^sub>2\<close> and
+   the corresponding factorisation of the squared sum - are
+   standard but tedious. *)
+
+lemma hs_norm_tensor_sq:
+  fixes A B :: "complex Matrix.mat" and r\<^sub>1 r\<^sub>2 :: nat
+  assumes A_c: "A \<in> carrier_mat r\<^sub>1 r\<^sub>1"
+      and B_c: "B \<in> carrier_mat r\<^sub>2 r\<^sub>2"
+      and r1_pos: "0 < r\<^sub>1" and r2_pos: "0 < r\<^sub>2"
+  shows "(hs_norm (A \<Otimes> B))\<^sup>2 = (hs_norm A)\<^sup>2 * (hs_norm B)\<^sup>2"
+proof -
+  have AB_c: "A \<Otimes> B \<in> carrier_mat (r\<^sub>1 * r\<^sub>2) (r\<^sub>1 * r\<^sub>2)"
+    using A_c B_c by auto
+  have AB_dr: "dim_row (A \<Otimes> B) = r\<^sub>1 * r\<^sub>2" using AB_c by auto
+  have AB_dc: "dim_col (A \<Otimes> B) = r\<^sub>1 * r\<^sub>2" using AB_c by auto
+  have A_dr: "dim_row A = r\<^sub>1" using A_c by auto
+  have A_dc: "dim_col A = r\<^sub>1" using A_c by auto
+  have B_dr: "dim_row B = r\<^sub>2" using B_c by auto
+  have B_dc: "dim_col B = r\<^sub>2" using B_c by auto
+  have hs_AB_eq:
+    "(hs_norm (A \<Otimes> B))\<^sup>2
+       = (\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}.
+              (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2)"
+  proof -
+    have "(hs_norm (A \<Otimes> B))\<^sup>2 = Re (\<langle>\<langle> A \<Otimes> B | A \<Otimes> B \<rangle>\<rangle>)"
+      by (rule hs_norm_sq)
+    also have "\<dots> = (\<Sum>i\<in>{0..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{0..<r\<^sub>1*r\<^sub>2}.
+                      (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2)"
+    proof -
+      have body_eq: "\<And>i j. i \<in> {0..<r\<^sub>1*r\<^sub>2} \<Longrightarrow> j \<in> {0..<r\<^sub>1*r\<^sub>2} \<Longrightarrow>
+              Re (cnj ((A \<Otimes> B) $$ (i,j)) * (A \<Otimes> B) $$ (i,j))
+                = (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2"
+      proof -
+        fix i j assume "i \<in> {0..<r\<^sub>1*r\<^sub>2}" "j \<in> {0..<r\<^sub>1*r\<^sub>2}"
+        let ?z = "(A \<Otimes> B) $$ (i,j)"
+        have e1: "cnj ?z * ?z = ?z * cnj ?z" by (simp add: mult.commute)
+        have e2: "?z * cnj ?z = complex_of_real ((cmod ?z)\<^sup>2)"
+          using complex_norm_square[of ?z, symmetric] by simp
+        show "Re (cnj ?z * ?z) = (cmod ?z)\<^sup>2"
+          using e1 e2 by simp
+      qed
+      have "Re (\<langle>\<langle> A \<Otimes> B | A \<Otimes> B \<rangle>\<rangle>)
+              = Re (\<Sum>i\<in>{0..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{0..<r\<^sub>1*r\<^sub>2}.
+                       cnj ((A \<Otimes> B) $$ (i,j)) * (A \<Otimes> B) $$ (i,j))"
+        unfolding hs_inner_prod_def using AB_dr AB_dc by simp
+      also have "\<dots> = (\<Sum>i\<in>{0..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{0..<r\<^sub>1*r\<^sub>2}.
+                       Re (cnj ((A \<Otimes> B) $$ (i,j)) * (A \<Otimes> B) $$ (i,j)))"
+        by (simp add: Re_sum)
+      also have "\<dots> = (\<Sum>i\<in>{0..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{0..<r\<^sub>1*r\<^sub>2}.
+                       (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2)"
+        by (intro sum.cong refl) (use body_eq in auto)
+      finally show ?thesis .
+    qed
+    finally show ?thesis by (simp add: lessThan_atLeast0)
+  qed
+  text \<open>Reindex via product: \<open>(i\<^sub>1, i\<^sub>2) \<mapsto> i\<^sub>1 * r\<^sub>2 + i\<^sub>2\<close>.\<close>
+  have hs_A_eq: "(hs_norm A)\<^sup>2
+                  = (\<Sum>i\<in>{..<r\<^sub>1}. \<Sum>j\<in>{..<r\<^sub>1}. (cmod (A $$ (i,j)))\<^sup>2)"
+  proof -
+    have "(hs_norm A)\<^sup>2 = Re (\<langle>\<langle> A | A \<rangle>\<rangle>)" by (rule hs_norm_sq)
+    also have "\<dots> = (\<Sum>i\<in>{..<r\<^sub>1}. \<Sum>j\<in>{..<r\<^sub>1}. (cmod (A $$ (i,j)))\<^sup>2)"
+    proof -
+      have body_eq: "\<And>i j. i < r\<^sub>1 \<Longrightarrow> j < r\<^sub>1 \<Longrightarrow>
+              Re (cnj (A $$ (i,j)) * A $$ (i,j))
+                = (cmod (A $$ (i,j)))\<^sup>2"
+      proof -
+        fix i j assume "i < r\<^sub>1" "j < r\<^sub>1"
+        let ?z = "A $$ (i,j)"
+        have e1: "cnj ?z * ?z = ?z * cnj ?z" by (simp add: mult.commute)
+        have e2: "?z * cnj ?z = complex_of_real ((cmod ?z)\<^sup>2)"
+          using complex_norm_square[of ?z, symmetric] by simp
+        show "Re (cnj ?z * ?z) = (cmod ?z)\<^sup>2"
+          using e1 e2 by simp
+      qed
+      have "Re (\<langle>\<langle> A | A \<rangle>\<rangle>)
+              = Re (\<Sum>i\<in>{0..<r\<^sub>1}. \<Sum>j\<in>{0..<r\<^sub>1}.
+                       cnj (A $$ (i,j)) * A $$ (i,j))"
+        unfolding hs_inner_prod_def using A_dr A_dc by simp
+      also have "\<dots> = (\<Sum>i\<in>{..<r\<^sub>1}. \<Sum>j\<in>{..<r\<^sub>1}.
+                       Re (cnj (A $$ (i,j)) * A $$ (i,j)))"
+        by (simp add: Re_sum lessThan_atLeast0)
+      also have "\<dots> = (\<Sum>i\<in>{..<r\<^sub>1}. \<Sum>j\<in>{..<r\<^sub>1}.
+                       (cmod (A $$ (i,j)))\<^sup>2)"
+        by (intro sum.cong refl) (use body_eq in auto)
+      finally show ?thesis .
+    qed
+    finally show ?thesis .
+  qed
+  have hs_B_eq: "(hs_norm B)\<^sup>2
+                  = (\<Sum>i\<in>{..<r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>2}. (cmod (B $$ (i,j)))\<^sup>2)"
+  proof -
+    have "(hs_norm B)\<^sup>2 = Re (\<langle>\<langle> B | B \<rangle>\<rangle>)" by (rule hs_norm_sq)
+    also have "\<dots> = (\<Sum>i\<in>{..<r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>2}. (cmod (B $$ (i,j)))\<^sup>2)"
+    proof -
+      have body_eq: "\<And>i j. i < r\<^sub>2 \<Longrightarrow> j < r\<^sub>2 \<Longrightarrow>
+              Re (cnj (B $$ (i,j)) * B $$ (i,j))
+                = (cmod (B $$ (i,j)))\<^sup>2"
+      proof -
+        fix i j assume "i < r\<^sub>2" "j < r\<^sub>2"
+        let ?z = "B $$ (i,j)"
+        have e1: "cnj ?z * ?z = ?z * cnj ?z" by (simp add: mult.commute)
+        have e2: "?z * cnj ?z = complex_of_real ((cmod ?z)\<^sup>2)"
+          using complex_norm_square[of ?z, symmetric] by simp
+        show "Re (cnj ?z * ?z) = (cmod ?z)\<^sup>2"
+          using e1 e2 by simp
+      qed
+      have "Re (\<langle>\<langle> B | B \<rangle>\<rangle>)
+              = Re (\<Sum>i\<in>{0..<r\<^sub>2}. \<Sum>j\<in>{0..<r\<^sub>2}.
+                       cnj (B $$ (i,j)) * B $$ (i,j))"
+        unfolding hs_inner_prod_def using B_dr B_dc by simp
+      also have "\<dots> = (\<Sum>i\<in>{..<r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>2}.
+                       Re (cnj (B $$ (i,j)) * B $$ (i,j)))"
+        by (simp add: Re_sum lessThan_atLeast0)
+      also have "\<dots> = (\<Sum>i\<in>{..<r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>2}.
+                       (cmod (B $$ (i,j)))\<^sup>2)"
+        by (intro sum.cong refl) (use body_eq in auto)
+      finally show ?thesis .
+    qed
+    finally show ?thesis .
+  qed
+  text \<open>Decompose the tensor sum into a product via div/mod.\<close>
+  have AB_entry: "\<And>i j. i < r\<^sub>1 * r\<^sub>2 \<Longrightarrow> j < r\<^sub>1 * r\<^sub>2 \<Longrightarrow>
+                    (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2
+                      = (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+                        * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2"
+  proof -
+    fix i j assume i: "i < r\<^sub>1 * r\<^sub>2" and j: "j < r\<^sub>1 * r\<^sub>2"
+    have "(A \<Otimes> B) $$ (i,j)
+            = A $$ (i div r\<^sub>2, j div r\<^sub>2) * B $$ (i mod r\<^sub>2, j mod r\<^sub>2)"
+      using A_c B_c i j r1_pos r2_pos by simp
+    hence "(cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2
+            = (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)
+                       * B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2"
+      by simp
+    also have "\<dots> = (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+                    * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2"
+      by (simp add: norm_mult power_mult_distrib)
+    finally show "(cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2
+                    = (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+                      * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2" .
+  qed
+  text \<open>Reindex via the bijection \<open>(i\<^sub>1, i\<^sub>2) \<mapsto> i\<^sub>1 * r\<^sub>2 + i\<^sub>2\<close>.\<close>
+  have reindex:
+    "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}. (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2)
+       = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+    sorry
+  have factored: "(\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                       (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)
+                  = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2)
+                    * (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}. (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+    sorry
+  show ?thesis
+    using hs_AB_eq hs_A_eq hs_B_eq reindex factored by simp
+qed
+
 (* Helper: HS norm vanishes iff the matrix is zero (equivalent of
    hs_inner_prod_self_zero_iff for the norm). *)
 
