@@ -18868,6 +18868,52 @@ proof (rule metric_LIMSEQ_I)
   qed
 qed
 
+(* The hermitian set is HS-closed. *)
+
+lemma hermitian_HS_closed:
+  fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and L :: "complex Matrix.mat"
+      and r :: nat
+  assumes carrier: "\<forall>n. M_seq n \<in> carrier_mat r r"
+      and L_c: "L \<in> carrier_mat r r"
+      and herm_n: "\<forall>n. hermitian (M_seq n)"
+      and lim: "(\<lambda>n. hs_norm (M_seq n - L)) \<longlonglongrightarrow> 0"
+  shows "hermitian L"
+  unfolding hermitian_def
+proof (intro eq_matI)
+  show "dim_row (L\<^sup>\<dagger>) = dim_row L" using L_c by auto
+  show "dim_col (L\<^sup>\<dagger>) = dim_col L" using L_c by auto
+  fix i j assume i: "i < dim_row L" and j: "j < dim_col L"
+  have iN: "i < r" using i L_c by auto
+  have jN: "j < r" using j L_c by auto
+  text \<open>Each \<open>M_seq n\<close> entry satisfies the hermitian condition.\<close>
+  have herm_entry: "\<And>n. M_seq n $$ (j,i) = cnj (M_seq n $$ (i,j))"
+  proof -
+    fix n
+    have Mn_c: "M_seq n \<in> carrier_mat r r" using carrier by simp
+    have dr: "dim_row (M_seq n) = r" using Mn_c by auto
+    have dc: "dim_col (M_seq n) = r" using Mn_c by auto
+    have "M_seq n $$ (j,i) = (M_seq n)\<^sup>\<dagger> $$ (j,i)"
+      using herm_n unfolding hermitian_def by simp
+    also have "\<dots> = cnj (M_seq n $$ (i,j))"
+      using iN jN dr dc unfolding dagger_def by simp
+    finally show "M_seq n $$ (j,i) = cnj (M_seq n $$ (i,j))" .
+  qed
+  text \<open>Take limits via \<open>HS_lim_entry_lim\<close>.\<close>
+  have lim_ij: "(\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L $$ (i,j)"
+    by (rule HS_lim_entry_lim[OF carrier L_c lim iN jN])
+  have lim_ji: "(\<lambda>n. M_seq n $$ (j,i)) \<longlonglongrightarrow> L $$ (j,i)"
+    by (rule HS_lim_entry_lim[OF carrier L_c lim jN iN])
+  have lim_cnj_ij: "(\<lambda>n. cnj (M_seq n $$ (i,j))) \<longlonglongrightarrow> cnj (L $$ (i,j))"
+    using lim_ij by (rule tendsto_cnj)
+  have lim_eq: "(\<lambda>n. M_seq n $$ (j,i)) = (\<lambda>n. cnj (M_seq n $$ (i,j)))"
+    using herm_entry by auto
+  have "L $$ (j,i) = cnj (L $$ (i,j))"
+    using lim_ji lim_cnj_ij lim_eq by (metis LIMSEQ_unique)
+  hence "(L\<^sup>\<dagger>) $$ (i,j) = L $$ (i,j)"
+    using iN jN L_c unfolding dagger_def by simp
+  thus "L\<^sup>\<dagger> $$ (i, j) = L $$ (i, j)" .
+qed
+
 (* Helper: HS norm vanishes iff the matrix is zero (equivalent of
    hs_inner_prod_self_zero_iff for the norm). *)
 
