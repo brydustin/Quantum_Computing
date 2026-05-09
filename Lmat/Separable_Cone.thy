@@ -436,6 +436,55 @@ proof -
   show ?thesis using sum_cont unfolding Tr_lmat_def by simp
 qed
 
+lemma Tr_lmat_add:
+  fixes M N :: "(complex, 'k :: finite, 'k) lmat"
+  shows "Tr_lmat (M + N) = Tr_lmat M + Tr_lmat N"
+proof -
+  have step: "(\<Sum>i = 0..<CARD('k). unwrap_lm (M + N) $$ (i, i))
+            = (\<Sum>i = 0..<CARD('k).
+                 unwrap_lm M $$ (i, i) + unwrap_lm N $$ (i, i))"
+    by (rule sum.cong) auto
+  show ?thesis
+    unfolding Tr_lmat_def using step by (simp add: sum.distrib)
+qed
+
+lemma Tr_lmat_scaleR:
+  fixes M :: "(complex, 'k :: finite, 'k) lmat" and a :: real
+  shows "Tr_lmat (a *\<^sub>R M) = a *\<^sub>R Tr_lmat M"
+proof -
+  have step: "(\<Sum>i = 0..<CARD('k). unwrap_lm (a *\<^sub>R M) $$ (i, i))
+            = (\<Sum>i = 0..<CARD('k). a *\<^sub>R (unwrap_lm M $$ (i, i)))"
+    by (rule sum.cong) auto
+  show ?thesis
+    unfolding Tr_lmat_def using step by (simp add: scaleR_sum_right)
+qed
+
+lemma Tr_lmat_zero [simp]:
+  "Tr_lmat (0 :: (complex, 'k :: finite, 'k) lmat) = 0"
+  unfolding Tr_lmat_def by simp
+
+lemma Tr_lmat_sum_scaleR:
+  fixes T :: "'a set" and u :: "'a \<Rightarrow> real"
+    and f :: "'a \<Rightarrow> (complex, 'k :: finite, 'k) lmat"
+  assumes "finite T"
+  shows "Tr_lmat (\<Sum>t \<in> T. u t *\<^sub>R f t) = (\<Sum>t \<in> T. u t *\<^sub>R Tr_lmat (f t))"
+  using assms
+proof induction
+  case empty thus ?case by simp
+next
+  case (insert t T)
+  have "Tr_lmat (\<Sum>s \<in> insert t T. u s *\<^sub>R f s)
+      = Tr_lmat (u t *\<^sub>R f t + (\<Sum>s \<in> T. u s *\<^sub>R f s))"
+    using insert by simp
+  also have "\<dots> = Tr_lmat (u t *\<^sub>R f t) + Tr_lmat (\<Sum>s \<in> T. u s *\<^sub>R f s)"
+    by (rule Tr_lmat_add)
+  also have "\<dots> = u t *\<^sub>R Tr_lmat (f t) + (\<Sum>s \<in> T. u s *\<^sub>R Tr_lmat (f s))"
+    using insert.IH by (simp add: Tr_lmat_scaleR)
+  also have "\<dots> = (\<Sum>s \<in> insert t T. u s *\<^sub>R Tr_lmat (f s))"
+    using insert by simp
+  finally show ?case .
+qed
+
 lemma closed_unit_trace_lmat:
   "closed {M :: (complex, 'k :: finite, 'k) lmat. Tr_lmat M = 1}"
 proof -
@@ -866,8 +915,51 @@ proof -
   qed
   have compact_convhull: "compact (convex hull ?S')"
     using compact_Sprime by (rule compact_convex_hull)
+  have Tr_Sprime: "\<And>s :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat. s \<in> ?S' \<Longrightarrow> Tr_lmat s = 1"
+  proof -
+    fix s :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    assume "s \<in> ?S'"
+    then obtain \<sigma> \<tau> where s_eq: "s = tensor_lmat \<sigma> \<tau>"
+                  and tr_s: "Tr_lmat (\<sigma> :: (complex, 'm, 'm) lmat) = 1"
+                  and tr_t: "Tr_lmat (\<tau> :: (complex, 'p, 'p) lmat) = 1"
+      unfolding Sprime_def by auto
+    have "Tr_lmat s = Tr_lmat (tensor_lmat \<sigma> \<tau>
+                                 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+      using s_eq by simp
+    also have "\<dots> = Tr_lmat \<sigma> * Tr_lmat \<tau>" by (rule Tr_lmat_tensor)
+    also have "\<dots> = 1" using tr_s tr_t by simp
+    finally show "Tr_lmat s = 1" .
+  qed
   have zero_not_in: "0 \<notin> convex hull ?S'"
-    sorry
+  proof
+    assume "0 \<in> convex hull ?S'"
+    then obtain T u where Tfin: "finite T" and Tsub: "T \<subseteq> ?S'"
+                    and unn: "\<forall>t \<in> T. 0 \<le> u t"
+                    and usum: "sum u T = 1"
+                    and sum_eq:
+                      "(\<Sum>t \<in> T. u t *\<^sub>R t) = (0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+      unfolding convex_hull_explicit by auto
+    have tr_zero: "Tr_lmat ((\<Sum>t \<in> T. u t *\<^sub>R t)
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 0"
+      using sum_eq by simp
+    have tr_one: "Tr_lmat ((\<Sum>t \<in> T. u t *\<^sub>R t)
+                             :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 1"
+    proof -
+      have "Tr_lmat ((\<Sum>t \<in> T. u t *\<^sub>R t)
+                       :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+          = (\<Sum>t \<in> T. u t *\<^sub>R Tr_lmat t)"
+        using Tfin by (rule Tr_lmat_sum_scaleR)
+      also have "\<dots> = (\<Sum>t \<in> T. u t *\<^sub>R 1)"
+        using Tsub Tr_Sprime by (intro sum.cong) auto
+      also have "\<dots> = (\<Sum>t \<in> T. complex_of_real (u t))"
+        by (intro sum.cong) (simp_all add: scaleR_conv_of_real)
+      also have "\<dots> = complex_of_real (\<Sum>t \<in> T. u t)"
+        by simp
+      also have "\<dots> = 1" using usum by simp
+      finally show ?thesis .
+    qed
+    from tr_zero tr_one show False by simp
+  qed
   show ?thesis
     unfolding hull_eq
     by (rule closed_conic_hull) (use compact_convhull zero_not_in in blast)
