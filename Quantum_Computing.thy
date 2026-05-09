@@ -19125,6 +19125,66 @@ proof (intro allI impI)
   qed
 qed
 
+(* Entry-wise Cauchy: each \<open>(i,j)\<close>-entry of a HS-Cauchy matrix
+   sequence is itself a Cauchy sequence in \<open>\<complex>\<close>.  Combined with the
+   completeness of \<open>\<complex>\<close>, each entry has a limit. *)
+
+lemma HS_Cauchy_entry_Cauchy:
+  fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and r c :: nat
+      and i j :: nat
+  assumes carrier: "\<forall>n. M_seq n \<in> carrier_mat r c"
+      and hs_cauchy: "\<forall>\<epsilon>>0. \<exists>N. \<forall>x \<ge> N. \<forall>y \<ge> N.
+                                hs_norm (M_seq x - M_seq y) < \<epsilon>"
+      and i_lt: "i < r" and j_lt: "j < c"
+      and r_eq_c: "r = c"
+  shows "Cauchy (\<lambda>n. M_seq n $$ (i,j))"
+proof (rule metric_CauchyI)
+  fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+  obtain N where N_bd: "\<forall>x \<ge> N. \<forall>y \<ge> N. hs_norm (M_seq x - M_seq y) < \<epsilon>"
+    using hs_cauchy \<epsilon>_pos by blast
+  show "\<exists>N. \<forall>x \<ge> N. \<forall>y \<ge> N.
+            dist (M_seq x $$ (i, j)) (M_seq y $$ (i, j)) < \<epsilon>"
+  proof (rule exI[of _ N], intro allI impI)
+    fix x y assume xN: "N \<le> x" and yN: "N \<le> y"
+    let ?D = "M_seq x - M_seq y"
+    have Mx_c: "M_seq x \<in> carrier_mat r c" using carrier by simp
+    have My_c: "M_seq y \<in> carrier_mat r c" using carrier by simp
+    have D_c: "?D \<in> carrier_mat r c"
+      by (rule minus_carrier_mat[OF My_c])
+    have D_c_eq: "?D \<in> carrier_mat r r" using D_c r_eq_c by simp
+    have entry_eq: "?D $$ (i,j) = M_seq x $$ (i,j) - M_seq y $$ (i,j)"
+    proof -
+      have dr: "dim_row (M_seq y) = r" using My_c by auto
+      have dc: "dim_col (M_seq y) = c" using My_c by auto
+      have "?D $$ (i,j)
+              = Matrix.mat (dim_row (M_seq y)) (dim_col (M_seq y))
+                  (\<lambda>ij. M_seq x $$ ij - M_seq y $$ ij) $$ (i,j)"
+        unfolding minus_mat_def by simp
+      also have "\<dots> = M_seq x $$ (i,j) - M_seq y $$ (i,j)"
+        using i_lt j_lt dr dc by simp
+      finally show ?thesis .
+    qed
+    have j_lt_r: "j < r" using j_lt r_eq_c by simp
+    have cmod_le: "(cmod (?D $$ (i,j)))\<^sup>2 \<le> (hs_norm ?D)\<^sup>2"
+      by (rule cmod_entry_sq_le_hs_norm_sq[OF D_c_eq i_lt j_lt_r])
+    have hs_lt_eps: "hs_norm ?D < \<epsilon>" using N_bd xN yN by simp
+    have hs_nn: "0 \<le> hs_norm ?D" by (rule hs_norm_nonneg)
+    have eps_nn: "0 \<le> \<epsilon>" using \<epsilon>_pos by simp
+    have hs_sq_lt: "(hs_norm ?D)\<^sup>2 < \<epsilon>\<^sup>2"
+      using hs_lt_eps hs_nn by (intro power_strict_mono) auto
+    have cmod_sq_lt: "(cmod (?D $$ (i,j)))\<^sup>2 < \<epsilon>\<^sup>2"
+      using cmod_le hs_sq_lt by linarith
+    have cmod_nn: "0 \<le> cmod (?D $$ (i,j))" by simp
+    have cmod_lt: "cmod (?D $$ (i,j)) < \<epsilon>"
+      by (rule power_less_imp_less_base[OF cmod_sq_lt eps_nn])
+    have dist_eq: "dist (M_seq x $$ (i,j)) (M_seq y $$ (i,j))
+                     = cmod (M_seq x $$ (i,j) - M_seq y $$ (i,j))"
+      by (simp add: dist_complex_def)
+    show "dist (M_seq x $$ (i,j)) (M_seq y $$ (i,j)) < \<epsilon>"
+      using dist_eq entry_eq cmod_lt by simp
+  qed
+qed
+
 (* Cone separator from closest point.
 
    Pure inner-product geometry: for σ in cone, the ray
