@@ -248,4 +248,50 @@ qed
 end
 
 
+section \<open>Real inner product\<close>
+
+text \<open>For \<open>'a :: real_inner\<close>, the lmat inner product is the entry-wise
+sum of inner products.  When \<open>'a = complex\<close> with the standard real-inner
+instance \<open>inner z w = Re (cnj z * w)\<close>, this is the real part of the
+Hilbert-Schmidt inner product.\<close>
+
+instantiation lmat :: (real_inner, finite, finite) real_inner
+begin
+
+definition inner_lmat :: "('a, 'm :: finite, 'n :: finite) lmat
+                        \<Rightarrow> ('a, 'm, 'n) lmat \<Rightarrow> real" where
+  "inner_lmat M N = (\<Sum>(i, j) \<in> {0..<CARD('m)} \<times> {0..<CARD('n)}.
+                       inner (unwrap_lm M $$ (i, j)) (unwrap_lm N $$ (i, j)))"
+
+instance proof
+  fix r :: real
+  fix x y z :: "('a, 'm :: finite, 'n :: finite) lmat"
+  show "inner x y = inner y x"
+    unfolding inner_lmat_def by (simp add: inner_commute split: prod.split)
+  show "inner (x + y) z = inner x z + inner y z"
+    unfolding inner_lmat_def
+    apply (subst sum.distrib[symmetric])
+    apply (rule sum.cong, simp)
+    apply (auto simp: inner_add_left split: prod.split)
+    done
+  show "inner (r *\<^sub>R x) y = r * inner x y"
+    unfolding inner_lmat_def
+    apply (subst sum_distrib_left)
+    apply (rule sum.cong, simp)
+    apply (auto split: prod.split)
+    done
+  show "0 \<le> inner x x"
+    unfolding inner_lmat_def
+    by (auto intro!: sum_nonneg split: prod.split)
+  show "inner x x = 0 \<longleftrightarrow> x = 0"
+    unfolding inner_lmat_def
+    by (auto simp: sum_nonneg_eq_0_iff lmat_eq_iff_entries split: prod.split)
+  show "norm x = sqrt (inner x x)"
+    unfolding inner_lmat_def norm_lmat_def L2_set_def
+    by (simp add: power2_norm_eq_inner split: prod.split)
+qed
+
+end
+
+
 end
