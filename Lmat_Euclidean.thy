@@ -180,4 +180,72 @@ qed
 end
 
 
+section \<open>Norm and \<open>real_normed_vector\<close> instance\<close>
+
+instantiation lmat :: (real_normed_vector, finite, finite) real_normed_vector
+begin
+
+definition norm_lmat :: "('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real" where
+  "norm_lmat M = L2_set (\<lambda>(i, j). norm (unwrap_lm M $$ (i, j)))
+                        ({0..<CARD('m)} \<times> {0..<CARD('n)})"
+
+definition sgn_lmat ::
+  "('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> ('a, 'm, 'n) lmat" where
+  "sgn_lmat (M :: ('a, 'm, 'n) lmat) = scaleR (inverse (norm M)) M"
+
+instance proof
+  fix a :: real
+  fix x y :: "('a, 'm :: finite, 'n :: finite) lmat"
+  show "norm x = 0 \<longleftrightarrow> x = 0"
+    unfolding norm_lmat_def
+    by (auto simp: L2_set_eq_0_iff lmat_eq_iff_entries split: prod.split)
+  show "norm (x + y) \<le> norm x + norm y"
+    unfolding norm_lmat_def
+    apply (rule order_trans [OF _ L2_set_triangle_ineq])
+    apply (rule L2_set_mono)
+     apply (auto simp: norm_triangle_ineq)
+    done
+  show "norm (a *\<^sub>R x) = \<bar>a\<bar> * norm x"
+  proof -
+    have eq1: "L2_set (\<lambda>(i, j). norm (unwrap_lm (a *\<^sub>R x) $$ (i, j)))
+                      ({0..<CARD('m)} \<times> {0..<CARD('n)})
+             = L2_set (\<lambda>(i, j). \<bar>a\<bar> * norm (unwrap_lm x $$ (i, j)))
+                      ({0..<CARD('m)} \<times> {0..<CARD('n)})"
+    proof (rule L2_set_cong [OF refl])
+      fix p :: "nat \<times> nat"
+      assume p_in: "p \<in> {0..<CARD('m)} \<times> {0..<CARD('n)}"
+      obtain i j where p_eq: "p = (i, j)" by (cases p)
+      from p_in p_eq have ij: "i < CARD('m)" "j < CARD('n)" by auto
+      show "(case p of (i, j) \<Rightarrow> norm (unwrap_lm (a *\<^sub>R x) $$ (i, j)))
+            = (case p of (i, j) \<Rightarrow> \<bar>a\<bar> * norm (unwrap_lm x $$ (i, j)))"
+        unfolding p_eq prod.case
+        by (simp add: ij)
+    qed
+    have eq2: "L2_set (\<lambda>(i, j). \<bar>a\<bar> * norm (unwrap_lm x $$ (i, j)))
+                      ({0..<CARD('m)} \<times> {0..<CARD('n)})
+             = \<bar>a\<bar> * L2_set (\<lambda>(i, j). norm (unwrap_lm x $$ (i, j)))
+                            ({0..<CARD('m)} \<times> {0..<CARD('n)})"
+    proof -
+      have "L2_set (\<lambda>(i, j). \<bar>a\<bar> * norm (unwrap_lm x $$ (i, j)))
+                   ({0..<CARD('m)} \<times> {0..<CARD('n)})
+          = L2_set (\<lambda>p. \<bar>a\<bar> * (\<lambda>(i, j). norm (unwrap_lm x $$ (i, j))) p)
+                   ({0..<CARD('m)} \<times> {0..<CARD('n)})"
+        by (rule L2_set_cong [OF refl]) (auto split: prod.split)
+      also have "\<dots> = \<bar>a\<bar> * L2_set (\<lambda>(i, j). norm (unwrap_lm x $$ (i, j)))
+                                   ({0..<CARD('m)} \<times> {0..<CARD('n)})"
+        by (subst L2_set_right_distrib[symmetric]) auto
+      finally show ?thesis .
+    qed
+    show ?thesis using eq1 eq2 unfolding norm_lmat_def by simp
+  qed
+  show "sgn x = scaleR (inverse (norm x)) x"
+    by (rule sgn_lmat_def)
+  show "dist x y = norm (x - y)"
+    unfolding dist_lmat_def norm_lmat_def
+    by (rule L2_set_cong) (auto simp: dist_norm split: prod.split)
+qed
+
+end
+
+
 end
