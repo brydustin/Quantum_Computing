@@ -755,4 +755,19 @@ proof -
 qed
 
 
+section \<open>Convergence: lmat sequence convergence implies entry convergence\<close>
+
+lemma tendsto_unwrap_lm_index:
+  fixes f :: "'b \<Rightarrow> ('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat"
+    and L :: "('a, 'm, 'n) lmat"
+  assumes lim: "(f \<longlongrightarrow> L) F"
+      and ij: "i < CARD('m)" "j < CARD('n)"
+  shows "((\<lambda>x. unwrap_lm (f x) $$ (i, j)) \<longlongrightarrow> unwrap_lm L $$ (i, j)) F"
+proof (rule metric_tendsto_imp_tendsto[OF lim])
+  show "\<forall>\<^sub>F x in F. dist (unwrap_lm (f x) $$ (i, j)) (unwrap_lm L $$ (i, j))
+                    \<le> dist (f x) L"
+    by (intro always_eventually allI) (rule dist_lmat_index_le[OF ij])
+qed
+
+
 end
