@@ -3,6 +3,32 @@
   Purpose:  Define the separable-state cone in the typed lmat space and
             prove it is closed in the Hilbert-Schmidt topology, using
             the HOL-Analysis machinery exposed by Lmat_Euclidean.
+
+  Status:   The main theorem separable_cone_lmat_closed is fully assembled
+            and reduced to six concrete sub-sorries:
+
+              norm_lmat_le_of_psd_unit_trace
+                PSD with Tr = 1 has ‖σ‖_HS ≤ 1
+                (spectral argument: ‖σ‖² = Σλᵢ² ≤ (Σλᵢ)² = 1).
+
+              continuous_on_tensor_lmat
+                tensor_lmat is jointly continuous in both factors
+                (bilinear function on finite-dim normed space).
+
+              Tr_lmat_tensor
+                Tr (σ ⊗ τ) = Tr σ · Tr τ
+                (direct entry computation).
+
+              In separable_cone_lmat_closed itself:
+                Sprime_nonempty       — witness: I_m/CARD('m) ⊗ I_p/CARD('p).
+                zero_not_in_convex_hull_Sprime
+                                      — every convex combo has trace 1.
+                convex_cone_hull_separable_eq_Sprime
+                                      — rescale by trace product.
+
+            Everything else (closed_psd_lmat, compact_unit_trace_psd_lmat,
+            compact_Sprime, the conic-hull-of-convex-hull factorisation,
+            and the application of closed_conic_hull) is fully proven.
 *)
 
 theory Separable_Cone
