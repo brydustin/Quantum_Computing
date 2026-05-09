@@ -18442,6 +18442,82 @@ lemma exists_closest_point_in_separable_cone:
                     \<longrightarrow> hs_norm (\<rho> - p_star) \<le> hs_norm (\<rho> - q))"
   sorry
 
+(* Sub-helper for closest-point existence: the infimum
+   \<open>D = \<sqinter> {hs_norm (\<rho>-q) | q \<in> cone}\<close> is well-defined and \<ge> 0,
+   and there is an approximating sequence \<open>q\<^sub>n\<close> in the cone whose
+   distances to \<rho> tend to \<open>D\<close>.
+
+   These are pure real-analysis facts not using closedness. *)
+
+definition cone_dist_set ::
+    "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> real set" where
+  "cone_dist_set m p \<rho> = {hs_norm (\<rho> - q) | q. separable_cone m p q}"
+
+lemma cone_dist_set_nonempty:
+  "cone_dist_set m p \<rho> \<noteq> {}"
+proof -
+  have "hs_norm (\<rho> - 0\<^sub>m (m*p) (m*p)) \<in> cone_dist_set m p \<rho>"
+    unfolding cone_dist_set_def
+    using separable_cone_zero by blast
+  thus ?thesis by auto
+qed
+
+lemma cone_dist_set_bdd_below:
+  "bdd_below (cone_dist_set m p \<rho>)"
+  unfolding cone_dist_set_def bdd_below_def
+  by (rule_tac x=0 in exI) (auto simp: hs_norm_nonneg)
+
+lemma cone_dist_set_inf_nonneg:
+  "0 \<le> Inf (cone_dist_set m p \<rho>)"
+proof (rule cInf_greatest)
+  show "cone_dist_set m p \<rho> \<noteq> {}" by (rule cone_dist_set_nonempty)
+  fix x assume "x \<in> cone_dist_set m p \<rho>"
+  thus "0 \<le> x"
+    unfolding cone_dist_set_def by (auto simp: hs_norm_nonneg)
+qed
+
+lemma cone_dist_approximator:
+  fixes \<epsilon> :: real
+  assumes "0 < \<epsilon>"
+  shows "\<exists>q. separable_cone m p q
+            \<and> hs_norm (\<rho> - q) < Inf (cone_dist_set m p \<rho>) + \<epsilon>"
+proof -
+  let ?D = "Inf (cone_dist_set m p \<rho>)"
+  have ne: "cone_dist_set m p \<rho> \<noteq> {}" by (rule cone_dist_set_nonempty)
+  have bd: "bdd_below (cone_dist_set m p \<rho>)" by (rule cone_dist_set_bdd_below)
+  obtain x where x_in: "x \<in> cone_dist_set m p \<rho>"
+             and x_lt: "x < ?D + \<epsilon>"
+    using cInf_lessD[OF ne, of "?D + \<epsilon>"] assms by auto
+  from x_in obtain q where q_cone: "separable_cone m p q"
+                       and x_eq: "x = hs_norm (\<rho> - q)"
+    unfolding cone_dist_set_def by auto
+  show ?thesis using q_cone x_eq x_lt by auto
+qed
+
+(* Approximating-minimizer sequence whose distances to \<rho> tend to \<open>D\<close>. *)
+
+lemma cone_dist_minimizing_sequence:
+  shows "\<exists>q\<^sub>n :: nat \<Rightarrow> complex Matrix.mat.
+           (\<forall>n. separable_cone m p (q\<^sub>n n))
+           \<and> (\<forall>n. hs_norm (\<rho> - q\<^sub>n n)
+                   < Inf (cone_dist_set m p \<rho>) + 1 / (real n + 1))"
+proof -
+  have step: "\<And>n :: nat. \<exists>q. separable_cone m p q
+                              \<and> hs_norm (\<rho> - q)
+                                  < Inf (cone_dist_set m p \<rho>)
+                                    + 1 / (real n + 1)"
+  proof -
+    fix n :: nat
+    have eps_pos: "0 < (1 :: real) / (real n + 1)" by simp
+    show "\<exists>q. separable_cone m p q
+                \<and> hs_norm (\<rho> - q) < Inf (cone_dist_set m p \<rho>)
+                                      + 1 / (real n + 1)"
+      by (rule cone_dist_approximator[OF eps_pos])
+  qed
+  show ?thesis
+    using step by metis
+qed
+
 (* Step 5e: given a closest point p_star \<in> cone to external point \<rho>,
    the matrix \<open>p_star - \<rho>\<close> separates: \<open>Re \<langle>\<langle>p_star-\<rho> | \<sigma>\<rangle>\<rangle> \<ge> Re \<langle>\<langle>p_star-\<rho> | p_star\<rangle>\<rangle>\<close>
    for all \<sigma> in the (closed convex) cone, and the value at \<rho> is
