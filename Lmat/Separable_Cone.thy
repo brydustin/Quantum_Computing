@@ -422,6 +422,38 @@ proof -
 qed
 
 
+section \<open>Compactness of the unit-trace PSD slice\<close>
+
+text \<open>For PSD \<open>\<sigma>\<close> with \<open>Tr \<sigma> = 1\<close>:
+\<open>‖\<sigma>‖\<^sup>2\<^sub>H\<^sub>S = \<Sum>\<lambda>\<^sub>i\<^sup>2 \<le> (\<Sum>\<lambda>\<^sub>i)\<^sup>2 = 1\<close>
+where \<open>\<lambda>\<^sub>i\<close> are the (nonneg) eigenvalues.\<close>
+
+lemma norm_lmat_le_of_psd_unit_trace:
+  fixes M :: "(complex, 'k :: finite, 'k) lmat"
+  assumes psd: "psd_lmat M" and tr: "Tr_lmat M = 1"
+  shows "norm M \<le> 1"
+  sorry
+
+lemma compact_unit_trace_psd_lmat:
+  "compact {M :: (complex, 'k :: finite, 'k) lmat. psd_lmat M \<and> Tr_lmat M = 1}"
+proof -
+  let ?S = "{M :: (complex, 'k, 'k) lmat. psd_lmat M \<and> Tr_lmat M = 1}"
+  have closed_S: "closed ?S"
+  proof -
+    have eq: "?S = {M. psd_lmat M} \<inter> {M. Tr_lmat M = 1}" by auto
+    show ?thesis
+      unfolding eq using closed_psd_lmat closed_unit_trace_lmat by (rule closed_Int)
+  qed
+  have bounded_S: "bounded ?S"
+  proof -
+    have "\<forall>M \<in> ?S. norm M \<le> 1"
+      using norm_lmat_le_of_psd_unit_trace by auto
+    thus ?thesis by (rule bounded_iff [THEN iffD2, OF exI[where x = 1]])
+  qed
+  show ?thesis using closed_S bounded_S compact_eq_bounded_closed by blast
+qed
+
+
 section \<open>Closedness of the separable cone\<close>
 
 text \<open>
