@@ -912,6 +912,60 @@ proof
     unfolding separable_lmat_gen_def using x_eq \<sigma>_psd \<tau>_psd by auto
 qed
 
+text \<open>The four spectral / bilinearity helpers needed for the
+hard direction.  Each is a one-line lift of a JNF fact, but the
+JNF facts (spectral closure and tensor scaleR) live outside the
+parent heap so they are stated as targeted sorries here for the
+moment.\<close>
+
+lemma psd_lmat_Tr_real_nonneg:
+  fixes M :: "(complex, 'k :: finite, 'k) lmat"
+  assumes "psd_lmat M"
+  shows "Im (Tr_lmat M) = 0 \<and> 0 \<le> Re (Tr_lmat M)"
+  sorry
+
+lemma psd_lmat_zero_trace_zero:
+  fixes M :: "(complex, 'k :: finite, 'k) lmat"
+  assumes "psd_lmat M" "Tr_lmat M = 0"
+  shows "M = 0"
+  sorry
+
+lemma psd_lmat_scaleR_nonneg:
+  fixes M :: "(complex, 'k :: finite, 'k) lmat" and a :: real
+  assumes "psd_lmat M" "0 \<le> a"
+  shows "psd_lmat (a *\<^sub>R M)"
+  sorry
+
+lemma tensor_lmat_scaleR_left:
+  fixes a :: real
+    and \<sigma> :: "(complex, 'm :: finite, 'm) lmat"
+    and \<tau> :: "(complex, 'p :: finite, 'p) lmat"
+  shows "(tensor_lmat (a *\<^sub>R \<sigma>) \<tau>
+            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+       = a *\<^sub>R tensor_lmat \<sigma> \<tau>"
+  sorry
+
+lemma tensor_lmat_scaleR_right:
+  fixes a :: real
+    and \<sigma> :: "(complex, 'm :: finite, 'm) lmat"
+    and \<tau> :: "(complex, 'p :: finite, 'p) lmat"
+  shows "(tensor_lmat \<sigma> (a *\<^sub>R \<tau>)
+            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+       = a *\<^sub>R tensor_lmat \<sigma> \<tau>"
+  sorry
+
+lemma tensor_lmat_zero_left:
+  fixes \<tau> :: "(complex, 'p :: finite, 'p) lmat"
+  shows "(tensor_lmat (0 :: (complex, 'm :: finite, 'm) lmat) \<tau>
+            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 0"
+  by (metis real_vector.scale_zero_left tensor_lmat_scaleR_left)
+
+lemma tensor_lmat_zero_right:
+  fixes \<sigma> :: "(complex, 'm :: finite, 'm) lmat"
+  shows "(tensor_lmat \<sigma> (0 :: (complex, 'p :: finite, 'p) lmat)
+            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 0"
+  by (metis real_vector.scale_zero_left tensor_lmat_scaleR_right)
+
 lemma convex_cone_hull_separable_eq_Sprime:
   "(convex_cone hull
       (separable_lmat_gen
