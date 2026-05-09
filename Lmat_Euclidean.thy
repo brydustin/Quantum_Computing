@@ -499,5 +499,25 @@ proof -
   qed
 qed
 
+lemma axis_mem_Basis_lmat_set:
+  fixes u :: "'a :: euclidean_space"
+  assumes i_lt: "i < CARD('m :: finite)"
+      and j_lt: "j < CARD('n :: finite)"
+      and uB: "u \<in> Basis"
+  shows "(lmat_axis i j u :: ('a, 'm, 'n) lmat) \<in> Basis_lmat_set"
+proof -
+  have mem_i: "i \<in> {0..<CARD('m)}" using i_lt by simp
+  have mem_j: "j \<in> {0..<CARD('n)}" using j_lt by simp
+  have step1: "(lmat_axis i j u :: ('a, 'm, 'n) lmat)
+              \<in> (\<Union>u' \<in> Basis. {lmat_axis i j u' :: ('a, 'm, 'n) lmat})"
+    using uB by blast
+  have step2: "(lmat_axis i j u :: ('a, 'm, 'n) lmat)
+              \<in> (\<Union>j' \<in> {0..<CARD('n)}.
+                    \<Union>u' \<in> Basis. {lmat_axis i j' u' :: ('a, 'm, 'n) lmat})"
+    using step1 mem_j by blast
+  show ?thesis
+    using step2 mem_i unfolding Basis_lmat_set_def by blast
+qed
+
 
 end
