@@ -86,7 +86,45 @@ lemma zero_in_separable_cone_lmat:
   using convex_cone_hull_contains_0 by blast
 
 
-section \<open>Closedness\<close>
+section \<open>Step 1: PSD set is closed\<close>
+
+text \<open>Sub-lemmas for the closedness of PSD: the Hermitian half and the
+nonneg-quadratic-form half.\<close>
+
+lemma closed_hermitian_unwrap_lmat:
+  "closed {M :: (complex, 'k :: finite, 'k) lmat. hermitian (unwrap_lm M)}"
+  sorry
+
+lemma closed_nonneg_quad_form_lmat:
+  fixes x :: "complex Matrix.vec"
+  assumes "dim_vec x = CARD('k :: finite)"
+  shows "closed {M :: (complex, 'k, 'k) lmat. Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) \<ge> 0}"
+  sorry
+
+lemma closed_psd_lmat:
+  "closed {M :: (complex, 'k :: finite, 'k) lmat. psd_lmat M}"
+proof -
+  let ?H = "{M :: (complex, 'k, 'k) lmat. hermitian (unwrap_lm M)}"
+  let ?Q = "\<lambda>x. {M :: (complex, 'k, 'k) lmat. Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) \<ge> 0}"
+  have psd_eq:
+    "{M :: (complex, 'k, 'k) lmat. psd_lmat M}
+     = ?H \<inter> (\<Inter>x \<in> {y. dim_vec y = CARD('k)}. ?Q x)"
+    unfolding psd_lmat_def psd_def by auto
+  have closed_H: "closed ?H" by (rule closed_hermitian_unwrap_lmat)
+  have closed_INT: "closed (\<Inter>x \<in> {y. dim_vec y = CARD('k)}. ?Q x)"
+  proof (rule closed_INT, intro ballI)
+    fix x :: "complex Matrix.vec"
+    assume "x \<in> {y. dim_vec y = CARD('k)}"
+    hence dim: "dim_vec x = CARD('k)" by simp
+    show "closed {M :: (complex, 'k, 'k) lmat. Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) \<ge> 0}"
+      by (rule closed_nonneg_quad_form_lmat[OF dim])
+  qed
+  show ?thesis
+    unfolding psd_eq using closed_H closed_INT by (rule closed_Int)
+qed
+
+
+section \<open>Closedness of the separable cone\<close>
 
 text \<open>
 Proof strategy (uses the typeclass tower from \<open>Lmat_Euclidean\<close>):
