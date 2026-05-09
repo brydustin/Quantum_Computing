@@ -361,4 +361,63 @@ proof -
 qed
 
 
+text \<open>Two matrix-unit basis vectors are equal iff their entries and
+positions match (or both vectors are zero).\<close>
+
+lemma lmat_axis_eq_iff:
+  fixes u v :: "'a :: zero"
+  assumes "i < CARD('m :: finite)" "j < CARD('n :: finite)"
+      and "i' < CARD('m)" "j' < CARD('n)"
+  shows "(lmat_axis i j u :: ('a, 'm, 'n) lmat) = lmat_axis i' j' v
+           \<longleftrightarrow> (u = v \<and> i = i' \<and> j = j') \<or> (u = 0 \<and> v = 0)"
+proof
+  assume eq: "(lmat_axis i j u :: ('a, 'm, 'n) lmat) = lmat_axis i' j' v"
+  show "(u = v \<and> i = i' \<and> j = j') \<or> (u = 0 \<and> v = 0)"
+  proof (cases "u = 0 \<and> v = 0")
+    case True thus ?thesis by simp
+  next
+    case False
+    have h1: "unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (i, j)
+            = unwrap_lm (lmat_axis i' j' v :: ('a, 'm, 'n) lmat) $$ (i, j)"
+      using eq by simp
+    have h2: "unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (i', j')
+            = unwrap_lm (lmat_axis i' j' v :: ('a, 'm, 'n) lmat) $$ (i', j')"
+      using eq by simp
+    show ?thesis using h1 h2 assms False
+      by (auto split: if_split_asm)
+  qed
+next
+  assume "(u = v \<and> i = i' \<and> j = j') \<or> (u = 0 \<and> v = 0)"
+  thus "(lmat_axis i j u :: ('a, 'm, 'n) lmat) = lmat_axis i' j' v"
+    apply (elim disjE)
+     apply simp
+    apply (subst lmat_eq_iff_entries)
+    apply auto
+    done
+qed
+
+
+text \<open>Inner product between two matrix-unit basis vectors: 1 if same
+position and basis component, 0 otherwise.\<close>
+
+lemma inner_lmat_axis_axis:
+  fixes u v :: "'a :: real_inner"
+  assumes ij: "i < CARD('m :: finite)" "j < CARD('n :: finite)"
+      and ij': "i' < CARD('m)" "j' < CARD('n)"
+  shows "inner (lmat_axis i j u :: ('a, 'm, 'n) lmat) (lmat_axis i' j' v)
+           = (if i = i' \<and> j = j' then inner u v else 0)"
+proof -
+  have "inner (lmat_axis i j u :: ('a, 'm, 'n) lmat) (lmat_axis i' j' v)
+      = inner (unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (i', j')) v"
+    using inner_lmat_axis[OF ij'] .
+  also have "\<dots> = inner (if i' = i \<and> j' = j then u else 0) v"
+    using ij' by simp
+  also have "\<dots> = (if i' = i \<and> j' = j then inner u v else 0)"
+    by (cases "i' = i \<and> j' = j") auto
+  also have "\<dots> = (if i = i' \<and> j = j' then inner u v else 0)"
+    by (cases "i = i' \<and> j = j'") auto
+  finally show ?thesis .
+qed
+
+
 end
