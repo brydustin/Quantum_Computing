@@ -18976,6 +18976,155 @@ proof -
   finally show ?thesis .
 qed
 
+(* HS-Cauchy property of any minimizing sequence: for each \<epsilon> > 0
+   there is an \<open>N\<close> such that pairs of indices \<ge> N produce HS-close
+   matrices.  Combines \<open>cone_minimizers_close\<close> with the explicit
+   \<open>1/(n+1)\<close> bound from \<open>cone_dist_minimizing_sequence\<close>. *)
+
+lemma minimizing_sequence_HS_Cauchy:
+  fixes m p :: nat and \<rho> :: "complex Matrix.mat"
+      and q\<^sub>n :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+      and seq_cone: "\<forall>n. separable_cone m p (q\<^sub>n n)"
+      and seq_bd:
+        "\<forall>n. hs_norm (\<rho> - q\<^sub>n n)
+              < Inf (cone_dist_set m p \<rho>) + 1 / (real n + 1)"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "\<forall>\<epsilon>>0. \<exists>N. \<forall>r \<ge> N. \<forall>s \<ge> N. hs_norm (q\<^sub>n r - q\<^sub>n s) < \<epsilon>"
+proof (intro allI impI)
+  fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+  let ?D = "Inf (cone_dist_set m p \<rho>)"
+  have D_nn: "0 \<le> ?D" by (rule cone_dist_set_inf_nonneg)
+  text \<open>Pick \<open>N\<close> large enough that for all \<open>k \<ge> N\<close>,
+  \<open>1/(k+1)\<close> is small enough.\<close>
+  have eps2_pos: "0 < \<epsilon>\<^sup>2 / (16 * (?D + 1))"
+    using \<epsilon>_pos D_nn by simp
+  obtain N where N_bd: "1 / (real N + 1) < \<epsilon>\<^sup>2 / (16 * (?D + 1))"
+  proof -
+    obtain N where N_big: "real N > 16 * (?D + 1) / \<epsilon>\<^sup>2"
+      using reals_Archimedean2[of "16 * (?D + 1) / \<epsilon>\<^sup>2"] by blast
+    have factor_pos: "0 < 16 * (?D + 1)" using D_nn by simp
+    have eps2_pos: "0 < \<epsilon>\<^sup>2" using \<epsilon>_pos by simp
+    have N_plus1_big: "real N + 1 > 16 * (?D + 1) / \<epsilon>\<^sup>2"
+      using N_big by linarith
+    have N_plus1_pos: "0 < real N + 1" by simp
+    have ratio_pos: "0 < 16 * (?D + 1) / \<epsilon>\<^sup>2"
+      using factor_pos eps2_pos by simp
+    have "(real N + 1) * \<epsilon>\<^sup>2 > 16 * (?D + 1)"
+      using N_plus1_big eps2_pos
+      by (simp add: pos_divide_less_eq mult.commute)
+    hence "1 / (real N + 1) < \<epsilon>\<^sup>2 / (16 * (?D + 1))"
+      using N_plus1_pos factor_pos eps2_pos
+      by (simp add: less_divide_eq pos_less_divide_eq field_simps)
+    thus ?thesis using that by blast
+  qed
+  show "\<exists>N. \<forall>r \<ge> N. \<forall>s \<ge> N. hs_norm (q\<^sub>n r - q\<^sub>n s) < \<epsilon>"
+  proof (rule exI[of _ N], intro allI impI)
+    fix r s assume rN: "N \<le> r" and sN: "N \<le> s"
+    have one_r: "0 < 1 / (real r + 1)" by simp
+    have one_s: "0 < 1 / (real s + 1)" by simp
+    define \<delta> where "\<delta> = max (1 / (real r + 1)) (1 / (real s + 1))"
+    have \<delta>_pos: "0 < \<delta>"
+      unfolding \<delta>_def using one_r one_s by linarith
+    have \<delta>_nn: "0 \<le> \<delta>" using \<delta>_pos by simp
+    have \<delta>_le_N: "\<delta> \<le> 1 / (real N + 1)"
+    proof -
+      have a: "1 / (real r + 1) \<le> 1 / (real N + 1)"
+        using rN by (simp add: frac_le)
+      have b: "1 / (real s + 1) \<le> 1 / (real N + 1)"
+        using sN by (simp add: frac_le)
+      show ?thesis using a b \<delta>_def by simp
+    qed
+    have \<delta>_small: "\<delta> < \<epsilon>\<^sup>2 / (16 * (?D + 1))"
+      using \<delta>_le_N N_bd by linarith
+    text \<open>Both \<open>q\<^sub>n r\<close> and \<open>q\<^sub>n s\<close> are within \<open>?D + \<delta>\<close>.\<close>
+    have bd_r: "hs_norm (\<rho> - q\<^sub>n r) \<le> ?D + \<delta>"
+    proof -
+      have "hs_norm (\<rho> - q\<^sub>n r) < ?D + 1 / (real r + 1)"
+        using seq_bd by simp
+      moreover have "1 / (real r + 1) \<le> \<delta>" using \<delta>_def by simp
+      ultimately show ?thesis by simp
+    qed
+    have bd_s: "hs_norm (\<rho> - q\<^sub>n s) \<le> ?D + \<delta>"
+    proof -
+      have "hs_norm (\<rho> - q\<^sub>n s) < ?D + 1 / (real s + 1)"
+        using seq_bd by simp
+      moreover have "1 / (real s + 1) \<le> \<delta>" using \<delta>_def by simp
+      ultimately show ?thesis by simp
+    qed
+    have qr_cone: "separable_cone m p (q\<^sub>n r)" using seq_cone by simp
+    have qs_cone: "separable_cone m p (q\<^sub>n s)" using seq_cone by simp
+    have sq_bd: "(hs_norm (q\<^sub>n s - q\<^sub>n r))\<^sup>2 \<le> 8 * ?D * \<delta> + 4 * \<delta>\<^sup>2"
+      by (rule cone_minimizers_close
+            [OF \<rho>_c qr_cone qs_cone \<delta>_nn bd_r bd_s m_pos p_pos])
+    text \<open>Now show \<open>8 D \<delta> + 4 \<delta>\<^sup>2 < \<epsilon>\<^sup>2\<close> using our choice of \<delta>.\<close>
+    have factor_pos: "0 < 16 * (?D + 1)" using D_nn by simp
+    have step_a: "8 * ?D * \<delta> \<le> 8 * (?D + 1) * \<delta>"
+      using D_nn \<delta>_nn by (simp add: mult_right_mono)
+    have step_b: "4 * \<delta>\<^sup>2 \<le> 4 * \<delta>"
+    proof -
+      have one_r_le: "1 / (real r + 1) \<le> 1" by simp
+      have one_s_le: "1 / (real s + 1) \<le> 1" by simp
+      have \<delta>_le_1: "\<delta> \<le> 1"
+        using one_r_le one_s_le unfolding \<delta>_def by simp
+      have "\<delta>\<^sup>2 = \<delta> * \<delta>" by (simp add: power2_eq_square)
+      also have "\<dots> \<le> \<delta> * 1" using \<delta>_le_1 \<delta>_nn by (rule mult_left_mono)
+      also have "\<delta> * 1 = \<delta>" by simp
+      finally have "\<delta>\<^sup>2 \<le> \<delta>" .
+      thus ?thesis using \<delta>_nn by simp
+    qed
+    have step_c: "4 * \<delta> \<le> 4 * (?D + 1) * \<delta>"
+      using D_nn \<delta>_nn by (simp add: mult_right_mono)
+    have combine: "8 * ?D * \<delta> + 4 * \<delta>\<^sup>2 \<le> 16 * (?D + 1) * \<delta>"
+    proof -
+      have a1: "8 * ?D * \<delta> + 4 * \<delta>\<^sup>2 \<le> 8 * (?D + 1) * \<delta> + 4 * \<delta>"
+        using step_a step_b by linarith
+      have a2: "8 * (?D + 1) * \<delta> + 4 * \<delta>
+                  \<le> 8 * (?D + 1) * \<delta> + 4 * (?D + 1) * \<delta>"
+        using step_c by linarith
+      have a3: "8 * (?D + 1) * \<delta> + 4 * (?D + 1) * \<delta>
+                  = 12 * (?D + 1) * \<delta>"
+        by (simp add: algebra_simps)
+      have a4: "12 * (?D + 1) * \<delta> \<le> 16 * (?D + 1) * \<delta>"
+        using D_nn \<delta>_nn by (intro mult_right_mono) auto
+      from a1 a2 a3 a4 show ?thesis by linarith
+    qed
+    have small: "16 * (?D + 1) * \<delta> < \<epsilon>\<^sup>2"
+    proof -
+      have "16 * (?D + 1) * \<delta> < 16 * (?D + 1) * (\<epsilon>\<^sup>2 / (16 * (?D + 1)))"
+        using \<delta>_small factor_pos by (intro mult_strict_left_mono) auto
+      also have "\<dots> = \<epsilon>\<^sup>2" using factor_pos by simp
+      finally show ?thesis .
+    qed
+    have final_sq: "(hs_norm (q\<^sub>n s - q\<^sub>n r))\<^sup>2 < \<epsilon>\<^sup>2"
+      using sq_bd combine small by linarith
+    text \<open>Take square roots.\<close>
+    have norm_nn: "0 \<le> hs_norm (q\<^sub>n s - q\<^sub>n r)" by (rule hs_norm_nonneg)
+    have eps_nn: "0 \<le> \<epsilon>" using \<epsilon>_pos by simp
+    have "hs_norm (q\<^sub>n s - q\<^sub>n r) < \<epsilon>"
+      by (rule power_less_imp_less_base[OF final_sq eps_nn])
+    text \<open>Same for \<open>q\<^sub>n r - q\<^sub>n s\<close> by symmetry.\<close>
+    moreover have "hs_norm (q\<^sub>n r - q\<^sub>n s) = hs_norm (q\<^sub>n s - q\<^sub>n r)"
+    proof -
+      have qr_c: "q\<^sub>n r \<in> carrier_mat (m*p) (m*p)"
+        using qr_cone unfolding separable_cone_def by auto
+      have qs_c: "q\<^sub>n s \<in> carrier_mat (m*p) (m*p)"
+        using qs_cone unfolding separable_cone_def by auto
+      have eq: "q\<^sub>n r - q\<^sub>n s = complex_of_real (-1) \<cdot>\<^sub>m (q\<^sub>n s - q\<^sub>n r)"
+        using qr_c qs_c
+        by (intro eq_matI) (auto simp: minus_mat_def)
+      have "hs_norm (q\<^sub>n r - q\<^sub>n s)
+              = hs_norm (complex_of_real (-1) \<cdot>\<^sub>m (q\<^sub>n s - q\<^sub>n r))"
+        using eq by simp
+      also have "\<dots> = cmod (complex_of_real (-1)) * hs_norm (q\<^sub>n s - q\<^sub>n r)"
+        by (rule hs_norm_smult)
+      also have "cmod (complex_of_real (-1)) = 1" by simp
+      finally show ?thesis by simp
+    qed
+    ultimately show "hs_norm (q\<^sub>n r - q\<^sub>n s) < \<epsilon>" by simp
+  qed
+qed
+
 (* Cone separator from closest point.
 
    Pure inner-product geometry: for σ in cone, the ray
