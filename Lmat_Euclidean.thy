@@ -420,12 +420,16 @@ proof -
 qed
 
 
-section \<open>Basis set (definition only)\<close>
+section \<open>Basis set\<close>
 
 definition Basis_lmat_set :: "('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat set"
   where "Basis_lmat_set = (\<Union>i \<in> {0..<CARD('m)}.
                             \<Union>j \<in> {0..<CARD('n)}.
                               \<Union>u \<in> Basis. {lmat_axis i j u :: ('a, 'm, 'n) lmat})"
+
+lemma Basis_lmat_set_finite:
+  "finite (Basis_lmat_set :: ('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat set)"
+  unfolding Basis_lmat_set_def by simp
 
 
 end
