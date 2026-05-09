@@ -19500,10 +19500,24 @@ proof -
     by blast
 
   text \<open>Step 4: \<open>p_star \<in> cone\<close> by closedness.\<close>
+  have lim_zero: "(\<lambda>n. hs_norm (q\<^sub>n n - p_star)) \<longlonglongrightarrow> 0"
+    unfolding lim_sequentially
+  proof (intro allI impI)
+    fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+    obtain N where N_bd: "\<forall>n \<ge> N. hs_norm (q\<^sub>n n - p_star) < \<epsilon>"
+      using p_star_lim \<epsilon>_pos by blast
+    show "\<exists>N. \<forall>n \<ge> N. dist (hs_norm (q\<^sub>n n - p_star)) 0 < \<epsilon>"
+    proof (rule exI[of _ N], intro allI impI)
+      fix n assume "n \<ge> N"
+      hence "hs_norm (q\<^sub>n n - p_star) < \<epsilon>" using N_bd by simp
+      moreover have "0 \<le> hs_norm (q\<^sub>n n - p_star)" by (rule hs_norm_nonneg)
+      ultimately show "dist (hs_norm (q\<^sub>n n - p_star)) 0 < \<epsilon>"
+        by (simp add: dist_real_def)
+    qed
+  qed
   have p_star_cone: "separable_cone m p p_star"
-    using separable_cone_HS_closed[OF m_pos p_pos]
-          seq_cone p_star_c
-    sorry
+    using separable_cone_HS_closed[OF m_pos p_pos] seq_cone p_star_c lim_zero
+    by blast
 
   text \<open>Step 5: \<open>hs_norm (\<rho> - p_star) \<le> Inf cone_dist_set\<close> via the limit.\<close>
   have D_le: "hs_norm (\<rho> - p_star) \<le> Inf (cone_dist_set m p \<rho>)"
