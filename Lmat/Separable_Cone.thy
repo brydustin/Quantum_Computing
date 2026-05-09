@@ -528,12 +528,117 @@ proof -
     by (rule compact_continuous_image [OF cont prod_compact])
 qed
 
+text \<open>Reindex \<open>{0..<n*q}\<close> via (div, mod) into \<open>{0..<n} \<times> {0..<q}\<close>.\<close>
+
+lemma sum_div_mod_split:
+  fixes f :: "nat \<Rightarrow> nat \<Rightarrow> 'a :: comm_monoid_add"
+  assumes q_pos: "0 < q"
+  shows "(\<Sum>a = 0..<n. \<Sum>b = 0..<q. f a b)
+       = (\<Sum>i = 0..<n * q. f (i div q) (i mod q))"
+proof -
+  have inner: "(\<Sum>(a, b) \<in> {0..<n} \<times> {0..<q}. f a b)
+             = (\<Sum>i = 0..<n * q. f (i div q) (i mod q))"
+  proof (rule sum.reindex_bij_witness
+                [where j = "\<lambda>(a, b). a * q + b"
+                  and i = "\<lambda>k. (k div q, k mod q)"])
+    show "\<And>p. p \<in> {0..<n} \<times> {0..<q}
+              \<Longrightarrow> (\<lambda>k. (k div q, k mod q)) ((\<lambda>(a, b). a * q + b) p) = p"
+      using q_pos by auto
+  next
+    show "\<And>p. p \<in> {0..<n} \<times> {0..<q}
+              \<Longrightarrow> (\<lambda>(a, b). a * q + b) p \<in> {0..<n * q}"
+    proof -
+      fix p assume p_in: "p \<in> {0..<n} \<times> {0..<q}"
+      then obtain a b where p_eq: "p = (a, b)" and a_lt: "a < n" and b_lt: "b < q"
+        by auto
+      have "a + 1 \<le> n" using a_lt by simp
+      hence "(a + 1) * q \<le> n * q" by (rule mult_le_mono1)
+      hence "a * q + q \<le> n * q" by (simp add: distrib_right)
+      hence "a * q + b < n * q" using b_lt by linarith
+      thus "(\<lambda>(a, b). a * q + b) p \<in> {0..<n * q}" using p_eq by simp
+    qed
+  next
+    show "\<And>k. k \<in> {0..<n * q}
+              \<Longrightarrow> (\<lambda>(a, b). a * q + b) ((\<lambda>k. (k div q, k mod q)) k) = k"
+      by simp
+  next
+    show "\<And>k. k \<in> {0..<n * q}
+              \<Longrightarrow> (\<lambda>k. (k div q, k mod q)) k \<in> {0..<n} \<times> {0..<q}"
+    proof -
+      fix k :: nat assume k_in: "k \<in> {0..<n * q}"
+      hence k_lt: "k < n * q" by simp
+      have div_lt: "k div q < n" using k_lt q_pos
+        by (metis atLeastLessThan_iff div_less_iff_less_mult less_nat_zero_code mult.commute)
+      have mod_lt: "k mod q < q" using q_pos by simp
+      show "(\<lambda>k. (k div q, k mod q)) k \<in> {0..<n} \<times> {0..<q}"
+        using div_lt mod_lt by auto
+    qed
+  next
+    show "\<And>p. p \<in> {0..<n} \<times> {0..<q}
+              \<Longrightarrow> f ((\<lambda>(a, b). a * q + b) p div q)
+                    ((\<lambda>(a, b). a * q + b) p mod q)
+                  = (case p of (a, b) \<Rightarrow> f a b)"
+      using q_pos by auto
+  qed
+  have outer: "(\<Sum>a = 0..<n. \<Sum>b = 0..<q. f a b)
+             = (\<Sum>(a, b) \<in> {0..<n} \<times> {0..<q}. f a b)"
+    by (subst sum.cartesian_product) simp
+  show ?thesis using outer inner by simp
+qed
+
 lemma Tr_lmat_tensor:
   fixes \<sigma> :: "(complex, 'm :: finite, 'm) lmat"
     and \<tau> :: "(complex, 'p :: finite, 'p) lmat"
   shows "Tr_lmat (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
        = Tr_lmat \<sigma> * Tr_lmat \<tau>"
-  sorry
+proof -
+  let ?M = "CARD('m)"
+  let ?P = "CARD('p)"
+  have card_eq: "CARD('m \<times> 'p) = ?M * ?P" by simp
+  have m_pos: "0 < ?M" by simp
+  have p_pos: "0 < ?P" by simp
+  have un_eq: "unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+             = unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>"
+    by simp
+  have rA: "dim_row (unwrap_lm \<sigma>) = ?M" by simp
+  have cA: "dim_col (unwrap_lm \<sigma>) = ?M" by simp
+  have rB: "dim_row (unwrap_lm \<tau>) = ?P" by simp
+  have cB: "dim_col (unwrap_lm \<tau>) = ?P" by simp
+  have step1: "Tr_lmat (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+             = (\<Sum>i = 0..<?M * ?P.
+                  (unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>) $$ (i, i))"
+    unfolding Tr_lmat_def using un_eq card_eq by simp
+  have step2: "(\<Sum>i = 0..<?M * ?P. (unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>) $$ (i, i))
+             = (\<Sum>i = 0..<?M * ?P.
+                  unwrap_lm \<sigma> $$ (i div ?P, i div ?P)
+                  * unwrap_lm \<tau> $$ (i mod ?P, i mod ?P))"
+  proof (rule sum.cong, simp)
+    fix i assume i_in: "i \<in> {0..<?M * ?P}"
+    hence i_lt: "i < ?M * ?P" by simp
+    have div_lt: "i div ?P < ?M"
+      using i_lt p_pos div_less_iff_less_mult by (metis mult.commute)
+    have mod_lt: "i mod ?P < ?P" using p_pos by simp
+    show "(unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>) $$ (i, i)
+        = unwrap_lm \<sigma> $$ (i div ?P, i div ?P)
+          * unwrap_lm \<tau> $$ (i mod ?P, i mod ?P)"
+      using index_tensor_mat[OF rA cA rB cB i_lt i_lt m_pos p_pos] .
+  qed
+  have step3: "(\<Sum>i = 0..<?M * ?P.
+                  unwrap_lm \<sigma> $$ (i div ?P, i div ?P)
+                  * unwrap_lm \<tau> $$ (i mod ?P, i mod ?P))
+             = (\<Sum>q = 0..<?M. \<Sum>r = 0..<?P.
+                  unwrap_lm \<sigma> $$ (q, q) * unwrap_lm \<tau> $$ (r, r))"
+    using sum_div_mod_split [OF p_pos,
+              where f = "\<lambda>q r. unwrap_lm \<sigma> $$ (q, q) * unwrap_lm \<tau> $$ (r, r)"]
+    by simp
+  have step4: "(\<Sum>q = 0..<?M. \<Sum>r = 0..<?P.
+                  unwrap_lm \<sigma> $$ (q, q) * unwrap_lm \<tau> $$ (r, r))
+             = (\<Sum>q = 0..<?M. unwrap_lm \<sigma> $$ (q, q))
+               * (\<Sum>r = 0..<?P. unwrap_lm \<tau> $$ (r, r))"
+    by (simp add: sum_product)
+  show ?thesis
+    using step1 step2 step3 step4 unfolding Tr_lmat_def by simp
+qed
 
 lemma zero_not_in_Sprime:
   "(0 :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat) \<notin> Sprime"
