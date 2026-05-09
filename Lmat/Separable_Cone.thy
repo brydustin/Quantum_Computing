@@ -492,7 +492,123 @@ lemma continuous_on_tensor_lmat:
               \<times> (complex, 'p :: finite, 'p) lmat) set"
   shows "continuous_on T (\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>
                                     :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
-  sorry
+proof (subst continuous_on_componentwise, intro ballI)
+  fix b :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+  assume "b \<in> Basis"
+  hence "b \<in> Basis_lmat_set"
+    unfolding Basis_lmat_def by simp
+  then obtain I J u where b_eq: "b = lmat_axis I J u"
+                     and I_lt: "I < CARD('m \<times> 'p)"
+                     and J_lt: "J < CARD('m \<times> 'p)"
+                     and uB: "u \<in> (Basis :: complex set)"
+    unfolding Basis_lmat_set_def by auto
+  let ?M = "CARD('m)"
+  let ?P = "CARD('p)"
+  have card_eq: "CARD('m \<times> 'p) = ?M * ?P" by simp
+  have m_pos: "0 < ?M" by simp
+  have p_pos: "0 < ?P" by simp
+  have I_lt': "I < ?M * ?P" using I_lt card_eq by simp
+  have J_lt': "J < ?M * ?P" using J_lt card_eq by simp
+  have rA: "dim_row (unwrap_lm (\<sigma> :: (complex, 'm, 'm) lmat)) = ?M" for \<sigma> by simp
+  have cA: "dim_col (unwrap_lm (\<sigma> :: (complex, 'm, 'm) lmat)) = ?M" for \<sigma> by simp
+  have rB: "dim_row (unwrap_lm (\<tau> :: (complex, 'p, 'p) lmat)) = ?P" for \<tau> by simp
+  have cB: "dim_col (unwrap_lm (\<tau> :: (complex, 'p, 'p) lmat)) = ?P" for \<tau> by simp
+  have iI_lt: "I div ?P < ?M" using I_lt' p_pos
+    by (metis div_less_iff_less_mult mult.commute)
+  have iJ_lt: "J div ?P < ?M" using J_lt' p_pos
+    by (metis div_less_iff_less_mult mult.commute)
+  have iImod: "I mod ?P < ?P" using p_pos by simp
+  have iJmod: "J mod ?P < ?P" using p_pos by simp
+  have inner_eq:
+    "\<And>\<sigma> :: (complex, 'm, 'm) lmat. \<And>\<tau> :: (complex, 'p, 'p) lmat.
+       inner (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) b
+       = inner (unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+                * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P)) u"
+  proof -
+    fix \<sigma> :: "(complex, 'm, 'm) lmat" and \<tau> :: "(complex, 'p, 'p) lmat"
+    have e0: "inner (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+                    (lmat_axis I J u :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+            = inner (unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+                       $$ (I, J)) u"
+      by (rule inner_lmat_axis [OF I_lt J_lt])
+    hence e1: "inner (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) b
+            = inner (unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+                       $$ (I, J)) u"
+      using b_eq by simp
+    have e2: "unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+            = unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+              * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P)"
+      using index_tensor_mat [OF rA cA rB cB I_lt' J_lt' m_pos p_pos] by simp
+    show "inner (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) b
+        = inner (unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+                  * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P)) u"
+      using e1 e2 by simp
+  qed
+  have cont_sigma_entry:
+    "continuous_on T
+       (\<lambda>p. unwrap_lm (fst p :: (complex, 'm, 'm) lmat) $$ (I div ?P, J div ?P))"
+  proof -
+    have c_proj: "continuous_on T (fst :: ((complex, 'm, 'm) lmat \<times> (complex, 'p, 'p) lmat)
+                                          \<Rightarrow> (complex, 'm, 'm) lmat)"
+      by (rule continuous_on_fst [OF continuous_on_id])
+    have c_entry: "continuous_on (fst ` T)
+                    (\<lambda>\<sigma> :: (complex, 'm, 'm) lmat.
+                       unwrap_lm \<sigma> $$ (I div ?P, J div ?P))"
+      by (rule continuous_on_unwrap_lm_index [OF iI_lt iJ_lt])
+    show ?thesis
+      using continuous_on_compose [OF c_proj c_entry] by (simp add: o_def)
+  qed
+  have cont_tau_entry:
+    "continuous_on T
+       (\<lambda>p. unwrap_lm (snd p :: (complex, 'p, 'p) lmat) $$ (I mod ?P, J mod ?P))"
+  proof -
+    have c_proj: "continuous_on T (snd :: ((complex, 'm, 'm) lmat \<times> (complex, 'p, 'p) lmat)
+                                          \<Rightarrow> (complex, 'p, 'p) lmat)"
+      by (rule continuous_on_snd [OF continuous_on_id])
+    have c_entry: "continuous_on (snd ` T)
+                    (\<lambda>\<tau> :: (complex, 'p, 'p) lmat.
+                       unwrap_lm \<tau> $$ (I mod ?P, J mod ?P))"
+      by (rule continuous_on_unwrap_lm_index [OF iImod iJmod])
+    show ?thesis
+      using continuous_on_compose [OF c_proj c_entry] by (simp add: o_def)
+  qed
+  have cont_product: "continuous_on T
+       (\<lambda>p. unwrap_lm (fst p) $$ (I div ?P, J div ?P)
+            * unwrap_lm (snd p) $$ (I mod ?P, J mod ?P))"
+    using cont_sigma_entry cont_tau_entry by (rule continuous_on_mult)
+  have cont_inner: "continuous_on T
+       (\<lambda>p. inner (unwrap_lm (fst p) $$ (I div ?P, J div ?P)
+                    * unwrap_lm (snd p) $$ (I mod ?P, J mod ?P)) u)"
+    using cont_product continuous_on_const by (rule continuous_on_inner)
+  have target_eq:
+    "\<And>p :: (complex, 'm, 'm) lmat \<times> (complex, 'p, 'p) lmat.
+        inner ((\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>
+                  :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) p) b
+      = inner (unwrap_lm (fst p) $$ (I div ?P, J div ?P)
+                * unwrap_lm (snd p) $$ (I mod ?P, J mod ?P)) u"
+  proof -
+    fix p :: "(complex, 'm, 'm) lmat \<times> (complex, 'p, 'p) lmat"
+    obtain \<sigma> \<tau> where p_eq: "p = (\<sigma>, \<tau>)" by (cases p)
+    have "inner ((\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>
+                  :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) p) b
+        = inner (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) b"
+      using p_eq by simp
+    also have "\<dots> = inner (unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+                            * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P)) u"
+      by (rule inner_eq)
+    also have "\<dots> = inner (unwrap_lm (fst p) $$ (I div ?P, J div ?P)
+                            * unwrap_lm (snd p) $$ (I mod ?P, J mod ?P)) u"
+      using p_eq by simp
+    finally show "inner ((\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>
+                            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) p) b
+                = inner (unwrap_lm (fst p) $$ (I div ?P, J div ?P)
+                          * unwrap_lm (snd p) $$ (I mod ?P, J mod ?P)) u" .
+  qed
+  show "continuous_on T (\<lambda>x. inner ((\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>
+                                       :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) x) b)"
+    using cont_inner target_eq
+    by (auto cong: continuous_on_cong)
+qed
 
 
 section \<open>The unit-trace product slice\<close>
