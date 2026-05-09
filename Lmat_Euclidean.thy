@@ -451,5 +451,53 @@ proof -
   thus ?thesis by blast
 qed
 
+lemma Basis_lmat_orthonormal:
+  fixes u v :: "('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat"
+  assumes uB: "u \<in> Basis_lmat_set" and vB: "v \<in> Basis_lmat_set"
+  shows "inner u v = (if u = v then 1 else 0)"
+proof -
+  from uB obtain i j a where u_eq: "u = lmat_axis i j a"
+                       and ij: "i < CARD('m)" "j < CARD('n)"
+                       and aB: "a \<in> Basis"
+    unfolding Basis_lmat_set_def by auto
+  from vB obtain i' j' b where v_eq: "v = lmat_axis i' j' b"
+                       and ij': "i' < CARD('m)" "j' < CARD('n)"
+                       and bB: "b \<in> Basis"
+    unfolding Basis_lmat_set_def by auto
+  have a0: "a \<noteq> 0" using aB by (rule nonzero_Basis)
+  have b0: "b \<noteq> 0" using bB by (rule nonzero_Basis)
+  have eq_iff: "(lmat_axis i j a :: ('a, 'm, 'n) lmat) = lmat_axis i' j' b
+              \<longleftrightarrow> (a = b \<and> i = i' \<and> j = j')"
+    using lmat_axis_eq_iff[OF ij ij'] a0 b0 by auto
+  have axx: "inner (lmat_axis i j a :: ('a, 'm, 'n) lmat) (lmat_axis i' j' b)
+           = (if i = i' \<and> j = j' then inner a b else 0)"
+    using inner_lmat_axis_axis[OF ij ij'] .
+  show ?thesis
+    unfolding u_eq v_eq
+  proof (cases "i = i' \<and> j = j'")
+    case True
+    have lhs: "inner (lmat_axis i j a :: ('a, 'm, 'n) lmat) (lmat_axis i' j' b)
+             = (if a = b then 1 else 0)"
+      using axx inner_Basis[OF aB bB] True by simp
+    have rhs: "(if (lmat_axis i j a :: ('a, 'm, 'n) lmat) = lmat_axis i' j' b
+                then (1 :: real) else 0) = (if a = b then 1 else 0)"
+      using eq_iff True by simp
+    show "inner (lmat_axis i j a :: ('a, 'm, 'n) lmat) (lmat_axis i' j' b)
+        = (if (lmat_axis i j a :: ('a, 'm, 'n) lmat) = lmat_axis i' j' b
+           then 1 else 0)"
+      using lhs rhs by simp
+  next
+    case False
+    hence lhs: "inner (lmat_axis i j a :: ('a, 'm, 'n) lmat) (lmat_axis i' j' b) = 0"
+      using axx by force
+    have ne: "(lmat_axis i j a :: ('a, 'm, 'n) lmat) \<noteq> lmat_axis i' j' b"
+      using False eq_iff by auto
+    show "inner (lmat_axis i j a :: ('a, 'm, 'n) lmat) (lmat_axis i' j' b)
+        = (if (lmat_axis i j a :: ('a, 'm, 'n) lmat) = lmat_axis i' j' b
+           then 1 else 0)"
+      using lhs ne by simp
+  qed
+qed
+
 
 end
