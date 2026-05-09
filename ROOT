@@ -7,6 +7,10 @@ session Vern_Paulsen_QC_3_10 in "." = Isabelle_Marries_Dirac +
     "HOL-Hahn_Banach"
     "HOL-Analysis"
   theories
+    "HOL-Analysis.Euclidean_Space"
+    "HOL-Analysis.L2_Norm"
+    "HOL-Analysis.Elementary_Metric_Spaces"
+    "HOL-Analysis.Topology_Euclidean_Space"
     Basic_Math
     Quantum_Computing_3_10
     "HOL-Hahn_Banach.Hahn_Banach"
