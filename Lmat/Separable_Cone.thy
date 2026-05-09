@@ -885,12 +885,49 @@ coincide: every \<open>tensor_lmat \<sigma> \<tau>\<close> with \<open>\<sigma>,
 into \<open>Sprime\<close> by dividing by traces (when nonzero) or replaced by
 0 when a trace is zero.\<close>
 
+text \<open>The hard direction depends on three facts that each lift a
+spectral / bilinearity property:
+
+  psd_lmat_scaleR     – PSD preserved under nonneg real scaling
+  psd_lmat_zero_trace_zero  – PSD with Tr = 0 is the zero matrix
+  tensor_lmat_scaleR_{left,right}  – tensor is bilinear over real scaling
+  psd_lmat_Tr_real_nonneg   – Tr of PSD is a real nonneg complex.
+
+These reduce \<open>tensor \<sigma> \<tau>\<close> with \<open>\<sigma>, \<tau>\<close> PSD to
+\<open>(Tr \<sigma> * Tr \<tau>) *\<^sub>R tensor (\<sigma>/Tr \<sigma>) (\<tau>/Tr \<tau>)\<close> when traces are positive,
+or to 0 when one is zero — both forms in \<open>convex_cone hull Sprime\<close>.\<close>
+
+lemma Sprime_subset_separable_lmat_gen:
+  "(Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)
+   \<subseteq> separable_lmat_gen"
+proof
+  fix x :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+  assume "x \<in> Sprime"
+  then obtain \<sigma> \<tau>
+    where x_eq: "x = tensor_lmat \<sigma> \<tau>"
+      and \<sigma>_psd: "psd_lmat (\<sigma> :: (complex, 'm, 'm) lmat)"
+      and \<tau>_psd: "psd_lmat (\<tau> :: (complex, 'p, 'p) lmat)"
+    unfolding Sprime_def by auto
+  show "x \<in> separable_lmat_gen"
+    unfolding separable_lmat_gen_def using x_eq \<sigma>_psd \<tau>_psd by auto
+qed
+
 lemma convex_cone_hull_separable_eq_Sprime:
   "(convex_cone hull
       (separable_lmat_gen
          :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))
    = convex_cone hull Sprime"
-  sorry
+proof
+  show "convex_cone hull Sprime
+        \<subseteq> convex_cone hull (separable_lmat_gen
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+    by (rule hull_mono [OF Sprime_subset_separable_lmat_gen])
+next
+  show "convex_cone hull (separable_lmat_gen
+                            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+        \<subseteq> convex_cone hull Sprime"
+    sorry
+qed
 
 theorem separable_cone_lmat_closed:
   "closed (separable_cone_lmat
