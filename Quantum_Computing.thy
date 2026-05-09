@@ -18518,6 +18518,7 @@ proof -
     using step by metis
 qed
 
+
 (* Step 5e: given a closest point p_star \<in> cone to external point \<rho>,
    the matrix \<open>p_star - \<rho>\<close> separates: \<open>Re \<langle>\<langle>p_star-\<rho> | \<sigma>\<rangle>\<rangle> \<ge> Re \<langle>\<langle>p_star-\<rho> | p_star\<rangle>\<rangle>\<close>
    for all \<sigma> in the (closed convex) cone, and the value at \<rho> is
@@ -18816,6 +18817,83 @@ next
   hence "\<langle>\<langle> A | A \<rangle>\<rangle> = 0" using hs_inner_prod_self_zero_iff by simp
   thus "hs_norm A = 0"
     by (simp add: hs_norm_def)
+qed
+
+(* Quantitative parallelogram identity for matrices: writes the
+   distance \<open>\<parallel>q\<^sub>2 - q\<^sub>1\<parallel>\<^sup>2\<close> in terms of distances of \<open>q\<^sub>1\<close>, \<open>q\<^sub>2\<close>
+   to a reference point \<open>\<rho>\<close> and the midpoint distance.
+
+   Core Cauchy bound for the closest-point existence proof:
+   \<parallel>q\<^sub>2 - q\<^sub>1\<parallel>\<^sup>2 = 2\<parallel>\<rho>-q\<^sub>1\<parallel>\<^sup>2 + 2\<parallel>\<rho>-q\<^sub>2\<parallel>\<^sup>2 - 4\<parallel>\<rho> - midpoint\<parallel>\<^sup>2.
+   When q\<^sub>1, q\<^sub>2 are near-minimizers and midpoint \<in> cone (convexity),
+   the LHS is forced to 0. *)
+
+lemma hs_quantitative_parallelogram:
+  fixes \<rho> q\<^sub>1 q\<^sub>2 :: "complex Matrix.mat"
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat n n"
+      and q\<^sub>1_c: "q\<^sub>1 \<in> carrier_mat n n"
+      and q\<^sub>2_c: "q\<^sub>2 \<in> carrier_mat n n"
+  shows "(hs_norm (q\<^sub>2 - q\<^sub>1))\<^sup>2
+          + 4 * (hs_norm (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)))\<^sup>2
+          = 2 * (hs_norm (\<rho> - q\<^sub>1))\<^sup>2 + 2 * (hs_norm (\<rho> - q\<^sub>2))\<^sup>2"
+proof -
+  let ?U = "\<rho> - q\<^sub>1"
+  let ?V = "\<rho> - q\<^sub>2"
+  have U_c: "?U \<in> carrier_mat n n" using \<rho>_c q\<^sub>1_c by auto
+  have V_c: "?V \<in> carrier_mat n n" using \<rho>_c q\<^sub>2_c by auto
+  have par: "(hs_norm (?U + ?V))\<^sup>2 + (hs_norm (?U - ?V))\<^sup>2
+              = 2 * (hs_norm ?U)\<^sup>2 + 2 * (hs_norm ?V)\<^sup>2"
+    by (rule hs_norm_parallelogram[OF U_c V_c])
+  have UV_eq: "?U + ?V = complex_of_real 2 \<cdot>\<^sub>m (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2))"
+  proof (intro eq_matI)
+    show "dim_row (?U + ?V)
+            = dim_row (complex_of_real 2 \<cdot>\<^sub>m (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)))"
+      using \<rho>_c q\<^sub>1_c q\<^sub>2_c by auto
+    show "dim_col (?U + ?V)
+            = dim_col (complex_of_real 2 \<cdot>\<^sub>m (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)))"
+      using \<rho>_c q\<^sub>1_c q\<^sub>2_c by auto
+    fix i j
+    assume i: "i < dim_row (complex_of_real 2 \<cdot>\<^sub>m (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)))"
+    assume j: "j < dim_col (complex_of_real 2 \<cdot>\<^sub>m (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)))"
+    have ilt: "i < n" using i \<rho>_c q\<^sub>1_c q\<^sub>2_c by auto
+    have jlt: "j < n" using j \<rho>_c q\<^sub>1_c q\<^sub>2_c by auto
+    show "(?U + ?V) $$ (i,j)
+            = (complex_of_real 2 \<cdot>\<^sub>m (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2))) $$ (i,j)"
+      using ilt jlt \<rho>_c q\<^sub>1_c q\<^sub>2_c
+      by (simp add: minus_mat_def algebra_simps)
+  qed
+  have UV_norm:
+    "(hs_norm (?U + ?V))\<^sup>2
+       = 4 * (hs_norm (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)))\<^sup>2"
+  proof -
+    have "hs_norm (?U + ?V)
+            = hs_norm (complex_of_real 2
+                        \<cdot>\<^sub>m (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)))"
+      using UV_eq by simp
+    also have "\<dots> = cmod (complex_of_real 2)
+                    * hs_norm (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2))"
+      by (rule hs_norm_smult)
+    also have "cmod (complex_of_real 2) = 2" by simp
+    finally have "hs_norm (?U + ?V)
+                    = 2 * hs_norm (\<rho> - complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2))" .
+    thus ?thesis by (simp add: power2_eq_square)
+  qed
+  have UV_diff: "?U - ?V = q\<^sub>2 - q\<^sub>1"
+  proof (intro eq_matI)
+    show "dim_row (?U - ?V) = dim_row (q\<^sub>2 - q\<^sub>1)"
+      using \<rho>_c q\<^sub>1_c q\<^sub>2_c by auto
+    show "dim_col (?U - ?V) = dim_col (q\<^sub>2 - q\<^sub>1)"
+      using \<rho>_c q\<^sub>1_c q\<^sub>2_c by auto
+    fix i j
+    assume i: "i < dim_row (q\<^sub>2 - q\<^sub>1)" and j: "j < dim_col (q\<^sub>2 - q\<^sub>1)"
+    have ilt: "i < n" using i q\<^sub>1_c q\<^sub>2_c by auto
+    have jlt: "j < n" using j q\<^sub>1_c q\<^sub>2_c by auto
+    show "(?U - ?V) $$ (i,j) = (q\<^sub>2 - q\<^sub>1) $$ (i,j)"
+      using ilt jlt \<rho>_c q\<^sub>1_c q\<^sub>2_c by (simp add: minus_mat_def)
+  qed
+  hence UV_diff_norm: "(hs_norm (?U - ?V))\<^sup>2 = (hs_norm (q\<^sub>2 - q\<^sub>1))\<^sup>2"
+    by simp
+  show ?thesis using par UV_norm UV_diff_norm by simp
 qed
 
 (* Cone separator from closest point.
