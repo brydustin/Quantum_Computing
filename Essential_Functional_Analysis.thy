@@ -202,4 +202,87 @@ next
     by (simp add: hs_norm_def)
 qed
 
+
+section \<open>Carath\<eacute>odory's theorem for conic combinations\<close>
+
+text \<open>Given a finite-dimensional real vector space V of dimension
+d and a set S of V, every element of the conic hull of S (the set
+of finite non-negative linear combinations of elements of S) admits
+a representation with at most d generators.
+
+For our application V is the real vector space of Hermitian
+(m*p)x(m*p) matrices, of real dimension (m*p)^2; S is the
+set of product PSD operators.  This is the bound that allows us
+to extract a convergent subsequence from a sequence in the
+separable cone (each rho_n decomposes with uniformly-bounded
+length, Bolzano-Weierstrass on weights and factors gives a
+convergent subsequence, the limit lies in the cone, hence the
+cone is closed).
+
+HOL-Analysis has a Carath\<eacute>odory theorem for euclidean_space;
+reusing it directly would require establishing a euclidean_space
+instance on the relevant matrix subspace.  The alternative is a
+list-based proof: linear dependence of any d+1 vectors gives
+a non-trivial relation; renormalising weights along this relation
+kills one term while keeping all weights non-negative; iterate.\<close>
+
+text \<open>Below is a fold-based weighted sum of the cone-style list,
+suitable for stating Carath\<eacute>odory at the matrix level.\<close>
+
+fun cone_list_sum ::
+  "nat \<Rightarrow> nat \<Rightarrow>
+   (real \<times> complex Matrix.mat \<times> complex Matrix.mat) list \<Rightarrow>
+   complex Matrix.mat"
+where
+  "cone_list_sum m p [] = 0\<^sub>m (m*p) (m*p)"
+| "cone_list_sum m p ((w, \<sigma>, \<tau>) # ts) =
+     complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + cone_list_sum m p ts"
+
+lemma cone_list_sum_carrier:
+  "cone_list_sum m p ts \<in> carrier_mat (m*p) (m*p)"
+proof (induction ts)
+  case Nil show ?case by simp
+next
+  case (Cons t ts)
+  obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+  show ?case using Cons.IH unfolding t_eq by (simp add: add_carrier_mat)
+qed
+
+text \<open>Statement of the matrix-space Carath\<eacute>odory result
+specialised to lists of weight-\<sigma>-\<tau> triples; the full proof is
+deferred (uses the linear-dependence argument above).\<close>
+
+lemma caratheodory_matrix_cone:
+  fixes m p :: nat
+      and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes m_pos: "0 < m" and p_pos: "0 < p"
+      and ts_typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+                          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+      and ts_nn: "\<forall>(w, _, _) \<in> set ts. 0 \<le> w"
+  shows "\<exists>ts'. length ts' \<le> (m*p)\<^sup>2 + 1
+              \<and> (\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
+                    \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+                    \<and> (w, \<sigma>, \<tau>) \<in> set ts)
+              \<and> cone_list_sum m p ts = cone_list_sum m p ts'"
+  sorry
+
+text \<open>The Bolzano-Weierstrass step that follows Carath\<eacute>odory:
+given a bounded HS-norm sequence in the cone, apply
+caratheodory_matrix_cone to get decompositions of length at most
+K = (m*p)^2 + 1; pad with zero-weight dummy entries; the weights
+are bounded after unit-trace normalisation; Bolzano-Weierstrass
+extracts a subsequence converging coordinatewise; tensor and
+addition are HS-continuous, so the limit equals the original
+limit and lies in the cone.
+
+The compactness step requires either embedding the unit-trace
+PSD slice into Euclidean space (via HS coordinates, cardinality
+2(m*p)^2) and invoking HOL-Analysis compactness, or proving
+  sequential compactness directly via diagonal extraction over
+  finitely many entries.  The latter is what \<open>HS_Cauchy_imp_convergent\<close>
+  achieves for general HS-Cauchy sequences; restricting to the
+  bounded-trace PSD slice and applying it pointwise on entries is
+  the concrete plan.
+\<close>
+
 end
