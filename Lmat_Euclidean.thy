@@ -769,5 +769,12 @@ proof (rule metric_tendsto_imp_tendsto[OF lim])
     by (intro always_eventually allI) (rule dist_lmat_index_le[OF ij])
 qed
 
+lemma LIMSEQ_unwrap_lm_index:
+  fixes f :: "nat \<Rightarrow> ('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat"
+    and L :: "('a, 'm, 'n) lmat"
+  assumes "f \<longlonglongrightarrow> L" "i < CARD('m)" "j < CARD('n)"
+  shows "(\<lambda>n. unwrap_lm (f n) $$ (i, j)) \<longlonglongrightarrow> unwrap_lm L $$ (i, j)"
+  using tendsto_unwrap_lm_index assms by blast
+
 
 end
