@@ -561,4 +561,37 @@ lemma Basis_lmat_perp_zero:
   using Basis_lmat_perp_imp_zero zero_inner_Basis_lmat by metis
 
 
+section \<open>Euclidean space instance\<close>
+
+instantiation lmat :: (euclidean_space, finite, finite) euclidean_space
+begin
+
+definition Basis_lmat :: "('a, 'm :: finite, 'n :: finite) lmat set" where
+  "Basis_lmat = Basis_lmat_set"
+
+instance proof
+  show "(Basis :: ('a, 'm :: finite, 'n :: finite) lmat set) \<noteq> {}"
+    unfolding Basis_lmat_def using Basis_lmat_set_nonempty .
+next
+  show "finite (Basis :: ('a, 'm :: finite, 'n :: finite) lmat set)"
+    unfolding Basis_lmat_def using Basis_lmat_set_finite .
+next
+  fix u v :: "('a, 'm :: finite, 'n :: finite) lmat"
+  assume "u \<in> Basis" "v \<in> Basis"
+  thus "inner u v = (if u = v then 1 else 0)"
+    unfolding Basis_lmat_def by (rule Basis_lmat_orthonormal)
+next
+  fix x :: "('a, 'm :: finite, 'n :: finite) lmat"
+  show "(\<forall>u \<in> Basis. inner x u = 0) \<longleftrightarrow> x = 0"
+    unfolding Basis_lmat_def by (rule Basis_lmat_perp_zero)
+qed
+
+end
+
+
+section \<open>Heine-Borel\<close>
+
+instance lmat :: (euclidean_space, finite, finite) heine_borel ..
+
+
 end
