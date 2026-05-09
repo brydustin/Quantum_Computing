@@ -5,12 +5,14 @@ session Vern_Paulsen_QC_3_10 in "." = Isabelle_Marries_Dirac +
   sessions
     Quantum_Fourier_Transform
     "HOL-Hahn_Banach"
+    "HOL-Analysis"
   theories
     Basic_Math
     Quantum_Computing_3_10
     "HOL-Hahn_Banach.Hahn_Banach"
     Matrix_Typed
     Essential_Functional_Analysis
+    Lmat_Euclidean
 
 session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10 +
   options [document = false, quick_and_dirty = true, timeout = 3600]
