@@ -19194,7 +19194,279 @@ lemma HS_Cauchy_imp_convergent:
                                 hs_norm (M_seq x - M_seq y) < \<epsilon>"
   shows "\<exists>M_lim. M_lim \<in> carrier_mat r r
               \<and> (\<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>)"
-  sorry
+proof -
+  text \<open>Step 1: each entry sequence is Cauchy in \<complex>.\<close>
+  have entry_cauchy:
+    "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> Cauchy (\<lambda>n. M_seq n $$ (i,j))"
+    by (rule HS_Cauchy_entry_Cauchy[OF carrier hs_cauchy _ _ refl])
+
+  text \<open>Step 2: each entry sequence converges (\<complex> is complete).\<close>
+  have lim_exists:
+    "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> \<exists>L. (\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L"
+    using entry_cauchy Cauchy_convergent unfolding convergent_def by metis
+
+  text \<open>Step 3: define the limit matrix entry-wise.\<close>
+  define L :: "nat \<Rightarrow> nat \<Rightarrow> complex" where
+    "L i j = (SOME L. (\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L)" for i j
+  define M_lim where "M_lim = Matrix.mat r r (\<lambda>(i,j). L i j)"
+  have M_lim_c: "M_lim \<in> carrier_mat r r"
+    unfolding M_lim_def by simp
+
+  have entry_lim:
+    "\<And>i j. i < r \<Longrightarrow> j < r
+            \<Longrightarrow> (\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> M_lim $$ (i,j)"
+  proof -
+    fix i j assume i: "i < r" and j: "j < r"
+    have entry_eq: "M_lim $$ (i,j) = L i j"
+      unfolding M_lim_def using i j by simp
+    have "(\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L i j"
+      unfolding L_def
+      by (rule someI_ex[OF lim_exists[OF i j]])
+    thus "(\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> M_lim $$ (i,j)"
+      using entry_eq by simp
+  qed
+
+  text \<open>Step 4: HS-convergence to \<open>M_lim\<close>.\<close>
+  have conv: "\<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>"
+  proof (intro allI impI)
+    fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+    show "\<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>"
+    proof (cases "r = 0")
+      case True
+      text \<open>For \<open>r = 0\<close>, every matrix is \<open>0\<times>0\<close> and HS norm is 0.\<close>
+      have hs_zero: "\<And>n. hs_norm (M_seq n - M_lim) = 0"
+      proof -
+        fix n :: nat
+        have Mn_dr: "dim_row (M_seq n) = 0" using carrier True by auto
+        have Mn_dc: "dim_col (M_seq n) = 0" using carrier True by auto
+        have ML_dr: "dim_row M_lim = 0" using M_lim_c True by auto
+        have ML_dc: "dim_col M_lim = 0" using M_lim_c True by auto
+        have D_dr: "dim_row (M_seq n - M_lim) = 0"
+          using ML_dr unfolding minus_mat_def by simp
+        have D_dc: "dim_col (M_seq n - M_lim) = 0"
+          using ML_dc unfolding minus_mat_def by simp
+        have "\<langle>\<langle> M_seq n - M_lim | M_seq n - M_lim \<rangle>\<rangle> = 0"
+          unfolding hs_inner_prod_def using D_dr D_dc by simp
+        thus "hs_norm (M_seq n - M_lim) = 0"
+          unfolding hs_norm_def by simp
+      qed
+      show ?thesis using hs_zero \<epsilon>_pos by auto
+    next
+      case False
+      hence r_pos: "0 < r" by simp
+      define \<delta> where "\<delta> = \<epsilon> / (2 * (real r + 1))"
+      have \<delta>_pos: "0 < \<delta>"
+        unfolding \<delta>_def using \<epsilon>_pos by (simp add: divide_pos_pos)
+      text \<open>For each \<open>(i,j)\<close> there's an \<open>N\<^sub>{i,j}\<close> guaranteeing entry-closeness.\<close>
+      have entry_close:
+        "\<And>i j. i < r \<Longrightarrow> j < r
+              \<Longrightarrow> \<exists>N. \<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) < \<delta>"
+      proof -
+        fix i j assume i: "i < r" and j: "j < r"
+        have lim: "(\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> M_lim $$ (i,j)"
+          by (rule entry_lim[OF i j])
+        from lim \<delta>_pos
+        obtain N where N_bd:
+          "\<forall>n \<ge> N. dist (M_seq n $$ (i,j)) (M_lim $$ (i,j)) < \<delta>"
+          unfolding lim_sequentially by blast
+        have "\<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) < \<delta>"
+          using N_bd by (simp add: dist_complex_def)
+        thus "\<exists>N. \<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) < \<delta>"
+          by blast
+      qed
+      text \<open>Pick \<open>N\<^sub>{i,j}\<close> for each \<open>(i,j)\<close> via \<open>bchoice\<close>, then
+      take \<open>N\<close> = \<open>Max\<close>.\<close>
+      let ?Idx = "{(i,j) | i j. i < r \<and> j < r}"
+      have I_finite: "finite ?Idx"
+      proof -
+        have eq: "?Idx = (\<lambda>(i,j). (i,j)) ` ({..<r} \<times> {..<r})" by auto
+        thus ?thesis by simp
+      qed
+      have N_choice:
+        "\<forall>x \<in> ?Idx. \<exists>N. \<forall>n \<ge> N.
+            cmod (M_seq n $$ (fst x, snd x) - M_lim $$ (fst x, snd x)) < \<delta>"
+      proof
+        fix x assume x_in: "x \<in> ?Idx"
+        then obtain i j where xij: "x = (i,j)" and i: "i < r" and j: "j < r"
+          by blast
+        have "\<exists>N. \<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) < \<delta>"
+          by (rule entry_close[OF i j])
+        thus "\<exists>N. \<forall>n \<ge> N.
+              cmod (M_seq n $$ (fst x, snd x) - M_lim $$ (fst x, snd x)) < \<delta>"
+          using xij by simp
+      qed
+      from bchoice[OF N_choice]
+      obtain N_fn :: "nat \<times> nat \<Rightarrow> nat" where
+        N_fn_bd: "\<forall>x \<in> ?Idx. \<forall>n \<ge> N_fn x.
+            cmod (M_seq n $$ (fst x, snd x) - M_lim $$ (fst x, snd x)) < \<delta>"
+        by blast
+      text \<open>Take a uniform N as the max of the finite family of \<open>N_fn\<close>.\<close>
+      text \<open>Use the (finite) sum of all \<open>N_fn\<close> values as a uniform bound.\<close>
+      have I_finite_set: "finite ?Idx" by (rule I_finite)
+      have x_in: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> (i,j) \<in> ?Idx" by blast
+      have Nbar_bd_each:
+        "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow>
+            \<forall>n \<ge> sum N_fn ?Idx.
+                cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) < \<delta>"
+      proof -
+        fix i j assume i: "i < r" and j: "j < r"
+        have ij_in: "(i,j) \<in> ?Idx" using x_in[OF i j] .
+        have N_fn_le: "N_fn (i,j) \<le> sum N_fn ?Idx"
+          by (rule member_le_sum[OF ij_in _ I_finite_set]) auto
+        show "\<forall>n \<ge> sum N_fn ?Idx.
+                cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) < \<delta>"
+        proof (intro allI impI)
+          fix n assume n_ge: "n \<ge> sum N_fn ?Idx"
+          hence "n \<ge> N_fn (i,j)" using N_fn_le by simp
+          thus "cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) < \<delta>"
+            using N_fn_bd ij_in by simp
+        qed
+      qed
+
+      text \<open>For \<open>n \<ge> sum N_fn ?Idx\<close>, bound the HS norm by \<open>\<epsilon>\<close>.\<close>
+      show "\<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>"
+      proof (rule exI[of _ "sum N_fn ?Idx"], intro allI impI)
+        fix n assume n_ge: "n \<ge> sum N_fn ?Idx"
+        let ?D = "M_seq n - M_lim"
+        have Mn_c: "M_seq n \<in> carrier_mat r r" using carrier by simp
+        have D_c: "?D \<in> carrier_mat r r"
+          by (rule minus_carrier_mat[OF M_lim_c])
+        have D_dr: "dim_row ?D = r" using D_c by auto
+        have D_dc: "dim_col ?D = r" using D_c by auto
+        have entry_diff:
+          "\<And>i j. i < r \<Longrightarrow> j < r
+                \<Longrightarrow> ?D $$ (i,j) = M_seq n $$ (i,j) - M_lim $$ (i,j)"
+        proof -
+          fix i j assume i: "i < r" and j: "j < r"
+          have ML_dr: "dim_row M_lim = r" using M_lim_c by auto
+          have ML_dc: "dim_col M_lim = r" using M_lim_c by auto
+          have "?D $$ (i,j)
+                  = Matrix.mat (dim_row M_lim) (dim_col M_lim)
+                      (\<lambda>ij. M_seq n $$ ij - M_lim $$ ij) $$ (i,j)"
+            unfolding minus_mat_def by simp
+          also have "\<dots> = M_seq n $$ (i,j) - M_lim $$ (i,j)"
+            using i j ML_dr ML_dc by simp
+          finally show "?D $$ (i,j) = M_seq n $$ (i,j) - M_lim $$ (i,j)" .
+        qed
+        have entry_lt: "\<And>i j. i < r \<Longrightarrow> j < r
+                              \<Longrightarrow> cmod (?D $$ (i,j)) < \<delta>"
+          using Nbar_bd_each n_ge entry_diff by simp
+        text \<open>HS norm squared = sum of cmod-squared entries.\<close>
+        have hs_sq_eq: "(hs_norm ?D)\<^sup>2
+                          = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}.
+                                (cmod (?D $$ (i,j)))\<^sup>2)"
+        proof -
+          have "(hs_norm ?D)\<^sup>2 = Re (\<langle>\<langle> ?D | ?D \<rangle>\<rangle>)" by (rule hs_norm_sq)
+          also have "\<dots> = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}.
+                              (cmod (?D $$ (i,j)))\<^sup>2)"
+          proof -
+            have body_eq:
+              "\<And>i j. i \<in> {0..<r} \<Longrightarrow> j \<in> {0..<r} \<Longrightarrow>
+                Re (cnj (?D $$ (i,j)) * ?D $$ (i,j)) = (cmod (?D $$ (i,j)))\<^sup>2"
+            proof -
+              fix i j assume "i \<in> {0..<r}" "j \<in> {0..<r}"
+              let ?z = "?D $$ (i,j)"
+              have e1: "cnj ?z * ?z = ?z * cnj ?z" by (simp add: mult.commute)
+              have e2: "?z * cnj ?z = complex_of_real ((cmod ?z)\<^sup>2)"
+                using complex_norm_square[of ?z, symmetric] by simp
+              show "Re (cnj ?z * ?z) = (cmod ?z)\<^sup>2"
+                using e1 e2 by simp
+            qed
+            have "Re (\<langle>\<langle> ?D | ?D \<rangle>\<rangle>)
+                    = Re (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}.
+                              cnj (?D $$ (i,j)) * ?D $$ (i,j))"
+              unfolding hs_inner_prod_def using D_dr D_dc by simp
+            also have "\<dots> = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}.
+                                Re (cnj (?D $$ (i,j)) * ?D $$ (i,j)))"
+              by (simp add: Re_sum)
+            also have "\<dots> = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}.
+                                (cmod (?D $$ (i,j)))\<^sup>2)"
+            proof (intro sum.cong refl)
+              fix i j assume i_in: "i \<in> {0..<r}" and j_in: "j \<in> {0..<r}"
+              show "Re (cnj (?D $$ (i,j)) * ?D $$ (i,j))
+                      = (cmod (?D $$ (i,j)))\<^sup>2"
+                by (rule body_eq[OF i_in j_in])
+            qed
+            finally show ?thesis .
+          qed
+          finally show ?thesis .
+        qed
+        text \<open>Bound by \<open>r\<^sup>2 \<delta>\<^sup>2\<close>.\<close>
+        have entry_sq_lt:
+          "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> (cmod (?D $$ (i,j)))\<^sup>2 < \<delta>\<^sup>2"
+        proof -
+          fix i j assume i: "i < r" and j: "j < r"
+          have lt: "cmod (?D $$ (i,j)) < \<delta>" using entry_lt[OF i j] .
+          have nn: "0 \<le> cmod (?D $$ (i,j))" by simp
+          show "(cmod (?D $$ (i,j)))\<^sup>2 < \<delta>\<^sup>2"
+            using lt nn \<delta>_pos by (intro power_strict_mono) auto
+        qed
+        have inner_sum_bound:
+          "\<And>i. i < r \<Longrightarrow> (\<Sum>j\<in>{0..<r}. (cmod (?D $$ (i,j)))\<^sup>2)
+                          < (\<Sum>j\<in>{0..<r}. \<delta>\<^sup>2)"
+        proof -
+          fix i assume i: "i < r"
+          show "(\<Sum>j\<in>{0..<r}. (cmod (?D $$ (i,j)))\<^sup>2)
+                  < (\<Sum>j\<in>{0..<r}. \<delta>\<^sup>2)"
+          proof (rule sum_strict_mono)
+            show "finite {0..<r}" by simp
+            show "{0..<r} \<noteq> {}" using r_pos by simp
+            show "\<And>a. a \<in> {0..<r}
+                    \<Longrightarrow> (cmod (?D $$ (i,a)))\<^sup>2 < \<delta>\<^sup>2"
+            proof -
+              fix a assume a_in: "a \<in> {0..<r}"
+              hence a: "a < r" by simp
+              show "(cmod (?D $$ (i,a)))\<^sup>2 < \<delta>\<^sup>2"
+                by (rule entry_sq_lt[OF i a])
+            qed
+          qed
+        qed
+        have outer_sum_bound:
+          "(\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. (cmod (?D $$ (i,j)))\<^sup>2)
+              < (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. \<delta>\<^sup>2)"
+        proof (rule sum_strict_mono)
+          show "finite {0..<r}" by simp
+          show "{0..<r} \<noteq> {}" using r_pos by simp
+          show "\<And>a. a \<in> {0..<r} \<Longrightarrow>
+                  (\<Sum>j\<in>{0..<r}. (cmod (?D $$ (a,j)))\<^sup>2)
+                    < (\<Sum>j\<in>{0..<r}. \<delta>\<^sup>2)"
+          proof -
+            fix a assume a_in: "a \<in> {0..<r}"
+            hence a: "a < r" by simp
+            show "(\<Sum>j\<in>{0..<r}. (cmod (?D $$ (a,j)))\<^sup>2)
+                    < (\<Sum>j\<in>{0..<r}. \<delta>\<^sup>2)"
+              by (rule inner_sum_bound[OF a])
+          qed
+        qed
+        have const_sum: "(\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. \<delta>\<^sup>2)
+                          = real r * real r * \<delta>\<^sup>2"
+          by simp
+        have hs_sq_lt: "(hs_norm ?D)\<^sup>2 < real r * real r * \<delta>\<^sup>2"
+          using hs_sq_eq outer_sum_bound const_sum by simp
+        text \<open>And \<open>r * \<delta> < \<epsilon>\<close>.\<close>
+        have r_le_r1: "real r \<le> 2 * (real r + 1)" by simp
+        have r_delta_le: "real r * \<delta> \<le> \<epsilon> / 2"
+          unfolding \<delta>_def
+          using \<epsilon>_pos r_le_r1
+          by (simp add: divide_le_eq mult_left_mono pos_le_divide_eq)
+        have r_delta_lt: "real r * \<delta> < \<epsilon>"
+          using r_delta_le \<epsilon>_pos by linarith
+        have r_delta_nn: "0 \<le> real r * \<delta>" using \<delta>_pos by simp
+        have rsq_dsq: "(real r * \<delta>)\<^sup>2 < \<epsilon>\<^sup>2"
+          using r_delta_lt r_delta_nn by (intro power_strict_mono) auto
+        have rsq_dsq_eq: "(real r * \<delta>)\<^sup>2 = real r * real r * \<delta>\<^sup>2"
+          by (simp add: power2_eq_square algebra_simps)
+        have hs_sq_lt_eps: "(hs_norm ?D)\<^sup>2 < \<epsilon>\<^sup>2"
+          using hs_sq_lt rsq_dsq rsq_dsq_eq by linarith
+        have eps_nn: "0 \<le> \<epsilon>" using \<epsilon>_pos by simp
+        show "hs_norm ?D < \<epsilon>"
+          by (rule power_less_imp_less_base[OF hs_sq_lt_eps eps_nn])
+      qed
+    qed
+  qed
+
+  show ?thesis using M_lim_c conv by blast
+qed
 
 (* Step 5d (closest-point existence) — assembly. *)
 
