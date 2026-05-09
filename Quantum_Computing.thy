@@ -18624,6 +18624,62 @@ proof -
   thus ?thesis using re_eq swap by simp
 qed
 
+(* Helper: HS norm satisfies the parallelogram identity. *)
+
+lemma hs_norm_parallelogram:
+  fixes U V :: "complex Matrix.mat"
+  assumes U_c: "U \<in> carrier_mat n n"
+      and V_c: "V \<in> carrier_mat n n"
+  shows "(hs_norm (U + V))\<^sup>2 + (hs_norm (U - V))\<^sup>2
+          = 2 * (hs_norm U)\<^sup>2 + 2 * (hs_norm V)\<^sup>2"
+proof -
+  have minus_eq: "U + complex_of_real (-1) \<cdot>\<^sub>m V = U - V"
+    using U_c V_c
+    by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def)
+  have plus_eq: "U + complex_of_real (-(-1)) \<cdot>\<^sub>m V = U + V"
+    using U_c V_c by (intro eq_matI) auto
+  have neg_one_expand:
+    "(hs_norm (U + complex_of_real (-1) \<cdot>\<^sub>m V))\<^sup>2
+       = Re (\<langle>\<langle> U | U \<rangle>\<rangle>) - 2 * 1 * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+         + 1\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+    by (rule hs_norm_sq_diff_expand[OF U_c V_c])
+  have pos_one_expand:
+    "(hs_norm (U + complex_of_real (-(-1)) \<cdot>\<^sub>m V))\<^sup>2
+       = Re (\<langle>\<langle> U | U \<rangle>\<rangle>) - 2 * (-1) * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+         + (-1)\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+    by (rule hs_norm_sq_diff_expand[OF U_c V_c])
+  have UU_eq: "Re (\<langle>\<langle> U | U \<rangle>\<rangle>) = (hs_norm U)\<^sup>2" by (simp add: hs_norm_sq)
+  have VV_eq: "Re (\<langle>\<langle> V | V \<rangle>\<rangle>) = (hs_norm V)\<^sup>2" by (simp add: hs_norm_sq)
+  have minus_norm: "(hs_norm (U - V))\<^sup>2
+                      = (hs_norm U)\<^sup>2 - 2 * Re (\<langle>\<langle> U | V \<rangle>\<rangle>) + (hs_norm V)\<^sup>2"
+    using neg_one_expand minus_eq UU_eq VV_eq by simp
+  have plus_norm: "(hs_norm (U + V))\<^sup>2
+                     = (hs_norm U)\<^sup>2 + 2 * Re (\<langle>\<langle> U | V \<rangle>\<rangle>) + (hs_norm V)\<^sup>2"
+    using pos_one_expand plus_eq UU_eq VV_eq by simp
+  show ?thesis using minus_norm plus_norm by simp
+qed
+
+(* Helper: HS norm vanishes iff the matrix is zero (equivalent of
+   hs_inner_prod_self_zero_iff for the norm). *)
+
+lemma hs_norm_zero_iff:
+  fixes A :: "complex Matrix.mat"
+  shows "hs_norm A = 0 \<longleftrightarrow> A = 0\<^sub>m (dim_row A) (dim_col A)"
+proof
+  assume "hs_norm A = 0"
+  hence "(hs_norm A)\<^sup>2 = 0" by simp
+  hence "Re (\<langle>\<langle> A | A \<rangle>\<rangle>) = 0" by (simp add: hs_norm_sq)
+  hence "\<langle>\<langle> A | A \<rangle>\<rangle> = 0"
+    using hs_inner_prod_self_eq_of_real by (metis of_real_0)
+  thus "A = 0\<^sub>m (dim_row A) (dim_col A)"
+    by (simp add: hs_inner_prod_self_zero_iff)
+next
+  assume eq: "A = 0\<^sub>m (dim_row A) (dim_col A)"
+  hence "\<langle>\<langle> A | A \<rangle>\<rangle> = 0" using hs_inner_prod_self_zero_iff by simp
+  thus "hs_norm A = 0"
+    by (simp add: hs_norm_def)
+qed
+
 (* Cone separator from closest point.
 
    Pure inner-product geometry: for σ in cone, the ray
