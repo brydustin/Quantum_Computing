@@ -18896,6 +18896,86 @@ proof -
   show ?thesis using par UV_norm UV_diff_norm by simp
 qed
 
+(* Quantitative Cauchy bound: any two near-minimizers in the
+   separable cone are HS-close. Concretely, if \<open>q\<^sub>1, q\<^sub>2 \<in> cone\<close>
+   with \<open>\<parallel>\<rho> - q\<^sub>i\<parallel> \<le> D + \<delta>\<close> (where \<open>D\<close> is the infimum), then
+   \<parallel>q\<^sub>2 - q\<^sub>1\<parallel>\<^sup>2 \<le> 8 D \<delta> + 4 \<delta>\<^sup>2.  Letting \<delta> \<to> 0 gives Cauchy. *)
+
+lemma cone_minimizers_close:
+  fixes \<rho> q\<^sub>1 q\<^sub>2 :: "complex Matrix.mat" and \<delta> :: real
+  assumes \<rho>_c: "\<rho> \<in> carrier_mat (m*p) (m*p)"
+      and q\<^sub>1_cone: "separable_cone m p q\<^sub>1"
+      and q\<^sub>2_cone: "separable_cone m p q\<^sub>2"
+      and \<delta>_nn: "0 \<le> \<delta>"
+      and bd1: "hs_norm (\<rho> - q\<^sub>1) \<le> Inf (cone_dist_set m p \<rho>) + \<delta>"
+      and bd2: "hs_norm (\<rho> - q\<^sub>2) \<le> Inf (cone_dist_set m p \<rho>) + \<delta>"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+  shows "(hs_norm (q\<^sub>2 - q\<^sub>1))\<^sup>2
+          \<le> 8 * Inf (cone_dist_set m p \<rho>) * \<delta> + 4 * \<delta>\<^sup>2"
+proof -
+  let ?D = "Inf (cone_dist_set m p \<rho>)"
+  have D_nn: "0 \<le> ?D" by (rule cone_dist_set_inf_nonneg)
+  have q\<^sub>1_c: "q\<^sub>1 \<in> carrier_mat (m*p) (m*p)"
+    using q\<^sub>1_cone unfolding separable_cone_def by auto
+  have q\<^sub>2_c: "q\<^sub>2 \<in> carrier_mat (m*p) (m*p)"
+    using q\<^sub>2_cone unfolding separable_cone_def by auto
+
+  text \<open>Midpoint is in the cone (convexity).\<close>
+  let ?mid = "complex_of_real (1/2) \<cdot>\<^sub>m (q\<^sub>1 + q\<^sub>2)"
+  have mid_eq: "?mid = complex_of_real (1/2) \<cdot>\<^sub>m q\<^sub>1
+                       + complex_of_real (1/2) \<cdot>\<^sub>m q\<^sub>2"
+    using q\<^sub>1_c q\<^sub>2_c
+    by (intro eq_matI) (auto simp: ring_distribs)
+  have half_q\<^sub>1_cone: "separable_cone m p (complex_of_real (1/2) \<cdot>\<^sub>m q\<^sub>1)"
+    by (rule separable_cone_smult[OF q\<^sub>1_cone _ m_pos p_pos]) simp
+  have half_q\<^sub>2_cone: "separable_cone m p (complex_of_real (1/2) \<cdot>\<^sub>m q\<^sub>2)"
+    by (rule separable_cone_smult[OF q\<^sub>2_cone _ m_pos p_pos]) simp
+  have mid_cone: "separable_cone m p ?mid"
+    using separable_cone_add[OF half_q\<^sub>1_cone half_q\<^sub>2_cone]
+    using mid_eq by simp
+
+  text \<open>Distance to midpoint \<ge> infimum.\<close>
+  have mid_in: "hs_norm (\<rho> - ?mid) \<in> cone_dist_set m p \<rho>"
+    unfolding cone_dist_set_def using mid_cone by blast
+  have D_le_mid: "?D \<le> hs_norm (\<rho> - ?mid)"
+    by (rule cInf_lower[OF mid_in cone_dist_set_bdd_below])
+  have D_le_mid_sq: "?D\<^sup>2 \<le> (hs_norm (\<rho> - ?mid))\<^sup>2"
+    using D_le_mid D_nn by (simp add: power_mono)
+
+  text \<open>Apply quantitative parallelogram.\<close>
+  have par: "(hs_norm (q\<^sub>2 - q\<^sub>1))\<^sup>2 + 4 * (hs_norm (\<rho> - ?mid))\<^sup>2
+              = 2 * (hs_norm (\<rho> - q\<^sub>1))\<^sup>2 + 2 * (hs_norm (\<rho> - q\<^sub>2))\<^sup>2"
+    by (rule hs_quantitative_parallelogram[OF \<rho>_c q\<^sub>1_c q\<^sub>2_c])
+
+  text \<open>Bound RHS using bd1, bd2.\<close>
+  have rho_q1_nn: "0 \<le> hs_norm (\<rho> - q\<^sub>1)" by (simp add: hs_norm_nonneg)
+  have rho_q2_nn: "0 \<le> hs_norm (\<rho> - q\<^sub>2)" by (simp add: hs_norm_nonneg)
+  have D_d_nn: "0 \<le> ?D + \<delta>" using D_nn \<delta>_nn by simp
+  have sq1: "(hs_norm (\<rho> - q\<^sub>1))\<^sup>2 \<le> (?D + \<delta>)\<^sup>2"
+    using bd1 rho_q1_nn by (rule power_mono)
+  have sq2: "(hs_norm (\<rho> - q\<^sub>2))\<^sup>2 \<le> (?D + \<delta>)\<^sup>2"
+    using bd2 rho_q2_nn by (rule power_mono)
+  have rhs_bd: "2 * (hs_norm (\<rho> - q\<^sub>1))\<^sup>2 + 2 * (hs_norm (\<rho> - q\<^sub>2))\<^sup>2
+                  \<le> 4 * (?D + \<delta>)\<^sup>2"
+    using sq1 sq2 by linarith
+
+  text \<open>Lower-bound LHS midpoint distance.\<close>
+  have lhs_lb: "4 * ?D\<^sup>2 \<le> 4 * (hs_norm (\<rho> - ?mid))\<^sup>2"
+    using D_le_mid_sq by linarith
+
+  have "(hs_norm (q\<^sub>2 - q\<^sub>1))\<^sup>2 + 4 * ?D\<^sup>2
+          \<le> (hs_norm (q\<^sub>2 - q\<^sub>1))\<^sup>2 + 4 * (hs_norm (\<rho> - ?mid))\<^sup>2"
+    using lhs_lb by linarith
+  also have "\<dots> = 2 * (hs_norm (\<rho> - q\<^sub>1))\<^sup>2 + 2 * (hs_norm (\<rho> - q\<^sub>2))\<^sup>2"
+    by (rule par)
+  also have "\<dots> \<le> 4 * (?D + \<delta>)\<^sup>2" by (rule rhs_bd)
+  finally have "(hs_norm (q\<^sub>2 - q\<^sub>1))\<^sup>2 \<le> 4 * (?D + \<delta>)\<^sup>2 - 4 * ?D\<^sup>2"
+    by linarith
+  also have "4 * (?D + \<delta>)\<^sup>2 - 4 * ?D\<^sup>2 = 8 * ?D * \<delta> + 4 * \<delta>\<^sup>2"
+    by (simp add: power2_eq_square algebra_simps)
+  finally show ?thesis .
+qed
+
 (* Cone separator from closest point.
 
    Pure inner-product geometry: for σ in cone, the ray
