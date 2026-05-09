@@ -431,5 +431,25 @@ lemma Basis_lmat_set_finite:
   "finite (Basis_lmat_set :: ('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat set)"
   unfolding Basis_lmat_set_def by simp
 
+lemma Basis_lmat_set_nonempty:
+  "Basis_lmat_set \<noteq> ({} :: ('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat set)"
+proof -
+  obtain u :: 'a where uB: "u \<in> Basis"
+    using nonempty_Basis[where 'a = 'a] by blast
+  have m_pos: "(0 :: nat) < CARD('m)" by simp
+  have n_pos: "(0 :: nat) < CARD('n)" by simp
+  have mem: "(0 :: nat) \<in> {0..<CARD('m)}" using m_pos by simp
+  have nmem: "(0 :: nat) \<in> {0..<CARD('n)}" using n_pos by simp
+  have step1: "(lmat_axis 0 0 u :: ('a, 'm, 'n) lmat)
+              \<in> (\<Union>u' \<in> Basis. {lmat_axis (0 :: nat) (0 :: nat) u' :: ('a, 'm, 'n) lmat})"
+    using uB by blast
+  have step2: "(lmat_axis 0 0 u :: ('a, 'm, 'n) lmat)
+              \<in> (\<Union>j \<in> {0..<CARD('n)}. \<Union>u' \<in> Basis. {lmat_axis (0 :: nat) j u' :: ('a, 'm, 'n) lmat})"
+    using step1 nmem by blast
+  have step3: "(lmat_axis 0 0 u :: ('a, 'm, 'n) lmat) \<in> Basis_lmat_set"
+    using step2 mem unfolding Basis_lmat_set_def by blast
+  thus ?thesis by blast
+qed
+
 
 end
