@@ -120,4 +120,64 @@ next
   thus "M = N" by (metis unwrap_lm_inverse)
 qed
 
+
+section \<open>Distance, uniformity, open: \<open>metric_space\<close> instance\<close>
+
+text \<open>Distance is the L2 sum of entry-wise distances, indexed by
+\<open>{0..<CARD('m)} \<times> {0..<CARD('n)}\<close>.  Uniformity and \<open>open\<close> are
+defined via the standard metric-induced filter so that the
+\<open>open_uniformity\<close> axiom is discharged by reflexivity.\<close>
+
+instantiation lmat :: (metric_space, finite, finite) dist
+begin
+
+definition dist_lmat :: "('a, 'm :: finite, 'n :: finite) lmat
+                      \<Rightarrow> ('a, 'm :: finite, 'n :: finite) lmat \<Rightarrow> real" where
+  "dist_lmat M N = L2_set (\<lambda>(i, j). dist (unwrap_lm M $$ (i, j)) (unwrap_lm N $$ (i, j)))
+                          ({0..<CARD('m)} \<times> {0..<CARD('n)})"
+
+instance ..
+
+end
+
+instantiation lmat :: (metric_space, finite, finite) uniformity_dist
+begin
+
+definition uniformity_lmat ::
+  "(('a, 'm :: finite, 'n :: finite) lmat \<times> ('a, 'm, 'n) lmat) filter" where
+  "(uniformity_lmat :: (('a, 'm, 'n) lmat \<times> ('a, 'm, 'n) lmat) filter)
+     = (INF e \<in> {0<..}. principal {(x, y). dist x y < e})"
+
+instance by standard (rule uniformity_lmat_def)
+
+end
+
+instantiation lmat :: (metric_space, finite, finite) metric_space
+begin
+
+definition open_lmat :: "('a, 'm :: finite, 'n :: finite) lmat set \<Rightarrow> bool" where
+  "open_lmat U = (\<forall>x \<in> U. \<forall>\<^sub>F (x', y) in uniformity. x' = x \<longrightarrow> y \<in> U)"
+
+instance proof
+  fix x y :: "('a, 'm :: finite, 'n :: finite) lmat"
+  show "(dist x y = 0) = (x = y)"
+    unfolding dist_lmat_def
+    by (auto simp: L2_set_eq_0_iff lmat_eq_iff_entries split: prod.split)
+next
+  fix x y z :: "('a, 'm :: finite, 'n :: finite) lmat"
+  show "dist x y \<le> dist x z + dist y z"
+    unfolding dist_lmat_def
+    apply (rule order_trans [OF _ L2_set_triangle_ineq])
+    apply (rule L2_set_mono)
+     apply (auto simp: dist_triangle2)
+    done
+next
+  fix S :: "('a, 'm :: finite, 'n :: finite) lmat set"
+  show "open S = (\<forall>x\<in>S. \<forall>\<^sub>F (x', y) in uniformity. x' = x \<longrightarrow> y \<in> S)"
+    by (rule open_lmat_def)
+qed
+
+end
+
+
 end
