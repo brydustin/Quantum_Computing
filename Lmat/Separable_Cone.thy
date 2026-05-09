@@ -454,6 +454,78 @@ proof -
 qed
 
 
+section \<open>Tensor continuity\<close>
+
+text \<open>The typed tensor product is jointly continuous in both factors.\<close>
+
+lemma continuous_on_tensor_lmat:
+  fixes T :: "((complex, 'm :: finite, 'm) lmat
+              \<times> (complex, 'p :: finite, 'p) lmat) set"
+  shows "continuous_on T (\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>
+                                    :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+  sorry
+
+
+section \<open>The unit-trace product slice\<close>
+
+definition Sprime :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set"
+  where
+  "Sprime =
+   {\<rho>. \<exists>(\<sigma> :: (complex, 'm, 'm) lmat) (\<tau> :: (complex, 'p, 'p) lmat).
+         \<rho> = tensor_lmat \<sigma> \<tau>
+         \<and> psd_lmat \<sigma> \<and> Tr_lmat \<sigma> = 1
+         \<and> psd_lmat \<tau> \<and> Tr_lmat \<tau> = 1}"
+
+lemma Sprime_image:
+  "(Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)
+   = (\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>) `
+       ({\<sigma> :: (complex, 'm, 'm) lmat. psd_lmat \<sigma> \<and> Tr_lmat \<sigma> = 1}
+        \<times> {\<tau> :: (complex, 'p, 'p) lmat. psd_lmat \<tau> \<and> Tr_lmat \<tau> = 1})"
+  unfolding Sprime_def by auto
+
+lemma compact_Sprime:
+  "compact (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)"
+proof -
+  let ?A = "{\<sigma> :: (complex, 'm, 'm) lmat. psd_lmat \<sigma> \<and> Tr_lmat \<sigma> = 1}"
+  let ?B = "{\<tau> :: (complex, 'p, 'p) lmat. psd_lmat \<tau> \<and> Tr_lmat \<tau> = 1}"
+  have cA: "compact ?A" by (rule compact_unit_trace_psd_lmat)
+  have cB: "compact ?B" by (rule compact_unit_trace_psd_lmat)
+  have prod_compact: "compact (?A \<times> ?B)" using cA cB by (rule compact_Times)
+  have cont: "continuous_on (?A \<times> ?B)
+                (\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+    by (rule continuous_on_tensor_lmat)
+  show ?thesis
+    unfolding Sprime_image
+    by (rule compact_continuous_image [OF cont prod_compact])
+qed
+
+lemma Tr_lmat_tensor:
+  fixes \<sigma> :: "(complex, 'm :: finite, 'm) lmat"
+    and \<tau> :: "(complex, 'p :: finite, 'p) lmat"
+  shows "Tr_lmat (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+       = Tr_lmat \<sigma> * Tr_lmat \<tau>"
+  sorry
+
+lemma zero_not_in_Sprime:
+  "(0 :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat) \<notin> Sprime"
+proof
+  assume "(0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) \<in> Sprime"
+  then obtain \<sigma> \<tau> where eq: "(0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = tensor_lmat \<sigma> \<tau>"
+                  and tr_s: "Tr_lmat (\<sigma> :: (complex, 'm, 'm) lmat) = 1"
+                  and tr_t: "Tr_lmat (\<tau> :: (complex, 'p, 'p) lmat) = 1"
+    unfolding Sprime_def by auto
+  have "Tr_lmat (0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 0"
+    unfolding Tr_lmat_def by simp
+  also have "Tr_lmat (0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+              = Tr_lmat (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+    using eq by simp
+  also have "\<dots> = Tr_lmat \<sigma> * Tr_lmat \<tau>" by (rule Tr_lmat_tensor)
+  also have "\<dots> = 1" using tr_s tr_t by simp
+  finally have "(0 :: complex) = 1" by simp
+  thus False by simp
+qed
+
+
 section \<open>Closedness of the separable cone\<close>
 
 text \<open>
