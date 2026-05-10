@@ -960,9 +960,55 @@ qed
 
 lemma psd_lmat_zero_trace_zero:
   fixes M :: "(complex, 'k :: finite, 'k) lmat"
-  assumes "psd_lmat M" "Tr_lmat M = 0"
+  assumes M_psd: "psd_lmat M" and tr_zero: "Tr_lmat M = 0"
   shows "M = 0"
-  sorry
+proof -
+  let ?n = "CARD('k)"
+  have psd_unwrap: "psd (unwrap_lm M)" using M_psd by simp
+  have unwrap_carr: "unwrap_lm M \<in> carrier_mat ?n ?n" by simp
+  obtain Q :: "complex Matrix.mat" where
+      Q_carr: "Q \<in> carrier_mat ?n ?n"
+    and Q_psd: "psd Q"
+    and QQ: "Q * Q = unwrap_lm M"
+    using psd_sqrt_exists [OF unwrap_carr psd_unwrap] by blast
+  have Q_herm: "hermitian Q" using Q_psd by (rule psd_hermitian)
+  have Q_dag: "Q\<^sup>\<dagger> = Q" using Q_herm by (simp add: hermitian_def)
+  have ip_self_eq:
+    "\<langle>\<langle> Q | Q \<rangle>\<rangle> = Tr (Q\<^sup>\<dagger> * Q)"
+    by (rule hs_inner_prod_self_as_trace)
+  have Tr_unwrap_eq_Tr_QQ: "Tr (unwrap_lm M) = Tr (Q * Q)"
+    using QQ by simp
+  have Tr_lmat_unwrap: "Tr_lmat M = Tr (unwrap_lm M)"
+    unfolding Tr_lmat_def Tr_def
+    by (simp add: atLeast0LessThan)
+  have ip_zero: "\<langle>\<langle> Q | Q \<rangle>\<rangle> = 0"
+  proof -
+    have "\<langle>\<langle> Q | Q \<rangle>\<rangle> = Tr (Q\<^sup>\<dagger> * Q)" by (rule ip_self_eq)
+    also have "\<dots> = Tr (Q * Q)" using Q_dag by simp
+    also have "\<dots> = Tr (unwrap_lm M)" using QQ by simp
+    also have "\<dots> = Tr_lmat M" using Tr_lmat_unwrap by simp
+    also have "\<dots> = 0" using tr_zero .
+    finally show ?thesis .
+  qed
+  have Q_dim_row: "dim_row Q = ?n" using Q_carr by simp
+  have Q_dim_col: "dim_col Q = ?n" using Q_carr by simp
+  have Q_entries_zero:
+    "\<And>i j. i < ?n \<Longrightarrow> j < ?n \<Longrightarrow> Q $$ (i, j) = 0"
+    using ip_zero hs_inner_prod_eq_zero_imp Q_dim_row Q_dim_col by force
+  have Q_zero: "Q = 0\<^sub>m ?n ?n"
+    using Q_carr Q_entries_zero by (intro eq_matI) (auto simp: zero_mat_def)
+  have unwrap_M_zero: "unwrap_lm M = 0\<^sub>m ?n ?n"
+  proof -
+    have "unwrap_lm M = Q * Q" using QQ by simp
+    also have "\<dots> = (0\<^sub>m ?n ?n :: complex Matrix.mat) * 0\<^sub>m ?n ?n"
+      using Q_zero by simp
+    also have "\<dots> = 0\<^sub>m ?n ?n" by simp
+    finally show ?thesis .
+  qed
+  have "unwrap_lm M = unwrap_lm (0 :: (complex, 'k, 'k) lmat)"
+    using unwrap_M_zero by simp
+  thus "M = 0" by (simp only: unwrap_lm_inject)
+qed
 
 lemma psd_smult_nonneg_local:
   fixes A :: "complex Matrix.mat" and c :: real
