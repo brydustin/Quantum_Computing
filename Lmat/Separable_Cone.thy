@@ -1162,7 +1162,77 @@ lemma tensor_lmat_scaleR_right:
   shows "(tensor_lmat \<sigma> (a *\<^sub>R \<tau>)
             :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
        = a *\<^sub>R tensor_lmat \<sigma> \<tau>"
-  sorry
+proof (subst lmat_eq_iff_entries, intro allI impI)
+  fix I J :: nat
+  assume IJ: "I < CARD('m \<times> 'p)" "J < CARD('m \<times> 'p)"
+  let ?M = "CARD('m)"
+  let ?P = "CARD('p)"
+  have card_eq: "CARD('m \<times> 'p) = ?M * ?P" by simp
+  have m_pos: "0 < ?M" by simp
+  have p_pos: "0 < ?P" by simp
+  have I_lt: "I < ?M * ?P" using IJ(1) card_eq by simp
+  have J_lt: "J < ?M * ?P" using IJ(2) card_eq by simp
+  have I_div: "I div ?P < ?M" using I_lt p_pos
+    by (metis div_less_iff_less_mult mult.commute)
+  have J_div: "J div ?P < ?M" using J_lt p_pos
+    by (metis div_less_iff_less_mult mult.commute)
+  have I_mod: "I mod ?P < ?P" using p_pos by simp
+  have J_mod: "J mod ?P < ?P" using p_pos by simp
+  have rA: "dim_row (unwrap_lm \<sigma>) = ?M" "dim_col (unwrap_lm \<sigma>) = ?M" by simp_all
+  have rB: "dim_row (unwrap_lm \<tau>) = ?P" "dim_col (unwrap_lm \<tau>) = ?P" by simp_all
+  have rB': "dim_row (unwrap_lm (a *\<^sub>R \<tau>)) = ?P" "dim_col (unwrap_lm (a *\<^sub>R \<tau>)) = ?P"
+    by simp_all
+  have lhs_entry:
+    "unwrap_lm (tensor_lmat \<sigma> (a *\<^sub>R \<tau>) :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+      = unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+        * unwrap_lm (a *\<^sub>R \<tau>) $$ (I mod ?P, J mod ?P)"
+  proof -
+    have "unwrap_lm (tensor_lmat \<sigma> (a *\<^sub>R \<tau>)
+                       :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+        = (unwrap_lm \<sigma> \<Otimes> unwrap_lm (a *\<^sub>R \<tau>)) $$ (I, J)" by simp
+    also have "\<dots> = unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+                    * unwrap_lm (a *\<^sub>R \<tau>) $$ (I mod ?P, J mod ?P)"
+      using index_tensor_mat [OF rA(1) rA(2) rB'(1) rB'(2) I_lt J_lt m_pos p_pos] .
+    finally show ?thesis .
+  qed
+  have rhs_entry:
+    "unwrap_lm (a *\<^sub>R tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+      = a *\<^sub>R (unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J))"
+    using IJ unwrap_lm_scaleR_index by simp
+  have tensor_entry:
+    "unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+      = unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+        * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P)"
+  proof -
+    have "unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+        = (unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>) $$ (I, J)" by simp
+    also have "\<dots> = unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+                    * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P)"
+      using index_tensor_mat [OF rA(1) rA(2) rB(1) rB(2) I_lt J_lt m_pos p_pos] .
+    finally show ?thesis .
+  qed
+  have tau_scaled:
+    "unwrap_lm (a *\<^sub>R \<tau>) $$ (I mod ?P, J mod ?P)
+      = complex_of_real a * (unwrap_lm \<tau> $$ (I mod ?P, J mod ?P))"
+    using I_mod J_mod by (simp add: scaleR_conv_of_real)
+  have lhs_simp:
+    "unwrap_lm (tensor_lmat \<sigma> (a *\<^sub>R \<tau>) :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+      = complex_of_real a *
+        (unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+         * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P))"
+    using lhs_entry tau_scaled by (simp add: scaleR_conv_of_real)
+  have rhs_simp:
+    "unwrap_lm (a *\<^sub>R tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+      = complex_of_real a *
+        (unwrap_lm \<sigma> $$ (I div ?P, J div ?P)
+         * unwrap_lm \<tau> $$ (I mod ?P, J mod ?P))"
+    using rhs_entry tensor_entry by (simp add: scaleR_conv_of_real)
+  show "unwrap_lm (tensor_lmat \<sigma> (a *\<^sub>R \<tau>)
+                     :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)
+      = unwrap_lm (a *\<^sub>R tensor_lmat \<sigma> \<tau>
+                     :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) $$ (I, J)"
+    using lhs_simp rhs_simp by simp
+qed
 
 lemma tensor_lmat_zero_left:
   fixes \<tau> :: "(complex, 'p :: finite, 'p) lmat"
