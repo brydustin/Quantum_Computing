@@ -1260,7 +1260,144 @@ next
   show "convex_cone hull (separable_lmat_gen
                             :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
         \<subseteq> convex_cone hull Sprime"
-    sorry
+  proof (rule hull_minimal)
+    show "separable_lmat_gen
+          \<subseteq> convex_cone hull (Sprime
+                                  :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+    proof
+      fix x :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+      assume "x \<in> separable_lmat_gen"
+      then obtain \<sigma> \<tau>
+        where x_eq: "x = tensor_lmat \<sigma> \<tau>"
+          and \<sigma>_psd: "psd_lmat (\<sigma> :: (complex, 'm, 'm) lmat)"
+          and \<tau>_psd: "psd_lmat (\<tau> :: (complex, 'p, 'p) lmat)"
+        unfolding separable_lmat_gen_def by auto
+      have \<sigma>_im: "Im (Tr_lmat \<sigma>) = 0" and \<sigma>_re_nn: "0 \<le> Re (Tr_lmat \<sigma>)"
+        using psd_lmat_Tr_real_nonneg [OF \<sigma>_psd] by simp_all
+      have \<tau>_im: "Im (Tr_lmat \<tau>) = 0" and \<tau>_re_nn: "0 \<le> Re (Tr_lmat \<tau>)"
+        using psd_lmat_Tr_real_nonneg [OF \<tau>_psd] by simp_all
+      define \<alpha> where "\<alpha> = Re (Tr_lmat \<sigma>)"
+      define \<beta> where "\<beta> = Re (Tr_lmat \<tau>)"
+      have \<sigma>_tr: "Tr_lmat \<sigma> = complex_of_real \<alpha>"
+        unfolding \<alpha>_def using \<sigma>_im by (simp add: complex_eq_iff)
+      have \<tau>_tr: "Tr_lmat \<tau> = complex_of_real \<beta>"
+        unfolding \<beta>_def using \<tau>_im by (simp add: complex_eq_iff)
+      have \<alpha>_nn: "0 \<le> \<alpha>" unfolding \<alpha>_def using \<sigma>_re_nn .
+      have \<beta>_nn: "0 \<le> \<beta>" unfolding \<beta>_def using \<tau>_re_nn .
+      show "x \<in> convex_cone hull Sprime"
+      proof (cases "\<alpha> = 0 \<or> \<beta> = 0")
+        case True
+        have x_zero: "x = 0"
+        proof (cases "\<alpha> = 0")
+          case True
+          with \<sigma>_tr have "Tr_lmat \<sigma> = 0" by simp
+          with \<sigma>_psd have "\<sigma> = 0"
+            by (rule psd_lmat_zero_trace_zero)
+          thus ?thesis
+            using x_eq tensor_lmat_zero_left by simp
+        next
+          case False
+          with True have b0: "\<beta> = 0" by simp
+          with \<tau>_tr have "Tr_lmat \<tau> = 0" by simp
+          with \<tau>_psd have "\<tau> = 0"
+            by (rule psd_lmat_zero_trace_zero)
+          thus ?thesis
+            using x_eq tensor_lmat_zero_right by simp
+        qed
+        show ?thesis
+          using x_zero convex_cone_hull_contains_0 by simp
+      next
+        case False
+        hence \<alpha>_pos: "0 < \<alpha>" and \<beta>_pos: "0 < \<beta>"
+          using \<alpha>_nn \<beta>_nn by auto
+        have \<alpha>_nz: "\<alpha> \<noteq> 0" using \<alpha>_pos by simp
+        have \<beta>_nz: "\<beta> \<noteq> 0" using \<beta>_pos by simp
+        define \<sigma>' :: "(complex, 'm, 'm) lmat"
+          where "\<sigma>' = (1/\<alpha>) *\<^sub>R \<sigma>"
+        define \<tau>' :: "(complex, 'p, 'p) lmat"
+          where "\<tau>' = (1/\<beta>) *\<^sub>R \<tau>"
+        have \<sigma>'_psd: "psd_lmat \<sigma>'"
+          unfolding \<sigma>'_def using \<sigma>_psd \<alpha>_pos
+          by (intro psd_lmat_scaleR_nonneg) auto
+        have \<tau>'_psd: "psd_lmat \<tau>'"
+          unfolding \<tau>'_def using \<tau>_psd \<beta>_pos
+          by (intro psd_lmat_scaleR_nonneg) auto
+        have \<sigma>'_tr: "Tr_lmat \<sigma>' = 1"
+        proof -
+          have "Tr_lmat \<sigma>' = (1/\<alpha>) *\<^sub>R Tr_lmat \<sigma>"
+            unfolding \<sigma>'_def by (rule Tr_lmat_scaleR)
+          also have "\<dots> = (1/\<alpha>) *\<^sub>R complex_of_real \<alpha>"
+            using \<sigma>_tr by simp
+          also have "\<dots> = complex_of_real ((1/\<alpha>) * \<alpha>)"
+            by (simp add: scaleR_conv_of_real)
+          also have "\<dots> = 1" using \<alpha>_nz by simp
+          finally show ?thesis .
+        qed
+        have \<tau>'_tr: "Tr_lmat \<tau>' = 1"
+        proof -
+          have "Tr_lmat \<tau>' = (1/\<beta>) *\<^sub>R Tr_lmat \<tau>"
+            unfolding \<tau>'_def by (rule Tr_lmat_scaleR)
+          also have "\<dots> = (1/\<beta>) *\<^sub>R complex_of_real \<beta>"
+            using \<tau>_tr by simp
+          also have "\<dots> = complex_of_real ((1/\<beta>) * \<beta>)"
+            by (simp add: scaleR_conv_of_real)
+          also have "\<dots> = 1" using \<beta>_nz by simp
+          finally show ?thesis .
+        qed
+        have \<sigma>_recon: "\<alpha> *\<^sub>R \<sigma>' = \<sigma>"
+          unfolding \<sigma>'_def using \<alpha>_nz by (simp add: scaleR_scaleR)
+        have \<tau>_recon: "\<beta> *\<^sub>R \<tau>' = \<tau>"
+          unfolding \<tau>'_def using \<beta>_nz by (simp add: scaleR_scaleR)
+        have x_resc:
+          "x = (\<alpha> * \<beta>) *\<^sub>R (tensor_lmat \<sigma>' \<tau>'
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+        proof -
+          have "x = tensor_lmat (\<alpha> *\<^sub>R \<sigma>') (\<beta> *\<^sub>R \<tau>')"
+            using x_eq \<sigma>_recon \<tau>_recon by simp
+          also have "\<dots> = \<alpha> *\<^sub>R (tensor_lmat \<sigma>' (\<beta> *\<^sub>R \<tau>')
+                                  :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+            by (rule tensor_lmat_scaleR_left)
+          also have "\<dots> = \<alpha> *\<^sub>R (\<beta> *\<^sub>R (tensor_lmat \<sigma>' \<tau>'
+                                          :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat))"
+            by (subst tensor_lmat_scaleR_right) (rule refl)
+          also have "\<dots> = (\<alpha> * \<beta>) *\<^sub>R (tensor_lmat \<sigma>' \<tau>'
+                                          :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+            by (rule scaleR_scaleR)
+          finally show ?thesis .
+        qed
+        have base: "(tensor_lmat \<sigma>' \<tau>'
+                       :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) \<in> Sprime"
+        proof -
+          have "\<exists>\<sigma>'' \<tau>''. (tensor_lmat \<sigma>' \<tau>'
+                            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+                          = tensor_lmat \<sigma>'' \<tau>''
+                       \<and> psd_lmat \<sigma>'' \<and> Tr_lmat \<sigma>'' = 1
+                       \<and> psd_lmat \<tau>'' \<and> Tr_lmat \<tau>'' = 1"
+            using \<sigma>'_psd \<tau>'_psd \<sigma>'_tr \<tau>'_tr by blast
+          thus ?thesis unfolding Sprime_def by simp
+        qed
+        have base_in_hull: "(tensor_lmat \<sigma>' \<tau>'
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+                              \<in> convex_cone hull Sprime"
+          using base by (rule hull_inc)
+        have hull_cone:
+          "convex_cone (convex_cone hull
+                          (Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set))"
+          by (rule convex_cone_convex_cone_hull)
+        have \<alpha>\<beta>_nn: "0 \<le> \<alpha> * \<beta>" using \<alpha>_pos \<beta>_pos by simp
+        have scaled_in_hull:
+          "(\<alpha> * \<beta>) *\<^sub>R (tensor_lmat \<sigma>' \<tau>'
+                          :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
+              \<in> convex_cone hull Sprime"
+          by (rule convex_cone_scaleR [OF hull_cone \<alpha>\<beta>_nn base_in_hull])
+        show ?thesis using x_resc scaled_in_hull by simp
+      qed
+    qed
+  next
+    show "convex_cone (convex_cone hull
+                         (Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set))"
+      by (rule convex_cone_convex_cone_hull)
+  qed
 qed
 
 theorem separable_cone_lmat_closed:
