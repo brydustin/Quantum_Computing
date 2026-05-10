@@ -920,9 +920,43 @@ moment.\<close>
 
 lemma psd_lmat_Tr_real_nonneg:
   fixes M :: "(complex, 'k :: finite, 'k) lmat"
-  assumes "psd_lmat M"
+  assumes M_psd: "psd_lmat M"
   shows "Im (Tr_lmat M) = 0 \<and> 0 \<le> Re (Tr_lmat M)"
-  sorry
+proof -
+  let ?n = "CARD('k)"
+  have M_unwrap_psd: "psd (unwrap_lm M)" using M_psd by simp
+  have M_carr: "unwrap_lm M \<in> carrier_mat ?n ?n" by simp
+  have hermM: "hermitian (unwrap_lm M)" using M_unwrap_psd by (rule psd_hermitian)
+  have diag_real_nn:
+    "\<And>i. i < ?n
+       \<Longrightarrow> Im (unwrap_lm M $$ (i, i)) = 0 \<and> 0 \<le> Re (unwrap_lm M $$ (i, i))"
+  proof -
+    fix i :: nat assume i_lt: "i < ?n"
+    have e_inner: "\<langle>unit_vec ?n i | unwrap_lm M *\<^sub>v unit_vec ?n i\<rangle>
+                 = unwrap_lm M $$ (i, i)"
+      using inner_unit_T_unit [OF M_carr i_lt i_lt] .
+    have e_dim_n: "dim_vec (unit_vec ?n i :: complex Matrix.vec) = ?n"
+      by simp
+    have e_dim_r: "dim_vec (unit_vec ?n i :: complex Matrix.vec) = dim_row (unwrap_lm M)"
+      by simp
+    have re_nn: "0 \<le> Re \<langle>unit_vec ?n i | unwrap_lm M *\<^sub>v unit_vec ?n i\<rangle>"
+      using M_unwrap_psd e_dim_r unfolding psd_def by blast
+    have quad_real: "\<langle>unit_vec ?n i | unwrap_lm M *\<^sub>v unit_vec ?n i\<rangle> \<in> \<real>"
+      using hermitian_iff_real_quad_form [OF M_carr, THEN iffD1, OF hermM,
+                                          rule_format, OF e_dim_n] .
+    have im_zero: "Im \<langle>unit_vec ?n i | unwrap_lm M *\<^sub>v unit_vec ?n i\<rangle> = 0"
+      using quad_real complex_is_Real_iff by auto
+    show "Im (unwrap_lm M $$ (i, i)) = 0 \<and> 0 \<le> Re (unwrap_lm M $$ (i, i))"
+      using e_inner re_nn im_zero by simp
+  qed
+  have im_tr: "Im (Tr_lmat M) = 0"
+    unfolding Tr_lmat_def
+    by (subst Im_sum) (auto simp: diag_real_nn)
+  have re_tr: "0 \<le> Re (Tr_lmat M)"
+    unfolding Tr_lmat_def
+    by (subst Re_sum) (auto intro: sum_nonneg simp: diag_real_nn)
+  show ?thesis using im_tr re_tr by simp
+qed
 
 lemma psd_lmat_zero_trace_zero:
   fixes M :: "(complex, 'k :: finite, 'k) lmat"
