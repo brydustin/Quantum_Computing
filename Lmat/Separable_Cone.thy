@@ -2624,4 +2624,135 @@ proof -
 qed
 
 
+text \<open>The trace is identically \<open>1\<close> on the convex hull of \<open>Sprime\<close>.\<close>
+
+lemma Tr_lmat_convex_hull_Sprime_eq_one:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes "\<rho> \<in> convex hull Sprime"
+  shows "Tr_lmat \<rho> = 1"
+proof -
+  from assms obtain T u
+    where Tfin: "finite T"
+      and Tsub: "T \<subseteq> (Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+      and unn: "\<forall>t \<in> T. 0 \<le> u t"
+      and usum: "sum u T = 1"
+      and sum_eq:
+        "(\<Sum>t \<in> T. u t *\<^sub>R t) = \<rho>"
+    unfolding convex_hull_explicit by auto
+  have Tr_Sprime:
+    "\<And>s :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat. s \<in> Sprime \<Longrightarrow> Tr_lmat s = 1"
+  proof -
+    fix s :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    assume "s \<in> Sprime"
+    then obtain \<sigma>\<^sub>0 \<tau>\<^sub>0
+      where s_eq: "s = tensor_lmat \<sigma>\<^sub>0 \<tau>\<^sub>0"
+        and tr_s: "Tr_lmat (\<sigma>\<^sub>0 :: (complex, 'm, 'm) lmat) = 1"
+        and tr_t: "Tr_lmat (\<tau>\<^sub>0 :: (complex, 'p, 'p) lmat) = 1"
+      unfolding Sprime_def by auto
+    have "Tr_lmat s = Tr_lmat (tensor_lmat \<sigma>\<^sub>0 \<tau>\<^sub>0
+                                 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+      using s_eq by simp
+    also have "\<dots> = Tr_lmat \<sigma>\<^sub>0 * Tr_lmat \<tau>\<^sub>0" by (rule Tr_lmat_tensor)
+    also have "\<dots> = 1" using tr_s tr_t by simp
+    finally show "Tr_lmat s = 1" .
+  qed
+  have "Tr_lmat \<rho> = Tr_lmat ((\<Sum>t \<in> T. u t *\<^sub>R t)
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
+    using sum_eq by simp
+  also have "\<dots> = (\<Sum>t \<in> T. u t *\<^sub>R Tr_lmat t)"
+    using Tfin by (rule Tr_lmat_sum_scaleR)
+  also have "\<dots> = (\<Sum>t \<in> T. u t *\<^sub>R 1)"
+    using Tsub Tr_Sprime by (intro sum.cong) auto
+  also have "\<dots> = (\<Sum>t \<in> T. complex_of_real (u t))"
+    by (intro sum.cong) (simp_all add: scaleR_conv_of_real)
+  also have "\<dots> = complex_of_real (\<Sum>t \<in> T. u t)" by simp
+  also have "\<dots> = 1" using usum by simp
+  finally show ?thesis .
+qed
+
+text \<open>A density matrix is separable iff it is a convex combination of
+separable pure-product states.  This is the standard textbook
+definition of separability for mixed states.\<close>
+
+theorem separable_density_iff_in_convex_hull_Sprime:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes \<rho>_psd: "psd_lmat \<rho>"
+      and \<rho>_tr: "Tr_lmat \<rho> = 1"
+  shows "\<rho> \<in> separable_cone_lmat \<longleftrightarrow> \<rho> \<in> convex hull Sprime"
+proof
+  assume rho_in_hull: "\<rho> \<in> convex hull Sprime"
+  text \<open>(Easy direction.)  \<open>convex hull Sprime \<subseteq> separable_cone_lmat\<close>.\<close>
+  have Sprime_sub:
+    "(Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+       \<subseteq> separable_cone_lmat"
+  proof -
+    have s1: "Sprime \<subseteq> (separable_lmat_gen
+                          :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+      by (rule Sprime_subset_separable_lmat_gen)
+    have s2: "(separable_lmat_gen :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+                \<subseteq> separable_cone_lmat"
+      unfolding separable_cone_lmat_def by (rule hull_subset)
+    show ?thesis using s1 s2 by (rule subset_trans)
+  qed
+  have cone_convex:
+    "convex (separable_cone_lmat
+              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+    using separable_cone_lmat_convex_cone
+    unfolding convex_cone_def by blast
+  have hull_in_cone:
+    "convex hull (Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+        \<subseteq> separable_cone_lmat"
+    using Sprime_sub cone_convex by (rule hull_minimal)
+  thus "\<rho> \<in> separable_cone_lmat" using rho_in_hull by blast
+next
+  assume rho_in_cone: "\<rho> \<in> separable_cone_lmat"
+  text \<open>(Hard direction.)  Use \<open>convex_cone_hull_separable_eq_Sprime\<close>
+  + \<open>convex_cone_hull_separate\<close> to identify the cone with
+  \<open>insert 0 (conic hull (convex hull Sprime))\<close>, then exploit that
+  \<open>\<rho>\<close> has unit trace.\<close>
+  let ?S' = "Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set"
+  have hull_eq:
+    "separable_cone_lmat
+       = insert 0 (conic hull (convex hull ?S'))"
+  proof -
+    have "separable_cone_lmat
+        = convex_cone hull (separable_lmat_gen
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+      unfolding separable_cone_lmat_def ..
+    also have "\<dots> = convex_cone hull ?S'"
+      using convex_cone_hull_separable_eq_Sprime .
+    also have "\<dots> = insert 0 (conic hull (convex hull ?S'))"
+      by (rule convex_cone_hull_separate)
+    finally show ?thesis .
+  qed
+  have rho_nonzero: "\<rho> \<noteq> 0"
+  proof
+    assume "\<rho> = 0"
+    hence "Tr_lmat \<rho> = 0" by simp
+    thus False using \<rho>_tr by simp
+  qed
+  from hull_eq rho_in_cone
+  have rho_in_conic: "\<rho> \<in> conic hull (convex hull ?S')"
+    using rho_nonzero by auto
+  then obtain c x where rho_eq: "\<rho> = c *\<^sub>R x"
+                    and c_nn: "0 \<le> c"
+                    and x_in: "x \<in> convex hull ?S'"
+    unfolding conic_hull_explicit by auto
+  have Tr_x_one: "Tr_lmat x = 1"
+    using x_in by (rule Tr_lmat_convex_hull_Sprime_eq_one)
+  have "Tr_lmat \<rho> = c *\<^sub>R Tr_lmat x"
+    using rho_eq Tr_lmat_scaleR by simp
+  also have "\<dots> = c *\<^sub>R (1 :: complex)" using Tr_x_one by simp
+  also have "\<dots> = complex_of_real c"
+    by (simp add: scaleR_conv_of_real)
+  finally have c_eq: "(complex_of_real c :: complex) = 1"
+    using \<rho>_tr by simp
+  have c_one: "c = 1"
+    using c_eq by (metis Re_complex_of_real one_complex.simps(1))
+  have "\<rho> = 1 *\<^sub>R x" using rho_eq c_one by simp
+  hence "\<rho> = x" by simp
+  thus "\<rho> \<in> convex hull Sprime" using x_in by simp
+qed
+
+
 end
