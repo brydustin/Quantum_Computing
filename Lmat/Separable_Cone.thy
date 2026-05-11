@@ -2534,4 +2534,94 @@ next
 qed
 
 
+section \<open>Density-matrix specialisation\<close>
+
+text \<open>For an actual quantum density matrix \<open>\<rho>\<close> (PSD with unit trace),
+the conditions \<open>psd_lmat \<rho>\<close> and \<open>Tr_lmat \<rho> = 1\<close> imply
+\<open>hermitian (unwrap_lm \<rho>)\<close>, so the witness theorem and the
+characterisation specialise cleanly.\<close>
+
+theorem entanglement_witness_for_density:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes \<rho>_psd: "psd_lmat \<rho>"
+      and \<rho>_tr: "Tr_lmat \<rho> = 1"
+      and \<rho>_not_sep: "\<rho> \<notin> separable_cone_lmat"
+  shows "\<exists>W :: complex Matrix.mat.
+           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+         \<and> hermitian W
+         \<and> Re (Tr (W * unwrap_lm \<rho>)) < 0
+         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+              \<sigma> \<in> separable_cone_lmat
+                \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))"
+proof -
+  have \<rho>_herm: "hermitian (unwrap_lm \<rho>)"
+    using \<rho>_psd by (simp add: psd_def)
+  show ?thesis
+    using entanglement_witness_hermitian' [OF \<rho>_not_sep \<rho>_herm] .
+qed
+
+text \<open>The witness is also nonneg on every separable density matrix
+(\<open>Sprime\<close>) since \<open>Sprime \<subseteq> separable_cone_lmat\<close>.\<close>
+
+theorem entanglement_witness_for_density_on_Sprime:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes \<rho>_psd: "psd_lmat \<rho>"
+      and \<rho>_tr: "Tr_lmat \<rho> = 1"
+      and \<rho>_not_sep: "\<rho> \<notin> separable_cone_lmat"
+  shows "\<exists>W :: complex Matrix.mat.
+           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+         \<and> hermitian W
+         \<and> Re (Tr (W * unwrap_lm \<rho>)) < 0
+         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+              \<sigma> \<in> Sprime \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))"
+proof -
+  obtain W where W_car: "W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))"
+            and W_herm: "hermitian W"
+            and W_\<rho>: "Re (Tr (W * unwrap_lm \<rho>)) < 0"
+            and W_cone: "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                          \<sigma> \<in> separable_cone_lmat
+                            \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
+    using entanglement_witness_for_density [OF \<rho>_psd \<rho>_tr \<rho>_not_sep] by blast
+  have Sprime_sub:
+    "(Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+       \<subseteq> separable_cone_lmat"
+  proof -
+    have step1: "Sprime \<subseteq> (separable_lmat_gen
+                              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+      by (rule Sprime_subset_separable_lmat_gen)
+    have step2: "(separable_lmat_gen :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+                  \<subseteq> separable_cone_lmat"
+      unfolding separable_cone_lmat_def by (rule hull_subset)
+    show ?thesis using step1 step2 by (rule subset_trans)
+  qed
+  have W_Sprime:
+    "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+       \<sigma> \<in> Sprime \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
+    using W_cone Sprime_sub by blast
+  show ?thesis using W_car W_herm W_\<rho> W_Sprime by blast
+qed
+
+text \<open>The full Horodecki characterisation, specialised to density
+matrices.\<close>
+
+theorem separable_density_iff_witness:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes \<rho>_psd: "psd_lmat \<rho>"
+      and \<rho>_tr: "Tr_lmat \<rho> = 1"
+  shows "\<rho> \<in> separable_cone_lmat
+       \<longleftrightarrow>
+        (\<forall>W :: complex Matrix.mat.
+           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+           \<and> hermitian W
+           \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                \<sigma> \<in> separable_cone_lmat
+                  \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))
+             \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<rho>)))"
+proof -
+  have \<rho>_herm: "hermitian (unwrap_lm \<rho>)"
+    using \<rho>_psd by (simp add: psd_def)
+  show ?thesis using separable_iff_witness [OF \<rho>_herm] .
+qed
+
+
 end
