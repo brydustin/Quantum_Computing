@@ -2466,4 +2466,61 @@ proof -
 qed
 
 
+section \<open>Main separability characterisation\<close>
+
+text \<open>The Horodecki-style witness characterisation: for hermitian
+\<open>\<rho>\<close>, membership in the separable cone is equivalent to the
+nonneg-real-trace property holding against every hermitian witness
+that is itself nonneg-real-trace on the cone.\<close>
+
+theorem separable_iff_witness:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes \<rho>_herm: "hermitian (unwrap_lm \<rho>)"
+  shows "\<rho> \<in> separable_cone_lmat
+       \<longleftrightarrow>
+        (\<forall>W :: complex Matrix.mat.
+           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+           \<and> hermitian W
+           \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                \<sigma> \<in> separable_cone_lmat
+                  \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))
+             \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<rho>)))"
+proof
+  assume \<rho>_in: "\<rho> \<in> separable_cone_lmat"
+  show "\<forall>W :: complex Matrix.mat.
+          W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+          \<and> hermitian W
+          \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+               \<sigma> \<in> separable_cone_lmat
+                 \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))
+            \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<rho>))"
+    using \<rho>_in by blast
+next
+  assume rhs:
+    "\<forall>W :: complex Matrix.mat.
+       W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+       \<and> hermitian W
+       \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+            \<sigma> \<in> separable_cone_lmat
+              \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))
+         \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<rho>))"
+  show "\<rho> \<in> separable_cone_lmat"
+  proof (rule ccontr)
+    assume not_in: "\<rho> \<notin> separable_cone_lmat"
+    obtain W :: "complex Matrix.mat"
+      where W_car: "W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))"
+        and W_herm: "hermitian W"
+        and W_\<rho>: "Re (Tr (W * unwrap_lm \<rho>)) < 0"
+        and W_\<sigma>:
+              "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                \<sigma> \<in> separable_cone_lmat
+                  \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
+      using entanglement_witness_hermitian' [OF not_in \<rho>_herm] by blast
+    have "0 \<le> Re (Tr (W * unwrap_lm \<rho>))"
+      using rhs W_car W_herm W_\<sigma> by blast
+    thus False using W_\<rho> by simp
+  qed
+qed
+
+
 end
