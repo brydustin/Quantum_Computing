@@ -1,25 +1,36 @@
 (*
   Title:    Lmat/Separable_Cone.thy
-  Purpose:  Define the separable-state cone in the typed lmat space and
-            prove it is closed in the Hilbert-Schmidt topology, using
-            the HOL-Analysis machinery exposed by Lmat_Euclidean.
+  Purpose:  Develop the separable-state cone in the typed lmat space.
+            Define it, show it is closed in the Hilbert-Schmidt topology,
+            apply HOL-Analysis separating_hyperplane_closed_point, and
+            convert the separating direction to a hermitian entanglement
+            witness; conclude with the Horodecki-style characterisation
+            "separable iff every hermitian witness sees it nonneg".
 
-  Status:   FULLY PROVEN.  All sub-sorries are closed and the main
-            theorem separable_cone_lmat_closed goes through unconditionally.
+  Status:   FULLY PROVEN.  No sorries.
 
-            Originally there were six concrete sub-sorries.  Each has now
-            been proven:
+            The main pieces (in order of appearance):
+              separable_cone_lmat_closed
+                - the separable cone is closed in HS topology.
+              separable_cone_lmat_separating_hyperplane
+                - rho not in cone => exists a in lmat with
+                    inner a rho < 0 <= inner a sigma for all sigma in cone.
+              entanglement_witness_re_tr
+                - Re-Tr-form of the previous: witness is unwrap_lm-dagger.
+              entanglement_witness_hermitian
+                - witness can be chosen hermitian, side condition on sigma.
+              separable_cone_lmat_hermitian
+                - every element of the cone has hermitian unwrap (PSD).
+              entanglement_witness_hermitian'
+                - the side condition is automatic; clean witness statement.
+              separable_iff_witness
+                - Horodecki characterisation: rho in cone iff every
+                  hermitian witness W that is nonneg-trace on the cone
+                  is also nonneg-trace on rho.
 
-              continuous_on_tensor_lmat        – joint continuity of \<otimes>
-              Tr_lmat_tensor                   – Tr (\<sigma> \<otimes> \<tau>) = Tr \<sigma> \<cdot> Tr \<tau>
-              zero_not_in_convex_hull_Sprime   – trace-1 obstruction
-              convex_cone_hull_separable_eq_Sprime – rescale by trace product
-              psd_lmat_zero_trace_zero         – via psd_sqrt + HS inner prod
-              norm_lmat_le_of_psd_unit_trace   – via psd_sqrt + Cauchy-Schwarz
-
-            The HOL-Analysis machinery exposed by Lmat_Euclidean
-            (real_inner / euclidean_space / heine_borel on lmat) carries
-            the closed-conic-hull factorisation through directly.
+            All built on Lmat_Euclidean's real_inner / euclidean_space /
+            heine_borel typeclass instances and the HS norm / inner
+            product / spectral machinery from Quantum_Computing.thy.
 *)
 
 theory Separable_Cone
