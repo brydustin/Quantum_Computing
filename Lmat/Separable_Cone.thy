@@ -1712,4 +1712,63 @@ proof -
 qed
 
 
+section \<open>Separating hyperplane for non-separable states\<close>
+
+text \<open>The closedness of the separable cone, combined with HOL-Analysis
+\<open>separating_hyperplane_closed_point\<close>, yields the geometric Hahn-Banach
+witness:  for every \<open>\<rho>\<close> outside the separable cone there is a linear
+functional (an HS inner product against some matrix \<open>a\<close>) that is strictly
+negative on \<open>\<rho>\<close> and nonneg on every separable element.  Because the
+separable set is a CONE, the strict inequality \<open>inner a x > b\<close> on the
+cone forces \<open>b < 0\<close> and \<open>inner a x \<ge> 0\<close> on the cone.\<close>
+
+theorem separable_cone_lmat_separating_hyperplane:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes notin: "\<rho> \<notin> separable_cone_lmat"
+  shows "\<exists>a :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+           inner a \<rho> < 0
+         \<and> (\<forall>\<sigma> \<in> separable_cone_lmat. 0 \<le> inner a \<sigma>)"
+proof -
+  let ?S = "separable_cone_lmat
+              :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set"
+  have cone_S: "convex_cone ?S" by (rule separable_cone_lmat_convex_cone)
+  have conv_S: "convex ?S" using cone_S unfolding convex_cone_def by simp
+  have closed_S: "closed ?S" by (rule separable_cone_lmat_closed)
+  obtain a b
+    where ineq_z: "inner a \<rho> < b"
+      and ineq_S: "\<forall>x \<in> ?S. inner a x > b"
+    using separating_hyperplane_closed_point [OF conv_S closed_S notin] by blast
+  have zero_in: "(0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) \<in> ?S"
+    by (rule zero_in_separable_cone_lmat)
+  have b_neg: "b < 0"
+    using ineq_S zero_in by force
+  have inner_\<rho>_neg: "inner a \<rho> < 0"
+    using ineq_z b_neg by simp
+  have inner_\<sigma>_nn: "\<forall>\<sigma> \<in> ?S. 0 \<le> inner a \<sigma>"
+  proof
+    fix \<sigma> :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    assume \<sigma>_in: "\<sigma> \<in> ?S"
+    show "0 \<le> inner a \<sigma>"
+    proof (rule ccontr)
+      assume "\<not> 0 \<le> inner a \<sigma>"
+      hence neg: "inner a \<sigma> < 0" by simp
+      define t :: real where "t = 2 * b / inner a \<sigma>"
+      have t_pos: "0 < t"
+        unfolding t_def using b_neg neg
+        by (simp add: divide_neg_neg)
+      have t_inner: "t * inner a \<sigma> = 2 * b"
+        unfolding t_def using neg by simp
+      have t_lt_b: "t * inner a \<sigma> < b"
+        using t_inner b_neg by simp
+      have ts_in: "t *\<^sub>R \<sigma> \<in> ?S"
+        using cone_S t_pos \<sigma>_in by (intro convex_cone_scaleR) auto
+      hence "inner a (t *\<^sub>R \<sigma>) > b" using ineq_S by blast
+      hence "t * inner a \<sigma> > b" by simp
+      thus False using t_lt_b by simp
+    qed
+  qed
+  show ?thesis using inner_\<rho>_neg inner_\<sigma>_nn by blast
+qed
+
+
 end
