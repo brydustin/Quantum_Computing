@@ -2157,4 +2157,313 @@ proof -
 qed
 
 
+section \<open>Hermitian closure of the separable cone\<close>
+
+text \<open>Every element of \<open>separable_cone_lmat\<close> has hermitian unwrap.
+Generators \<open>tensor_lmat \<sigma> \<tau>\<close> with \<open>\<sigma>, \<tau>\<close> PSD are hermitian, and the
+hermitian set is closed under \<open>+\<close> and nonneg real scaling.\<close>
+
+lemma hermitian_zero_mat:
+  "hermitian (0\<^sub>m n n :: complex Matrix.mat)"
+proof -
+  have "(0\<^sub>m n n :: complex Matrix.mat)\<^sup>\<dagger> = 0\<^sub>m n n"
+    by (rule eq_matI) (auto simp: dagger_def)
+  thus ?thesis by (simp add: hermitian_def)
+qed
+
+lemma hermitian_add_mat:
+  fixes P Q :: "complex Matrix.mat"
+  assumes Pcar: "P \<in> carrier_mat n n" and Qcar: "Q \<in> carrier_mat n n"
+      and Pherm: "hermitian P" and Qherm: "hermitian Q"
+  shows "hermitian (P + Q)"
+proof -
+  have PQcar: "P + Q \<in> carrier_mat n n" using Pcar Qcar by simp
+  have Pdag: "P\<^sup>\<dagger> = P" using Pherm by (simp add: hermitian_def)
+  have Qdag: "Q\<^sup>\<dagger> = Q" using Qherm by (simp add: hermitian_def)
+  have "(P + Q)\<^sup>\<dagger> = P + Q"
+  proof (rule eq_matI)
+    show "dim_row ((P + Q)\<^sup>\<dagger>) = dim_row (P + Q)"
+      using PQcar Qcar by (simp add: dim_row_of_dagger)
+    show "dim_col ((P + Q)\<^sup>\<dagger>) = dim_col (P + Q)"
+      using PQcar Qcar by (simp add: dim_col_of_dagger)
+  next
+    fix i j
+    assume i: "i < dim_row (P + Q)" and j: "j < dim_col (P + Q)"
+    hence ij: "i < n" "j < n" using PQcar Qcar by simp_all
+    have eq1: "(P + Q)\<^sup>\<dagger> $$ (i, j) = cnj ((P + Q) $$ (j, i))"
+      unfolding dagger_def using ij PQcar Qcar by simp
+    have eq2: "(P + Q) $$ (j, i) = P $$ (j, i) + Q $$ (j, i)"
+      using ij Qcar by simp
+    have eq3: "cnj (P $$ (j, i)) = P\<^sup>\<dagger> $$ (i, j)"
+      unfolding dagger_def using ij Pcar by simp
+    have eq4: "cnj (Q $$ (j, i)) = Q\<^sup>\<dagger> $$ (i, j)"
+      unfolding dagger_def using ij Qcar by simp
+    have "(P + Q)\<^sup>\<dagger> $$ (i, j)
+        = cnj (P $$ (j, i)) + cnj (Q $$ (j, i))"
+      using eq1 eq2 by simp
+    also have "\<dots> = P\<^sup>\<dagger> $$ (i, j) + Q\<^sup>\<dagger> $$ (i, j)"
+      using eq3 eq4 by simp
+    also have "\<dots> = P $$ (i, j) + Q $$ (i, j)"
+      using Pdag Qdag by simp
+    also have "\<dots> = (P + Q) $$ (i, j)"
+      using ij Qcar by simp
+    finally show "(P + Q)\<^sup>\<dagger> $$ (i, j) = (P + Q) $$ (i, j)" .
+  qed
+  thus ?thesis by (simp add: hermitian_def)
+qed
+
+lemma hermitian_smult_real_mat:
+  fixes M :: "complex Matrix.mat" and c :: real
+  assumes Mcar: "M \<in> carrier_mat n n" and Mherm: "hermitian M"
+  shows "hermitian (complex_of_real c \<cdot>\<^sub>m M)"
+proof -
+  let ?cM = "complex_of_real c \<cdot>\<^sub>m M"
+  have cM_car: "?cM \<in> carrier_mat n n" using Mcar by simp
+  have Mdag: "M\<^sup>\<dagger> = M" using Mherm by (simp add: hermitian_def)
+  have "?cM\<^sup>\<dagger> = ?cM"
+  proof (rule eq_matI)
+    show "dim_row (?cM\<^sup>\<dagger>) = dim_row ?cM"
+      using cM_car Mcar by (simp add: dim_row_of_dagger)
+    show "dim_col (?cM\<^sup>\<dagger>) = dim_col ?cM"
+      using cM_car Mcar by (simp add: dim_col_of_dagger)
+  next
+    fix i j
+    assume i: "i < dim_row ?cM" and j: "j < dim_col ?cM"
+    hence ij: "i < n" "j < n" using cM_car Mcar by simp_all
+    have eq1: "?cM\<^sup>\<dagger> $$ (i, j) = cnj (?cM $$ (j, i))"
+      unfolding dagger_def using ij cM_car Mcar by simp
+    have eq2: "?cM $$ (j, i) = complex_of_real c * M $$ (j, i)"
+      using ij Mcar by simp
+    have eq3: "cnj (M $$ (j, i)) = M\<^sup>\<dagger> $$ (i, j)"
+      unfolding dagger_def using ij Mcar by simp
+    have "?cM\<^sup>\<dagger> $$ (i, j) = cnj (complex_of_real c) * cnj (M $$ (j, i))"
+      using eq1 eq2 by simp
+    also have "\<dots> = complex_of_real c * cnj (M $$ (j, i))" by simp
+    also have "\<dots> = complex_of_real c * (M\<^sup>\<dagger>) $$ (i, j)" using eq3 by simp
+    also have "\<dots> = complex_of_real c * M $$ (i, j)" using Mdag by simp
+    also have "\<dots> = ?cM $$ (i, j)" using ij Mcar by simp
+    finally show "?cM\<^sup>\<dagger> $$ (i, j) = ?cM $$ (i, j)" .
+  qed
+  thus ?thesis by (simp add: hermitian_def)
+qed
+
+text \<open>Tensor product of hermitians is hermitian (entrywise via
+\<open>index_tensor_mat\<close>).\<close>
+
+lemma hermitian_tensor_mat:
+  fixes P Q :: "complex Matrix.mat"
+  assumes Pcar: "P \<in> carrier_mat m m" and Qcar: "Q \<in> carrier_mat p p"
+      and m_pos: "0 < m" and p_pos: "0 < p"
+      and Pherm: "hermitian P" and Qherm: "hermitian Q"
+  shows "hermitian (P \<Otimes> Q)"
+proof -
+  let ?T = "P \<Otimes> Q"
+  have T_dr: "dim_row ?T = m * p" using Pcar Qcar by simp
+  have T_dc: "dim_col ?T = m * p" using Pcar Qcar by simp
+  have T_car: "?T \<in> carrier_mat (m * p) (m * p)"
+    using T_dr T_dc by (intro carrier_matI) auto
+  have Pdag: "P\<^sup>\<dagger> = P" using Pherm by (simp add: hermitian_def)
+  have Qdag: "Q\<^sup>\<dagger> = Q" using Qherm by (simp add: hermitian_def)
+  have P_dr: "dim_row P = m" using Pcar by simp
+  have P_dc: "dim_col P = m" using Pcar by simp
+  have Q_dr: "dim_row Q = p" using Qcar by simp
+  have Q_dc: "dim_col Q = p" using Qcar by simp
+  have "?T\<^sup>\<dagger> = ?T"
+  proof (rule eq_matI)
+    show "dim_row (?T\<^sup>\<dagger>) = dim_row ?T"
+      using T_dr T_dc Pcar Qcar by (simp add: dim_row_of_dagger)
+    show "dim_col (?T\<^sup>\<dagger>) = dim_col ?T"
+      using T_dr T_dc Pcar Qcar by (simp add: dim_col_of_dagger)
+  next
+    fix i j
+    assume i: "i < dim_row ?T" and j: "j < dim_col ?T"
+    hence ij_lt: "i < m * p" "j < m * p"
+      using T_dr T_dc Pcar Qcar by simp_all
+    have iP_lt: "i div p < m" using ij_lt(1) p_pos
+      by (metis div_less_iff_less_mult mult.commute)
+    have jP_lt: "j div p < m" using ij_lt(2) p_pos
+      by (metis div_less_iff_less_mult mult.commute)
+    have iQ_lt: "i mod p < p" using p_pos by simp
+    have jQ_lt: "j mod p < p" using p_pos by simp
+    have T_entry: "?T $$ (i, j)
+        = P $$ (i div p, j div p) * Q $$ (i mod p, j mod p)"
+      using index_tensor_mat [OF P_dr P_dc Q_dr Q_dc ij_lt(1) ij_lt(2)
+                                m_pos p_pos] .
+    have Tji_entry: "?T $$ (j, i)
+        = P $$ (j div p, i div p) * Q $$ (j mod p, i mod p)"
+      using index_tensor_mat [OF P_dr P_dc Q_dr Q_dc ij_lt(2) ij_lt(1)
+                                m_pos p_pos] .
+    have P_herm_entry: "P $$ (j div p, i div p)
+                      = cnj (P $$ (i div p, j div p))"
+    proof -
+      have "P\<^sup>\<dagger> $$ (i div p, j div p) = cnj (P $$ (j div p, i div p))"
+        unfolding dagger_def using iP_lt jP_lt P_dr P_dc by simp
+      hence "P $$ (i div p, j div p) = cnj (P $$ (j div p, i div p))"
+        using Pdag by simp
+      thus ?thesis by (metis complex_cnj_cnj)
+    qed
+    have Q_herm_entry: "Q $$ (j mod p, i mod p)
+                      = cnj (Q $$ (i mod p, j mod p))"
+    proof -
+      have "Q\<^sup>\<dagger> $$ (i mod p, j mod p) = cnj (Q $$ (j mod p, i mod p))"
+        unfolding dagger_def using iQ_lt jQ_lt Q_dr Q_dc by simp
+      hence "Q $$ (i mod p, j mod p) = cnj (Q $$ (j mod p, i mod p))"
+        using Qdag by simp
+      thus ?thesis by (metis complex_cnj_cnj)
+    qed
+    have "?T\<^sup>\<dagger> $$ (i, j) = cnj (?T $$ (j, i))"
+      unfolding dagger_def using ij_lt T_dr T_dc Pcar Qcar by simp
+    also have "\<dots> = cnj (P $$ (j div p, i div p) * Q $$ (j mod p, i mod p))"
+      using Tji_entry by simp
+    also have "\<dots> = cnj (P $$ (j div p, i div p))
+                  * cnj (Q $$ (j mod p, i mod p))" by simp
+    also have "\<dots> = P $$ (i div p, j div p) * Q $$ (i mod p, j mod p)"
+      using P_herm_entry Q_herm_entry by (metis complex_cnj_cnj)
+    also have "\<dots> = ?T $$ (i, j)" using T_entry by simp
+    finally show "?T\<^sup>\<dagger> $$ (i, j) = ?T $$ (i, j)" .
+  qed
+  thus ?thesis by (simp add: hermitian_def)
+qed
+
+text \<open>Generators of \<open>separable_cone_lmat\<close> have hermitian unwrap.\<close>
+
+lemma separable_lmat_gen_hermitian:
+  fixes \<sigma> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes "\<sigma> \<in> separable_lmat_gen"
+  shows "hermitian (unwrap_lm \<sigma>)"
+proof -
+  from assms obtain a b
+    where \<sigma>_eq: "\<sigma> = tensor_lmat a b"
+      and a_psd: "psd_lmat (a :: (complex, 'm, 'm) lmat)"
+      and b_psd: "psd_lmat (b :: (complex, 'p, 'p) lmat)"
+    unfolding separable_lmat_gen_def by auto
+  have a_herm: "hermitian (unwrap_lm a)" using a_psd by (simp add: psd_def)
+  have b_herm: "hermitian (unwrap_lm b)" using b_psd by (simp add: psd_def)
+  have a_car: "unwrap_lm a \<in> carrier_mat (CARD('m)) (CARD('m))"
+    by (rule carrier_matI) auto
+  have b_car: "unwrap_lm b \<in> carrier_mat (CARD('p)) (CARD('p))"
+    by (rule carrier_matI) auto
+  have m_pos: "0 < CARD('m)" by simp
+  have p_pos: "0 < CARD('p)" by simp
+  have "hermitian (unwrap_lm a \<Otimes> unwrap_lm b)"
+    using hermitian_tensor_mat [OF a_car b_car m_pos p_pos a_herm b_herm] .
+  thus ?thesis using \<sigma>_eq by simp
+qed
+
+text \<open>The hermitian set in lmat is a convex cone, hence contains the
+hull of the generators.\<close>
+
+lemma hermitian_lmat_set_convex_cone:
+  "convex_cone {M :: (complex, 'k :: finite, 'k) lmat.
+                  hermitian (unwrap_lm M)}"
+proof -
+  let ?H = "{M :: (complex, 'k, 'k) lmat. hermitian (unwrap_lm M)}"
+  have zero_in: "(0 :: (complex, 'k, 'k) lmat) \<in> ?H"
+    using hermitian_zero_mat by simp
+  have add_closed:
+    "\<And>M N. M \<in> ?H \<Longrightarrow> N \<in> ?H \<Longrightarrow> M + N \<in> ?H"
+  proof -
+    fix M N :: "(complex, 'k, 'k) lmat"
+    assume Mh: "M \<in> ?H" and Nh: "N \<in> ?H"
+    have Mherm: "hermitian (unwrap_lm M)" using Mh by simp
+    have Nherm: "hermitian (unwrap_lm N)" using Nh by simp
+    have Mcar: "unwrap_lm M \<in> carrier_mat (CARD('k)) (CARD('k))"
+      by (rule carrier_matI) auto
+    have Ncar: "unwrap_lm N \<in> carrier_mat (CARD('k)) (CARD('k))"
+      by (rule carrier_matI) auto
+    have MN_eq: "unwrap_lm (M + N) = unwrap_lm M + unwrap_lm N"
+    proof (rule eq_matI)
+      fix i j
+      assume "i < dim_row (unwrap_lm M + unwrap_lm N)"
+             "j < dim_col (unwrap_lm M + unwrap_lm N)"
+      hence ij: "i < CARD('k)" "j < CARD('k)" using Mcar Ncar by simp_all
+      show "unwrap_lm (M + N) $$ (i, j)
+          = (unwrap_lm M + unwrap_lm N) $$ (i, j)"
+        using ij Mcar Ncar by (simp add: index_add_mat)
+    qed (use Mcar Ncar in auto)
+    have "hermitian (unwrap_lm M + unwrap_lm N)"
+      using hermitian_add_mat [OF Mcar Ncar Mherm Nherm] .
+    hence "hermitian (unwrap_lm (M + N))" using MN_eq by simp
+    thus "M + N \<in> ?H" by simp
+  qed
+  have scaleR_closed:
+    "\<And>M c. M \<in> ?H \<Longrightarrow> 0 \<le> c \<Longrightarrow> c *\<^sub>R M \<in> ?H"
+  proof -
+    fix M :: "(complex, 'k, 'k) lmat" and c :: real
+    assume Mh: "M \<in> ?H" and c_nn: "0 \<le> c"
+    have Mherm: "hermitian (unwrap_lm M)" using Mh by simp
+    have Mcar: "unwrap_lm M \<in> carrier_mat (CARD('k)) (CARD('k))"
+      by (rule carrier_matI) auto
+    have unwrap_eq:
+      "unwrap_lm (c *\<^sub>R M) = complex_of_real c \<cdot>\<^sub>m unwrap_lm M"
+      by (rule unwrap_lm_scaleR_eq)
+    have "hermitian (complex_of_real c \<cdot>\<^sub>m unwrap_lm M)"
+      using hermitian_smult_real_mat [OF Mcar Mherm] .
+    hence "hermitian (unwrap_lm (c *\<^sub>R M))" using unwrap_eq by simp
+    thus "c *\<^sub>R M \<in> ?H" by simp
+  qed
+  show ?thesis
+    using zero_in add_closed scaleR_closed
+    by (subst convex_cone_iff) blast
+qed
+
+theorem separable_cone_lmat_hermitian:
+  fixes \<sigma> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes "\<sigma> \<in> separable_cone_lmat"
+  shows "hermitian (unwrap_lm \<sigma>)"
+proof -
+  let ?H = "{M :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+              hermitian (unwrap_lm M)}"
+  have gen_sub: "separable_lmat_gen \<subseteq> ?H"
+    using separable_lmat_gen_hermitian by blast
+  have H_cone: "convex_cone ?H"
+    by (rule hermitian_lmat_set_convex_cone)
+  have "convex_cone hull
+          (separable_lmat_gen :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+         \<subseteq> ?H"
+    using gen_sub H_cone by (rule hull_minimal)
+  hence "separable_cone_lmat \<subseteq> ?H"
+    unfolding separable_cone_lmat_def .
+  thus ?thesis using assms by blast
+qed
+
+text \<open>Final form of the entanglement witness theorem: the side
+condition ``\<open>\<sigma>\<close> has hermitian unwrap'' is automatic for elements
+of the separable cone.\<close>
+
+theorem entanglement_witness_hermitian':
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes notin: "\<rho> \<notin> separable_cone_lmat"
+      and \<rho>_herm: "hermitian (unwrap_lm \<rho>)"
+  shows "\<exists>W :: complex Matrix.mat.
+           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+         \<and> hermitian W
+         \<and> Re (Tr (W * unwrap_lm \<rho>)) < 0
+         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+              \<sigma> \<in> separable_cone_lmat
+                \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))"
+proof -
+  obtain W where W_car: "W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))"
+            and W_herm: "hermitian W"
+            and W_\<rho>: "Re (Tr (W * unwrap_lm \<rho>)) < 0"
+            and W_\<sigma>: "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                       \<sigma> \<in> separable_cone_lmat
+                       \<and> hermitian (unwrap_lm \<sigma>)
+                         \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
+    using entanglement_witness_hermitian [OF notin \<rho>_herm] by blast
+  have W_\<sigma>': "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                \<sigma> \<in> separable_cone_lmat
+                  \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
+  proof (intro allI impI)
+    fix \<sigma> :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    assume \<sigma>_in: "\<sigma> \<in> separable_cone_lmat"
+    hence \<sigma>_herm: "hermitian (unwrap_lm \<sigma>)"
+      by (rule separable_cone_lmat_hermitian)
+    show "0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
+      using W_\<sigma> \<sigma>_in \<sigma>_herm by blast
+  qed
+  show ?thesis using W_car W_herm W_\<rho> W_\<sigma>' by blast
+qed
+
+
 end
