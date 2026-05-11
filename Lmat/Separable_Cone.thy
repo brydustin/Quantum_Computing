@@ -1712,6 +1712,47 @@ proof -
 qed
 
 
+section \<open>The lmat inner product as a real-trace inner product\<close>
+
+text \<open>The real inner product on \<open>(complex, 'm, 'n) lmat\<close> is the real
+part of the JNF Hilbert-Schmidt inner product on the underlying
+matrices.  For square matrices it is also \<open>Re (Tr (M\<^sup>\<dagger> * N))\<close>.\<close>
+
+lemma inner_lmat_eq_re_hs_inner_prod:
+  fixes M N :: "(complex, 'm :: finite, 'n :: finite) lmat"
+  shows "inner M N = Re \<langle>\<langle> unwrap_lm M | unwrap_lm N \<rangle>\<rangle>"
+proof -
+  let ?S = "{0..<CARD('m)} \<times> {0..<CARD('n)}"
+  have "inner M N
+      = (\<Sum>(i, j) \<in> ?S. inner (unwrap_lm M $$ (i, j)) (unwrap_lm N $$ (i, j)))"
+    unfolding inner_lmat_def by simp
+  also have "\<dots> = (\<Sum>(i, j) \<in> ?S.
+                    Re (cnj (unwrap_lm M $$ (i, j)) * unwrap_lm N $$ (i, j)))"
+    by (intro sum.cong refl) (auto simp: inner_complex_def split: prod.split)
+  also have "\<dots> = Re (\<Sum>(i, j) \<in> ?S.
+                       cnj (unwrap_lm M $$ (i, j)) * unwrap_lm N $$ (i, j))"
+    by (subst Re_sum) (simp split: prod.split)
+  also have "\<dots> = Re (\<Sum>i = 0..<CARD('m). \<Sum>j = 0..<CARD('n).
+                       cnj (unwrap_lm M $$ (i, j)) * unwrap_lm N $$ (i, j))"
+    by (subst sum.cartesian_product [symmetric]) (simp split: prod.split)
+  also have "\<dots> = Re \<langle>\<langle> unwrap_lm M | unwrap_lm N \<rangle>\<rangle>"
+    unfolding hs_inner_prod_def by simp
+  finally show ?thesis .
+qed
+
+lemma inner_lmat_eq_re_tr_dagger:
+  fixes M N :: "(complex, 'k :: finite, 'k) lmat"
+  shows "inner M N = Re (Tr ((unwrap_lm M)\<^sup>\<dagger> * unwrap_lm N))"
+proof -
+  have "inner M N = Re \<langle>\<langle> unwrap_lm M | unwrap_lm N \<rangle>\<rangle>"
+    by (rule inner_lmat_eq_re_hs_inner_prod)
+  also have "\<langle>\<langle> unwrap_lm M | unwrap_lm N \<rangle>\<rangle>
+           = Tr ((unwrap_lm M)\<^sup>\<dagger> * unwrap_lm N)"
+    by (rule hs_inner_prod_as_trace) simp_all
+  finally show ?thesis .
+qed
+
+
 section \<open>Separating hyperplane for non-separable states\<close>
 
 text \<open>The closedness of the separable cone, combined with HOL-Analysis
@@ -1768,6 +1809,59 @@ proof -
     qed
   qed
   show ?thesis using inner_\<rho>_neg inner_\<sigma>_nn by blast
+qed
+
+
+section \<open>Entanglement witness in real-trace form\<close>
+
+text \<open>Reformulating the separating hyperplane via the
+\<open>inner = Re Tr\<close> identity gives a JNF matrix \<open>W\<close> whose adjoint
+times \<open>\<rho>\<close> has strictly negative real trace, while \<open>W\<^sup>\<dagger> * \<sigma>\<close>
+has nonneg real trace for every \<open>\<sigma>\<close> in the separable cone.\<close>
+
+theorem entanglement_witness_re_tr:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes notin: "\<rho> \<notin> separable_cone_lmat"
+  shows "\<exists>W :: complex Matrix.mat.
+           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+         \<and> Re (Tr (W * unwrap_lm \<rho>)) < 0
+         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+              \<sigma> \<in> separable_cone_lmat
+                \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))"
+proof -
+  obtain a :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    where ineq_\<rho>: "inner a \<rho> < 0"
+      and ineq_S: "\<forall>\<sigma> \<in> separable_cone_lmat. 0 \<le> inner a \<sigma>"
+    using separable_cone_lmat_separating_hyperplane [OF notin] by blast
+  let ?W = "(unwrap_lm a)\<^sup>\<dagger>"
+  have W_carr: "?W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))"
+    by (rule carrier_matI) (auto simp: dim_row_of_dagger dim_col_of_dagger)
+  have re_tr_\<rho>:
+    "Re (Tr (?W * unwrap_lm \<rho>)) = inner a \<rho>"
+  proof -
+    have "inner a \<rho> = Re (Tr ((unwrap_lm a)\<^sup>\<dagger> * unwrap_lm \<rho>))"
+      by (rule inner_lmat_eq_re_tr_dagger)
+    thus ?thesis by simp
+  qed
+  have re_tr_\<sigma>:
+    "\<And>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+       \<sigma> \<in> separable_cone_lmat
+         \<Longrightarrow> Re (Tr (?W * unwrap_lm \<sigma>)) = inner a \<sigma>"
+  proof -
+    fix \<sigma> :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    assume \<sigma>_in: "\<sigma> \<in> separable_cone_lmat"
+    have "inner a \<sigma> = Re (Tr ((unwrap_lm a)\<^sup>\<dagger> * unwrap_lm \<sigma>))"
+      by (rule inner_lmat_eq_re_tr_dagger)
+    thus "Re (Tr (?W * unwrap_lm \<sigma>)) = inner a \<sigma>" by simp
+  qed
+  have neg_\<rho>: "Re (Tr (?W * unwrap_lm \<rho>)) < 0"
+    using re_tr_\<rho> ineq_\<rho> by simp
+  have nn_\<sigma>:
+    "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+       \<sigma> \<in> separable_cone_lmat
+         \<longrightarrow> 0 \<le> Re (Tr (?W * unwrap_lm \<sigma>))"
+    using re_tr_\<sigma> ineq_S by auto
+  show ?thesis using W_carr neg_\<rho> nn_\<sigma> by blast
 qed
 
 
