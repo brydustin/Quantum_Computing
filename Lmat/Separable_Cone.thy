@@ -2755,4 +2755,52 @@ next
 qed
 
 
+text \<open>Topology of the separable density-matrix set.\<close>
+
+lemma compact_convex_hull_Sprime:
+  "compact (convex hull
+              (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
+  using compact_Sprime by (rule compact_convex_hull)
+
+lemma closed_convex_hull_Sprime:
+  "closed (convex hull
+              (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
+  using compact_convex_hull_Sprime by (rule compact_imp_closed)
+
+lemma bounded_convex_hull_Sprime:
+  "bounded (convex hull
+              (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
+  using compact_convex_hull_Sprime by (rule compact_imp_bounded)
+
+
+text \<open>Strict separation in the inner-product form: by closedness of
+\<open>convex hull Sprime\<close> we get a strictly negative-inner-product
+hyperplane.  The Re-trace strict-form is then an immediate corollary
+once the hermitian witness construction is replayed.\<close>
+
+lemma separable_density_separating_hyperplane:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes \<rho>_psd: "psd_lmat \<rho>"
+      and \<rho>_tr: "Tr_lmat \<rho> = 1"
+      and \<rho>_not_sep: "\<rho> \<notin> separable_cone_lmat"
+  shows "\<exists>a b.
+           inner a \<rho> < b
+         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+              \<sigma> \<in> convex hull Sprime \<longrightarrow> b < inner a \<sigma>)"
+proof -
+  have \<rho>_not_in_hull: "\<rho> \<notin> convex hull Sprime"
+    using \<rho>_not_sep separable_density_iff_in_convex_hull_Sprime [OF \<rho>_psd \<rho>_tr]
+    by blast
+  have hull_closed: "closed (convex hull
+                                (Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set))"
+    by (rule closed_convex_hull_Sprime)
+  have hull_convex: "convex (convex hull
+                                (Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set))"
+    by (rule convex_convex_hull)
+  show ?thesis
+    using separating_hyperplane_closed_point
+            [OF hull_convex hull_closed \<rho>_not_in_hull] by blast
+qed
+
+
 end
