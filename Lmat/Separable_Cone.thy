@@ -4,21 +4,22 @@
             prove it is closed in the Hilbert-Schmidt topology, using
             the HOL-Analysis machinery exposed by Lmat_Euclidean.
 
-  Status:   The main theorem separable_cone_lmat_closed is fully assembled.
-            Of the six original sub-sorries, only ONE remains:
+  Status:   FULLY PROVEN.  All sub-sorries are closed and the main
+            theorem separable_cone_lmat_closed goes through unconditionally.
 
-              norm_lmat_le_of_psd_unit_trace
-                PSD with Tr = 1 has ‖σ‖_HS ≤ 1
-                (spectral argument: ‖σ‖² = Σλᵢ² ≤ (Σλᵢ)² = 1).
+            Originally there were six concrete sub-sorries.  Each has now
+            been proven:
 
-            All others — continuous_on_tensor_lmat, Tr_lmat_tensor,
-            zero_not_in_convex_hull_Sprime, convex_cone_hull_separable_eq_Sprime,
-            psd_lmat_zero_trace_zero (linchpin of the (⊆) direction) — are
-            now fully proven.
+              continuous_on_tensor_lmat        – joint continuity of \<otimes>
+              Tr_lmat_tensor                   – Tr (\<sigma> \<otimes> \<tau>) = Tr \<sigma> \<cdot> Tr \<tau>
+              zero_not_in_convex_hull_Sprime   – trace-1 obstruction
+              convex_cone_hull_separable_eq_Sprime – rescale by trace product
+              psd_lmat_zero_trace_zero         – via psd_sqrt + HS inner prod
+              norm_lmat_le_of_psd_unit_trace   – via psd_sqrt + Cauchy-Schwarz
 
-            Everything else (closed_psd_lmat, compact_unit_trace_psd_lmat,
-            compact_Sprime, the conic-hull-of-convex-hull factorisation,
-            and the application of closed_conic_hull) is fully proven.
+            The HOL-Analysis machinery exposed by Lmat_Euclidean
+            (real_inner / euclidean_space / heine_borel on lmat) carries
+            the closed-conic-hull factorisation through directly.
 *)
 
 theory Separable_Cone
