@@ -496,11 +496,208 @@ text \<open>For PSD \<open>\<sigma>\<close> with \<open>Tr \<sigma> = 1\<close>:
 \<open>‖\<sigma>‖\<^sup>2\<^sub>H\<^sub>S = \<Sum>\<lambda>\<^sub>i\<^sup>2 \<le> (\<Sum>\<lambda>\<^sub>i)\<^sup>2 = 1\<close>
 where \<open>\<lambda>\<^sub>i\<close> are the (nonneg) eigenvalues.\<close>
 
+lemma psd_entry_bound_by_diag:
+  fixes M :: "complex Matrix.mat"
+  assumes Mcar: "M \<in> carrier_mat n n"
+      and Mpsd: "psd M"
+      and i: "i < n" and j: "j < n"
+  shows "(norm (M $$ (i, j)))\<^sup>2 \<le> Re (M $$ (i, i)) * Re (M $$ (j, j))"
+proof -
+  obtain Q :: "complex Matrix.mat"
+    where Qcar: "Q \<in> carrier_mat n n"
+      and Qpsd: "psd Q"
+      and QQ: "Q * Q = M"
+    using psd_sqrt_exists [OF Mcar Mpsd] by blast
+  have Qherm: "hermitian Q" using Qpsd by (rule psd_hermitian)
+  have Qdr: "dim_row Q = n" using Qcar by simp
+  have Qdc: "dim_col Q = n" using Qcar by simp
+  have Qcnj:
+    "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> Q $$ (b, a) = cnj (Q $$ (a, b))"
+  proof -
+    fix a b assume a: "a < n" and b: "b < n"
+    have e1: "(Q\<^sup>\<dagger>) $$ (a, b) = cnj (Q $$ (b, a))"
+      unfolding dagger_def using Qdr Qdc a b by simp
+    have qe: "Q $$ (a, b) = cnj (Q $$ (b, a))"
+      using e1 Qherm by (simp add: hermitian_def)
+    show "Q $$ (b, a) = cnj (Q $$ (a, b))"
+      using qe by (metis complex_cnj_cnj)
+  qed
+  have Mij_sum:
+    "M $$ (i, j) = (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
+  proof -
+    have "M $$ (i, j) = (Q * Q) $$ (i, j)" using QQ by simp
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (i, k) * Q $$ (k, j))"
+      using Qcar i j by (simp add: scalar_prod_def Matrix.row_def
+                                     Matrix.col_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
+    proof (rule sum.cong [OF refl])
+      fix k assume k_in: "k \<in> {0..<n}"
+      hence k_lt: "k < n" by simp
+      have "Q $$ (k, j) = cnj (Q $$ (j, k))" using Qcnj [OF j k_lt] .
+      thus "Q $$ (i, k) * Q $$ (k, j) = Q $$ (i, k) * cnj (Q $$ (j, k))"
+        by simp
+    qed
+    finally show ?thesis .
+  qed
+  have diag_entry_sum:
+    "\<And>l. l < n
+       \<Longrightarrow> Re (M $$ (l, l)) = (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)"
+  proof -
+    fix l assume l: "l < n"
+    have "M $$ (l, l) = (Q * Q) $$ (l, l)" using QQ by simp
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (l, k) * Q $$ (k, l))"
+      using Qcar l by (simp add: scalar_prod_def Matrix.row_def
+                                   Matrix.col_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (l, k) * cnj (Q $$ (l, k)))"
+    proof (rule sum.cong [OF refl])
+      fix k assume k_in: "k \<in> {0..<n}"
+      hence k_lt: "k < n" by simp
+      have "Q $$ (k, l) = cnj (Q $$ (l, k))" using Qcnj [OF l k_lt] .
+      thus "Q $$ (l, k) * Q $$ (k, l) = Q $$ (l, k) * cnj (Q $$ (l, k))"
+        by simp
+    qed
+    also have "\<dots> = (\<Sum>k = 0..<n. complex_of_real ((norm (Q $$ (l, k)))\<^sup>2))"
+    proof (rule sum.cong [OF refl])
+      fix k assume "k \<in> {0..<n}"
+      show "Q $$ (l, k) * cnj (Q $$ (l, k))
+          = complex_of_real ((norm (Q $$ (l, k)))\<^sup>2)"
+        by (simp add: complex_mult_cnj power2_eq_square norm_complex_def)
+    qed
+    also have "\<dots> = complex_of_real (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)"
+      by simp
+    finally have entry_eq:
+      "M $$ (l, l) = complex_of_real (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)" .
+    thus "Re (M $$ (l, l)) = (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)" by simp
+  qed
+  have Mii_real:
+    "Re (M $$ (i, i)) = (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)"
+    using diag_entry_sum [OF i] .
+  have Mjj_real:
+    "Re (M $$ (j, j)) = (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
+    using diag_entry_sum [OF j] .
+  have triangle:
+    "norm (M $$ (i, j))
+       \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
+  proof -
+    have "norm (M $$ (i, j))
+        = norm (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
+      using Mij_sum by simp
+    also have "\<dots> \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k) * cnj (Q $$ (j, k))))"
+      by (rule norm_sum)
+    also have "\<dots> = (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
+      by (simp add: norm_mult)
+    finally show ?thesis .
+  qed
+  have CS:
+    "(\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))\<^sup>2
+       \<le> (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)
+        * (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
+    by (rule Cauchy_Schwarz_ineq_sum)
+  have nn: "0 \<le> norm (M $$ (i, j))" by simp
+  have sn: "0 \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
+    by (intro sum_nonneg) auto
+  have sq_mono:
+    "(norm (M $$ (i, j)))\<^sup>2
+       \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))\<^sup>2"
+    using triangle nn sn by (simp add: power_mono)
+  have "(norm (M $$ (i, j)))\<^sup>2
+       \<le> (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)
+        * (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
+    using sq_mono CS by linarith
+  thus ?thesis using Mii_real Mjj_real by simp
+qed
+
 lemma norm_lmat_le_of_psd_unit_trace:
   fixes M :: "(complex, 'k :: finite, 'k) lmat"
   assumes psd: "psd_lmat M" and tr: "Tr_lmat M = 1"
   shows "norm M \<le> 1"
-  sorry
+proof -
+  let ?n = "CARD('k)"
+  have psd_unwrap: "psd (unwrap_lm M)" using psd by simp
+  have unwrap_carr: "unwrap_lm M \<in> carrier_mat ?n ?n" by simp
+  have Tr_lmat_unwrap: "Tr_lmat M = Tr (unwrap_lm M)"
+    unfolding Tr_lmat_def Tr_def by (simp add: atLeast0LessThan)
+  have norm_sq_eq:
+    "(norm M)\<^sup>2 = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+                    (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
+  proof -
+    have "(norm M)\<^sup>2 = inner M M" by (simp add: power2_norm_eq_inner)
+    also have "\<dots> = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+                      (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
+      unfolding inner_lmat_def
+      by (intro sum.cong refl)
+         (auto simp: power2_norm_eq_inner [symmetric] split: prod.split)
+    finally show ?thesis .
+  qed
+  have entry_bound:
+    "\<And>i j. i < ?n \<Longrightarrow> j < ?n \<Longrightarrow>
+       (norm (unwrap_lm M $$ (i, j)))\<^sup>2 \<le>
+       Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j))"
+    using psd_entry_bound_by_diag [OF unwrap_carr psd_unwrap] .
+  have sum_bound:
+    "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}. (norm (unwrap_lm M $$ (i, j)))\<^sup>2)
+     \<le> (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+          Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+  proof (rule sum_mono)
+    fix x :: "nat \<times> nat"
+    assume x_in: "x \<in> {0..<?n} \<times> {0..<?n}"
+    obtain a b where x_eq: "x = (a, b)" by (cases x)
+    from x_in x_eq have ab: "a < ?n" "b < ?n" by auto
+    show "(case x of (i, j) \<Rightarrow> (norm (unwrap_lm M $$ (i, j)))\<^sup>2)
+          \<le> (case x of (i, j) \<Rightarrow>
+                Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+      using entry_bound [OF ab(1) ab(2)] by (simp add: x_eq)
+  qed
+  have prod_eq:
+    "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+        Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))
+     = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+       * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
+  proof -
+    have "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+            Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))
+        = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n.
+            Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+      by (rule sum.cartesian_product [symmetric])
+    also have "\<dots> = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+                  * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
+      by (rule sum_product [symmetric])
+    finally show ?thesis .
+  qed
+  have Re_tr_one:
+    "(\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i))) = 1"
+  proof -
+    have "(\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+        = Re (\<Sum>i = 0..<?n. unwrap_lm M $$ (i, i))"
+      by (rule Re_sum [symmetric])
+    also have "\<dots> = Re (Tr (unwrap_lm M))"
+      unfolding Tr_def by (simp add: atLeast0LessThan)
+    also have "\<dots> = Re (Tr_lmat M)" using Tr_lmat_unwrap by simp
+    also have "\<dots> = Re (1 :: complex)" using tr by simp
+    also have "\<dots> = 1" by simp
+    finally show ?thesis .
+  qed
+  have norm_sq_le: "(norm M)\<^sup>2 \<le> 1"
+  proof -
+    have "(norm M)\<^sup>2
+        = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+            (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
+      by (rule norm_sq_eq)
+    also have "\<dots> \<le> (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+                      Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+      using sum_bound .
+    also have "\<dots> = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+                  * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
+      by (rule prod_eq)
+    also have "\<dots> = 1 * 1" using Re_tr_one by simp
+    also have "\<dots> = 1" by simp
+    finally show ?thesis .
+  qed
+  have nn: "0 \<le> norm M" by (rule norm_ge_zero)
+  show "norm M \<le> 1"
+    using norm_sq_le nn
+    by (smt (verit) one_power2 power2_le_imp_le)
+qed
 
 lemma compact_unit_trace_psd_lmat:
   "compact {M :: (complex, 'k :: finite, 'k) lmat. psd_lmat M \<and> Tr_lmat M = 1}"
