@@ -2803,4 +2803,321 @@ proof -
 qed
 
 
+text \<open>The inner-product-to-Re-trace bridge for hermitian arguments,
+extracted as a separate lemma so we can reuse it for the strict
+separation theorem.  This is the same hermitisation construction
+that drives \<open>entanglement_witness_hermitian\<close>.\<close>
+
+lemma hermitian_witness_from_lmat:
+  fixes a :: "(complex, 'k :: finite, 'k) lmat"
+  shows "\<exists>W :: complex Matrix.mat.
+           W \<in> carrier_mat (CARD('k)) (CARD('k))
+         \<and> hermitian W
+         \<and> (\<forall>M :: (complex, 'k, 'k) lmat.
+              hermitian (unwrap_lm M)
+                \<longrightarrow> Re (Tr (W * unwrap_lm M)) = inner a M)"
+proof -
+  let ?n = "CARD('k)"
+  let ?A = "unwrap_lm a"
+  have A_car: "?A \<in> carrier_mat ?n ?n"
+    by (rule carrier_matI) auto
+  define W :: "complex Matrix.mat"
+    where "W = Matrix.mat ?n ?n
+                 (\<lambda>(i, j). (1/2 :: complex) *
+                            (?A $$ (i, j) + cnj (?A $$ (j, i))))"
+  have W_car: "W \<in> carrier_mat ?n ?n"
+    unfolding W_def by (intro carrier_matI) auto
+  have W_dr: "dim_row W = ?n" using W_car by simp
+  have W_dc: "dim_col W = ?n" using W_car by simp
+  have W_entry:
+    "\<And>i j. i < ?n \<Longrightarrow> j < ?n \<Longrightarrow>
+      W $$ (i, j) = (1/2 :: complex) *
+                    (?A $$ (i, j) + cnj (?A $$ (j, i)))"
+    unfolding W_def by simp
+  have W_herm: "hermitian W"
+  proof -
+    have "W\<^sup>\<dagger> = W"
+    proof (rule eq_matI)
+      show "dim_row (W\<^sup>\<dagger>) = dim_row W"
+        using W_dr W_dc by (simp add: dim_row_of_dagger)
+      show "dim_col (W\<^sup>\<dagger>) = dim_col W"
+        using W_dr W_dc by (simp add: dim_col_of_dagger)
+    next
+      fix i j
+      assume i: "i < dim_row W" and j: "j < dim_col W"
+      hence ij: "i < ?n" "j < ?n" using W_dr W_dc by simp_all
+      have Wji_eq: "W $$ (j, i) = (1/2 :: complex) *
+                                    (?A $$ (j, i) + cnj (?A $$ (i, j)))"
+        using W_entry [OF ij(2) ij(1)] .
+      have Wij_eq: "W $$ (i, j) = (1/2 :: complex) *
+                                    (?A $$ (i, j) + cnj (?A $$ (j, i)))"
+        using W_entry [OF ij(1) ij(2)] .
+      have "W\<^sup>\<dagger> $$ (i, j) = cnj (W $$ (j, i))"
+        unfolding dagger_def using ij W_dr W_dc by simp
+      also have "\<dots> = cnj ((1/2 :: complex) *
+                            (?A $$ (j, i) + cnj (?A $$ (i, j))))"
+        by (rule arg_cong [where f = cnj]) (rule Wji_eq)
+      also have "\<dots> = (1/2 :: complex) *
+                       (cnj (?A $$ (j, i)) + ?A $$ (i, j))"
+        by simp
+      also have "\<dots> = (1/2 :: complex) *
+                       (?A $$ (i, j) + cnj (?A $$ (j, i)))"
+        by (simp add: add.commute)
+      also have "\<dots> = W $$ (i, j)" using Wij_eq by simp
+      finally show "W\<^sup>\<dagger> $$ (i, j) = W $$ (i, j)" .
+    qed
+    thus ?thesis by (simp add: hermitian_def)
+  qed
+  have re_tr_eq_inner:
+    "\<And>M :: (complex, 'k, 'k) lmat.
+       hermitian (unwrap_lm M)
+        \<Longrightarrow> Re (Tr (W * unwrap_lm M)) = inner a M"
+  proof -
+    fix M :: "(complex, 'k, 'k) lmat"
+    assume Mherm: "hermitian (unwrap_lm M)"
+    let ?M = "unwrap_lm M"
+    have Mcar: "?M \<in> carrier_mat ?n ?n"
+      by (rule carrier_matI) auto
+    have M_dr: "dim_row ?M = ?n" using Mcar by simp
+    have M_dc: "dim_col ?M = ?n" using Mcar by simp
+    have M_herm_entry:
+      "\<And>i j. i < ?n \<Longrightarrow> j < ?n \<Longrightarrow> ?M $$ (j, i) = cnj (?M $$ (i, j))"
+    proof -
+      fix i j assume i_lt: "i < ?n" and j_lt: "j < ?n"
+      have "(?M\<^sup>\<dagger>) $$ (i, j) = cnj (?M $$ (j, i))"
+        unfolding dagger_def using i_lt j_lt M_dr M_dc by simp
+      hence "?M $$ (i, j) = cnj (?M $$ (j, i))"
+        using Mherm by (simp add: hermitian_def)
+      thus "?M $$ (j, i) = cnj (?M $$ (i, j))"
+        by (metis complex_cnj_cnj)
+    qed
+    have WM_car: "W * ?M \<in> carrier_mat ?n ?n" using W_car Mcar by simp
+    have WM_dr: "dim_row (W * ?M) = ?n" using WM_car carrier_matD by blast
+    have WM_dc: "dim_col (W * ?M) = ?n" using WM_car carrier_matD by blast
+    have Tr_WM:
+      "Tr (W * ?M)
+         = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. W $$ (i, j) * ?M $$ (j, i))"
+    proof -
+      have "Tr (W * ?M)
+          = (\<Sum>r < dim_row (W * ?M).
+              if r < dim_col (W * ?M) then (W * ?M) $$ (r, r) else 0)"
+        unfolding Tr_def by simp
+      also have "\<dots>
+          = (\<Sum>r < ?n. if r < ?n then (W * ?M) $$ (r, r) else 0)"
+        using WM_dr WM_dc by simp
+      also have "\<dots> = (\<Sum>r < ?n. (W * ?M) $$ (r, r))"
+        by (intro sum.cong refl) auto
+      also have "\<dots> = (\<Sum>i = 0..<?n. (W * ?M) $$ (i, i))"
+        by (simp add: atLeast0LessThan)
+      also have "\<dots> = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n.
+                          W $$ (i, j) * ?M $$ (j, i))"
+      proof (intro sum.cong refl)
+        fix i assume "i \<in> {0..<?n}"
+        hence i_lt: "i < ?n" by simp
+        show "(W * ?M) $$ (i, i)
+            = (\<Sum>j = 0..<?n. W $$ (i, j) * ?M $$ (j, i))"
+          using W_car Mcar i_lt
+          by (simp add: scalar_prod_def Matrix.row_def Matrix.col_def
+                          lessThan_atLeast0)
+      qed
+      finally show ?thesis .
+    qed
+    have HS:
+      "\<langle>\<langle> ?A | ?M \<rangle>\<rangle>
+         = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n.
+              cnj (?A $$ (i, j)) * ?M $$ (i, j))"
+      unfolding hs_inner_prod_def using M_dr M_dc by simp
+    have rewrite_entry:
+      "\<And>i j. i < ?n \<Longrightarrow> j < ?n
+        \<Longrightarrow> W $$ (i, j) * ?M $$ (j, i)
+            = (1/2 :: complex) *
+              (?A $$ (i, j) * cnj (?M $$ (i, j))
+               + cnj (?A $$ (j, i)) * cnj (?M $$ (i, j)))"
+    proof -
+      fix i j assume i: "i < ?n" and j: "j < ?n"
+      have Mji: "?M $$ (j, i) = cnj (?M $$ (i, j))"
+        using M_herm_entry [OF i j] .
+      have Wij: "W $$ (i, j) = (1/2 :: complex) *
+                                (?A $$ (i, j) + cnj (?A $$ (j, i)))"
+        using W_entry [OF i j] .
+      show "W $$ (i, j) * ?M $$ (j, i)
+          = (1/2 :: complex) *
+            (?A $$ (i, j) * cnj (?M $$ (i, j))
+             + cnj (?A $$ (j, i)) * cnj (?M $$ (i, j)))"
+        using Mji Wij by (simp add: ring_distribs)
+    qed
+    have sum_eq_half_split:
+      "(\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. W $$ (i, j) * ?M $$ (j, i))
+       = (1/2 :: complex) *
+         ((\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. ?A $$ (i, j) * cnj (?M $$ (i, j)))
+        + (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. cnj (?A $$ (j, i)) * cnj (?M $$ (i, j))))"
+    proof -
+      have step1:
+        "(\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. W $$ (i, j) * ?M $$ (j, i))
+       = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n.
+            (1/2 :: complex) *
+              (?A $$ (i, j) * cnj (?M $$ (i, j))
+               + cnj (?A $$ (j, i)) * cnj (?M $$ (i, j))))"
+      proof (intro sum.cong refl)
+        fix i j assume "i \<in> {0..<?n}" "j \<in> {0..<?n}"
+        hence "i < ?n" "j < ?n" by simp_all
+        thus "W $$ (i, j) * ?M $$ (j, i)
+            = (1/2 :: complex) *
+              (?A $$ (i, j) * cnj (?M $$ (i, j))
+               + cnj (?A $$ (j, i)) * cnj (?M $$ (i, j)))"
+          by (rule rewrite_entry)
+      qed
+      also have "\<dots>
+        = (1/2 :: complex) *
+          (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n.
+            ?A $$ (i, j) * cnj (?M $$ (i, j))
+            + cnj (?A $$ (j, i)) * cnj (?M $$ (i, j)))"
+        by (simp only: sum_distrib_left)
+      also have "\<dots>
+        = (1/2 :: complex) *
+          ((\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. ?A $$ (i, j) * cnj (?M $$ (i, j)))
+         + (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. cnj (?A $$ (j, i)) * cnj (?M $$ (i, j))))"
+        by (simp only: sum.distrib)
+      finally show ?thesis .
+    qed
+    have second_swap:
+      "(\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. cnj (?A $$ (j, i)) * cnj (?M $$ (i, j)))
+       = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. cnj (?A $$ (i, j)) * ?M $$ (i, j))"
+    proof -
+      have "(\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. cnj (?A $$ (j, i)) * cnj (?M $$ (i, j)))
+          = (\<Sum>j = 0..<?n. \<Sum>i = 0..<?n. cnj (?A $$ (j, i)) * cnj (?M $$ (i, j)))"
+        by (rule sum.swap)
+      also have "\<dots>
+          = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. cnj (?A $$ (i, j)) * ?M $$ (i, j))"
+      proof (intro sum.cong refl)
+        fix i j assume i_in: "i \<in> {0..<?n}" and j_in: "j \<in> {0..<?n}"
+        hence i_lt: "i < ?n" and j_lt: "j < ?n" by simp_all
+        have "cnj (?M $$ (j, i)) = ?M $$ (i, j)"
+          using M_herm_entry [OF i_lt j_lt] by (metis complex_cnj_cnj)
+        thus "cnj (?A $$ (i, j)) * cnj (?M $$ (j, i))
+            = cnj (?A $$ (i, j)) * ?M $$ (i, j)"
+          by simp
+      qed
+      finally show ?thesis .
+    qed
+    define S1 :: complex where
+      "S1 = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. ?A $$ (i, j) * cnj (?M $$ (i, j)))"
+    define S2 :: complex where
+      "S2 = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n. cnj (?A $$ (i, j)) * ?M $$ (i, j))"
+    have Tr_WM_S: "Tr (W * ?M) = (1/2 :: complex) * (S1 + S2)"
+      using Tr_WM sum_eq_half_split second_swap
+      unfolding S1_def S2_def by simp
+    have Re_S_eq: "Re (Tr (W * ?M)) = (1/2) * (Re S1 + Re S2)"
+    proof -
+      have eq1: "Tr (W * ?M) = (S1 + S2) / 2"
+        using Tr_WM_S by simp
+      have "Re (Tr (W * ?M)) = Re ((S1 + S2) / 2)"
+        by (subst eq1) (rule refl)
+      also have "\<dots> = Re (S1 + S2) / 2"
+        by (rule Re_divide_numeral)
+      also have "\<dots> = (Re S1 + Re S2) / 2" by simp
+      also have "\<dots> = (1/2) * (Re S1 + Re S2)" by simp
+      finally show ?thesis .
+    qed
+    have Re_S1_eq_Re_S2: "Re S1 = Re S2"
+    proof -
+      have "S1 = cnj S2"
+        unfolding S1_def S2_def by (simp add: cnj_sum)
+      thus ?thesis by simp
+    qed
+    have Re_S2_eq_HS: "Re S2 = Re \<langle>\<langle> ?A | ?M \<rangle>\<rangle>"
+      using HS unfolding S2_def by simp
+    have "Re (Tr (W * ?M)) = (1/2) * (Re S1 + Re S2)" by (rule Re_S_eq)
+    also have "\<dots> = Re S2" using Re_S1_eq_Re_S2 by simp
+    also have "\<dots> = Re \<langle>\<langle> ?A | ?M \<rangle>\<rangle>" by (rule Re_S2_eq_HS)
+    also have "\<dots> = inner a M"
+      using inner_lmat_eq_re_hs_inner_prod [of a M] by simp
+    finally show "Re (Tr (W * ?M)) = inner a M" .
+  qed
+  show ?thesis using W_car W_herm re_tr_eq_inner by blast
+qed
+
+
+text \<open>The strict Re-trace form of the entanglement witness.\<close>
+
+theorem entanglement_witness_strict:
+  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes \<rho>_psd: "psd_lmat \<rho>"
+      and \<rho>_tr: "Tr_lmat \<rho> = 1"
+      and \<rho>_not_sep: "\<rho> \<notin> separable_cone_lmat"
+  shows "\<exists>(W :: complex Matrix.mat) c.
+           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
+         \<and> hermitian W
+         \<and> Re (Tr (W * unwrap_lm \<rho>)) < c
+         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+              \<sigma> \<in> convex hull Sprime
+                \<longrightarrow> c < Re (Tr (W * unwrap_lm \<sigma>)))"
+proof -
+  obtain a c
+    where ineq_\<rho>: "inner a \<rho> < c"
+      and ineq_S: "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                      \<sigma> \<in> convex hull Sprime \<longrightarrow> c < inner a \<sigma>"
+    using separable_density_separating_hyperplane [OF \<rho>_psd \<rho>_tr \<rho>_not_sep]
+    by blast
+  obtain W :: "complex Matrix.mat"
+    where W_car: "W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))"
+      and W_herm: "hermitian W"
+      and W_eq: "\<forall>M :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+                   hermitian (unwrap_lm M)
+                     \<longrightarrow> Re (Tr (W * unwrap_lm M)) = inner a M"
+    using hermitian_witness_from_lmat [where 'k = "'m \<times> 'p" and a = a]
+    by blast
+  have \<rho>_herm: "hermitian (unwrap_lm \<rho>)"
+    using \<rho>_psd by (simp add: psd_def)
+  have re_tr_\<rho>: "Re (Tr (W * unwrap_lm \<rho>)) = inner a \<rho>"
+    using W_eq \<rho>_herm by blast
+  have re_tr_\<sigma>:
+    "\<And>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
+       \<sigma> \<in> convex hull Sprime
+        \<Longrightarrow> Re (Tr (W * unwrap_lm \<sigma>)) = inner a \<sigma>"
+  proof -
+    fix \<sigma> :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    assume \<sigma>_in: "\<sigma> \<in> convex hull Sprime"
+    have Sprime_sub:
+      "(Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+         \<subseteq> separable_cone_lmat"
+    proof -
+      have s1: "Sprime \<subseteq> (separable_lmat_gen
+                            :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+        by (rule Sprime_subset_separable_lmat_gen)
+      have s2: "(separable_lmat_gen :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+                  \<subseteq> separable_cone_lmat"
+        unfolding separable_cone_lmat_def by (rule hull_subset)
+      show ?thesis using s1 s2 by (rule subset_trans)
+    qed
+    have cone_convex:
+      "convex (separable_cone_lmat
+                :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)"
+      using separable_cone_lmat_convex_cone unfolding convex_cone_def by blast
+    have hull_in_cone:
+      "convex hull (Sprime :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat set)
+         \<subseteq> separable_cone_lmat"
+      using Sprime_sub cone_convex by (rule hull_minimal)
+    hence \<sigma>_in_cone: "\<sigma> \<in> separable_cone_lmat" using \<sigma>_in by blast
+    hence \<sigma>_herm: "hermitian (unwrap_lm \<sigma>)"
+      by (rule separable_cone_lmat_hermitian)
+    show "Re (Tr (W * unwrap_lm \<sigma>)) = inner a \<sigma>"
+      using W_eq \<sigma>_herm by blast
+  qed
+  show ?thesis
+  proof (intro exI conjI allI impI)
+    show "W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))" by (rule W_car)
+    show "hermitian W" by (rule W_herm)
+    show "Re (Tr (W * unwrap_lm \<rho>)) < c"
+      using re_tr_\<rho> ineq_\<rho> by simp
+    fix \<sigma> :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat"
+    assume \<sigma>_in: "\<sigma> \<in> convex hull Sprime"
+    have "Re (Tr (W * unwrap_lm \<sigma>)) = inner a \<sigma>"
+      using re_tr_\<sigma> \<sigma>_in by simp
+    moreover have "c < inner a \<sigma>" using ineq_S \<sigma>_in by blast
+    ultimately show "c < Re (Tr (W * unwrap_lm \<sigma>))" by simp
+  qed
+qed
+
+
 end
