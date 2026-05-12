@@ -27,4 +27,5 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
   options [document = false, quick_and_dirty = true, timeout = 3600]
   theories
     Quantum_Computing11
+    Day23_ChoiExtremeUCP
     Day24_Separability
