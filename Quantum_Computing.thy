@@ -19199,16 +19199,227 @@ proof -
                       * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2" .
   qed
   text \<open>Reindex via the bijection \<open>(i\<^sub>1, i\<^sub>2) \<mapsto> i\<^sub>1 * r\<^sub>2 + i\<^sub>2\<close>.\<close>
+  have reindex_one:
+    "\<And>g :: nat \<Rightarrow> real.
+       (\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. g i)
+         = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. g (i\<^sub>1 * r\<^sub>2 + i\<^sub>2))"
+  proof -
+    fix g :: "nat \<Rightarrow> real"
+    have bij:
+      "bij_betw (\<lambda>(i\<^sub>1, i\<^sub>2). i\<^sub>1 * r\<^sub>2 + i\<^sub>2)
+                ({..<r\<^sub>1} \<times> {..<r\<^sub>2}) {..<r\<^sub>1 * r\<^sub>2}"
+    proof (rule bij_betwI [where g = "\<lambda>k. (k div r\<^sub>2, k mod r\<^sub>2)"])
+      show "(\<lambda>(i\<^sub>1, i\<^sub>2). i\<^sub>1 * r\<^sub>2 + i\<^sub>2)
+              \<in> {..<r\<^sub>1} \<times> {..<r\<^sub>2} \<rightarrow> {..<r\<^sub>1 * r\<^sub>2}"
+      proof
+        fix p :: "nat \<times> nat"
+        assume "p \<in> {..<r\<^sub>1} \<times> {..<r\<^sub>2}"
+        then obtain a b where p_eq: "p = (a, b)"
+                          and a_lt: "a < r\<^sub>1" and b_lt: "b < r\<^sub>2" by auto
+        have "a + 1 \<le> r\<^sub>1" using a_lt by simp
+        hence "(a + 1) * r\<^sub>2 \<le> r\<^sub>1 * r\<^sub>2" by (rule mult_le_mono1)
+        hence "a * r\<^sub>2 + r\<^sub>2 \<le> r\<^sub>1 * r\<^sub>2" by (simp add: distrib_right)
+        hence "a * r\<^sub>2 + b < r\<^sub>1 * r\<^sub>2" using b_lt by linarith
+        thus "(\<lambda>(i\<^sub>1, i\<^sub>2). i\<^sub>1 * r\<^sub>2 + i\<^sub>2) p \<in> {..<r\<^sub>1 * r\<^sub>2}"
+          using p_eq by simp
+      qed
+      show "(\<lambda>k. (k div r\<^sub>2, k mod r\<^sub>2))
+              \<in> {..<r\<^sub>1 * r\<^sub>2} \<rightarrow> {..<r\<^sub>1} \<times> {..<r\<^sub>2}"
+      proof
+        fix k :: nat assume k_in: "k \<in> {..<r\<^sub>1 * r\<^sub>2}"
+        hence k_lt: "k < r\<^sub>1 * r\<^sub>2" by simp
+        have div_lt: "k div r\<^sub>2 < r\<^sub>1" using k_lt r2_pos
+          by (metis div_less_iff_less_mult mult.commute)
+        have mod_lt: "k mod r\<^sub>2 < r\<^sub>2" using r2_pos by simp
+        show "(\<lambda>k. (k div r\<^sub>2, k mod r\<^sub>2)) k \<in> {..<r\<^sub>1} \<times> {..<r\<^sub>2}"
+          using div_lt mod_lt by simp
+      qed
+      show "\<And>p. p \<in> {..<r\<^sub>1} \<times> {..<r\<^sub>2}
+               \<Longrightarrow> (\<lambda>k. (k div r\<^sub>2, k mod r\<^sub>2))
+                     ((\<lambda>(i\<^sub>1, i\<^sub>2). i\<^sub>1 * r\<^sub>2 + i\<^sub>2) p) = p"
+        using r2_pos by auto
+      show "\<And>k. k \<in> {..<r\<^sub>1 * r\<^sub>2}
+               \<Longrightarrow> (\<lambda>(i\<^sub>1, i\<^sub>2). i\<^sub>1 * r\<^sub>2 + i\<^sub>2)
+                     ((\<lambda>k. (k div r\<^sub>2, k mod r\<^sub>2)) k) = k"
+        by simp
+    qed
+    have "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. g i)
+        = (\<Sum>p \<in> {..<r\<^sub>1} \<times> {..<r\<^sub>2}.
+              g ((\<lambda>(i\<^sub>1, i\<^sub>2). i\<^sub>1 * r\<^sub>2 + i\<^sub>2) p))"
+      using sum.reindex_bij_betw [OF bij, symmetric, of g] by simp
+    also have "\<dots> = (\<Sum>(i\<^sub>1, i\<^sub>2) \<in> {..<r\<^sub>1} \<times> {..<r\<^sub>2}. g (i\<^sub>1 * r\<^sub>2 + i\<^sub>2))"
+      by (intro sum.cong refl) (auto split: prod.split)
+    also have "\<dots> = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. g (i\<^sub>1 * r\<^sub>2 + i\<^sub>2))"
+      by (subst sum.cartesian_product [symmetric]) simp
+    finally show "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. g i)
+                = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. g (i\<^sub>1 * r\<^sub>2 + i\<^sub>2))" .
+  qed
+  have div_mod_id:
+    "\<And>i\<^sub>1 i\<^sub>2. i\<^sub>2 < r\<^sub>2 \<Longrightarrow> (i\<^sub>1 * r\<^sub>2 + i\<^sub>2) div r\<^sub>2 = i\<^sub>1
+                       \<and> (i\<^sub>1 * r\<^sub>2 + i\<^sub>2) mod r\<^sub>2 = i\<^sub>2"
+    by simp
   have reindex:
     "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}. (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2)
        = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
               (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
-    sorry
+  proof -
+    have body_eq:
+      "\<And>i j. i < r\<^sub>1 * r\<^sub>2 \<Longrightarrow> j < r\<^sub>1 * r\<^sub>2
+        \<Longrightarrow> (cmod ((A \<Otimes> B) $$ (i, j)))\<^sup>2
+            = (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+              * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2"
+      using AB_entry by blast
+    have step1:
+      "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}. (cmod ((A \<Otimes> B) $$ (i,j)))\<^sup>2)
+       = (\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}.
+            (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+            * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2)"
+      by (intro sum.cong refl) (auto simp: body_eq)
+    have step2:
+      "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}.
+          (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+          * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2)
+       = (\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+            (cmod (A $$ (i div r\<^sub>2, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i mod r\<^sub>2, j\<^sub>2)))\<^sup>2)"
+    proof (rule sum.cong [OF refl])
+      fix i assume "i \<in> {..<r\<^sub>1*r\<^sub>2}"
+      have eq1: "(\<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}.
+              (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+              * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2)
+          = (\<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ (i div r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) div r\<^sub>2)))\<^sup>2
+                * (cmod (B $$ (i mod r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) mod r\<^sub>2)))\<^sup>2)"
+        by (rule reindex_one)
+      have eq2: "(\<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                  (cmod (A $$ (i div r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) div r\<^sub>2)))\<^sup>2
+                  * (cmod (B $$ (i mod r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) mod r\<^sub>2)))\<^sup>2)
+              = (\<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                  (cmod (A $$ (i div r\<^sub>2, j\<^sub>1)))\<^sup>2
+                  * (cmod (B $$ (i mod r\<^sub>2, j\<^sub>2)))\<^sup>2)"
+      proof (rule sum.cong [OF refl])
+        fix j\<^sub>1 assume j1: "j\<^sub>1 \<in> {..<r\<^sub>1}"
+        show "(\<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ (i div r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) div r\<^sub>2)))\<^sup>2
+                * (cmod (B $$ (i mod r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) mod r\<^sub>2)))\<^sup>2)
+            = (\<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ (i div r\<^sub>2, j\<^sub>1)))\<^sup>2
+                * (cmod (B $$ (i mod r\<^sub>2, j\<^sub>2)))\<^sup>2)"
+        proof (rule sum.cong [OF refl])
+          fix j\<^sub>2 assume j2: "j\<^sub>2 \<in> {..<r\<^sub>2}"
+          from j2 have j2_lt: "j\<^sub>2 < r\<^sub>2" by simp
+          have d_eq: "(j\<^sub>1 * r\<^sub>2 + j\<^sub>2) div r\<^sub>2 = j\<^sub>1" using j2_lt by simp
+          have m_eq: "(j\<^sub>1 * r\<^sub>2 + j\<^sub>2) mod r\<^sub>2 = j\<^sub>2" using j2_lt by simp
+          show "(cmod (A $$ (i div r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) div r\<^sub>2)))\<^sup>2
+                * (cmod (B $$ (i mod r\<^sub>2, (j\<^sub>1 * r\<^sub>2 + j\<^sub>2) mod r\<^sub>2)))\<^sup>2
+              = (cmod (A $$ (i div r\<^sub>2, j\<^sub>1)))\<^sup>2
+                * (cmod (B $$ (i mod r\<^sub>2, j\<^sub>2)))\<^sup>2"
+            using d_eq m_eq by simp
+        qed
+      qed
+      show "(\<Sum>j\<in>{..<r\<^sub>1*r\<^sub>2}.
+              (cmod (A $$ (i div r\<^sub>2, j div r\<^sub>2)))\<^sup>2
+              * (cmod (B $$ (i mod r\<^sub>2, j mod r\<^sub>2)))\<^sup>2)
+          = (\<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i div r\<^sub>2, j\<^sub>1)))\<^sup>2
+              * (cmod (B $$ (i mod r\<^sub>2, j\<^sub>2)))\<^sup>2)"
+        using eq1 eq2 by metis
+    qed
+    have step3:
+      "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+            (cmod (A $$ (i div r\<^sub>2, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i mod r\<^sub>2, j\<^sub>2)))\<^sup>2)
+       = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+            (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+    proof -
+      have step3a:
+        "(\<Sum>i\<in>{..<r\<^sub>1*r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i div r\<^sub>2, j\<^sub>1)))\<^sup>2
+              * (cmod (B $$ (i mod r\<^sub>2, j\<^sub>2)))\<^sup>2)
+          = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}.
+              \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) div r\<^sub>2, j\<^sub>1)))\<^sup>2
+                * (cmod (B $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) mod r\<^sub>2, j\<^sub>2)))\<^sup>2)"
+        by (rule reindex_one)
+      have step3b:
+        "(\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}.
+            \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) div r\<^sub>2, j\<^sub>1)))\<^sup>2
+              * (cmod (B $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) mod r\<^sub>2, j\<^sub>2)))\<^sup>2)
+        = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}.
+            \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+      proof (rule sum.cong [OF refl])
+        fix i\<^sub>1 assume i1: "i\<^sub>1 \<in> {..<r\<^sub>1}"
+        show "(\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) div r\<^sub>2, j\<^sub>1)))\<^sup>2
+                * (cmod (B $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) mod r\<^sub>2, j\<^sub>2)))\<^sup>2)
+            = (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+        proof (rule sum.cong [OF refl])
+          fix i\<^sub>2 assume i2: "i\<^sub>2 \<in> {..<r\<^sub>2}"
+          from i2 have i2_lt: "i\<^sub>2 < r\<^sub>2" by simp
+          have d_eq: "(i\<^sub>1 * r\<^sub>2 + i\<^sub>2) div r\<^sub>2 = i\<^sub>1" using i2_lt by simp
+          have m_eq: "(i\<^sub>1 * r\<^sub>2 + i\<^sub>2) mod r\<^sub>2 = i\<^sub>2" using i2_lt by simp
+          show "(\<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                  (cmod (A $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) div r\<^sub>2, j\<^sub>1)))\<^sup>2
+                  * (cmod (B $$ ((i\<^sub>1 * r\<^sub>2 + i\<^sub>2) mod r\<^sub>2, j\<^sub>2)))\<^sup>2)
+              = (\<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                  (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+            using d_eq m_eq by simp
+        qed
+      qed
+      show ?thesis using step3a step3b by metis
+    qed
+    show ?thesis using step1 step2 step3 by simp
+  qed
   have factored: "(\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
                        (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)
                   = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2)
                     * (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}. (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
-    sorry
+  proof -
+    have inner:
+      "\<And>i\<^sub>1 j\<^sub>1. (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                  (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)
+                = (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2
+                  * (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}. (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+      by (simp add: sum_distrib_left)
+    have step_inner:
+      "(\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)
+        = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}.
+            (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2
+            * (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}. (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2))"
+    proof -
+      have swap_step:
+        "(\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)
+          = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+      proof (rule sum.cong [OF refl])
+        fix i\<^sub>1 assume "i\<^sub>1 \<in> {..<r\<^sub>1}"
+        show "(\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)
+            = (\<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+                (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+          by (rule sum.swap)
+      qed
+      have factor_step:
+        "(\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}.
+              (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2 * (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)
+          = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}.
+              (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2
+              * (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}. (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2))"
+        by (simp add: sum_distrib_left)
+      show ?thesis using swap_step factor_step by metis
+    qed
+    have step_outer:
+      "(\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}.
+            (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2
+            * (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}. (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2))
+       = (\<Sum>i\<^sub>1\<in>{..<r\<^sub>1}. \<Sum>j\<^sub>1\<in>{..<r\<^sub>1}. (cmod (A $$ (i\<^sub>1, j\<^sub>1)))\<^sup>2)
+         * (\<Sum>i\<^sub>2\<in>{..<r\<^sub>2}. \<Sum>j\<^sub>2\<in>{..<r\<^sub>2}. (cmod (B $$ (i\<^sub>2, j\<^sub>2)))\<^sup>2)"
+      by (simp add: sum_distrib_right)
+    show ?thesis using step_inner step_outer by simp
+  qed
   show ?thesis
     using hs_AB_eq hs_A_eq hs_B_eq reindex factored by simp
 qed
