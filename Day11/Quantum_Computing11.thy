@@ -8245,12 +8245,12 @@ qed
    DAY 29 \<mdash> 7 / Nov / 11
    Topic: Classical Error Correction; Hamming Weight and Distance
 
-   Days 23-28 are skipped here:
-     - Day 23 (Choi Theorem 3 / extreme-point classification of UCP)
-       and Day 24-28 (Arveson Extension, separability, entanglement
-       witnesses) require partial-isometry / Hahn-Banach machinery
-       that lies beyond the matrix infrastructure currently set up.
-   We resume at Day 29, which is purely classical and stands alone.
+   Days 24-28 (separability, entanglement witnesses) are now covered
+   in the sibling theory \<^theory>\<open>Vern_Paulsen_QC.Day24_Separability\<close>,
+   which is built on top of \<^theory>\<open>Vern_Paulsen_QC_3_10_Lmat.Separable_Cone\<close>.
+   Day 23 (Choi Theorem 3 / extreme-point classification of UCP)
+   still requires partial-isometry machinery and is not yet
+   formalised; we skip directly from Day 22 to Day 29 in this file.
    ============================================================================ *)
 
 (* --------------------------------------------------------------------------
