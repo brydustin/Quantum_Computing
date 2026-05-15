@@ -1338,18 +1338,51 @@ proof -
   have ts'_len_orig: "length ts' = length ts - 1"
     using ts'_len unfolding L_def .
 
-  text \<open>List/sum calculus: every triple in \<open>ts'\<close> is properly typed,
-        has non-negative weight, and its matrix pair appears in the
-        original list \<open>ts\<close>; and the cone sum is preserved.\<close>
-  have ts'_props_and_sum:
-       "(\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
-            \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
-            \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts))
-      \<and> cone_list_sum m p ts = cone_list_sum m p ts'"
-    sorry  \<comment> \<open>List/sum calculus residue.\<close>
+  text \<open>Typing / non-negativity / matrix-pair-inheritance for every
+        triple of \<open>ts'\<close>.\<close>
+  have ts'_sub_ts1: "set ts' \<subseteq> set ts1"
+    unfolding ts'_def using set_take_subset set_drop_subset by fastforce
+  have ts'_props:
+    "\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
+        \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+        \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts)"
+  proof (intro ballI, clarify)
+    fix w \<sigma> \<tau> assume mem: "(w, \<sigma>, \<tau>) \<in> set ts'"
+    from mem ts'_sub_ts1 have mem1: "(w, \<sigma>, \<tau>) \<in> set ts1" by blast
+    from mem1 obtain k where kL: "k < L"
+      and triple_eq: "(w, \<sigma>, \<tau>)
+                       = (w' k, fst (snd (ts ! k)), snd (snd (ts ! k)))"
+      unfolding ts1_def by auto
+    obtain w0 s0 t0 where tsk: "ts ! k = (w0, s0, t0)"
+      by (cases "ts ! k") auto
+    have decomp: "(w, \<sigma>, \<tau>) = (w' k, s0, t0)"
+      using triple_eq tsk by simp
+    have w_eq: "w = w' k" using decomp by simp
+    have s_eq: "\<sigma> = s0" using decomp by simp
+    have t_eq: "\<tau> = t0" using decomp by simp
+    have tsk_mem: "(w0, s0, t0) \<in> set ts"
+      using kL tsk L_def by (metis nth_mem)
+    have s0_c: "s0 \<in> carrier_mat m m" and t0_c: "t0 \<in> carrier_mat p p"
+      using ts_typing tsk_mem by auto
+    show "\<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+          \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts)"
+    proof (intro conjI)
+      show "\<sigma> \<in> carrier_mat m m" using s_eq s0_c by simp
+      show "\<tau> \<in> carrier_mat p p" using t_eq t0_c by simp
+      show "0 \<le> w" using w'_nn[OF kL] w_eq by simp
+      show "\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts"
+        using tsk_mem s_eq t_eq by blast
+    qed
+  qed
+
+  text \<open>Sum preservation (residual sub-sorry: linearity of cone_list_sum
+        in the weight plus the relation \<open>r_zero_sum\<close>, then drop the
+        zero-weight entry at \<open>k0\<close>).\<close>
+  have sum_preserved: "cone_list_sum m p ts = cone_list_sum m p ts'"
+    sorry
 
   show ?thesis
-    using ts'_len_orig ts'_props_and_sum
+    using ts'_len_orig ts'_props sum_preserved
     by (intro exI[of _ ts']) blast
 qed
 
