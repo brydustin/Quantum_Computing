@@ -646,6 +646,103 @@ proof (rule metric_CauchyI)
   qed
 qed
 
+text \<open>HS-norm-squared as a real double sum of entry-modulus squares.
+This is the entry-wise expansion of \<open>\<parallel>A\<parallel>\<^sup>2 = Re \<langle>\<langle> A | A \<rangle>\<rangle>\<close>.\<close>
+
+lemma hs_norm_sq_as_entry_sum:
+  fixes A :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat r r"
+  shows "(hs_norm A)\<^sup>2
+           = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. (cmod (A $$ (i,j)))\<^sup>2)"
+proof -
+  have dr: "dim_row A = r" using A_c by auto
+  have dc: "dim_col A = r" using A_c by auto
+  have body_eq:
+    "\<And>i j. Re (cnj (A $$ (i,j)) * A $$ (i,j)) = (cmod (A $$ (i,j)))\<^sup>2"
+  proof -
+    fix i j
+    let ?z = "A $$ (i,j)"
+    have e1: "cnj ?z * ?z = ?z * cnj ?z" by (simp add: mult.commute)
+    have e2: "?z * cnj ?z = complex_of_real ((cmod ?z)\<^sup>2)"
+      using complex_norm_square[of ?z, symmetric] by simp
+    show "Re (cnj ?z * ?z) = (cmod ?z)\<^sup>2" using e1 e2 by simp
+  qed
+  have "(hs_norm A)\<^sup>2 = Re (\<langle>\<langle> A | A \<rangle>\<rangle>)" by (rule hs_norm_sq)
+  also have "\<dots> = Re (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}.
+                        cnj (A $$ (i,j)) * A $$ (i,j))"
+    unfolding hs_inner_prod_def using dr dc by simp
+  also have "\<dots> = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}.
+                      Re (cnj (A $$ (i,j)) * A $$ (i,j)))"
+    by (simp add: Re_sum)
+  also have "\<dots> = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. (cmod (A $$ (i,j)))\<^sup>2)"
+    by (intro sum.cong refl) (rule body_eq)
+  finally show ?thesis .
+qed
+
+text \<open>Pointwise entry bounds give an HS-norm-squared bound.\<close>
+
+lemma hs_norm_sq_le_from_entry_bounds:
+  fixes A :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat r r"
+      and entries: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> (cmod (A $$ (i,j)))\<^sup>2 \<le> M"
+  shows "(hs_norm A)\<^sup>2 \<le> real r * real r * M"
+proof -
+  let ?term = "\<lambda>i j. (cmod (A $$ (i,j)))\<^sup>2"
+  have inner_bound: "\<And>i. i < r \<Longrightarrow> (\<Sum>j\<in>{0..<r}. ?term i j) \<le> real r * M"
+  proof -
+    fix i assume i: "i < r"
+    have "(\<Sum>j\<in>{0..<r}. ?term i j) \<le> (\<Sum>j\<in>{0..<r}. M)"
+      by (intro sum_mono entries[OF i]) auto
+    also have "(\<Sum>j\<in>{0..<r}. M :: real) = real r * M" by simp
+    finally show "(\<Sum>j\<in>{0..<r}. ?term i j) \<le> real r * M" .
+  qed
+  have outer_bound:
+    "(\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. ?term i j) \<le> real r * real r * M"
+  proof -
+    have "(\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. ?term i j)
+            \<le> (\<Sum>i\<in>{0..<r}. real r * M)"
+      by (intro sum_mono inner_bound) auto
+    also have "(\<Sum>i\<in>{0..<r}. real r * M) = real r * (real r * M)"
+      by simp
+    also have "real r * (real r * M) = real r * real r * M"
+      by (simp add: mult.assoc)
+    finally show ?thesis .
+  qed
+  have eq: "(hs_norm A)\<^sup>2
+            = (\<Sum>i\<in>{0..<r}. \<Sum>j\<in>{0..<r}. ?term i j)"
+    by (rule hs_norm_sq_as_entry_sum[OF A_c])
+  show ?thesis using eq outer_bound by linarith
+qed
+
+text \<open>Entry-cmod bound gives an HS-norm bound.  Combines the
+\<open>hs_norm_sq_le_from_entry_bounds\<close> bound with \<open>sqrt\<close>.\<close>
+
+lemma hs_norm_le_from_entry_bounds:
+  fixes A :: "complex Matrix.mat" and \<delta> :: real
+  assumes A_c: "A \<in> carrier_mat r r"
+      and \<delta>_nn: "0 \<le> \<delta>"
+      and entries: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> cmod (A $$ (i,j)) \<le> \<delta>"
+  shows "hs_norm A \<le> real r * \<delta>"
+proof -
+  have sq_le: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> (cmod (A $$ (i,j)))\<^sup>2 \<le> \<delta>\<^sup>2"
+  proof -
+    fix i j assume i: "i < r" and j: "j < r"
+    have nn: "0 \<le> cmod (A $$ (i,j))" by simp
+    have le: "cmod (A $$ (i,j)) \<le> \<delta>" by (rule entries[OF i j])
+    show "(cmod (A $$ (i,j)))\<^sup>2 \<le> \<delta>\<^sup>2"
+      using nn le \<delta>_nn by (intro power_mono) auto
+  qed
+  have hs_sq_le: "(hs_norm A)\<^sup>2 \<le> real r * real r * \<delta>\<^sup>2"
+    by (rule hs_norm_sq_le_from_entry_bounds[OF A_c sq_le])
+  have rd_sq_eq: "(real r * \<delta>)\<^sup>2 = real r * real r * \<delta>\<^sup>2"
+    by (simp add: power2_eq_square algebra_simps)
+  have hs_sq_le': "(hs_norm A)\<^sup>2 \<le> (real r * \<delta>)\<^sup>2"
+    using hs_sq_le rd_sq_eq by linarith
+  have rd_nn: "0 \<le> real r * \<delta>" using \<delta>_nn by simp
+  show ?thesis
+    by (rule power2_le_imp_le[OF hs_sq_le' rd_nn])
+qed
+
 text \<open>Symmetry of HS-distance: \<open>\<parallel>A - B\<parallel> = \<parallel>B - A\<parallel>\<close>.\<close>
 
 lemma hs_norm_sub_swap:
