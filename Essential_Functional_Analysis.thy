@@ -533,6 +533,64 @@ proof -
 qed
 
 
+section \<open>HS-norm convergence vs entry-wise convergence\<close>
+
+text \<open>HS-norm convergence implies entry-wise convergence:
+if \<open>(M\<^sub>n)\<close> converges to \<open>L\<close> in HS-norm then for every
+\<open>(i, j)\<close> the entry sequence \<open>M\<^sub>n $$ (i, j)\<close> tends to \<open>L $$ (i, j)\<close>.\<close>
+
+lemma HS_lim_entry_lim:
+  fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and r :: nat
+      and i j :: nat and L :: "complex Matrix.mat"
+  assumes carrier: "\<forall>n. M_seq n \<in> carrier_mat r r"
+      and L_c: "L \<in> carrier_mat r r"
+      and lim: "(\<lambda>n. hs_norm (M_seq n - L)) \<longlonglongrightarrow> 0"
+      and i_lt: "i < r" and j_lt: "j < r"
+  shows "(\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L $$ (i,j)"
+proof (rule metric_LIMSEQ_I)
+  fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+  obtain N where N_bd: "\<forall>n \<ge> N. hs_norm (M_seq n - L) < \<epsilon>"
+    using lim \<epsilon>_pos
+    unfolding lim_sequentially
+    by (auto simp: dist_real_def hs_norm_nonneg)
+  show "\<exists>N. \<forall>n \<ge> N. dist (M_seq n $$ (i,j)) (L $$ (i,j)) < \<epsilon>"
+  proof (rule exI[of _ N], intro allI impI)
+    fix n assume n_ge: "n \<ge> N"
+    let ?D = "M_seq n - L"
+    have Mn_c: "M_seq n \<in> carrier_mat r r" using carrier by simp
+    have D_c: "?D \<in> carrier_mat r r" by (rule minus_carrier_mat[OF L_c])
+    have entry_eq: "?D $$ (i,j) = M_seq n $$ (i,j) - L $$ (i,j)"
+    proof -
+      have dr: "dim_row L = r" using L_c by auto
+      have dc: "dim_col L = r" using L_c by auto
+      have "?D $$ (i,j)
+              = Matrix.mat (dim_row L) (dim_col L)
+                  (\<lambda>ij. M_seq n $$ ij - L $$ ij) $$ (i,j)"
+        unfolding minus_mat_def by simp
+      also have "\<dots> = M_seq n $$ (i,j) - L $$ (i,j)"
+        using i_lt j_lt dr dc by simp
+      finally show ?thesis .
+    qed
+    have cmod_le: "(cmod (?D $$ (i,j)))\<^sup>2 \<le> (hs_norm ?D)\<^sup>2"
+      by (rule cmod_entry_sq_le_hs_norm_sq[OF D_c i_lt j_lt])
+    have hs_lt: "hs_norm ?D < \<epsilon>" using N_bd n_ge by simp
+    have hs_nn: "0 \<le> hs_norm ?D" by (rule hs_norm_nonneg)
+    have eps_nn: "0 \<le> \<epsilon>" using \<epsilon>_pos by simp
+    have hs_sq_lt: "(hs_norm ?D)\<^sup>2 < \<epsilon>\<^sup>2"
+      using hs_lt hs_nn by (intro power_strict_mono) auto
+    have cmod_sq_lt: "(cmod (?D $$ (i,j)))\<^sup>2 < \<epsilon>\<^sup>2"
+      using cmod_le hs_sq_lt by linarith
+    have cmod_lt: "cmod (?D $$ (i,j)) < \<epsilon>"
+      by (rule power_less_imp_less_base[OF cmod_sq_lt eps_nn])
+    have dist_eq: "dist (M_seq n $$ (i,j)) (L $$ (i,j))
+                     = cmod (M_seq n $$ (i,j) - L $$ (i,j))"
+      by (simp add: dist_complex_def)
+    show "dist (M_seq n $$ (i,j)) (L $$ (i,j)) < \<epsilon>"
+      using dist_eq entry_eq cmod_lt by simp
+  qed
+qed
+
+
 section \<open>Carath\<eacute>odory's theorem for conic combinations\<close>
 
 text \<open>Given a finite-dimensional real vector space V of dimension
