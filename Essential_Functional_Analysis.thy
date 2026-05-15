@@ -298,6 +298,143 @@ proof -
     using target_sq lhs_nn rhs_nn power2_le_imp_le by blast
 qed
 
+text \<open>HS-norm-squared of \<open>U + (-t) \<cdot> V\<close>, expanded along the
+bilinear structure.  We extract this into a stand-alone lemma so
+the parameter names do not clash with let-bound names in callers.\<close>
+
+lemma hs_norm_sq_diff_expand:
+  fixes U V :: "complex Matrix.mat" and t :: real
+  assumes U_c: "U \<in> carrier_mat n n"
+      and V_c: "V \<in> carrier_mat n n"
+  shows "(hs_norm (U + complex_of_real (-t) \<cdot>\<^sub>m V))\<^sup>2
+          = Re (\<langle>\<langle> U | U \<rangle>\<rangle>) - 2 * t * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+            + t\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+proof -
+  let ?tV = "complex_of_real (-t) \<cdot>\<^sub>m V"
+  let ?Z = "U + ?tV"
+  have tV_c: "?tV \<in> carrier_mat n n" using V_c by auto
+  have Z_c: "?Z \<in> carrier_mat n n" using U_c tV_c by auto
+  have U_dr: "dim_row U = n" using U_c by auto
+  have U_dc: "dim_col U = n" using U_c by auto
+  have V_dr: "dim_row V = n" using V_c by auto
+  have V_dc: "dim_col V = n" using V_c by auto
+  have tV_dr: "dim_row ?tV = n" using tV_c by auto
+  have tV_dc: "dim_col ?tV = n" using tV_c by auto
+  have Z_dr: "dim_row ?Z = n" using Z_c by auto
+  have Z_dc: "dim_col ?Z = n" using Z_c by auto
+  have ZZ_split: "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle> = \<langle>\<langle> U | ?Z \<rangle>\<rangle> + \<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>"
+  proof -
+    have rhs_split: "\<langle>\<langle> ?Z | U + ?tV \<rangle>\<rangle>
+                       = \<langle>\<langle> ?Z | U \<rangle>\<rangle> + \<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>"
+      by (rule hs_inner_prod_right_add)
+         (use Z_dr Z_dc U_dr U_dc tV_dr tV_dc in auto)
+    have IP1: "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>
+                  = \<langle>\<langle> ?Z | U \<rangle>\<rangle> + \<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>"
+      using rhs_split by simp
+    have e1: "\<langle>\<langle> ?Z | U \<rangle>\<rangle> = cnj (\<langle>\<langle> U | ?Z \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_cnj) (use U_dr U_dc Z_dr Z_dc in auto)
+    have e2: "\<langle>\<langle> ?Z | ?tV \<rangle>\<rangle> = cnj (\<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_cnj) (use tV_dr tV_dc Z_dr Z_dc in auto)
+    have ZZ_real: "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle> = cnj (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)"
+      using hs_inner_prod_self_real by (metis Reals_cnj_iff)
+    have "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle> = cnj (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)" by (rule ZZ_real)
+    also have "cnj (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)
+                = cnj (\<langle>\<langle> ?Z | U \<rangle>\<rangle> + \<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>)"
+      using IP1 by simp
+    also have "\<dots> = cnj (\<langle>\<langle> ?Z | U \<rangle>\<rangle>) + cnj (\<langle>\<langle> ?Z | ?tV \<rangle>\<rangle>)" by simp
+    also have "\<dots> = cnj (cnj (\<langle>\<langle> U | ?Z \<rangle>\<rangle>))
+                    + cnj (cnj (\<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>))"
+      using e1 e2 by simp
+    also have "\<dots> = \<langle>\<langle> U | ?Z \<rangle>\<rangle> + \<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>" by simp
+    finally show ?thesis .
+  qed
+  have UZ_split: "\<langle>\<langle> U | ?Z \<rangle>\<rangle> = \<langle>\<langle> U | U \<rangle>\<rangle> + \<langle>\<langle> U | ?tV \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_add)
+       (use U_dr U_dc tV_dr tV_dc in auto)
+  have tVZ_split: "\<langle>\<langle> ?tV | ?Z \<rangle>\<rangle>
+                    = \<langle>\<langle> ?tV | U \<rangle>\<rangle> + \<langle>\<langle> ?tV | ?tV \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_add)
+       (use U_dr U_dc tV_dr tV_dc in auto)
+  have UtV_smult: "\<langle>\<langle> U | ?tV \<rangle>\<rangle>
+                    = complex_of_real (-t) * \<langle>\<langle> U | V \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_smult)
+       (use U_dr U_dc V_dr V_dc in auto)
+  have tVU_smult: "\<langle>\<langle> ?tV | U \<rangle>\<rangle>
+                    = cnj (complex_of_real (-t)) * \<langle>\<langle> V | U \<rangle>\<rangle>"
+    by (rule hs_inner_prod_left_smult)
+       (use U_dr U_dc V_dr V_dc in auto)
+  have tVtV_smult: "\<langle>\<langle> ?tV | ?tV \<rangle>\<rangle>
+                     = cnj (complex_of_real (-t)) * \<langle>\<langle> V | ?tV \<rangle>\<rangle>"
+    by (rule hs_inner_prod_left_smult)
+       (use V_dr V_dc tV_dr tV_dc in auto)
+  have VtV_smult: "\<langle>\<langle> V | ?tV \<rangle>\<rangle>
+                    = complex_of_real (-t) * \<langle>\<langle> V | V \<rangle>\<rangle>"
+    by (rule hs_inner_prod_right_smult)
+       (use V_dr V_dc in auto)
+  have full:
+    "\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>
+       = \<langle>\<langle> U | U \<rangle>\<rangle>
+         + complex_of_real (-t) * \<langle>\<langle> U | V \<rangle>\<rangle>
+         + (cnj (complex_of_real (-t)) * \<langle>\<langle> V | U \<rangle>\<rangle>
+             + cnj (complex_of_real (-t))
+                 * (complex_of_real (-t) * \<langle>\<langle> V | V \<rangle>\<rangle>))"
+    using ZZ_split UZ_split tVZ_split
+          UtV_smult tVU_smult tVtV_smult VtV_smult
+    by simp
+  have re_eq:
+    "Re (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)
+        = Re (\<langle>\<langle> U | U \<rangle>\<rangle>)
+          - t * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+          - t * Re (\<langle>\<langle> V | U \<rangle>\<rangle>)
+          + t\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+    using full by (simp add: power2_eq_square)
+  have swap: "Re (\<langle>\<langle> V | U \<rangle>\<rangle>) = Re (\<langle>\<langle> U | V \<rangle>\<rangle>)"
+  proof -
+    have d1: "dim_row V = dim_row U" using V_dr U_dr by simp
+    have d2: "dim_col V = dim_col U" using V_dc U_dc by simp
+    have "\<langle>\<langle> V | U \<rangle>\<rangle> = cnj (\<langle>\<langle> U | V \<rangle>\<rangle>)"
+      by (rule hs_inner_prod_cnj[OF d1 d2])
+    thus ?thesis by simp
+  qed
+  have "(hs_norm ?Z)\<^sup>2 = Re (\<langle>\<langle> ?Z | ?Z \<rangle>\<rangle>)" by (rule hs_norm_sq)
+  thus ?thesis using re_eq swap by simp
+qed
+
+text \<open>HS norm satisfies the parallelogram identity.\<close>
+
+lemma hs_norm_parallelogram:
+  fixes U V :: "complex Matrix.mat"
+  assumes U_c: "U \<in> carrier_mat n n"
+      and V_c: "V \<in> carrier_mat n n"
+  shows "(hs_norm (U + V))\<^sup>2 + (hs_norm (U - V))\<^sup>2
+          = 2 * (hs_norm U)\<^sup>2 + 2 * (hs_norm V)\<^sup>2"
+proof -
+  have minus_eq: "U + complex_of_real (-1) \<cdot>\<^sub>m V = U - V"
+    using U_c V_c
+    by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def)
+  have plus_eq: "U + complex_of_real (-(-1)) \<cdot>\<^sub>m V = U + V"
+    using U_c V_c by (intro eq_matI) auto
+  have neg_one_expand:
+    "(hs_norm (U + complex_of_real (-1) \<cdot>\<^sub>m V))\<^sup>2
+       = Re (\<langle>\<langle> U | U \<rangle>\<rangle>) - 2 * 1 * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+         + 1\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+    by (rule hs_norm_sq_diff_expand[OF U_c V_c])
+  have pos_one_expand:
+    "(hs_norm (U + complex_of_real (-(-1)) \<cdot>\<^sub>m V))\<^sup>2
+       = Re (\<langle>\<langle> U | U \<rangle>\<rangle>) - 2 * (-1) * Re (\<langle>\<langle> U | V \<rangle>\<rangle>)
+         + (-1)\<^sup>2 * Re (\<langle>\<langle> V | V \<rangle>\<rangle>)"
+    by (rule hs_norm_sq_diff_expand[OF U_c V_c])
+  have UU_eq: "Re (\<langle>\<langle> U | U \<rangle>\<rangle>) = (hs_norm U)\<^sup>2" by (simp add: hs_norm_sq)
+  have VV_eq: "Re (\<langle>\<langle> V | V \<rangle>\<rangle>) = (hs_norm V)\<^sup>2" by (simp add: hs_norm_sq)
+  have minus_norm: "(hs_norm (U - V))\<^sup>2
+                      = (hs_norm U)\<^sup>2 - 2 * Re (\<langle>\<langle> U | V \<rangle>\<rangle>) + (hs_norm V)\<^sup>2"
+    using neg_one_expand minus_eq UU_eq VV_eq by simp
+  have plus_norm: "(hs_norm (U + V))\<^sup>2
+                     = (hs_norm U)\<^sup>2 + 2 * Re (\<langle>\<langle> U | V \<rangle>\<rangle>) + (hs_norm V)\<^sup>2"
+    using pos_one_expand plus_eq UU_eq VV_eq by simp
+  show ?thesis using minus_norm plus_norm by simp
+qed
+
 lemma hs_norm_zero_iff:
   fixes A :: "complex Matrix.mat"
   shows "hs_norm A = 0 \<longleftrightarrow> A = 0\<^sub>m (dim_row A) (dim_col A)"
