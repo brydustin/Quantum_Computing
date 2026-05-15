@@ -645,6 +645,60 @@ proof (rule metric_CauchyI)
   qed
 qed
 
+text \<open>Symmetry of HS-distance: \<open>\<parallel>A - B\<parallel> = \<parallel>B - A\<parallel>\<close>.\<close>
+
+lemma hs_norm_sub_swap:
+  fixes A B :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat n n"
+      and B_c: "B \<in> carrier_mat n n"
+  shows "hs_norm (A - B) = hs_norm (B - A)"
+proof -
+  have lhs: "A - B = complex_of_real (-1) \<cdot>\<^sub>m (B - A)"
+    using A_c B_c
+    by (intro eq_matI) (auto simp: minus_mat_def uminus_mat_def)
+  have abs_one: "cmod (complex_of_real (-1)) = 1" by simp
+  have "hs_norm (A - B) = hs_norm (complex_of_real (-1) \<cdot>\<^sub>m (B - A))"
+    using lhs by simp
+  also have "\<dots> = cmod (complex_of_real (-1)) * hs_norm (B - A)"
+    by (rule hs_norm_smult)
+  also have "\<dots> = hs_norm (B - A)" using abs_one by simp
+  finally show ?thesis .
+qed
+
+text \<open>Reverse triangle inequality: \<open>\<bar>\<parallel>A\<parallel> - \<parallel>B\<parallel>\<bar> \<le> \<parallel>A - B\<parallel>\<close>.\<close>
+
+lemma hs_norm_sub_triangle_ineq:
+  fixes A B :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat n n"
+      and B_c: "B \<in> carrier_mat n n"
+  shows "\<bar>hs_norm A - hs_norm B\<bar> \<le> hs_norm (A - B)"
+proof -
+  have AB_c: "A - B \<in> carrier_mat n n" by (rule minus_carrier_mat[OF B_c])
+  have BA_c: "B - A \<in> carrier_mat n n" by (rule minus_carrier_mat[OF A_c])
+  text \<open>Two inequalities.\<close>
+  have A_eq: "A = B + (A - B)"
+    using A_c B_c by (intro eq_matI) (auto simp: minus_mat_def)
+  have lhs1: "hs_norm A \<le> hs_norm B + hs_norm (A - B)"
+  proof -
+    have "hs_norm A = hs_norm (B + (A - B))" using A_eq by simp
+    also have "\<dots> \<le> hs_norm B + hs_norm (A - B)"
+      by (rule hs_norm_triangle[OF B_c AB_c])
+    finally show ?thesis .
+  qed
+  have B_eq: "B = A + (B - A)"
+    using A_c B_c by (intro eq_matI) (auto simp: minus_mat_def)
+  have lhs2: "hs_norm B \<le> hs_norm A + hs_norm (B - A)"
+  proof -
+    have "hs_norm B = hs_norm (A + (B - A))" using B_eq by simp
+    also have "\<dots> \<le> hs_norm A + hs_norm (B - A)"
+      by (rule hs_norm_triangle[OF A_c BA_c])
+    finally show ?thesis .
+  qed
+  have BA_eq_AB: "hs_norm (B - A) = hs_norm (A - B)"
+    using hs_norm_sub_swap[OF B_c A_c] .
+  show ?thesis using lhs1 lhs2 BA_eq_AB by linarith
+qed
+
 
 section \<open>Carath\<eacute>odory's theorem for conic combinations\<close>
 
