@@ -710,6 +710,141 @@ proof (intro eq_matI)
   thus "L\<^sup>\<dagger> $$ (i, j) = L $$ (i, j)" .
 qed
 
+text \<open>HS-norm closedness of the PSD set.  The proof combines
+hermitian_HS_closed for the Hermitian part with continuity of the
+quadratic form \<open>\<sigma> \<mapsto> \<langle>x | \<sigma> *\<^sub>v x\<rangle>\<close> (linear in the entries of
+\<open>\<sigma>\<close>, hence HS-continuous via entry convergence).\<close>
+
+lemma psd_HS_closed:
+  fixes \<sigma>_n :: "nat \<Rightarrow> complex Matrix.mat" and \<sigma> :: "complex Matrix.mat"
+      and r :: nat
+  assumes carrier: "\<forall>n. \<sigma>_n n \<in> carrier_mat r r"
+      and \<sigma>_c: "\<sigma> \<in> carrier_mat r r"
+      and psd_n: "\<forall>n. psd (\<sigma>_n n)"
+      and lim: "(\<lambda>n. hs_norm (\<sigma>_n n - \<sigma>)) \<longlonglongrightarrow> 0"
+  shows "psd \<sigma>"
+proof -
+  have herm_n: "\<forall>n. hermitian (\<sigma>_n n)"
+    using psd_n by (auto simp: psd_def)
+  have herm: "hermitian \<sigma>"
+    by (rule hermitian_HS_closed[OF carrier \<sigma>_c herm_n lim])
+  have quad: "\<forall>x. dim_vec x = dim_row \<sigma>
+                  \<longrightarrow> Re (\<langle>x | \<sigma> *\<^sub>v x\<rangle>) \<ge> 0"
+  proof (intro allI impI)
+    fix x :: "complex Matrix.vec"
+    assume xdim_eq: "dim_vec x = dim_row \<sigma>"
+    have xdim: "dim_vec x = r" using xdim_eq \<sigma>_c by auto
+    have ip_eq: "\<And>M :: complex Matrix.mat. M \<in> carrier_mat r r \<Longrightarrow>
+                  \<langle>x | M *\<^sub>v x\<rangle>
+                  = (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                       cnj (x $ i) * M $$ (i,j) * x $ j)"
+    proof -
+      fix M :: "complex Matrix.mat" assume M_c: "M \<in> carrier_mat r r"
+      have M_dr: "dim_row M = r" using M_c by auto
+      have M_dc: "dim_col M = r" using M_c by auto
+      have Mxv_dim: "dim_vec (M *\<^sub>v x) = r"
+        using M_c xdim by simp
+      have entry_eq: "\<And>i. i < r \<Longrightarrow>
+              (M *\<^sub>v x) $ i = (\<Sum>j\<in>{..<r}. M $$ (i,j) * x $ j)"
+      proof -
+        fix i assume i: "i < r"
+        have "(M *\<^sub>v x) $ i = Matrix.row M i \<bullet> x"
+          using i M_c by simp
+        also have "\<dots> = (\<Sum>j<r. Matrix.row M i $ j * x $ j)"
+          using xdim M_c by (simp add: scalar_prod_def lessThan_atLeast0)
+        also have "\<dots> = (\<Sum>j<r. M $$ (i,j) * x $ j)"
+          using i M_c by simp
+        finally show "(M *\<^sub>v x) $ i = (\<Sum>j<r. M $$ (i,j) * x $ j)"
+          by simp
+      qed
+      have "\<langle>x | M *\<^sub>v x\<rangle>
+             = (\<Sum>i = 0..<r. cnj (x $ i) * (M *\<^sub>v x) $ i)"
+        unfolding inner_prod_def using Mxv_dim xdim by simp
+      also have "\<dots> = (\<Sum>i\<in>{..<r}. cnj (x $ i)
+                                 * (\<Sum>j\<in>{..<r}. M $$ (i,j) * x $ j))"
+      proof -
+        have "(\<Sum>i = 0..<r. cnj (x $ i) * (M *\<^sub>v x) $ i)
+              = (\<Sum>i\<in>{..<r}. cnj (x $ i) * (M *\<^sub>v x) $ i)"
+          by (simp add: lessThan_atLeast0)
+        also have "\<dots> = (\<Sum>i\<in>{..<r}. cnj (x $ i)
+                                   * (\<Sum>j\<in>{..<r}. M $$ (i,j) * x $ j))"
+        proof (intro sum.cong refl)
+          fix i assume i_in: "i \<in> {..<r}"
+          hence i: "i < r" by simp
+          show "cnj (x $ i) * (M *\<^sub>v x) $ i
+                  = cnj (x $ i) * (\<Sum>j\<in>{..<r}. M $$ (i,j) * x $ j)"
+            using entry_eq[OF i] by simp
+        qed
+        finally show ?thesis .
+      qed
+      also have "\<dots> = (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                          cnj (x $ i) * (M $$ (i,j) * x $ j))"
+        by (simp add: sum_distrib_left)
+      also have "\<dots> = (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                          cnj (x $ i) * M $$ (i,j) * x $ j)"
+        by (intro sum.cong refl) (simp add: mult.assoc)
+      finally show "\<langle>x | M *\<^sub>v x\<rangle>
+                       = (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                            cnj (x $ i) * M $$ (i,j) * x $ j)" .
+    qed
+    have psd_form: "\<And>n. Re (\<langle>x | \<sigma>_n n *\<^sub>v x\<rangle>) \<ge> 0"
+    proof -
+      fix n
+      have Mn_c: "\<sigma>_n n \<in> carrier_mat r r" using carrier by simp
+      have xdim_n: "dim_vec x = dim_row (\<sigma>_n n)" using Mn_c xdim by auto
+      show "Re (\<langle>x | \<sigma>_n n *\<^sub>v x\<rangle>) \<ge> 0"
+        using psd_n[THEN spec, of n] xdim_n unfolding psd_def by blast
+    qed
+    have entry_lim: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow>
+                     (\<lambda>n. \<sigma>_n n $$ (i,j)) \<longlonglongrightarrow> \<sigma> $$ (i,j)"
+      using HS_lim_entry_lim[OF carrier \<sigma>_c lim] by simp
+    have term_lim: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow>
+                     (\<lambda>n. cnj (x $ i) * \<sigma>_n n $$ (i,j) * x $ j)
+                     \<longlonglongrightarrow> cnj (x $ i) * \<sigma> $$ (i,j) * x $ j"
+    proof -
+      fix i j assume i: "i < r" and j: "j < r"
+      have "(\<lambda>n. \<sigma>_n n $$ (i,j) * x $ j)
+              \<longlonglongrightarrow> \<sigma> $$ (i,j) * x $ j"
+        by (rule tendsto_mult_right) (rule entry_lim[OF i j])
+      hence h: "(\<lambda>n. cnj (x $ i) * (\<sigma>_n n $$ (i,j) * x $ j))
+              \<longlonglongrightarrow> cnj (x $ i) * (\<sigma> $$ (i,j) * x $ j)"
+        by (rule tendsto_mult_left)
+      have eq1: "\<And>n. cnj (x $ i) * (\<sigma>_n n $$ (i,j) * x $ j)
+                     = cnj (x $ i) * \<sigma>_n n $$ (i,j) * x $ j"
+        by (simp add: mult.assoc)
+      have eq2: "cnj (x $ i) * (\<sigma> $$ (i,j) * x $ j)
+                   = cnj (x $ i) * \<sigma> $$ (i,j) * x $ j"
+        by (simp add: mult.assoc)
+      show "(\<lambda>n. cnj (x $ i) * \<sigma>_n n $$ (i,j) * x $ j)
+              \<longlonglongrightarrow> cnj (x $ i) * \<sigma> $$ (i,j) * x $ j"
+        using h eq1 eq2 by simp
+    qed
+    have inner_lim: "(\<lambda>n. (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                              cnj (x $ i) * \<sigma>_n n $$ (i,j) * x $ j))
+                       \<longlonglongrightarrow> (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                              cnj (x $ i) * \<sigma> $$ (i,j) * x $ j)"
+      using term_lim
+      by (intro tendsto_sum) auto
+    have ip_n_eq: "\<And>n. \<langle>x | \<sigma>_n n *\<^sub>v x\<rangle>
+                       = (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                            cnj (x $ i) * \<sigma>_n n $$ (i,j) * x $ j)"
+      using ip_eq[OF carrier[THEN spec]] by simp
+    have ip_lim_eq: "\<langle>x | \<sigma> *\<^sub>v x\<rangle>
+                       = (\<Sum>i\<in>{..<r}. \<Sum>j\<in>{..<r}.
+                            cnj (x $ i) * \<sigma> $$ (i,j) * x $ j)"
+      using ip_eq[OF \<sigma>_c] by simp
+    have inner_prod_lim: "(\<lambda>n. \<langle>x | \<sigma>_n n *\<^sub>v x\<rangle>) \<longlonglongrightarrow> \<langle>x | \<sigma> *\<^sub>v x\<rangle>"
+      using inner_lim ip_n_eq ip_lim_eq by simp
+    have re_lim: "(\<lambda>n. Re (\<langle>x | \<sigma>_n n *\<^sub>v x\<rangle>)) \<longlonglongrightarrow> Re (\<langle>x | \<sigma> *\<^sub>v x\<rangle>)"
+      using inner_prod_lim by (rule tendsto_Re)
+    have psd_form_exN: "\<exists>N. \<forall>n \<ge> N. 0 \<le> Re (\<langle>x | \<sigma>_n n *\<^sub>v x\<rangle>)"
+      using psd_form by blast
+    show "0 \<le> Re (\<langle>x | \<sigma> *\<^sub>v x\<rangle>)"
+      using re_lim psd_form_exN by (rule LIMSEQ_le_const)
+  qed
+  show ?thesis unfolding psd_def using herm quad by blast
+qed
+
 text \<open>Reverse triangle inequality: \<open>\<bar>\<parallel>A\<parallel> - \<parallel>B\<parallel>\<bar> \<le> \<parallel>A - B\<parallel>\<close>.\<close>
 
 lemma hs_norm_sub_triangle_ineq:
