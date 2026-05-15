@@ -743,6 +743,187 @@ proof -
     by (rule power2_le_imp_le[OF hs_sq_le' rd_nn])
 qed
 
+text \<open>Entry-wise convergence implies HS-norm convergence.  This is
+the slow half of HS-completeness; we use the entry-bound helper to
+keep it tractable.\<close>
+
+lemma entry_lim_imp_HS_lim:
+  fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and M_lim :: "complex Matrix.mat"
+      and r :: nat
+  assumes carrier: "\<forall>n. M_seq n \<in> carrier_mat r r"
+      and M_lim_c: "M_lim \<in> carrier_mat r r"
+      and entry_lim: "\<And>i j. i < r \<Longrightarrow> j < r
+                       \<Longrightarrow> (\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> M_lim $$ (i,j)"
+  shows "(\<lambda>n. hs_norm (M_seq n - M_lim)) \<longlonglongrightarrow> 0"
+proof (rule metric_LIMSEQ_I)
+  fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+  define \<delta> where "\<delta> = \<epsilon> / (real r + 1)"
+  have \<delta>_pos: "0 < \<delta>"
+    unfolding \<delta>_def using \<epsilon>_pos by simp
+  have \<delta>_nn: "0 \<le> \<delta>" using \<delta>_pos by simp
+  text \<open>Per-entry: \<open>\<exists>N_ij. \<forall>n \<ge> N_ij. cmod entry < \<delta>\<close>.\<close>
+  have entry_close:
+    "\<And>i j. i < r \<Longrightarrow> j < r
+            \<Longrightarrow> \<exists>N. \<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>"
+  proof -
+    fix i j assume i: "i < r" and j: "j < r"
+    from entry_lim[OF i j] \<delta>_pos
+    obtain N where N_bd:
+      "\<forall>n \<ge> N. dist (M_seq n $$ (i,j)) (M_lim $$ (i,j)) < \<delta>"
+      unfolding lim_sequentially by blast
+    have "\<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>"
+      using N_bd by (auto simp: dist_complex_def)
+    thus "\<exists>N. \<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>"
+      by blast
+  qed
+  text \<open>Choose \<open>N_fn (i,j)\<close> via Hilbert choice; take Max over a finite set.\<close>
+  define N_pick :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+    "N_pick = (\<lambda>i j. SOME N. \<forall>n \<ge> N.
+              cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>)"
+  have N_pick_bd:
+    "\<And>i j. i < r \<Longrightarrow> j < r
+           \<Longrightarrow> \<forall>n \<ge> N_pick i j.
+                  cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>"
+  proof -
+    fix i j assume i: "i < r" and j: "j < r"
+    have ex: "\<exists>N. \<forall>n \<ge> N. cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>"
+      by (rule entry_close[OF i j])
+    show "\<forall>n \<ge> N_pick i j.
+            cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>"
+      unfolding N_pick_def by (rule someI_ex[OF ex])
+  qed
+  define N_fn :: "nat \<times> nat \<Rightarrow> nat" where
+    "N_fn = (\<lambda>p. N_pick (fst p) (snd p))"
+  define IdxList :: "(nat \<times> nat) list" where
+    "IdxList = concat (map (\<lambda>i. map (\<lambda>j. (i,j)) [0..<r]) [0..<r])"
+  have IdxList_in: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> (i,j) \<in> set IdxList"
+  proof -
+    fix i j assume i: "i < r" and j: "j < r"
+    have i_in: "i \<in> set [0..<r]" using i by simp
+    have j_in: "j \<in> set [0..<r]" using j by simp
+    have inner: "(i,j) \<in> set (map (\<lambda>j. (i,j)) [0..<r])" using j_in by auto
+    show "(i,j) \<in> set IdxList"
+      unfolding IdxList_def using i_in inner by auto
+  qed
+  define Nbar :: nat where
+    "Nbar = sum_list (map N_fn IdxList)"
+  have Nbar_ge:
+    "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> N_pick i j \<le> Nbar"
+  proof -
+    fix i j assume i: "i < r" and j: "j < r"
+    have ij_in: "(i,j) \<in> set IdxList" using IdxList_in[OF i j] .
+    hence N_in: "N_fn (i,j) \<in> set (map N_fn IdxList)" by simp
+    have all_le: "\<And>x :: nat. x \<in> set (map N_fn IdxList) \<Longrightarrow> x \<le> Nbar"
+      unfolding Nbar_def by (rule member_le_sum_list) auto
+    have eq: "N_fn (i,j) = N_pick i j" unfolding N_fn_def by simp
+    show "N_pick i j \<le> Nbar"
+      using all_le[OF N_in] eq by simp
+  qed
+  show "\<exists>N. \<forall>n \<ge> N. dist (hs_norm (M_seq n - M_lim)) 0 < \<epsilon>"
+  proof (rule exI[of _ Nbar], intro allI impI)
+    fix n assume n_ge: "n \<ge> Nbar"
+    let ?D = "M_seq n - M_lim"
+    have Mn_c: "M_seq n \<in> carrier_mat r r" using carrier by simp
+    have D_c: "?D \<in> carrier_mat r r" by (rule minus_carrier_mat[OF M_lim_c])
+    have entry_diff:
+      "\<And>i j. i < r \<Longrightarrow> j < r
+            \<Longrightarrow> ?D $$ (i,j) = M_seq n $$ (i,j) - M_lim $$ (i,j)"
+    proof -
+      fix i j assume i: "i < r" and j: "j < r"
+      have ML_dr: "dim_row M_lim = r" using M_lim_c by auto
+      have ML_dc: "dim_col M_lim = r" using M_lim_c by auto
+      have "?D $$ (i,j)
+              = Matrix.mat (dim_row M_lim) (dim_col M_lim)
+                  (\<lambda>ij. M_seq n $$ ij - M_lim $$ ij) $$ (i,j)"
+        unfolding minus_mat_def by simp
+      also have "\<dots> = M_seq n $$ (i,j) - M_lim $$ (i,j)"
+        using i j ML_dr ML_dc by simp
+      finally show "?D $$ (i,j) = M_seq n $$ (i,j) - M_lim $$ (i,j)" .
+    qed
+    have entry_le: "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> cmod (?D $$ (i,j)) \<le> \<delta>"
+    proof -
+      fix i j assume i: "i < r" and j: "j < r"
+      have nN: "n \<ge> N_pick i j" using n_ge Nbar_ge[OF i j] by simp
+      hence "cmod (M_seq n $$ (i,j) - M_lim $$ (i,j)) \<le> \<delta>"
+        using N_pick_bd[OF i j] by simp
+      thus "cmod (?D $$ (i,j)) \<le> \<delta>"
+        using entry_diff[OF i j] by simp
+    qed
+    have hs_le_rd: "hs_norm ?D \<le> real r * \<delta>"
+      by (rule hs_norm_le_from_entry_bounds[OF D_c \<delta>_nn entry_le])
+    have rd_lt: "real r * \<delta> < \<epsilon>"
+    proof -
+      have "real r * \<delta> = real r * (\<epsilon> / (real r + 1))"
+        unfolding \<delta>_def by simp
+      also have "\<dots> = (real r / (real r + 1)) * \<epsilon>"
+        by simp
+      also have "\<dots> < 1 * \<epsilon>"
+      proof (rule mult_strict_right_mono[OF _ \<epsilon>_pos])
+        have rp1_pos: "0 < real r + 1" by simp
+        have "real r < real r + 1" by simp
+        thus "real r / (real r + 1) < 1"
+          using rp1_pos by (simp add: divide_less_eq)
+      qed
+      finally show ?thesis by simp
+    qed
+    have hs_lt: "hs_norm ?D < \<epsilon>" using hs_le_rd rd_lt by linarith
+    have hs_nn: "0 \<le> hs_norm ?D" by (rule hs_norm_nonneg)
+    show "dist (hs_norm ?D) 0 < \<epsilon>" using hs_lt hs_nn by (simp add: dist_real_def)
+  qed
+qed
+
+text \<open>HS-completeness of the matrix space: every HS-Cauchy sequence
+in \<open>carrier_mat r r\<close> converges in HS norm to a matrix in
+\<open>carrier_mat r r\<close>.  Combines \<open>HS_Cauchy_entry_Cauchy\<close> +
+completeness of \<open>\<complex>\<close> + \<open>entry_lim_imp_HS_lim\<close>.\<close>
+
+lemma HS_Cauchy_imp_convergent:
+  fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and r :: nat
+  assumes carrier: "\<forall>n. M_seq n \<in> carrier_mat r r"
+      and hs_cauchy: "\<forall>\<epsilon>>0. \<exists>N. \<forall>x \<ge> N. \<forall>y \<ge> N.
+                                hs_norm (M_seq x - M_seq y) < \<epsilon>"
+  shows "\<exists>M_lim. M_lim \<in> carrier_mat r r
+              \<and> (\<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>)"
+proof -
+  have entry_cauchy:
+    "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> Cauchy (\<lambda>n. M_seq n $$ (i,j))"
+    by (rule HS_Cauchy_entry_Cauchy[OF carrier hs_cauchy])
+  have lim_exists:
+    "\<And>i j. i < r \<Longrightarrow> j < r \<Longrightarrow> \<exists>L. (\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L"
+    using entry_cauchy Cauchy_convergent unfolding convergent_def by metis
+  define L :: "nat \<Rightarrow> nat \<Rightarrow> complex" where
+    "L i j = (SOME L. (\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L)" for i j
+  define M_lim where "M_lim = Matrix.mat r r (\<lambda>(i,j). L i j)"
+  have M_lim_c: "M_lim \<in> carrier_mat r r"
+    unfolding M_lim_def by simp
+  have entry_lim:
+    "\<And>i j. i < r \<Longrightarrow> j < r
+            \<Longrightarrow> (\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> M_lim $$ (i,j)"
+  proof -
+    fix i j assume i: "i < r" and j: "j < r"
+    have entry_eq: "M_lim $$ (i,j) = L i j"
+      unfolding M_lim_def using i j by simp
+    have "(\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> L i j"
+      unfolding L_def by (rule someI_ex[OF lim_exists[OF i j]])
+    thus "(\<lambda>n. M_seq n $$ (i,j)) \<longlonglongrightarrow> M_lim $$ (i,j)"
+      using entry_eq by simp
+  qed
+  have hs_lim_zero: "(\<lambda>n. hs_norm (M_seq n - M_lim)) \<longlonglongrightarrow> 0"
+    by (rule entry_lim_imp_HS_lim[OF carrier M_lim_c entry_lim])
+  have conv: "\<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>"
+  proof (intro allI impI)
+    fix \<epsilon> :: real assume \<epsilon>_pos: "0 < \<epsilon>"
+    from hs_lim_zero \<epsilon>_pos
+    obtain N where "\<forall>n \<ge> N. dist (hs_norm (M_seq n - M_lim)) 0 < \<epsilon>"
+      unfolding lim_sequentially by blast
+    hence "\<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>"
+      by (simp add: dist_real_def hs_norm_nonneg)
+    thus "\<exists>N. \<forall>n \<ge> N. hs_norm (M_seq n - M_lim) < \<epsilon>" by blast
+  qed
+  show ?thesis using M_lim_c conv by blast
+qed
+
+
 text \<open>Symmetry of HS-distance: \<open>\<parallel>A - B\<parallel> = \<parallel>B - A\<parallel>\<close>.\<close>
 
 lemma hs_norm_sub_swap:
