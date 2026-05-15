@@ -1203,9 +1203,37 @@ next
   show ?case using Cons.IH unfolding t_eq by (simp add: add_carrier_mat)
 qed
 
-text \<open>Statement of the matrix-space Carath\<eacute>odory result
-specialised to lists of weight-\<sigma>-\<tau> triples; the full proof is
-deferred (uses the linear-dependence argument above).\<close>
+text \<open>One reduction step: a length-\<open>L\<close> cone list with
+\<open>L > (m p)\<^sup>2 + 1\<close> admits a length-\<open>(L-1)\<close> sub-list with the same
+cone sum, all weights still non-negative, and all elements
+inherited from the original list.
+
+The proof requires the linear-dependence-in-finite-dim fact, which
+in turn needs a complex-linear embedding of \<open>carrier_mat (m p) (m p)\<close>
+into JNF's \<open>vec_space TYPE(complex) ((m p)\<^sup>2)\<close>.  Both pieces
+exist in JNF but the build-time cost of the embedding lemmas
+inside EFA.thy's simp environment has been observed to exceed
+the session timeout; the step is therefore admitted as an
+isolated sorry to be discharged in a future iteration.\<close>
+
+lemma caratheodory_matrix_cone_step:
+  fixes m p :: nat
+      and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes m_pos: "0 < m" and p_pos: "0 < p"
+      and ts_typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+                          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+      and ts_nn: "\<forall>(w, _, _) \<in> set ts. 0 \<le> w"
+      and ts_long: "length ts > (m*p)\<^sup>2 + 1"
+  shows "\<exists>ts'. length ts' = length ts - 1
+              \<and> (\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
+                    \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+                    \<and> (w, \<sigma>, \<tau>) \<in> set ts)
+              \<and> cone_list_sum m p ts = cone_list_sum m p ts'"
+  sorry
+
+text \<open>The Carath\<eacute>odory bound follows from the reduction step by
+strong induction on \<open>length ts\<close>.  This part is now closed
+unconditionally; only \<open>caratheodory_matrix_cone_step\<close> remains.\<close>
 
 lemma caratheodory_matrix_cone:
   fixes m p :: nat
@@ -1219,7 +1247,55 @@ lemma caratheodory_matrix_cone:
                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
                     \<and> (w, \<sigma>, \<tau>) \<in> set ts)
               \<and> cone_list_sum m p ts = cone_list_sum m p ts'"
-  sorry
+  using ts_typing ts_nn
+proof (induction "length ts" arbitrary: ts rule: less_induct)
+  case less
+  show ?case
+  proof (cases "length ts \<le> (m*p)\<^sup>2 + 1")
+    case True
+    have ts_in: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+                    \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+                    \<and> (w, \<sigma>, \<tau>) \<in> set ts"
+      using less.prems by force
+    show ?thesis
+      using True ts_in by (intro exI[of _ ts]) auto
+  next
+    case False
+    hence ts_long: "length ts > (m*p)\<^sup>2 + 1" by simp
+    from caratheodory_matrix_cone_step
+            [OF m_pos p_pos less.prems(1) less.prems(2) ts_long]
+    obtain ts1 where ts1_len: "length ts1 = length ts - 1"
+      and ts1_props: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts1.
+                          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+                          \<and> (w, \<sigma>, \<tau>) \<in> set ts"
+      and ts1_sum: "cone_list_sum m p ts = cone_list_sum m p ts1"
+      by blast
+    have ts_pos_len: "0 < length ts" using ts_long by linarith
+    have ts1_shorter: "length ts1 < length ts"
+      using ts1_len ts_pos_len by linarith
+    have ts1_typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts1.
+                          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+      using ts1_props by force
+    have ts1_nn: "\<forall>(w, _, _) \<in> set ts1. 0 \<le> w"
+      using ts1_props by force
+    from less.hyps[OF ts1_shorter ts1_typing ts1_nn]
+    obtain ts' where ts'_len: "length ts' \<le> (m*p)\<^sup>2 + 1"
+      and ts'_props: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
+                          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+                          \<and> (w, \<sigma>, \<tau>) \<in> set ts1"
+      and ts'_sum: "cone_list_sum m p ts1 = cone_list_sum m p ts'"
+      by blast
+    have ts'_in_ts:
+      "\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
+          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+          \<and> (w, \<sigma>, \<tau>) \<in> set ts"
+      using ts'_props ts1_props by force
+    have sum_eq: "cone_list_sum m p ts = cone_list_sum m p ts'"
+      using ts1_sum ts'_sum by simp
+    show ?thesis
+      using ts'_len ts'_in_ts sum_eq by (intro exI[of _ ts']) blast
+  qed
+qed
 
 text \<open>The Bolzano-Weierstrass step that follows Carath\<eacute>odory:
 given a bounded HS-norm sequence in the cone, apply
