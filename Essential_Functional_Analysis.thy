@@ -1204,17 +1204,16 @@ next
 qed
 
 text \<open>One reduction step: a length-\<open>L\<close> cone list with
-\<open>L > (m p)\<^sup>2 + 1\<close> admits a length-\<open>(L-1)\<close> sub-list with the same
-cone sum, all weights still non-negative, and all elements
-inherited from the original list.
+\<open>L > (m p)\<^sup>2 + 1\<close> admits a length-\<open>(L-1)\<close> list with the same cone
+sum, weights non-negative, and matrix pairs inherited from the
+original list.
 
-The proof requires the linear-dependence-in-finite-dim fact, which
-in turn needs a complex-linear embedding of \<open>carrier_mat (m p) (m p)\<close>
-into JNF's \<open>vec_space TYPE(complex) ((m p)\<^sup>2)\<close>.  Both pieces
-exist in JNF but the build-time cost of the embedding lemmas
-inside EFA.thy's simp environment has been observed to exceed
-the session timeout; the step is therefore admitted as an
-isolated sorry to be discharged in a future iteration.\<close>
+NOTE on the conclusion: the standard Carath\<eacute>odory reduction
+\<^emph>\<open>reweights\<close> rather than \<^emph>\<open>selects\<close>, so we require only that the
+\<^emph>\<open>matrix pair\<close> \<open>(\<sigma>, \<tau>)\<close> of each new entry occurs in the original
+list — the weight may differ.  This is what the downstream
+closedness argument actually needs (typing + non-negativity
+inherited from the original cone).\<close>
 
 lemma caratheodory_matrix_cone_step:
   fixes m p :: nat
@@ -1227,13 +1226,137 @@ lemma caratheodory_matrix_cone_step:
   shows "\<exists>ts'. length ts' = length ts - 1
               \<and> (\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
-                    \<and> (w, \<sigma>, \<tau>) \<in> set ts)
+                    \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts))
               \<and> cone_list_sum m p ts = cone_list_sum m p ts'"
-  sorry
+proof -
+  define K where "K = (m * p)\<^sup>2"
+  define L where "L = length ts"
+  have K_pos: "0 < K" unfolding K_def using m_pos p_pos by simp
+  have L_gt: "L > K + 1" unfolding L_def K_def using ts_long by simp
+  have L_pos: "0 < L" using L_gt by linarith
+
+  have typing_idx:
+    "\<And>k. k < L \<Longrightarrow>
+        fst (snd (ts ! k)) \<in> carrier_mat m m \<and>
+        snd (snd (ts ! k)) \<in> carrier_mat p p"
+  proof -
+    fix k assume "k < L"
+    hence mem: "ts ! k \<in> set ts" unfolding L_def by (simp add: nth_mem)
+    show "fst (snd (ts ! k)) \<in> carrier_mat m m \<and>
+          snd (snd (ts ! k)) \<in> carrier_mat p p"
+      using ts_typing mem by (cases "ts ! k") auto
+  qed
+
+  have w_nn_idx: "\<And>k. k < L \<Longrightarrow> 0 \<le> fst (ts ! k)"
+  proof -
+    fix k assume "k < L"
+    hence mem: "ts ! k \<in> set ts" unfolding L_def by (simp add: nth_mem)
+    show "0 \<le> fst (ts ! k)" using ts_nn mem by (cases "ts ! k") auto
+  qed
+
+  text \<open>The linear-algebra core: dependence of more than \<open>K\<close> flattened
+        tensors in \<open>K\<close>-dim complex space via \<open>vec_space.li_le_dim\<close>,
+        followed by real-part extraction and sign-flip.  Yields a
+        non-trivial REAL relation among the matrices \<open>\<sigma>\<^sub>k \<otimes> \<tau>\<^sub>k\<close>, with at
+        least one strictly positive coefficient.\<close>
+  have real_relation_exists:
+    "\<exists>r :: nat \<Rightarrow> real.
+        (\<exists>k<L. 0 < r k) \<and>
+        (\<forall>k\<ge>L. r k = 0) \<and>
+        cone_list_sum m p
+          (map (\<lambda>k. (r k, fst (snd (ts ! k)), snd (snd (ts ! k))))
+               [0..<L])
+           = 0\<^sub>m (m*p) (m*p)"
+    sorry  \<comment> \<open>The remaining linear-algebra obligation.\<close>
+
+  then obtain r :: "nat \<Rightarrow> real"
+    where r_pos_some: "\<exists>k<L. 0 < r k"
+      and r_zero_outside: "\<forall>k\<ge>L. r k = 0"
+      and r_zero_sum:
+        "cone_list_sum m p
+          (map (\<lambda>k. (r k, fst (snd (ts ! k)), snd (snd (ts ! k))))
+               [0..<L])
+           = 0\<^sub>m (m*p) (m*p)"
+    by blast
+
+  define P where "P = {k. k < L \<and> 0 < r k}"
+  have P_finite: "finite P" unfolding P_def by simp
+  have P_nonempty: "P \<noteq> {}" using r_pos_some unfolding P_def by blast
+  define ratios where "ratios = (\<lambda>k. fst (ts ! k) / r k)"
+  define lam where "lam = Min (ratios ` P)"
+  have ri_fin: "finite (ratios ` P)" using P_finite by simp
+  have ri_ne: "ratios ` P \<noteq> {}" using P_nonempty by simp
+  have lam_in: "lam \<in> ratios ` P"
+    unfolding lam_def using ri_fin ri_ne by (rule Min_in)
+  have lam_le: "\<And>k. k \<in> P \<Longrightarrow> lam \<le> ratios k"
+    unfolding lam_def using ri_fin by (auto intro: Min_le)
+  obtain k0 where k0_in: "k0 \<in> P" and k0_eq: "lam = ratios k0"
+    using lam_in by auto
+  have k0_lt: "k0 < L" and rk0_pos: "0 < r k0"
+    using k0_in unfolding P_def by auto
+  have wk0_nn: "0 \<le> fst (ts ! k0)" using w_nn_idx[OF k0_lt] .
+  have lam_nn: "0 \<le> lam"
+    using k0_eq wk0_nn rk0_pos unfolding ratios_def by simp
+
+  define w' where "w' = (\<lambda>k. fst (ts ! k) - lam * r k)"
+  have w'_nn: "\<And>k. k < L \<Longrightarrow> 0 \<le> w' k"
+  proof -
+    fix k assume kL: "k < L"
+    show "0 \<le> w' k"
+    proof (cases "0 < r k")
+      case True
+      hence kP: "k \<in> P" using kL unfolding P_def by simp
+      have "lam \<le> fst (ts ! k) / r k"
+        using lam_le[OF kP] unfolding ratios_def .
+      hence "lam * r k \<le> fst (ts ! k)"
+        using True by (simp add: pos_le_divide_eq mult.commute)
+      thus ?thesis unfolding w'_def by linarith
+    next
+      case False
+      hence "r k \<le> 0" by linarith
+      hence "lam * r k \<le> 0"
+        using lam_nn by (simp add: mult_nonneg_nonpos)
+      thus ?thesis unfolding w'_def using w_nn_idx[OF kL] by linarith
+    qed
+  qed
+  have w'_k0_zero: "w' k0 = 0"
+    using k0_eq rk0_pos unfolding w'_def ratios_def by simp
+
+  define ts1 :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+    where "ts1 = map (\<lambda>k. (w' k, fst (snd (ts ! k)), snd (snd (ts ! k))))
+                     [0..<L]"
+  define ts' where "ts' = take k0 ts1 @ drop (Suc k0) ts1"
+
+  have ts1_len: "length ts1 = L" unfolding ts1_def by simp
+  have ts'_len: "length ts' = L - 1"
+  proof -
+    have "length ts' = k0 + (L - Suc k0)"
+      unfolding ts'_def using k0_lt ts1_len by simp
+    also have "\<dots> = L - 1" using k0_lt by linarith
+    finally show ?thesis .
+  qed
+  have ts'_len_orig: "length ts' = length ts - 1"
+    using ts'_len unfolding L_def .
+
+  text \<open>List/sum calculus: every triple in \<open>ts'\<close> is properly typed,
+        has non-negative weight, and its matrix pair appears in the
+        original list \<open>ts\<close>; and the cone sum is preserved.\<close>
+  have ts'_props_and_sum:
+       "(\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
+            \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+            \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts))
+      \<and> cone_list_sum m p ts = cone_list_sum m p ts'"
+    sorry  \<comment> \<open>List/sum calculus residue.\<close>
+
+  show ?thesis
+    using ts'_len_orig ts'_props_and_sum
+    by (intro exI[of _ ts']) blast
+qed
 
 text \<open>The Carath\<eacute>odory bound follows from the reduction step by
 strong induction on \<open>length ts\<close>.  This part is now closed
-unconditionally; only \<open>caratheodory_matrix_cone_step\<close> remains.\<close>
+unconditionally; only the two focused sub-sorries inside
+\<open>caratheodory_matrix_cone_step\<close> remain.\<close>
 
 lemma caratheodory_matrix_cone:
   fixes m p :: nat
@@ -1245,7 +1368,7 @@ lemma caratheodory_matrix_cone:
   shows "\<exists>ts'. length ts' \<le> (m*p)\<^sup>2 + 1
               \<and> (\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
-                    \<and> (w, \<sigma>, \<tau>) \<in> set ts)
+                    \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts))
               \<and> cone_list_sum m p ts = cone_list_sum m p ts'"
   using ts_typing ts_nn
 proof (induction "length ts" arbitrary: ts rule: less_induct)
@@ -1255,7 +1378,7 @@ proof (induction "length ts" arbitrary: ts rule: less_induct)
     case True
     have ts_in: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
-                    \<and> (w, \<sigma>, \<tau>) \<in> set ts"
+                    \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts)"
       using less.prems by force
     show ?thesis
       using True ts_in by (intro exI[of _ ts]) auto
@@ -1267,7 +1390,7 @@ proof (induction "length ts" arbitrary: ts rule: less_induct)
     obtain ts1 where ts1_len: "length ts1 = length ts - 1"
       and ts1_props: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts1.
                           \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
-                          \<and> (w, \<sigma>, \<tau>) \<in> set ts"
+                          \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts)"
       and ts1_sum: "cone_list_sum m p ts = cone_list_sum m p ts1"
       by blast
     have ts_pos_len: "0 < length ts" using ts_long by linarith
@@ -1282,14 +1405,24 @@ proof (induction "length ts" arbitrary: ts rule: less_induct)
     obtain ts' where ts'_len: "length ts' \<le> (m*p)\<^sup>2 + 1"
       and ts'_props: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
                           \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
-                          \<and> (w, \<sigma>, \<tau>) \<in> set ts1"
+                          \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts1)"
       and ts'_sum: "cone_list_sum m p ts1 = cone_list_sum m p ts'"
       by blast
     have ts'_in_ts:
       "\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
           \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
-          \<and> (w, \<sigma>, \<tau>) \<in> set ts"
-      using ts'_props ts1_props by force
+          \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts)"
+    proof clarify
+      fix w \<sigma> \<tau> assume m: "(w, \<sigma>, \<tau>) \<in> set ts'"
+      from ts'_props m have \<sigma>: "\<sigma> \<in> carrier_mat m m"
+        and \<tau>: "\<tau> \<in> carrier_mat p p" and wnn: "0 \<le> w"
+        and ex1: "\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts1" by auto
+      from ex1 obtain w1 where w1: "(w1, \<sigma>, \<tau>) \<in> set ts1" by blast
+      from ts1_props w1 have "\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts" by auto
+      thus "\<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
+              \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts)"
+        using \<sigma> \<tau> wnn by blast
+    qed
     have sum_eq: "cone_list_sum m p ts = cone_list_sum m p ts'"
       using ts1_sum ts'_sum by simp
     show ?thesis
