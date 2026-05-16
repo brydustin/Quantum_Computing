@@ -1423,6 +1423,33 @@ next
   thus ?case using F_app G_app H_app by simp
 qed
 
+text \<open>Top-level linear-algebra core.  A list of more than \<open>2 (m p)\<^sup>2\<close>
+complex \<open>(m p) \<times> (m p)\<close> matrix pairs admits a non-trivial real
+linear combination of their tensor products that vanishes.
+
+The proof is the standard JNF \<open>vec_space TYPE(real) (2 (m p)\<^sup>2)\<close>
+\<open>li_le_dim\<close> contrapositive applied to a real-flatten of the tensor
+products.  Admitted here as a single named lemma so it can be
+discharged independently of the cone Carath\<eacute>odory reduction
+machinery (which is fully proved below modulo this one lemma).\<close>
+
+lemma cone_list_real_lin_dep:
+  fixes m p :: nat
+      and pairs :: "(complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes m_pos: "0 < m" and p_pos: "0 < p"
+      and typing: "\<forall>(\<sigma>, \<tau>) \<in> set pairs.
+                       \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+      and long: "length pairs > 2 * (m*p)\<^sup>2"
+  shows "\<exists>r :: nat \<Rightarrow> real.
+            (\<exists>k < length pairs. r k \<noteq> 0) \<and>
+            (\<forall>k \<ge> length pairs. r k = 0) \<and>
+            cone_list_sum m p
+              (map (\<lambda>k. (r k, fst (pairs ! k), snd (pairs ! k)))
+                   [0..<length pairs])
+             = 0\<^sub>m (m*p) (m*p)"
+  sorry
+
+
 text \<open>One reduction step: a length-\<open>L\<close> cone list with
 \<open>L > (m p)\<^sup>2 + 1\<close> admits a length-\<open>(L-1)\<close> list with the same cone
 sum, weights non-negative, and matrix pairs inherited from the
@@ -1474,11 +1501,70 @@ proof -
     show "0 \<le> fst (ts ! k)" using ts_nn mem by (cases "ts ! k") auto
   qed
 
-  text \<open>The linear-algebra core: dependence of more than \<open>K\<close> flattened
-        tensors in \<open>K\<close>-dim complex space via \<open>vec_space.li_le_dim\<close>,
-        followed by real-part extraction and sign-flip.  Yields a
-        non-trivial REAL relation among the matrices \<open>\<sigma>\<^sub>k \<otimes> \<tau>\<^sub>k\<close>, with at
-        least one strictly positive coefficient.\<close>
+  text \<open>The linear-algebra core: invoke \<open>cone_list_real_lin_dep\<close> on
+        the pair-list extracted from \<open>ts\<close>, then sign-correct so that
+        at least one coefficient is strictly positive.\<close>
+
+  define pairs :: "(complex Matrix.mat \<times> complex Matrix.mat) list"
+    where "pairs = map (\<lambda>k. (fst (snd (ts ! k)), snd (snd (ts ! k))))
+                       [0..<L]"
+  have pairs_length: "length pairs = L" unfolding pairs_def by simp
+  have pairs_typing: "\<forall>(\<sigma>, \<tau>) \<in> set pairs.
+                          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+  proof clarify
+    fix \<sigma> \<tau> assume "(\<sigma>, \<tau>) \<in> set pairs"
+    then obtain k where kL: "k < L"
+      and pair_eq: "(\<sigma>, \<tau>) = (fst (snd (ts ! k)), snd (snd (ts ! k)))"
+      unfolding pairs_def by auto
+    have s_eq: "\<sigma> = fst (snd (ts ! k))"
+      using pair_eq by (metis fst_conv)
+    have t_eq: "\<tau> = snd (snd (ts ! k))"
+      using pair_eq by (metis snd_conv)
+    show "\<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+      using typing_idx[OF kL] s_eq t_eq by simp
+  qed
+  have pairs_long: "length pairs > 2 * (m*p)\<^sup>2"
+    unfolding pairs_length L_def using ts_long by simp
+
+  from cone_list_real_lin_dep[OF m_pos p_pos pairs_typing pairs_long]
+  obtain c :: "nat \<Rightarrow> real"
+    where c_nontriv: "\<exists>k<length pairs. c k \<noteq> 0"
+      and c_outside: "\<forall>k\<ge>length pairs. c k = 0"
+      and c_sum: "cone_list_sum m p
+                    (map (\<lambda>k. (c k, fst (pairs ! k), snd (pairs ! k)))
+                         [0..<length pairs])
+                  = 0\<^sub>m (m*p) (m*p)"
+    by blast
+  have c_nontriv_L: "\<exists>k<L. c k \<noteq> 0" using c_nontriv pairs_length by simp
+  have c_outside_L: "\<forall>k\<ge>L. c k = 0" using c_outside pairs_length by simp
+
+  text \<open>Rewrite \<open>c_sum\<close> with \<open>pairs ! k\<close> unfolded.\<close>
+  have pairs_nth: "\<And>k. k < L \<Longrightarrow>
+                       pairs ! k = (fst (snd (ts ! k)), snd (snd (ts ! k)))"
+    unfolding pairs_def by simp
+  have c_sum_ts: "cone_list_sum m p
+                    (map (\<lambda>k. (c k, fst (snd (ts ! k)),
+                                    snd (snd (ts ! k))))
+                         [0..<L])
+                  = 0\<^sub>m (m*p) (m*p)"
+  proof -
+    have list_eq:
+      "map (\<lambda>k. (c k, fst (pairs ! k), snd (pairs ! k)))
+           [0..<length pairs]
+       = map (\<lambda>k. (c k, fst (snd (ts ! k)), snd (snd (ts ! k)))) [0..<L]"
+    proof -
+      have step:
+        "\<And>k. k \<in> set [0..<L]
+            \<Longrightarrow> (c k, fst (pairs ! k), snd (pairs ! k))
+                = (c k, fst (snd (ts ! k)), snd (snd (ts ! k)))"
+        using pairs_nth by auto
+      have len_eq: "[0..<length pairs] = [0..<L]" using pairs_length by simp
+      show ?thesis using len_eq step by (auto cong: map_cong)
+    qed
+    show ?thesis using c_sum list_eq by simp
+  qed
+
+  text \<open>Sign-correct so the witness coefficient is strictly positive.\<close>
   have real_relation_exists:
     "\<exists>r :: nat \<Rightarrow> real.
         (\<exists>k<L. 0 < r k) \<and>
@@ -1487,7 +1573,127 @@ proof -
           (map (\<lambda>k. (r k, fst (snd (ts ! k)), snd (snd (ts ! k))))
                [0..<L])
            = 0\<^sub>m (m*p) (m*p)"
-    sorry  \<comment> \<open>The remaining linear-algebra obligation.\<close>
+  proof (cases "\<exists>k<L. 0 < c k")
+    case True
+    show ?thesis
+      using True c_outside_L c_sum_ts by blast
+  next
+    case False
+    obtain k0 where k0_L: "k0 < L" and k0_nz: "c k0 \<noteq> 0"
+      using c_nontriv_L by blast
+    have all_nonpos: "\<And>k. k < L \<Longrightarrow> c k \<le> 0" using False by force
+    have k0_neg: "c k0 < 0" using all_nonpos[OF k0_L] k0_nz by linarith
+    define rN :: "nat \<Rightarrow> real" where "rN k = - c k" for k
+    have rN_pos: "0 < rN k0" using k0_neg unfolding rN_def by simp
+    have rN_outside: "\<forall>k\<ge>L. rN k = 0"
+      unfolding rN_def using c_outside_L by simp
+    text \<open>Apply \<open>cone_list_sum_weight_split\<close> with \<open>f = c\<close>,
+          \<open>g = 0\<close>, \<open>h = rN\<close>, \<open>\<mu> = -1\<close>: then \<open>c k = 0 + (-1) * rN k\<close>
+          holds (since \<open>rN k = - c k\<close>).\<close>
+    have c_split: "\<And>k. k < L \<Longrightarrow> c k = (0::real) + (-1) * rN k"
+      unfolding rN_def by simp
+    have typing_idx_pair2:
+      "\<And>k. k < L \<Longrightarrow>
+          fst (snd (ts ! k)) \<in> carrier_mat m m
+          \<and> snd (snd (ts ! k)) \<in> carrier_mat p p"
+      using typing_idx by simp
+    text \<open>Step A: \<open>cone_list_sum\<close> with all-zero weights = \<open>0\<^sub>m\<close>.\<close>
+    have zero_sum:
+      "cone_list_sum m p
+          (map (\<lambda>k. ((0::real), fst (snd (ts ! k)), snd (snd (ts ! k))))
+               [0..<L])
+        = 0\<^sub>m (m*p) (m*p)"
+    proof -
+      have step: "\<And>L'. L' \<le> L \<Longrightarrow>
+            cone_list_sum m p
+              (map (\<lambda>k. ((0::real), fst (snd (ts ! k)), snd (snd (ts ! k))))
+                   [0..<L'])
+              = 0\<^sub>m (m*p) (m*p)"
+      proof -
+        fix L' assume "L' \<le> L"
+        thus "cone_list_sum m p
+                (map (\<lambda>k. ((0::real), fst (snd (ts ! k)), snd (snd (ts ! k))))
+                     [0..<L'])
+              = 0\<^sub>m (m*p) (m*p)"
+        proof (induction L')
+          case 0 thus ?case by simp
+        next
+          case (Suc L'')
+          have L''_lt: "L'' < L" using Suc.prems by linarith
+          have L''_le: "L'' \<le> L" using L''_lt by linarith
+          have IH: "cone_list_sum m p
+                       (map (\<lambda>k. ((0::real), fst (snd (ts ! k)),
+                                                  snd (snd (ts ! k))))
+                            [0..<L''])
+                       = 0\<^sub>m (m*p) (m*p)"
+            using Suc.IH[OF L''_le] .
+          obtain w0 \<sigma>0 \<tau>0 where ts_L: "ts ! L'' = (w0, \<sigma>0, \<tau>0)"
+            by (cases "ts ! L''") auto
+          have fst_eq: "fst (snd (ts ! L'')) = \<sigma>0" using ts_L by simp
+          have snd_eq: "snd (snd (ts ! L'')) = \<tau>0" using ts_L by simp
+          have ts_L_mem: "(w0, \<sigma>0, \<tau>0) \<in> set ts"
+            using ts_L L''_lt unfolding L_def by (metis nth_mem)
+          have \<sigma>0_c: "\<sigma>0 \<in> carrier_mat m m" and \<tau>0_c: "\<tau>0 \<in> carrier_mat p p"
+            using ts_typing ts_L_mem by auto
+          have single: "cone_list_sum m p [((0::real), \<sigma>0, \<tau>0)] = 0\<^sub>m (m*p) (m*p)"
+            using cone_list_sum_zero_singleton[OF \<sigma>0_c \<tau>0_c] .
+          have map_step:
+            "map (\<lambda>k. ((0::real), fst (snd (ts ! k)), snd (snd (ts ! k))))
+                 [0..<Suc L'']
+              = map (\<lambda>k. ((0::real), fst (snd (ts ! k)), snd (snd (ts ! k))))
+                    [0..<L'']
+                @ [((0::real), \<sigma>0, \<tau>0)]"
+            using ts_L by simp
+          have z_c: "(0\<^sub>m (m*p) (m*p) :: complex Matrix.mat) \<in> carrier_mat (m*p) (m*p)"
+            by simp
+          show ?case
+            using map_step cone_list_sum_append IH single z_c
+            by (simp add: left_add_zero_mat)
+        qed
+      qed
+      show ?thesis using step[OF le_refl] .
+    qed
+
+    text \<open>Step B: apply weight-split with \<open>f = c\<close>, \<open>g = 0\<close>, \<open>h = rN\<close>,
+          \<open>\<mu> = -1\<close>; then combine with \<open>c_sum_ts = 0\<close> and \<open>zero_sum = 0\<close>.\<close>
+    let ?rN_sum = "cone_list_sum m p
+                     (map (\<lambda>k. (rN k, fst (snd (ts ! k)),
+                                        snd (snd (ts ! k))))
+                          [0..<L])"
+    have rN_c: "?rN_sum \<in> carrier_mat (m*p) (m*p)"
+      by (rule cone_list_sum_carrier)
+    have wsplit_eq:
+      "cone_list_sum m p
+          (map (\<lambda>k. (c k, fst (snd (ts ! k)), snd (snd (ts ! k))))
+               [0..<L])
+        = cone_list_sum m p
+            (map (\<lambda>k. ((0::real), fst (snd (ts ! k)),
+                                          snd (snd (ts ! k))))
+                 [0..<L])
+          + complex_of_real (-1) \<cdot>\<^sub>m ?rN_sum"
+      by (rule cone_list_sum_weight_split[OF typing_idx_pair2 c_split])
+    text \<open>From \<open>c_sum_ts = 0\<close> and \<open>zero_sum = 0\<close>: \<open>(-1) \<cdot>\<^sub>m ?rN_sum = 0\<close>.\<close>
+    have neg_rN_zero: "complex_of_real (-1) \<cdot>\<^sub>m ?rN_sum = 0\<^sub>m (m*p) (m*p)"
+    proof -
+      have h: "0\<^sub>m (m*p) (m*p)
+                  = 0\<^sub>m (m*p) (m*p) + complex_of_real (-1) \<cdot>\<^sub>m ?rN_sum"
+        using wsplit_eq c_sum_ts zero_sum by simp
+      thus ?thesis using rN_c by (intro eq_matI) auto
+    qed
+    have S_zero: "?rN_sum = 0\<^sub>m (m*p) (m*p)"
+    proof -
+      have "?rN_sum = (-1 :: complex) \<cdot>\<^sub>m (complex_of_real (-1) \<cdot>\<^sub>m ?rN_sum)"
+        using rN_c by (intro eq_matI) auto
+      also have "\<dots> = (-1 :: complex) \<cdot>\<^sub>m 0\<^sub>m (m*p) (m*p)" using neg_rN_zero by simp
+      also have "(-1 :: complex) \<cdot>\<^sub>m (0\<^sub>m (m*p) (m*p) :: complex Matrix.mat)
+                    = 0\<^sub>m (m*p) (m*p)"
+        by (intro eq_matI) auto
+      finally show ?thesis .
+    qed
+    show ?thesis
+      apply (rule exI[of _ rN])
+      using rN_pos k0_L rN_outside S_zero by blast
+  qed
 
   then obtain r :: "nat \<Rightarrow> real"
     where r_pos_some: "\<exists>k<L. 0 < r k"
