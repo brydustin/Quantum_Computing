@@ -1595,11 +1595,99 @@ proof -
     qed
   qed
 
-  text \<open>Sum preservation (residual sub-sorry: linearity of cone_list_sum
-        in the weight plus the relation \<open>r_zero_sum\<close>, then drop the
-        zero-weight entry at \<open>k0\<close>).\<close>
+  text \<open>Sum preservation: \<open>cone_list_sum ts = cone_list_sum ts'\<close>.
+        Apply \<open>cone_list_sum_weight_split\<close> with \<open>f = fst \<circ> (ts!_)\<close>,
+        \<open>g = w'\<close>, \<open>h = r\<close>, \<open>\<mu> = lam\<close>; use \<open>r_zero_sum\<close> to kill the
+        \<open>lam\<close>-scaled term; then apply \<open>cone_list_sum_drop_zero\<close>
+        at index \<open>k0\<close> where \<open>w' k0 = 0\<close>.\<close>
+  have typing_idx_pair:
+    "\<And>k. k < L \<Longrightarrow>
+        fst (snd (ts ! k)) \<in> carrier_mat m m
+        \<and> snd (snd (ts ! k)) \<in> carrier_mat p p"
+    using typing_idx by simp
+  define tsI :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+    where "tsI = map (\<lambda>k. (fst (ts ! k), fst (snd (ts ! k)),
+                              snd (snd (ts ! k)))) [0..<L]"
+  define tsR :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+    where "tsR = map (\<lambda>k. (r k, fst (snd (ts ! k)), snd (snd (ts ! k))))
+                    [0..<L]"
+  have tsI_eq_ts: "tsI = ts"
+  proof (rule nth_equalityI)
+    show "length tsI = length ts" unfolding tsI_def L_def by simp
+  next
+    fix k assume k_lt: "k < length tsI"
+    hence k_L: "k < L" unfolding tsI_def by simp
+    obtain w0 s0 t0 where tsk: "ts ! k = (w0, s0, t0)"
+      by (cases "ts ! k") auto
+    have "tsI ! k = (fst (ts ! k), fst (snd (ts ! k)), snd (snd (ts ! k)))"
+      unfolding tsI_def using k_L by simp
+    also have "\<dots> = (w0, s0, t0)" using tsk by simp
+    finally show "tsI ! k = ts ! k" using tsk by simp
+  qed
+  have r_zero: "cone_list_sum m p tsR = 0\<^sub>m (m*p) (m*p)"
+    using r_zero_sum unfolding tsR_def .
+  have split_eq:
+    "\<And>k. k < L \<Longrightarrow> fst (ts ! k) = w' k + lam * r k"
+    unfolding w'_def by simp
+  have ws_eq: "cone_list_sum m p tsI
+                  = cone_list_sum m p ts1
+                    + complex_of_real lam \<cdot>\<^sub>m cone_list_sum m p tsR"
+    unfolding tsI_def ts1_def tsR_def
+    by (rule cone_list_sum_weight_split[OF typing_idx_pair split_eq])
+  have ts1_c: "cone_list_sum m p ts1 \<in> carrier_mat (m*p) (m*p)"
+    by (rule cone_list_sum_carrier)
+  have z_scale: "complex_of_real lam \<cdot>\<^sub>m (0\<^sub>m (m*p) (m*p) :: complex Matrix.mat)
+                  = 0\<^sub>m (m*p) (m*p)"
+    by (intro eq_matI) auto
+  have ts1_sum_eq: "cone_list_sum m p ts1 = cone_list_sum m p ts"
+  proof -
+    have "cone_list_sum m p ts = cone_list_sum m p tsI"
+      using tsI_eq_ts by simp
+    also have "\<dots> = cone_list_sum m p ts1
+                    + complex_of_real lam \<cdot>\<^sub>m cone_list_sum m p tsR"
+      using ws_eq .
+    also have "\<dots> = cone_list_sum m p ts1
+                    + complex_of_real lam \<cdot>\<^sub>m 0\<^sub>m (m*p) (m*p)"
+      using r_zero by simp
+    also have "complex_of_real lam \<cdot>\<^sub>m 0\<^sub>m (m*p) (m*p)
+                  = (0\<^sub>m (m*p) (m*p) :: complex Matrix.mat)"
+      using z_scale .
+    also have "cone_list_sum m p ts1 + 0\<^sub>m (m*p) (m*p)
+                  = cone_list_sum m p ts1"
+      using ts1_c by (intro eq_matI) auto
+    finally show ?thesis by simp
+  qed
+  have ts1_typing_all: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts1.
+                          \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+  proof clarify
+    fix w \<sigma> \<tau> assume "(w, \<sigma>, \<tau>) \<in> set ts1"
+    then obtain k where kL: "k < L"
+      and triple_eq: "(w, \<sigma>, \<tau>)
+                       = (w' k, fst (snd (ts ! k)), snd (snd (ts ! k)))"
+      unfolding ts1_def by auto
+    obtain w0 s0 t0 where tsk: "ts ! k = (w0, s0, t0)"
+      by (cases "ts ! k") auto
+    have d: "(w, \<sigma>, \<tau>) = (w' k, s0, t0)"
+      using triple_eq tsk by simp
+    have s_eq: "\<sigma> = s0" using d by simp
+    have t_eq: "\<tau> = t0" using d by simp
+    have tsk_mem: "(w0, s0, t0) \<in> set ts"
+      using kL tsk L_def by (metis nth_mem)
+    have "s0 \<in> carrier_mat m m \<and> t0 \<in> carrier_mat p p"
+      using ts_typing tsk_mem by auto
+    thus "\<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+      using s_eq t_eq by simp
+  qed
+  have k0_in_ts1: "k0 < length ts1" using k0_lt ts1_len by simp
+  have ts1_k0_zero: "fst (ts1 ! k0) = 0"
+    unfolding ts1_def using k0_lt w'_k0_zero by simp
+  have drop_eq: "cone_list_sum m p (take k0 ts1 @ drop (Suc k0) ts1)
+                  = cone_list_sum m p ts1"
+    using cone_list_sum_drop_zero[OF k0_in_ts1 ts1_k0_zero ts1_typing_all] .
+  have ts'_sum_eq: "cone_list_sum m p ts' = cone_list_sum m p ts1"
+    unfolding ts'_def using drop_eq .
   have sum_preserved: "cone_list_sum m p ts = cone_list_sum m p ts'"
-    sorry
+    using ts1_sum_eq ts'_sum_eq by simp
 
   show ?thesis
     using ts'_len_orig ts'_props sum_preserved
