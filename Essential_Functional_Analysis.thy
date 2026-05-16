@@ -1442,7 +1442,7 @@ lemma caratheodory_matrix_cone_step:
       and ts_typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
                           \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
       and ts_nn: "\<forall>(w, _, _) \<in> set ts. 0 \<le> w"
-      and ts_long: "length ts > (m*p)\<^sup>2 + 1"
+      and ts_long: "length ts > 2 * (m*p)\<^sup>2 + 1"
   shows "\<exists>ts'. length ts' = length ts - 1
               \<and> (\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
@@ -1706,7 +1706,7 @@ lemma caratheodory_matrix_cone:
       and ts_typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
                           \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
       and ts_nn: "\<forall>(w, _, _) \<in> set ts. 0 \<le> w"
-  shows "\<exists>ts'. length ts' \<le> (m*p)\<^sup>2 + 1
+  shows "\<exists>ts'. length ts' \<le> 2 * (m*p)\<^sup>2 + 1
               \<and> (\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
                     \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts))
@@ -1715,7 +1715,7 @@ lemma caratheodory_matrix_cone:
 proof (induction "length ts" arbitrary: ts rule: less_induct)
   case less
   show ?case
-  proof (cases "length ts \<le> (m*p)\<^sup>2 + 1")
+  proof (cases "length ts \<le> 2 * (m*p)\<^sup>2 + 1")
     case True
     have ts_in: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
@@ -1725,7 +1725,7 @@ proof (induction "length ts" arbitrary: ts rule: less_induct)
       using True ts_in by (intro exI[of _ ts]) auto
   next
     case False
-    hence ts_long: "length ts > (m*p)\<^sup>2 + 1" by simp
+    hence ts_long: "length ts > 2 * (m*p)\<^sup>2 + 1" by simp
     from caratheodory_matrix_cone_step
             [OF m_pos p_pos less.prems(1) less.prems(2) ts_long]
     obtain ts1 where ts1_len: "length ts1 = length ts - 1"
@@ -1743,7 +1743,7 @@ proof (induction "length ts" arbitrary: ts rule: less_induct)
     have ts1_nn: "\<forall>(w, _, _) \<in> set ts1. 0 \<le> w"
       using ts1_props by force
     from less.hyps[OF ts1_shorter ts1_typing ts1_nn]
-    obtain ts' where ts'_len: "length ts' \<le> (m*p)\<^sup>2 + 1"
+    obtain ts' where ts'_len: "length ts' \<le> 2 * (m*p)\<^sup>2 + 1"
       and ts'_props: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts'.
                           \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p \<and> 0 \<le> w
                           \<and> (\<exists>w\<^sub>0. (w\<^sub>0, \<sigma>, \<tau>) \<in> set ts1)"
