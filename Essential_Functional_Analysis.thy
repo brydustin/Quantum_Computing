@@ -1203,6 +1203,226 @@ next
   show ?case using Cons.IH unfolding t_eq by (simp add: add_carrier_mat)
 qed
 
+text \<open>\<open>cone_list_sum\<close> is additive over list-append.\<close>
+
+lemma cone_list_sum_append:
+  "cone_list_sum m p (xs @ ys)
+     = cone_list_sum m p xs + cone_list_sum m p ys"
+proof (induction xs)
+  case Nil
+  have ys_c: "cone_list_sum m p ys \<in> carrier_mat (m*p) (m*p)"
+    by (rule cone_list_sum_carrier)
+  have "cone_list_sum m p [] + cone_list_sum m p ys
+          = 0\<^sub>m (m*p) (m*p) + cone_list_sum m p ys" by simp
+  also have "\<dots> = cone_list_sum m p ys" using left_add_zero_mat[OF ys_c] .
+  finally show ?case by simp
+next
+  case (Cons x xs)
+  obtain w \<sigma> \<tau> where x_eq: "x = (w, \<sigma>, \<tau>)" by (cases x)
+  let ?S = "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)"
+  have xs_c: "cone_list_sum m p xs \<in> carrier_mat (m*p) (m*p)"
+    by (rule cone_list_sum_carrier)
+  have ys_c: "cone_list_sum m p ys \<in> carrier_mat (m*p) (m*p)"
+    by (rule cone_list_sum_carrier)
+  have IH: "cone_list_sum m p (xs @ ys)
+            = cone_list_sum m p xs + cone_list_sum m p ys" using Cons.IH .
+  have "cone_list_sum m p ((x # xs) @ ys)
+          = ?S + cone_list_sum m p (xs @ ys)"
+    using x_eq by simp
+  also have "\<dots> = ?S + (cone_list_sum m p xs + cone_list_sum m p ys)"
+    using IH by simp
+  also have "\<dots> = (?S + cone_list_sum m p xs) + cone_list_sum m p ys"
+    using xs_c ys_c by (intro eq_matI) auto
+  also have "\<dots> = cone_list_sum m p (x # xs) + cone_list_sum m p ys"
+    using x_eq by simp
+  finally show ?case .
+qed
+
+text \<open>A zero-weight singleton over a properly-sized matrix pair
+contributes the zero matrix.\<close>
+
+lemma cone_list_sum_zero_singleton:
+  assumes \<sigma>_c: "\<sigma> \<in> carrier_mat m m" and \<tau>_c: "\<tau> \<in> carrier_mat p p"
+  shows "cone_list_sum m p [(0, \<sigma>, \<tau>)] = 0\<^sub>m (m*p) (m*p)"
+proof -
+  have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)" using \<sigma>_c \<tau>_c by auto
+  have st_dr: "dim_row (\<sigma> \<Otimes> \<tau>) = m*p"
+    using st_c by (rule carrier_matD)
+  have st_dc: "dim_col (\<sigma> \<Otimes> \<tau>) = m*p"
+    using st_c by (rule carrier_matD)
+  have zs: "complex_of_real 0 \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) = 0\<^sub>m (m*p) (m*p)"
+  proof (intro eq_matI)
+    show "dim_row (complex_of_real 0 \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = dim_row (0\<^sub>m (m*p) (m*p))"
+      using st_dr by simp
+    show "dim_col (complex_of_real 0 \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) = dim_col (0\<^sub>m (m*p) (m*p))"
+      using st_dc by simp
+  next
+    fix i j
+    assume "i < dim_row (0\<^sub>m (m*p) (m*p))" and "j < dim_col (0\<^sub>m (m*p) (m*p))"
+    hence i_lt: "i < m*p" and j_lt: "j < m*p" by auto
+    have e1: "(complex_of_real 0 \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) $$ (i, j)
+                 = complex_of_real 0 * (\<sigma> \<Otimes> \<tau>) $$ (i, j)"
+      using st_dr st_dc i_lt j_lt by simp
+    have e2: "complex_of_real 0 = (0 :: complex)" by simp
+    show "(complex_of_real 0 \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) $$ (i, j) = 0\<^sub>m (m*p) (m*p) $$ (i, j)"
+      using e1 e2 i_lt j_lt by simp
+  qed
+  have "cone_list_sum m p [(0, \<sigma>, \<tau>)]
+          = complex_of_real 0 \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + 0\<^sub>m (m*p) (m*p)" by simp
+  also have "\<dots> = 0\<^sub>m (m*p) (m*p) + 0\<^sub>m (m*p) (m*p)" using zs by simp
+  also have "\<dots> = 0\<^sub>m (m*p) (m*p)" by (intro eq_matI) auto
+  finally show ?thesis .
+qed
+
+text \<open>Dropping a zero-weight entry from a cone list (with properly
+typed matrix part) preserves the cone sum.\<close>
+
+lemma cone_list_sum_drop_zero:
+  assumes i_lt: "i < length xs"
+      and zero_w: "fst (xs ! i) = 0"
+      and typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set xs.
+                       \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+  shows "cone_list_sum m p (take i xs @ drop (Suc i) xs)
+            = cone_list_sum m p xs"
+proof -
+  obtain w \<sigma> \<tau> where xi: "xs ! i = (w, \<sigma>, \<tau>)" by (cases "xs ! i") auto
+  have w_zero: "w = 0" using zero_w xi by simp
+  have xi_mem: "(w, \<sigma>, \<tau>) \<in> set xs"
+    using xi i_lt nth_mem by metis
+  have \<sigma>_c: "\<sigma> \<in> carrier_mat m m" and \<tau>_c: "\<tau> \<in> carrier_mat p p"
+    using typing xi_mem by auto
+  have decomp: "xs = take i xs @ [xs ! i] @ drop (Suc i) xs"
+    using i_lt by (simp add: id_take_nth_drop)
+  let ?L = "take i xs"
+  let ?R = "drop (Suc i) xs"
+  let ?M = "[xs ! i]"
+  have L_c: "cone_list_sum m p ?L \<in> carrier_mat (m*p) (m*p)"
+    by (rule cone_list_sum_carrier)
+  have R_c: "cone_list_sum m p ?R \<in> carrier_mat (m*p) (m*p)"
+    by (rule cone_list_sum_carrier)
+  have Msum_zero: "cone_list_sum m p ?M = 0\<^sub>m (m*p) (m*p)"
+    using cone_list_sum_zero_singleton[OF \<sigma>_c \<tau>_c] xi w_zero by simp
+  have "cone_list_sum m p xs
+          = cone_list_sum m p (?L @ ?M @ ?R)" using decomp by simp
+  also have "\<dots> = cone_list_sum m p ?L + cone_list_sum m p (?M @ ?R)"
+    by (rule cone_list_sum_append)
+  also have "cone_list_sum m p (?M @ ?R)
+              = cone_list_sum m p ?M + cone_list_sum m p ?R"
+    by (rule cone_list_sum_append)
+  also have "cone_list_sum m p ?M + cone_list_sum m p ?R
+              = 0\<^sub>m (m*p) (m*p) + cone_list_sum m p ?R" using Msum_zero by simp
+  also have "\<dots> = cone_list_sum m p ?R" using left_add_zero_mat[OF R_c] .
+  finally have xs_eq:
+    "cone_list_sum m p xs = cone_list_sum m p ?L + cone_list_sum m p ?R" .
+  have "cone_list_sum m p (?L @ ?R)
+          = cone_list_sum m p ?L + cone_list_sum m p ?R"
+    by (rule cone_list_sum_append)
+  thus ?thesis using xs_eq by simp
+qed
+
+text \<open>Linearity of \<open>cone_list_sum\<close> in the weight.  Two lists with
+matching matrix parts but weights related by
+\<open>w\<^sub>k = w\<^sub>k\<^sup>1 + \<mu> * r\<^sub>k\<close> satisfy the corresponding sum-equation.\<close>
+
+lemma cone_list_sum_weight_split:
+  fixes f g h :: "nat \<Rightarrow> real"
+    and \<sigma>f \<tau>f :: "nat \<Rightarrow> complex Matrix.mat"
+    and \<mu> :: real and L :: nat
+  assumes typing: "\<And>k. k < L \<Longrightarrow>
+                        \<sigma>f k \<in> carrier_mat m m \<and> \<tau>f k \<in> carrier_mat p p"
+      and split: "\<And>k. k < L \<Longrightarrow> f k = g k + \<mu> * h k"
+  shows "cone_list_sum m p (map (\<lambda>k. (f k, \<sigma>f k, \<tau>f k)) [0..<L])
+       = cone_list_sum m p (map (\<lambda>k. (g k, \<sigma>f k, \<tau>f k)) [0..<L])
+         + complex_of_real \<mu> \<cdot>\<^sub>m
+             cone_list_sum m p (map (\<lambda>k. (h k, \<sigma>f k, \<tau>f k)) [0..<L])"
+  using typing split
+proof (induction L)
+  case 0
+  have rhs: "complex_of_real \<mu> \<cdot>\<^sub>m (0\<^sub>m (m*p) (m*p) :: complex Matrix.mat)
+              = 0\<^sub>m (m*p) (m*p)"
+    by (intro eq_matI) auto
+  show ?case using rhs by simp
+next
+  case (Suc L)
+  have typing_L: "\<And>k. k < L \<Longrightarrow>
+                       \<sigma>f k \<in> carrier_mat m m \<and> \<tau>f k \<in> carrier_mat p p"
+    using Suc.prems(1) by simp
+  have split_L: "\<And>k. k < L \<Longrightarrow> f k = g k + \<mu> * h k"
+    using Suc.prems(2) by simp
+  have IH: "cone_list_sum m p (map (\<lambda>k. (f k, \<sigma>f k, \<tau>f k)) [0..<L])
+            = cone_list_sum m p (map (\<lambda>k. (g k, \<sigma>f k, \<tau>f k)) [0..<L])
+              + complex_of_real \<mu> \<cdot>\<^sub>m
+                  cone_list_sum m p (map (\<lambda>k. (h k, \<sigma>f k, \<tau>f k)) [0..<L])"
+    using Suc.IH[OF typing_L split_L] .
+  have typingL: "\<sigma>f L \<in> carrier_mat m m \<and> \<tau>f L \<in> carrier_mat p p"
+    using Suc.prems(1) by simp
+  have splitL: "f L = g L + \<mu> * h L" using Suc.prems(2) by simp
+  let ?TL = "\<sigma>f L \<Otimes> \<tau>f L"
+  have TL_c: "?TL \<in> carrier_mat (m*p) (m*p)" using typingL by auto
+  let ?F = "cone_list_sum m p (map (\<lambda>k. (f k, \<sigma>f k, \<tau>f k)) [0..<L])"
+  let ?G = "cone_list_sum m p (map (\<lambda>k. (g k, \<sigma>f k, \<tau>f k)) [0..<L])"
+  let ?H = "cone_list_sum m p (map (\<lambda>k. (h k, \<sigma>f k, \<tau>f k)) [0..<L])"
+  have F_c: "?F \<in> carrier_mat (m*p) (m*p)" by (rule cone_list_sum_carrier)
+  have G_c: "?G \<in> carrier_mat (m*p) (m*p)" by (rule cone_list_sum_carrier)
+  have H_c: "?H \<in> carrier_mat (m*p) (m*p)" by (rule cone_list_sum_carrier)
+  have list_split_f:
+    "map (\<lambda>k. (f k, \<sigma>f k, \<tau>f k)) [0..<Suc L]
+      = map (\<lambda>k. (f k, \<sigma>f k, \<tau>f k)) [0..<L] @ [(f L, \<sigma>f L, \<tau>f L)]"
+    by simp
+  have list_split_g:
+    "map (\<lambda>k. (g k, \<sigma>f k, \<tau>f k)) [0..<Suc L]
+      = map (\<lambda>k. (g k, \<sigma>f k, \<tau>f k)) [0..<L] @ [(g L, \<sigma>f L, \<tau>f L)]"
+    by simp
+  have list_split_h:
+    "map (\<lambda>k. (h k, \<sigma>f k, \<tau>f k)) [0..<Suc L]
+      = map (\<lambda>k. (h k, \<sigma>f k, \<tau>f k)) [0..<L] @ [(h L, \<sigma>f L, \<tau>f L)]"
+    by simp
+  let ?eFL = "complex_of_real (f L) \<cdot>\<^sub>m ?TL"
+  let ?eGL = "complex_of_real (g L) \<cdot>\<^sub>m ?TL"
+  let ?eHL = "complex_of_real (h L) \<cdot>\<^sub>m ?TL"
+  have eFL_c: "?eFL \<in> carrier_mat (m*p) (m*p)" using TL_c by auto
+  have eGL_c: "?eGL \<in> carrier_mat (m*p) (m*p)" using TL_c by auto
+  have eHL_c: "?eHL \<in> carrier_mat (m*p) (m*p)" using TL_c by auto
+  have single_f: "cone_list_sum m p [(f L, \<sigma>f L, \<tau>f L)] = ?eFL"
+    using eFL_c by (intro eq_matI) auto
+  have single_g: "cone_list_sum m p [(g L, \<sigma>f L, \<tau>f L)] = ?eGL"
+    using eGL_c by (intro eq_matI) auto
+  have single_h: "cone_list_sum m p [(h L, \<sigma>f L, \<tau>f L)] = ?eHL"
+    using eHL_c by (intro eq_matI) auto
+  have F_app: "cone_list_sum m p (map (\<lambda>k. (f k, \<sigma>f k, \<tau>f k)) [0..<Suc L])
+                  = ?F + ?eFL"
+    using list_split_f cone_list_sum_append single_f by simp
+  have G_app: "cone_list_sum m p (map (\<lambda>k. (g k, \<sigma>f k, \<tau>f k)) [0..<Suc L])
+                  = ?G + ?eGL"
+    using list_split_g cone_list_sum_append single_g by simp
+  have H_app: "cone_list_sum m p (map (\<lambda>k. (h k, \<sigma>f k, \<tau>f k)) [0..<Suc L])
+                  = ?H + ?eHL"
+    using list_split_h cone_list_sum_append single_h by simp
+  have scale_eq: "?eFL = ?eGL + complex_of_real \<mu> \<cdot>\<^sub>m ?eHL"
+    using splitL TL_c by (intro eq_matI) (auto simp: distrib_right)
+  have mu_HL_c: "complex_of_real \<mu> \<cdot>\<^sub>m ?eHL \<in> carrier_mat (m*p) (m*p)"
+    using eHL_c by auto
+  have mu_H_c: "complex_of_real \<mu> \<cdot>\<^sub>m ?H \<in> carrier_mat (m*p) (m*p)"
+    using H_c by auto
+  have scale_dist:
+    "complex_of_real \<mu> \<cdot>\<^sub>m (?H + ?eHL)
+       = complex_of_real \<mu> \<cdot>\<^sub>m ?H + complex_of_real \<mu> \<cdot>\<^sub>m ?eHL"
+    using H_c eHL_c by (rule add_smult_distrib_left_mat)
+  have rearr: "(?G + complex_of_real \<mu> \<cdot>\<^sub>m ?H) + (?eGL + complex_of_real \<mu> \<cdot>\<^sub>m ?eHL)
+                = (?G + ?eGL) + (complex_of_real \<mu> \<cdot>\<^sub>m ?H + complex_of_real \<mu> \<cdot>\<^sub>m ?eHL)"
+    using G_c eGL_c mu_H_c mu_HL_c by (intro eq_matI) auto
+  have "?F + ?eFL = (?G + complex_of_real \<mu> \<cdot>\<^sub>m ?H)
+                      + (?eGL + complex_of_real \<mu> \<cdot>\<^sub>m ?eHL)"
+    using IH scale_eq by simp
+  also have "\<dots> = (?G + ?eGL)
+                  + (complex_of_real \<mu> \<cdot>\<^sub>m ?H + complex_of_real \<mu> \<cdot>\<^sub>m ?eHL)"
+    using rearr .
+  also have "complex_of_real \<mu> \<cdot>\<^sub>m ?H + complex_of_real \<mu> \<cdot>\<^sub>m ?eHL
+              = complex_of_real \<mu> \<cdot>\<^sub>m (?H + ?eHL)" using scale_dist by simp
+  finally have "?F + ?eFL = (?G + ?eGL) + complex_of_real \<mu> \<cdot>\<^sub>m (?H + ?eHL)" .
+  thus ?case using F_app G_app H_app by simp
+qed
+
 text \<open>One reduction step: a length-\<open>L\<close> cone list with
 \<open>L > (m p)\<^sup>2 + 1\<close> admits a length-\<open>(L-1)\<close> list with the same cone
 sum, weights non-negative, and matrix pairs inherited from the
