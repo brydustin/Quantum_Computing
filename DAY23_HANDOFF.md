@@ -157,8 +157,24 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `kraus_map_dim_one`           | ✅ proved (eval at `1_m n`) |
 | `ucp_has_kraus_rep`           | ✅ proved (UCP-Kraus existence) |
 | `kraus_products_carrier`      | ✅ proved (typing) |
+| `kraus_quad_map`, `kraus_quad_row` | ✅ defined (perturbation primitive) |
+| `kraus_combo`                 | ✅ defined (linear combo `Σ u_i V_i`) |
+| `kraus_quad_map_index`        | ✅ proved (double-sum entry formula) |
+| `kraus_quad_map_add_Tm`       | ✅ proved (linearity in `T`) |
+| `kraus_quad_map_outer_singleton` | ✅ proved (rank-1 identity) |
+| `kraus_quad_map_outer_sum_eq_kraus_map_dim` | ✅ proved (sum decomp) |
+| `amplification_cong`, `completely_positive_cong` | ✅ proved |
+| `kraus_perturbation_cp`       | ✅ proved (**Lemma A**) |
 | `choi_theorem_3_cptp`         | ❌ `sorry` — your target |
 | `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
+
+\<^bold>What's left for the reverse direction:</br>
+- Symmetric / antisymmetric split of a real-coefficient dependence to a
+  hermitian `A : k×k` with `Σ A_{ij} V_j† V_i = 0`.
+- `small_eps_psd`: for hermitian `A`, `\<exists>\<epsilon> > 0.\<forall>\<delta>. \<bar>\<delta>\<bar> \<le> \<epsilon> \<longrightarrow> psd (1\<^sub>m k + \<delta> \<cdot>\<^sub>m A)`.
+- Distinctness (`kraus_quad_map_zero_iff`-style): when `A \<noteq> 0`, the map
+  `kraus_quad_map d Vs A` is non-zero on some `\<rho>` (needs minimality of `Vs` or pre-processing).
+- Assembly of `choi_theorem_3_cptp` reverse direction.
 
 The UCP version's products convention is **wrong** as stated
 (should be `{V_i V_j†}` in `M_d`, not `{V_j† V_i}` in `M_n`).
