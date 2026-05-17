@@ -3853,6 +3853,93 @@ proof -
 qed
 
 
+subsection \<open>Trace pairing duality and TP-converse\<close>
+
+text \<open>If \<open>Tr (M * \<rho>) = Tr (N * \<rho>)\<close> for every \<open>\<rho>\<close> in carrier,
+then \<open>M = N\<close>. Used to invert @{thm kraus_quad_map_is_TP}.\<close>
+
+lemma Tr_mat_unit_mult:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat n n"
+      and r_lt: "r < n" and s_lt: "s < n"
+  shows "Tr (M * mat_unit s r n n) = M $$ (r, s)"
+proof -
+  let ?E = "mat_unit s r n n"
+  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+  have ME_c: "M * ?E \<in> carrier_mat n n" using M_c E_c by auto
+  \<comment> \<open>Per-entry: \<open>(M * E)$$(i, j) = M$$(i, s)\<close> if \<open>j = r\<close>, else \<open>0\<close>.\<close>
+  have ME_idx: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
+                    (M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)"
+  proof -
+    fix i j assume i_lt: "i < n" and j_lt: "j < n"
+    have "(M * ?E) $$ (i, j) = (\<Sum>k = 0..<n. M $$ (i, k) * ?E $$ (k, j))"
+      by (rule mat_mult_index_sum[OF M_c E_c i_lt j_lt])
+    also have "\<dots> = (\<Sum>k = 0..<n.
+                       M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))"
+    proof (rule sum.cong[OF refl])
+      fix k assume "k \<in> {0..<n}" hence k_lt: "k < n" by simp
+      show "M $$ (i, k) * ?E $$ (k, j)
+              = M $$ (i, k) * (if k = s \<and> j = r then 1 else 0)"
+        using mat_unit_index[OF k_lt j_lt, of s r] by simp
+    qed
+    also have "\<dots> = (if j = r then M $$ (i, s) else 0)"
+    proof (cases "j = r")
+      case True
+      have "(\<Sum>k = 0..<n.
+              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
+              = (\<Sum>k = 0..<n. if k = s then M $$ (i, k) else 0)"
+        using True by (intro sum.cong refl) (auto)
+      also have "\<dots> = (if s \<in> {0..<n} then M $$ (i, s) else 0)"
+        by (rule sum.delta) simp
+      also have "\<dots> = M $$ (i, s)" using s_lt by simp
+      finally show ?thesis using True by simp
+    next
+      case False
+      have "(\<Sum>k = 0..<n.
+              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
+              = (\<Sum>k = 0..<n. (0::complex))"
+        using False by (intro sum.cong refl) (auto)
+      thus ?thesis using False by simp
+    qed
+    finally show "(M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)" .
+  qed
+  \<comment> \<open>\<open>Tr (M * E) = \<Sum>\<^sub>i (M * E)[i, i] = M[r, s]\<close>.\<close>
+  have ME_dr: "dim_row (M * ?E) = n" using ME_c by auto
+  have ME_dc: "dim_col (M * ?E) = n" using ME_c by auto
+  have "Tr (M * ?E) = (\<Sum>i < n. if i < n then (M * ?E) $$ (i, i) else 0)"
+    unfolding Tr_def using ME_dr ME_dc by simp
+  also have "\<dots> = (\<Sum>i = 0..<n. (M * ?E) $$ (i, i))"
+    by (simp add: lessThan_atLeast0)
+  also have "\<dots> = (\<Sum>i = 0..<n. if i = r then M $$ (i, s) else 0)"
+    by (rule sum.cong[OF refl]) (auto simp: ME_idx)
+  also have "\<dots> = (if r \<in> {0..<n} then M $$ (r, s) else 0)"
+    by (rule sum.delta) simp
+  also have "\<dots> = M $$ (r, s)" using r_lt by simp
+  finally show ?thesis .
+qed
+
+lemma mat_trace_pairing_unique:
+  fixes M N :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat n n"
+      and N_c: "N \<in> carrier_mat n n"
+      and pair_eq: "\<And>rho. rho \<in> carrier_mat n n \<Longrightarrow> Tr (M * rho) = Tr (N * rho)"
+  shows "M = N"
+proof (rule eq_matI)
+  show "dim_row M = dim_row N" using M_c N_c by auto
+  show "dim_col M = dim_col N" using M_c N_c by auto
+  fix r c assume r_a: "r < dim_row N" and c_a: "c < dim_col N"
+  hence r_lt: "r < n" and c_lt: "c < n" using N_c by auto
+  let ?E = "mat_unit c r n n"
+  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+  have "M $$ (r, c) = Tr (M * ?E)"
+    using Tr_mat_unit_mult[OF M_c r_lt c_lt] by simp
+  also have "\<dots> = Tr (N * ?E)" using pair_eq[OF E_c] .
+  also have "\<dots> = N $$ (r, c)"
+    using Tr_mat_unit_mult[OF N_c r_lt c_lt] by simp
+  finally show "M $$ (r, c) = N $$ (r, c)" .
+qed
+
+
 subsection \<open>Choi's Theorem 3 \<mdash> forward direction\<close>
 
 text \<open>\<^bold>\<open>Important caveat on @{const extreme_CPTP}.\<close>  The current
@@ -3954,11 +4041,32 @@ proof (rule ccontr)
       using kraus_quad_map_smult_Tm[OF Vs_c X_c T_c, of "(2 :: complex)"] by simp
     finally show "\<Phi>\<^sub>1 X = kraus_quad_map d Vs T\<^sub>1 X" unfolding T\<^sub>1_def .
   qed
-  \<comment> \<open>Step D: \<open>kraus_pair_sum n Vs T\<^sub>1 = 1\<^sub>m n\<close> (from TP of \<open>\<Phi>\<^sub>1\<close>).
-      This is the converse of @{thm kraus_quad_map_is_TP}, proved via the
-      trace pairing duality: @{thm Tr_kraus_quad_map_eq} plus
-      \<open>\<forall>\<rho>. Tr (M\<rho>) = Tr (\<rho>) \<Longrightarrow> M = 1\<^sub>m n\<close>.\<close>
-  have ps_T1: "kraus_pair_sum n Vs T\<^sub>1 = 1\<^sub>m n" sorry
+  \<comment> \<open>Step D: \<open>kraus_pair_sum n Vs T\<^sub>1 = 1\<^sub>m n\<close> (from TP of \<open>\<Phi>\<^sub>1\<close>).\<close>
+  have ps_T1: "kraus_pair_sum n Vs T\<^sub>1 = 1\<^sub>m n"
+  proof -
+    let ?M = "kraus_pair_sum n Vs T\<^sub>1"
+    have M_c: "?M \<in> carrier_mat n n"
+      by (rule kraus_pair_sum_carrier[OF Vs_c])
+    have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
+    have pair_eq: "\<And>rho. rho \<in> carrier_mat n n \<Longrightarrow>
+                       Tr (?M * rho) = Tr (1\<^sub>m n * rho)"
+    proof -
+      fix rho :: "complex Matrix.mat" assume rho_c: "rho \<in> carrier_mat n n"
+      \<comment> \<open>LHS: \<open>Tr (M * \<rho>) = Tr (kraus_quad_map d Vs T\<^sub>1 \<rho>)\<close>
+          via @{thm Tr_kraus_quad_map_eq} reversed.\<close>
+      have "Tr (?M * rho) = Tr (kraus_quad_map d Vs T\<^sub>1 rho)"
+        using Tr_kraus_quad_map_eq[OF Vs_c T1_c rho_c] by simp
+      also have "\<dots> = Tr (\<Phi>\<^sub>1 rho)"
+        using \<Phi>1_eq_qmap[OF rho_c] by simp
+      also have "\<dots> = Tr rho"
+        using \<Phi>1_tp rho_c by (simp add: trace_preserving_def)
+      also have "\<dots> = Tr (1\<^sub>m n * rho)"
+        using rho_c by simp
+      finally show "Tr (?M * rho) = Tr (1\<^sub>m n * rho)" .
+    qed
+    show ?thesis
+      by (rule mat_trace_pairing_unique[OF M_c I_c pair_eq])
+  qed
   \<comment> \<open>Step E: \<open>S := T\<^sub>1 - 1\<^sub>m k\<close> is hermitian, non-zero, with
       \<open>kraus_pair_sum n Vs S = 0\<^sub>m n n\<close>; this yields a complex relation
       contradicting @{thm lin_indep}.\<close>
