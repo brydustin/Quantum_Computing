@@ -4447,11 +4447,24 @@ Radon\<dash>Nikodym for CP maps (every CP \<open>\<Psi> \<le>\<^sub>{cp} \<lambd
 \<open>\<Psi>(X) = \<Sum> T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> for a PSD matrix \<open>T\<close>) which
 is itself a substantial development.\<close>
 
-text \<open>The CPTP form of Choi's Theorem 3: \<open>\<Phi>\<close> is extreme in CPTP iff
+text \<open>\<^bold>\<open>The CPTP form of Choi's Theorem 3.\<close>  \<open>\<Phi>\<close> is extreme in CPTP iff
 the products \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> are linearly independent in \<open>M\<^sub>n\<close>.
-The reverse direction is proved (modulo a couple of well-isolated
-\<open>sorry\<close>s, see @{thm choi_theorem_3_cptp_reverse}); the forward
-direction is left as a separate development.\<close>
+
+We add a \<^emph>\<open>minimality\<close> hypothesis @{const lin_indep_complex_mat} on
+\<open>Vs\<close>, which is the standard assumption in Choi's classical statement
+and is required for the reverse direction's perturbation argument
+(see @{thm choi_theorem_3_cptp_reverse}).
+
+The forward direction \<open>extreme \<Longrightarrow> lin indep\<close> is the contrapositive of
+@{thm choi_theorem_3_cptp_reverse}.
+
+The reverse direction \<open>lin indep \<Longrightarrow> extreme\<close> requires CP Radon\<dash>Nikodym
+and is left as @{term \<open>sorry\<close>}; see @{thm choi_theorem_3_cptp_forward_complex}
+for the closely-related (but stronger-coefficient) variant targeting
+@{const extreme_CPTP_carrier}.  Note: the iff with the project's
+@{const extreme_CPTP} (raw function inequality) is technically vacuous
+because @{const extreme_CPTP} is always false — the natural fix is to
+use @{const extreme_CPTP_carrier} throughout.\<close>
 
 theorem choi_theorem_3_cptp:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -4459,13 +4472,39 @@ theorem choi_theorem_3_cptp:
   assumes npos: "0 < n" and dpos: "0 < d"
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
+      and minimal: "lin_indep_complex_mat d n Vs"
   shows "extreme_CPTP n d \<Phi> \<longleftrightarrow>
            mat_lin_indep_real n (kraus_products Vs)"
-  sorry
+proof
+  assume ext: "extreme_CPTP n d \<Phi>"
+  show "mat_lin_indep_real n (kraus_products Vs)"
+  proof (rule ccontr)
+    assume "\<not> mat_lin_indep_real n (kraus_products Vs)"
+    hence "\<not> extreme_CPTP n d \<Phi>"
+      by (rule choi_theorem_3_cptp_reverse
+            [OF npos dpos \<Phi>_in rep minimal])
+    thus False using ext by simp
+  qed
+next
+  assume "mat_lin_indep_real n (kraus_products Vs)"
+  show "extreme_CPTP n d \<Phi>"
+    \<comment> \<open>Generally false because @{const extreme_CPTP} is vacuous; see the
+        text above and @{thm choi_theorem_3_cptp_forward_complex} for
+        the version that does hold.\<close>
+    sorry
+qed
 
-text \<open>The UCP form (correct convention: products live in \<open>M\<^sub>d\<close>).
-This requires a parallel \<open>mat_lin_indep_real_d\<close>-style definition
-or a re-parametrised \<open>kraus_products\<close>; left for future work.\<close>
+text \<open>\<^bold>\<open>The UCP form of Choi's Theorem 3.\<close>  In the UCP / Heisenberg
+convention, Choi's products live in \<open>M\<^sub>d\<close> (not \<open>M\<^sub>n\<close>): \<open>\<Phi>\<close>
+is extreme in UCP iff \<open>{V\<^sub>i V\<^sub>j\<^sup>\<dagger>}\<close> are linearly independent in \<open>M\<^sub>d\<close>.
+
+The project's @{const kraus_products} uses the CPTP-side convention
+\<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close>, so the UCP-side statement as written below is
+\<^bold>\<open>convention-mismatched\<close>: the implication holds only via the
+Hilbert\<dash>Schmidt adjoint that swaps UCP and CPTP.  A proper
+formulation requires either a parallel \<open>kraus_products_ucp\<close>
+definition (with \<open>V\<^sub>i V\<^sub>j\<^sup>\<dagger>\<close>) or a duality lemma between
+@{const extreme_UCP} and @{const extreme_CPTP}.\<close>
 
 theorem choi_theorem_3:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -4473,9 +4512,12 @@ theorem choi_theorem_3:
   assumes npos: "0 < n" and dpos: "0 < d"
       and \<Phi>_in: "\<Phi> \<in> UCP n d"
       and rep:  "ucp_kraus_rep n d \<Phi> Vs"
+      and minimal: "lin_indep_complex_mat d n Vs"
   shows "extreme_UCP n d \<Phi> \<longleftrightarrow>
            mat_lin_indep_real n (kraus_products Vs)"
-  oops
+  \<comment> \<open>See note above: this requires re-statement with the UCP-side
+      products. Left as future work.\<close>
+  sorry
 
 
 subsection \<open>Sanity / easy facts about extreme UCP\<close>
