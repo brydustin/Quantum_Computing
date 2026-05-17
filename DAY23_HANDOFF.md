@@ -178,21 +178,19 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `mat_lin_indep_real_neg_witness` | ✅ proved (the bridge) |
 | `kraus_quad_map_smult_Tm`, `kraus_quad_map_one_eq_kraus_map_dim`, `kraus_pair_sum_one_eq_sum_wdag_w` | ✅ proved |
 | `lin_indep_complex_mat`       | ✅ defined (minimality) |
-| `kraus_quad_map_nonzero_witness` (Lemma B) | ❌ `sorry` (rank-1 mat-unit argument under minimality) |
+| `lin_indep_zero_combo`, `kraus_quad_map_mat_unit_index` | ✅ proved (Lemma B helpers) |
+| `kraus_quad_map_nonzero_witness` (Lemma B) | ✅ **proved** |
 | `Tr_kraus_quad_map_eq`        | ✅ proved |
 | `kraus_quad_map_is_TP`        | ✅ proved |
-| **`choi_theorem_3_cptp_reverse`** | ✅ **proved** (modulo Lemma B sorry only) |
-| `choi_theorem_3_cptp`         | ❌ `sorry` — full iff (needs reverse + forward) |
+| **`choi_theorem_3_cptp_reverse`** | ✅ **proved (sorry-free!)** |
+| `choi_theorem_3_cptp`         | ❌ `sorry` — full iff (needs forward direction) |
 | `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
 
 \<^bold>What's left:</br>
-- `kraus_quad_map_nonzero_witness` / Lemma B (substantial): for \<open>A \<noteq> 0\<close>
-  and \<open>Vs\<close> linearly independent over \<open>\<complex>\<close>, exhibit \<open>\<rho>\<close> via
-  \<open>\<rho> := mat_unit n p q\<close>; expand \<open>(V_i \<rho> V_j\<^sup>\<dagger>)\<close> at \<open>(r,c)\<close> as
-  \<open>V_i\<^sub>{r,p} \<bar>V_j\<^sub>{c,q}\<bar>\<close>; argue lin-indep \<open>\<Rightarrow>\<close> the columns of \<open>V\<close>
-  span \<open>\<complex>\<^sup>k\<close> as \<open>(r,p)\<close> varies, forcing \<open>A = 0\<close>.
-- Forward direction of `choi_theorem_3_cptp` (Radon\<dash>Nikodym, separate project).
+- Forward direction of `choi_theorem_3_cptp` (Radon\<dash>Nikodym for CP maps,
+  a substantial separate development).
 - UCP-side restatement (`choi_theorem_3` with products in \<open>M\<^sub>d\<close>).
+- Glue: combine forward + reverse into the iff `choi_theorem_3_cptp`.
 
 The UCP version's products convention is **wrong** as stated
 (should be `{V_i V_j†}` in `M_d`, not `{V_j† V_i}` in `M_n`).

@@ -2706,12 +2706,11 @@ where
 text \<open>\<^bold>\<open>Lemma B\<close>: under minimality of \<open>Vs\<close>, a non-zero coefficient matrix
 gives a non-vanishing quadratic Kraus map for some \<open>\<rho>\<close>.
 
-\<^bold>\<open>Proof sketch (currently \<open>sorry\<close>'d).\<close> Take \<open>\<rho> := mat_unit n p q\<close> (a matrix
-with a single 1 at \<open>(p,q)\<close>). Then
+The witness \<open>\<rho> := mat_unit p q n n\<close> (a single 1 at \<open>(p,q)\<close>) makes
 \<open>(V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>) $$ (r,c) = V\<^sub>i $$ (r,p) \<bar>V\<^sub>j $$ (c,q)\<bar>\<close>, so
-\<open>kraus_quad_map d Vs A \<rho> $$ (r,c) = M\<^sub>p\<^sup>T A M\<^sub>q\<^sup>* $$ (r,c)\<close> for an appropriate
-\<open>M\<^sub>p\<close>. Vanishing for all \<open>p,q,r,c\<close> together with linear independence of
-\<open>Vs\<close> forces \<open>A = 0\<close>.\<close>
+universal vanishing of @{const kraus_quad_map} on all \<open>(p,q,r,c)\<close>
+combined with linear independence of \<open>Vs\<close> (applied twice, separated
+by conjugation) forces \<open>A = 0\<close>.\<close>
 
 text \<open>A convenient form of minimality: if the per-entry sum vanishes for
 all \<open>(r,p)\<close>, then all coefficients are zero.\<close>
