@@ -227,6 +227,26 @@ proof -
 qed
 
 
+subsection \<open>Sanity facts about \<open>kraus_products\<close>\<close>
+
+lemma kraus_products_carrier:
+  assumes "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+  shows "\<forall>B \<in> set (kraus_products Vs). B \<in> carrier_mat n n"
+proof
+  fix B assume "B \<in> set (kraus_products Vs)"
+  then obtain i j where
+    i_lt: "i < length Vs" and j_lt: "j < length Vs"
+    and B_eq: "B = (Vs!j)\<^sup>\<dagger> * Vs!i"
+    unfolding kraus_products_def by auto
+  have Vi_c: "Vs!i \<in> carrier_mat d n"
+    using assms i_lt by (simp add: nth_mem)
+  have Vj_c: "Vs!j \<in> carrier_mat d n"
+    using assms j_lt by (simp add: nth_mem)
+  have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by auto
+  show "B \<in> carrier_mat n n" using B_eq Vi_c Vjd_c by auto
+qed
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>Choi (1975), Theorem 3: a UCP map \<open>\<Phi> : M\<^sub>n \<rightarrow> M\<^sub>d\<close> is an
