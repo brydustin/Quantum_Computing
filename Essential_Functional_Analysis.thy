@@ -1423,6 +1423,135 @@ next
   thus ?case using F_app G_app H_app by simp
 qed
 
+text \<open>Entry-wise expression for \<open>cone_list_sum\<close>: each entry is a
+HOL sum over the list indices of weight times tensor entry.\<close>
+
+lemma cone_list_sum_entry:
+  fixes m p :: nat
+      and ts :: "(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list"
+  assumes typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+                       \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+      and i_lt: "i < m * p" and j_lt: "j < m * p"
+  shows "cone_list_sum m p ts $$ (i, j)
+           = (\<Sum>k<length ts.
+                complex_of_real (fst (ts!k))
+                  * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j))"
+  using typing
+proof (induction ts)
+  case Nil
+  show ?case using i_lt j_lt by (simp add: zero_mat_def)
+next
+  case (Cons t ts)
+  obtain w \<sigma> \<tau> where t_eq: "t = (w, \<sigma>, \<tau>)" by (cases t)
+  from Cons.prems t_eq have
+    \<sigma>_c: "\<sigma> \<in> carrier_mat m m" and \<tau>_c: "\<tau> \<in> carrier_mat p p" by auto
+  have ts_typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+                       \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+    using Cons.prems by simp
+  have st_c: "\<sigma> \<Otimes> \<tau> \<in> carrier_mat (m*p) (m*p)" using \<sigma>_c \<tau>_c by auto
+  have wstm_c: "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) \<in> carrier_mat (m*p) (m*p)"
+    using st_c by auto
+  have rest_c: "cone_list_sum m p ts \<in> carrier_mat (m*p) (m*p)"
+    by (rule cone_list_sum_carrier)
+  have dim_st_r: "dim_row (\<sigma> \<Otimes> \<tau>) = m*p" using st_c by auto
+  have dim_st_c: "dim_col (\<sigma> \<Otimes> \<tau>) = m*p" using st_c by auto
+  have dim_rest_r: "dim_row (cone_list_sum m p ts) = m*p" using rest_c by auto
+  have dim_rest_c: "dim_col (cone_list_sum m p ts) = m*p" using rest_c by auto
+  have head_entry:
+    "(complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) $$ (i, j)
+       = complex_of_real w * (\<sigma> \<Otimes> \<tau>) $$ (i, j)"
+    using index_smult_mat(1)[of i "\<sigma> \<Otimes> \<tau>" j "complex_of_real w"]
+          i_lt j_lt dim_st_r dim_st_c by simp
+  have add_entry:
+    "(complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>) + cone_list_sum m p ts) $$ (i, j)
+       = (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) $$ (i, j)
+         + cone_list_sum m p ts $$ (i, j)"
+    using index_add_mat(1)[of i "complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)" j "cone_list_sum m p ts"]
+          i_lt j_lt wstm_c rest_c by auto
+  have IH: "cone_list_sum m p ts $$ (i, j)
+              = (\<Sum>k<length ts.
+                   complex_of_real (fst (ts!k))
+                     * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j))"
+    using Cons.IH[OF ts_typing] .
+  define gf where "gf =
+     (\<lambda>xs k. complex_of_real (fst ((xs::(real \<times> complex Matrix.mat \<times> complex Matrix.mat) list)!k))
+              * (fst (snd (xs!k)) \<Otimes> snd (snd (xs!k))) $$ (i, j))"
+  have shift_unfold:
+    "(\<Sum>k<length (t # ts). gf (t#ts) k)
+       = gf (t#ts) 0 + (\<Sum>k<length ts. gf (t#ts) (Suc k))"
+  proof -
+    have len_eq: "length (t # ts) = Suc (length ts)" by simp
+    have step: "(\<Sum>k<Suc (length ts). gf (t#ts) k)
+                  = gf (t#ts) 0 + (\<Sum>k<length ts. gf (t#ts) (Suc k))"
+      by (rule sum.lessThan_Suc_shift)
+    show ?thesis using step unfolding len_eq .
+  qed
+  have suc_eq: "\<And>k. k < length ts \<Longrightarrow> gf (t#ts) (Suc k) = gf ts k"
+    unfolding gf_def by simp
+  have head_gf: "gf (t#ts) 0 = complex_of_real (fst t) * (fst (snd t) \<Otimes> snd (snd t)) $$ (i, j)"
+    unfolding gf_def by simp
+  have shift:
+    "(\<Sum>k<length (t # ts).
+         complex_of_real (fst ((t # ts)!k))
+           * (fst (snd ((t # ts)!k))
+              \<Otimes> snd (snd ((t # ts)!k))) $$ (i, j))
+     = complex_of_real (fst t) * (fst (snd t) \<Otimes> snd (snd t)) $$ (i, j)
+       + (\<Sum>k<length ts.
+            complex_of_real (fst (ts!k))
+              * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j))"
+  proof -
+    have L_eq: "(\<Sum>k<length (t # ts).
+                  complex_of_real (fst ((t # ts)!k))
+                    * (fst (snd ((t # ts)!k))
+                       \<Otimes> snd (snd ((t # ts)!k))) $$ (i, j))
+                = (\<Sum>k<length (t # ts). gf (t#ts) k)"
+      unfolding gf_def by simp
+    have R_eq: "(\<Sum>k<length ts. gf (t#ts) (Suc k))
+                = (\<Sum>k<length ts. gf ts k)"
+      using suc_eq by (intro sum.cong) auto
+    have R_eq2: "(\<Sum>k<length ts. gf ts k)
+                  = (\<Sum>k<length ts.
+                       complex_of_real (fst (ts!k))
+                         * (fst (snd (ts!k))
+                            \<Otimes> snd (snd (ts!k))) $$ (i, j))"
+      unfolding gf_def by simp
+    show ?thesis
+      using L_eq shift_unfold head_gf R_eq R_eq2 by simp
+  qed
+  have lhs_split: "cone_list_sum m p (t # ts) $$ (i, j)
+          = (complex_of_real w \<cdot>\<^sub>m (\<sigma> \<Otimes> \<tau>)) $$ (i, j)
+              + cone_list_sum m p ts $$ (i, j)"
+    using t_eq add_entry by simp
+  have step1: "cone_list_sum m p (t # ts) $$ (i, j)
+                = complex_of_real w * (\<sigma> \<Otimes> \<tau>) $$ (i, j)
+                  + (\<Sum>k<length ts.
+                       complex_of_real (fst (ts!k))
+                         * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j))"
+    using lhs_split head_entry IH by simp
+  have t_proj: "fst t = w" "fst (snd t) = \<sigma>" "snd (snd t) = \<tau>"
+    using t_eq by auto
+  show ?case using step1 shift t_proj by simp
+qed
+
+text \<open>An entry-wise zero criterion: if every entry is 0, the matrix is \<open>0\<^sub>m\<close>.\<close>
+
+lemma matrix_eq_zero_via_entries:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat (m*p) (m*p)"
+      and zero: "\<And>i j. i < m*p \<Longrightarrow> j < m*p \<Longrightarrow> M $$ (i, j) = 0"
+  shows "M = 0\<^sub>m (m*p) (m*p)"
+proof (intro eq_matI)
+  show "dim_row M = dim_row (0\<^sub>m (m*p) (m*p))" using M_c by simp
+  show "dim_col M = dim_col (0\<^sub>m (m*p) (m*p))" using M_c by simp
+next
+  fix i j assume "i < dim_row (0\<^sub>m (m*p) (m*p))"
+             and "j < dim_col (0\<^sub>m (m*p) (m*p))"
+  hence i_lt: "i < m*p" and j_lt: "j < m*p" by auto
+  show "M $$ (i, j) = 0\<^sub>m (m*p) (m*p) $$ (i, j)"
+    using zero[OF i_lt j_lt] i_lt j_lt by simp
+qed
+
+
 text \<open>Top-level linear-algebra core.  A list of more than \<open>2 (m p)\<^sup>2\<close>
 complex \<open>(m p) \<times> (m p)\<close> matrix pairs admits a non-trivial real
 linear combination of their tensor products that vanishes.
