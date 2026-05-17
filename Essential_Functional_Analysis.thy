@@ -23,6 +23,7 @@ theory Essential_Functional_Analysis
     Matrix_Typed
     Quantum_Computing_3_10
     "Jordan_Normal_Form.Schur_Decomposition"
+    "Jordan_Normal_Form.DL_Rank"
     "Isabelle_Marries_Dirac.Tensor"
 begin
 
@@ -1637,11 +1638,133 @@ proof -
         A $$ (k, j) = Im ((T!j) $$ ((k-N) div n, (k-N) mod n))"
     unfolding A_def by simp
 
+  have cols_set_c: "set (cols A) \<subseteq> carrier_vec D"
+  proof
+    fix x assume "x \<in> set (cols A)"
+    then obtain k where k_lt: "k < length (cols A)" and x_eq: "x = cols A ! k"
+      by (auto simp: in_set_conv_nth)
+    have k_L: "k < L" using k_lt A_c by (simp add: cols_length)
+    have "cols A ! k = Matrix.col A k"
+      using k_lt A_c by (simp add: cols_nth cols_length)
+    hence "x = Matrix.col A k" using x_eq by simp
+    moreover have "Matrix.col A k \<in> carrier_vec D"
+      using A_c k_L by auto
+    ultimately show "x \<in> carrier_vec D" by simp
+  qed
+  have cols_len: "length (cols A) = L"
+    using A_c by (simp add: cols_length)
+
+  have unit_mult_col:
+    "\<And>i. i < L \<Longrightarrow> A *\<^sub>v unit_vec L i = Matrix.col A i"
+  proof -
+    fix i assume i_L: "i < L"
+    show "A *\<^sub>v unit_vec L i = Matrix.col A i"
+    proof (rule eq_vecI)
+      show "dim_vec (A *\<^sub>v unit_vec L i) = dim_vec (Matrix.col A i)"
+        using A_c by auto
+    next
+      fix k assume k_lt: "k < dim_vec (Matrix.col A i)"
+      hence k_D: "k < D" using A_c by auto
+      have "(A *\<^sub>v unit_vec L i) $ k = Matrix.row A k \<bullet> unit_vec L i"
+        using A_c k_D by (simp add: index_mult_mat_vec)
+      also have "... = (\<Sum>j = 0..<L. Matrix.row A k $ j * unit_vec L i $ j)"
+        unfolding scalar_prod_def by simp
+      also have "... = (\<Sum>j = 0..<L.
+                          Matrix.row A k $ j * (if j = i then 1 else 0))"
+        using i_L by (intro sum.cong refl) (auto simp: index_unit_vec)
+      also have "... = Matrix.row A k $ i"
+        using i_L by (simp add: sum.delta if_distrib mult.commute
+                              cong: if_cong)
+      also have "Matrix.row A k $ i = A $$ (k, i)"
+        using A_c k_D i_L by (simp add: index_row(1))
+      finally have lhs: "(A *\<^sub>v unit_vec L i) $ k = A $$ (k, i)" .
+      have rhs: "Matrix.col A i $ k = A $$ (k, i)"
+        using A_c k_D i_L by (simp add: index_col)
+      show "(A *\<^sub>v unit_vec L i) $ k = Matrix.col A i $ k"
+        using lhs rhs by simp
+    qed
+  qed
+
+  have ex_v: "\<exists>v :: real Matrix.vec.
+                v \<in> carrier_vec L \<and> v \<noteq> 0\<^sub>v L \<and> A *\<^sub>v v = 0\<^sub>v D"
+  proof (cases "distinct (cols A)")
+    case True
+    have cols_card: "card (set (cols A)) = L"
+      using True cols_len by (simp add: distinct_card)
+    interpret VS: vec_space "TYPE(real)" D .
+    have not_li: "\<not> VS.lin_indpt (set (cols A))"
+    proof
+      assume li: "VS.lin_indpt (set (cols A))"
+      have "card (set (cols A)) \<le> VS.dim"
+        using VS.li_le_dim(2)[OF VS.fin_dim cols_set_c li] .
+      hence card_le: "card (set (cols A)) \<le> D"
+        using VS.dim_is_n by simp
+      thus False using cols_card L_gt_D by linarith
+    qed
+    hence lin_dep_cols: "VS.lin_dep (set (cols A))" by simp
+    show ?thesis
+      using VS.lin_depE[OF A_c lin_dep_cols True] by blast
+  next
+    case False
+    obtain i j where i_lt: "i < L" and j_lt: "j < L"
+                 and i_neq_j: "i \<noteq> j"
+                 and ij_eq: "cols A ! i = cols A ! j"
+      using False cols_len by (metis distinct_conv_nth)
+    define vv :: "real Matrix.vec" where
+      "vv = unit_vec L i - unit_vec L j"
+    have uvi_c: "unit_vec L i \<in> carrier_vec L" by simp
+    have uvj_c: "unit_vec L j \<in> carrier_vec L" by simp
+    have vv_c: "vv \<in> carrier_vec L"
+      unfolding vv_def using uvi_c uvj_c by auto
+    have vv_i: "vv $ i = (1 :: real)"
+    proof -
+      have ui_i: "(unit_vec L i :: real Matrix.vec) $ i = 1"
+        using i_lt by (simp add: index_unit_vec)
+      have uj_i: "(unit_vec L j :: real Matrix.vec) $ i = 0"
+      proof -
+        have "(unit_vec L j :: real Matrix.vec) $ i = (if i = j then 1 else 0)"
+          using i_lt j_lt index_unit_vec(1)[of j L i] by simp
+        thus ?thesis using i_neq_j by simp
+      qed
+      have "vv $ i = (unit_vec L i :: real Matrix.vec) $ i
+                    - (unit_vec L j :: real Matrix.vec) $ i"
+        unfolding vv_def using i_lt by (simp add: index_minus_vec)
+      also have "... = 1 - 0" using ui_i uj_i by simp
+      also have "... = (1 :: real)" by simp
+      finally show "vv $ i = (1 :: real)" .
+    qed
+    have vv_nz: "vv \<noteq> 0\<^sub>v L"
+    proof
+      assume "vv = 0\<^sub>v L"
+      hence "vv $ i = 0\<^sub>v L $ i" by simp
+      hence "(1::real) = 0" using vv_i i_lt by simp
+      thus False by simp
+    qed
+    have col_i: "Matrix.col A i = cols A ! i"
+      using i_lt cols_len cols_nth A_c by simp
+    have col_j: "Matrix.col A j = cols A ! j"
+      using j_lt cols_len cols_nth A_c by simp
+    have col_eq: "Matrix.col A i = Matrix.col A j"
+      using col_i col_j ij_eq by simp
+    have col_i_c: "Matrix.col A i \<in> carrier_vec D"
+      using A_c i_lt by auto
+    have "A *\<^sub>v vv = A *\<^sub>v (unit_vec L i - unit_vec L j)"
+      unfolding vv_def by simp
+    also have "... = A *\<^sub>v unit_vec L i - A *\<^sub>v unit_vec L j"
+      using mult_minus_distrib_mat_vec[OF A_c uvi_c uvj_c] .
+    also have "... = Matrix.col A i - Matrix.col A j"
+      using unit_mult_col[OF i_lt] unit_mult_col[OF j_lt] by simp
+    also have "... = 0\<^sub>v D"
+      using col_eq col_i_c by simp
+    finally have Avv: "A *\<^sub>v vv = 0\<^sub>v D" .
+    show ?thesis using vv_c vv_nz Avv by blast
+  qed
+
   obtain v :: "real Matrix.vec" where
     v_c: "v \<in> carrier_vec L"
     and v_nz: "v \<noteq> 0\<^sub>v L"
     and Av_eq: "A *\<^sub>v v = 0\<^sub>v D"
-    sorry
+    using ex_v by blast
 
   define r :: "nat \<Rightarrow> real" where
     "r = (\<lambda>k. if k < L then v $ k else 0)"
