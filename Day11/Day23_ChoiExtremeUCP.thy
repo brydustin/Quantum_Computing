@@ -2713,6 +2713,150 @@ with a single 1 at \<open>(p,q)\<close>). Then
 \<open>M\<^sub>p\<close>. Vanishing for all \<open>p,q,r,c\<close> together with linear independence of
 \<open>Vs\<close> forces \<open>A = 0\<close>.\<close>
 
+text \<open>A convenient form of minimality: if the per-entry sum vanishes for
+all \<open>(r,p)\<close>, then all coefficients are zero.\<close>
+
+lemma lin_indep_zero_combo:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and minimal: "lin_indep_complex_mat d n Vs"
+      and coeff_kills: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
+                           (\<Sum>i = 0..<length Vs. c i * (Vs!i) $$ (r, p)) = 0"
+  shows "\<forall>i < length Vs. c i = 0"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>k. c k \<cdot>\<^sub>m (Vs!k)"
+  have term_c: "\<forall>k < ?N. ?f k \<in> carrier_mat d n"
+  proof (intro allI impI)
+    fix k assume k_lt: "k < ?N"
+    have "Vs!k \<in> carrier_mat d n" using Vs_c k_lt nth_mem by blast
+    thus "?f k \<in> carrier_mat d n" by (intro smult_carrier_mat) auto
+  qed
+  have foldr_c: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) \<in> carrier_mat d n"
+    using term_c by (intro foldr_add_carrier_dn) auto
+  have foldr_zero: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) = 0\<^sub>m d n"
+  proof (rule eq_matI)
+    show "dim_row (foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n))
+            = dim_row (0\<^sub>m d n :: complex Matrix.mat)"
+      using foldr_c by auto
+    show "dim_col (foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n))
+            = dim_col (0\<^sub>m d n :: complex Matrix.mat)"
+      using foldr_c by auto
+    fix r p
+    assume r_a: "r < dim_row (0\<^sub>m d n :: complex Matrix.mat)"
+       and p_a: "p < dim_col (0\<^sub>m d n :: complex Matrix.mat)"
+    hence r_lt: "r < d" and p_lt: "p < n" by auto
+    have z_c: "(0\<^sub>m d n :: complex Matrix.mat) \<in> carrier_mat d n" by simp
+    have idx_step: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
+                      = (\<Sum>k = 0..<?N. ?f k $$ (r, p))
+                        + (0\<^sub>m d n :: complex Matrix.mat) $$ (r, p)"
+      using foldr_upt_add_acc_index_dn[OF term_c z_c r_lt p_lt] .
+    have z_idx: "(0\<^sub>m d n :: complex Matrix.mat) $$ (r, p) = 0"
+      using r_lt p_lt by simp
+    have term_idx: "(\<Sum>k = 0..<?N. ?f k $$ (r, p))
+                      = (\<Sum>k = 0..<?N. c k * (Vs!k) $$ (r, p))"
+    proof (rule sum.cong[OF refl])
+      fix k assume "k \<in> {0..<?N}" hence k_lt: "k < ?N" by simp
+      have Vk_c: "Vs!k \<in> carrier_mat d n" using Vs_c k_lt nth_mem by blast
+      have r_dim: "r < dim_row (Vs!k)" using Vk_c r_lt by auto
+      have p_dim: "p < dim_col (Vs!k)" using Vk_c p_lt by auto
+      show "?f k $$ (r, p) = c k * (Vs!k) $$ (r, p)"
+        using index_smult_mat(1)[OF r_dim p_dim] .
+    qed
+    have "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
+            = (\<Sum>k = 0..<?N. c k * (Vs!k) $$ (r, p))"
+      using idx_step z_idx term_idx by simp
+    also have "\<dots> = 0" using coeff_kills[OF r_lt p_lt] .
+    finally show "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
+                    = (0\<^sub>m d n :: complex Matrix.mat) $$ (r, p)"
+      using r_lt p_lt by simp
+  qed
+  show ?thesis
+    using minimal foldr_zero unfolding lin_indep_complex_mat_def by simp
+qed
+
+text \<open>The per-entry computation for the rank-1 \<open>\<rho> = mat_unit p q n n\<close>.\<close>
+
+lemma kraus_quad_map_mat_unit_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and i_lt: "i < length Vs" and j_lt: "j < length Vs"
+      and p_lt: "p < n" and q_lt: "q < n"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+           = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
+proof -
+  have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+  have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+  have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+  have unit_c: "mat_unit p q n n \<in> carrier_mat n n"
+    by (simp add: mat_unit_def)
+  have ViE_c: "Vs!i * mat_unit p q n n \<in> carrier_mat d n"
+    using Vi_c unit_c by auto
+  \<comment> \<open>\<open>(V\<^sub>i * E\<^sub>{pq}) $$ (r,b)\<close> is \<open>V\<^sub>i $$ (r,p)\<close> if \<open>b = q\<close>, else 0.\<close>
+  have ViE_idx: "\<And>b. b < n \<Longrightarrow>
+                   (Vs!i * mat_unit p q n n) $$ (r, b)
+                     = (if b = q then (Vs!i) $$ (r, p) else 0)"
+  proof -
+    fix b assume b_lt: "b < n"
+    have "(Vs!i * mat_unit p q n n) $$ (r, b)
+            = (\<Sum>a = 0..<n. (Vs!i) $$ (r, a) * (mat_unit p q n n) $$ (a, b))"
+      by (rule mat_mult_index_sum[OF Vi_c unit_c r_lt b_lt])
+    also have "\<dots> = (\<Sum>a = 0..<n.
+                       (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))"
+    proof (rule sum.cong[OF refl])
+      fix a assume "a \<in> {0..<n}" hence a_lt: "a < n" by simp
+      show "(Vs!i) $$ (r, a) * (mat_unit p q n n) $$ (a, b)
+              = (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0)"
+        using mat_unit_index[OF a_lt b_lt, of p q] by simp
+    qed
+    also have "\<dots> = (if b = q then (Vs!i) $$ (r, p) else 0)"
+    proof (cases "b = q")
+      case True
+      have "(\<Sum>a = 0..<n.
+              (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))
+              = (\<Sum>a = 0..<n.
+                   (if a = p then (Vs!i) $$ (r, a) else 0))"
+        using True by (intro sum.cong refl) (auto)
+      also have "\<dots> = (if p \<in> {0..<n} then (Vs!i) $$ (r, p) else 0)"
+        by (rule sum.delta) simp
+      also have "\<dots> = (Vs!i) $$ (r, p)" using p_lt by simp
+      finally show ?thesis using True by simp
+    next
+      case False
+      have "(\<Sum>a = 0..<n.
+              (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))
+              = (\<Sum>a = 0..<n. (0::complex))"
+        using False by (intro sum.cong refl) (auto)
+      thus ?thesis using False by simp
+    qed
+    finally show "(Vs!i * mat_unit p q n n) $$ (r, b)
+                    = (if b = q then (Vs!i) $$ (r, p) else 0)" .
+  qed
+  \<comment> \<open>Now the outer product.\<close>
+  have "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+          = (\<Sum>b = 0..<n.
+              (Vs!i * mat_unit p q n n) $$ (r, b) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c))"
+    by (rule mat_mult_index_sum[OF ViE_c Vjd_c r_lt c_lt])
+  also have "\<dots> = (\<Sum>b = 0..<n.
+                     (if b = q then (Vs!i) $$ (r, p) else 0) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c))"
+    by (rule sum.cong[OF refl]) (auto simp: ViE_idx)
+  also have "\<dots> = (\<Sum>b = 0..<n.
+                     (if b = q then (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c)
+                              else 0))"
+    by (intro sum.cong refl) (simp split: if_split)
+  also have "\<dots> = (if q \<in> {0..<n} then (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (q, c)
+                                   else 0)"
+    by (rule sum.delta) simp
+  also have "\<dots> = (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (q, c)"
+    using q_lt by simp
+  also have "((Vs!j)\<^sup>\<dagger>) $$ (q, c) = cnj ((Vs!j) $$ (c, q))"
+    using Vj_c q_lt c_lt by (simp add: dagger_def)
+  finally show "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                  = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))" by simp
+qed
+
+text \<open>\<^bold>\<open>Lemma B.\<close> Under minimality, a non-zero coefficient matrix
+gives a non-vanishing quadratic Kraus map for some rank-1 \<open>\<rho>\<close>.\<close>
+
 lemma kraus_quad_map_nonzero_witness:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
       and minimal: "lin_indep_complex_mat d n Vs"
@@ -2720,7 +2864,135 @@ lemma kraus_quad_map_nonzero_witness:
       and A_nz: "A \<noteq> 0\<^sub>m (length Vs) (length Vs)"
       and npos: "0 < n" and dpos: "0 < d"
   shows "\<exists>rho \<in> carrier_mat n n. kraus_quad_map d Vs A rho \<noteq> 0\<^sub>m d d"
-  sorry
+proof (rule ccontr)
+  let ?k = "length Vs"
+  assume not_ex: "\<not> (\<exists>rho \<in> carrier_mat n n. kraus_quad_map d Vs A rho \<noteq> 0\<^sub>m d d)"
+  hence all_zero: "\<And>rho. rho \<in> carrier_mat n n \<Longrightarrow>
+                       kraus_quad_map d Vs A rho = 0\<^sub>m d d"
+    by auto
+  \<comment> \<open>Step 1: pick \<open>\<rho> = mat_unit p q n n\<close>, get a per-entry vanishing identity.\<close>
+  have entry_zero:
+    "\<And>p q r c. p < n \<Longrightarrow> q < n \<Longrightarrow> r < d \<Longrightarrow> c < d \<Longrightarrow>
+       (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+          A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))) = 0"
+  proof -
+    fix p q r c
+    assume p_lt: "p < n" and q_lt: "q < n" and r_lt: "r < d" and c_lt: "c < d"
+    have unit_c: "mat_unit p q n n \<in> carrier_mat n n"
+      by (simp add: mat_unit_def)
+    have qm_zero: "kraus_quad_map d Vs A (mat_unit p q n n) = 0\<^sub>m d d"
+      using all_zero[OF unit_c] .
+    have qm_zero_idx: "kraus_quad_map d Vs A (mat_unit p q n n) $$ (r, c) = 0"
+      using qm_zero r_lt c_lt by simp
+    have qm_idx: "kraus_quad_map d Vs A (mat_unit p q n n) $$ (r, c)
+                    = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                        A $$ (i, j)
+                          * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+      using kraus_quad_map_index[OF Vs_c unit_c r_lt c_lt] .
+    have sum_eq: "(\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                     A $$ (i, j)
+                       * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+                  = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                       A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q)))"
+    proof (rule sum.cong[OF refl])
+      fix i assume "i \<in> {0..<?k}" hence i_lt: "i < ?k" by simp
+      show "(\<Sum>j = 0..<?k.
+              A $$ (i, j) * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+              = (\<Sum>j = 0..<?k.
+                   A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q)))"
+      proof (rule sum.cong[OF refl])
+        fix j assume "j \<in> {0..<?k}" hence j_lt: "j < ?k" by simp
+        have prod_eq: "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                         = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
+          by (rule kraus_quad_map_mat_unit_index
+                    [OF Vs_c i_lt j_lt p_lt q_lt r_lt c_lt])
+        show "A $$ (i, j) * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                = A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
+          using prod_eq by (simp add: mult.assoc)
+      qed
+    qed
+    show "(\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+            A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))) = 0"
+      using qm_zero_idx qm_idx sum_eq by simp
+  qed
+  \<comment> \<open>Step 2: for each fixed \<open>(c, q)\<close>, the coefficients
+      \<open>e i = \<Sum>j A(i,j) cnj(V_j$$(c,q))\<close> satisfy
+      \<open>\<Sum>i e i V_i = 0\<close>, so all \<open>e i = 0\<close> by minimality.\<close>
+  have inner_zero: "\<And>i c q. i < ?k \<Longrightarrow> c < d \<Longrightarrow> q < n \<Longrightarrow>
+                       (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
+  proof -
+    fix i c q assume i_lt: "i < ?k" and c_lt: "c < d" and q_lt: "q < n"
+    let ?e = "\<lambda>i'. (\<Sum>j = 0..<?k. A $$ (i', j) * cnj ((Vs!j) $$ (c, q)))"
+    have e_zero_combo: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
+                           (\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p)) = 0"
+    proof -
+      fix r p assume r_lt: "r < d" and p_lt: "p < n"
+      have step1: "(\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p))
+                     = (\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                         A $$ (i', j) * cnj ((Vs!j) $$ (c, q))
+                          * (Vs!i') $$ (r, p))"
+        by (simp add: sum_distrib_right)
+      have step2: "(\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                       A $$ (i', j) * cnj ((Vs!j) $$ (c, q))
+                        * (Vs!i') $$ (r, p))
+                    = (\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                         A $$ (i', j) * (Vs!i') $$ (r, p)
+                          * cnj ((Vs!j) $$ (c, q)))"
+        by (intro sum.cong refl) (simp add: ac_simps)
+      have step3: "(\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                       A $$ (i', j) * (Vs!i') $$ (r, p)
+                        * cnj ((Vs!j) $$ (c, q))) = 0"
+        by (rule entry_zero[OF p_lt q_lt r_lt c_lt])
+      show "(\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p)) = 0"
+        using step1 step2 step3 by simp
+    qed
+    have all_e: "\<forall>i' < ?k. ?e i' = 0"
+      by (rule lin_indep_zero_combo[OF Vs_c minimal e_zero_combo])
+    show "(\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
+      using all_e i_lt by simp
+  qed
+  \<comment> \<open>Step 3: take \<open>cnj\<close> to get \<open>\<Sum>j cnj(A(i,j)) V_j$$(c,q) = 0\<close>
+      for all \<open>(c,q)\<close>.\<close>
+  have cnj_inner_zero: "\<And>i c q. i < ?k \<Longrightarrow> c < d \<Longrightarrow> q < n \<Longrightarrow>
+                          (\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q)) = 0"
+  proof -
+    fix i c q assume i_lt: "i < ?k" and c_lt: "c < d" and q_lt: "q < n"
+    have "cnj (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q)))
+            = (\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q))"
+      by (simp add: complex_cnj_mult)
+    moreover have "cnj (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
+      using inner_zero[OF i_lt c_lt q_lt] by simp
+    ultimately show "(\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q)) = 0"
+      by simp
+  qed
+  \<comment> \<open>Step 4: for each fixed \<open>i\<close>, the coefficients
+      \<open>g j := cnj(A(i,j))\<close> satisfy \<open>\<Sum>j g j V_j = 0\<close>, so \<open>g j = 0\<close>
+      by minimality. Hence \<open>A(i,j) = 0\<close>.\<close>
+  have A_entry_zero: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A $$ (i, j) = 0"
+  proof -
+    fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+    let ?g = "\<lambda>k. cnj (A $$ (i, k))"
+    have g_zero_combo: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
+                           (\<Sum>j' = 0..<?k. ?g j' * (Vs!j') $$ (r, p)) = 0"
+      using cnj_inner_zero[OF i_lt] by simp
+    have all_g: "\<forall>j' < ?k. ?g j' = 0"
+      by (rule lin_indep_zero_combo[OF Vs_c minimal g_zero_combo])
+    hence "cnj (A $$ (i, j)) = 0" using j_lt by simp
+    thus "A $$ (i, j) = 0" by simp
+  qed
+  \<comment> \<open>Therefore \<open>A = 0\<close>, contradiction.\<close>
+  have "A = 0\<^sub>m ?k ?k"
+  proof (rule eq_matI)
+    show "dim_row A = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by auto
+    show "dim_col A = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by auto
+    fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+                   "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+    hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
+    show "A $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
+      using A_entry_zero[OF i_lt j_lt] i_lt j_lt by simp
+  qed
+  thus False using A_nz by simp
+qed
 
 text \<open>Trace-preservation lemma for @{const kraus_quad_map}.
 
