@@ -173,14 +173,13 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `kraus_pair_sum_index`, `kraus_pair_sum_add_A`, `kraus_pair_sum_smult_A` | ✅ proved |
 | `kraus_pair_sum_dagger`       | ✅ proved (\<open>(...)\<^sup>\<dagger> = ...\<close> swapping coefficient indices) |
 | `sym_or_antisym_witness`      | ✅ proved |
+| `length_kraus_products`, `kraus_products_nth` | ✅ proved |
+| `sum_split_prod_atLeastLessThan` | ✅ proved (\<open>\<Sum>\<^sub>{\<kappa><N*k}\<close> reindex) |
+| `mat_lin_indep_real_neg_witness` | ✅ proved (the bridge) |
 | `choi_theorem_3_cptp`         | ❌ `sorry` — your target |
 | `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
 
 \<^bold>What's left for the reverse direction:</br>
-- Bridge: convert a \<open>\<not> mat_lin_indep_real n (kraus_products Vs)\<close>
-  witness (a real \<open>c : nat \<Rightarrow> real\<close> with the foldr-sum vanishing) into
-  a real-valued matrix \<open>A_orig\<close> satisfying
-  \<open>kraus_pair_sum n Vs A_orig = 0\<close> and \<open>A_orig \<noteq> 0\<close>.
 - Distinctness (`kraus_quad_map_zero_iff`-style): when \<open>A \<noteq> 0\<close>, the map
   \<open>kraus_quad_map d Vs A\<close> is non-zero on some \<open>\<rho>\<close> (needs minimality of \<open>Vs\<close>
   or pre-processing).
