@@ -195,21 +195,31 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 Skeleton fully assembled in `choi_theorem_3_cptp_forward_complex`, targeting
 the new `extreme_CPTP_carrier` (carrier-point inequality, since the
 original `extreme_CPTP` is vacuously false due to using raw function
-inequality). Step structure end-to-end with the following well-isolated
-sorries:
-- `cp_radon_nikodym` (axiom): a substantial classical result.
-- `psi_cp`, `psi_range`, `diff_cp`: CP / range / dominated-CP properties
-  of `\<Psi> := \<lambda>X. (1/2) ⋅m \<Phi>\<^sub>1 X`. Provable via `amplification_smult`
-  and `psd_smult_nonneg`, modulo a range condition that should be made
-  explicit in `extreme_CPTP_carrier`.
+inequality).
+
+\<^bold>Internally proved\<^bold>:</br>
+- `psi_cp` (Ψ is CP via `amplification_smult` + `psd_smult_nonneg`)
+- `psi_range` (from `Phi1_range`)
+- `diff_cp` (Φ - Ψ CP, via `completely_positive_cong` from `halfPhi2_cp`)
+- Step C (Φ\<^sub>1 = kraus_quad_map d Vs T\<^sub>1 on carrier)
+- Step D (ps_T1 via trace pairing duality)
+- Step E (assembly: S nonzero, build complex c, contradict lin_indep)
+
+\<^bold>Remaining sorries\<^bold>:</br>
+- `cp_radon_nikodym` (axiom): substantial classical result.
+- `Phi1_range`, `Phi2_range`: CPTP maps map carrier to carrier.
+  Should be added as side hypotheses to `extreme_CPTP_carrier` (the
+  project's CPTP definition doesn't enforce range, but it should).
 
 \<^bold>What's left for full closure:</br>
-- The four sorries above (R-N is the big one; the CP properties are
-  ~50 lines once range is sorted out).
+- The three sorries above.
 - UCP-side restatement (`choi_theorem_3` with products in \<open>M\<^sub>d\<close>).
-- Glue: combine forward + reverse into the iff `choi_theorem_3_cptp`
-  (the original real-coefficient version is asymmetric; the complex one
-  with `extreme_CPTP_carrier` is correct).
+- Glue: combine forward + reverse into the iff `choi_theorem_3_cptp_complex`
+  (the original real-coefficient version is asymmetric).
+
+\<^bold>Interactive workflow\<^bold>:</br>
+Load the theory in jEdit from the project root:
+\<open>/home/dusty/Desktop/Isabelle/Isabelle2025-2/bin/isabelle jedit -d . -l Vern_Paulsen_QC_3_10 Day11/Day23_ChoiExtremeUCP.thy\<close>
 
 The UCP version's products convention is **wrong** as stated
 (should be `{V_i V_j†}` in `M_d`, not `{V_j† V_i}` in `M_n`).
