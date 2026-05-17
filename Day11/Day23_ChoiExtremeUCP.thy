@@ -3962,6 +3962,8 @@ where
   "extreme_CPTP_carrier n d \<Phi> \<equiv>
      \<Phi> \<in> CPTP n d \<and>
      \<not> (\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
+           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d) \<and>
+           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d) \<and>
            (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
            (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
            (\<forall>X. X \<in> carrier_mat n n
@@ -3994,6 +3996,8 @@ proof (rule ccontr)
   assume "\<not> extreme_CPTP_carrier n d \<Phi>"
   with \<Phi>_in have not_ext:
     "\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
+        (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d) \<and>
+        (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d) \<and>
         (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
         (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
         (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
@@ -4002,6 +4006,8 @@ proof (rule ccontr)
   obtain \<Phi>\<^sub>1 \<Phi>\<^sub>2 X\<^sub>0 where
         \<Phi>1_in: "\<Phi>\<^sub>1 \<in> CPTP n d"
     and \<Phi>2_in: "\<Phi>\<^sub>2 \<in> CPTP n d"
+    and \<Phi>1_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d"
+    and \<Phi>2_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d"
     and X\<^sub>0_c: "X\<^sub>0 \<in> carrier_mat n n"
     and \<Phi>1_ne_at_X0: "\<Phi>\<^sub>1 X\<^sub>0 \<noteq> \<Phi> X\<^sub>0"
     and mid: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
@@ -4015,13 +4021,10 @@ proof (rule ccontr)
   \<comment> \<open>Define the half-map and apply CP Radon\<dash>Nikodym.\<close>
   define \<Psi> where "\<Psi> = (\<lambda>X. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
   \<comment> \<open>Step A: \<open>\<Psi>\<close> is CP, has the right range, and \<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier is CP.\<close>
-  \<comment> \<open>Range hypothesis: assume \<open>\<Phi>\<^sub>1\<close> and \<open>\<Phi>\<^sub>2\<close> map carrier inputs to
-      carrier outputs.  This is a natural property of CPTP maps but isn't
-      enforced by the project's `CPTP` definition, so we sorry it.\<close>
-  have \<Phi>1_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d"
-    sorry
-  have \<Phi>2_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d"
-    sorry
+  \<comment> \<open>\<open>\<Phi>\<^sub>1\<close>, \<open>\<Phi>\<^sub>2\<close> have range \<open>carrier_mat d d\<close> on carrier inputs:
+      provided directly by the (strengthened) @{const extreme_CPTP_carrier}
+      definition, which makes the range condition explicit (since the
+      project's @{const CPTP} doesn't enforce it).\<close>
   \<comment> \<open>From these, \<open>\<Psi>\<close>'s range is in \<open>carrier_mat d d\<close>.\<close>
   have psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Psi> X \<in> carrier_mat d d"
     unfolding \<Psi>_def using \<Phi>1_range by auto
