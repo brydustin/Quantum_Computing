@@ -136,6 +136,57 @@ where
           = 0\<^sub>m n n
         \<longrightarrow> (\<forall>k < length Bs. c k = 0))"
 
+text \<open>Complex linear independence: the classical Choi statement uses
+\<^bold>\<open>complex\<close>-coefficient linear independence. This is strictly stronger
+than @{const mat_lin_indep_real}.\<close>
+
+definition mat_lin_indep_complex ::
+  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
+where
+  "mat_lin_indep_complex n Bs \<equiv>
+     (\<forall>B \<in> set Bs. B \<in> carrier_mat n n) \<and>
+     (\<forall>c :: nat \<Rightarrow> complex.
+        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs!k) + acc)
+              [0..<length Bs] (0\<^sub>m n n)
+          = 0\<^sub>m n n
+        \<longrightarrow> (\<forall>k < length Bs. c k = 0))"
+
+text \<open>Complex linear independence implies real.\<close>
+
+lemma mat_lin_indep_complex_imp_real:
+  assumes "mat_lin_indep_complex n Bs"
+  shows "mat_lin_indep_real n Bs"
+proof -
+  have carr: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n"
+    using assms unfolding mat_lin_indep_complex_def by simp
+  have body: "\<And>c :: nat \<Rightarrow> real.
+                foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs!k) + acc)
+                      [0..<length Bs] (0\<^sub>m n n)
+                  = 0\<^sub>m n n
+                \<Longrightarrow> (\<forall>k < length Bs. c k = 0)"
+  proof -
+    fix c :: "nat \<Rightarrow> real"
+    assume foldr_zero: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs!k) + acc)
+                              [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n"
+    let ?c_complex = "\<lambda>k. complex_of_real (c k)"
+    have foldr_complex: "foldr (\<lambda>k acc. ?c_complex k \<cdot>\<^sub>m (Bs!k) + acc)
+                                 [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n"
+      using foldr_zero by simp
+    have univ: "\<forall>c :: nat \<Rightarrow> complex.
+                  foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs!k) + acc)
+                        [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n
+                  \<longrightarrow> (\<forall>k < length Bs. c k = 0)"
+      using assms unfolding mat_lin_indep_complex_def by simp
+    have all_zero: "\<forall>k < length Bs. complex_of_real (c k) = 0"
+      using spec[OF univ, where x = "\<lambda>k. complex_of_real (c k)"]
+            foldr_complex by blast
+    show "\<forall>k < length Bs. c k = 0"
+      using all_zero by (metis of_real_eq_0_iff)
+  qed
+  show ?thesis
+    unfolding mat_lin_indep_real_def using carr body by metis
+qed
+
 
 subsection \<open>Unital condition from the Kraus list\<close>
 
