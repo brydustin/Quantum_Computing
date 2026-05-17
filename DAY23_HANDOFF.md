@@ -165,13 +165,16 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `kraus_quad_map_outer_sum_eq_kraus_map_dim` | ✅ proved (sum decomp) |
 | `amplification_cong`, `completely_positive_cong` | ✅ proved |
 | `kraus_perturbation_cp`       | ✅ proved (**Lemma A**) |
+| `inner_prod_add_right`, `inner_prod_smult_right` | ✅ proved (bilinearity of \<open>\<langle>_|_\<rangle>\<close>) |
+| `hermitian_add`, `hermitian_one_mat`, `hermitian_smult_real` | ✅ proved |
+| `quad_form_bound_by_entry_sum` | ✅ proved (entry-sum bound on \<open>\<bar>\<langle>x|Ax\<rangle>\<bar>\<close>) |
+| `small_eps_psd`               | ✅ proved |
 | `choi_theorem_3_cptp`         | ❌ `sorry` — your target |
 | `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
 
 \<^bold>What's left for the reverse direction:</br>
 - Symmetric / antisymmetric split of a real-coefficient dependence to a
   hermitian `A : k×k` with `Σ A_{ij} V_j† V_i = 0`.
-- `small_eps_psd`: for hermitian `A`, `\<exists>\<epsilon> > 0.\<forall>\<delta>. \<bar>\<delta>\<bar> \<le> \<epsilon> \<longrightarrow> psd (1\<^sub>m k + \<delta> \<cdot>\<^sub>m A)`.
 - Distinctness (`kraus_quad_map_zero_iff`-style): when `A \<noteq> 0`, the map
   `kraus_quad_map d Vs A` is non-zero on some `\<rho>` (needs minimality of `Vs` or pre-processing).
 - Assembly of `choi_theorem_3_cptp` reverse direction.
