@@ -1697,8 +1697,175 @@ proof -
   have T_nth_pairs: "\<And>k. k < L \<Longrightarrow> T ! k = fst (pairs ! k) \<Otimes> snd (pairs ! k)"
     unfolding T_def L_def by simp
 
+  have idx_lt_N: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> i * n + j < N"
+  proof -
+    fix i j assume i_n: "i < n" and j_n: "j < n"
+    have step1: "i * n + j < i * n + n" using j_n by simp
+    have step2: "i * n + n = Suc i * n" by simp
+    have step3: "Suc i * n \<le> n * n"
+      using i_n by (intro mult_right_mono) auto
+    have "i * n + j < n * n" using step1 step2 step3 by linarith
+    thus "i * n + j < N" unfolding N_def .
+  qed
+
+  have idx_div_mod: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
+                       (i * n + j) div n = i \<and> (i * n + j) mod n = j"
+    by auto
+
+  define rowAv where
+    "rowAv = (\<lambda>idx::nat. (\<Sum>k<L. A $$ (idx, k) * v $ k))"
+
+  have rowAv_eq: "\<And>idx. idx < D \<Longrightarrow> (A *\<^sub>v v) $ idx = rowAv idx"
+  proof -
+    fix idx assume idx_D: "idx < D"
+    have "(A *\<^sub>v v) $ idx = Matrix.row A idx \<bullet> v"
+      using A_c idx_D index_mult_mat_vec by auto
+    also have "... = (\<Sum>k = 0..<dim_vec v. Matrix.row A idx $ k * v $ k)"
+      unfolding scalar_prod_def by simp
+    also have "... = (\<Sum>k<L. Matrix.row A idx $ k * v $ k)"
+      using v_c by (simp add: atLeast0LessThan)
+    also have "... = (\<Sum>k<L. A $$ (idx, k) * v $ k)"
+      using A_c idx_D by (intro sum.cong refl) (auto simp: index_row(1))
+    finally show "(A *\<^sub>v v) $ idx = rowAv idx" unfolding rowAv_def .
+  qed
+
+  have rowAv_zero: "\<And>idx. idx < D \<Longrightarrow> rowAv idx = 0"
+  proof -
+    fix idx assume idx_D: "idx < D"
+    have "rowAv idx = (A *\<^sub>v v) $ idx" using rowAv_eq idx_D by simp
+    also have "... = (0\<^sub>v D) $ idx" using Av_eq by simp
+    also have "... = 0" using idx_D by simp
+    finally show "rowAv idx = 0" .
+  qed
+
+  have AvRe: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
+              (\<Sum>k<L. v $ k * Re ((T!k) $$ (i, j))) = 0"
+  proof -
+    fix i j assume i_n: "i < n" and j_n: "j < n"
+    define idx where "idx = i * n + j"
+    have idx_N: "idx < N" using idx_lt_N[OF i_n j_n] idx_def by simp
+    have idx_D: "idx < D" using idx_N D_def by simp
+    have div_eq: "idx div n = i" and mod_eq: "idx mod n = j"
+      using idx_div_mod[OF i_n j_n] idx_def by auto
+    have rowAv_unfold:
+      "rowAv idx = (\<Sum>k<L. v $ k * Re ((T!k) $$ (i, j)))"
+    proof -
+      have "rowAv idx = (\<Sum>k<L. A $$ (idx, k) * v $ k)"
+        unfolding rowAv_def by simp
+      also have "... = (\<Sum>k<L. Re ((T!k) $$ (i, j)) * v $ k)"
+        using A_entry_Re[OF idx_N] div_eq mod_eq
+        by (intro sum.cong refl) auto
+      also have "... = (\<Sum>k<L. v $ k * Re ((T!k) $$ (i, j)))"
+        by (simp add: mult.commute)
+      finally show ?thesis .
+    qed
+    show "(\<Sum>k<L. v $ k * Re ((T!k) $$ (i, j))) = 0"
+      using rowAv_zero[OF idx_D] rowAv_unfold by simp
+  qed
+
+  have AvIm: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
+              (\<Sum>k<L. v $ k * Im ((T!k) $$ (i, j))) = 0"
+  proof -
+    fix i j assume i_n: "i < n" and j_n: "j < n"
+    define idx where "idx = N + i * n + j"
+    have idx_ge_N: "\<not> idx < N" unfolding idx_def by simp
+    have idx_D: "idx < D"
+      using idx_lt_N[OF i_n j_n] idx_def D_def by simp
+    have idx_sub: "idx - N = i * n + j" unfolding idx_def by simp
+    have div_eq: "(idx - N) div n = i" and mod_eq: "(idx - N) mod n = j"
+      using idx_div_mod[OF i_n j_n] idx_sub by auto
+    have rowAv_unfold:
+      "rowAv idx = (\<Sum>k<L. v $ k * Im ((T!k) $$ (i, j)))"
+    proof -
+      have "rowAv idx = (\<Sum>k<L. A $$ (idx, k) * v $ k)"
+        unfolding rowAv_def by simp
+      also have "... = (\<Sum>k<L. Im ((T!k) $$ (i, j)) * v $ k)"
+        using A_entry_Im[OF idx_D idx_ge_N] div_eq mod_eq
+        by (intro sum.cong refl) auto
+      also have "... = (\<Sum>k<L. v $ k * Im ((T!k) $$ (i, j)))"
+        by (simp add: mult.commute)
+      finally show ?thesis .
+    qed
+    show "(\<Sum>k<L. v $ k * Im ((T!k) $$ (i, j))) = 0"
+      using rowAv_zero[OF idx_D] rowAv_unfold by simp
+  qed
+
   have cls_zero: "cone_list_sum m p ts = 0\<^sub>m (m*p) (m*p)"
-    sorry
+  proof (rule matrix_eq_zero_via_entries[where m=m and p=p])
+    show "cone_list_sum m p ts \<in> carrier_mat (m*p) (m*p)"
+      by (rule cone_list_sum_carrier)
+  next
+    fix i j assume i_mp: "i < m*p" and j_mp: "j < m*p"
+    have i_n: "i < n" and j_n: "j < n" using i_mp j_mp n_def by auto
+
+    have entry_ts: "cone_list_sum m p ts $$ (i, j)
+                  = (\<Sum>k<length ts. complex_of_real (fst (ts!k))
+                       * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j))"
+      using cone_list_sum_entry[OF ts_typing i_mp j_mp] .
+
+    have ts_subst: "\<And>k. k < L \<Longrightarrow>
+        complex_of_real (fst (ts!k))
+          * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j)
+          = complex_of_real (v $ k) * (T!k) $$ (i, j)"
+    proof -
+      fix k assume k_lt: "k < L"
+      have a: "fst (ts ! k) = r k"
+        and b: "fst (snd (ts ! k)) = fst (pairs ! k)"
+        and c: "snd (snd (ts ! k)) = snd (pairs ! k)"
+        using ts_nth[OF k_lt] by auto
+      have rk: "r k = v $ k" unfolding r_def using k_lt by simp
+      have T_k: "T ! k = fst (pairs ! k) \<Otimes> snd (pairs ! k)"
+        using T_nth_pairs[OF k_lt] .
+      show "complex_of_real (fst (ts!k))
+              * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j)
+              = complex_of_real (v $ k) * (T!k) $$ (i, j)"
+        using a b c rk T_k by simp
+    qed
+
+    have entry_v: "cone_list_sum m p ts $$ (i, j)
+                    = (\<Sum>k<L. complex_of_real (v $ k) * (T!k) $$ (i, j))"
+    proof -
+      have "cone_list_sum m p ts $$ (i, j)
+              = (\<Sum>k<L. complex_of_real (fst (ts!k))
+                  * (fst (snd (ts!k)) \<Otimes> snd (snd (ts!k))) $$ (i, j))"
+        using entry_ts ts_len by simp
+      also have "... = (\<Sum>k<L. complex_of_real (v $ k) * (T!k) $$ (i, j))"
+        using ts_subst by (intro sum.cong refl) auto
+      finally show ?thesis .
+    qed
+
+    have decomp: "\<And>k. k < L \<Longrightarrow>
+        complex_of_real (v $ k) * (T!k) $$ (i, j)
+          = Complex (v $ k * Re ((T!k) $$ (i, j)))
+                     (v $ k * Im ((T!k) $$ (i, j)))"
+      by (simp add: complex_eq_iff)
+
+    have sum_to_complex:
+      "(\<Sum>k<L. complex_of_real (v $ k) * (T!k) $$ (i, j))
+        = Complex (\<Sum>k<L. v $ k * Re ((T!k) $$ (i, j)))
+                   (\<Sum>k<L. v $ k * Im ((T!k) $$ (i, j)))"
+    proof -
+      have "(\<Sum>k<L. complex_of_real (v $ k) * (T!k) $$ (i, j))
+              = (\<Sum>k<L. Complex (v $ k * Re ((T!k) $$ (i, j)))
+                                  (v $ k * Im ((T!k) $$ (i, j))))"
+        using decomp by (intro sum.cong refl) auto
+      also have "... = Complex (\<Sum>k<L. v $ k * Re ((T!k) $$ (i, j)))
+                                (\<Sum>k<L. v $ k * Im ((T!k) $$ (i, j)))"
+        by (induction L) (auto simp: complex_eq_iff)
+      finally show ?thesis .
+    qed
+
+    have Re_zero: "(\<Sum>k<L. v $ k * Re ((T!k) $$ (i, j))) = 0"
+      using AvRe[OF i_n j_n] .
+    have Im_zero: "(\<Sum>k<L. v $ k * Im ((T!k) $$ (i, j))) = 0"
+      using AvIm[OF i_n j_n] .
+
+    have "cone_list_sum m p ts $$ (i, j)
+            = Complex 0 0"
+      using entry_v sum_to_complex Re_zero Im_zero by simp
+    thus "cone_list_sum m p ts $$ (i, j) = 0"
+      by (simp add: complex_eq_iff)
+  qed
 
   show ?thesis
   proof (rule exI[where x = r])
