@@ -1132,6 +1132,105 @@ next
 qed
 
 
+subsection \<open>Lemma A: PSD coefficient matrix gives a CP perturbation\<close>
+
+text \<open>Since @{const amplification} only evaluates @{term \<Phi>} on
+\<open>n\<times>n\<close> blocks, two maps that agree on @{term \<open>carrier_mat n n\<close>}
+yield the same amplification, hence the same notion of complete
+positivity.\<close>
+
+lemma amplification_cong:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Xm :: "complex Matrix.mat"
+  assumes eq: "\<And>r. r \<in> carrier_mat n n \<Longrightarrow> Phi r = Psi r"
+  shows "amplification n d p Phi Xm = amplification n d p Psi Xm"
+proof (rule eq_matI)
+  show "dim_row (amplification n d p Phi Xm) = dim_row (amplification n d p Psi Xm)"
+    by (simp add: amplification_def)
+  show "dim_col (amplification n d p Phi Xm) = dim_col (amplification n d p Psi Xm)"
+    by (simp add: amplification_def)
+  fix i j
+  assume i_a: "i < dim_row (amplification n d p Psi Xm)"
+  assume j_a: "j < dim_col (amplification n d p Psi Xm)"
+  have i_lt: "i < p * d" using i_a by (simp add: amplification_def)
+  have j_lt: "j < p * d" using j_a by (simp add: amplification_def)
+  have blk_c: "block_of_mat n Xm (i div d) (j div d) \<in> carrier_mat n n"
+    by (simp add: block_of_mat_def)
+  hence phi_eq_psi: "Phi (block_of_mat n Xm (i div d) (j div d))
+           = Psi (block_of_mat n Xm (i div d) (j div d))"
+    by (rule eq)
+  have L_idx: "amplification n d p Phi Xm $$ (i, j)
+                 = Phi (block_of_mat n Xm (i div d) (j div d)) $$ (i mod d, j mod d)"
+    using i_lt j_lt by (simp add: amplification_def)
+  have R_idx: "amplification n d p Psi Xm $$ (i, j)
+                 = Psi (block_of_mat n Xm (i div d) (j div d)) $$ (i mod d, j mod d)"
+    using i_lt j_lt by (simp add: amplification_def)
+  show "amplification n d p Phi Xm $$ (i, j)
+          = amplification n d p Psi Xm $$ (i, j)"
+    using L_idx R_idx phi_eq_psi by simp
+qed
+
+lemma completely_positive_cong:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes "\<And>r. r \<in> carrier_mat n n \<Longrightarrow> Phi r = Psi r"
+  shows "completely_positive n d Phi \<longleftrightarrow> completely_positive n d Psi"
+proof -
+  have "amplification n d p Phi Xm = amplification n d p Psi Xm" for p Xm
+    by (rule amplification_cong[OF assms])
+  thus ?thesis
+    by (simp add: completely_positive_def p_positive_def)
+qed
+
+text \<open>\<^bold>\<open>Lemma A\<close>: if \<open>T\<close> is PSD then
+\<open>kraus_quad_map d Vs T\<close> is completely positive.
+
+\<^bold>\<open>Proof sketch.\<close> Use @{thm psd_kraus_decomp} to write
+\<open>T = outer_sum k us\<close>. Then by
+@{thm kraus_quad_map_outer_sum_eq_kraus_map_dim},
+\<open>kraus_quad_map d Vs T\<close> agrees on @{term \<open>carrier_mat n n\<close>}
+with \<open>kraus_map_dim d Ws\<close>, where \<open>Ws := map (kraus_combo d n Vs) us\<close>.
+Apply @{thm kraus_cp_no_tp}.\<close>
+
+lemma kraus_perturbation_cp:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Tm_c: "Tm \<in> carrier_mat (length Vs) (length Vs)"
+      and Tm_psd: "psd Tm"
+      and npos: "0 < n" and dpos: "0 < d"
+  shows "completely_positive n d (kraus_quad_map d Vs Tm)"
+proof -
+  let ?k = "length Vs"
+  obtain us :: "complex Matrix.vec list"
+    where us_len: "length us = ?k"
+      and us_dim: "\<forall>v \<in> set us. dim_vec v = ?k"
+      and outer_eq: "outer_sum ?k us = Tm"
+    using psd_kraus_decomp[OF Tm_c Tm_psd] by blast
+  let ?Ws = "map (kraus_combo d n Vs) us"
+  have Ws_c: "\<forall>W \<in> set ?Ws. W \<in> carrier_mat d n"
+  proof
+    fix W assume "W \<in> set ?Ws"
+    then obtain u where "u \<in> set us" "W = kraus_combo d n Vs u" by auto
+    thus "W \<in> carrier_mat d n"
+      using kraus_combo_carrier[OF Vs_c] by simp
+  qed
+  have agree: "\<And>r :: complex Matrix.mat.
+                  r \<in> carrier_mat n n \<Longrightarrow>
+                  kraus_quad_map d Vs Tm r = kraus_map_dim d ?Ws r"
+  proof -
+    fix r :: "complex Matrix.mat" assume r_c: "r \<in> carrier_mat n n"
+    have "kraus_quad_map d Vs Tm r
+            = kraus_quad_map d Vs (outer_sum ?k us) r"
+      using outer_eq by simp
+    also have "\<dots> = kraus_map_dim d ?Ws r"
+      using kraus_quad_map_outer_sum_eq_kraus_map_dim[OF Vs_c r_c us_dim] .
+    finally show "kraus_quad_map d Vs Tm r = kraus_map_dim d ?Ws r" .
+  qed
+  have cp_Ws: "completely_positive n d (kraus_map_dim d ?Ws)"
+    by (rule kraus_cp_no_tp[OF Ws_c npos dpos])
+  show ?thesis
+    using cp_Ws completely_positive_cong[OF agree] by simp
+qed
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
