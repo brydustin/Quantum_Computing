@@ -4067,10 +4067,211 @@ proof (rule ccontr)
     show ?thesis
       by (rule mat_trace_pairing_unique[OF M_c I_c pair_eq])
   qed
-  \<comment> \<open>Step E: \<open>S := T\<^sub>1 - 1\<^sub>m k\<close> is hermitian, non-zero, with
+  \<comment> \<open>Step E: \<open>S := T\<^sub>1 - 1\<^sub>m k\<close> is non-zero, with
       \<open>kraus_pair_sum n Vs S = 0\<^sub>m n n\<close>; this yields a complex relation
       contradicting @{thm lin_indep}.\<close>
-  show False sorry
+  let ?I = "(1\<^sub>m ?k :: complex Matrix.mat)"
+  let ?negI = "(-1 :: complex) \<cdot>\<^sub>m ?I"
+  let ?S = "T\<^sub>1 + ?negI"
+  have I_c: "?I \<in> carrier_mat ?k ?k" by simp
+  have negI_c: "?negI \<in> carrier_mat ?k ?k" by auto
+  have S_c: "?S \<in> carrier_mat ?k ?k" using T1_c negI_c by auto
+  \<comment> \<open>\<open>kraus_pair_sum n Vs S = 0\<close>.\<close>
+  have ps_S_zero: "kraus_pair_sum n Vs ?S = 0\<^sub>m n n"
+  proof -
+    have add_lin: "kraus_pair_sum n Vs ?S
+                     = kraus_pair_sum n Vs T\<^sub>1 + kraus_pair_sum n Vs ?negI"
+      by (rule kraus_pair_sum_add_A[OF Vs_c T1_c negI_c])
+    have smult_lin: "kraus_pair_sum n Vs ?negI
+                       = (-1 :: complex) \<cdot>\<^sub>m kraus_pair_sum n Vs ?I"
+      by (rule kraus_pair_sum_smult_A[OF Vs_c I_c])
+    have ps_I: "kraus_pair_sum n Vs ?I = sum_wdag_w n Vs"
+      by (rule kraus_pair_sum_one_eq_sum_wdag_w[OF Vs_c])
+    have "kraus_pair_sum n Vs ?S
+            = kraus_pair_sum n Vs T\<^sub>1
+              + (-1 :: complex) \<cdot>\<^sub>m kraus_pair_sum n Vs ?I"
+      using add_lin smult_lin by simp
+    also have "\<dots> = 1\<^sub>m n + (-1 :: complex) \<cdot>\<^sub>m sum_wdag_w n Vs"
+      using ps_T1 ps_I by simp
+    also have "\<dots> = 1\<^sub>m n + (-1 :: complex) \<cdot>\<^sub>m (1\<^sub>m n :: complex Matrix.mat)"
+      using Vs_sum_one by simp
+    also have "(1\<^sub>m n :: complex Matrix.mat) + (-1 :: complex) \<cdot>\<^sub>m 1\<^sub>m n = 0\<^sub>m n n"
+      by (rule eq_matI) auto
+    finally show ?thesis .
+  qed
+  \<comment> \<open>\<open>S \<noteq> 0\<close>: if \<open>S = 0\<close> then \<open>T\<^sub>1 = 1\<^sub>m k\<close>, so \<open>\<Phi>\<^sub>1 X = \<Phi> X\<close> on carrier,
+      contradicting \<open>\<Phi>\<^sub>1 X\<^sub>0 \<noteq> \<Phi> X\<^sub>0\<close>.\<close>
+  have S_nz: "?S \<noteq> 0\<^sub>m ?k ?k"
+  proof
+    assume S_zero: "?S = 0\<^sub>m ?k ?k"
+    \<comment> \<open>So \<open>T\<^sub>1 = 1\<^sub>m k\<close>.\<close>
+    have T1_eq_I: "T\<^sub>1 = 1\<^sub>m ?k"
+    proof (rule eq_matI)
+      show "dim_row T\<^sub>1 = dim_row (1\<^sub>m ?k :: complex Matrix.mat)" using T1_c by auto
+      show "dim_col T\<^sub>1 = dim_col (1\<^sub>m ?k :: complex Matrix.mat)" using T1_c by auto
+      fix i j assume "i < dim_row (1\<^sub>m ?k :: complex Matrix.mat)"
+                     "j < dim_col (1\<^sub>m ?k :: complex Matrix.mat)"
+      hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
+      have "?S $$ (i, j) = T\<^sub>1 $$ (i, j) + ?negI $$ (i, j)"
+        using T1_c negI_c i_lt j_lt by auto
+      moreover have "?S $$ (i, j) = 0"
+        using S_zero i_lt j_lt by simp
+      moreover have "?negI $$ (i, j) = - (1\<^sub>m ?k :: complex Matrix.mat) $$ (i, j)"
+        using I_c i_lt j_lt by auto
+      ultimately have "T\<^sub>1 $$ (i, j) = (1\<^sub>m ?k :: complex Matrix.mat) $$ (i, j)"
+        by simp
+      thus "T\<^sub>1 $$ (i, j) = (1\<^sub>m ?k :: complex Matrix.mat) $$ (i, j)" .
+    qed
+    have "\<Phi>\<^sub>1 X\<^sub>0 = kraus_quad_map d Vs T\<^sub>1 X\<^sub>0"
+      using \<Phi>1_eq_qmap[OF X\<^sub>0_c] .
+    also have "\<dots> = kraus_quad_map d Vs (1\<^sub>m ?k) X\<^sub>0"
+      using T1_eq_I by simp
+    also have "\<dots> = kraus_map_dim d Vs X\<^sub>0"
+      using kraus_quad_map_one_eq_kraus_map_dim[OF Vs_c X\<^sub>0_c] .
+    also have "\<dots> = \<Phi> X\<^sub>0"
+      using \<Phi>_eq[OF X\<^sub>0_c] by simp
+    finally have "\<Phi>\<^sub>1 X\<^sub>0 = \<Phi> X\<^sub>0" .
+    thus False using \<Phi>1_ne_at_X0 by simp
+  qed
+  \<comment> \<open>Build a complex coefficient function from \<open>S\<close>.\<close>
+  define c :: "nat \<Rightarrow> complex"
+    where "c = (\<lambda>\<kappa>. if \<kappa> < ?k * ?k then ?S $$ (\<kappa> div ?k, \<kappa> mod ?k) else 0)"
+  have c_eval: "\<And>\<kappa>. c \<kappa>
+                    = (if \<kappa> < ?k * ?k then ?S $$ (\<kappa> div ?k, \<kappa> mod ?k) else 0)"
+    by (simp add: c_def)
+  let ?B = "kraus_products Vs"
+  have B_c: "\<forall>B \<in> set ?B. B \<in> carrier_mat n n"
+    by (rule kraus_products_carrier[OF Vs_c])
+  have B_len: "length ?B = ?k * ?k"
+    by (simp add: length_kraus_products)
+  \<comment> \<open>\<open>k > 0\<close> since \<open>X\<^sub>0\<close> witnesses the non-triviality.\<close>
+  have S_nontriv: "\<exists>i j. i < ?k \<and> j < ?k \<and> ?S $$ (i, j) \<noteq> 0"
+  proof (rule ccontr)
+    assume "\<not> (\<exists>i j. i < ?k \<and> j < ?k \<and> ?S $$ (i, j) \<noteq> 0)"
+    hence all0: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> ?S $$ (i, j) = 0" by blast
+    have "?S = 0\<^sub>m ?k ?k"
+    proof (rule eq_matI)
+      show "dim_row ?S = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+        using S_c by auto
+      show "dim_col ?S = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+        using S_c by auto
+      fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+                     "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+      hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
+      show "?S $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
+        using all0[OF i_lt j_lt] i_lt j_lt by simp
+    qed
+    thus False using S_nz by simp
+  qed
+  \<comment> \<open>Extract index \<open>(i\<^sub>0, j\<^sub>0)\<close> witnessing \<open>S \<noteq> 0\<close>.\<close>
+  obtain i\<^sub>0 j\<^sub>0 where i0_lt: "i\<^sub>0 < ?k" and j0_lt: "j\<^sub>0 < ?k"
+                  and S_nz_at: "?S $$ (i\<^sub>0, j\<^sub>0) \<noteq> 0"
+    using S_nontriv by blast
+  have k_pos: "0 < ?k" using i0_lt by linarith
+  define \<kappa>\<^sub>0 where "\<kappa>\<^sub>0 = i\<^sub>0 * ?k + j\<^sub>0"
+  have k0_lt: "\<kappa>\<^sub>0 < ?k * ?k"
+  proof -
+    have ile: "Suc i\<^sub>0 \<le> ?k" using i0_lt by simp
+    have step1: "?k + i\<^sub>0 * ?k = Suc i\<^sub>0 * ?k"
+      by simp
+    have step2: "Suc i\<^sub>0 * ?k \<le> ?k * ?k"
+      by (rule mult_right_mono[OF ile]) simp
+    have step3: "i\<^sub>0 * ?k + j\<^sub>0 < ?k + i\<^sub>0 * ?k" using j0_lt by simp
+    show ?thesis unfolding \<kappa>\<^sub>0_def using step1 step2 step3 by linarith
+  qed
+  have k0_div: "\<kappa>\<^sub>0 div ?k = i\<^sub>0" unfolding \<kappa>\<^sub>0_def using j0_lt by simp
+  have k0_mod: "\<kappa>\<^sub>0 mod ?k = j\<^sub>0" unfolding \<kappa>\<^sub>0_def using j0_lt by simp
+  have c_k0: "c \<kappa>\<^sub>0 = ?S $$ (i\<^sub>0, j\<^sub>0)"
+    using c_eval[of \<kappa>\<^sub>0] k0_lt k0_div k0_mod by simp
+  have c_k0_nz: "c \<kappa>\<^sub>0 \<noteq> 0" using c_k0 S_nz_at by simp
+  \<comment> \<open>The foldr-sum of \<open>c\<close> on \<open>kraus_products Vs\<close> vanishes (per-entry argument
+      parallel to @{thm mat_lin_indep_real_neg_witness}).\<close>
+  have foldr_zero: "foldr (\<lambda>\<kappa> acc. c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>) + acc)
+                          [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
+  proof (rule eq_matI)
+    let ?fs = "foldr (\<lambda>\<kappa> acc. c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>) + acc) [0..<length ?B] (0\<^sub>m n n)"
+    let ?f = "\<lambda>\<kappa>. c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>)"
+    have term_c: "\<forall>\<kappa> < length ?B. ?f \<kappa> \<in> carrier_mat n n"
+    proof (intro allI impI)
+      fix \<kappa> assume \<kappa>_lt: "\<kappa> < length ?B"
+      have "?B!\<kappa> \<in> carrier_mat n n" using B_c \<kappa>_lt nth_mem by blast
+      thus "?f \<kappa> \<in> carrier_mat n n" by (intro smult_carrier_mat) auto
+    qed
+    have fs_c: "?fs \<in> carrier_mat n n"
+      by (rule foldr_upt_add_carrier[OF term_c])
+    show "dim_row ?fs = dim_row (0\<^sub>m n n :: complex Matrix.mat)" using fs_c by auto
+    show "dim_col ?fs = dim_col (0\<^sub>m n n :: complex Matrix.mat)" using fs_c by auto
+    fix r p assume r_a: "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)"
+               and p_a: "p < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
+    hence r_lt: "r < n" and p_lt: "p < n" by auto
+    have "?fs $$ (r, p)
+            = (\<Sum>\<kappa> = 0..<length ?B. c \<kappa> * (?B!\<kappa>) $$ (r, p))"
+    proof -
+      have idx: "\<And>\<kappa>. \<kappa> < length ?B \<Longrightarrow>
+                    (c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>)) $$ (r, p) = c \<kappa> * (?B!\<kappa>) $$ (r, p)"
+      proof -
+        fix \<kappa> assume \<kappa>_lt: "\<kappa> < length ?B"
+        have Bk_c: "?B!\<kappa> \<in> carrier_mat n n" using B_c \<kappa>_lt nth_mem by blast
+        have r_dim: "r < dim_row (?B!\<kappa>)" using Bk_c r_lt by auto
+        have p_dim: "p < dim_col (?B!\<kappa>)" using Bk_c p_lt by auto
+        show "(c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>)) $$ (r, p) = c \<kappa> * (?B!\<kappa>) $$ (r, p)"
+          using index_smult_mat(1)[OF r_dim p_dim] .
+      qed
+      have "?fs $$ (r, p) = (\<Sum>\<kappa> = 0..<length ?B. (c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>)) $$ (r, p))"
+        using foldr_upt_add_index[OF term_c r_lt p_lt] .
+      also have "\<dots> = (\<Sum>\<kappa> = 0..<length ?B. c \<kappa> * (?B!\<kappa>) $$ (r, p))"
+        by (rule sum.cong[OF refl]) (auto simp: idx)
+      finally show ?thesis .
+    qed
+    also have "\<dots> = (\<Sum>\<kappa> = 0..<?k * ?k. c \<kappa> * (?B!\<kappa>) $$ (r, p))"
+      using B_len by simp
+    also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                       c (i * ?k + j) * (?B!(i * ?k + j)) $$ (r, p))"
+      by (rule sum_split_prod_atLeastLessThan)
+    also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                       ?S $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, p))"
+    proof (rule sum.cong[OF refl])
+      fix i assume "i \<in> {0..<?k}" hence i_lt: "i < ?k" by simp
+      show "(\<Sum>j = 0..<?k.
+              c (i * ?k + j) * (?B!(i * ?k + j)) $$ (r, p))
+            = (\<Sum>j = 0..<?k.
+                ?S $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, p))"
+      proof (rule sum.cong[OF refl])
+        fix j assume "j \<in> {0..<?k}" hence j_lt: "j < ?k" by simp
+        have kappa_lt: "i * ?k + j < ?k * ?k"
+        proof -
+          have ile: "Suc i \<le> ?k" using i_lt by simp
+          have "?k + i * ?k = Suc i * ?k" by simp
+          moreover have "Suc i * ?k \<le> ?k * ?k"
+            by (rule mult_right_mono[OF ile]) simp
+          moreover have "i * ?k + j < ?k + i * ?k" using j_lt by simp
+          ultimately show ?thesis by linarith
+        qed
+        have div_h: "(i * ?k + j) div ?k = i"
+          using j_lt by (simp add: add.commute)
+        have mod_h: "(i * ?k + j) mod ?k = j"
+          using j_lt by simp
+        have c_idx: "c (i * ?k + j) = ?S $$ (i, j)"
+          using c_eval[of "i * ?k + j"] kappa_lt div_h mod_h by simp
+        have B_idx: "?B!(i * ?k + j) = (Vs!j)\<^sup>\<dagger> * Vs!i"
+          using kraus_products_nth[OF i_lt j_lt] .
+        show "c (i * ?k + j) * (?B!(i * ?k + j)) $$ (r, p)
+                = ?S $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, p)"
+          using c_idx B_idx by simp
+      qed
+    qed
+    also have "\<dots> = kraus_pair_sum n Vs ?S $$ (r, p)"
+      using kraus_pair_sum_index[OF Vs_c r_lt p_lt] by simp
+    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat) $$ (r, p)"
+      using ps_S_zero by simp
+    finally show "?fs $$ (r, p) = (0\<^sub>m n n :: complex Matrix.mat) $$ (r, p)" .
+  qed
+  \<comment> \<open>Apply lin\_indep to get \<open>c \<kappa>\<^sub>0 = 0\<close>, contradicting \<open>c_k0_nz\<close>.\<close>
+  have all_c_zero: "\<forall>\<kappa> < length ?B. c \<kappa> = 0"
+    using lin_indep foldr_zero
+    unfolding mat_lin_indep_complex_def by blast
+  hence "c \<kappa>\<^sub>0 = 0" using k0_lt B_len by simp
+  thus False using c_k0_nz by simp
 qed
 
 
