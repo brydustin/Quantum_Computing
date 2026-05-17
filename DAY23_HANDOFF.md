@@ -187,9 +187,9 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `extreme_CPTP_carrier` | ✅ defined (replaces vacuously-false `extreme_CPTP`) |
 | `Tr_mat_unit_mult`, `mat_trace_pairing_unique` | ✅ proved |
 | `cp_radon_nikodym` | ❌ `sorry` (axiom; substantial classical result) |
-| `choi_theorem_3_cptp_forward_complex` | ✅ skeleton **end-to-end**; sorries on CP-property gaps + R-N axiom |
-| `choi_theorem_3_cptp`         | ❌ `sorry` — full iff (real-coef version is asymmetric) |
-| `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
+| `choi_theorem_3_cptp_forward_complex` | ✅ proved modulo R-N axiom + `Phi_i_range` sorries (CP-property gaps closed) |
+| `choi_theorem_3_cptp`         | ✅ \<^bold>forward direction proved\<^bold>; reverse sorried with documented `extreme_CPTP` vacuity issue |
+| `choi_theorem_3` (UCP form)   | ❌ `sorry` — documented convention mismatch (project uses CPTP-side products) |
 
 \<^bold>Forward direction status (\<open>mat_lin_indep_complex \<Longrightarrow> extreme_CPTP_carrier\<close>):</br>
 Skeleton fully assembled in `choi_theorem_3_cptp_forward_complex`, targeting
