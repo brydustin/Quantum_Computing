@@ -249,29 +249,81 @@ qed
 
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
-text \<open>Choi (1975), Theorem 3: a UCP map \<open>\<Phi> : M\<^sub>n \<rightarrow> M\<^sub>d\<close> is an
-extreme point of \<open>UCP(n,d)\<close> if and only if, for any (equivalently:
-every) Kraus representation \<open>\<Phi>(X) = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close>, the
-matrices \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i : 1 \<le> i,j \<le> length Vs}\<close> are linearly
-independent in \<open>M\<^sub>n\<close>.
+text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
+extreme-point characterisation in terms of \<^emph>\<open>linear independence
+of certain products of Kraus operators\<close>.  Which products appear
+depends on which of the two natural normalisations the underlying
+convex set uses:
 
-We state it as a single theorem parametrised by a fixed Kraus
+  \<^item> \<^bold>\<open>CPTP\<close> (\<open>\<Sum> V\<^sub>i\<^sup>\<dagger> V\<^sub>i = I\<^sub>n\<close>): products are
+    \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> in \<open>M\<^sub>n\<close>.  The perturbation
+    \<open>\<Phi>\<^sub>\<epsilon>(X) = \<Sum>(\<delta>\<^sub>{ij} + \<epsilon> a\<^sub>{ij}) V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> stays
+    trace-preserving iff \<open>\<Sum> a\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i = 0\<close>.
+  \<^item> \<^bold>\<open>UCP\<close>  (\<open>\<Sum> V\<^sub>i V\<^sub>i\<^sup>\<dagger> = I\<^sub>d\<close>): products are
+    \<open>{V\<^sub>i V\<^sub>j\<^sup>\<dagger>}\<close> in \<open>M\<^sub>d\<close>.  Same perturbation stays
+    unital iff \<open>\<Sum> a\<^sub>{ij} V\<^sub>i V\<^sub>j\<^sup>\<dagger> = 0\<close>.
+
+The two are interchanged by the Hilbert\<dash>Schmidt adjoint
+\<open>\<Phi> \<mapsto> \<Phi>\<^sup>*\<close>; this provides a UCP \<leftrightarrow> CPTP bijection.
+
+We state both versions, parametrised by a fixed Kraus
 representation; the "any/every" character follows from the
 unitary-freedom of Kraus reps (Day 22 / "Kraus uniqueness"),
 which is not yet formalised in this development.
 
-\<^bold>\<open>Forward (lin. indep. \<Rightarrow> extreme)\<close>: given any UCP midpoint
-splitting \<open>\<Phi> = \<onehalf>\<Phi>\<^sub>1 + \<onehalf>\<Phi>\<^sub>2\<close>, both \<open>\<Phi>\<^sub>i\<close>
-admit Kraus reps that factor through \<open>Vs\<close> (Radon-Nikodym for
-CP maps); unitality + lin. indep. of the products forces the
-factoring matrix to be a multiple of the identity, hence
-\<open>\<Phi>\<^sub>1 = \<Phi>\<^sub>2 = \<Phi>\<close>.
+\<^bold>\<open>Reverse direction (extreme \<Rightarrow> lin. indep.)\<close>: contrapositive.
+For the CPTP version: if \<open>\<Sum> a\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i = 0\<close> non-trivially,
+define \<open>\<Phi>\<^sub>\<epsilon>\<close> as above; for small hermitian \<open>a\<close>, both
+\<open>\<Phi>\<^sub>\<plusminus>\<epsilon>\<close> are CPTP and distinct, giving a non-trivial midpoint
+of \<open>\<Phi>\<close>.
 
-\<^bold>\<open>Reverse (extreme \<Rightarrow> lin. indep.)\<close>: contrapositive.  If
-\<open>\<Sum>\<^sub>{i,j} a\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i = 0\<close> non-trivially, define
-\<open>\<Phi>\<^sub>\<epsilon>(X) = \<Phi>(X) + \<epsilon> \<Sum>\<^sub>{i,j} a\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>; for small
-hermitian \<open>a\<close>, both \<open>\<Phi>\<^sub>\<plusminus>\<epsilon>\<close> are UCP and distinct, yielding
-a non-trivial midpoint of \<open>\<Phi>\<close>.\<close>
+\<^bold>\<open>Forward direction (lin. indep. \<Rightarrow> extreme)\<close>: requires
+Radon\<dash>Nikodym for CP maps (every CP \<open>\<Psi> \<le>\<^sub>{cp} \<lambda>\<Phi>\<close> has
+\<open>\<Psi>(X) = \<Sum> T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> for a PSD matrix \<open>T\<close>) which
+is itself a substantial development.\<close>
+
+text \<open>The Heisenberg-dual definitions for the CPTP / Heisenberg
+side: a \<open>cptp_kraus_rep n d \<Phi> Vs\<close> is the trace-preserving
+Kraus condition, using the existing \<open>kraus_operators\<close> predicate
+from Day 17.\<close>
+
+definition cptp_kraus_rep ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow>
+       complex Matrix.mat list \<Rightarrow> bool"
+where
+  "cptp_kraus_rep n d \<Phi> Vs \<equiv>
+     kraus_operators n d Vs \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
+
+text \<open>Extreme points of \<open>CPTP(n,d)\<close>: analog of \<open>extreme_UCP\<close>.\<close>
+
+definition extreme_CPTP ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
+where
+  "extreme_CPTP n d \<Phi> \<equiv>
+     \<Phi> \<in> CPTP n d \<and>
+     \<not> (\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
+           \<Phi>\<^sub>1 \<noteq> \<Phi> \<and> \<Phi> \<noteq> \<Phi>\<^sub>2 \<and>
+           (\<forall>X. X \<in> carrier_mat n n
+                  \<longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
+                            + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X))"
+
+text \<open>The CPTP form of Choi's Theorem 3: \<open>\<Phi>\<close> is extreme in CPTP iff
+the products \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> are linearly independent in \<open>M\<^sub>n\<close>.\<close>
+
+theorem choi_theorem_3_cptp:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Vs :: "complex Matrix.mat list"
+  assumes npos: "0 < n" and dpos: "0 < d"
+      and \<Phi>_in: "\<Phi> \<in> CPTP n d"
+      and rep:  "cptp_kraus_rep n d \<Phi> Vs"
+  shows "extreme_CPTP n d \<Phi> \<longleftrightarrow>
+           mat_lin_indep_real n (kraus_products Vs)"
+  sorry
+
+text \<open>The UCP form (correct convention: products live in \<open>M\<^sub>d\<close>).
+This requires a parallel \<open>mat_lin_indep_real_d\<close>-style definition
+or a re-parametrised \<open>kraus_products\<close>; left for future work.\<close>
 
 theorem choi_theorem_3:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -281,7 +333,7 @@ theorem choi_theorem_3:
       and rep:  "ucp_kraus_rep n d \<Phi> Vs"
   shows "extreme_UCP n d \<Phi> \<longleftrightarrow>
            mat_lin_indep_real n (kraus_products Vs)"
-  sorry
+  oops
 
 
 subsection \<open>Sanity / easy facts about extreme UCP\<close>
