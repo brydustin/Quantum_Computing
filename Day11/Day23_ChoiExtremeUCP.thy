@@ -587,6 +587,284 @@ proof -
 qed
 
 
+text \<open>A direct per-entry formula for matrix products.\<close>
+
+lemma mat_mult_index_sum:
+  assumes A_c: "A \<in> carrier_mat p q"
+      and B_c: "B \<in> carrier_mat q s"
+      and r_lt: "r < p" and c_lt: "c < s"
+  shows "(A * B) $$ (r, c) = (\<Sum>k = 0..<q. A $$ (r, k) * B $$ (k, c))"
+  using A_c B_c r_lt c_lt
+  by (simp add: times_mat_def scalar_prod_def lessThan_atLeast0)
+
+text \<open>Per-entry formula for \<open>W * rho\<close>, where \<open>W = kraus_combo d n Vs u\<close>.\<close>
+
+lemma kraus_combo_times_rho_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and r_lt: "r < d" and k_lt: "k < n"
+  shows "(kraus_combo d n Vs u * rho) $$ (r, k)
+           = (\<Sum>i = 0..<length Vs. u $ i * (Vs!i * rho) $$ (r, k))"
+proof -
+  let ?W = "kraus_combo d n Vs u"
+  let ?N = "length Vs"
+  have W_c: "?W \<in> carrier_mat d n"
+    by (rule kraus_combo_carrier[OF Vs_c])
+  have "(?W * rho) $$ (r, k)
+          = (\<Sum>b = 0..<n. ?W $$ (r, b) * rho $$ (b, k))"
+    by (rule mat_mult_index_sum[OF W_c rho_c r_lt k_lt])
+  also have "\<dots> = (\<Sum>b = 0..<n.
+                     (\<Sum>i = 0..<?N. u $ i * (Vs!i) $$ (r, b)) * rho $$ (b, k))"
+  proof (intro sum.cong refl)
+    fix b assume "b \<in> {0..<n}"
+    hence b_lt: "b < n" by simp
+    have "?W $$ (r, b) = (\<Sum>i = 0..<?N. u $ i * (Vs!i) $$ (r, b))"
+      by (rule kraus_combo_index[OF Vs_c r_lt b_lt])
+    thus "?W $$ (r, b) * rho $$ (b, k)
+            = (\<Sum>i = 0..<?N. u $ i * (Vs!i) $$ (r, b)) * rho $$ (b, k)"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>b = 0..<n. \<Sum>i = 0..<?N.
+                     (u $ i * (Vs!i) $$ (r, b)) * rho $$ (b, k))"
+    by (simp add: sum_distrib_right)
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>b = 0..<n.
+                     (u $ i * (Vs!i) $$ (r, b)) * rho $$ (b, k))"
+    by (rule sum.swap)
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>b = 0..<n.
+                     u $ i * ((Vs!i) $$ (r, b) * rho $$ (b, k)))"
+  proof (intro sum.cong refl)
+    fix i b assume "i \<in> {0..<?N}" "b \<in> {0..<n}"
+    show "(u $ i * (Vs!i) $$ (r, b)) * rho $$ (b, k)
+            = u $ i * ((Vs!i) $$ (r, b) * rho $$ (b, k))"
+      by (simp add: algebra_simps)
+  qed
+  also have "\<dots> = (\<Sum>i = 0..<?N. u $ i *
+                       (\<Sum>b = 0..<n. (Vs!i) $$ (r, b) * rho $$ (b, k)))"
+    by (simp add: sum_distrib_left)
+  also have "\<dots> = (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, k))"
+  proof (intro sum.cong refl)
+    fix i assume "i \<in> {0..<?N}"
+    hence i_lt: "i < ?N" by simp
+    have Vi_c: "Vs!i \<in> carrier_mat d n"
+      using Vs_c i_lt nth_mem by blast
+    have "(Vs!i * rho) $$ (r, k)
+            = (\<Sum>b = 0..<n. (Vs!i) $$ (r, b) * rho $$ (b, k))"
+      by (rule mat_mult_index_sum[OF Vi_c rho_c r_lt k_lt])
+    thus "u $ i * (\<Sum>b = 0..<n. (Vs!i) $$ (r, b) * rho $$ (b, k))
+            = u $ i * (Vs!i * rho) $$ (r, k)"
+      by simp
+  qed
+  finally show ?thesis .
+qed
+
+text \<open>The full quadratic per-entry formula:
+\<open>(W rho W\<^sup>\<dagger>) $$ (r,c) = \<Sum>\<^sub>{i,j} u\<^sub>i \<bar>u\<^sub>j\<bar> (V\<^sub>i rho V\<^sub>j\<^sup>\<dagger>) $$ (r,c)\<close>.\<close>
+
+lemma kraus_combo_quad_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "(kraus_combo d n Vs u * rho * ((kraus_combo d n Vs u)\<^sup>\<dagger>)) $$ (r, c)
+           = (\<Sum>i = 0..<length Vs. \<Sum>j = 0..<length Vs.
+                u $ i * cnj (u $ j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+proof -
+  let ?W = "kraus_combo d n Vs u"
+  let ?N = "length Vs"
+  have W_c: "?W \<in> carrier_mat d n"
+    by (rule kraus_combo_carrier[OF Vs_c])
+  have Wdag_c: "?W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using W_c by (rule dagger_carrier)
+  have Wrho_c: "?W * rho \<in> carrier_mat d n"
+    using W_c rho_c by auto
+  \<comment> \<open>Expand the outer matrix product.\<close>
+  have outer_idx: "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+                     = (\<Sum>a = 0..<n. (?W * rho) $$ (r, a) * (?W\<^sup>\<dagger>) $$ (a, c))"
+    by (rule mat_mult_index_sum[OF Wrho_c Wdag_c r_lt c_lt])
+  \<comment> \<open>Convert the dagger entry to a conjugate.\<close>
+  have Wdag_idx: "\<And>a. a < n \<Longrightarrow> (?W\<^sup>\<dagger>) $$ (a, c) = cnj (?W $$ (c, a))"
+    using W_c c_lt by (simp add: dagger_def)
+  \<comment> \<open>Substitute the per-entry formula for the inner product \<open>W * rho\<close>.\<close>
+  have Wrho_idx: "\<And>a. a < n \<Longrightarrow>
+                    (?W * rho) $$ (r, a)
+                      = (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))"
+    using kraus_combo_times_rho_index[OF Vs_c rho_c r_lt] by blast
+  \<comment> \<open>And for \<open>W\<close> at the dagger argument.\<close>
+  have W_at_c: "\<And>a. a < n \<Longrightarrow>
+                  ?W $$ (c, a) = (\<Sum>j = 0..<?N. u $ j * (Vs!j) $$ (c, a))"
+    using kraus_combo_index[OF Vs_c c_lt] by blast
+  \<comment> \<open>Step 1: rewrite the per-\<open>a\<close> term inside the sum.\<close>
+  have per_a: "\<And>a. a < n \<Longrightarrow>
+                 (?W * rho) $$ (r, a) * (?W\<^sup>\<dagger>) $$ (a, c)
+                 = (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+                   * cnj (\<Sum>j = 0..<?N. u $ j * (Vs!j) $$ (c, a))"
+    using Wrho_idx Wdag_idx W_at_c by simp
+  have step1: "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+                 = (\<Sum>a = 0..<n.
+                      (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+                      * cnj (\<Sum>j = 0..<?N. u $ j * (Vs!j) $$ (c, a)))"
+  proof -
+    have "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+            = (\<Sum>a = 0..<n. (?W * rho) $$ (r, a) * (?W\<^sup>\<dagger>) $$ (a, c))"
+      using outer_idx .
+    also have "\<dots> = (\<Sum>a = 0..<n.
+                       (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+                       * cnj (\<Sum>j = 0..<?N. u $ j * (Vs!j) $$ (c, a)))"
+      by (intro sum.cong refl) (auto simp: per_a)
+    finally show ?thesis .
+  qed
+  \<comment> \<open>Step 2: per-\<open>a\<close>, expand product of two sums and pull out scalars.
+      We split into two pieces: (a) push \<open>cnj\<close> through the sum, and (b)
+      distribute the product of two sums and reorder.\<close>
+  have cnj_push: "\<And>a. cnj (\<Sum>j = 0..<?N. u $ j * (Vs!j) $$ (c, a))
+                       = (\<Sum>j = 0..<?N. cnj (u $ j) * cnj ((Vs!j) $$ (c, a)))"
+    by (simp add: complex_cnj_mult)
+  have per_a2: "\<And>a. a < n \<Longrightarrow>
+                  (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+                  * (\<Sum>j = 0..<?N. cnj (u $ j) * cnj ((Vs!j) $$ (c, a)))
+                = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                     u $ i * cnj (u $ j) *
+                     ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+  proof -
+    fix a assume a_lt: "a < n"
+    have "(\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+            * (\<Sum>j = 0..<?N. cnj (u $ j) * cnj ((Vs!j) $$ (c, a)))
+          = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+               (u $ i * (Vs!i * rho) $$ (r, a))
+               * (cnj (u $ j) * cnj ((Vs!j) $$ (c, a))))"
+      by (simp add: sum_product)
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       u $ i * cnj (u $ j) *
+                       ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+    proof (intro sum.cong refl)
+      fix i j assume "i \<in> {0..<?N}" "j \<in> {0..<?N}"
+      show "(u $ i * (Vs!i * rho) $$ (r, a))
+              * (cnj (u $ j) * cnj ((Vs!j) $$ (c, a)))
+            = u $ i * cnj (u $ j) *
+              ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a)))"
+        by (simp add: algebra_simps)
+    qed
+    finally show "(\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+                  * (\<Sum>j = 0..<?N. cnj (u $ j) * cnj ((Vs!j) $$ (c, a)))
+                  = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       u $ i * cnj (u $ j) *
+                       ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))" .
+  qed
+  have step2: "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+                 = (\<Sum>a = 0..<n. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      u $ i * cnj (u $ j) *
+                      ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+  proof -
+    have "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+            = (\<Sum>a = 0..<n.
+                 (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+                 * cnj (\<Sum>j = 0..<?N. u $ j * (Vs!j) $$ (c, a)))"
+      using step1 .
+    also have "\<dots> = (\<Sum>a = 0..<n.
+                       (\<Sum>i = 0..<?N. u $ i * (Vs!i * rho) $$ (r, a))
+                       * (\<Sum>j = 0..<?N. cnj (u $ j) * cnj ((Vs!j) $$ (c, a))))"
+      by (intro sum.cong refl) (simp add: cnj_push)
+    also have "\<dots> = (\<Sum>a = 0..<n. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       u $ i * cnj (u $ j) *
+                       ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+      by (intro sum.cong refl) (auto simp: per_a2)
+    finally show ?thesis .
+  qed
+  \<comment> \<open>Step 3: swap sums.\<close>
+  have step3: "(\<Sum>a = 0..<n. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                  u $ i * cnj (u $ j) *
+                  ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))
+               = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N. \<Sum>a = 0..<n.
+                    u $ i * cnj (u $ j) *
+                    ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+  proof -
+    have "(\<Sum>a = 0..<n. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+             u $ i * cnj (u $ j) *
+             ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))
+          = (\<Sum>i = 0..<?N. \<Sum>a = 0..<n. \<Sum>j = 0..<?N.
+                u $ i * cnj (u $ j) *
+                ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+      by (rule sum.swap)
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N. \<Sum>a = 0..<n.
+                       u $ i * cnj (u $ j) *
+                       ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+    proof (rule sum.cong[OF refl])
+      fix i assume "i \<in> {0..<?N}"
+      show "(\<Sum>a = 0..<n. \<Sum>j = 0..<?N.
+               u $ i * cnj (u $ j) *
+               ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))
+            = (\<Sum>j = 0..<?N. \<Sum>a = 0..<n.
+                u $ i * cnj (u $ j) *
+                ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+        by (rule sum.swap)
+    qed
+    finally show ?thesis .
+  qed
+  \<comment> \<open>Step 4: pull out the \<open>u\<^sub>i \<bar>u\<^sub>j\<bar>\<close> scalar from the \<open>a\<close>-sum.\<close>
+  have step4: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N. \<Sum>a = 0..<n.
+                  u $ i * cnj (u $ j) *
+                  ((Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))
+               = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                  u $ i * cnj (u $ j) *
+                  (\<Sum>a = 0..<n.
+                    (Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+    by (simp add: sum_distrib_left)
+  \<comment> \<open>Step 5: collapse the \<open>a\<close>-sum into a matrix product entry.\<close>
+  have step5: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                  (\<Sum>a = 0..<n.
+                     (Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a)))
+                  = (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
+  proof -
+    fix i j assume i_lt: "i < ?N" and j_lt: "j < ?N"
+    have Vi_c: "Vs!i \<in> carrier_mat d n"
+      using Vs_c i_lt nth_mem by blast
+    have Vj_c: "Vs!j \<in> carrier_mat d n"
+      using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d"
+      using Vj_c by (rule dagger_carrier)
+    have Virho_c: "Vs!i * rho \<in> carrier_mat d n"
+      using Vi_c rho_c by auto
+    have "(Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+            = (\<Sum>a = 0..<n.
+                 (Vs!i * rho) $$ (r, a) * ((Vs!j)\<^sup>\<dagger>) $$ (a, c))"
+      by (rule mat_mult_index_sum[OF Virho_c Vjd_c r_lt c_lt])
+    also have "\<dots> = (\<Sum>a = 0..<n.
+                       (Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a)))"
+    proof (intro sum.cong refl)
+      fix a assume "a \<in> {0..<n}"
+      hence a_lt: "a < n" by simp
+      have "((Vs!j)\<^sup>\<dagger>) $$ (a, c) = cnj ((Vs!j) $$ (c, a))"
+        using Vj_c c_lt a_lt by (simp add: dagger_def)
+      thus "(Vs!i * rho) $$ (r, a) * ((Vs!j)\<^sup>\<dagger>) $$ (a, c)
+             = (Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))"
+        by simp
+    qed
+    finally show "(\<Sum>a = 0..<n.
+                     (Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a)))
+                  = (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
+      by simp
+  qed
+  \<comment> \<open>Combine.\<close>
+  have combined: "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+                    = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                         u $ i * cnj (u $ j) *
+                         (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+  proof -
+    have "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+            = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                u $ i * cnj (u $ j) *
+                (\<Sum>a = 0..<n.
+                  (Vs!i * rho) $$ (r, a) * cnj ((Vs!j) $$ (c, a))))"
+      using step2 step3 step4 by simp
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       u $ i * cnj (u $ j) *
+                       (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+      by (intro sum.cong refl) (auto simp: step5)
+    finally show ?thesis .
+  qed
+  show ?thesis using combined .
+qed
+
+
 text \<open>Linearity of @{const kraus_quad_map} in the coefficient matrix.\<close>
 
 lemma kraus_quad_map_add_Tm:
