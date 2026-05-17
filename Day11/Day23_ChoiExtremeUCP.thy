@@ -2724,12 +2724,292 @@ lemma kraus_quad_map_nonzero_witness:
 
 text \<open>Trace-preservation lemma for @{const kraus_quad_map}.
 
-\<^bold>\<open>Proof sketch (currently \<open>sorry\<close>'d).\<close>
-\<open>Tr (kraus_quad_map d Vs T \<rho>) = \<Sum>\<^sub>{i,j} T\<^sub>{ij} Tr (V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>)
-                              = \<Sum>\<^sub>{i,j} T\<^sub>{ij} Tr (V\<^sub>j\<^sup>\<dagger> V\<^sub>i \<rho>)\<close> [cyclicity]
-\<open>= Tr ((\<Sum> T\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i) \<rho>) = Tr (kraus_pair_sum n Vs T \<cdot> \<rho>) = Tr (\<rho>)\<close>,
-the last step using \<open>kraus_pair_sum n Vs T = 1\<^sub>m n\<close>. The full Isabelle proof
-plumbs the per-entry sum manipulations and uses @{thm Tr_cyclic}.\<close>
+The proof shows
+\<open>Tr (kraus_quad_map d Vs T \<rho>) = Tr (kraus_pair_sum n Vs T * \<rho>)\<close>
+by per-entry sum manipulation and one application of @{thm Tr_cyclic}
+to flip \<open>V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>\<close> into \<open>V\<^sub>j\<^sup>\<dagger> V\<^sub>i \<rho>\<close>; the
+TP conclusion follows when the pair-sum equals \<open>1\<^sub>m n\<close>.\<close>
+
+lemma Tr_kraus_quad_map_eq:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Tmat_c: "Tmat \<in> carrier_mat (length Vs) (length Vs)"
+      and rho_c: "rho \<in> carrier_mat n n"
+  shows "Tr (kraus_quad_map d Vs Tmat rho)
+           = Tr (kraus_pair_sum n Vs Tmat * rho)"
+proof -
+  let ?N = "length Vs"
+  let ?M = "kraus_quad_map d Vs Tmat rho"
+  let ?P = "kraus_pair_sum n Vs Tmat"
+  have M_c: "?M \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have P_c: "?P \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have Prho_c: "?P * rho \<in> carrier_mat n n"
+    using P_c rho_c by auto
+  \<comment> \<open>Common quantity: \<open>S := \<Sum>\<^sub>{i,j} T\<^sub>{ij} Tr (V\<^sub>j\<^sup>\<dagger> V\<^sub>i * \<rho>)\<close>.\<close>
+  define S where
+    "S = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+            Tmat $$ (i,j) * Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho))"
+  \<comment> \<open>LHS.\<close>
+  have lhs_eq_S: "Tr ?M = S"
+  proof -
+    have M_dr: "dim_row ?M = d" using M_c by auto
+    have M_dc: "dim_col ?M = d" using M_c by auto
+    have "Tr ?M = (\<Sum>r < d. if r < d then ?M $$ (r, r) else 0)"
+      unfolding Tr_def using M_dr M_dc by simp
+    also have "\<dots> = (\<Sum>r = 0..<d. ?M $$ (r, r))"
+      by (simp add: lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>r = 0..<d. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))"
+      by (rule sum.cong[OF refl])
+         (auto simp: kraus_quad_map_index[OF Vs_c rho_c])
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N. \<Sum>r = 0..<d.
+                       Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))"
+    proof -
+      have a: "(\<Sum>r = 0..<d. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                  Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))
+              = (\<Sum>i = 0..<?N. \<Sum>r = 0..<d. \<Sum>j = 0..<?N.
+                  Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))"
+        by (rule sum.swap)
+      have b: "(\<Sum>i = 0..<?N. \<Sum>r = 0..<d. \<Sum>j = 0..<?N.
+                  Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))
+              = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N. \<Sum>r = 0..<d.
+                  Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))"
+      proof (rule sum.cong[OF refl])
+        fix i assume "i \<in> {0..<?N}"
+        show "(\<Sum>r = 0..<d. \<Sum>j = 0..<?N.
+                 Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))
+                = (\<Sum>j = 0..<?N. \<Sum>r = 0..<d.
+                     Tmat $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))"
+          by (rule sum.swap)
+      qed
+      show ?thesis using a b by simp
+    qed
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tmat $$ (i, j) *
+                       (\<Sum>r = 0..<d. (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r)))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tmat $$ (i, j) * Tr (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)))"
+    proof (intro sum.cong refl)
+      fix i j assume "i \<in> {0..<?N}" "j \<in> {0..<?N}"
+      hence i_lt: "i < ?N" and j_lt: "j < ?N" by simp_all
+      have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+      have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+      have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+      have prod_c: "Vs!i * rho * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+        using Vi_c rho_c Vjd_c by (intro mult_carrier_mat) auto
+      have prod_dr: "dim_row (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) = d" using prod_c by auto
+      have prod_dc: "dim_col (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) = d" using prod_c by auto
+      have "Tr (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))
+              = (\<Sum>r < d.
+                  if r < d then (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r) else 0)"
+        unfolding Tr_def using prod_dr prod_dc by simp
+      also have "\<dots> = (\<Sum>r = 0..<d. (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))"
+        by (simp add: lessThan_atLeast0)
+      finally have tr_eq: "Tr (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))
+                             = (\<Sum>r = 0..<d. (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))" .
+      show "Tmat $$ (i, j) *
+              (\<Sum>r = 0..<d. (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, r))
+            = Tmat $$ (i, j) * Tr (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
+        using tr_eq by simp
+    qed
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tmat $$ (i, j) * Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho))"
+    proof (intro sum.cong refl)
+      fix i j assume "i \<in> {0..<?N}" "j \<in> {0..<?N}"
+      hence i_lt: "i < ?N" and j_lt: "j < ?N" by simp_all
+      have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+      have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+      have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+      have VirhoVjd_c: "Vs!i * rho * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+        using Vi_c rho_c Vjd_c by (intro mult_carrier_mat) auto
+      have ViRho_c: "Vs!i * rho \<in> carrier_mat d n"
+        using Vi_c rho_c by auto
+      \<comment> \<open>Group as \<open>(V\<^sub>i * \<rho>) * V\<^sub>j\<^sup>\<dagger>\<close>.\<close>
+      have group1: "Vs!i * rho * ((Vs!j)\<^sup>\<dagger>) = (Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>)"
+        by simp
+      have dims1: "dim_col (Vs!i * rho) = dim_row ((Vs!j)\<^sup>\<dagger>)"
+      proof -
+        have "dim_col (Vs!i * rho) = n" using ViRho_c by auto
+        moreover have "dim_row ((Vs!j)\<^sup>\<dagger>) = n" using Vjd_c by auto
+        ultimately show ?thesis by simp
+      qed
+      have dims2: "dim_row (Vs!i * rho) = dim_col ((Vs!j)\<^sup>\<dagger>)"
+      proof -
+        have "dim_row (Vs!i * rho) = d" using ViRho_c by auto
+        moreover have "dim_col ((Vs!j)\<^sup>\<dagger>) = d" using Vjd_c by auto
+        ultimately show ?thesis by simp
+      qed
+      have cyc1: "Tr ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>))
+                    = Tr ((Vs!j)\<^sup>\<dagger> * (Vs!i * rho))"
+        using Tr_cyclic[OF dims1 dims2] .
+      \<comment> \<open>And rewrite \<open>V\<^sub>j\<^sup>\<dagger> * (V\<^sub>i * \<rho>)\<close> as \<open>V\<^sub>j\<^sup>\<dagger> * V\<^sub>i * \<rho>\<close>.\<close>
+      have reassoc: "(Vs!j)\<^sup>\<dagger> * (Vs!i * rho) = (Vs!j)\<^sup>\<dagger> * Vs!i * rho"
+        using Vjd_c Vi_c rho_c by (metis assoc_mult_mat)
+      have "Tr (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) = Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho)"
+        using cyc1 reassoc group1 by simp
+      thus "Tmat $$ (i, j) * Tr (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))
+              = Tmat $$ (i, j) * Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho)"
+        by simp
+    qed
+    finally show ?thesis unfolding S_def .
+  qed
+  \<comment> \<open>RHS.\<close>
+  have rhs_eq_S: "Tr (?P * rho) = S"
+  proof -
+    have Prho_dr: "dim_row (?P * rho) = n" using Prho_c by auto
+    have Prho_dc: "dim_col (?P * rho) = n" using Prho_c by auto
+    have "Tr (?P * rho) = (\<Sum>r < n. if r < n then (?P * rho) $$ (r, r) else 0)"
+      unfolding Tr_def using Prho_dr Prho_dc by simp
+    also have "\<dots> = (\<Sum>r = 0..<n. (?P * rho) $$ (r, r))"
+      by (simp add: lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>r = 0..<n. \<Sum>s = 0..<n. ?P $$ (r, s) * rho $$ (s, r))"
+    proof (intro sum.cong refl)
+      fix r assume "r \<in> {0..<n}" hence r_lt: "r < n" by simp
+      show "(?P * rho) $$ (r, r)
+              = (\<Sum>s = 0..<n. ?P $$ (r, s) * rho $$ (s, r))"
+        by (rule mat_mult_index_sum[OF P_c rho_c r_lt r_lt])
+    qed
+    also have "\<dots> = (\<Sum>r = 0..<n. \<Sum>s = 0..<n.
+                       (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                         Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s))
+                       * rho $$ (s, r))"
+    proof (intro sum.cong refl)
+      fix r s assume "r \<in> {0..<n}" "s \<in> {0..<n}"
+      hence r_lt: "r < n" and s_lt: "s < n" by simp_all
+      have "?P $$ (r, s)
+              = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                   Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s))"
+        using kraus_pair_sum_index[OF Vs_c r_lt s_lt] .
+      thus "?P $$ (r, s) * rho $$ (s, r)
+              = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                   Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s))
+                * rho $$ (s, r)" by simp
+    qed
+    also have "\<dots> = (\<Sum>r = 0..<n. \<Sum>s = 0..<n.
+                       \<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                         Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r))"
+      by (intro sum.cong refl) (simp add: sum_distrib_right)
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N. \<Sum>r = 0..<n. \<Sum>s = 0..<n.
+                       Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r))"
+    proof -
+      let ?h = "\<lambda>r s i j.
+                  Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r)"
+      \<comment> \<open>Step 1: swap outermost \<open>s\<close> with \<open>i\<close>, under outer \<open>r\<close>.\<close>
+      have step1: "(\<Sum>r = 0..<n. \<Sum>s = 0..<n. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N. ?h r s i j)
+                    = (\<Sum>r = 0..<n. \<Sum>i = 0..<?N. \<Sum>s = 0..<n. \<Sum>j = 0..<?N. ?h r s i j)"
+      proof (rule sum.cong[OF refl])
+        fix r assume "r \<in> {0..<n}"
+        show "(\<Sum>s = 0..<n. \<Sum>i = 0..<?N. \<Sum>j = 0..<?N. ?h r s i j)
+                = (\<Sum>i = 0..<?N. \<Sum>s = 0..<n. \<Sum>j = 0..<?N. ?h r s i j)"
+          by (rule sum.swap)
+      qed
+      have step2: "(\<Sum>r = 0..<n. \<Sum>i = 0..<?N. \<Sum>s = 0..<n. \<Sum>j = 0..<?N. ?h r s i j)
+                    = (\<Sum>i = 0..<?N. \<Sum>r = 0..<n. \<Sum>s = 0..<n. \<Sum>j = 0..<?N. ?h r s i j)"
+        by (rule sum.swap)
+      have step3: "(\<Sum>i = 0..<?N. \<Sum>r = 0..<n. \<Sum>s = 0..<n. \<Sum>j = 0..<?N. ?h r s i j)
+                    = (\<Sum>i = 0..<?N. \<Sum>r = 0..<n. \<Sum>j = 0..<?N. \<Sum>s = 0..<n. ?h r s i j)"
+      proof (rule sum.cong[OF refl])
+        fix i assume "i \<in> {0..<?N}"
+        show "(\<Sum>r = 0..<n. \<Sum>s = 0..<n. \<Sum>j = 0..<?N. ?h r s i j)
+                = (\<Sum>r = 0..<n. \<Sum>j = 0..<?N. \<Sum>s = 0..<n. ?h r s i j)"
+        proof (rule sum.cong[OF refl])
+          fix r assume "r \<in> {0..<n}"
+          show "(\<Sum>s = 0..<n. \<Sum>j = 0..<?N. ?h r s i j)
+                  = (\<Sum>j = 0..<?N. \<Sum>s = 0..<n. ?h r s i j)"
+            by (rule sum.swap)
+        qed
+      qed
+      have step4: "(\<Sum>i = 0..<?N. \<Sum>r = 0..<n. \<Sum>j = 0..<?N. \<Sum>s = 0..<n. ?h r s i j)
+                    = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N. \<Sum>r = 0..<n. \<Sum>s = 0..<n. ?h r s i j)"
+      proof (rule sum.cong[OF refl])
+        fix i assume "i \<in> {0..<?N}"
+        show "(\<Sum>r = 0..<n. \<Sum>j = 0..<?N. \<Sum>s = 0..<n. ?h r s i j)
+                = (\<Sum>j = 0..<?N. \<Sum>r = 0..<n. \<Sum>s = 0..<n. ?h r s i j)"
+          by (rule sum.swap)
+      qed
+      show ?thesis using step1 step2 step3 step4 by simp
+    qed
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       \<Sum>r = 0..<n.
+                         Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r))"
+    proof (rule sum.cong[OF refl])
+      fix i assume "i \<in> {0..<?N}" hence i_lt: "i < ?N" by simp
+      show "(\<Sum>j = 0..<?N. \<Sum>r = 0..<n. \<Sum>s = 0..<n.
+                Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r))
+              = (\<Sum>j = 0..<?N. \<Sum>r = 0..<n.
+                   Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r))"
+      proof (rule sum.cong[OF refl])
+        fix j assume "j \<in> {0..<?N}" hence j_lt: "j < ?N" by simp
+        have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+        have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+        have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+        have VjdVi_c: "(Vs!j)\<^sup>\<dagger> * Vs!i \<in> carrier_mat n n"
+          using Vjd_c Vi_c by auto
+        show "(\<Sum>r = 0..<n. \<Sum>s = 0..<n.
+                  Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r))
+                = (\<Sum>r = 0..<n.
+                     Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r))"
+        proof (rule sum.cong[OF refl])
+          fix r assume "r \<in> {0..<n}" hence r_lt: "r < n" by simp
+          have prod_idx: "((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r)
+                            = (\<Sum>s = 0..<n.
+                                ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r))"
+            by (rule mat_mult_index_sum[OF VjdVi_c rho_c r_lt r_lt])
+          have "(\<Sum>s = 0..<n.
+                   Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r))
+                = (\<Sum>s = 0..<n.
+                     Tmat $$ (i, j)
+                      * (((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r)))"
+            by (intro sum.cong refl) (simp add: mult.assoc)
+          also have "\<dots> = Tmat $$ (i, j)
+                            * (\<Sum>s = 0..<n.
+                                  ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s) * rho $$ (s, r))"
+            by (simp add: sum_distrib_left)
+          also have "\<dots> = Tmat $$ (i, j)
+                            * ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r)"
+            using prod_idx by simp
+          finally show "(\<Sum>s = 0..<n.
+                           Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, s)
+                            * rho $$ (s, r))
+                         = Tmat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r)" .
+        qed
+      qed
+    qed
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tmat $$ (i, j) *
+                       (\<Sum>r = 0..<n. ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r)))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tmat $$ (i, j) * Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho))"
+    proof (intro sum.cong refl)
+      fix i j assume "i \<in> {0..<?N}" "j \<in> {0..<?N}"
+      hence i_lt: "i < ?N" and j_lt: "j < ?N" by simp_all
+      have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+      have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+      have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+      have VjdVi_c: "(Vs!j)\<^sup>\<dagger> * Vs!i \<in> carrier_mat n n"
+        using Vjd_c Vi_c by auto
+      have VjdViRho_c: "(Vs!j)\<^sup>\<dagger> * Vs!i * rho \<in> carrier_mat n n"
+        using VjdVi_c rho_c by auto
+      have prod_dr: "dim_row ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) = n" using VjdViRho_c by auto
+      have prod_dc: "dim_col ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) = n" using VjdViRho_c by auto
+      have "Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho)
+              = (\<Sum>r < n. if r < n then ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r) else 0)"
+        unfolding Tr_def using prod_dr prod_dc by simp
+      also have "\<dots> = (\<Sum>r = 0..<n. ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r))"
+        by (simp add: lessThan_atLeast0)
+      finally have tr_eq: "Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho)
+                             = (\<Sum>r = 0..<n. ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r))" .
+      show "Tmat $$ (i, j) * (\<Sum>r = 0..<n. ((Vs!j)\<^sup>\<dagger> * Vs!i * rho) $$ (r, r))
+              = Tmat $$ (i, j) * Tr ((Vs!j)\<^sup>\<dagger> * Vs!i * rho)"
+        using tr_eq by simp
+    qed
+    finally show ?thesis unfolding S_def .
+  qed
+  show ?thesis using lhs_eq_S rhs_eq_S by simp
+qed
 
 lemma kraus_quad_map_is_TP:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -2737,7 +3017,18 @@ lemma kraus_quad_map_is_TP:
       and Tmat_pair_sum: "kraus_pair_sum n Vs Tmat = 1\<^sub>m n"
       and npos: "0 < n"
   shows "trace_preserving n (kraus_quad_map d Vs Tmat)"
-  sorry
+  unfolding trace_preserving_def
+proof (intro allI impI)
+  fix rho :: "complex Matrix.mat" assume rho_c: "rho \<in> carrier_mat n n"
+  have "Tr (kraus_quad_map d Vs Tmat rho)
+          = Tr (kraus_pair_sum n Vs Tmat * rho)"
+    by (rule Tr_kraus_quad_map_eq[OF Vs_c Tmat_c rho_c])
+  also have "\<dots> = Tr (1\<^sub>m n * rho)"
+    using Tmat_pair_sum by simp
+  also have "1\<^sub>m n * rho = rho"
+    using rho_c by simp
+  finally show "Tr (kraus_quad_map d Vs Tmat rho) = Tr rho" .
+qed
 
 
 subsection \<open>CPTP-Kraus representation and extreme CPTP maps\<close>
