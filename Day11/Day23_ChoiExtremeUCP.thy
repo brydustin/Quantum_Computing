@@ -247,6 +247,92 @@ proof
 qed
 
 
+subsection \<open>Quadratic Kraus map (perturbation primitive)\<close>
+
+text \<open>For a Kraus list \<open>Vs\<close> of \<open>d \<times> n\<close> matrices and a coefficient
+matrix \<open>T \<in> M\<^sub>k\<close> (where \<open>k = length Vs\<close>), the \<^emph>\<open>quadratic
+Kraus map\<close> is
+  \<open>(kraus_quad_map d Vs T) X = \<Sum>\<^sub>{i,j} T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>.
+When \<open>T = I\<^sub>k\<close> this reduces to the ordinary Kraus map
+\<open>kraus_map_dim d Vs X = \<Sum> V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close>; for PSD \<open>T\<close> the
+result is again a Kraus map (Lemma A below).  The perturbations
+\<open>T\<^sub>\<plusminus> = I \<plusminus> \<epsilon> A\<close> for small \<open>\<epsilon>\<close> and hermitian \<open>A\<close>
+will provide the \<^emph>\<open>splittings\<close> witnessing non-extremity.\<close>
+
+definition kraus_quad_row ::
+  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
+       complex Matrix.mat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat"
+where
+  "kraus_quad_row d Vs Tm rho i \<equiv>
+     foldr (\<lambda>j acc. Tm $$ (i, j) \<cdot>\<^sub>m (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) + acc)
+           [0..<length Vs] (0\<^sub>m d d)"
+
+definition kraus_quad_map ::
+  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
+       complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+where
+  "kraus_quad_map d Vs Tm rho \<equiv>
+     foldr (\<lambda>i acc. kraus_quad_row d Vs Tm rho i + acc)
+           [0..<length Vs] (0\<^sub>m d d)"
+
+text \<open>Generic carrier-preservation lemma for accumulating folds over
+\<open>[0..<N]\<close>: if each per-index term lies in \<open>M\<^sub>d\<close>, so does the fold.\<close>
+
+lemma foldr_add_carrier:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat d d"
+  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m d d) \<in> carrier_mat d d"
+  using assms
+  by (induction xs) (auto intro!: add_carrier_mat)
+
+lemma foldr_upt_add_carrier:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>k < N. f k \<in> carrier_mat d d"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) \<in> carrier_mat d d"
+  using assms by (intro foldr_add_carrier) auto
+
+lemma kraus_quad_row_carrier:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and i_lt: "i < length Vs"
+  shows "kraus_quad_row d Vs Tm rho i \<in> carrier_mat d d"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>j. Tm $$ (i, j) \<cdot>\<^sub>m (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
+  have Vi_c: "Vs!i \<in> carrier_mat d n"
+    using Vs_c i_lt nth_mem by blast
+  have term_c: "\<forall>j < ?N. ?f j \<in> carrier_mat d d"
+  proof (intro allI impI)
+    fix j assume j_lt: "j < ?N"
+    have Vj_c: "Vs!j \<in> carrier_mat d n"
+      using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d"
+      using Vj_c by (rule dagger_carrier)
+    have inner_c: "Vs!i * rho * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using Vi_c rho_c Vjd_c by (intro mult_carrier_mat) auto
+    show "?f j \<in> carrier_mat d d"
+      using inner_c by (intro smult_carrier_mat) auto
+  qed
+  show ?thesis
+    unfolding kraus_quad_row_def
+    using foldr_upt_add_carrier[OF term_c] .
+qed
+
+lemma kraus_quad_map_carrier:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+  shows "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>i. kraus_quad_row d Vs Tm rho i"
+  have term_c: "\<forall>i < ?N. ?f i \<in> carrier_mat d d"
+    using kraus_quad_row_carrier[OF Vs_c rho_c] by blast
+  show ?thesis
+    unfolding kraus_quad_map_def
+    using foldr_upt_add_carrier[OF term_c] .
+qed
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
