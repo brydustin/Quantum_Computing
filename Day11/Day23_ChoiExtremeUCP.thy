@@ -4055,8 +4055,106 @@ proof (rule ccontr)
     thus "psd (amplification n d p (\<lambda>\<rho>. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 \<rho>) X)"
       using amp_eq by simp
   qed
-  \<comment> \<open>\<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier (from midpoint), so CP via the same chain.\<close>
-  have diff_cp: "completely_positive n d (\<lambda>X. \<Phi> X - \<Psi> X)" sorry
+  \<comment> \<open>\<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier (from midpoint), so CP via the
+      same chain (with @{thm completely_positive_cong} to bridge).\<close>
+  define halfPhi2 :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    where "halfPhi2 = (\<lambda>X. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
+  have halfPhi2_cp: "completely_positive n d halfPhi2"
+    unfolding halfPhi2_def completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume p_pos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)" and X_psd: "psd X"
+    have F2_block: "\<And>a b. \<Phi>\<^sub>2 (block_of_mat n X a b) \<in> carrier_mat d d"
+    proof -
+      fix a b
+      have "block_of_mat n X a b \<in> carrier_mat n n"
+        by (simp add: block_of_mat_def)
+      thus "\<Phi>\<^sub>2 (block_of_mat n X a b) \<in> carrier_mat d d" by (rule \<Phi>2_range)
+    qed
+    have amp_eq: "amplification n d p (\<lambda>\<rho>. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 \<rho>) X
+                    = (1/2 :: complex) \<cdot>\<^sub>m amplification n d p \<Phi>\<^sub>2 X"
+      using amplification_smult[where F = "\<Phi>\<^sub>2" and c = "1/2 :: complex"
+                                  and n = n and d = d and p = p and x = X,
+                                OF dpos F2_block] .
+    have amp_phi2_psd: "psd (amplification n d p \<Phi>\<^sub>2 X)"
+      using \<Phi>2_cp X_c X_psd p_pos
+      unfolding completely_positive_def p_positive_def by blast
+    have amp_phi2_c: "amplification n d p \<Phi>\<^sub>2 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have "(1/2 :: complex) = complex_of_real (1/2)" by simp
+    hence "psd ((1/2 :: complex) \<cdot>\<^sub>m amplification n d p \<Phi>\<^sub>2 X)"
+      using psd_smult_nonneg[of "1/2 :: real" "amplification n d p \<Phi>\<^sub>2 X" "p*d"]
+            amp_phi2_psd amp_phi2_c by simp
+    thus "psd (amplification n d p (\<lambda>\<rho>. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 \<rho>) X)"
+      using amp_eq by simp
+  qed
+  \<comment> \<open>On carrier, \<open>\<Phi> X - \<Psi> X = halfPhi2 X\<close>.\<close>
+  have agree_carrier: "\<And>r :: complex Matrix.mat.
+                          r \<in> carrier_mat n n \<Longrightarrow>
+                          (\<lambda>X. \<Phi> X - \<Psi> X) r = halfPhi2 r"
+  proof -
+    fix r :: "complex Matrix.mat" assume r_c: "r \<in> carrier_mat n n"
+    have \<Phi>r_c: "\<Phi> r \<in> carrier_mat d d"
+      using \<Phi>_eq[OF r_c] kraus_map_dim_carrier[OF Vs_c r_c] by simp
+    have \<Phi>1r_c: "\<Phi>\<^sub>1 r \<in> carrier_mat d d" by (rule \<Phi>1_range[OF r_c])
+    have \<Phi>2r_c: "\<Phi>\<^sub>2 r \<in> carrier_mat d d" by (rule \<Phi>2_range[OF r_c])
+    have psi_r_c: "\<Psi> r \<in> carrier_mat d d" by (rule psi_range[OF r_c])
+    have mid_r: "\<Phi> r = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r"
+      by (rule mid[OF r_c])
+    show "(\<lambda>X. \<Phi> X - \<Psi> X) r = halfPhi2 r"
+      unfolding \<Psi>_def halfPhi2_def
+    proof (rule eq_matI)
+      show "dim_row (\<Phi> r - (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r)
+              = dim_row ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r)"
+        using \<Phi>r_c \<Phi>1r_c \<Phi>2r_c by auto
+      show "dim_col (\<Phi> r - (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r)
+              = dim_col ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r)"
+        using \<Phi>r_c \<Phi>1r_c \<Phi>2r_c by auto
+      fix i j assume "i < dim_row ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r)"
+                     "j < dim_col ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r)"
+      hence i_lt: "i < d" and j_lt: "j < d" using \<Phi>2r_c by auto
+      have lhs_idx: "(\<Phi> r - (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r) $$ (i, j)
+                       = \<Phi> r $$ (i, j) - (1/2 :: complex) * \<Phi>\<^sub>1 r $$ (i, j)"
+        using \<Phi>r_c \<Phi>1r_c i_lt j_lt by auto
+      have mid_idx: "\<Phi> r $$ (i, j)
+                       = (1/2 :: complex) * \<Phi>\<^sub>1 r $$ (i, j)
+                       + (1/2 :: complex) * \<Phi>\<^sub>2 r $$ (i, j)"
+      proof -
+        have add_c: "(1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r
+                       \<in> carrier_mat d d"
+          using \<Phi>1r_c \<Phi>2r_c by auto
+        have i_dim: "i < dim_row ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r)" using \<Phi>2r_c i_lt by auto
+        have j_dim: "j < dim_col ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r)" using \<Phi>2r_c j_lt by auto
+        have "\<Phi> r $$ (i, j)
+                = ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r) $$ (i, j)"
+          using mid_r by simp
+        also have "\<dots> = ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r) $$ (i, j)
+                        + ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r) $$ (i, j)"
+          using index_add_mat(1)[OF i_dim j_dim] .
+        also have "\<dots> = (1/2 :: complex) * \<Phi>\<^sub>1 r $$ (i, j)
+                        + (1/2 :: complex) * \<Phi>\<^sub>2 r $$ (i, j)"
+          using \<Phi>1r_c \<Phi>2r_c i_lt j_lt by auto
+        finally show ?thesis .
+      qed
+      have rhs_idx: "((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r) $$ (i, j)
+                       = (1/2 :: complex) * \<Phi>\<^sub>2 r $$ (i, j)"
+        using \<Phi>2r_c i_lt j_lt by auto
+      have "(\<Phi> r - (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r) $$ (i, j)
+              = \<Phi> r $$ (i, j) - (1/2 :: complex) * \<Phi>\<^sub>1 r $$ (i, j)"
+        using lhs_idx .
+      also have "\<dots> = ((1/2 :: complex) * \<Phi>\<^sub>1 r $$ (i, j)
+                        + (1/2 :: complex) * \<Phi>\<^sub>2 r $$ (i, j))
+                       - (1/2 :: complex) * \<Phi>\<^sub>1 r $$ (i, j)"
+        using mid_idx by simp
+      also have "\<dots> = (1/2 :: complex) * \<Phi>\<^sub>2 r $$ (i, j)" by simp
+      also have "\<dots> = ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r) $$ (i, j)"
+        using rhs_idx by simp
+      finally show "(\<Phi> r - (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 r) $$ (i, j)
+                      = ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 r) $$ (i, j)" .
+    qed
+  qed
+  have diff_cp: "completely_positive n d (\<lambda>X. \<Phi> X - \<Psi> X)"
+    using halfPhi2_cp completely_positive_cong[OF agree_carrier] by simp
   \<comment> \<open>Step B: R-N gives PSD \<open>T\<close> with \<open>\<Psi> X = kraus_quad_map d Vs T X\<close>.\<close>
   obtain T where
       T_c: "T \<in> carrier_mat ?k ?k" and T_psd: "psd T"
