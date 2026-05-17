@@ -2165,6 +2165,287 @@ proof -
 qed
 
 
+subsection \<open>Bridge: \<open>\<not> mat_lin_indep_real\<close> gives a real \<open>A_orig\<close> witness\<close>
+
+text \<open>Generic concat-nth for uniform-length rows.\<close>
+
+lemma concat_uniform_length:
+  assumes "\<forall>xs \<in> set L. length xs = m"
+  shows "length (concat L) = length L * m"
+  using assms by (induct L) auto
+
+lemma concat_uniform_nth:
+  assumes uniform: "\<forall>xs \<in> set L. length xs = m"
+      and i_lt: "i < length L"
+      and j_lt: "j < m"
+  shows "concat L ! (i * m + j) = L ! i ! j"
+  using uniform i_lt
+proof (induction L arbitrary: i)
+  case Nil thus ?case by simp
+next
+  case (Cons l L)
+  hence l_len: "length l = m" and rest_uniform: "\<forall>xs \<in> set L. length xs = m"
+    by simp_all
+  show ?case
+  proof (cases i)
+    case 0
+    show ?thesis using 0 l_len j_lt by (simp add: nth_append)
+  next
+    case (Suc i')
+    hence i'_lt: "i' < length L" using Cons.prems by simp
+    have idx_shift: "i * m + j = m + (i' * m + j)"
+      using Suc by (simp add: algebra_simps)
+    have lhs_split: "concat (l # L) ! (i * m + j)
+                       = concat L ! (i' * m + j)"
+      using l_len idx_shift j_lt by (simp add: nth_append)
+    have rhs: "(l # L) ! i ! j = L ! i' ! j"
+      using Suc by simp
+    show ?thesis using lhs_split rhs Cons.IH[OF rest_uniform i'_lt] by simp
+  qed
+qed
+
+text \<open>\<open>kraus_products Vs\<close> has length \<open>k\<^sup>2\<close> with
+\<open>kraus_products Vs ! (i*k + j) = (V\<^sub>j)\<^sup>\<dagger> V\<^sub>i\<close>.\<close>
+
+lemma length_kraus_products:
+  "length (kraus_products Vs) = length Vs * length Vs"
+proof -
+  let ?k = "length Vs"
+  let ?L = "map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<?k]) [0..<?k]"
+  have uniform: "\<forall>xs \<in> set ?L. length xs = ?k" by auto
+  have outer_len: "length ?L = ?k" by simp
+  have "length (kraus_products Vs) = length (concat ?L)"
+    by (simp add: kraus_products_def)
+  also have "\<dots> = length ?L * ?k"
+    using concat_uniform_length[OF uniform] .
+  also have "\<dots> = ?k * ?k"
+    using outer_len by simp
+  finally show ?thesis .
+qed
+
+lemma kraus_products_nth:
+  assumes i_lt: "i < length Vs" and j_lt: "j < length Vs"
+  shows "kraus_products Vs ! (i * length Vs + j) = (Vs!j)\<^sup>\<dagger> * Vs!i"
+proof -
+  let ?k = "length Vs"
+  let ?L = "map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<?k]) [0..<?k]"
+  have uniform: "\<forall>xs \<in> set ?L. length xs = ?k" by auto
+  have outer_len: "length ?L = ?k" by simp
+  have inner_nth: "?L ! i ! j = (Vs!j)\<^sup>\<dagger> * Vs!i"
+    using i_lt j_lt by simp
+  have i_lt': "i < length ?L" using outer_len i_lt by simp
+  have "kraus_products Vs ! (i * ?k + j) = concat ?L ! (i * ?k + j)"
+    by (simp add: kraus_products_def)
+  also have "\<dots> = ?L ! i ! j"
+    using concat_uniform_nth[OF uniform i_lt' j_lt] .
+  also have "\<dots> = (Vs!j)\<^sup>\<dagger> * Vs!i"
+    using inner_nth .
+  finally show ?thesis .
+qed
+
+text \<open>Per-entry of the foldr that mat_lin_indep_real builds.\<close>
+
+lemma foldr_smult_nth_index:
+  fixes c :: "nat \<Rightarrow> real" and Bs :: "complex Matrix.mat list"
+  assumes Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n"
+      and r_lt: "r < n" and c_lt: "c1 < n"
+  shows "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k) + acc)
+                [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
+           = (\<Sum>k = 0..<length Bs.
+                complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
+proof -
+  let ?f = "\<lambda>k. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k)"
+  have term_c: "\<forall>k < length Bs. ?f k \<in> carrier_mat n n"
+  proof (intro allI impI)
+    fix k assume k_lt: "k < length Bs"
+    have "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
+    thus "?f k \<in> carrier_mat n n" by (intro smult_carrier_mat) auto
+  qed
+  have term_idx: "\<And>k. k < length Bs \<Longrightarrow>
+                    ?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
+  proof -
+    fix k assume k_lt: "k < length Bs"
+    have Bk_c: "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
+    have r_dim: "r < dim_row (Bs ! k)" using Bk_c r_lt by auto
+    have c_dim: "c1 < dim_col (Bs ! k)" using Bk_c c_lt by auto
+    show "?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
+      using index_smult_mat(1)[OF r_dim c_dim] .
+  qed
+  have "foldr (\<lambda>k acc. ?f k + acc) [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
+          = (\<Sum>k = 0..<length Bs. ?f k $$ (r, c1))"
+    using foldr_upt_add_index[OF term_c r_lt c_lt] .
+  also have "\<dots> = (\<Sum>k = 0..<length Bs.
+                     complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
+    by (rule sum.cong) (auto simp: term_idx)
+  finally show ?thesis .
+qed
+
+text \<open>Reindex \<open>\<Sum>\<^sub>{\<kappa> = 0..<n\<cdot>k}\<close> via \<open>\<kappa> = i*k + j\<close>.\<close>
+
+lemma sum_split_prod_atLeastLessThan:
+  fixes f :: "nat \<Rightarrow> 'a::comm_monoid_add"
+  shows "(\<Sum>\<kappa> = 0..<N * k. f \<kappa>) = (\<Sum>i = 0..<N. \<Sum>j = 0..<k. f (i * k + j))"
+proof -
+  have step1: "(\<Sum>\<kappa> < N * k. f \<kappa>) = (\<Sum>i < N. \<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>)"
+    by (rule sum.nat_group[symmetric])
+  have step2: "\<And>i. (\<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
+  proof -
+    fix i
+    have "(\<Sum>\<kappa> \<in> {0 + i*k..<k + i*k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
+      by (rule sum.shift_bounds_nat_ivl)
+    thus "(\<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
+      by (simp add: add.commute)
+  qed
+  have step3: "\<And>i j. f (j + i * k) = f (i * k + j)"
+    by (simp add: add.commute)
+  have "(\<Sum>\<kappa> < N * k. f \<kappa>) = (\<Sum>i < N. \<Sum>j = 0..<k. f (i * k + j))"
+    using step1 step2 step3 by (simp cong: sum.cong)
+  thus ?thesis by (simp add: atLeast0LessThan)
+qed
+
+text \<open>The main bridge: a non-trivial real dependence yields a real,
+non-zero matrix \<open>A_orig\<close> for which @{const kraus_pair_sum} vanishes.\<close>
+
+lemma mat_lin_indep_real_neg_witness:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dep: "\<not> mat_lin_indep_real n (kraus_products Vs)"
+  shows "\<exists>A_orig :: complex Matrix.mat.
+            A_orig \<in> carrier_mat (length Vs) (length Vs)
+          \<and> (\<forall>i j. i < length Vs \<longrightarrow> j < length Vs \<longrightarrow>
+                cnj (A_orig $$ (i, j)) = A_orig $$ (i, j))
+          \<and> A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)
+          \<and> kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
+proof -
+  let ?k = "length Vs"
+  let ?L = "?k * ?k"
+  let ?B = "kraus_products Vs"
+  have B_c: "\<forall>B \<in> set ?B. B \<in> carrier_mat n n"
+    by (rule kraus_products_carrier[OF Vs_c])
+  have B_len: "length ?B = ?L"
+    by (simp add: length_kraus_products)
+  \<comment> \<open>From the negation, extract coefficients.\<close>
+  from dep have "\<not> ((\<forall>B \<in> set ?B. B \<in> carrier_mat n n) \<and>
+                    (\<forall>c :: nat \<Rightarrow> real.
+                       foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
+                             [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n
+                       \<longrightarrow> (\<forall>k < length ?B. c k = 0)))"
+    unfolding mat_lin_indep_real_def .
+  with B_c obtain c :: "nat \<Rightarrow> real" where
+        c_fold: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
+                       [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
+    and c_nontriv: "\<exists>k < length ?B. c k \<noteq> 0"
+    by blast
+  obtain k0 where k0_lt: "k0 < ?L" and c_k0: "c k0 \<noteq> 0"
+    using c_nontriv B_len by auto
+  define i0 where "i0 = k0 div ?k"
+  define j0 where "j0 = k0 mod ?k"
+  have k_pos: "0 < ?k"
+    using k0_lt by (cases ?k) auto
+  have i0_lt: "i0 < ?k"
+    unfolding i0_def using k0_lt k_pos by (simp add: less_mult_imp_div_less)
+  have j0_lt: "j0 < ?k"
+    unfolding j0_def using k_pos by simp
+  have k0_decomp: "k0 = i0 * ?k + j0"
+    unfolding i0_def j0_def by simp
+  \<comment> \<open>Build the real matrix.\<close>
+  define A_orig where
+    "A_orig = Matrix.mat ?k ?k (\<lambda>(i, j). complex_of_real (c (i * ?k + j)))"
+  have A_c: "A_orig \<in> carrier_mat ?k ?k"
+    unfolding A_orig_def by simp
+  have A_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                  A_orig $$ (i, j) = complex_of_real (c (i * ?k + j))"
+    unfolding A_orig_def by simp
+  have A_real: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                   cnj (A_orig $$ (i, j)) = A_orig $$ (i, j)"
+    using A_idx by simp
+  \<comment> \<open>\<open>A_orig\<close> is non-zero at \<open>(i0, j0)\<close>.\<close>
+  have A_nontriv: "A_orig \<noteq> 0\<^sub>m ?k ?k"
+  proof
+    assume "A_orig = 0\<^sub>m ?k ?k"
+    hence "A_orig $$ (i0, j0) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i0, j0)"
+      by simp
+    hence "complex_of_real (c k0) = 0"
+      using A_idx[OF i0_lt j0_lt] k0_decomp i0_lt j0_lt by simp
+    hence "c k0 = 0" by simp
+    thus False using c_k0 by simp
+  qed
+  \<comment> \<open>The crucial per-entry equality.\<close>
+  have pair_sum_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
+  proof (rule eq_matI)
+    let ?S = "kraus_pair_sum n Vs A_orig"
+    have S_c: "?S \<in> carrier_mat n n"
+      by (rule kraus_pair_sum_carrier[OF Vs_c])
+    show "dim_row ?S = dim_row (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
+    show "dim_col ?S = dim_col (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
+    fix r c1 assume r_a: "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)"
+                and c_a: "c1 < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
+    hence r_lt: "r < n" and c_lt: "c1 < n" by auto
+    \<comment> \<open>LHS via @{thm kraus_pair_sum_index}.\<close>
+    have lhs_idx: "?S $$ (r, c1)
+                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                          A_orig $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+      using kraus_pair_sum_index[OF Vs_c r_lt c_lt] .
+    \<comment> \<open>Substitute the def of \<open>A_orig\<close>.\<close>
+    have lhs_idx': "?S $$ (r, c1)
+                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                           complex_of_real (c (i * ?k + j))
+                             * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+      using lhs_idx by (auto intro!: sum.cong simp: A_idx)
+    \<comment> \<open>Reindex the foldr to a double sum.\<close>
+    have foldr_idx: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
+                            [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
+                     = (\<Sum>\<kappa> = 0..<?L.
+                          complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1))"
+    proof -
+      have step: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
+                         [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
+                    = (\<Sum>k = 0..<length ?B.
+                         complex_of_real (c k) * (?B!k) $$ (r, c1))"
+        using foldr_smult_nth_index[OF B_c r_lt c_lt] .
+      show ?thesis using step B_len by simp
+    qed
+    \<comment> \<open>The foldr equals zero by \<open>c_fold\<close>.\<close>
+    have foldr_zero: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
+                              [0..<length ?B] (0\<^sub>m n n) $$ (r, c1) = 0"
+      using c_fold r_lt c_lt by simp
+    \<comment> \<open>So the sum vanishes.\<close>
+    have sum_kappa_zero: "(\<Sum>\<kappa> = 0..<?L.
+                            complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1)) = 0"
+      using foldr_idx foldr_zero by simp
+    \<comment> \<open>Apply reindex.\<close>
+    have sum_decomp: "(\<Sum>\<kappa> = 0..<?L.
+                         complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1))
+                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                          complex_of_real (c (i * ?k + j))
+                            * (?B!(i * ?k + j)) $$ (r, c1))"
+      by (rule sum_split_prod_atLeastLessThan)
+    \<comment> \<open>Substitute the formula for kraus_products at index \<open>i*k+j\<close>.\<close>
+    have inner_eq: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                      (?B!(i * ?k + j)) $$ (r, c1)
+                      = ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1)"
+      using kraus_products_nth by metis
+    have sum_decomp': "(\<Sum>\<kappa> = 0..<?L.
+                          complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1))
+                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                          complex_of_real (c (i * ?k + j))
+                            * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+      using sum_decomp by (auto intro!: sum.cong simp: inner_eq)
+    \<comment> \<open>Conclude.\<close>
+    have "?S $$ (r, c1) = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                            complex_of_real (c (i * ?k + j))
+                              * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+      using lhs_idx' .
+    also have "\<dots> = 0"
+      using sum_decomp' sum_kappa_zero by simp
+    finally show "?S $$ (r, c1) = (0\<^sub>m n n :: complex Matrix.mat) $$ (r, c1)"
+      using r_lt c_lt by simp
+  qed
+  show ?thesis
+    using A_c A_real A_nontriv pair_sum_zero by blast
+qed
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
