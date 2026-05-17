@@ -169,14 +169,21 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `hermitian_add`, `hermitian_one_mat`, `hermitian_smult_real` | ✅ proved |
 | `quad_form_bound_by_entry_sum` | ✅ proved (entry-sum bound on \<open>\<bar>\<langle>x|Ax\<rangle>\<bar>\<close>) |
 | `small_eps_psd`               | ✅ proved |
+| `kraus_pair_sum`, `kraus_pair_row` | ✅ defined (dual sum \<open>\<Sum> A\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i\<close>) |
+| `kraus_pair_sum_index`, `kraus_pair_sum_add_A`, `kraus_pair_sum_smult_A` | ✅ proved |
+| `kraus_pair_sum_dagger`       | ✅ proved (\<open>(...)\<^sup>\<dagger> = ...\<close> swapping coefficient indices) |
+| `sym_or_antisym_witness`      | ✅ proved |
 | `choi_theorem_3_cptp`         | ❌ `sorry` — your target |
 | `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
 
 \<^bold>What's left for the reverse direction:</br>
-- Symmetric / antisymmetric split of a real-coefficient dependence to a
-  hermitian `A : k×k` with `Σ A_{ij} V_j† V_i = 0`.
-- Distinctness (`kraus_quad_map_zero_iff`-style): when `A \<noteq> 0`, the map
-  `kraus_quad_map d Vs A` is non-zero on some `\<rho>` (needs minimality of `Vs` or pre-processing).
+- Bridge: convert a \<open>\<not> mat_lin_indep_real n (kraus_products Vs)\<close>
+  witness (a real \<open>c : nat \<Rightarrow> real\<close> with the foldr-sum vanishing) into
+  a real-valued matrix \<open>A_orig\<close> satisfying
+  \<open>kraus_pair_sum n Vs A_orig = 0\<close> and \<open>A_orig \<noteq> 0\<close>.
+- Distinctness (`kraus_quad_map_zero_iff`-style): when \<open>A \<noteq> 0\<close>, the map
+  \<open>kraus_quad_map d Vs A\<close> is non-zero on some \<open>\<rho>\<close> (needs minimality of \<open>Vs\<close>
+  or pre-processing).
 - Assembly of `choi_theorem_3_cptp` reverse direction.
 
 The UCP version's products convention is **wrong** as stated
