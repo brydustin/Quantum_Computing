@@ -1231,6 +1231,400 @@ proof -
 qed
 
 
+subsection \<open>Small-\<open>\<epsilon>\<close> PSD perturbation of the identity\<close>
+
+text \<open>For any hermitian \<open>A : k \<times> k\<close>, the matrix \<open>1\<^sub>m k + \<delta> \<cdot>\<^sub>m A\<close>
+is PSD whenever \<open>\<bar>\<delta>\<bar>\<close> is small enough. The bound uses the
+entry-wise sum
+\<open>S := \<Sum>\<^sub>{i,j} \<bar>A\<^sub>{ij}\<bar>\<close>, taking \<open>\<epsilon> := 1/(1 + S)\<close>; this avoids any
+operator-norm computation and just uses Cauchy-Schwarz on entries.\<close>
+
+text \<open>Bilinearity of the inner product in the right slot.\<close>
+
+lemma inner_prod_add_right:
+  fixes u v w :: "complex Matrix.vec"
+  assumes ud: "dim_vec u = k" and vd: "dim_vec v = k" and wd: "dim_vec w = k"
+  shows "\<langle>u | v + w\<rangle> = \<langle>u | v\<rangle> + \<langle>u | w\<rangle>"
+proof -
+  have vwd: "dim_vec (v + w) = k" using vd wd by auto
+  have "\<langle>u | v + w\<rangle> = (\<Sum>i = 0..<k. cnj (u $ i) * (v + w) $ i)"
+    using inner_prod_expand[OF ud vwd] .
+  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * (v $ i + w $ i))"
+    by (intro sum.cong refl) (simp add: vd wd)
+  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * v $ i + cnj (u $ i) * w $ i)"
+    by (intro sum.cong refl) (simp add: distrib_left)
+  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * v $ i)
+                + (\<Sum>i = 0..<k. cnj (u $ i) * w $ i)"
+    by (rule sum.distrib)
+  also have "\<dots> = \<langle>u | v\<rangle> + \<langle>u | w\<rangle>"
+    using inner_prod_expand[OF ud vd] inner_prod_expand[OF ud wd] by simp
+  finally show ?thesis .
+qed
+
+lemma inner_prod_smult_right:
+  fixes u v :: "complex Matrix.vec"
+  assumes ud: "dim_vec u = k" and vd: "dim_vec v = k"
+  shows "\<langle>u | c \<cdot>\<^sub>v v\<rangle> = c * \<langle>u | v\<rangle>"
+proof -
+  have cvd: "dim_vec (c \<cdot>\<^sub>v v) = k" using vd by auto
+  have "\<langle>u | c \<cdot>\<^sub>v v\<rangle> = (\<Sum>i = 0..<k. cnj (u $ i) * (c \<cdot>\<^sub>v v) $ i)"
+    using inner_prod_expand[OF ud cvd] .
+  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * (c * v $ i))"
+    by (intro sum.cong refl) (simp add: vd)
+  also have "\<dots> = (\<Sum>i = 0..<k. c * (cnj (u $ i) * v $ i))"
+    by (intro sum.cong refl) (simp add: ac_simps)
+  also have "\<dots> = c * (\<Sum>i = 0..<k. cnj (u $ i) * v $ i)"
+    by (simp add: sum_distrib_left)
+  also have "\<dots> = c * \<langle>u | v\<rangle>"
+    using inner_prod_expand[OF ud vd] by simp
+  finally show ?thesis .
+qed
+
+text \<open>The hermitian sum.\<close>
+
+lemma hermitian_add:
+  assumes Aherm: "hermitian A" and Bherm: "hermitian B"
+      and Ac: "A \<in> carrier_mat k k" and Bc: "B \<in> carrier_mat k k"
+  shows "hermitian (A + B)"
+  unfolding hermitian_def
+proof (rule eq_matI)
+  show "dim_row ((A + B)\<^sup>\<dagger>) = dim_row (A + B)" using Ac Bc by simp
+  show "dim_col ((A + B)\<^sup>\<dagger>) = dim_col (A + B)" using Ac Bc by simp
+  fix i j assume "i < dim_row (A + B)" "j < dim_col (A + B)"
+  hence i_lt: "i < k" and j_lt: "j < k" using Ac Bc by auto
+  have Ad: "A\<^sup>\<dagger> = A" using Aherm by (simp add: hermitian_def)
+  have Bd: "B\<^sup>\<dagger> = B" using Bherm by (simp add: hermitian_def)
+  have "((A + B)\<^sup>\<dagger>) $$ (i, j) = cnj ((A + B) $$ (j, i))"
+    using i_lt j_lt Ac Bc by (simp add: dagger_def)
+  also have "\<dots> = cnj (A $$ (j, i)) + cnj (B $$ (j, i))"
+    using i_lt j_lt Ac Bc by simp
+  also have "\<dots> = (A\<^sup>\<dagger>) $$ (i, j) + (B\<^sup>\<dagger>) $$ (i, j)"
+    using i_lt j_lt Ac Bc by (simp add: dagger_def)
+  also have "\<dots> = A $$ (i, j) + B $$ (i, j)"
+    using Ad Bd by simp
+  also have "\<dots> = (A + B) $$ (i, j)"
+    using i_lt j_lt Ac Bc by simp
+  finally show "((A + B)\<^sup>\<dagger>) $$ (i, j) = (A + B) $$ (i, j)" .
+qed
+
+lemma hermitian_one_mat:
+  "hermitian (1\<^sub>m k :: complex Matrix.mat)"
+  unfolding hermitian_def by (rule eq_matI) (auto simp: dagger_def)
+
+lemma hermitian_smult_real:
+  fixes A :: "complex Matrix.mat"
+  assumes "hermitian A" "A \<in> carrier_mat k k"
+  shows "hermitian (complex_of_real d \<cdot>\<^sub>m A)"
+  unfolding hermitian_def
+proof (rule eq_matI)
+  let ?dA = "complex_of_real d \<cdot>\<^sub>m A"
+  show "dim_row (?dA\<^sup>\<dagger>) = dim_row ?dA" using assms by simp
+  show "dim_col (?dA\<^sup>\<dagger>) = dim_col ?dA" using assms by simp
+  fix i j assume "i < dim_row ?dA" "j < dim_col ?dA"
+  hence i_lt: "i < k" and j_lt: "j < k" using assms by auto
+  have "?dA\<^sup>\<dagger> $$ (i,j) = cnj (?dA $$ (j,i))"
+    using i_lt j_lt assms by (simp add: dagger_def)
+  also have "\<dots> = cnj (complex_of_real d * A $$ (j,i))"
+    using i_lt j_lt assms by simp
+  also have "\<dots> = complex_of_real d * cnj (A $$ (j,i))"
+    by (simp add: complex_cnj_mult)
+  also have "\<dots> = complex_of_real d * (A\<^sup>\<dagger>) $$ (i,j)"
+    using i_lt j_lt assms by (simp add: dagger_def)
+  also have "\<dots> = complex_of_real d * A $$ (i,j)"
+    using assms by (simp add: hermitian_def)
+  also have "\<dots> = ?dA $$ (i,j)"
+    using i_lt j_lt assms by simp
+  finally show "?dA\<^sup>\<dagger> $$ (i,j) = ?dA $$ (i,j)" .
+qed
+
+text \<open>Entry-wise bound on the quadratic form of a hermitian matrix.\<close>
+
+lemma quad_form_bound_by_entry_sum:
+  fixes A :: "complex Matrix.mat" and x :: "complex Matrix.vec"
+  assumes A_c: "A \<in> carrier_mat k k" and x_d: "dim_vec x = k"
+  shows "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+           \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j))) * Re \<langle>x | x\<rangle>"
+proof -
+  let ?S = "(\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j)))"
+  let ?Rxx = "Re \<langle>x | x\<rangle>"
+  \<comment> \<open>Per-entry: \<open>(A*x)_i = \<Sum>_j A_{ij} x_j\<close>.\<close>
+  have Ax_idx: "\<And>i. i < k \<Longrightarrow>
+                  (A *\<^sub>v x) $ i = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)"
+  proof -
+    fix i assume i_lt: "i < k"
+    have "(A *\<^sub>v x) $ i = Matrix.row A i \<bullet> x"
+      using A_c x_d i_lt by simp
+    also have "\<dots> = (\<Sum>j = 0..<k. Matrix.row A i $ j * x $ j)"
+      using A_c x_d by (simp add: scalar_prod_def)
+    also have "\<dots> = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)"
+      using A_c i_lt by (intro sum.cong refl) auto
+    finally show "(A *\<^sub>v x) $ i = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)" .
+  qed
+  \<comment> \<open>Expand \<open>\<langle>x | A*x\<rangle>\<close> as a double sum.\<close>
+  have Ax_dim: "dim_vec (A *\<^sub>v x) = k" using A_c x_d by simp
+  have q: "\<langle>x | A *\<^sub>v x\<rangle>
+             = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cnj (x $ i) * A $$ (i,j) * x $ j)"
+  proof -
+    have "\<langle>x | A *\<^sub>v x\<rangle> = (\<Sum>i = 0..<k. cnj (x $ i) * (A *\<^sub>v x) $ i)"
+      using x_d Ax_dim inner_prod_expand by blast
+    also have "\<dots> = (\<Sum>i = 0..<k.
+                       cnj (x $ i) * (\<Sum>j = 0..<k. A $$ (i,j) * x $ j))"
+      by (intro sum.cong refl) (auto simp: Ax_idx)
+    also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                       cnj (x $ i) * (A $$ (i,j) * x $ j))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                       cnj (x $ i) * A $$ (i,j) * x $ j)"
+      by (intro sum.cong refl) (simp add: mult.assoc)
+    finally show ?thesis .
+  qed
+  \<comment> \<open>Triangle: \<open>cmod\<close> of a double sum bound by sum of \<open>cmod\<close>s.\<close>
+  have tri: "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+               \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                     cmod (cnj (x $ i) * A $$ (i,j) * x $ j))"
+  proof -
+    have "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+             \<le> (\<Sum>i = 0..<k. cmod (\<Sum>j = 0..<k.
+                  cnj (x $ i) * A $$ (i,j) * x $ j))"
+      using q norm_sum by (simp add: q) (rule norm_sum)
+    also have "\<dots> \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                       cmod (cnj (x $ i) * A $$ (i,j) * x $ j))"
+      by (intro sum_mono norm_sum)
+    finally show ?thesis .
+  qed
+  \<comment> \<open>Per-entry factorisation: \<open>cmod (cnj x_i * A_{ij} * x_j) = |x_i| |A_{ij}| |x_j|\<close>.\<close>
+  have entry_eq: "\<And>i j. cmod (cnj (x $ i) * A $$ (i,j) * x $ j)
+                          = cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)"
+    by (simp add: norm_mult)
+  \<comment> \<open>Each cross-term bounded by \<open>cmod(A_{ij}) * Re\<langle>x|x\<rangle>\<close>.\<close>
+  have xx_real: "Re \<langle>x | x\<rangle> = (\<Sum>p = 0..<k. (cmod (x $ p))\<^sup>2)"
+  proof -
+    have "Re \<langle>x | x\<rangle> = (\<Sum>p<k. Re (cnj (x $ p) * x $ p))"
+      using x_d by (simp add: inner_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>p<k. (cmod (x $ p))\<^sup>2)"
+    proof (intro sum.cong refl)
+      fix p assume "p \<in> {..<k}"
+      have "cnj (x $ p) * x $ p = x $ p * cnj (x $ p)" by (rule mult.commute)
+      also have "\<dots> = complex_of_real ((cmod (x $ p))\<^sup>2)"
+        using complex_norm_square[of "x $ p"] by simp
+      finally have "Re (cnj (x $ p) * x $ p) = (cmod (x $ p))\<^sup>2" by simp
+      thus "Re (cnj (x $ p) * x $ p) = (cmod (x $ p))\<^sup>2" .
+    qed
+    finally show ?thesis by (simp add: lessThan_atLeast0)
+  qed
+  have x_sq_bound: "\<And>i. i < k \<Longrightarrow> (cmod (x $ i))\<^sup>2 \<le> Re \<langle>x | x\<rangle>"
+  proof -
+    fix i assume i_lt: "i < k"
+    have iI: "i \<in> {0..<k}" using i_lt by simp
+    have nn: "\<And>p. p \<in> {0..<k} - {i} \<Longrightarrow> 0 \<le> (cmod (x $ p))\<^sup>2"
+      by simp
+    have "(cmod (x $ i))\<^sup>2 \<le> (\<Sum>p = 0..<k. (cmod (x $ p))\<^sup>2)"
+      by (rule member_le_sum[OF iI nn]) auto
+    thus "(cmod (x $ i))\<^sup>2 \<le> Re \<langle>x | x\<rangle>" using xx_real by simp
+  qed
+  have x_cmod_bound: "\<And>i. i < k \<Longrightarrow> cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)"
+  proof -
+    fix i assume i_lt: "i < k"
+    have "cmod (x $ i) = sqrt ((cmod (x $ i))\<^sup>2)" by simp
+    also have "\<dots> \<le> sqrt (Re \<langle>x | x\<rangle>)"
+      using x_sq_bound[OF i_lt] real_sqrt_le_mono by blast
+    finally show "cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)" .
+  qed
+  have prod_bound: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow>
+                       cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>"
+  proof -
+    fix i j assume i_lt: "i < k" and j_lt: "j < k"
+    have nn: "0 \<le> Re \<langle>x | x\<rangle>" using inner_prod_with_itself_Re by blast
+    have i_b: "cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)" using x_cmod_bound[OF i_lt] .
+    have j_b: "cmod (x $ j) \<le> sqrt (Re \<langle>x | x\<rangle>)" using x_cmod_bound[OF j_lt] .
+    have sqrt_nn: "0 \<le> sqrt (Re \<langle>x | x\<rangle>)" using nn by auto
+    have cj_nn: "0 \<le> cmod (x $ j)" by simp
+    have "cmod (x $ i) * cmod (x $ j)
+            \<le> sqrt (Re \<langle>x | x\<rangle>) * sqrt (Re \<langle>x | x\<rangle>)"
+      by (rule mult_mono[OF i_b j_b sqrt_nn cj_nn])
+    also have "\<dots> = Re \<langle>x | x\<rangle>"
+      using nn by simp
+    finally show "cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>" .
+  qed
+  have inner_bound:
+    "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow>
+       cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+       \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
+  proof -
+    fix i j assume i_lt: "i < k" and j_lt: "j < k"
+    have nn: "0 \<le> cmod (A $$ (i,j))" by simp
+    have rxx_nn: "0 \<le> Re \<langle>x | x\<rangle>"
+      using inner_prod_with_itself_Re by blast
+    have step: "cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>"
+      by (rule prod_bound[OF i_lt j_lt])
+    have "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+            = cmod (A $$ (i,j)) * (cmod (x $ i) * cmod (x $ j))"
+      by (simp add: ac_simps)
+    also have "\<dots> \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
+      using step nn by (rule mult_left_mono)
+    finally show "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+                    \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>" .
+  qed
+  \<comment> \<open>Assemble.\<close>
+  have "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+          \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j))"
+    using tri entry_eq by simp
+  also have "\<dots> \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                     cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>)"
+  proof (rule sum_mono)
+    fix i assume "i \<in> {0..<k}"
+    hence i_lt: "i < k" by simp
+    show "(\<Sum>j = 0..<k. cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j))
+            \<le> (\<Sum>j = 0..<k. cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>)"
+    proof (rule sum_mono)
+      fix j assume "j \<in> {0..<k}"
+      hence j_lt: "j < k" by simp
+      show "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+              \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
+        by (rule inner_bound[OF i_lt j_lt])
+    qed
+  qed
+  also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j))) * Re \<langle>x | x\<rangle>"
+    by (simp add: sum_distrib_right)
+  finally show ?thesis .
+qed
+
+text \<open>The main lemma: small \<open>\<epsilon>\<close> keeps the perturbation PSD.\<close>
+
+lemma small_eps_psd:
+  fixes A :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat k k" and herm: "hermitian A"
+  shows "\<exists>\<epsilon> > 0. \<forall>d :: real. \<bar>d\<bar> \<le> \<epsilon> \<longrightarrow>
+                     psd (1\<^sub>m k + complex_of_real d \<cdot>\<^sub>m A)"
+proof -
+  define S where "S = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j)))"
+  have S_nn: "S \<ge> 0" unfolding S_def by (simp add: sum_nonneg)
+  define eps where "eps = 1 / (1 + S)"
+  have eps_pos: "eps > 0" unfolding eps_def using S_nn by simp
+  have S_eps_le1: "S * eps \<le> 1"
+  proof -
+    have "S * eps = S / (1 + S)" by (simp add: eps_def field_simps)
+    also have "\<dots> \<le> 1" using S_nn by simp
+    finally show ?thesis .
+  qed
+  show ?thesis
+  proof (intro exI[where x = eps] conjI allI impI)
+    show "eps > 0" using eps_pos .
+    fix d :: real assume d_le: "\<bar>d\<bar> \<le> eps"
+    let ?M = "1\<^sub>m k + complex_of_real d \<cdot>\<^sub>m A"
+    have I_c: "(1\<^sub>m k :: complex Matrix.mat) \<in> carrier_mat k k" by simp
+    have dA_c: "complex_of_real d \<cdot>\<^sub>m A \<in> carrier_mat k k"
+      using A_c by simp
+    have M_c: "?M \<in> carrier_mat k k"
+      using I_c dA_c by auto
+    have herm_M: "hermitian ?M"
+    proof -
+      have herm_dA: "hermitian (complex_of_real d \<cdot>\<^sub>m A)"
+        by (rule hermitian_smult_real[OF herm A_c])
+      show ?thesis
+        by (rule hermitian_add[OF hermitian_one_mat herm_dA I_c dA_c])
+    qed
+    have quad_nn: "\<forall>x :: complex Matrix.vec.
+                     dim_vec x = dim_row ?M \<longrightarrow> 0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>"
+    proof (intro allI impI)
+      fix x :: "complex Matrix.vec"
+      assume xd: "dim_vec x = dim_row ?M"
+      have dim_M_k: "dim_row ?M = k" using M_c by auto
+      have x_d: "dim_vec x = k" using xd dim_M_k by simp
+      \<comment> \<open>Split \<open>?M*x = x + d \<cdot>v (A*x)\<close>.\<close>
+      have Ax_dim: "dim_vec (A *\<^sub>v x) = k" using A_c x_d by simp
+      have dAx_dim: "dim_vec (complex_of_real d \<cdot>\<^sub>m A *\<^sub>v x) = k"
+        using A_c x_d by simp
+      have x_cv: "x \<in> carrier_vec k"
+        using x_d by (intro carrier_vecI) simp
+      have Ix_eq: "(1\<^sub>m k :: complex Matrix.mat) *\<^sub>v x = x"
+        using one_mult_mat_vec[OF x_cv] .
+      have dAx_eq: "(complex_of_real d \<cdot>\<^sub>m A) *\<^sub>v x
+                      = complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
+        using smult_mat_mult_vec[OF A_c x_cv] .
+      have Mx_eq: "?M *\<^sub>v x = x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
+      proof -
+        have "?M *\<^sub>v x = (1\<^sub>m k :: complex Matrix.mat) *\<^sub>v x
+                       + (complex_of_real d \<cdot>\<^sub>m A) *\<^sub>v x"
+          using add_mult_distrib_mat_vec[OF I_c dA_c x_cv] .
+        also have "\<dots> = x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
+          using Ix_eq dAx_eq by simp
+        finally show ?thesis .
+      qed
+      have inner_split: "\<langle>x | ?M *\<^sub>v x\<rangle>
+                            = \<langle>x | x\<rangle> + complex_of_real d * \<langle>x | A *\<^sub>v x\<rangle>"
+      proof -
+        have dAx_dimv: "dim_vec (complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)) = k"
+          using Ax_dim by auto
+        have "\<langle>x | ?M *\<^sub>v x\<rangle>
+                = \<langle>x | x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
+          using Mx_eq by simp
+        also have "\<dots> = \<langle>x | x\<rangle>
+                        + \<langle>x | complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
+          using inner_prod_add_right[OF x_d x_d dAx_dimv] .
+        also have "\<dots> = \<langle>x | x\<rangle>
+                        + complex_of_real d * \<langle>x | A *\<^sub>v x\<rangle>"
+          using inner_prod_smult_right[OF x_d Ax_dim] by simp
+        finally show ?thesis .
+      qed
+      have rxx_nn: "0 \<le> Re \<langle>x | x\<rangle>"
+        using inner_prod_with_itself_Re by blast
+      \<comment> \<open>Apply the entry-sum bound.\<close>
+      have qbound: "cmod (\<langle>x | A *\<^sub>v x\<rangle>) \<le> S * Re \<langle>x | x\<rangle>"
+        using quad_form_bound_by_entry_sum[OF A_c x_d]
+        unfolding S_def .
+      have re_abs: "\<bar>Re (\<langle>x | A *\<^sub>v x\<rangle>)\<bar> \<le> cmod (\<langle>x | A *\<^sub>v x\<rangle>)"
+        by (rule abs_Re_le_cmod)
+      have re_bound: "\<bar>Re (\<langle>x | A *\<^sub>v x\<rangle>)\<bar> \<le> S * Re \<langle>x | x\<rangle>"
+        using re_abs qbound by linarith
+      \<comment> \<open>Final estimate.\<close>
+      have re_Mx: "Re \<langle>x | ?M *\<^sub>v x\<rangle>
+                     = Re \<langle>x | x\<rangle> + d * Re \<langle>x | A *\<^sub>v x\<rangle>"
+        using inner_split by simp
+      have abs_bound: "\<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar> \<le> \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
+      proof -
+        have "\<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar> = \<bar>d\<bar> * \<bar>Re \<langle>x | A *\<^sub>v x\<rangle>\<bar>"
+          by (simp add: abs_mult)
+        also have "\<dots> \<le> \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
+          using re_bound by (intro mult_left_mono) auto
+        finally show ?thesis .
+      qed
+      have d_re_bound: "d * Re \<langle>x | A *\<^sub>v x\<rangle> \<ge> - (\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>))"
+      proof -
+        have "d * Re \<langle>x | A *\<^sub>v x\<rangle> \<ge> - \<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar>" by simp
+        thus ?thesis using abs_bound by linarith
+      qed
+      have eps_re_bound: "\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>) \<le> Re \<langle>x | x\<rangle>"
+      proof -
+        have step: "\<bar>d\<bar> * S \<le> 1"
+        proof -
+          have "\<bar>d\<bar> * S \<le> eps * S"
+            using d_le S_nn by (intro mult_right_mono) auto
+          also have "\<dots> = S * eps" by (simp add: mult.commute)
+          also have "\<dots> \<le> 1" using S_eps_le1 .
+          finally show ?thesis .
+        qed
+        have "\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>) = (\<bar>d\<bar> * S) * Re \<langle>x | x\<rangle>"
+          by (simp add: mult.assoc)
+        also have "\<dots> \<le> 1 * Re \<langle>x | x\<rangle>"
+          using step rxx_nn by (intro mult_right_mono) auto
+        finally show ?thesis by simp
+      qed
+      have "0 \<le> Re \<langle>x | x\<rangle> - \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
+        using eps_re_bound rxx_nn by linarith
+      also have "\<dots> \<le> Re \<langle>x | x\<rangle> + d * Re \<langle>x | A *\<^sub>v x\<rangle>"
+        using d_re_bound by linarith
+      also have "\<dots> = Re \<langle>x | ?M *\<^sub>v x\<rangle>"
+        using re_Mx by simp
+      finally show "0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>" .
+    qed
+    show "psd ?M"
+      unfolding psd_def using herm_M quad_nn by blast
+  qed
+qed
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
