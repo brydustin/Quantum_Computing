@@ -1,8 +1,15 @@
 # Editor / session backups
 *~
 *.bak
+*.backup
 .Rhistory
 .codex
+
+# Local archived theory copies
+Quantum_Computing_OLD.thy
+
+# External agentic CLI tooling (managed separately)
+isa_agentic_cli_tools-main/
 
 # Isabelle build artifacts
 Basic_Math_session/
