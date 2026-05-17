@@ -470,6 +470,123 @@ proof -
   finally show ?thesis .
 qed
 
+text \<open>Carrier-preservation in a different dimension pair.\<close>
+
+lemma foldr_add_carrier_dn:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat d n"
+  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m d n) \<in> carrier_mat d n"
+  using assms by (induction xs) (auto intro!: add_carrier_mat)
+
+text \<open>Linear combination of Kraus operators with complex coefficients.
+\<open>kraus_combo d n Vs u\<close> is \<open>\<Sum>\<^sub>i u\<^sub>i V\<^sub>i\<close>, a
+\<open>d \<times> n\<close> matrix.\<close>
+
+definition kraus_combo ::
+  "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.vec \<Rightarrow>
+       complex Matrix.mat"
+where
+  "kraus_combo d n Vs u \<equiv>
+     foldr (\<lambda>i acc. u $ i \<cdot>\<^sub>m (Vs!i) + acc) [0..<length Vs] (0\<^sub>m d n)"
+
+lemma kraus_combo_carrier:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+  shows "kraus_combo d n Vs u \<in> carrier_mat d n"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>i. u $ i \<cdot>\<^sub>m (Vs!i)"
+  have "\<forall>i \<in> set [0..<?N]. ?f i \<in> carrier_mat d n"
+  proof
+    fix i assume "i \<in> set [0..<?N]"
+    hence i_lt: "i < ?N" by simp
+    have Vi_c: "Vs!i \<in> carrier_mat d n"
+      using Vs_c i_lt nth_mem by blast
+    show "?f i \<in> carrier_mat d n"
+      using Vi_c by (intro smult_carrier_mat) auto
+  qed
+  thus ?thesis
+    unfolding kraus_combo_def
+    by (rule foldr_add_carrier_dn)
+qed
+
+text \<open>Per-entry formula for @{const kraus_combo}: foldr index lemma in d\<times>n.\<close>
+
+lemma foldr_upt_add_acc_index_dn:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d n"
+      and z_c:  "z \<in> carrier_mat d n"
+      and r_lt: "r < d" and c_lt: "c < n"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] z $$ (r, c)
+           = (\<Sum>k = 0..<N. f k $$ (r, c)) + z $$ (r, c)"
+  using carr z_c
+proof (induction N arbitrary: z)
+  case 0
+  show ?case by simp
+next
+  case (Suc N)
+  have hd_c:   "f N \<in> carrier_mat d n" using Suc.prems(1) by simp
+  have rest_c: "\<forall>k < N. f k \<in> carrier_mat d n" using Suc.prems(1) by simp
+  have fNz_c:  "f N + z \<in> carrier_mat d n"
+    using hd_c Suc.prems(2) by auto
+  have dec: "[0..<Suc N] = [0..<N] @ [N]" by simp
+  have step: "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z
+                = foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z)"
+    using dec by (simp add: foldr_append)
+  have IH: "foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z) $$ (r,c)
+              = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N + z) $$ (r,c)"
+    using Suc.IH[OF rest_c fNz_c] .
+  have idx_split: "(f N + z) $$ (r,c) = f N $$ (r,c) + z $$ (r,c)"
+    using hd_c Suc.prems(2) r_lt c_lt by simp
+  have "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z $$ (r,c)
+          = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N $$ (r,c) + z $$ (r,c))"
+    using step IH idx_split by simp
+  also have "\<dots> = ((\<Sum>k = 0..<N. f k $$ (r,c)) + f N $$ (r,c)) + z $$ (r,c)"
+    by (simp add: add.assoc)
+  also have "\<dots> = (\<Sum>k = 0..<Suc N. f k $$ (r,c)) + z $$ (r,c)"
+    by simp
+  finally show ?case .
+qed
+
+lemma kraus_combo_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and r_lt: "r < d" and c_lt: "c < n"
+  shows "kraus_combo d n Vs u $$ (r, c)
+           = (\<Sum>i = 0..<length Vs. u $ i * (Vs!i) $$ (r, c))"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>i. u $ i \<cdot>\<^sub>m (Vs!i)"
+  have term_c: "\<forall>i < ?N. ?f i \<in> carrier_mat d n"
+  proof (intro allI impI)
+    fix i assume i_lt: "i < ?N"
+    have Vi_c: "Vs!i \<in> carrier_mat d n"
+      using Vs_c i_lt nth_mem by blast
+    show "?f i \<in> carrier_mat d n"
+      using Vi_c by (intro smult_carrier_mat) auto
+  qed
+  have z_c: "(0\<^sub>m d n :: complex Matrix.mat) \<in> carrier_mat d n" by simp
+  have z_idx: "(0\<^sub>m d n :: complex Matrix.mat) $$ (r,c) = 0"
+    using r_lt c_lt by simp
+  have idx_term: "\<And>i. i < ?N \<Longrightarrow> ?f i $$ (r,c) = u $ i * (Vs!i) $$ (r,c)"
+  proof -
+    fix i assume i_lt: "i < ?N"
+    have Vi_c: "Vs!i \<in> carrier_mat d n"
+      using Vs_c i_lt nth_mem by blast
+    show "?f i $$ (r,c) = u $ i * (Vs!i) $$ (r,c)"
+      using Vi_c r_lt c_lt by simp
+  qed
+  have "kraus_combo d n Vs u $$ (r,c)
+          = foldr (\<lambda>i acc. ?f i + acc) [0..<?N] (0\<^sub>m d n) $$ (r,c)"
+    unfolding kraus_combo_def by simp
+  also have "\<dots> = (\<Sum>i = 0..<?N. ?f i $$ (r,c)) + (0\<^sub>m d n :: complex Matrix.mat) $$ (r,c)"
+    using foldr_upt_add_acc_index_dn[OF term_c z_c r_lt c_lt] .
+  also have "\<dots> = (\<Sum>i = 0..<?N. ?f i $$ (r,c))"
+    using z_idx by simp
+  also have "\<dots> = (\<Sum>i = 0..<?N. u $ i * (Vs!i) $$ (r,c))"
+    by (rule sum.cong) (auto simp: idx_term)
+  finally show ?thesis .
+qed
+
+
 text \<open>Linearity of @{const kraus_quad_map} in the coefficient matrix.\<close>
 
 lemma kraus_quad_map_add_Tm:
