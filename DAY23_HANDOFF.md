@@ -183,14 +183,33 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `Tr_kraus_quad_map_eq`        | ✅ proved |
 | `kraus_quad_map_is_TP`        | ✅ proved |
 | **`choi_theorem_3_cptp_reverse`** | ✅ **proved (sorry-free!)** |
-| `choi_theorem_3_cptp`         | ❌ `sorry` — full iff (needs forward direction) |
+| `mat_lin_indep_complex`, `mat_lin_indep_complex_imp_real` | ✅ defined / proved |
+| `extreme_CPTP_carrier` | ✅ defined (replaces vacuously-false `extreme_CPTP`) |
+| `Tr_mat_unit_mult`, `mat_trace_pairing_unique` | ✅ proved |
+| `cp_radon_nikodym` | ❌ `sorry` (axiom; substantial classical result) |
+| `choi_theorem_3_cptp_forward_complex` | ✅ skeleton **end-to-end**; sorries on CP-property gaps + R-N axiom |
+| `choi_theorem_3_cptp`         | ❌ `sorry` — full iff (real-coef version is asymmetric) |
 | `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
 
-\<^bold>What's left:</br>
-- Forward direction of `choi_theorem_3_cptp` (Radon\<dash>Nikodym for CP maps,
-  a substantial separate development).
+\<^bold>Forward direction status (\<open>mat_lin_indep_complex \<Longrightarrow> extreme_CPTP_carrier\<close>):</br>
+Skeleton fully assembled in `choi_theorem_3_cptp_forward_complex`, targeting
+the new `extreme_CPTP_carrier` (carrier-point inequality, since the
+original `extreme_CPTP` is vacuously false due to using raw function
+inequality). Step structure end-to-end with the following well-isolated
+sorries:
+- `cp_radon_nikodym` (axiom): a substantial classical result.
+- `psi_cp`, `psi_range`, `diff_cp`: CP / range / dominated-CP properties
+  of `\<Psi> := \<lambda>X. (1/2) ⋅m \<Phi>\<^sub>1 X`. Provable via `amplification_smult`
+  and `psd_smult_nonneg`, modulo a range condition that should be made
+  explicit in `extreme_CPTP_carrier`.
+
+\<^bold>What's left for full closure:</br>
+- The four sorries above (R-N is the big one; the CP properties are
+  ~50 lines once range is sorted out).
 - UCP-side restatement (`choi_theorem_3` with products in \<open>M\<^sub>d\<close>).
-- Glue: combine forward + reverse into the iff `choi_theorem_3_cptp`.
+- Glue: combine forward + reverse into the iff `choi_theorem_3_cptp`
+  (the original real-coefficient version is asymmetric; the complex one
+  with `extreme_CPTP_carrier` is correct).
 
 The UCP version's products convention is **wrong** as stated
 (should be `{V_i V_j†}` in `M_d`, not `{V_j† V_i}` in `M_n`).
