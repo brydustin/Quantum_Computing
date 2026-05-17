@@ -2446,6 +2446,283 @@ proof -
 qed
 
 
+subsection \<open>Auxiliary lemmas for the assembly\<close>
+
+text \<open>Scalar-multiplication linearity of @{const kraus_quad_map} in \<open>T\<close>.\<close>
+
+lemma kraus_quad_map_smult_Tm:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and Tm_c: "Tm \<in> carrier_mat (length Vs) (length Vs)"
+  shows "kraus_quad_map d Vs (c \<cdot>\<^sub>m Tm) rho
+           = c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_quad_map d Vs (c \<cdot>\<^sub>m Tm) rho"
+  let ?R = "c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R0_c: "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d" using R0_c by simp
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c1 assume r_lt: "r < dim_row ?R" and c1_lt: "c1 < dim_col ?R"
+  hence r_lt': "r < d" and c1_lt': "c1 < d" using R_c by auto
+  have smult_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                     (c \<cdot>\<^sub>m Tm) $$ (i, j) = c * Tm $$ (i, j)"
+    using Tm_c by auto
+  have L_idx: "?L $$ (r, c1)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (c * Tm $$ (i, j))
+                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c1_lt', of "c \<cdot>\<^sub>m Tm"]
+    by (auto intro!: sum.cong simp: smult_idx)
+  have R_pre: "kraus_quad_map d Vs Tm rho $$ (r, c1)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c1_lt'] .
+  have r_lt_dim: "r < dim_row (kraus_quad_map d Vs Tm rho)" using R0_c r_lt' by auto
+  have c_lt_dim: "c1 < dim_col (kraus_quad_map d Vs Tm rho)" using R0_c c1_lt' by auto
+  have R_idx: "?R $$ (r, c1)
+                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+    using index_smult_mat(1)[OF r_lt_dim c_lt_dim] R_pre by simp
+  have collapse: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      (c * Tm $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))
+                = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+  proof -
+    have step1: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                    (c * Tm $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1)))"
+      by (intro sum.cong refl) (simp add: algebra_simps)
+    have step2: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                    c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1)))
+                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+      by (simp add: sum_distrib_left)
+    show ?thesis using step1 step2 by simp
+  qed
+  show "?L $$ (r, c1) = ?R $$ (r, c1)"
+    using L_idx R_idx collapse by simp
+qed
+
+text \<open>The identity-coefficient case: @{const kraus_quad_map} with \<open>1\<^sub>m k\<close>
+reduces to the ordinary @{const kraus_map_dim}.\<close>
+
+lemma kraus_quad_map_one_eq_kraus_map_dim:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+  shows "kraus_quad_map d Vs (1\<^sub>m (length Vs)) rho = kraus_map_dim d Vs rho"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_quad_map d Vs (1\<^sub>m ?N) rho"
+  let ?R = "kraus_map_dim d Vs rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d"
+    by (rule kraus_map_dim_carrier[OF Vs_c rho_c])
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
+  hence r_lt: "r < d" and c_lt: "c < d" using R_c by auto
+  have one_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                    (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
+                      = (if i = j then 1 else 0)"
+    by simp
+  have term_zero: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow> i \<noteq> j \<Longrightarrow>
+                      (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
+                        * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) = 0"
+    by simp
+  have term_diag: "\<And>i. i < ?N \<Longrightarrow>
+                      (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, i)
+                        * (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)
+                      = (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)"
+    by simp
+  \<comment> \<open>LHS per-entry: double sum collapses to diagonal.\<close>
+  have L_idx: "?L $$ (r, c)
+                 = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
+  proof -
+    have "?L $$ (r, c)
+            = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                 (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
+                   * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+      using kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt] .
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (if i = j then 1 else 0)
+                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+      by (intro sum.cong refl) auto
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (if i = j then (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) else 0))"
+      by (intro sum.cong refl) (simp split: if_split)
+    also have "\<dots> = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
+    proof (intro sum.cong refl)
+      fix i assume "i \<in> {0..<?N}"
+      hence i_lt: "i < ?N" by simp
+      show "(\<Sum>j = 0..<?N.
+                if i = j then (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) else 0)
+            = (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)"
+        using i_lt by (simp add: sum.delta)
+    qed
+    finally show ?thesis .
+  qed
+  \<comment> \<open>RHS via list-induction on Vs (uses outer_sum_entry_sum_list-like reasoning).\<close>
+  have R_idx: "?R $$ (r, c)
+                 = sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs)"
+    using Vs_c rho_c r_lt c_lt
+  proof (induction Vs)
+    case Nil
+    have "kraus_map_dim d [] rho = 0\<^sub>m d d" by simp
+    thus ?case using r_lt c_lt by simp
+  next
+    case (Cons V Vs')
+    have V_c: "V \<in> carrier_mat d n" using Cons.prems by simp
+    have Vs'_c: "\<forall>W \<in> set Vs'. W \<in> carrier_mat d n" using Cons.prems by simp
+    have Vd_c: "V\<^sup>\<dagger> \<in> carrier_mat n d" using V_c by (rule dagger_carrier)
+    have term_c: "V * rho * (V\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using V_c rho_c Vd_c by (intro mult_carrier_mat) auto
+    have IH_c: "kraus_map_dim d Vs' rho \<in> carrier_mat d d"
+      using kraus_map_dim_carrier[OF Vs'_c rho_c] .
+    have "kraus_map_dim d (V # Vs') rho $$ (r, c)
+            = (V * rho * (V\<^sup>\<dagger>) + kraus_map_dim d Vs' rho) $$ (r, c)"
+      by simp
+    also have "\<dots> = (V * rho * (V\<^sup>\<dagger>)) $$ (r, c)
+                  + kraus_map_dim d Vs' rho $$ (r, c)"
+      using term_c IH_c r_lt c_lt by auto
+    also have "\<dots> = (V * rho * (V\<^sup>\<dagger>)) $$ (r, c)
+                  + sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs')"
+      using Cons.IH[OF Vs'_c rho_c r_lt c_lt] by simp
+    also have "\<dots> = sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) (V # Vs'))"
+      by simp
+    finally show ?case .
+  qed
+  have R_sum_eq: "sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs)
+                    = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
+    by (simp add: sum_list_sum_nth atLeast0LessThan)
+  show "?L $$ (r, c) = ?R $$ (r, c)"
+    using L_idx R_idx R_sum_eq by simp
+qed
+
+text \<open>The pair-sum at the identity coefficient is exactly @{const sum_wdag_w}.\<close>
+
+lemma kraus_pair_sum_one_eq_sum_wdag_w:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+  shows "kraus_pair_sum n Vs (1\<^sub>m (length Vs)) = sum_wdag_w n Vs"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_pair_sum n Vs (1\<^sub>m ?N)"
+  let ?R = "sum_wdag_w n Vs"
+  have L_c: "?L \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have R_c: "?R \<in> carrier_mat n n"
+    by (rule sum_wdag_w_carrier[OF Vs_c])
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
+  hence r_lt: "r < n" and c_lt: "c < n" using R_c by auto
+  \<comment> \<open>LHS: double sum collapses to diagonal.\<close>
+  have L_idx: "?L $$ (r, c)
+                 = (\<Sum>i = 0..<?N. ((Vs!i)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+  proof -
+    have "?L $$ (r, c)
+            = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                  (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
+                    * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+      using kraus_pair_sum_index[OF Vs_c r_lt c_lt] .
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (if i = j then 1 else 0)
+                         * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+      by (intro sum.cong refl) auto
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (if i = j then ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c) else 0))"
+      by (intro sum.cong refl) (simp split: if_split)
+    also have "\<dots> = (\<Sum>i = 0..<?N. ((Vs!i)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+    proof (intro sum.cong refl)
+      fix i assume "i \<in> {0..<?N}"
+      hence i_lt: "i < ?N" by simp
+      show "(\<Sum>j = 0..<?N.
+                if i = j then ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c) else 0)
+            = ((Vs!i)\<^sup>\<dagger> * Vs!i) $$ (r, c)"
+        using i_lt by (simp add: sum.delta)
+    qed
+    finally show ?thesis .
+  qed
+  \<comment> \<open>RHS via list induction.\<close>
+  have R_idx: "?R $$ (r, c)
+                 = sum_list (map (\<lambda>W. (W\<^sup>\<dagger> * W) $$ (r, c)) Vs)"
+    using Vs_c r_lt c_lt
+  proof (induction Vs)
+    case Nil
+    have "sum_wdag_w n [] = 0\<^sub>m n n" by simp
+    thus ?case using r_lt c_lt by simp
+  next
+    case (Cons V Vs')
+    have V_c: "V \<in> carrier_mat d n" using Cons.prems by simp
+    have Vs'_c: "\<forall>W \<in> set Vs'. W \<in> carrier_mat d n" using Cons.prems by simp
+    have Vd_c: "V\<^sup>\<dagger> \<in> carrier_mat n d" using V_c by (rule dagger_carrier)
+    have term_c: "V\<^sup>\<dagger> * V \<in> carrier_mat n n"
+      using Vd_c V_c by auto
+    have IH_c: "sum_wdag_w n Vs' \<in> carrier_mat n n"
+      using sum_wdag_w_carrier[OF Vs'_c] .
+    have "sum_wdag_w n (V # Vs') $$ (r, c)
+            = (V\<^sup>\<dagger> * V + sum_wdag_w n Vs') $$ (r, c)"
+      by (simp add: sum_wdag_w_Cons)
+    also have "\<dots> = (V\<^sup>\<dagger> * V) $$ (r, c) + sum_wdag_w n Vs' $$ (r, c)"
+      using term_c IH_c r_lt c_lt by auto
+    also have "\<dots> = (V\<^sup>\<dagger> * V) $$ (r, c)
+                  + sum_list (map (\<lambda>W. (W\<^sup>\<dagger> * W) $$ (r, c)) Vs')"
+      using Cons.IH[OF Vs'_c r_lt c_lt] by simp
+    also have "\<dots> = sum_list (map (\<lambda>W. (W\<^sup>\<dagger> * W) $$ (r, c)) (V # Vs'))"
+      by simp
+    finally show ?case .
+  qed
+  have R_sum_eq: "sum_list (map (\<lambda>W. (W\<^sup>\<dagger> * W) $$ (r, c)) Vs)
+                    = (\<Sum>i = 0..<?N. ((Vs!i)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+    by (simp add: sum_list_sum_nth atLeast0LessThan)
+  show "?L $$ (r, c) = ?R $$ (r, c)"
+    using L_idx R_idx R_sum_eq by simp
+qed
+
+
+subsection \<open>Minimality and the distinctness lemma (Lemma B)\<close>
+
+text \<open>Linear independence of a complex-matrix list (over \<open>\<complex>\<close>).
+This is the \<^emph>\<open>minimality\<close> assumption needed to make the reverse direction
+of Choi's Theorem 3 go through: without it, perturbations of a non-minimal
+Kraus list can produce the same map.\<close>
+
+definition lin_indep_complex_mat ::
+  "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
+where
+  "lin_indep_complex_mat d n Ws \<equiv>
+     (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
+     (\<forall>c :: nat \<Rightarrow> complex.
+        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Ws!k) + acc) [0..<length Ws] (0\<^sub>m d n)
+            = 0\<^sub>m d n
+        \<longrightarrow> (\<forall>k < length Ws. c k = 0))"
+
+text \<open>\<^bold>\<open>Lemma B\<close>: under minimality of \<open>Vs\<close>, a non-zero coefficient matrix
+gives a non-vanishing quadratic Kraus map for some \<open>\<rho>\<close>.
+
+\<^bold>\<open>Proof sketch (currently \<open>sorry\<close>'d).\<close> Take \<open>\<rho> := mat_unit n p q\<close> (a matrix
+with a single 1 at \<open>(p,q)\<close>). Then
+\<open>(V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>) $$ (r,c) = V\<^sub>i $$ (r,p) \<bar>V\<^sub>j $$ (c,q)\<bar>\<close>, so
+\<open>kraus_quad_map d Vs A \<rho> $$ (r,c) = M\<^sub>p\<^sup>T A M\<^sub>q\<^sup>* $$ (r,c)\<close> for an appropriate
+\<open>M\<^sub>p\<close>. Vanishing for all \<open>p,q,r,c\<close> together with linear independence of
+\<open>Vs\<close> forces \<open>A = 0\<close>.\<close>
+
+lemma kraus_quad_map_nonzero_witness:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and minimal: "lin_indep_complex_mat d n Vs"
+      and A_c: "A \<in> carrier_mat (length Vs) (length Vs)"
+      and A_nz: "A \<noteq> 0\<^sub>m (length Vs) (length Vs)"
+      and npos: "0 < n" and dpos: "0 < d"
+  shows "\<exists>rho \<in> carrier_mat n n. kraus_quad_map d Vs A rho \<noteq> 0\<^sub>m d d"
+  sorry
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
