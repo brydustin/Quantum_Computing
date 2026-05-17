@@ -865,7 +865,8 @@ proof -
 qed
 
 
-text \<open>Linearity of @{const kraus_quad_map} in the coefficient matrix.\<close>
+text \<open>Linearity of @{const kraus_quad_map} in the coefficient matrix
+(needed for the rank-1 decomposition below).\<close>
 
 lemma kraus_quad_map_add_Tm:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -919,6 +920,215 @@ proof (rule eq_matI)
     by (simp add: distr sum.distrib)
   show "?L $$ (r, c) = ?R $$ (r, c)"
     using L_idx R_idx inner_split by (simp add: sum.distrib)
+qed
+
+text \<open>Carrier of @{term \<open>outer_sum k vs\<close>}.\<close>
+
+lemma outer_sum_carrier:
+  "outer_sum k vs \<in> carrier_mat k k"
+  by (auto simp: outer_sum_def)
+
+text \<open>Cons-recursion for @{const outer_sum}: adds a rank-1 piece.\<close>
+
+lemma outer_sum_Cons_split:
+  assumes "\<forall>v \<in> set (u # us). dim_vec v = k"
+  shows "outer_sum k (u # us)
+           = outer_sum k [u] + outer_sum k us"
+proof (rule eq_matI)
+  let ?L = "outer_sum k (u # us)"
+  let ?R1 = "outer_sum k [u]"
+  let ?R2 = "outer_sum k us"
+  have L_c: "?L \<in> carrier_mat k k" by (rule outer_sum_carrier)
+  have R1_c: "?R1 \<in> carrier_mat k k" by (rule outer_sum_carrier)
+  have R2_c: "?R2 \<in> carrier_mat k k" by (rule outer_sum_carrier)
+  show "dim_row ?L = dim_row (?R1 + ?R2)" using L_c R1_c R2_c by simp
+  show "dim_col ?L = dim_col (?R1 + ?R2)" using L_c R1_c R2_c by simp
+  fix i j assume "i < dim_row (?R1 + ?R2)" "j < dim_col (?R1 + ?R2)"
+  hence i_lt: "i < k" and j_lt: "j < k" using R1_c R2_c by auto
+  have u_dim: "dim_vec u = k" using assms by simp
+  have us_dim: "\<forall>v \<in> set us. dim_vec v = k" using assms by simp
+  have uus_dim: "\<forall>v \<in> set (u # us). dim_vec v = k" using assms by simp
+  have eqL: "?L $$ (i, j)
+               = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) (u # us))"
+    by (rule outer_sum_entry_sum_list[OF uus_dim i_lt j_lt])
+  have eqR1: "?R1 $$ (i, j) = u $ i * cnj (u $ j)"
+  proof -
+    have "\<forall>v \<in> set [u]. dim_vec v = k" using u_dim by simp
+    hence "?R1 $$ (i, j) = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) [u])"
+      by (rule outer_sum_entry_sum_list[OF _ i_lt j_lt])
+    thus ?thesis by simp
+  qed
+  have eqR2: "?R2 $$ (i, j) = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) us)"
+    by (rule outer_sum_entry_sum_list[OF us_dim i_lt j_lt])
+  show "?L $$ (i, j) = (?R1 + ?R2) $$ (i, j)"
+    using eqL eqR1 eqR2 R1_c R2_c i_lt j_lt by simp
+qed
+
+text \<open>Rank-1 identity:
+\<open>kraus_quad_map d Vs (outer_sum k [u]) rho = W rho W\<^sup>\<dagger>\<close>
+where \<open>W = kraus_combo d n Vs u\<close>.\<close>
+
+lemma kraus_quad_map_outer_singleton:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and u_dim: "dim_vec u = length Vs"
+  shows "kraus_quad_map d Vs (outer_sum (length Vs) [u]) rho
+           = kraus_combo d n Vs u * rho * ((kraus_combo d n Vs u)\<^sup>\<dagger>)"
+proof (rule eq_matI)
+  let ?k = "length Vs"
+  let ?T = "outer_sum ?k [u]"
+  let ?W = "kraus_combo d n Vs u"
+  have T_c: "?T \<in> carrier_mat ?k ?k" by (rule outer_sum_carrier)
+  have W_c: "?W \<in> carrier_mat d n"
+    by (rule kraus_combo_carrier[OF Vs_c])
+  have Wdag_c: "?W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using W_c by (rule dagger_carrier)
+  have L_c: "kraus_quad_map d Vs ?T rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?W * rho * (?W\<^sup>\<dagger>) \<in> carrier_mat d d"
+    using W_c rho_c Wdag_c by (intro mult_carrier_mat) auto
+  show "dim_row (kraus_quad_map d Vs ?T rho) = dim_row (?W * rho * (?W\<^sup>\<dagger>))"
+    using L_c R_c by auto
+  show "dim_col (kraus_quad_map d Vs ?T rho) = dim_col (?W * rho * (?W\<^sup>\<dagger>))"
+    using L_c R_c by auto
+  fix r c
+  assume "r < dim_row (?W * rho * (?W\<^sup>\<dagger>))" "c < dim_col (?W * rho * (?W\<^sup>\<dagger>))"
+  hence r_lt: "r < d" and c_lt: "c < d" using R_c by auto
+  \<comment> \<open>Per-entry of LHS.\<close>
+  have L_idx: "kraus_quad_map d Vs ?T rho $$ (r, c)
+                 = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                      ?T $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (rule kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt])
+  \<comment> \<open>Per-entry of \<open>?T\<close>.\<close>
+  have T_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                  ?T $$ (i, j) = u $ i * cnj (u $ j)"
+  proof -
+    fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+    have "\<forall>v \<in> set [u]. dim_vec v = ?k" using u_dim by simp
+    hence "?T $$ (i, j) = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) [u])"
+      by (rule outer_sum_entry_sum_list[OF _ i_lt j_lt])
+    thus "?T $$ (i, j) = u $ i * cnj (u $ j)" by simp
+  qed
+  \<comment> \<open>Per-entry of RHS.\<close>
+  have R_idx: "(?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)
+                 = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                      u $ i * cnj (u $ j)
+                      * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (rule kraus_combo_quad_index[OF Vs_c rho_c r_lt c_lt])
+  \<comment> \<open>Match per-entry.\<close>
+  have "kraus_quad_map d Vs ?T rho $$ (r, c)
+          = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+               u $ i * cnj (u $ j)
+               * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using L_idx by (auto intro!: sum.cong simp: T_idx)
+  also have "\<dots> = (?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)"
+    using R_idx by simp
+  finally show "kraus_quad_map d Vs ?T rho $$ (r, c)
+                  = (?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)" .
+qed
+
+text \<open>Vanishing of the quadratic map when the coefficient matrix is zero.\<close>
+
+lemma kraus_quad_map_zero_Tm:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+  shows "kraus_quad_map d Vs (0\<^sub>m (length Vs) (length Vs)) rho = 0\<^sub>m d d"
+proof (rule eq_matI)
+  let ?L = "kraus_quad_map d Vs (0\<^sub>m (length Vs) (length Vs)) rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  show "dim_row ?L = dim_row ((0\<^sub>m d d) :: complex Matrix.mat)"
+    using L_c by auto
+  show "dim_col ?L = dim_col ((0\<^sub>m d d) :: complex Matrix.mat)"
+    using L_c by auto
+  fix r c
+  assume "r < dim_row ((0\<^sub>m d d) :: complex Matrix.mat)"
+         "c < dim_col ((0\<^sub>m d d) :: complex Matrix.mat)"
+  hence r_lt: "r < d" and c_lt: "c < d" by auto
+  have "?L $$ (r, c)
+          = (\<Sum>i = 0..<length Vs. \<Sum>j = 0..<length Vs.
+               (0\<^sub>m (length Vs) (length Vs)) $$ (i, j)
+                 * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (rule kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt])
+  also have "\<dots> = 0"
+    by (rule sum.neutral) (auto intro!: sum.neutral)
+  finally show "?L $$ (r, c) = (0\<^sub>m d d :: complex Matrix.mat) $$ (r, c)"
+    using r_lt c_lt by simp
+qed
+
+text \<open>Sum-decomposition: a PSD-style coefficient matrix \<open>outer_sum k us\<close>
+gives @{const kraus_quad_map} as a kraus_map_dim of the combos.\<close>
+
+lemma kraus_quad_map_outer_sum_eq_kraus_map_dim:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and us_dim: "\<forall>v \<in> set us. dim_vec v = length Vs"
+  shows "kraus_quad_map d Vs (outer_sum (length Vs) us) rho
+           = kraus_map_dim d (map (kraus_combo d n Vs) us) rho"
+  using us_dim
+proof (induction us)
+  case Nil
+  \<comment> \<open>Base case: empty list. outer_sum reduces to the zero matrix.\<close>
+  have outer_nil: "outer_sum (length Vs) ([] :: complex Matrix.vec list)
+                    = 0\<^sub>m (length Vs) (length Vs)"
+  proof (rule eq_matI)
+    have c: "outer_sum (length Vs) ([] :: complex Matrix.vec list)
+              \<in> carrier_mat (length Vs) (length Vs)"
+      by (rule outer_sum_carrier)
+    show "dim_row (outer_sum (length Vs) ([] :: complex Matrix.vec list))
+           = dim_row (0\<^sub>m (length Vs) (length Vs) :: complex Matrix.mat)"
+      using c by auto
+    show "dim_col (outer_sum (length Vs) ([] :: complex Matrix.vec list))
+           = dim_col (0\<^sub>m (length Vs) (length Vs) :: complex Matrix.mat)"
+      using c by auto
+    fix i j
+    assume i_lt: "i < dim_row (0\<^sub>m (length Vs) (length Vs) :: complex Matrix.mat)"
+    assume j_lt: "j < dim_col (0\<^sub>m (length Vs) (length Vs) :: complex Matrix.mat)"
+    from i_lt have i_lt': "i < length Vs" by simp
+    from j_lt have j_lt': "j < length Vs" by simp
+    have nil_dim: "\<forall>v \<in> set ([] :: complex Matrix.vec list). dim_vec v = length Vs"
+      by simp
+    have "outer_sum (length Vs) ([] :: complex Matrix.vec list) $$ (i, j)
+            = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) [])"
+      by (rule outer_sum_entry_sum_list[OF nil_dim i_lt' j_lt'])
+    thus "outer_sum (length Vs) ([] :: complex Matrix.vec list) $$ (i, j)
+            = (0\<^sub>m (length Vs) (length Vs) :: complex Matrix.mat) $$ (i, j)"
+      using i_lt' j_lt' by simp
+  qed
+  show ?case
+    using outer_nil kraus_quad_map_zero_Tm[OF Vs_c rho_c]
+    by simp
+next
+  case (Cons u us)
+  let ?k = "length Vs"
+  let ?Tu  = "outer_sum ?k [u]"
+  let ?Tus = "outer_sum ?k us"
+  let ?T   = "outer_sum ?k (u # us)"
+  have u_dim: "dim_vec u = ?k" using Cons.prems by simp
+  have us_dim': "\<forall>v \<in> set us. dim_vec v = ?k" using Cons.prems by simp
+  have uus_dim: "\<forall>v \<in> set (u # us). dim_vec v = ?k" using Cons.prems by simp
+  have Tu_c:  "?Tu  \<in> carrier_mat ?k ?k" by (rule outer_sum_carrier)
+  have Tus_c: "?Tus \<in> carrier_mat ?k ?k" by (rule outer_sum_carrier)
+  have IH: "kraus_quad_map d Vs ?Tus rho
+              = kraus_map_dim d (map (kraus_combo d n Vs) us) rho"
+    using Cons.IH[OF us_dim'] .
+  have split: "?T = ?Tu + ?Tus"
+    by (rule outer_sum_Cons_split[OF uus_dim])
+  have "kraus_quad_map d Vs ?T rho
+          = kraus_quad_map d Vs (?Tu + ?Tus) rho"
+    using split by simp
+  also have "\<dots> = kraus_quad_map d Vs ?Tu rho
+                + kraus_quad_map d Vs ?Tus rho"
+    by (rule kraus_quad_map_add_Tm[OF Vs_c rho_c Tu_c Tus_c])
+  also have "\<dots> = (kraus_combo d n Vs u * rho * ((kraus_combo d n Vs u)\<^sup>\<dagger>))
+                + kraus_map_dim d (map (kraus_combo d n Vs) us) rho"
+    using kraus_quad_map_outer_singleton[OF Vs_c rho_c u_dim] IH by simp
+  also have "\<dots> = kraus_map_dim d (kraus_combo d n Vs u
+                                    # map (kraus_combo d n Vs) us) rho"
+    by simp
+  also have "\<dots> = kraus_map_dim d (map (kraus_combo d n Vs) (u # us)) rho"
+    by simp
+  finally show ?case .
 qed
 
 
