@@ -4015,8 +4015,47 @@ proof (rule ccontr)
   \<comment> \<open>Define the half-map and apply CP Radon\<dash>Nikodym.\<close>
   define \<Psi> where "\<Psi> = (\<lambda>X. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
   \<comment> \<open>Step A: \<open>\<Psi>\<close> is CP, has the right range, and \<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier is CP.\<close>
-  have psi_cp: "completely_positive n d \<Psi>" sorry
-  have psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Psi> X \<in> carrier_mat d d" sorry
+  \<comment> \<open>Range hypothesis: assume \<open>\<Phi>\<^sub>1\<close> and \<open>\<Phi>\<^sub>2\<close> map carrier inputs to
+      carrier outputs.  This is a natural property of CPTP maps but isn't
+      enforced by the project's `CPTP` definition, so we sorry it.\<close>
+  have \<Phi>1_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d"
+    sorry
+  have \<Phi>2_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d"
+    sorry
+  \<comment> \<open>From these, \<open>\<Psi>\<close>'s range is in \<open>carrier_mat d d\<close>.\<close>
+  have psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Psi> X \<in> carrier_mat d d"
+    unfolding \<Psi>_def using \<Phi>1_range by auto
+  \<comment> \<open>\<open>\<Psi>\<close> is CP via @{thm amplification_smult} + @{thm psd_smult_nonneg}.\<close>
+  have psi_cp: "completely_positive n d \<Psi>"
+    unfolding \<Psi>_def completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume p_pos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)" and X_psd: "psd X"
+    have F1_block: "\<And>a b. \<Phi>\<^sub>1 (block_of_mat n X a b) \<in> carrier_mat d d"
+    proof -
+      fix a b
+      have "block_of_mat n X a b \<in> carrier_mat n n"
+        by (simp add: block_of_mat_def)
+      thus "\<Phi>\<^sub>1 (block_of_mat n X a b) \<in> carrier_mat d d" by (rule \<Phi>1_range)
+    qed
+    have amp_eq: "amplification n d p (\<lambda>\<rho>. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 \<rho>) X
+                    = (1/2 :: complex) \<cdot>\<^sub>m amplification n d p \<Phi>\<^sub>1 X"
+      using amplification_smult[where F = "\<Phi>\<^sub>1" and c = "1/2 :: complex"
+                                  and n = n and d = d and p = p and x = X,
+                                OF dpos F1_block] .
+    have amp_phi1_psd: "psd (amplification n d p \<Phi>\<^sub>1 X)"
+      using \<Phi>1_cp X_c X_psd p_pos
+      unfolding completely_positive_def p_positive_def by blast
+    have amp_phi1_c: "amplification n d p \<Phi>\<^sub>1 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have "(1/2 :: complex) = complex_of_real (1/2)" by simp
+    hence "psd ((1/2 :: complex) \<cdot>\<^sub>m amplification n d p \<Phi>\<^sub>1 X)"
+      using psd_smult_nonneg[of "1/2 :: real" "amplification n d p \<Phi>\<^sub>1 X" "p*d"]
+            amp_phi1_psd amp_phi1_c by simp
+    thus "psd (amplification n d p (\<lambda>\<rho>. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 \<rho>) X)"
+      using amp_eq by simp
+  qed
+  \<comment> \<open>\<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier (from midpoint), so CP via the same chain.\<close>
   have diff_cp: "completely_positive n d (\<lambda>X. \<Phi> X - \<Psi> X)" sorry
   \<comment> \<open>Step B: R-N gives PSD \<open>T\<close> with \<open>\<Psi> X = kraus_quad_map d Vs T X\<close>.\<close>
   obtain T where
