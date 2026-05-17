@@ -1576,7 +1576,149 @@ lemma cone_list_real_lin_dep:
               (map (\<lambda>k. (r k, fst (pairs ! k), snd (pairs ! k)))
                    [0..<length pairs])
              = 0\<^sub>m (m*p) (m*p)"
-  sorry
+proof -
+  define n where "n = m * p"
+  define N where "N = n * n"
+  define D where "D = 2 * N"
+  define L where "L = length pairs"
+  have n_pos: "0 < n" using m_pos p_pos n_def by simp
+  have N_pos: "0 < N" using n_pos N_def by simp
+  have D_pos: "0 < D" using N_pos D_def by simp
+  have L_gt_D: "L > D"
+    using long unfolding L_def D_def N_def n_def power2_eq_square by simp
+  have L_pos: "0 < L" using L_gt_D D_pos by linarith
+
+  define T :: "complex Matrix.mat list" where
+    "T = map (\<lambda>p. fst p \<Otimes> snd p) pairs"
+  have T_len: "length T = L" unfolding T_def L_def by simp
+
+  have T_idx_c: "\<And>k. k < L \<Longrightarrow> T ! k \<in> carrier_mat n n"
+  proof -
+    fix k assume k_lt: "k < L"
+    obtain \<sigma> \<tau> where p_eq: "pairs ! k = (\<sigma>, \<tau>)" by (cases "pairs ! k")
+    have mem_p: "pairs ! k \<in> set pairs"
+      using k_lt unfolding L_def by (simp add: nth_mem)
+    hence "(\<sigma>, \<tau>) \<in> set pairs" using p_eq by simp
+    hence \<sigma>_c: "\<sigma> \<in> carrier_mat m m" and \<tau>_c: "\<tau> \<in> carrier_mat p p"
+      using typing by auto
+    have T_k: "T ! k = \<sigma> \<Otimes> \<tau>"
+      using p_eq k_lt T_len unfolding T_def L_def by simp
+    show "T ! k \<in> carrier_mat n n"
+      using T_k \<sigma>_c \<tau>_c unfolding n_def by auto
+  qed
+
+  define A :: "real Matrix.mat" where
+    "A = Matrix.mat D L (\<lambda>(k, j).
+            if k < N then Re ((T!j) $$ (k div n, k mod n))
+                     else Im ((T!j) $$ ((k-N) div n, (k-N) mod n)))"
+  have A_c: "A \<in> carrier_mat D L" unfolding A_def by simp
+  have A_dim_r: "dim_row A = D" using A_c by simp
+  have A_dim_c: "dim_col A = L" using A_c by simp
+
+  have row_lt_N: "\<And>k. k < N \<Longrightarrow> k div n < n \<and> k mod n < n"
+    using n_pos N_def by (simp add: less_mult_imp_div_less)
+  have row_lt_2N: "\<And>k. k < D \<Longrightarrow> \<not> k < N \<Longrightarrow>
+                      (k-N) div n < n \<and> (k-N) mod n < n"
+  proof -
+    fix k assume k_lt: "k < D" and k_ge_N: "\<not> k < N"
+    have "k - N < D - N" using k_lt k_ge_N by linarith
+    also have "D - N = N" unfolding D_def by simp
+    finally have kN: "k - N < N" .
+    thus "(k-N) div n < n \<and> (k-N) mod n < n"
+      using n_pos N_def by (simp add: less_mult_imp_div_less)
+  qed
+
+  have A_entry_Re:
+    "\<And>k j. k < N \<Longrightarrow> j < L \<Longrightarrow>
+        A $$ (k, j) = Re ((T!j) $$ (k div n, k mod n))"
+    unfolding A_def using D_pos N_def D_def by (simp add: less_le_trans)
+  have A_entry_Im:
+    "\<And>k j. k < D \<Longrightarrow> \<not> k < N \<Longrightarrow> j < L \<Longrightarrow>
+        A $$ (k, j) = Im ((T!j) $$ ((k-N) div n, (k-N) mod n))"
+    unfolding A_def by simp
+
+  obtain v :: "real Matrix.vec" where
+    v_c: "v \<in> carrier_vec L"
+    and v_nz: "v \<noteq> 0\<^sub>v L"
+    and Av_eq: "A *\<^sub>v v = 0\<^sub>v D"
+    sorry
+
+  define r :: "nat \<Rightarrow> real" where
+    "r = (\<lambda>k. if k < L then v $ k else 0)"
+
+  have r_witness: "\<exists>k < L. r k \<noteq> 0"
+  proof (rule ccontr)
+    assume neg: "\<not> (\<exists>k < L. r k \<noteq> 0)"
+    hence all_zero: "\<forall>k < L. r k = 0" by auto
+    have all_v_zero: "\<And>i. i < L \<Longrightarrow> v $ i = 0"
+      using all_zero unfolding r_def by auto
+    have v_eq: "v = 0\<^sub>v L"
+    proof (rule eq_vecI)
+      show "dim_vec v = dim_vec (0\<^sub>v L)" using v_c by simp
+      fix i assume i_lt: "i < dim_vec (0\<^sub>v L)"
+      hence "i < L" by simp
+      thus "v $ i = 0\<^sub>v L $ i" using all_v_zero by simp
+    qed
+    show False using v_eq v_nz by simp
+  qed
+
+  have r_zero_high: "\<forall>k \<ge> L. r k = 0"
+    unfolding r_def by auto
+
+  define ts where
+    "ts = map (\<lambda>k. (r k, fst (pairs ! k), snd (pairs ! k))) [0..<L]"
+  have ts_len: "length ts = L" unfolding ts_def by simp
+
+  have ts_typing: "\<forall>(w, \<sigma>, \<tau>) \<in> set ts.
+                     \<sigma> \<in> carrier_mat m m \<and> \<tau> \<in> carrier_mat p p"
+  proof safe
+    fix w \<sigma> \<tau> assume mem: "(w, \<sigma>, \<tau>) \<in> set ts"
+    then obtain k where k_lt: "k < L" and ts_k: "ts ! k = (w, \<sigma>, \<tau>)"
+      unfolding ts_def L_def by (auto simp: in_set_conv_nth)
+    obtain pa pb where pairs_k: "pairs ! k = (pa, pb)" by (cases "pairs ! k")
+    have eq: "ts ! k = (r k, pa, pb)"
+      using k_lt pairs_k unfolding ts_def L_def by simp
+    hence w_eq: "w = r k" and \<sigma>eq: "\<sigma> = pa" and \<tau>eq: "\<tau> = pb"
+      using ts_k by auto
+    have "pairs ! k \<in> set pairs"
+      using k_lt unfolding L_def by (simp add: nth_mem)
+    hence pa_c: "pa \<in> carrier_mat m m" and pb_c: "pb \<in> carrier_mat p p"
+      using typing pairs_k by auto
+    show "\<sigma> \<in> carrier_mat m m" using pa_c \<sigma>eq by simp
+    show "\<tau> \<in> carrier_mat p p" using pb_c \<tau>eq by simp
+  qed
+
+  have ts_nth: "\<And>k. k < L \<Longrightarrow>
+        fst (ts ! k) = r k \<and>
+        fst (snd (ts ! k)) = fst (pairs ! k) \<and>
+        snd (snd (ts ! k)) = snd (pairs ! k)"
+    unfolding ts_def L_def by auto
+
+  have T_nth_pairs: "\<And>k. k < L \<Longrightarrow> T ! k = fst (pairs ! k) \<Otimes> snd (pairs ! k)"
+    unfolding T_def L_def by simp
+
+  have cls_zero: "cone_list_sum m p ts = 0\<^sub>m (m*p) (m*p)"
+    sorry
+
+  show ?thesis
+  proof (rule exI[where x = r])
+    have "(\<exists>k < length pairs. r k \<noteq> 0)
+            \<and> (\<forall>k \<ge> length pairs. r k = 0)
+            \<and> cone_list_sum m p
+                (map (\<lambda>k. (r k, fst (pairs ! k), snd (pairs ! k)))
+                     [0..<length pairs])
+               = 0\<^sub>m (m*p) (m*p)"
+      using r_witness r_zero_high cls_zero
+      unfolding L_def[symmetric] ts_def[symmetric]
+      by blast
+    thus "(\<exists>k < length pairs. r k \<noteq> 0)
+            \<and> (\<forall>k \<ge> length pairs. r k = 0)
+            \<and> cone_list_sum m p
+                (map (\<lambda>k. (r k, fst (pairs ! k), snd (pairs ! k)))
+                     [0..<length pairs])
+               = 0\<^sub>m (m*p) (m*p)" .
+  qed
+qed
 
 
 text \<open>One reduction step: a length-\<open>L\<close> cone list with
