@@ -137,6 +137,96 @@ where
         \<longrightarrow> (\<forall>k < length Bs. c k = 0))"
 
 
+subsection \<open>Unital condition from the Kraus list\<close>
+
+text \<open>If \<open>Ws\<close> is a list of \<open>d \<times> n\<close> matrices, then evaluating the
+Kraus map at the identity \<open>1\<^sub>m n\<close> gives exactly the sum
+\<open>\<Sum> W W\<^sup>\<dagger>\<close>.  Combined with unitality, this gives the
+\<open>\<Sum> W W\<^sup>\<dagger> = 1\<^sub>m d\<close> identity that distinguishes UCP from
+plain CP.\<close>
+
+lemma kraus_map_dim_one:
+  assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+  shows "kraus_map_dim d Ws (1\<^sub>m n)
+           = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+  using assms
+proof (induction Ws)
+  case Nil
+  show ?case by simp
+next
+  case (Cons W Ws)
+  have W_c: "W \<in> carrier_mat d n" using Cons.prems by simp
+  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d" using W_c by auto
+  have I_n_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
+  have step_W: "W * 1\<^sub>m n * (W\<^sup>\<dagger>) = W * (W\<^sup>\<dagger>)"
+    using W_c by simp
+  have rest_c: "\<forall>W' \<in> set Ws. W' \<in> carrier_mat d n"
+    using Cons.prems by simp
+  have IH: "kraus_map_dim d Ws (1\<^sub>m n)
+              = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+    using Cons.IH[OF rest_c] .
+  have "kraus_map_dim d (W # Ws) (1\<^sub>m n)
+          = W * 1\<^sub>m n * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (1\<^sub>m n)"
+    by simp
+  also have "... = W * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (1\<^sub>m n)"
+    using step_W by simp
+  also have "... = W * (W\<^sup>\<dagger>) + foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+    using IH by simp
+  also have "... = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) (W # Ws) (0\<^sub>m d d)"
+    by simp
+  finally show ?case .
+qed
+
+
+subsection \<open>UCP-Kraus existence\<close>
+
+text \<open>Every linear UCP map admits a UCP Kraus representation
+of length \<open>n d\<close>.  Linearity, scalar-multiplication and range
+hypotheses match those of \<open>kraus_rep_of_psd_choi\<close>; the unital
+condition \<open>\<Sum> V V\<^sup>\<dagger> = 1\<^sub>m d\<close> is supplied by
+\<open>\<Phi> (1\<^sub>m n) = 1\<^sub>m d\<close> + \<open>kraus_map_dim_one\<close>.\<close>
+
+lemma ucp_has_kraus_rep:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
+                   \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and npos: "0 < n" and dpos: "0 < d"
+      and ucp: "\<Phi> \<in> UCP n d"
+  shows "\<exists>Vs :: complex Matrix.mat list.
+           ucp_kraus_rep n d \<Phi> Vs \<and> length Vs = n * d"
+proof -
+  have cp: "completely_positive n d \<Phi>"
+    using ucp unfolding UCP_def by auto
+  have unital: "\<Phi> (1\<^sub>m n) = 1\<^sub>m d"
+    using ucp unfolding UCP_def unital_map_def by auto
+  have psd_choi: "psd (choi_matrix n d \<Phi>)"
+    using choi_psd_if_cp[OF npos dpos cp] .
+  obtain Ws :: "complex Matrix.mat list"
+    where Ws_len: "length Ws = n * d"
+      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Ws_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
+    using kraus_rep_of_psd_choi[OF linear smult range npos dpos psd_choi]
+    by blast
+  have I_n_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
+  have phi_I: "\<Phi> (1\<^sub>m n) = kraus_map_dim d Ws (1\<^sub>m n)"
+    using Ws_eq I_n_c by blast
+  have sum_WWdag: "foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d) = 1\<^sub>m d"
+  proof -
+    have "1\<^sub>m d = \<Phi> (1\<^sub>m n)" using unital by simp
+    also have "... = kraus_map_dim d Ws (1\<^sub>m n)" using phi_I .
+    also have "... = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+      using kraus_map_dim_one[OF Ws_c] .
+    finally show ?thesis by simp
+  qed
+  have rep: "ucp_kraus_rep n d \<Phi> Ws"
+    unfolding ucp_kraus_rep_def
+    using Ws_c sum_WWdag Ws_eq by blast
+  show ?thesis using rep Ws_len by blast
+qed
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>Choi (1975), Theorem 3: a UCP map \<open>\<Phi> : M\<^sub>n \<rightarrow> M\<^sub>d\<close> is an
