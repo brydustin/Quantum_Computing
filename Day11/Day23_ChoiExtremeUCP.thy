@@ -3855,16 +3855,36 @@ qed
 
 subsection \<open>Choi's Theorem 3 \<mdash> forward direction\<close>
 
-text \<open>The forward direction uses CP Radon\<dash>Nikodym (the sorry'd
-@{thm cp_radon_nikodym}).  Two refinement issues are isolated as
-@{term \<open>sorry\<close>}s:
-  \<^item> recovering a \<^emph>\<open>carrier\<close>-point witness of \<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close>
-    (the definition of @{const extreme_CPTP} uses function
-    inequality, allowing pathological off-carrier disagreement);
-  \<^item> the converse of @{thm kraus_quad_map_is_TP}:
-    \<open>trace_preserving n (kraus_quad_map d Vs T) \<and> \<dots> \<Longrightarrow> kraus_pair_sum n Vs T = 1\<^sub>m n\<close>.
+text \<open>\<^bold>\<open>Important caveat on @{const extreme_CPTP}.\<close>  The current
+definition uses raw function inequality \<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close>, but both
+@{const completely_positive} and @{const trace_preserving} only
+constrain behaviour on @{term \<open>carrier_mat n n\<close>}.  Hence for
+\<^emph>\<open>any\<close> CPTP \<open>\<Phi>\<close> one can construct \<open>\<Phi>\<^sub>1\<close> that agrees
+with \<open>\<Phi>\<close> on the carrier but disagrees on (say) a \<open>1\<times>1\<close> matrix;
+this \<open>\<Phi>\<^sub>1\<close> is itself in CPTP, so the negation of
+@{const extreme_CPTP} is vacuously satisfied.  Consequently
+\<^bold>\<open>@{const extreme_CPTP} as currently defined is always false\<close>,
+and Choi's Theorem 3 as stated (an iff with @{const mat_lin_indep_real})
+does not hold.
 
-Each is a clean, self-contained gap.\<close>
+The fix is to use a \<^emph>\<open>carrier\<close>-point notion of inequality.\<close>
+
+definition extreme_CPTP_carrier ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
+where
+  "extreme_CPTP_carrier n d \<Phi> \<equiv>
+     \<Phi> \<in> CPTP n d \<and>
+     \<not> (\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
+           (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
+           (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
+           (\<forall>X. X \<in> carrier_mat n n
+                  \<longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
+                            + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X))"
+
+text \<open>The forward direction targets the \<^emph>\<open>carrier\<close>-flavoured version:
+\<open>mat_lin_indep_complex \<Longrightarrow> extreme_CPTP_carrier\<close>.  Proof uses
+@{thm cp_radon_nikodym}; remaining sorries are mechanical
+(R-N application + TP-converse + assembly).\<close>
 
 theorem choi_theorem_3_cptp_forward_complex:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -3873,7 +3893,7 @@ theorem choi_theorem_3_cptp_forward_complex:
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
       and lin_indep: "mat_lin_indep_complex n (kraus_products Vs)"
-  shows "extreme_CPTP n d \<Phi>"
+  shows "extreme_CPTP_carrier n d \<Phi>"
 proof (rule ccontr)
   let ?k = "length Vs"
   have Vs_kops: "kraus_operators n d Vs"
@@ -3884,18 +3904,19 @@ proof (rule ccontr)
     using Vs_kops by (simp add: kraus_operators_altdef)
   have \<Phi>_eq: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = kraus_map_dim d Vs X"
     using rep by (simp add: cptp_kraus_rep_def)
-  assume "\<not> extreme_CPTP n d \<Phi>"
-  with \<Phi>_in have not_ext: "\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
-                              \<Phi>\<^sub>1 \<noteq> \<Phi> \<and> \<Phi> \<noteq> \<Phi>\<^sub>2 \<and>
-                              (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
-                                \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
-                                      + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
-    unfolding extreme_CPTP_def by blast
-  obtain \<Phi>\<^sub>1 \<Phi>\<^sub>2 where
+  assume "\<not> extreme_CPTP_carrier n d \<Phi>"
+  with \<Phi>_in have not_ext:
+    "\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
+        (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
+        (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
+        (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
+            \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
+    unfolding extreme_CPTP_carrier_def by blast
+  obtain \<Phi>\<^sub>1 \<Phi>\<^sub>2 X\<^sub>0 where
         \<Phi>1_in: "\<Phi>\<^sub>1 \<in> CPTP n d"
     and \<Phi>2_in: "\<Phi>\<^sub>2 \<in> CPTP n d"
-    and \<Phi>1_ne: "\<Phi>\<^sub>1 \<noteq> \<Phi>"
-    and \<Phi>2_ne: "\<Phi> \<noteq> \<Phi>\<^sub>2"
+    and X\<^sub>0_c: "X\<^sub>0 \<in> carrier_mat n n"
+    and \<Phi>1_ne_at_X0: "\<Phi>\<^sub>1 X\<^sub>0 \<noteq> \<Phi> X\<^sub>0"
     and mid: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
                  \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
                        + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X"
@@ -3904,25 +3925,44 @@ proof (rule ccontr)
   have \<Phi>1_tp: "trace_preserving n \<Phi>\<^sub>1" using \<Phi>1_in by (simp add: CPTP_def)
   have \<Phi>2_cp: "completely_positive n d \<Phi>\<^sub>2" using \<Phi>2_in by (simp add: CPTP_def)
   have \<Phi>2_tp: "trace_preserving n \<Phi>\<^sub>2" using \<Phi>2_in by (simp add: CPTP_def)
-  \<comment> \<open>Three subgoals (each sorry'd; see comments) compose to the contradiction.\<close>
-  \<comment> \<open>Step 1: get a carrier-point witness \<open>X\<^sub>0\<close> with \<open>\<Phi>\<^sub>1 X\<^sub>0 \<noteq> \<Phi> X\<^sub>0\<close>.\<close>
-  have carrier_witness: "\<exists>X\<^sub>0 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>0 \<noteq> \<Phi> X\<^sub>0"
-    sorry
-  \<comment> \<open>Step 2: define the half-map \<open>\<Psi> := \<lambda>X. (1/2) \<cdot> \<Phi>\<^sub>1 X\<close>, show CP and dominated.\<close>
+  \<comment> \<open>Define the half-map and apply CP Radon\<dash>Nikodym.\<close>
   define \<Psi> where "\<Psi> = (\<lambda>X. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
-  \<comment> \<open>Step 3: apply CP Radon\<dash>Nikodym to get a PSD \<open>T\<close> with
-      \<open>\<Psi> X = kraus_quad_map d Vs T X\<close> on carrier.\<close>
-  have RN_witness: "\<exists>T. T \<in> carrier_mat ?k ?k \<and> psd T \<and>
-                          (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
-                              \<Psi> X = kraus_quad_map d Vs T X)"
-    sorry
-  \<comment> \<open>Step 4: \<open>T\<^sub>1 := 2 \<cdot>\<^sub>m T\<close> satisfies \<open>\<Phi>\<^sub>1 X = kraus_quad_map d Vs T\<^sub>1 X\<close> on carrier,
-      and \<open>kraus_pair_sum n Vs T\<^sub>1 = 1\<^sub>m n\<close> (by TP of \<open>\<Phi>\<^sub>1\<close> + trace duality).
-      Set \<open>S := T\<^sub>1 - 1\<^sub>m k\<close>; \<open>S\<close> is hermitian, non-zero, satisfies
-      \<open>kraus_pair_sum n Vs S = 0\<^sub>m n n\<close>.  This is a complex relation among
-      \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close>, contradicting @{term \<open>mat_lin_indep_complex n (kraus_products Vs)\<close>}.\<close>
-  show False
-    sorry
+  \<comment> \<open>Step A: \<open>\<Psi>\<close> is CP, has the right range, and \<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier is CP.\<close>
+  have psi_cp: "completely_positive n d \<Psi>" sorry
+  have psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Psi> X \<in> carrier_mat d d" sorry
+  have diff_cp: "completely_positive n d (\<lambda>X. \<Phi> X - \<Psi> X)" sorry
+  \<comment> \<open>Step B: R-N gives PSD \<open>T\<close> with \<open>\<Psi> X = kraus_quad_map d Vs T X\<close>.\<close>
+  obtain T where
+      T_c: "T \<in> carrier_mat ?k ?k" and T_psd: "psd T"
+    and Psi_eq: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
+                    \<Psi> X = kraus_quad_map d Vs T X"
+    using cp_radon_nikodym[OF Vs_c \<Phi>_eq psi_cp psi_range diff_cp npos dpos] by blast
+  \<comment> \<open>Step C: \<open>T\<^sub>1 := 2 \<cdot>\<^sub>m T\<close> satisfies \<open>\<Phi>\<^sub>1 X = kraus_quad_map d Vs T\<^sub>1 X\<close> on carrier.\<close>
+  define T\<^sub>1 where "T\<^sub>1 = (2 :: complex) \<cdot>\<^sub>m T"
+  have T1_c: "T\<^sub>1 \<in> carrier_mat ?k ?k" unfolding T\<^sub>1_def using T_c by auto
+  have \<Phi>1_eq_qmap: "\<And>X :: complex Matrix.mat.
+                       X \<in> carrier_mat n n \<Longrightarrow>
+                       \<Phi>\<^sub>1 X = kraus_quad_map d Vs T\<^sub>1 X"
+  proof -
+    fix X :: "complex Matrix.mat" assume X_c: "X \<in> carrier_mat n n"
+    have "\<Phi>\<^sub>1 X = (2 :: complex) \<cdot>\<^sub>m ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
+      by (rule eq_matI) auto
+    also have "\<dots> = (2 :: complex) \<cdot>\<^sub>m \<Psi> X" unfolding \<Psi>_def by simp
+    also have "\<dots> = (2 :: complex) \<cdot>\<^sub>m kraus_quad_map d Vs T X"
+      using Psi_eq[OF X_c] by simp
+    also have "\<dots> = kraus_quad_map d Vs ((2 :: complex) \<cdot>\<^sub>m T) X"
+      using kraus_quad_map_smult_Tm[OF Vs_c X_c T_c, of "(2 :: complex)"] by simp
+    finally show "\<Phi>\<^sub>1 X = kraus_quad_map d Vs T\<^sub>1 X" unfolding T\<^sub>1_def .
+  qed
+  \<comment> \<open>Step D: \<open>kraus_pair_sum n Vs T\<^sub>1 = 1\<^sub>m n\<close> (from TP of \<open>\<Phi>\<^sub>1\<close>).
+      This is the converse of @{thm kraus_quad_map_is_TP}, proved via the
+      trace pairing duality: @{thm Tr_kraus_quad_map_eq} plus
+      \<open>\<forall>\<rho>. Tr (M\<rho>) = Tr (\<rho>) \<Longrightarrow> M = 1\<^sub>m n\<close>.\<close>
+  have ps_T1: "kraus_pair_sum n Vs T\<^sub>1 = 1\<^sub>m n" sorry
+  \<comment> \<open>Step E: \<open>S := T\<^sub>1 - 1\<^sub>m k\<close> is hermitian, non-zero, with
+      \<open>kraus_pair_sum n Vs S = 0\<^sub>m n n\<close>; this yields a complex relation
+      contradicting @{thm lin_indep}.\<close>
+  show False sorry
 qed
 
 
