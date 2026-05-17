@@ -1625,6 +1625,546 @@ proof -
 qed
 
 
+subsection \<open>Symmetric / anti-hermitian split of the coefficient matrix\<close>
+
+text \<open>The \<^emph>\<open>dual\<close> linear combination
+\<open>kraus_pair_sum n Vs A = \<Sum>\<^sub>{i,j} A\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i\<close>
+is an \<open>n \<times> n\<close> matrix. The dependence assumption
+\<open>\<not> mat_lin_indep_real n (kraus_products Vs)\<close> says that some real-coefficient
+\<open>A\<close> makes this sum vanish.\<close>
+
+definition kraus_pair_row ::
+  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
+       nat \<Rightarrow> complex Matrix.mat"
+where
+  "kraus_pair_row n Vs Amat i \<equiv>
+     foldr (\<lambda>j acc. Amat $$ (i, j) \<cdot>\<^sub>m ((Vs!j)\<^sup>\<dagger> * Vs!i) + acc)
+           [0..<length Vs] (0\<^sub>m n n)"
+
+definition kraus_pair_sum ::
+  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
+       complex Matrix.mat"
+where
+  "kraus_pair_sum n Vs Amat \<equiv>
+     foldr (\<lambda>i acc. kraus_pair_row n Vs Amat i + acc)
+           [0..<length Vs] (0\<^sub>m n n)"
+
+lemma kraus_pair_row_carrier:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and i_lt: "i < length Vs"
+  shows "kraus_pair_row n Vs Amat i \<in> carrier_mat n n"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>j. Amat $$ (i,j) \<cdot>\<^sub>m ((Vs!j)\<^sup>\<dagger> * Vs!i)"
+  have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+  have term_c: "\<forall>j < ?N. ?f j \<in> carrier_mat n n"
+  proof (intro allI impI)
+    fix j assume j_lt: "j < ?N"
+    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+    have inner_c: "(Vs!j)\<^sup>\<dagger> * Vs!i \<in> carrier_mat n n"
+      using Vjd_c Vi_c by auto
+    show "?f j \<in> carrier_mat n n"
+      using inner_c by (intro smult_carrier_mat) auto
+  qed
+  show ?thesis
+    unfolding kraus_pair_row_def
+    using foldr_upt_add_carrier[OF term_c] .
+qed
+
+lemma kraus_pair_sum_carrier:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+  shows "kraus_pair_sum n Vs Amat \<in> carrier_mat n n"
+proof -
+  let ?N = "length Vs"
+  have term_c: "\<forall>i < ?N. kraus_pair_row n Vs Amat i \<in> carrier_mat n n"
+    using kraus_pair_row_carrier[OF Vs_c] by blast
+  show ?thesis
+    unfolding kraus_pair_sum_def
+    using foldr_upt_add_carrier[OF term_c] .
+qed
+
+text \<open>Per-entry index for the dual sum.\<close>
+
+lemma kraus_pair_row_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and i_lt: "i < length Vs"
+      and r_lt: "r < n" and c_lt: "c < n"
+  shows "kraus_pair_row n Vs Amat i $$ (r, c)
+           = (\<Sum>j = 0..<length Vs.
+                Amat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>j. Amat $$ (i, j) \<cdot>\<^sub>m ((Vs!j)\<^sup>\<dagger> * Vs!i)"
+  have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+  have term_c: "\<forall>j < ?N. ?f j \<in> carrier_mat n n"
+  proof (intro allI impI)
+    fix j assume j_lt: "j < ?N"
+    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+    have inner_c: "(Vs!j)\<^sup>\<dagger> * Vs!i \<in> carrier_mat n n"
+      using Vjd_c Vi_c by auto
+    show "?f j \<in> carrier_mat n n"
+      using inner_c by (intro smult_carrier_mat) auto
+  qed
+  have term_idx: "\<And>j. j < ?N \<Longrightarrow>
+                   ?f j $$ (r,c) = Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r,c)"
+  proof -
+    fix j assume j_lt: "j < ?N"
+    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+    have inner_c: "(Vs!j)\<^sup>\<dagger> * Vs!i \<in> carrier_mat n n"
+      using Vjd_c Vi_c by auto
+    have r_dim: "r < dim_row ((Vs!j)\<^sup>\<dagger> * Vs!i)" using inner_c r_lt by auto
+    have c_dim: "c < dim_col ((Vs!j)\<^sup>\<dagger> * Vs!i)" using inner_c c_lt by auto
+    show "?f j $$ (r,c) = Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r,c)"
+      using index_smult_mat(1)[OF r_dim c_dim] .
+  qed
+  have "kraus_pair_row n Vs Amat i $$ (r, c)
+          = foldr (\<lambda>j acc. ?f j + acc) [0..<?N] (0\<^sub>m n n) $$ (r, c)"
+    unfolding kraus_pair_row_def by simp
+  also have "\<dots> = (\<Sum>j = 0..<?N. ?f j $$ (r, c))"
+    using foldr_upt_add_index[OF term_c r_lt c_lt] .
+  also have "\<dots> = (\<Sum>j = 0..<?N. Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+    by (rule sum.cong) (auto simp: term_idx)
+  finally show ?thesis .
+qed
+
+lemma kraus_pair_sum_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and r_lt: "r < n" and c_lt: "c < n"
+  shows "kraus_pair_sum n Vs Amat $$ (r, c)
+           = (\<Sum>i = 0..<length Vs. \<Sum>j = 0..<length Vs.
+                Amat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+proof -
+  let ?N = "length Vs"
+  let ?row = "\<lambda>i. kraus_pair_row n Vs Amat i"
+  have row_c: "\<forall>i < ?N. ?row i \<in> carrier_mat n n"
+    using kraus_pair_row_carrier[OF Vs_c] by blast
+  have row_idx: "\<And>i. i < ?N \<Longrightarrow>
+                  ?row i $$ (r,c) = (\<Sum>j = 0..<?N.
+                     Amat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+    using kraus_pair_row_index[OF Vs_c _ r_lt c_lt] by blast
+  have "kraus_pair_sum n Vs Amat $$ (r, c)
+          = foldr (\<lambda>i acc. ?row i + acc) [0..<?N] (0\<^sub>m n n) $$ (r, c)"
+    unfolding kraus_pair_sum_def by simp
+  also have "\<dots> = (\<Sum>i = 0..<?N. ?row i $$ (r, c))"
+    using foldr_upt_add_index[OF row_c r_lt c_lt] .
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                     Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r,c))"
+    by (rule sum.cong) (auto simp: row_idx)
+  finally show ?thesis .
+qed
+
+text \<open>Linearity in the coefficient matrix.\<close>
+
+lemma kraus_pair_sum_add_A:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and A1_c: "A1 \<in> carrier_mat (length Vs) (length Vs)"
+      and A2_c: "A2 \<in> carrier_mat (length Vs) (length Vs)"
+  shows "kraus_pair_sum n Vs (A1 + A2)
+           = kraus_pair_sum n Vs A1 + kraus_pair_sum n Vs A2"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_pair_sum n Vs (A1 + A2)"
+  let ?R = "kraus_pair_sum n Vs A1 + kraus_pair_sum n Vs A2"
+  have L_c: "?L \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have R1_c: "kraus_pair_sum n Vs A1 \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have R2_c: "kraus_pair_sum n Vs A2 \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have R_c: "?R \<in> carrier_mat n n" using R1_c R2_c by auto
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c assume r_lt: "r < dim_row ?R" and c_lt: "c < dim_col ?R"
+  hence r_lt': "r < n" and c_lt': "c < n" using R_c by auto
+  have plus_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                    (A1 + A2) $$ (i, j) = A1 $$ (i, j) + A2 $$ (i, j)"
+    using A1_c A2_c by auto
+  have L_idx: "?L $$ (r, c)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (A1 $$ (i,j) + A2 $$ (i,j)) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+    using kraus_pair_sum_index[OF Vs_c r_lt' c_lt', of "A1 + A2"]
+    by (auto intro!: sum.cong simp: plus_idx)
+  have R_idx: "?R $$ (r, c)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       A1 $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))
+                 + (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       A2 $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+    using R1_c R2_c r_lt' c_lt'
+          kraus_pair_sum_index[OF Vs_c r_lt' c_lt', of A1]
+          kraus_pair_sum_index[OF Vs_c r_lt' c_lt', of A2]
+    by simp
+  have inner_split:
+    "\<And>i. (\<Sum>j = 0..<?N.
+            (A1 $$ (i, j) + A2 $$ (i, j)) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))
+         = (\<Sum>j = 0..<?N. A1 $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))
+         + (\<Sum>j = 0..<?N. A2 $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c))"
+    by (simp add: ring_distribs sum.distrib)
+  show "?L $$ (r, c) = ?R $$ (r, c)"
+    using L_idx R_idx inner_split by (simp add: sum.distrib)
+qed
+
+lemma kraus_pair_sum_smult_A:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Amat_c: "Amat \<in> carrier_mat (length Vs) (length Vs)"
+  shows "kraus_pair_sum n Vs (c \<cdot>\<^sub>m Amat)
+           = c \<cdot>\<^sub>m kraus_pair_sum n Vs Amat"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_pair_sum n Vs (c \<cdot>\<^sub>m Amat)"
+  let ?R = "c \<cdot>\<^sub>m kraus_pair_sum n Vs Amat"
+  have L_c: "?L \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have R0_c: "kraus_pair_sum n Vs Amat \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have R_c: "?R \<in> carrier_mat n n" using R0_c by simp
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c1 assume r_lt: "r < dim_row ?R" and c1_lt: "c1 < dim_col ?R"
+  hence r_lt': "r < n" and c1_lt': "c1 < n" using R_c by auto
+  have smult_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                     (c \<cdot>\<^sub>m Amat) $$ (i,j) = c * Amat $$ (i,j)"
+    using Amat_c by auto
+  have L_idx: "?L $$ (r, c1)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (c * Amat $$ (i,j)) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+    using kraus_pair_sum_index[OF Vs_c r_lt' c1_lt', of "c \<cdot>\<^sub>m Amat"]
+    by (auto intro!: sum.cong simp: smult_idx)
+  have R_idx_pre: "kraus_pair_sum n Vs Amat $$ (r, c1)
+                     = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+    using kraus_pair_sum_index[OF Vs_c r_lt' c1_lt'] .
+  have r_lt_dim: "r < dim_row (kraus_pair_sum n Vs Amat)" using R0_c r_lt' by auto
+  have c1_lt_dim: "c1 < dim_col (kraus_pair_sum n Vs Amat)" using R0_c c1_lt' by auto
+  have R_idx: "?R $$ (r, c1)
+                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+    using index_smult_mat(1)[OF r_lt_dim c1_lt_dim] R_idx_pre by simp
+  have collapse: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      (c * Amat $$ (i,j)) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))
+                = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+  proof -
+    have step1: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                    (c * Amat $$ (i,j)) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      c * (Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1)))"
+      by (intro sum.cong refl) (simp add: algebra_simps)
+    have step2: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                    c * (Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1)))
+                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Amat $$ (i,j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+      by (simp add: sum_distrib_left)
+    show ?thesis using step1 step2 by simp
+  qed
+  show "?L $$ (r, c1) = ?R $$ (r, c1)"
+    using L_idx R_idx collapse by simp
+qed
+
+text \<open>Dagger identity: taking the dagger of @{term \<open>kraus_pair_sum n Vs A\<close>}
+swaps and conjugates the coefficient indices.\<close>
+
+lemma kraus_pair_sum_dagger:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Amat_c: "Amat \<in> carrier_mat (length Vs) (length Vs)"
+  shows "(kraus_pair_sum n Vs Amat)\<^sup>\<dagger>
+           = kraus_pair_sum n Vs
+               (Matrix.mat (length Vs) (length Vs)
+                  (\<lambda>(i,j). cnj (Amat $$ (j, i))))"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?Adag = "Matrix.mat ?N ?N (\<lambda>(i,j). cnj (Amat $$ (j, i)))"
+  let ?L = "(kraus_pair_sum n Vs Amat)\<^sup>\<dagger>"
+  let ?R = "kraus_pair_sum n Vs ?Adag"
+  have S_c: "kraus_pair_sum n Vs Amat \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  have L_c: "?L \<in> carrier_mat n n" using S_c by (rule dagger_carrier)
+  have R_c: "?R \<in> carrier_mat n n"
+    by (rule kraus_pair_sum_carrier[OF Vs_c])
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
+  hence r_lt: "r < n" and c_lt: "c < n" using R_c by auto
+  \<comment> \<open>LHS via dagger of the original.\<close>
+  have L_idx: "?L $$ (r, c) = cnj (kraus_pair_sum n Vs Amat $$ (c, r))"
+    using S_c r_lt c_lt by (simp add: dagger_def)
+  also have "\<dots> = cnj (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Amat $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (c, r))"
+    using kraus_pair_sum_index[OF Vs_c c_lt r_lt] by simp
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                     cnj (Amat $$ (i, j)) * cnj (((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (c, r)))"
+    by (simp add: complex_cnj_mult)
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                     cnj (Amat $$ (i, j)) * ((Vs!i)\<^sup>\<dagger> * Vs!j) $$ (r, c))"
+  proof (intro sum.cong refl)
+    fix i j assume "i \<in> {0..<?N}" "j \<in> {0..<?N}"
+    hence i_lt: "i < ?N" and j_lt: "j < ?N" by simp_all
+    have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+    have Vid_c: "(Vs!i)\<^sup>\<dagger> \<in> carrier_mat n d" using Vi_c by (rule dagger_carrier)
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+    have inner_c1: "(Vs!j)\<^sup>\<dagger> * Vs!i \<in> carrier_mat n n" using Vjd_c Vi_c by auto
+    have inner_c2: "(Vs!i)\<^sup>\<dagger> * Vs!j \<in> carrier_mat n n" using Vid_c Vj_c by auto
+    have dag_prod: "((Vs!j)\<^sup>\<dagger> * Vs!i)\<^sup>\<dagger> = (Vs!i)\<^sup>\<dagger> * Vs!j"
+    proof -
+      let ?Vjd = "(Vs!j)\<^sup>\<dagger>"
+      have dims: "dim_col ?Vjd = dim_row (Vs!i)"
+        using Vjd_c Vi_c by auto
+      have a: "(?Vjd * Vs!i)\<^sup>\<dagger> = (Vs!i)\<^sup>\<dagger> * (?Vjd\<^sup>\<dagger>)"
+        by (rule dagger_of_prod[OF dims])
+      have b: "(?Vjd)\<^sup>\<dagger> = Vs!j"
+        by (rule dagger_of_dagger_is_id)
+      from a b show ?thesis by simp
+    qed
+    have cnj_eq: "cnj (((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (c, r)) = ((Vs!i)\<^sup>\<dagger> * Vs!j) $$ (r, c)"
+    proof -
+      have c_dim: "c < dim_row ((Vs!j)\<^sup>\<dagger> * Vs!i)" using inner_c1 c_lt by auto
+      have r_dim: "r < dim_col ((Vs!j)\<^sup>\<dagger> * Vs!i)" using inner_c1 r_lt by auto
+      have "cnj (((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (c, r))
+              = ((Vs!j)\<^sup>\<dagger> * Vs!i)\<^sup>\<dagger> $$ (r, c)"
+        using c_dim r_dim by (simp add: dagger_def)
+      thus ?thesis using dag_prod by simp
+    qed
+    show "cnj (Amat $$ (i, j)) * cnj (((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (c, r))
+            = cnj (Amat $$ (i, j)) * ((Vs!i)\<^sup>\<dagger> * Vs!j) $$ (r, c)"
+      using cnj_eq by simp
+  qed
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                     ?Adag $$ (j, i) * ((Vs!i)\<^sup>\<dagger> * Vs!j) $$ (r, c))"
+  proof (intro sum.cong refl)
+    fix i j assume "i \<in> {0..<?N}" "j \<in> {0..<?N}"
+    hence i_lt: "i < ?N" and j_lt: "j < ?N" by simp_all
+    have idx: "?Adag $$ (j, i) = cnj (Amat $$ (i, j))"
+      using i_lt j_lt by simp
+    show "cnj (Amat $$ (i, j)) * ((Vs!i)\<^sup>\<dagger> * Vs!j) $$ (r, c)
+            = ?Adag $$ (j, i) * ((Vs!i)\<^sup>\<dagger> * Vs!j) $$ (r, c)"
+      using idx by simp
+  qed
+  also have "\<dots> = (\<Sum>j = 0..<?N. \<Sum>i = 0..<?N.
+                     ?Adag $$ (j, i) * ((Vs!i)\<^sup>\<dagger> * Vs!j) $$ (r, c))"
+    by (rule sum.swap)
+  also have "\<dots> = ?R $$ (r, c)"
+    using kraus_pair_sum_index[OF Vs_c r_lt c_lt, of ?Adag] by simp
+  finally show "?L $$ (r, c) = ?R $$ (r, c)" .
+qed
+
+
+text \<open>Existence of a hermitian witness: if \<open>A_orig\<close> (with real entries)
+gives \<open>kraus_pair_sum n Vs A_orig = 0\<close> and \<open>A_orig \<noteq> 0\<close>, then either
+the symmetric or the anti-hermitian part yields a non-zero hermitian
+matrix with the same property.\<close>
+
+lemma sym_or_antisym_witness:
+  fixes A_orig :: "complex Matrix.mat"
+  assumes Vs_c:  "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and A_c:   "A_orig \<in> carrier_mat (length Vs) (length Vs)"
+      and A_real: "\<And>i j. i < length Vs \<Longrightarrow> j < length Vs \<Longrightarrow>
+                      cnj (A_orig $$ (i, j)) = A_orig $$ (i, j)"
+      and A_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
+      and A_nontriv: "A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)"
+  shows "\<exists>H. H \<in> carrier_mat (length Vs) (length Vs)
+           \<and> hermitian H
+           \<and> H \<noteq> 0\<^sub>m (length Vs) (length Vs)
+           \<and> kraus_pair_sum n Vs H = 0\<^sub>m n n"
+proof -
+  let ?k = "length Vs"
+  let ?Atr = "Matrix.mat ?k ?k (\<lambda>(i,j). cnj (A_orig $$ (j, i)))"
+  have Atr_c: "?Atr \<in> carrier_mat ?k ?k" by simp
+  \<comment> \<open>For real \<open>A_orig\<close>, \<open>?Atr\<close> coincides with the transpose.\<close>
+  have Atr_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                   ?Atr $$ (i, j) = A_orig $$ (j, i)"
+    using A_real by auto
+  \<comment> \<open>By the dagger identity, the pair-sum of \<open>?Atr\<close> also vanishes.\<close>
+  have pairsum_Atr: "kraus_pair_sum n Vs ?Atr = 0\<^sub>m n n"
+  proof -
+    have "kraus_pair_sum n Vs ?Atr = (kraus_pair_sum n Vs A_orig)\<^sup>\<dagger>"
+      using kraus_pair_sum_dagger[OF Vs_c A_c] by simp
+    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)\<^sup>\<dagger>"
+      using A_zero by simp
+    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)"
+      by (rule eq_matI) (auto simp: dagger_def)
+    finally show ?thesis .
+  qed
+  define Asym  where "Asym  = A_orig + ?Atr"
+  define Askew where "Askew = A_orig + (-1) \<cdot>\<^sub>m ?Atr"
+  define Hskew where "Hskew = \<i> \<cdot>\<^sub>m Askew"
+  have Asym_c:  "Asym  \<in> carrier_mat ?k ?k" unfolding Asym_def using A_c Atr_c by auto
+  have nAtr_c: "(-1::complex) \<cdot>\<^sub>m ?Atr \<in> carrier_mat ?k ?k" using Atr_c by auto
+  have Askew_c: "Askew \<in> carrier_mat ?k ?k" unfolding Askew_def using A_c nAtr_c by auto
+  have Hskew_c: "Hskew \<in> carrier_mat ?k ?k" unfolding Hskew_def using Askew_c by auto
+  \<comment> \<open>Pair-sum of \<open>Asym\<close> and \<open>Askew\<close> vanish.\<close>
+  have ps_Asym: "kraus_pair_sum n Vs Asym = 0\<^sub>m n n"
+  proof -
+    have "kraus_pair_sum n Vs Asym
+            = kraus_pair_sum n Vs A_orig + kraus_pair_sum n Vs ?Atr"
+      unfolding Asym_def by (rule kraus_pair_sum_add_A[OF Vs_c A_c Atr_c])
+    also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n"
+      using A_zero pairsum_Atr by simp
+    also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n"
+      by (rule eq_matI) auto
+    finally show ?thesis .
+  qed
+  have ps_Hskew: "kraus_pair_sum n Vs Hskew = 0\<^sub>m n n"
+  proof -
+    have ps_nAtr: "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr) = 0\<^sub>m n n"
+    proof -
+      have "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr)
+              = (-1::complex) \<cdot>\<^sub>m kraus_pair_sum n Vs ?Atr"
+        by (rule kraus_pair_sum_smult_A[OF Vs_c Atr_c])
+      also have "\<dots> = (-1::complex) \<cdot>\<^sub>m 0\<^sub>m n n"
+        using pairsum_Atr by simp
+      also have "\<dots> = 0\<^sub>m n n"
+        by (rule eq_matI) auto
+      finally show ?thesis .
+    qed
+    have ps_Askew: "kraus_pair_sum n Vs Askew = 0\<^sub>m n n"
+    proof -
+      have "kraus_pair_sum n Vs Askew
+              = kraus_pair_sum n Vs A_orig
+                + kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr)"
+        unfolding Askew_def
+        by (rule kraus_pair_sum_add_A[OF Vs_c A_c nAtr_c])
+      also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n"
+        using A_zero ps_nAtr by simp
+      also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n"
+        by (rule eq_matI) auto
+      finally show ?thesis .
+    qed
+    have "kraus_pair_sum n Vs Hskew
+            = \<i> \<cdot>\<^sub>m kraus_pair_sum n Vs Askew"
+      unfolding Hskew_def
+      by (rule kraus_pair_sum_smult_A[OF Vs_c Askew_c])
+    also have "\<dots> = \<i> \<cdot>\<^sub>m 0\<^sub>m n n"
+      using ps_Askew by simp
+    also have "\<dots> = 0\<^sub>m n n"
+      by (rule eq_matI) auto
+    finally show ?thesis .
+  qed
+  \<comment> \<open>Hermitian-ness.\<close>
+  have herm_Asym: "hermitian Asym"
+    unfolding hermitian_def
+  proof (rule eq_matI)
+    show "dim_row (Asym\<^sup>\<dagger>) = dim_row Asym" using Asym_c by simp
+    show "dim_col (Asym\<^sup>\<dagger>) = dim_col Asym" using Asym_c by simp
+    fix i j assume "i < dim_row Asym" "j < dim_col Asym"
+    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Asym_c by auto
+    have Atr_ij: "?Atr $$ (i, j) = cnj (A_orig $$ (j, i))"
+      using i_lt j_lt by simp
+    have Atr_ji: "?Atr $$ (j, i) = cnj (A_orig $$ (i, j))"
+      using i_lt j_lt by simp
+    have Asym_ij: "Asym $$ (i, j) = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))"
+      unfolding Asym_def using i_lt j_lt A_c Atr_c Atr_ij by simp
+    have Asym_ji: "Asym $$ (j, i) = A_orig $$ (j, i) + cnj (A_orig $$ (i, j))"
+      unfolding Asym_def using i_lt j_lt A_c Atr_c Atr_ji by simp
+    have "Asym\<^sup>\<dagger> $$ (i, j) = cnj (Asym $$ (j, i))"
+      using i_lt j_lt Asym_c by (simp add: dagger_def)
+    also have "\<dots> = cnj (A_orig $$ (j, i) + cnj (A_orig $$ (i, j)))"
+      using Asym_ji by simp
+    also have "\<dots> = cnj (A_orig $$ (j, i)) + A_orig $$ (i, j)"
+      by simp
+    also have "\<dots> = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))"
+      by simp
+    also have "\<dots> = Asym $$ (i, j)"
+      using Asym_ij by simp
+    finally show "Asym\<^sup>\<dagger> $$ (i, j) = Asym $$ (i, j)" .
+  qed
+  have herm_Hskew: "hermitian Hskew"
+    unfolding hermitian_def
+  proof (rule eq_matI)
+    show "dim_row (Hskew\<^sup>\<dagger>) = dim_row Hskew" using Hskew_c by simp
+    show "dim_col (Hskew\<^sup>\<dagger>) = dim_col Hskew" using Hskew_c by simp
+    fix i j assume "i < dim_row Hskew" "j < dim_col Hskew"
+    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Hskew_c by auto
+    have As_idx: "Askew $$ (i, j) = A_orig $$ (i, j) - A_orig $$ (j, i)"
+      unfolding Askew_def using i_lt j_lt A_c Atr_c Atr_idx by simp
+    have As_idx_swap: "Askew $$ (j, i) = A_orig $$ (j, i) - A_orig $$ (i, j)"
+      unfolding Askew_def using i_lt j_lt A_c Atr_c Atr_idx by simp
+    have "Hskew\<^sup>\<dagger> $$ (i, j) = cnj (Hskew $$ (j, i))"
+      using i_lt j_lt Hskew_c by (simp add: dagger_def)
+    also have "\<dots> = cnj (\<i> * Askew $$ (j, i))"
+      unfolding Hskew_def using i_lt j_lt Askew_c by simp
+    also have "\<dots> = - \<i> * cnj (Askew $$ (j, i))"
+      by (simp add: complex_cnj_mult)
+    also have "\<dots> = - \<i> * (A_orig $$ (j, i) - A_orig $$ (i, j))"
+      using As_idx_swap A_real[OF i_lt j_lt] A_real[OF j_lt i_lt] by simp
+    also have "\<dots> = \<i> * (A_orig $$ (i, j) - A_orig $$ (j, i))"
+      by (simp add: algebra_simps)
+    also have "\<dots> = \<i> * Askew $$ (i, j)"
+      using As_idx by simp
+    also have "\<dots> = Hskew $$ (i, j)"
+      unfolding Hskew_def using i_lt j_lt Askew_c by simp
+    finally show "Hskew\<^sup>\<dagger> $$ (i, j) = Hskew $$ (i, j)" .
+  qed
+  \<comment> \<open>At least one is non-zero.\<close>
+  show ?thesis
+  proof (cases "Asym = 0\<^sub>m ?k ?k")
+    case False
+    \<comment> \<open>Use the symmetric part.\<close>
+    show ?thesis using Asym_c herm_Asym False ps_Asym by blast
+  next
+    case True
+    \<comment> \<open>\<open>Asym = 0\<close> means \<open>A_orig + transpose A_orig = 0\<close>, so \<open>A_orig\<close> is skew.
+        Then \<open>Hskew = \<i> \<cdot> 2A_orig \<noteq> 0\<close>.\<close>
+    have At_eq_neg: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                      A_orig $$ (j, i) = - A_orig $$ (i, j)"
+    proof -
+      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+      have "Asym $$ (i, j) = 0"
+        using True i_lt j_lt by simp
+      hence "A_orig $$ (i, j) + ?Atr $$ (i, j) = 0"
+        unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
+      hence eq0: "A_orig $$ (i, j) + A_orig $$ (j, i) = 0"
+        using Atr_idx[OF i_lt j_lt] by simp
+      hence "- A_orig $$ (i, j) = A_orig $$ (j, i)"
+        by (rule minus_unique)
+      thus "A_orig $$ (j, i) = - A_orig $$ (i, j)" by simp
+    qed
+    have Askew_eq_2A: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                         Askew $$ (i, j) = 2 * A_orig $$ (i, j)"
+    proof -
+      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+      have "Askew $$ (i, j) = A_orig $$ (i, j) - A_orig $$ (j, i)"
+        unfolding Askew_def using i_lt j_lt A_c Atr_c Atr_idx by simp
+      also have "\<dots> = A_orig $$ (i, j) - (- A_orig $$ (i, j))"
+        using At_eq_neg[OF i_lt j_lt] by simp
+      also have "\<dots> = 2 * A_orig $$ (i, j)" by simp
+      finally show "Askew $$ (i, j) = 2 * A_orig $$ (i, j)" .
+    qed
+    have Hskew_nz: "Hskew \<noteq> 0\<^sub>m ?k ?k"
+    proof
+      assume Hzero: "Hskew = 0\<^sub>m ?k ?k"
+      have all_zero: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A_orig $$ (i, j) = 0"
+      proof -
+        fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+        have "Hskew $$ (i, j) = 0"
+          using Hzero i_lt j_lt by simp
+        hence "\<i> * Askew $$ (i, j) = 0"
+          unfolding Hskew_def using i_lt j_lt Askew_c by simp
+        hence "\<i> * (2 * A_orig $$ (i, j)) = 0"
+          using Askew_eq_2A[OF i_lt j_lt] by simp
+        thus "A_orig $$ (i, j) = 0" by simp
+      qed
+      have "A_orig = 0\<^sub>m ?k ?k"
+      proof (rule eq_matI)
+        show "dim_row A_orig = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+          using A_c by simp
+        show "dim_col A_orig = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+          using A_c by simp
+        fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+                       "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+        hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
+        show "A_orig $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
+          using all_zero[OF i_lt j_lt] i_lt j_lt by simp
+      qed
+      thus False using A_nontriv by simp
+    qed
+    show ?thesis using Hskew_c herm_Hskew Hskew_nz ps_Hskew by blast
+  qed
+qed
+
+
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
 text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
