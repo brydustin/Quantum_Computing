@@ -179,16 +179,13 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `kraus_quad_map_smult_Tm`, `kraus_quad_map_one_eq_kraus_map_dim`, `kraus_pair_sum_one_eq_sum_wdag_w` | ✅ proved |
 | `lin_indep_complex_mat`       | ✅ defined (minimality) |
 | `kraus_quad_map_nonzero_witness` (Lemma B) | ❌ `sorry` (rank-1 mat-unit argument under minimality) |
-| `kraus_quad_map_is_TP`        | ❌ `sorry` (trace-cyclic + `kraus_pair_sum n Vs T = I`) |
-| **`choi_theorem_3_cptp_reverse`** | ✅ **proved** (modulo above two sorries) |
+| `Tr_kraus_quad_map_eq`        | ✅ proved |
+| `kraus_quad_map_is_TP`        | ✅ proved |
+| **`choi_theorem_3_cptp_reverse`** | ✅ **proved** (modulo Lemma B sorry only) |
 | `choi_theorem_3_cptp`         | ❌ `sorry` — full iff (needs reverse + forward) |
 | `choi_theorem_3` (UCP form)   | `oops` — pending dual restatement |
 
 \<^bold>What's left:</br>
-- `kraus_quad_map_is_TP` (medium effort): direct \<open>Tr\<close> computation using
-  \<open>Tr (kraus_quad_map d Vs T \<rho>) = Tr (kraus_pair_sum n Vs T * \<rho>)\<close> via
-  cyclicity (@{thm Tr_cyclic}). Per-entry sum manipulations parallel to
-  @{thm kraus_pair_sum_index}.
 - `kraus_quad_map_nonzero_witness` / Lemma B (substantial): for \<open>A \<noteq> 0\<close>
   and \<open>Vs\<close> linearly independent over \<open>\<complex>\<close>, exhibit \<open>\<rho>\<close> via
   \<open>\<rho> := mat_unit n p q\<close>; expand \<open>(V_i \<rho> V_j\<^sup>\<dagger>)\<close> at \<open>(r,c)\<close> as
