@@ -332,6 +332,200 @@ proof -
     using foldr_upt_add_carrier[OF term_c] .
 qed
 
+text \<open>Per-entry index formula for the accumulating fold (with arbitrary base).\<close>
+
+lemma foldr_upt_add_acc_index:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d d"
+      and z_c:  "z \<in> carrier_mat d d"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] z $$ (r, c)
+           = (\<Sum>k = 0..<N. f k $$ (r, c)) + z $$ (r, c)"
+  using carr z_c
+proof (induction N arbitrary: z)
+  case 0
+  show ?case by simp
+next
+  case (Suc N)
+  have hd_c:   "f N \<in> carrier_mat d d" using Suc.prems(1) by simp
+  have rest_c: "\<forall>k < N. f k \<in> carrier_mat d d" using Suc.prems(1) by simp
+  have fNz_c:  "f N + z \<in> carrier_mat d d"
+    using hd_c Suc.prems(2) by auto
+  have dec: "[0..<Suc N] = [0..<N] @ [N]" by simp
+  have step: "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z
+                = foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z)"
+    using dec by (simp add: foldr_append)
+  have IH: "foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z) $$ (r,c)
+              = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N + z) $$ (r,c)"
+    using Suc.IH[OF rest_c fNz_c] .
+  have idx_split: "(f N + z) $$ (r,c) = f N $$ (r,c) + z $$ (r,c)"
+    using hd_c Suc.prems(2) r_lt c_lt by simp
+  have "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z $$ (r,c)
+          = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N $$ (r,c) + z $$ (r,c))"
+    using step IH idx_split by simp
+  also have "\<dots> = ((\<Sum>k = 0..<N. f k $$ (r,c)) + f N $$ (r,c)) + z $$ (r,c)"
+    by (simp add: add.assoc)
+  also have "\<dots> = (\<Sum>k = 0..<Suc N. f k $$ (r,c)) + z $$ (r,c)"
+    by simp
+  finally show ?case .
+qed
+
+lemma foldr_upt_add_index:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d d"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) $$ (r, c)
+           = (\<Sum>k = 0..<N. f k $$ (r, c))"
+proof -
+  have z_c: "(0\<^sub>m d d :: complex Matrix.mat) \<in> carrier_mat d d" by simp
+  have z_idx: "(0\<^sub>m d d :: complex Matrix.mat) $$ (r,c) = 0"
+    using r_lt c_lt by simp
+  show ?thesis
+    using foldr_upt_add_acc_index[OF carr z_c r_lt c_lt] z_idx by simp
+qed
+
+text \<open>Per-entry formula for @{const kraus_quad_row}.\<close>
+
+lemma kraus_quad_row_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and i_lt: "i < length Vs"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "kraus_quad_row d Vs Tm rho i $$ (r, c)
+           = (\<Sum>j = 0..<length Vs.
+                Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>j. Tm $$ (i, j) \<cdot>\<^sub>m (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
+  have Vi_c: "Vs!i \<in> carrier_mat d n"
+    using Vs_c i_lt nth_mem by blast
+  have term_c: "\<forall>j < ?N. ?f j \<in> carrier_mat d d"
+  proof (intro allI impI)
+    fix j assume j_lt: "j < ?N"
+    have Vj_c: "Vs!j \<in> carrier_mat d n"
+      using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d"
+      using Vj_c by (rule dagger_carrier)
+    have inner_c: "Vs!i * rho * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using Vi_c rho_c Vjd_c by (intro mult_carrier_mat) auto
+    show "?f j \<in> carrier_mat d d"
+      using inner_c by (intro smult_carrier_mat) auto
+  qed
+  have term_idx: "\<And>j. j < ?N \<Longrightarrow>
+                   ?f j $$ (r, c) = Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
+  proof -
+    fix j assume j_lt: "j < ?N"
+    have Vj_c: "Vs!j \<in> carrier_mat d n"
+      using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d"
+      using Vj_c by (rule dagger_carrier)
+    have inner_c: "Vs!i * rho * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using Vi_c rho_c Vjd_c by (intro mult_carrier_mat) auto
+    have r_lt_dim: "r < dim_row (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
+      using inner_c r_lt by auto
+    have c_lt_dim: "c < dim_col (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
+      using inner_c c_lt by auto
+    show "?f j $$ (r, c) = Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
+      using index_smult_mat(1)[OF r_lt_dim c_lt_dim] .
+  qed
+  have "kraus_quad_row d Vs Tm rho i $$ (r, c)
+          = foldr (\<lambda>j acc. ?f j + acc) [0..<?N] (0\<^sub>m d d) $$ (r, c)"
+    unfolding kraus_quad_row_def by simp
+  also have "\<dots> = (\<Sum>j = 0..<?N. ?f j $$ (r, c))"
+    using foldr_upt_add_index[OF term_c r_lt c_lt] .
+  also have "\<dots> = (\<Sum>j = 0..<?N.
+                     Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (rule sum.cong) (auto simp: term_idx)
+  finally show ?thesis .
+qed
+
+text \<open>Per-entry formula for @{const kraus_quad_map}: double sum over indices.\<close>
+
+lemma kraus_quad_map_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "kraus_quad_map d Vs Tm rho $$ (r, c)
+           = (\<Sum>i = 0..<length Vs.
+                \<Sum>j = 0..<length Vs.
+                   Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+proof -
+  let ?N = "length Vs"
+  let ?row = "\<lambda>i. kraus_quad_row d Vs Tm rho i"
+  have row_c: "\<forall>i < ?N. ?row i \<in> carrier_mat d d"
+    using kraus_quad_row_carrier[OF Vs_c rho_c] by blast
+  have row_idx: "\<And>i. i < ?N \<Longrightarrow>
+                  ?row i $$ (r,c) = (\<Sum>j = 0..<?N.
+                     Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using kraus_quad_row_index[OF Vs_c rho_c _ r_lt c_lt] by blast
+  have "kraus_quad_map d Vs Tm rho $$ (r, c)
+          = foldr (\<lambda>i acc. ?row i + acc) [0..<?N] (0\<^sub>m d d) $$ (r, c)"
+    unfolding kraus_quad_map_def by simp
+  also have "\<dots> = (\<Sum>i = 0..<?N. ?row i $$ (r, c))"
+    using foldr_upt_add_index[OF row_c r_lt c_lt] .
+  also have "\<dots> = (\<Sum>i = 0..<?N.
+                     \<Sum>j = 0..<?N.
+                       Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (rule sum.cong) (auto simp: row_idx)
+  finally show ?thesis .
+qed
+
+text \<open>Linearity of @{const kraus_quad_map} in the coefficient matrix.\<close>
+
+lemma kraus_quad_map_add_Tm:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and T1_c: "T1 \<in> carrier_mat (length Vs) (length Vs)"
+      and T2_c: "T2 \<in> carrier_mat (length Vs) (length Vs)"
+  shows "kraus_quad_map d Vs (T1 + T2) rho
+           = kraus_quad_map d Vs T1 rho + kraus_quad_map d Vs T2 rho"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_quad_map d Vs (T1 + T2) rho"
+  let ?R = "kraus_quad_map d Vs T1 rho + kraus_quad_map d Vs T2 rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R1_c: "kraus_quad_map d Vs T1 rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R2_c: "kraus_quad_map d Vs T2 rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d" using R1_c R2_c by auto
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c assume r_lt: "r < dim_row ?R" and c_lt: "c < dim_col ?R"
+  hence r_lt': "r < d" and c_lt': "c < d" using R_c by auto
+  have plus_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                    (T1 + T2) $$ (i, j) = T1 $$ (i, j) + T2 $$ (i, j)"
+    using T1_c T2_c by auto
+  have L_idx: "?L $$ (r, c)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (T1 $$ (i, j) + T2 $$ (i, j))
+                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of "T1 + T2"]
+    by (auto intro!: sum.cong simp: plus_idx)
+  have R_idx: "?R $$ (r, c)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       T1 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+                 + (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       T2 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using R1_c R2_c r_lt' c_lt'
+          kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of T1]
+          kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of T2]
+    by simp
+  have distr: "\<And>i j. (T1 $$ (i,j) + T2 $$ (i,j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)
+                    = T1 $$ (i,j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)
+                    + T2 $$ (i,j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)"
+    by (simp add: ring_distribs)
+  have inner_split:
+    "\<And>i. (\<Sum>j = 0..<?N.
+            (T1 $$ (i, j) + T2 $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+         = (\<Sum>j = 0..<?N. T1 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+         + (\<Sum>j = 0..<?N. T2 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (simp add: distr sum.distrib)
+  show "?L $$ (r, c) = ?R $$ (r, c)"
+    using L_idx R_idx inner_split by (simp add: sum.distrib)
+qed
+
 
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
