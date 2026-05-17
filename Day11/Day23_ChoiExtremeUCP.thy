@@ -87,24 +87,91 @@ lemma extreme_UCP_no_split:
   unfolding extreme_UCP_def by blast
 
 
-subsection \<open>Choi's Theorem 3 (statement only)\<close>
+subsection \<open>UCP-Kraus representation\<close>
 
-text \<open>Choi (1975) Theorem 3 states: a UCP map \<open>\<Phi>\<close> with Kraus
-representation \<open>\<Phi>(X) = sum (V_i X V_i^dag) over i\<close> is an extreme
-point of UCP(n,d) iff the set of n-by-n matrices
-\<open>{V_j^dag V_i : i, j over the Kraus index}\<close> is linearly independent.
+text \<open>A \<^emph>\<open>UCP Kraus representation\<close> for a map \<open>\<Phi> : M\<^sub>n \<rightarrow> M\<^sub>d\<close> is a
+list \<open>Vs\<close> of \<open>d \<times> n\<close> matrices such that
+  \<^item> each \<open>V \<in> Vs\<close> is \<open>d \<times> n\<close>;
+  \<^item> the unitality identity \<open>\<Sum>\<^sub>i V\<^sub>i V\<^sub>i\<^sup>\<dagger> = I\<^sub>d\<close> holds;
+  \<^item> \<open>\<Phi> X = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close> for every \<open>X \<in> M\<^sub>n\<close>.
 
-Forward direction (linearly indep => extreme): a perturbation
-argument starting from any non-trivial mid-point splitting.
-Reverse direction (extreme => linearly indep): the
-constructive direction; a linear dependence among the
-products yields a non-trivial splitting.
+Note that the standard \<open>kraus_operators\<close> predicate of Day 17 uses
+the \<^emph>\<open>trace-preserving\<close> identity \<open>\<Sum> V\<^sub>i\<^sup>\<dagger> V\<^sub>i = I\<^sub>n\<close>; the
+\<^emph>\<open>unital\<close> form \<open>\<Sum> V\<^sub>i V\<^sub>i\<^sup>\<dagger> = I\<^sub>d\<close> is the Heisenberg-dual
+condition appropriate for \<open>UCP\<close>.\<close>
 
-A full proof requires a Kraus-list infrastructure that packages
-the operators V_i together with the trace-preserving normalisation
-sum (V_i^dag V_i) = I_n.  Day 19 already provides choi_matrix and
-the PSD-Kraus decomposition; the missing piece is the linear
-independence wrapper.  Pending.\<close>
+definition ucp_kraus_rep ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow>
+       complex Matrix.mat list \<Rightarrow> bool"
+where
+  "ucp_kraus_rep n d \<Phi> Vs \<equiv>
+     (\<forall>V \<in> set Vs. V \<in> carrier_mat d n) \<and>
+     foldr (\<lambda>V acc. V * (V\<^sup>\<dagger>) + acc) Vs (0\<^sub>m d d) = 1\<^sub>m d \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
+
+text \<open>The \<^emph>\<open>products set\<close> of a Kraus list \<open>Vs\<close> is the list of
+\<open>n \<times> n\<close> matrices \<open>V\<^sub>j\<^sup>\<dagger> V\<^sub>i\<close> for all pairs of indices \<open>(i,j)\<close>.\<close>
+
+definition kraus_products ::
+  "complex Matrix.mat list \<Rightarrow> complex Matrix.mat list"
+where
+  "kraus_products Vs \<equiv>
+     concat (map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<length Vs])
+                 [0..<length Vs])"
+
+text \<open>Real linear independence for a list of complex matrices.
+A list \<open>Bs\<close> is independent over \<open>\<real>\<close> iff the only \<open>\<real>\<close>-coefficients
+making \<open>\<Sum>\<^sub>k c\<^sub>k B\<^sub>k = 0\<close> are all zero.  We use the real-coefficient
+form because Choi's perturbation argument constructs real
+combinations of hermitian generators.\<close>
+
+definition mat_lin_indep_real ::
+  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
+where
+  "mat_lin_indep_real n Bs \<equiv>
+     (\<forall>B \<in> set Bs. B \<in> carrier_mat n n) \<and>
+     (\<forall>c :: nat \<Rightarrow> real.
+        foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs!k) + acc)
+              [0..<length Bs] (0\<^sub>m n n)
+          = 0\<^sub>m n n
+        \<longrightarrow> (\<forall>k < length Bs. c k = 0))"
+
+
+subsection \<open>Choi's Theorem 3 (statement)\<close>
+
+text \<open>Choi (1975), Theorem 3: a UCP map \<open>\<Phi> : M\<^sub>n \<rightarrow> M\<^sub>d\<close> is an
+extreme point of \<open>UCP(n,d)\<close> if and only if, for any (equivalently:
+every) Kraus representation \<open>\<Phi>(X) = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close>, the
+matrices \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i : 1 \<le> i,j \<le> length Vs}\<close> are linearly
+independent in \<open>M\<^sub>n\<close>.
+
+We state it as a single theorem parametrised by a fixed Kraus
+representation; the "any/every" character follows from the
+unitary-freedom of Kraus reps (Day 22 / "Kraus uniqueness"),
+which is not yet formalised in this development.
+
+\<^bold>\<open>Forward (lin. indep. \<Rightarrow> extreme)\<close>: given any UCP midpoint
+splitting \<open>\<Phi> = \<onehalf>\<Phi>\<^sub>1 + \<onehalf>\<Phi>\<^sub>2\<close>, both \<open>\<Phi>\<^sub>i\<close>
+admit Kraus reps that factor through \<open>Vs\<close> (Radon-Nikodym for
+CP maps); unitality + lin. indep. of the products forces the
+factoring matrix to be a multiple of the identity, hence
+\<open>\<Phi>\<^sub>1 = \<Phi>\<^sub>2 = \<Phi>\<close>.
+
+\<^bold>\<open>Reverse (extreme \<Rightarrow> lin. indep.)\<close>: contrapositive.  If
+\<open>\<Sum>\<^sub>{i,j} a\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i = 0\<close> non-trivially, define
+\<open>\<Phi>\<^sub>\<epsilon>(X) = \<Phi>(X) + \<epsilon> \<Sum>\<^sub>{i,j} a\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>; for small
+hermitian \<open>a\<close>, both \<open>\<Phi>\<^sub>\<plusminus>\<epsilon>\<close> are UCP and distinct, yielding
+a non-trivial midpoint of \<open>\<Phi>\<close>.\<close>
+
+theorem choi_theorem_3:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Vs :: "complex Matrix.mat list"
+  assumes npos: "0 < n" and dpos: "0 < d"
+      and \<Phi>_in: "\<Phi> \<in> UCP n d"
+      and rep:  "ucp_kraus_rep n d \<Phi> Vs"
+  shows "extreme_UCP n d \<Phi> \<longleftrightarrow>
+           mat_lin_indep_real n (kraus_products Vs)"
+  sorry
 
 
 subsection \<open>Sanity / easy facts about extreme UCP\<close>
