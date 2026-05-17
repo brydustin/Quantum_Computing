@@ -3381,6 +3381,34 @@ where
                             + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X))"
 
 
+subsection \<open>CP Radon\<dash>Nikodym (axiom)\<close>
+
+text \<open>\<^bold>\<open>CP Radon\<dash>Nikodym\<close> (Arveson 1969).  If \<open>\<Phi>\<close> is CP with Kraus
+representation \<open>\<Phi>(X) = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close> and \<open>\<Psi>\<close> is CP with
+\<open>\<Phi> - \<Psi>\<close> also CP (i.e., \<open>\<Psi>\<close> is \<^emph>\<open>dominated\<close> by \<open>\<Phi>\<close> in the CP order),
+then there exists a PSD matrix \<open>T \<in> M\<^sub>k\<close> (where \<open>k = length Vs\<close>)
+such that
+\<open>\<Psi>(X) = \<Sum>\<^sub>{i,j} T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> on @{term \<open>carrier_mat n n\<close>}.
+
+This is a substantial classical result; we take it as an axiom here
+(currently \<open>sorry\<close>'d) so the forward direction of Choi's Theorem 3
+can be assembled.\<close>
+
+lemma cp_radon_nikodym:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Vs :: "complex Matrix.mat list"
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
+      and Psi_cp: "completely_positive n d Psi"
+      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
+      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
+              (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> Psi X = kraus_quad_map d Vs T X)"
+  sorry
+
+
 subsection \<open>Choi's Theorem 3 \<mdash> reverse direction\<close>
 
 
