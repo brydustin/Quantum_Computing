@@ -3381,6 +3381,231 @@ where
                             + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X))"
 
 
+subsection \<open>Vectorisation of Kraus operators\<close>
+
+text \<open>The \<^emph>\<open>vectorisation\<close> of a \<open>d \<times> n\<close> matrix \<open>V\<close> is the length-\<open>n*d\<close>
+vector with \<open>r\<close>-th entry \<open>V(r mod d, r div d)\<close>.  This is the column-stacking
+isomorphism \<open>M\<^sub>{d\<times>n} \<cong> \<complex>\<^sup>{nd}\<close> used in the Choi/Stinespring picture.\<close>
+
+definition vec_of_kraus :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec"
+  where
+  "vec_of_kraus d n V = Matrix.vec (n*d) (\<lambda>r. V $$ (r mod d, r div d))"
+
+lemma vec_of_kraus_dim [simp]: "dim_vec (vec_of_kraus d n V) = n*d"
+  by (simp add: vec_of_kraus_def)
+
+lemma vec_of_kraus_index:
+  assumes r_lt: "r < n*d"
+  shows "vec_of_kraus d n V $ r = V $$ (r mod d, r div d)"
+  using r_lt by (simp add: vec_of_kraus_def)
+
+text \<open>For \<open>i < d\<close> and \<open>a < n\<close>, indexing the vectorisation at the
+\<^emph>\<open>combined\<close> index \<open>a*d + i\<close> recovers the matrix entry \<open>V(i, a)\<close>.\<close>
+
+lemma vec_of_kraus_combined_index:
+  assumes V_c: "V \<in> carrier_mat d n"
+      and a_lt: "a < n" and i_lt: "i < d" and dpos: "0 < d"
+  shows "vec_of_kraus d n V $ (a*d + i) = V $$ (i, a)"
+proof -
+  have lt: "a*d + i < n*d"
+  proof -
+    have "a*d + i < a*d + d" using i_lt by simp
+    also have "\<dots> = Suc a * d" by simp
+    also have "\<dots> \<le> n * d"
+      using a_lt by (intro mult_le_mono1) simp
+    finally show ?thesis .
+  qed
+  have d_div: "(a*d + i) div d = a" using i_lt dpos by simp
+  have d_mod: "(a*d + i) mod d = i" using i_lt dpos by simp
+  show ?thesis using lt d_div d_mod by (simp add: vec_of_kraus_def)
+qed
+
+
+subsection \<open>Choi matrix of a Kraus map\<close>
+
+text \<open>\<^bold>\<open>Key structural identity\<close>: the Choi matrix of a Kraus map
+\<open>\<Phi>(X) = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close> equals the outer sum
+\<open>\<Sum>\<^sub>i v\<^sub>i v\<^sub>i\<^sup>\<dagger>\<close> where \<open>v\<^sub>i = vec_of_kraus(V\<^sub>i)\<close>.  In particular,
+its range is the linear span of the vectorisations of \<open>Vs\<close>.\<close>
+
+lemma kraus_map_dim_mat_unit_entry:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and a_lt: "a < n" and b_lt: "b < n"
+      and i_lt: "i < d" and j_lt: "j < d"
+  shows "(kraus_map_dim d Vs (mat_unit a b n n)) $$ (i, j)
+           = (\<Sum>k<length Vs. Vs!k $$ (i, a) * cnj (Vs!k $$ (j, b)))"
+  using Vs_c
+proof (induction Vs)
+  case Nil
+  show ?case using i_lt j_lt by simp
+next
+  case (Cons V Vs)
+  from Cons.prems have V_c: "V \<in> carrier_mat d n" by simp
+  from Cons.prems have rest_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n" by simp
+  have IH: "(kraus_map_dim d Vs (mat_unit a b n n)) $$ (i, j)
+              = (\<Sum>k<length Vs. Vs!k $$ (i, a) * cnj (Vs!k $$ (j, b)))"
+    by (rule Cons.IH[OF rest_c])
+  have rest_c': "kraus_map_dim d Vs (mat_unit a b n n) \<in> carrier_mat d d"
+    by (rule kraus_map_dim_carrier[OF rest_c]) (simp add: mat_unit_def)
+  have term_c: "V * mat_unit a b n n * (V\<^sup>\<dagger>) \<in> carrier_mat d d"
+    using V_c by (auto simp: mat_unit_def)
+  have i_dim: "i < dim_row (V * mat_unit a b n n * (V\<^sup>\<dagger>))"
+    using term_c i_lt by auto
+  have j_dim: "j < dim_col (V * mat_unit a b n n * (V\<^sup>\<dagger>))"
+    using term_c j_lt by auto
+  have "(kraus_map_dim d (V # Vs) (mat_unit a b n n)) $$ (i, j)
+          = (V * mat_unit a b n n * (V\<^sup>\<dagger>) + kraus_map_dim d Vs (mat_unit a b n n))
+              $$ (i, j)" by simp
+  also have "\<dots> = (V * mat_unit a b n n * (V\<^sup>\<dagger>)) $$ (i, j)
+                   + (kraus_map_dim d Vs (mat_unit a b n n)) $$ (i, j)"
+    using index_add_mat(1)[OF i_dim j_dim] term_c rest_c' i_lt j_lt by auto
+  also have "(V * mat_unit a b n n * (V\<^sup>\<dagger>)) $$ (i, j) = V $$ (i, a) * cnj (V $$ (j, b))"
+    by (rule conjugation_mat_unit_entry[OF V_c a_lt b_lt i_lt j_lt])
+  also have "V $$ (i, a) * cnj (V $$ (j, b))
+               + (kraus_map_dim d Vs (mat_unit a b n n)) $$ (i, j)
+              = V $$ (i, a) * cnj (V $$ (j, b))
+                + (\<Sum>k<length Vs. Vs!k $$ (i, a) * cnj (Vs!k $$ (j, b)))"
+    using IH by simp
+  also have "\<dots> = (\<Sum>k<length (V # Vs).
+                     (V # Vs)!k $$ (i, a) * cnj ((V # Vs)!k $$ (j, b)))"
+  proof -
+    have len: "length (V # Vs) = Suc (length Vs)" by simp
+    have "(\<Sum>k<length (V # Vs).
+              (V # Vs)!k $$ (i, a) * cnj ((V # Vs)!k $$ (j, b)))
+            = (\<Sum>k<Suc (length Vs).
+                  (V # Vs)!k $$ (i, a) * cnj ((V # Vs)!k $$ (j, b)))"
+      using len by simp
+    also have "\<dots> = (V # Vs)!0 $$ (i, a) * cnj ((V # Vs)!0 $$ (j, b))
+                    + (\<Sum>k<length Vs.
+                          (V # Vs)!(Suc k) $$ (i, a)
+                            * cnj ((V # Vs)!(Suc k) $$ (j, b)))"
+      by (rule sum.lessThan_Suc_shift)
+    also have "\<dots> = V $$ (i, a) * cnj (V $$ (j, b))
+                    + (\<Sum>k<length Vs. Vs!k $$ (i, a) * cnj (Vs!k $$ (j, b)))"
+      by simp
+    finally show ?thesis by simp
+  qed
+  finally show ?case .
+qed
+
+lemma choi_matrix_kraus_eq:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and npos: "0 < n" and dpos: "0 < d"
+  shows "choi_matrix n d (kraus_map_dim d Vs)
+           = outer_sum (n*d) (map (vec_of_kraus d n) Vs)"
+proof (rule eq_matI)
+  let ?vs = "map (vec_of_kraus d n) Vs"
+  let ?V = "mat_of_cols (n*d) ?vs"
+  have V_c: "?V \<in> carrier_mat (n*d) (length Vs)"
+    by (simp add: mat_of_cols_def)
+  have Vdag_c: "?V\<^sup>\<dagger> \<in> carrier_mat (length Vs) (n*d)"
+    using V_c by (rule dagger_carrier)
+  have out_c: "outer_sum (n*d) ?vs \<in> carrier_mat (n*d) (n*d)"
+    unfolding outer_sum_def using V_c Vdag_c by auto
+  show "dim_row (choi_matrix n d (kraus_map_dim d Vs))
+          = dim_row (outer_sum (n*d) ?vs)"
+    by (simp add: choi_matrix_def)
+  show "dim_col (choi_matrix n d (kraus_map_dim d Vs))
+          = dim_col (outer_sum (n*d) ?vs)"
+    by (simp add: choi_matrix_def)
+next
+  let ?vs = "map (vec_of_kraus d n) Vs"
+  let ?V = "mat_of_cols (n*d) ?vs"
+  fix r c
+  assume r_a: "r < dim_row (outer_sum (n*d) ?vs)"
+     and c_a: "c < dim_col (outer_sum (n*d) ?vs)"
+  hence r_lt: "r < n*d" and c_lt: "c < n*d" by auto
+  have a_lt: "r div d < n" using r_lt dpos by (simp add: div_less_iff_less_mult)
+  have b_lt: "c div d < n" using c_lt dpos by (simp add: div_less_iff_less_mult)
+  have i_lt: "r mod d < d" using dpos by simp
+  have j_lt: "c mod d < d" using dpos by simp
+  have V_c: "?V \<in> carrier_mat (n*d) (length Vs)"
+    by (simp add: mat_of_cols_def)
+  have Vdag_c: "?V\<^sup>\<dagger> \<in> carrier_mat (length Vs) (n*d)"
+    using V_c by (rule dagger_carrier)
+  have rrow: "r < dim_row ?V" using V_c r_lt by auto
+  have ccol: "c < dim_col (?V\<^sup>\<dagger>)" using Vdag_c c_lt by auto
+  have "choi_matrix n d (kraus_map_dim d Vs) $$ (r, c)
+          = kraus_map_dim d Vs (mat_unit (r div d) (c div d) n n)
+              $$ (r mod d, c mod d)"
+    using r_lt c_lt by (simp add: choi_matrix_def)
+  also have "\<dots> = (\<Sum>k<length Vs.
+                    Vs!k $$ (r mod d, r div d) * cnj (Vs!k $$ (c mod d, c div d)))"
+    by (rule kraus_map_dim_mat_unit_entry[OF Vs_c a_lt b_lt i_lt j_lt])
+  also have "\<dots> = (\<Sum>k<length Vs.
+                    vec_of_kraus d n (Vs!k) $ r * cnj (vec_of_kraus d n (Vs!k) $ c))"
+  proof (rule sum.cong[OF refl])
+    fix k assume "k \<in> {..<length Vs}"
+    hence k_lt: "k < length Vs" by simp
+    have Vk_c: "Vs!k \<in> carrier_mat d n" using Vs_c k_lt by simp
+    have "vec_of_kraus d n (Vs!k) $ r = Vs!k $$ (r mod d, r div d)"
+      using r_lt by (simp add: vec_of_kraus_def)
+    moreover have "vec_of_kraus d n (Vs!k) $ c = Vs!k $$ (c mod d, c div d)"
+      using c_lt by (simp add: vec_of_kraus_def)
+    ultimately show
+      "Vs!k $$ (r mod d, r div d) * cnj (Vs!k $$ (c mod d, c div d))
+        = vec_of_kraus d n (Vs!k) $ r * cnj (vec_of_kraus d n (Vs!k) $ c)"
+      by simp
+  qed
+  also have "\<dots> = (\<Sum>k<length Vs.
+                    ?vs!k $ r * cnj (?vs!k $ c))"
+    by (rule sum.cong[OF refl]) simp
+  also have "\<dots> = outer_sum (n*d) ?vs $$ (r, c)"
+  proof -
+    have mul_entry: "(?V * (?V\<^sup>\<dagger>)) $$ (r, c)
+                       = (\<Sum>k<length Vs.
+                            ?V $$ (r, k) * (?V\<^sup>\<dagger>) $$ (k, c))"
+    proof -
+      have "(?V * (?V\<^sup>\<dagger>)) $$ (r, c)
+              = Matrix.row ?V r \<bullet> Matrix.col (?V\<^sup>\<dagger>) c"
+        using rrow ccol by (subst index_mult_mat) auto
+      also have "\<dots> = (\<Sum>k\<in>{0..<length Vs}.
+                          Matrix.row ?V r $ k * Matrix.col (?V\<^sup>\<dagger>) c $ k)"
+        unfolding scalar_prod_def using V_c Vdag_c by simp
+      also have "\<dots> = (\<Sum>k\<in>{0..<length Vs}.
+                          ?V $$ (r, k) * (?V\<^sup>\<dagger>) $$ (k, c))"
+      proof (rule sum.cong[OF refl])
+        fix k assume "k \<in> {0..<length Vs}"
+        hence k_lt: "k < length Vs" by simp
+        have rr: "Matrix.row ?V r $ k = ?V $$ (r, k)"
+          using rrow V_c k_lt by auto
+        have cc: "Matrix.col (?V\<^sup>\<dagger>) c $ k = (?V\<^sup>\<dagger>) $$ (k, c)"
+          using ccol Vdag_c k_lt by (simp add: dagger_def mat_of_cols_def)
+        show "Matrix.row ?V r $ k * Matrix.col (?V\<^sup>\<dagger>) c $ k
+                = ?V $$ (r, k) * (?V\<^sup>\<dagger>) $$ (k, c)"
+          using rr cc by simp
+      qed
+      finally show ?thesis by (simp add: lessThan_atLeast0)
+    qed
+    have entry_eq: "\<And>k. k < length Vs \<Longrightarrow>
+                       ?V $$ (r, k) * (?V\<^sup>\<dagger>) $$ (k, c)
+                         = ?vs!k $ r * cnj (?vs!k $ c)"
+    proof -
+      fix k assume k_lt: "k < length Vs"
+      have V_idx: "?V $$ (r, k) = ?vs!k $ r"
+        using r_lt k_lt by (simp add: mat_of_cols_def)
+      have Vdag_idx: "(?V\<^sup>\<dagger>) $$ (k, c) = cnj (?V $$ (c, k))"
+        using V_c c_lt k_lt by (simp add: dagger_def)
+      have Vc_idx: "?V $$ (c, k) = ?vs!k $ c"
+        using c_lt k_lt by (simp add: mat_of_cols_def)
+      show "?V $$ (r, k) * (?V\<^sup>\<dagger>) $$ (k, c)
+              = ?vs!k $ r * cnj (?vs!k $ c)"
+        using V_idx Vdag_idx Vc_idx by simp
+    qed
+    have "(\<Sum>k<length Vs. ?vs!k $ r * cnj (?vs!k $ c))
+            = (\<Sum>k<length Vs. ?V $$ (r, k) * (?V\<^sup>\<dagger>) $$ (k, c))"
+      by (rule sum.cong[OF refl]) (simp add: entry_eq)
+    also have "\<dots> = (?V * (?V\<^sup>\<dagger>)) $$ (r, c)"
+      using mul_entry by simp
+    also have "\<dots> = outer_sum (n*d) ?vs $$ (r, c)"
+      by (simp add: outer_sum_def)
+    finally show ?thesis .
+  qed
+  finally show "choi_matrix n d (kraus_map_dim d Vs) $$ (r, c)
+                  = outer_sum (n*d) ?vs $$ (r, c)" .
+qed
+
+
 subsection \<open>CP Radon\<dash>Nikodym (axiom)\<close>
 
 text \<open>\<^bold>\<open>CP Radon\<dash>Nikodym\<close> (Arveson 1969).  If \<open>\<Phi>\<close> is CP with Kraus
