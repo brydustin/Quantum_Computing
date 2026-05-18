@@ -3735,11 +3735,12 @@ text \<open>The Choi matrix of \<open>kraus_quad_map d Vs T\<close> is the sandw
 \<open>V T V\<^sup>\<dagger>\<close>, where \<open>V = kraus_vec_mat d n Vs\<close>.\<close>
 
 lemma choi_matrix_kraus_quad_eq:
+  fixes Tmat :: "complex Matrix.mat"
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and T_c: "T \<in> carrier_mat (length Vs) (length Vs)"
+      and T_c: "Tmat \<in> carrier_mat (length Vs) (length Vs)"
       and npos: "0 < n" and dpos: "0 < d"
-  shows "choi_matrix n d (kraus_quad_map d Vs T)
-           = (kraus_vec_mat d n Vs) * T * ((kraus_vec_mat d n Vs)\<^sup>\<dagger>)"
+  shows "choi_matrix n d (kraus_quad_map d Vs Tmat)
+           = (kraus_vec_mat d n Vs) * Tmat * ((kraus_vec_mat d n Vs)\<^sup>\<dagger>)"
 proof (rule eq_matI)
   let ?k = "length Vs"
   let ?M = "kraus_vec_mat d n Vs"
@@ -3747,15 +3748,15 @@ proof (rule eq_matI)
   have M_c: "?M \<in> carrier_mat (n*d) ?k" by simp
   have Mdag_c: "?Mdag \<in> carrier_mat ?k (n*d)"
     using M_c by (rule dagger_carrier)
-  have prod1_c: "?M * T \<in> carrier_mat (n*d) ?k"
+  have prod1_c: "?M * Tmat \<in> carrier_mat (n*d) ?k"
     using M_c T_c by (rule mult_carrier_mat)
-  have prod_c: "?M * T * ?Mdag \<in> carrier_mat (n*d) (n*d)"
+  have prod_c: "?M * Tmat * ?Mdag \<in> carrier_mat (n*d) (n*d)"
     using prod1_c Mdag_c by (rule mult_carrier_mat)
-  show "dim_row (choi_matrix n d (kraus_quad_map d Vs T))
-          = dim_row (?M * T * ?Mdag)"
+  show "dim_row (choi_matrix n d (kraus_quad_map d Vs Tmat))
+          = dim_row (?M * Tmat * ?Mdag)"
     using prod_c by (auto simp: choi_matrix_def)
-  show "dim_col (choi_matrix n d (kraus_quad_map d Vs T))
-          = dim_col (?M * T * ?Mdag)"
+  show "dim_col (choi_matrix n d (kraus_quad_map d Vs Tmat))
+          = dim_col (?M * Tmat * ?Mdag)"
     using prod_c by (auto simp: choi_matrix_def)
 next
   let ?k = "length Vs"
@@ -3764,13 +3765,13 @@ next
   have M_c: "?M \<in> carrier_mat (n*d) ?k" by simp
   have Mdag_c: "?Mdag \<in> carrier_mat ?k (n*d)"
     using M_c by (rule dagger_carrier)
-  have prod1_c: "?M * T \<in> carrier_mat (n*d) ?k"
+  have prod1_c: "?M * Tmat \<in> carrier_mat (n*d) ?k"
     using M_c T_c by (rule mult_carrier_mat)
-  have prod_c: "?M * T * ?Mdag \<in> carrier_mat (n*d) (n*d)"
+  have prod_c: "?M * Tmat * ?Mdag \<in> carrier_mat (n*d) (n*d)"
     using prod1_c Mdag_c by (rule mult_carrier_mat)
   fix r c
-  assume r_a: "r < dim_row (?M * T * ?Mdag)"
-     and c_a: "c < dim_col (?M * T * ?Mdag)"
+  assume r_a: "r < dim_row (?M * Tmat * ?Mdag)"
+     and c_a: "c < dim_col (?M * Tmat * ?Mdag)"
   have r_lt: "r < n*d" using r_a prod_c by auto
   have c_lt: "c < n*d" using c_a prod_c by auto
   have a_lt: "r div d < n" using r_lt dpos by (simp add: div_less_iff_less_mult)
@@ -3781,28 +3782,28 @@ next
   have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
   \<comment> \<open>LHS entry via @{thm kraus_quad_map_index} and
       @{thm kraus_quad_map_mat_unit_index}.\<close>
-  have lhs_entry: "choi_matrix n d (kraus_quad_map d Vs T) $$ (r, c)
+  have lhs_entry: "choi_matrix n d (kraus_quad_map d Vs Tmat) $$ (r, c)
                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                          T $$ (i, j)
+                          Tmat $$ (i, j)
                             * (Vs!i $$ (r mod d, r div d))
                             * cnj (Vs!j $$ (c mod d, c div d)))"
   proof -
-    have "choi_matrix n d (kraus_quad_map d Vs T) $$ (r, c)
-            = kraus_quad_map d Vs T ?E $$ (r mod d, c mod d)"
+    have "choi_matrix n d (kraus_quad_map d Vs Tmat) $$ (r, c)
+            = kraus_quad_map d Vs Tmat ?E $$ (r mod d, c mod d)"
       using r_lt c_lt by (simp add: choi_matrix_def)
     also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                        T $$ (i, j) * (Vs!i * ?E * ((Vs!j)\<^sup>\<dagger>)) $$ (r mod d, c mod d))"
+                        Tmat $$ (i, j) * (Vs!i * ?E * ((Vs!j)\<^sup>\<dagger>)) $$ (r mod d, c mod d))"
       using kraus_quad_map_index[OF Vs_c E_c i_lt j_lt] .
     also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                       T $$ (i, j)
+                       Tmat $$ (i, j)
                          * (Vs!i $$ (r mod d, r div d))
                          * cnj (Vs!j $$ (c mod d, c div d)))"
     proof (rule sum.cong[OF refl])
       fix i assume "i \<in> {0..<?k}" hence ii_lt: "i < ?k" by simp
       show "(\<Sum>j = 0..<?k.
-               T $$ (i, j) * (Vs!i * ?E * ((Vs!j)\<^sup>\<dagger>)) $$ (r mod d, c mod d))
+               Tmat $$ (i, j) * (Vs!i * ?E * ((Vs!j)\<^sup>\<dagger>)) $$ (r mod d, c mod d))
              = (\<Sum>j = 0..<?k.
-                  T $$ (i, j)
+                  Tmat $$ (i, j)
                     * (Vs!i $$ (r mod d, r div d))
                     * cnj (Vs!j $$ (c mod d, c div d)))"
       proof (rule sum.cong[OF refl])
@@ -3811,8 +3812,8 @@ next
                          = Vs!i $$ (r mod d, r div d) * cnj (Vs!j $$ (c mod d, c div d))"
           by (rule kraus_quad_map_mat_unit_index
                     [OF Vs_c ii_lt jj_lt a_lt b_lt i_lt j_lt])
-        show "T $$ (i, j) * (Vs!i * ?E * ((Vs!j)\<^sup>\<dagger>)) $$ (r mod d, c mod d)
-                = T $$ (i, j) * (Vs!i $$ (r mod d, r div d))
+        show "Tmat $$ (i, j) * (Vs!i * ?E * ((Vs!j)\<^sup>\<dagger>)) $$ (r mod d, c mod d)
+                = Tmat $$ (i, j) * (Vs!i $$ (r mod d, r div d))
                   * cnj (Vs!j $$ (c mod d, c div d))"
           using prod_eq by (simp add: mult.assoc)
       qed
@@ -3820,44 +3821,44 @@ next
     finally show ?thesis .
   qed
   \<comment> \<open>RHS entry via @{thm mat_mult_index_sum} applied to the
-      sandwich \<open>M T M\<^sup>\<dagger>\<close>.\<close>
-  have rhs_entry: "(?M * T * ?Mdag) $$ (r, c)
+      sandwich \<open>M Tmat M\<^sup>\<dagger>\<close>.\<close>
+  have rhs_entry: "(?M * Tmat * ?Mdag) $$ (r, c)
                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                          T $$ (i, j)
+                          Tmat $$ (i, j)
                             * vec_of_kraus d n (Vs!i) $ r
                             * cnj (vec_of_kraus d n (Vs!j) $ c))"
   proof -
-    have MT_c: "?M * T \<in> carrier_mat (n*d) ?k" using prod1_c .
-    have "(?M * T * ?Mdag) $$ (r, c)
-            = (\<Sum>j = 0..<?k. (?M * T) $$ (r, j) * ?Mdag $$ (j, c))"
+    have MT_c: "?M * Tmat \<in> carrier_mat (n*d) ?k" using prod1_c .
+    have "(?M * Tmat * ?Mdag) $$ (r, c)
+            = (\<Sum>j = 0..<?k. (?M * Tmat) $$ (r, j) * ?Mdag $$ (j, c))"
       using mat_mult_index_sum[OF MT_c Mdag_c r_lt c_lt] .
     also have "\<dots> = (\<Sum>j = 0..<?k.
-                       (\<Sum>i = 0..<?k. ?M $$ (r, i) * T $$ (i, j))
+                       (\<Sum>i = 0..<?k. ?M $$ (r, i) * Tmat $$ (i, j))
                          * ?Mdag $$ (j, c))"
     proof (rule sum.cong[OF refl])
       fix j assume "j \<in> {0..<?k}" hence j_lt': "j < ?k" by simp
-      have "(?M * T) $$ (r, j) = (\<Sum>i = 0..<?k. ?M $$ (r, i) * T $$ (i, j))"
+      have "(?M * Tmat) $$ (r, j) = (\<Sum>i = 0..<?k. ?M $$ (r, i) * Tmat $$ (i, j))"
         by (rule mat_mult_index_sum[OF M_c T_c r_lt j_lt'])
-      thus "(?M * T) $$ (r, j) * ?Mdag $$ (j, c)
-              = (\<Sum>i = 0..<?k. ?M $$ (r, i) * T $$ (i, j)) * ?Mdag $$ (j, c)"
+      thus "(?M * Tmat) $$ (r, j) * ?Mdag $$ (j, c)
+              = (\<Sum>i = 0..<?k. ?M $$ (r, i) * Tmat $$ (i, j)) * ?Mdag $$ (j, c)"
         by simp
     qed
     also have "\<dots> = (\<Sum>j = 0..<?k. \<Sum>i = 0..<?k.
-                       ?M $$ (r, i) * T $$ (i, j) * ?Mdag $$ (j, c))"
+                       ?M $$ (r, i) * Tmat $$ (i, j) * ?Mdag $$ (j, c))"
       by (rule sum.cong[OF refl]) (simp add: sum_distrib_right)
     also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                       ?M $$ (r, i) * T $$ (i, j) * ?Mdag $$ (j, c))"
+                       ?M $$ (r, i) * Tmat $$ (i, j) * ?Mdag $$ (j, c))"
       by (rule sum.swap)
     also have "\<dots> = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                       T $$ (i, j)
+                       Tmat $$ (i, j)
                          * vec_of_kraus d n (Vs!i) $ r
                          * cnj (vec_of_kraus d n (Vs!j) $ c))"
     proof (rule sum.cong[OF refl])
       fix i assume "i \<in> {0..<?k}" hence ii_lt: "i < ?k" by simp
       show "(\<Sum>j = 0..<?k.
-               ?M $$ (r, i) * T $$ (i, j) * ?Mdag $$ (j, c))
+               ?M $$ (r, i) * Tmat $$ (i, j) * ?Mdag $$ (j, c))
              = (\<Sum>j = 0..<?k.
-                  T $$ (i, j)
+                  Tmat $$ (i, j)
                     * vec_of_kraus d n (Vs!i) $ r
                     * cnj (vec_of_kraus d n (Vs!j) $ c))"
       proof (rule sum.cong[OF refl])
@@ -3867,8 +3868,8 @@ next
         have Mdag_idx: "?Mdag $$ (j, c)
                           = cnj (vec_of_kraus d n (Vs!j) $ c)"
           by (rule kraus_vec_mat_dagger_index[OF Vs_c jj_lt c_lt])
-        show "?M $$ (r, i) * T $$ (i, j) * ?Mdag $$ (j, c)
-                = T $$ (i, j)
+        show "?M $$ (r, i) * Tmat $$ (i, j) * ?Mdag $$ (j, c)
+                = Tmat $$ (i, j)
                   * vec_of_kraus d n (Vs!i) $ r
                   * cnj (vec_of_kraus d n (Vs!j) $ c)"
           using M_idx Mdag_idx by (simp add: mult.assoc mult.commute)
@@ -3880,14 +3881,14 @@ next
     using r_lt by (simp add: vec_of_kraus_def)
   have V_idx_c: "\<And>j. vec_of_kraus d n (Vs!j) $ c = Vs!j $$ (c mod d, c div d)"
     using c_lt by (simp add: vec_of_kraus_def)
-  have rhs_simp: "(?M * T * ?Mdag) $$ (r, c)
+  have rhs_simp: "(?M * Tmat * ?Mdag) $$ (r, c)
                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                         T $$ (i, j)
+                         Tmat $$ (i, j)
                            * Vs!i $$ (r mod d, r div d)
                            * cnj (Vs!j $$ (c mod d, c div d)))"
     using rhs_entry by (simp add: V_idx_r V_idx_c)
-  show "choi_matrix n d (kraus_quad_map d Vs T) $$ (r, c)
-          = (?M * T * ?Mdag) $$ (r, c)"
+  show "choi_matrix n d (kraus_quad_map d Vs Tmat) $$ (r, c)
+          = (?M * Tmat * ?Mdag) $$ (r, c)"
     using lhs_entry rhs_simp by simp
 qed
 
@@ -3922,18 +3923,89 @@ lemma dominated_outer_sum_param:
   sorry
 
 
-subsection \<open>CP Radon\<dash>Nikodym (axiom)\<close>
+subsection \<open>CP Radon\<dash>Nikodym\<close>
 
-text \<open>\<^bold>\<open>CP Radon\<dash>Nikodym\<close> (Arveson 1969).  If \<open>\<Phi>\<close> is CP with Kraus
-representation \<open>\<Phi>(X) = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close> and \<open>\<Psi>\<close> is CP with
-\<open>\<Phi> - \<Psi>\<close> also CP (i.e., \<open>\<Psi>\<close> is \<^emph>\<open>dominated\<close> by \<open>\<Phi>\<close> in the CP order),
-then there exists a PSD matrix \<open>T \<in> M\<^sub>k\<close> (where \<open>k = length Vs\<close>)
-such that
-\<open>\<Psi>(X) = \<Sum>\<^sub>{i,j} T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> on @{term \<open>carrier_mat n n\<close>}.
+text \<open>\<^bold>\<open>CP Radon\<dash>Nikodym (Choi level)\<close>.  At the Choi-matrix level,
+the parametrisation falls out from the classical
+@{thm dominated_outer_sum_param} composed with the structural identities
+@{thm choi_matrix_kraus_eq} and @{thm choi_matrix_kraus_quad_eq}.  This
+proves what is needed at the matrix level; passing to the
+\<open>\<forall>X\<close>-quantified form requires linearity of \<open>\<Psi>\<close>, which is
+the project's @{const completely_positive} does \<^emph>\<open>not\<close>
+include (see the lemma after).\<close>
 
-This is a substantial classical result; we take it as an axiom here
-(currently \<open>sorry\<close>'d) so the forward direction of Choi's Theorem 3
-can be assembled.\<close>
+lemma cp_radon_nikodym_choi:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Vs :: "complex Matrix.mat list"
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
+      and Psi_cp: "completely_positive n d Psi"
+      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
+      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
+              choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs T)"
+proof -
+  let ?k = "length Vs"
+  let ?us = "map (vec_of_kraus d n) Vs"
+  let ?V = "kraus_vec_mat d n Vs"
+  have V_eq: "?V = mat_of_cols (n*d) ?us"
+    by (simp add: kraus_vec_mat_def)
+  have Phi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X \<in> carrier_mat d d"
+  proof -
+    fix X :: "complex Matrix.mat" assume X_c: "X \<in> carrier_mat n n"
+    have "Phi X = kraus_map_dim d Vs X" by (rule Phi_kraus[OF X_c])
+    thus "Phi X \<in> carrier_mat d d"
+      using kraus_map_dim_carrier[OF Vs_c X_c] by simp
+  qed
+  have P_Phi_eq: "choi_matrix n d Phi = outer_sum (n*d) ?us"
+  proof -
+    have "choi_matrix n d Phi = choi_matrix n d (kraus_map_dim d Vs)"
+      by (rule choi_matrix_cong) (rule Phi_kraus)
+    also have "\<dots> = outer_sum (n*d) ?us"
+      by (rule choi_matrix_kraus_eq[OF Vs_c npos dpos])
+    finally show ?thesis .
+  qed
+  have us_dim: "\<forall>v \<in> set ?us. dim_vec v = n*d" by simp
+  have nd_pos: "0 < n*d" using npos dpos by simp
+  have P_Psi_psd: "psd (choi_matrix n d Psi)"
+    using choi_psd_if_cp[OF npos dpos Psi_cp] .
+  have P_Psi_c: "choi_matrix n d Psi \<in> carrier_mat (n*d) (n*d)" by simp
+  have P_diff_psd: "psd (choi_matrix n d (\<lambda>X. Phi X - Psi X))"
+    using choi_psd_if_cp[OF npos dpos diff_cp] .
+  have P_diff_eq: "choi_matrix n d (\<lambda>X. Phi X - Psi X)
+                     = choi_matrix n d Phi - choi_matrix n d Psi"
+    by (rule choi_matrix_diff[OF Phi_range Psi_range npos dpos])
+  have dom_psd: "psd (outer_sum (n*d) ?us - choi_matrix n d Psi)"
+    using P_diff_psd P_diff_eq P_Phi_eq by simp
+  obtain Tm :: "complex Matrix.mat"
+    where Tm_c: "Tm \<in> carrier_mat (length ?us) (length ?us)"
+    and Tm_psd: "psd Tm"
+    and P_Psi_param: "choi_matrix n d Psi
+                        = (mat_of_cols (n*d) ?us) * Tm
+                          * ((mat_of_cols (n*d) ?us)\<^sup>\<dagger>)"
+    using dominated_outer_sum_param[OF us_dim nd_pos P_Psi_c P_Psi_psd dom_psd]
+    by blast
+  have length_us: "length ?us = ?k" by simp
+  have Tm_c': "Tm \<in> carrier_mat ?k ?k" using Tm_c length_us by simp
+  have P_kqm_eq: "choi_matrix n d (kraus_quad_map d Vs Tm) = ?V * Tm * (?V\<^sup>\<dagger>)"
+    by (rule choi_matrix_kraus_quad_eq[OF Vs_c Tm_c' npos dpos])
+  have P_match: "choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs Tm)"
+    using P_Psi_param P_kqm_eq V_eq by simp
+  show ?thesis
+    using Tm_c' Tm_psd P_match by blast
+qed
+
+text \<open>\<^bold>\<open>CP Radon\<dash>Nikodym (operator level)\<close>.  With \<open>\<Psi>\<close> linear
+on \<open>carrier_mat n n\<close>, the Choi-level parametrisation gives the
+pointwise equality \<open>\<Psi>(X) = \<Sum> T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>.
+
+Linearity of \<open>\<Psi>\<close> is supplied as an explicit hypothesis: the
+project's @{const completely_positive} predicate does \<^emph>\<open>not\<close>
+imply linearity (it constrains only positivity under amplification).
+This corresponds to the classical fact that ``CP map'' standardly
+includes linearity; we make it explicit so the consumer can supply it.\<close>
 
 lemma cp_radon_nikodym:
   fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
