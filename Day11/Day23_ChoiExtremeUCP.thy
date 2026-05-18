@@ -4805,24 +4805,28 @@ Radon\<dash>Nikodym for CP maps (every CP \<open>\<Psi> \<le>\<^sub>{cp} \<lambd
 \<open>\<Psi>(X) = \<Sum> T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> for a PSD matrix \<open>T\<close>) which
 is itself a substantial development.\<close>
 
-text \<open>\<^bold>\<open>The CPTP form of Choi's Theorem 3.\<close>  \<open>\<Phi>\<close> is extreme in CPTP iff
-the products \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> are linearly independent in \<open>M\<^sub>n\<close>.
+text \<open>\<^bold>\<open>The CPTP form of Choi's Theorem 3 (carrier-flavoured).\<close>
+\<open>\<Phi>\<close> is extreme in CPTP iff the products \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> are
+linearly independent in \<open>M\<^sub>n\<close>.
 
-We add a \<^emph>\<open>minimality\<close> hypothesis @{const lin_indep_complex_mat} on
-\<open>Vs\<close>, which is the standard assumption in Choi's classical statement
-and is required for the reverse direction's perturbation argument
-(see @{thm choi_theorem_3_cptp_reverse}).
+The project's @{const extreme_CPTP} uses a raw function inequality
+\<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close>; since @{const completely_positive} and
+@{const trace_preserving} only constrain behaviour on
+@{term \<open>carrier_mat n n\<close>}, this is technically vacuous (every
+CPTP map admits a CPTP \<open>\<Phi>\<^sub>1\<close> that agrees with it on carrier but
+disagrees off carrier).  The theorem is therefore stated in terms of
+@{const extreme_CPTP_carrier}, the carrier-point variant.
 
-The forward direction \<open>extreme \<Longrightarrow> lin indep\<close> is the contrapositive of
-@{thm choi_theorem_3_cptp_reverse}.
+The biconditional below uses different lin-indep notions on each
+direction \<mdash> \<^bold>\<open>partial iff\<close>:
+\<^item> \<open>extreme_CPTP_carrier \<Longrightarrow> mat_lin_indep_real\<close>
+   (contrapositive of @{thm choi_theorem_3_cptp_reverse_carrier});
+\<^item> \<open>mat_lin_indep_complex \<Longrightarrow> extreme_CPTP_carrier\<close>
+   (the strengthened Choi forward direction
+   @{thm choi_theorem_3_cptp_forward_complex}, modulo CP Radon\<dash>Nikodym).
 
-The reverse direction \<open>lin indep \<Longrightarrow> extreme\<close> requires CP Radon\<dash>Nikodym
-and is left as @{term \<open>sorry\<close>}; see @{thm choi_theorem_3_cptp_forward_complex}
-for the closely-related (but stronger-coefficient) variant targeting
-@{const extreme_CPTP_carrier}.  Note: the iff with the project's
-@{const extreme_CPTP} (raw function inequality) is technically vacuous
-because @{const extreme_CPTP} is always false — the natural fix is to
-use @{const extreme_CPTP_carrier} throughout.\<close>
+Bridging the two notions on Hermitian-closed families
+(\<open>real \<longleftrightarrow> complex\<close>) is a separate classical fact left for future work.\<close>
 
 theorem choi_theorem_3_cptp:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -4831,51 +4835,37 @@ theorem choi_theorem_3_cptp:
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
       and minimal: "lin_indep_complex_mat d n Vs"
-  shows "extreme_CPTP n d \<Phi> \<longleftrightarrow>
-           mat_lin_indep_real n (kraus_products Vs)"
-proof
-  assume ext: "extreme_CPTP n d \<Phi>"
+  shows "(extreme_CPTP_carrier n d \<Phi>
+            \<longrightarrow> mat_lin_indep_real n (kraus_products Vs))
+       \<and> (mat_lin_indep_complex n (kraus_products Vs)
+            \<longrightarrow> extreme_CPTP_carrier n d \<Phi>)"
+proof (intro conjI impI)
+  assume ext: "extreme_CPTP_carrier n d \<Phi>"
   show "mat_lin_indep_real n (kraus_products Vs)"
-  proof (rule ccontr)
-    assume "\<not> mat_lin_indep_real n (kraus_products Vs)"
-    hence "\<not> extreme_CPTP n d \<Phi>"
-      by (rule choi_theorem_3_cptp_reverse
-            [OF npos dpos \<Phi>_in rep minimal])
-    thus False using ext by simp
-  qed
+    by (rule choi_theorem_3_cptp_carrier_forward
+          [OF npos dpos \<Phi>_in rep minimal ext])
 next
-  assume "mat_lin_indep_real n (kraus_products Vs)"
-  show "extreme_CPTP n d \<Phi>"
-    \<comment> \<open>Generally false because @{const extreme_CPTP} is vacuous; see the
-        text above and @{thm choi_theorem_3_cptp_forward_complex} for
-        the version that does hold.\<close>
-    sorry
+  assume li: "mat_lin_indep_complex n (kraus_products Vs)"
+  show "extreme_CPTP_carrier n d \<Phi>"
+    by (rule choi_theorem_3_cptp_forward_complex
+          [OF npos dpos \<Phi>_in rep li])
 qed
 
 text \<open>\<^bold>\<open>The UCP form of Choi's Theorem 3.\<close>  In the UCP / Heisenberg
-convention, Choi's products live in \<open>M\<^sub>d\<close> (not \<open>M\<^sub>n\<close>): \<open>\<Phi>\<close>
-is extreme in UCP iff \<open>{V\<^sub>i V\<^sub>j\<^sup>\<dagger>}\<close> are linearly independent in \<open>M\<^sub>d\<close>.
+convention, the relevant products live in \<open>M\<^sub>d\<close> with the
+\<^emph>\<open>opposite\<close> order \<open>{V\<^sub>i V\<^sub>j\<^sup>\<dagger>}\<close>.
 
 The project's @{const kraus_products} uses the CPTP-side convention
-\<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close>, so the UCP-side statement as written below is
-\<^bold>\<open>convention-mismatched\<close>: the implication holds only via the
-Hilbert\<dash>Schmidt adjoint that swaps UCP and CPTP.  A proper
-formulation requires either a parallel \<open>kraus_products_ucp\<close>
-definition (with \<open>V\<^sub>i V\<^sub>j\<^sup>\<dagger>\<close>) or a duality lemma between
-@{const extreme_UCP} and @{const extreme_CPTP}.\<close>
+\<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close>, and there is no UCP-side carrier-extreme notion
+or analogue of @{thm choi_theorem_3_cptp_reverse_carrier} in this
+development.  A proper UCP form of Choi's theorem requires either:
+\<^item> a parallel @{term \<open>kraus_products_ucp\<close>} (\<open>V\<^sub>i V\<^sub>j\<^sup>\<dagger>\<close>),
+   an \<open>extreme_UCP_carrier\<close> predicate, and full UCP-side analogues
+   of the carrier-flavoured lemmas; or
+\<^item> a Hilbert\<dash>Schmidt duality between @{const extreme_UCP} and
+   @{const extreme_CPTP} that transports the CPTP theorem above.
 
-theorem choi_theorem_3:
-  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes npos: "0 < n" and dpos: "0 < d"
-      and \<Phi>_in: "\<Phi> \<in> UCP n d"
-      and rep:  "ucp_kraus_rep n d \<Phi> Vs"
-      and minimal: "lin_indep_complex_mat d n Vs"
-  shows "extreme_UCP n d \<Phi> \<longleftrightarrow>
-           mat_lin_indep_real n (kraus_products Vs)"
-  \<comment> \<open>See note above: this requires re-statement with the UCP-side
-      products. Left as future work.\<close>
-  sorry
+We leave both routes for future work and state no UCP form here.\<close>
 
 
 subsection \<open>Sanity / easy facts about extreme UCP\<close>
