@@ -3606,6 +3606,110 @@ next
 qed
 
 
+subsection \<open>Choi matrix is linear in the map\<close>
+
+text \<open>The Choi matrix is a linear function of the underlying map
+(evaluated on the basis @{const mat_unit}'s).  In particular,
+\<open>P\<^sub>{\<Phi> - \<Psi>} = P\<^sub>\<Phi> - P\<^sub>\<Psi>\<close>.\<close>
+
+lemma choi_matrix_carrier [simp]:
+  "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
+  by (simp add: choi_matrix_def)
+
+lemma choi_matrix_diff:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes Phi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X \<in> carrier_mat d d"
+      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
+      and npos: "0 < n" and dpos: "0 < d"
+  shows "choi_matrix n d (\<lambda>X. Phi X - Psi X)
+           = choi_matrix n d Phi - choi_matrix n d Psi"
+proof (rule eq_matI)
+  show "dim_row (choi_matrix n d (\<lambda>X. Phi X - Psi X))
+          = dim_row (choi_matrix n d Phi - choi_matrix n d Psi)"
+    by (simp add: choi_matrix_def)
+  show "dim_col (choi_matrix n d (\<lambda>X. Phi X - Psi X))
+          = dim_col (choi_matrix n d Phi - choi_matrix n d Psi)"
+    by (simp add: choi_matrix_def)
+next
+  fix r c
+  assume r_a: "r < dim_row (choi_matrix n d Phi - choi_matrix n d Psi)"
+     and c_a: "c < dim_col (choi_matrix n d Phi - choi_matrix n d Psi)"
+  have r_lt: "r < n*d"
+    using r_a by (simp add: choi_matrix_def)
+  have c_lt: "c < n*d"
+    using c_a by (simp add: choi_matrix_def)
+  have a_lt: "r div d < n" using r_lt dpos by (simp add: div_less_iff_less_mult)
+  have b_lt: "c div d < n" using c_lt dpos by (simp add: div_less_iff_less_mult)
+  have i_lt: "r mod d < d" using dpos by simp
+  have j_lt: "c mod d < d" using dpos by simp
+  let ?E = "mat_unit (r div d) (c div d) n n"
+  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+  have phi_E_c: "Phi ?E \<in> carrier_mat d d" by (rule Phi_range[OF E_c])
+  have psi_E_c: "Psi ?E \<in> carrier_mat d d" by (rule Psi_range[OF E_c])
+  have "choi_matrix n d (\<lambda>X. Phi X - Psi X) $$ (r, c)
+          = (Phi ?E - Psi ?E) $$ (r mod d, c mod d)"
+    using r_lt c_lt by (simp add: choi_matrix_def)
+  also have "\<dots> = Phi ?E $$ (r mod d, c mod d) - Psi ?E $$ (r mod d, c mod d)"
+    using phi_E_c psi_E_c i_lt j_lt by auto
+  also have "\<dots> = choi_matrix n d Phi $$ (r, c) - choi_matrix n d Psi $$ (r, c)"
+    using r_lt c_lt by (simp add: choi_matrix_def)
+  also have "\<dots> = (choi_matrix n d Phi - choi_matrix n d Psi) $$ (r, c)"
+    using r_lt c_lt by (simp add: choi_matrix_def)
+  finally show "choi_matrix n d (\<lambda>X. Phi X - Psi X) $$ (r, c)
+                  = (choi_matrix n d Phi - choi_matrix n d Psi) $$ (r, c)" .
+qed
+
+text \<open>The Choi matrix agrees on maps that agree on the carrier.\<close>
+
+lemma choi_matrix_cong:
+  assumes agree: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = Psi X"
+  shows "choi_matrix n d Phi = choi_matrix n d Psi"
+proof (rule eq_matI)
+  show "dim_row (choi_matrix n d Phi) = dim_row (choi_matrix n d Psi)"
+    by (simp add: choi_matrix_def)
+  show "dim_col (choi_matrix n d Phi) = dim_col (choi_matrix n d Psi)"
+    by (simp add: choi_matrix_def)
+next
+  fix r c
+  assume r_a: "r < dim_row (choi_matrix n d Psi)"
+     and c_a: "c < dim_col (choi_matrix n d Psi)"
+  have r_lt: "r < n*d" using r_a by (simp add: choi_matrix_def)
+  have c_lt: "c < n*d" using c_a by (simp add: choi_matrix_def)
+  let ?E = "mat_unit (r div d) (c div d) n n"
+  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+  have "choi_matrix n d Phi $$ (r, c)
+          = Phi ?E $$ (r mod d, c mod d)"
+    using r_lt c_lt by (simp add: choi_matrix_def)
+  also have "\<dots> = Psi ?E $$ (r mod d, c mod d)"
+    using agree[OF E_c] by simp
+  also have "\<dots> = choi_matrix n d Psi $$ (r, c)"
+    using r_lt c_lt by (simp add: choi_matrix_def)
+  finally show "choi_matrix n d Phi $$ (r, c) = choi_matrix n d Psi $$ (r, c)" .
+qed
+
+
+subsection \<open>The Choi matrix of a @{const kraus_quad_map}\<close>
+
+text \<open>The Choi matrix of \<open>X \<mapsto> \<Sum>\<^sub>{ij} T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>
+equals \<open>V T V\<^sup>\<dagger>\<close> where \<open>V = mat_of_cols (n*d) (map vec_of_kraus Vs)\<close>.
+
+This is the bridge from the classical dominated-PSD parametrisation
+back to a Kraus quadratic form.\<close>
+
+definition kraus_vec_mat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat"
+  where "kraus_vec_mat d n Vs = mat_of_cols (n*d) (map (vec_of_kraus d n) Vs)"
+
+lemma kraus_vec_mat_carrier [simp]:
+  "kraus_vec_mat d n Vs \<in> carrier_mat (n*d) (length Vs)"
+  by (simp add: kraus_vec_mat_def mat_of_cols_def)
+
+lemma kraus_vec_mat_index:
+  assumes r_lt: "r < n*d" and k_lt: "k < length Vs"
+  shows "kraus_vec_mat d n Vs $$ (r, k) = vec_of_kraus d n (Vs!k) $ r"
+  using r_lt k_lt
+  by (simp add: kraus_vec_mat_def mat_of_cols_def)
+
+
 subsection \<open>CP Radon\<dash>Nikodym (axiom)\<close>
 
 text \<open>\<^bold>\<open>CP Radon\<dash>Nikodym\<close> (Arveson 1969).  If \<open>\<Phi>\<close> is CP with Kraus
