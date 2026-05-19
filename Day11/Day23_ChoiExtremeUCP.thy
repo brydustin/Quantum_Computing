@@ -4254,6 +4254,101 @@ proof (rule eq_matI)
 qed
 
 
+text \<open>\<^bold>\<open>Pseudoinverse identity at operator level.\<close>  Given a hermitian
+spectral decomposition \<open>A = U D U\<^sup>\<dagger>\<close>, define the Moore\<dash>Penrose
+pseudoinverse via \<open>A\<^sup>+ = U D\<^sup>+ U\<^sup>\<dagger>\<close>.  Then \<open>A A\<^sup>+ A = A\<close>.
+This is the unitary-conjugation lift of @{thm diag_pinv_diag_eq}.\<close>
+
+lemma A_Aplus_A_eq:
+  fixes U :: "complex Matrix.mat" and D :: "real list"
+  assumes Uc: "U \<in> carrier_mat k k"
+      and UU: "unitary U"
+      and Dlen: "length D = k"
+  shows "(U * diag_mat_of_real D * (U\<^sup>\<dagger>))
+           * (U * diag_mat_of_real (pinv_list D) * (U\<^sup>\<dagger>))
+           * (U * diag_mat_of_real D * (U\<^sup>\<dagger>))
+         = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+proof -
+  let ?Dm = "diag_mat_of_real D"
+  let ?Pm = "diag_mat_of_real (pinv_list D)"
+  let ?Ud = "U\<^sup>\<dagger>"
+  have Dm_c: "?Dm \<in> carrier_mat k k" using Dlen by auto
+  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
+  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
+  have UdU: "?Ud * U = 1\<^sub>m k"
+  proof -
+    have "?Ud * U = 1\<^sub>m (dim_col U)"
+      using unitary_left_right(1)[OF UU] .
+    thus ?thesis using Uc by simp
+  qed
+
+  \<comment> \<open>Build up by regrouping factors.\<close>
+  have UDm_c: "U * ?Dm \<in> carrier_mat k k" using Uc Dm_c by simp
+  have UDmUd_c: "U * ?Dm * ?Ud \<in> carrier_mat k k" using UDm_c Ud_c by simp
+  have UPm_c: "U * ?Pm \<in> carrier_mat k k" using Uc Pm_c by simp
+  have UPmUd_c: "U * ?Pm * ?Ud \<in> carrier_mat k k" using UPm_c Ud_c by simp
+  have DmPm_c: "?Dm * ?Pm \<in> carrier_mat k k" using Dm_c Pm_c by simp
+  have DmPmDm_c: "?Dm * ?Pm * ?Dm \<in> carrier_mat k k" using DmPm_c Dm_c by simp
+
+  \<comment> \<open>Lift \<open>?Ud * U = 1\<^sub>m k\<close> through the matrix product, collapsing
+      the central factors.\<close>
+  have step_AAp: "(U * ?Dm * ?Ud) * (U * ?Pm * ?Ud) = U * (?Dm * ?Pm) * ?Ud"
+  proof -
+    have a1: "U * ?Dm * ?Ud * (U * ?Pm * ?Ud)
+                = U * ?Dm * ?Ud * (U * ?Pm) * ?Ud"
+      using UDmUd_c UPm_c Ud_c by (metis assoc_mult_mat)
+    have a2: "U * ?Dm * ?Ud * (U * ?Pm) = U * ?Dm * ?Ud * U * ?Pm"
+      using UDmUd_c Uc Pm_c by (metis assoc_mult_mat)
+    have a3: "U * ?Dm * ?Ud * U = U * ?Dm * (?Ud * U)"
+      using UDm_c Ud_c Uc by (metis assoc_mult_mat)
+    have a4: "U * ?Dm * (?Ud * U) = U * ?Dm"
+      using UDm_c UdU right_mult_one_mat[OF UDm_c] by simp
+    have "U * ?Dm * ?Ud * (U * ?Pm * ?Ud)
+            = U * ?Dm * ?Ud * U * ?Pm * ?Ud"
+      using a1 a2 by simp
+    also have "\<dots> = U * ?Dm * ?Pm * ?Ud"
+      using a3 a4 by simp
+    also have "\<dots> = U * (?Dm * ?Pm) * ?Ud"
+      using Uc Dm_c Pm_c by (metis assoc_mult_mat)
+    finally show ?thesis .
+  qed
+
+  have step_AApA: "(U * (?Dm * ?Pm) * ?Ud) * (U * ?Dm * ?Ud)
+                     = U * (?Dm * ?Pm * ?Dm) * ?Ud"
+  proof -
+    have UDmPm_c: "U * (?Dm * ?Pm) \<in> carrier_mat k k" using Uc DmPm_c by simp
+    have UDmPm_Ud_c: "U * (?Dm * ?Pm) * ?Ud \<in> carrier_mat k k" using UDmPm_c Ud_c by simp
+    have b1: "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm * ?Ud)
+                = U * (?Dm * ?Pm) * ?Ud * (U * ?Dm) * ?Ud"
+      using UDmPm_Ud_c UDm_c Ud_c by (metis assoc_mult_mat)
+    have b2: "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm)
+                = U * (?Dm * ?Pm) * ?Ud * U * ?Dm"
+      using UDmPm_Ud_c Uc Dm_c by (metis assoc_mult_mat)
+    have b3: "U * (?Dm * ?Pm) * ?Ud * U = U * (?Dm * ?Pm) * (?Ud * U)"
+      using UDmPm_c Ud_c Uc by (metis assoc_mult_mat)
+    have b4: "U * (?Dm * ?Pm) * (?Ud * U) = U * (?Dm * ?Pm)"
+      using UDmPm_c UdU right_mult_one_mat[OF UDmPm_c] by simp
+    have "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm * ?Ud)
+            = U * (?Dm * ?Pm) * ?Ud * U * ?Dm * ?Ud"
+      using b1 b2 by simp
+    also have "\<dots> = U * (?Dm * ?Pm) * ?Dm * ?Ud"
+      using b3 b4 by simp
+    also have "\<dots> = U * (?Dm * ?Pm * ?Dm) * ?Ud"
+      using Uc DmPm_c Dm_c by (metis assoc_mult_mat)
+    finally show ?thesis .
+  qed
+
+  have "(U * ?Dm * ?Ud) * (U * ?Pm * ?Ud) * (U * ?Dm * ?Ud)
+          = (U * (?Dm * ?Pm) * ?Ud) * (U * ?Dm * ?Ud)"
+    using step_AAp by simp
+  also have "\<dots> = U * (?Dm * ?Pm * ?Dm) * ?Ud"
+    using step_AApA .
+  also have "\<dots> = U * ?Dm * ?Ud"
+    using diag_pinv_diag_eq[of D] by simp
+  finally show ?thesis .
+qed
+
+
 lemma dominated_outer_sum_param:
   fixes vs :: "complex Matrix.vec list"
     and B :: "complex Matrix.mat"
