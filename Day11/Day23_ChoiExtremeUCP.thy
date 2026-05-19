@@ -4311,7 +4311,14 @@ imply linearity (it constrains only positivity under amplification).
 This corresponds to the classical fact that ``CP map'' standardly
 includes linearity; we make it explicit so the consumer can supply it.\<close>
 
-lemma cp_radon_nikodym:
+text \<open>\<^bold>\<open>Operator-level CP Radon\<dash>Nikodym, with linearity assumption.\<close>
+This version is fully discharged via @{thm cp_radon_nikodym_choi} +
+@{thm map_eq_from_choi_when_linear}, modulo the classical
+@{thm dominated_outer_sum_param} axiom.  It requires @{term Psi} to be
+linear on @{term \<open>carrier_mat n n\<close>}, which is not implied by the
+project's @{const completely_positive} predicate.\<close>
+
+lemma cp_radon_nikodym_linear:
   fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
     and Vs :: "complex Matrix.mat list"
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -4351,6 +4358,28 @@ proof -
   show ?thesis
     using Tm_c Tm_psd ptwise by blast
 qed
+
+text \<open>The original operator-level CP Radon\<dash>Nikodym is left sorried:
+the project's @{const completely_positive} does not include linearity,
+so without a definitional change there is no way to discharge it for
+arbitrary CP \<open>\<Psi>\<close>.  The use site (Choi's Theorem 3 forward direction)
+continues to depend on this lemma; refactoring that use site requires
+propagating linearity hypotheses up to (and ultimately strengthening)
+the carrier-extreme definition, which is left as future work.\<close>
+
+lemma cp_radon_nikodym:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Vs :: "complex Matrix.mat list"
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
+      and Psi_cp: "completely_positive n d Psi"
+      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
+      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
+              (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> Psi X = kraus_quad_map d Vs T X)"
+  sorry
 
 
 subsection \<open>Choi's Theorem 3 \<mdash> reverse direction\<close>
