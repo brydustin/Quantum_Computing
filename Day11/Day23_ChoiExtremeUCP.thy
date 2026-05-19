@@ -4359,27 +4359,12 @@ proof -
     using Tm_c Tm_psd ptwise by blast
 qed
 
-text \<open>The original operator-level CP Radon\<dash>Nikodym is left sorried:
-the project's @{const completely_positive} does not include linearity,
-so without a definitional change there is no way to discharge it for
-arbitrary CP \<open>\<Psi>\<close>.  The use site (Choi's Theorem 3 forward direction)
-continues to depend on this lemma; refactoring that use site requires
-propagating linearity hypotheses up to (and ultimately strengthening)
-the carrier-extreme definition, which is left as future work.\<close>
-
-lemma cp_radon_nikodym:
-  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
-      and Psi_cp: "completely_positive n d Psi"
-      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
-      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
-      and npos: "0 < n"
-      and dpos: "0 < d"
-  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
-              (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> Psi X = kraus_quad_map d Vs T X)"
-  sorry
+text \<open>The use site \<open>choi_theorem_3_cptp_forward_complex\<close> obtains
+linearity of its \<open>\<Psi>\<close> through the strengthened \<open>cptp_pair_mid\<close>
+predicate (which carries \<open>lin_on_carrier\<close> for both midpoint
+witnesses) and dispatches to @{thm cp_radon_nikodym_linear}.  No
+operator-level \<open>cp_radon_nikodym\<close> without linearity is needed
+any more.\<close>
 
 
 subsection \<open>Choi's Theorem 3 \<mdash> reverse direction\<close>
@@ -4832,19 +4817,58 @@ inequality \<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close> in @{const extreme_CPTP
 satisfiable.  We therefore introduce a \<^emph>\<open>carrier\<close>-point
 non-extremity notion below.\<close>
 
+text \<open>To keep @{term \<open>extreme_CPTP_carrier\<close>}'s definition manageable
+for automated proofs, we factor it through a helper predicate
+@{term \<open>cptp_pair_mid\<close>}: the data of a CPTP midpoint pair witnessing
+non-extremity (range, linearity on carrier, off-equal at some
+carrier-point, and the midpoint identity).  Unfolding only the outer
+definition keeps the goal small.\<close>
+
+definition lin_on_carrier ::
+  "nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
+where
+  "lin_on_carrier n \<Phi> \<equiv>
+     (\<forall>X Y. X \<in> carrier_mat n n \<longrightarrow> Y \<in> carrier_mat n n
+            \<longrightarrow> \<Phi> (X + Y) = \<Phi> X + \<Phi> Y) \<and>
+     (\<forall>c X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X)"
+
+lemma lin_on_carrier_add:
+  assumes "lin_on_carrier n \<Phi>" "X \<in> carrier_mat n n" "Y \<in> carrier_mat n n"
+  shows "\<Phi> (X + Y) = \<Phi> X + \<Phi> Y"
+  using assms unfolding lin_on_carrier_def by blast
+
+lemma lin_on_carrier_smult:
+  assumes "lin_on_carrier n \<Phi>" "X \<in> carrier_mat n n"
+  shows "\<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X"
+  using assms unfolding lin_on_carrier_def by blast
+
+lemma lin_on_carrierI:
+  assumes "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
+                  \<Longrightarrow> \<Phi> (X + Y) = \<Phi> X + \<Phi> Y"
+      and "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X"
+  shows "lin_on_carrier n \<Phi>"
+  using assms unfolding lin_on_carrier_def by blast
+
+definition cptp_pair_mid ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat)
+       \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat)
+       \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
+where
+  "cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2 \<equiv>
+     \<Phi>\<^sub>1 \<in> CPTP n d \<and> \<Phi>\<^sub>2 \<in> CPTP n d \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d) \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d) \<and>
+     lin_on_carrier n \<Phi>\<^sub>1 \<and> lin_on_carrier n \<Phi>\<^sub>2 \<and>
+     (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
+     (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
+         \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
+
 definition extreme_CPTP_carrier ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
 where
   "extreme_CPTP_carrier n d \<Phi> \<equiv>
-     \<Phi> \<in> CPTP n d \<and>
-     \<not> (\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
-           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d) \<and>
-           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d) \<and>
-           (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
-           (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
-           (\<forall>X. X \<in> carrier_mat n n
-                  \<longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
-                            + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X))"
+     \<Phi> \<in> CPTP n d \<and> \<not> (\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2)"
 
 text \<open>The same construction as in @{thm choi_theorem_3_cptp_reverse}
 yields the stronger fact that \<open>\<Phi>\<close> fails the
@@ -4935,6 +4959,14 @@ proof -
     unfolding Phip_def using kraus_quad_map_carrier[OF Vs_c] by blast
   have Phim_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phim X \<in> carrier_mat d d"
     unfolding Phim_def using kraus_quad_map_carrier[OF Vs_c] by blast
+  have Phip_lin: "lin_on_carrier n Phip"
+    by (rule lin_on_carrierI)
+       (auto simp: Phip_def kraus_quad_map_add_rho[OF Vs_c]
+                    kraus_quad_map_smult_rho[OF Vs_c])
+  have Phim_lin: "lin_on_carrier n Phim"
+    by (rule lin_on_carrierI)
+       (auto simp: Phim_def kraus_quad_map_add_rho[OF Vs_c]
+                    kraus_quad_map_smult_rho[OF Vs_c])
   have Phip_in_CPTP: "Phip \<in> CPTP n d"
     unfolding CPTP_def
   proof (intro CollectI conjI)
@@ -5166,11 +5198,18 @@ proof -
     qed
     thus False using Phip_ne_at_rho by simp
   qed
+  have ne1: "\<exists>X\<^sub>1 \<in> carrier_mat n n. Phip X\<^sub>1 \<noteq> \<Phi> X\<^sub>1"
+    using rho_c Phip_ne_at_rho by blast
+  have ne2: "\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> Phim X\<^sub>2"
+    using rho_c Phim_ne_at_rho by blast
+  have pair_witness: "cptp_pair_mid n d \<Phi> Phip Phim"
+    unfolding cptp_pair_mid_def
+    by (intro conjI Phip_in_CPTP Phim_in_CPTP Phip_lin Phim_lin
+                    allI impI ne1 ne2)
+       (use Phip_range Phim_range midpoint in blast)+
   show ?thesis
     unfolding extreme_CPTP_carrier_def
-    using \<Phi>_in Phip_in_CPTP Phim_in_CPTP Phip_range Phim_range
-          Phip_ne_at_rho Phim_ne_at_rho rho_c midpoint
-    by blast
+    using \<Phi>_in pair_witness by blast
 qed
 
 text \<open>Immediate contrapositive: extreme-in-carrier-sense forces
@@ -5300,8 +5339,8 @@ The fix is to use a \<^emph>\<open>carrier\<close>-point notion of inequality
 
 text \<open>The forward direction targets the \<^emph>\<open>carrier\<close>-flavoured version:
 \<open>mat_lin_indep_complex \<Longrightarrow> extreme_CPTP_carrier\<close>.  Proof uses
-@{thm cp_radon_nikodym}; remaining sorries are mechanical
-(R-N application + TP-converse + assembly).\<close>
+@{thm cp_radon_nikodym_linear}, obtaining linearity of \<open>\<Psi>\<close> from the
+@{const lin_on_carrier} conjuncts carried by @{const cptp_pair_mid}.\<close>
 
 theorem choi_theorem_3_cptp_forward_complex:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -5322,26 +5361,34 @@ proof (rule ccontr)
   have \<Phi>_eq: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = kraus_map_dim d Vs X"
     using rep by (simp add: cptp_kraus_rep_def)
   assume "\<not> extreme_CPTP_carrier n d \<Phi>"
-  with \<Phi>_in have not_ext:
-    "\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
-        (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d) \<and>
-        (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d) \<and>
-        (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
-        (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
-        (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
-            \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
-    unfolding extreme_CPTP_carrier_def by blast
-  obtain \<Phi>\<^sub>1 \<Phi>\<^sub>2 X\<^sub>0 where
-        \<Phi>1_in: "\<Phi>\<^sub>1 \<in> CPTP n d"
-    and \<Phi>2_in: "\<Phi>\<^sub>2 \<in> CPTP n d"
-    and \<Phi>1_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d"
-    and \<Phi>2_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d"
-    and X\<^sub>0_c: "X\<^sub>0 \<in> carrier_mat n n"
-    and \<Phi>1_ne_at_X0: "\<Phi>\<^sub>1 X\<^sub>0 \<noteq> \<Phi> X\<^sub>0"
-    and mid: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
+  with \<Phi>_in have ex_pair: "\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2"
+    unfolding extreme_CPTP_carrier_def by simp
+  obtain \<Phi>\<^sub>1 \<Phi>\<^sub>2 X\<^sub>0
+    where \<Phi>1_in: "\<Phi>\<^sub>1 \<in> CPTP n d"
+      and \<Phi>2_in: "\<Phi>\<^sub>2 \<in> CPTP n d"
+      and \<Phi>1_range: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d"
+      and \<Phi>2_range: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d"
+      and \<Phi>1_lin: "lin_on_carrier n \<Phi>\<^sub>1"
+      and \<Phi>2_lin: "lin_on_carrier n \<Phi>\<^sub>2"
+      and X\<^sub>0_c: "X\<^sub>0 \<in> carrier_mat n n"
+      and \<Phi>1_ne_at_X0: "\<Phi>\<^sub>1 X\<^sub>0 \<noteq> \<Phi> X\<^sub>0"
+      and mid_raw: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
+                       \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
+                             + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X"
+    using ex_pair unfolding cptp_pair_mid_def by blast
+  have \<Phi>1_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
+                       \<Longrightarrow> \<Phi>\<^sub>1 (X + Y) = \<Phi>\<^sub>1 X + \<Phi>\<^sub>1 Y"
+    using \<Phi>1_lin[unfolded lin_on_carrier_def] by blast
+  have \<Phi>1_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>1 (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi>\<^sub>1 X"
+    using \<Phi>1_lin[unfolded lin_on_carrier_def] by blast
+  have \<Phi>1_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d"
+    using \<Phi>1_range by blast
+  have \<Phi>2_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d"
+    using \<Phi>2_range by blast
+  have mid: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
                  \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
                        + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X"
-    using not_ext by blast
+    using mid_raw by blast
   have \<Phi>1_cp: "completely_positive n d \<Phi>\<^sub>1" using \<Phi>1_in by (simp add: CPTP_def)
   have \<Phi>1_tp: "trace_preserving n \<Phi>\<^sub>1" using \<Phi>1_in by (simp add: CPTP_def)
   have \<Phi>2_cp: "completely_positive n d \<Phi>\<^sub>2" using \<Phi>2_in by (simp add: CPTP_def)
@@ -5487,11 +5534,53 @@ proof (rule ccontr)
   have diff_cp: "completely_positive n d (\<lambda>X. \<Phi> X - \<Psi> X)"
     using halfPhi2_cp completely_positive_cong[OF agree_carrier] by simp
   \<comment> \<open>Step B: R-N gives PSD \<open>T\<close> with \<open>\<Psi> X = kraus_quad_map d Vs T X\<close>.\<close>
+  \<comment> \<open>\<open>\<Psi>\<close> inherits linearity on carrier from \<open>\<Phi>\<^sub>1\<close>.\<close>
+  have psi_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
+                       \<Longrightarrow> \<Psi> (X + Y) = \<Psi> X + \<Psi> Y"
+  proof -
+    fix X Y :: "complex Matrix.mat"
+    assume X_c: "X \<in> carrier_mat n n" and Y_c: "Y \<in> carrier_mat n n"
+    have \<Phi>1X_c: "\<Phi>\<^sub>1 X \<in> carrier_mat d d" by (rule \<Phi>1_range[OF X_c])
+    have \<Phi>1Y_c: "\<Phi>\<^sub>1 Y \<in> carrier_mat d d" by (rule \<Phi>1_range[OF Y_c])
+    have "\<Psi> (X + Y) = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 (X + Y)" unfolding \<Psi>_def by simp
+    also have "\<dots> = (1/2 :: complex) \<cdot>\<^sub>m (\<Phi>\<^sub>1 X + \<Phi>\<^sub>1 Y)"
+      using \<Phi>1_add[OF X_c Y_c] by simp
+    also have "\<dots> = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 Y"
+      using \<Phi>1X_c \<Phi>1Y_c by (rule add_smult_distrib_left_mat)
+    also have "\<dots> = \<Psi> X + \<Psi> Y" unfolding \<Psi>_def by simp
+    finally show "\<Psi> (X + Y) = \<Psi> X + \<Psi> Y" .
+  qed
+  have psi_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> \<Psi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Psi> X"
+  proof -
+    fix c :: complex and X :: "complex Matrix.mat"
+    assume X_c: "X \<in> carrier_mat n n"
+    have \<Phi>1X_c: "\<Phi>\<^sub>1 X \<in> carrier_mat d d" by (rule \<Phi>1_range[OF X_c])
+    have "\<Psi> (c \<cdot>\<^sub>m X) = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 (c \<cdot>\<^sub>m X)" unfolding \<Psi>_def by simp
+    also have "\<dots> = (1/2 :: complex) \<cdot>\<^sub>m (c \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
+      using \<Phi>1_smult[OF X_c] by simp
+    also have "\<dots> = c \<cdot>\<^sub>m ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
+    proof (rule eq_matI)
+      show "dim_row ((1/2 :: complex) \<cdot>\<^sub>m (c \<cdot>\<^sub>m \<Phi>\<^sub>1 X))
+              = dim_row (c \<cdot>\<^sub>m ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X))" by simp
+      show "dim_col ((1/2 :: complex) \<cdot>\<^sub>m (c \<cdot>\<^sub>m \<Phi>\<^sub>1 X))
+              = dim_col (c \<cdot>\<^sub>m ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X))" by simp
+      fix r c'
+      assume "r < dim_row (c \<cdot>\<^sub>m ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X))"
+         and "c' < dim_col (c \<cdot>\<^sub>m ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X))"
+      hence r_lt: "r < d" and c_lt: "c' < d" using \<Phi>1X_c by auto
+      show "((1/2 :: complex) \<cdot>\<^sub>m (c \<cdot>\<^sub>m \<Phi>\<^sub>1 X)) $$ (r, c')
+              = (c \<cdot>\<^sub>m ((1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)) $$ (r, c')"
+        using \<Phi>1X_c r_lt c_lt by (simp add: mult.commute mult.left_commute)
+    qed
+    also have "\<dots> = c \<cdot>\<^sub>m \<Psi> X" unfolding \<Psi>_def by simp
+    finally show "\<Psi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Psi> X" .
+  qed
   obtain T where
       T_c: "T \<in> carrier_mat ?k ?k" and T_psd: "psd T"
     and Psi_eq: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
                     \<Psi> X = kraus_quad_map d Vs T X"
-    using cp_radon_nikodym[OF Vs_c \<Phi>_eq psi_cp psi_range diff_cp npos dpos] by blast
+    using cp_radon_nikodym_linear[OF Vs_c \<Phi>_eq psi_cp psi_range psi_add psi_smult
+                                     diff_cp npos dpos] by blast
   \<comment> \<open>Step C: \<open>T\<^sub>1 := 2 \<cdot>\<^sub>m T\<close> satisfies \<open>\<Phi>\<^sub>1 X = kraus_quad_map d Vs T\<^sub>1 X\<close> on carrier.\<close>
   define T\<^sub>1 where "T\<^sub>1 = (2 :: complex) \<cdot>\<^sub>m T"
   have T1_c: "T\<^sub>1 \<in> carrier_mat ?k ?k" unfolding T\<^sub>1_def using T_c by auto
