@@ -4122,6 +4122,138 @@ proof -
 qed
 
 
+subsubsection \<open>Diagonal pseudo-inverse list and its identity\<close>
+
+text \<open>\<^bold>\<open>Pseudo-inverse of a real list (interpreted as a diagonal).\<close>
+Zero entries are kept at zero; non-zero entries are reciprocated.
+This is the diagonal Moore\<dash>Penrose pseudoinverse.\<close>
+
+definition pinv_list :: "real list \<Rightarrow> real list" where
+  "pinv_list D = map (\<lambda>d. if d = 0 then 0 else 1/d) D"
+
+lemma pinv_list_length [simp]: "length (pinv_list D) = length D"
+  unfolding pinv_list_def by simp
+
+lemma pinv_list_index:
+  assumes "i < length D"
+  shows "pinv_list D ! i = (if D ! i = 0 then 0 else 1 / (D ! i))"
+  using assms unfolding pinv_list_def by simp
+
+lemma pinv_list_nonneg:
+  assumes "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
+  shows "\<And>i. i < length D \<Longrightarrow> 0 \<le> pinv_list D ! i"
+proof -
+  fix i assume i: "i < length D"
+  show "0 \<le> pinv_list D ! i"
+    using assms[OF i] by (simp add: pinv_list_index[OF i])
+qed
+
+text \<open>The central identity: \<open>D \<cdot> D\<^sup>+ \<cdot> D = D\<close> entrywise on the
+diagonal.  For \<open>D\<^sub>i = 0\<close> the left-hand side is \<open>0 \<cdot> 0 \<cdot> 0 = 0 = D\<^sub>i\<close>;
+for \<open>D\<^sub>i \<noteq> 0\<close> it is \<open>D\<^sub>i \<cdot> (1/D\<^sub>i) \<cdot> D\<^sub>i = D\<^sub>i\<close>.  This is the
+core diagonal pseudoinverse identity that lifts to operator level
+through unitary conjugation.\<close>
+
+lemma diag_pinv_diag_eq:
+  fixes D :: "real list"
+  shows "diag_mat_of_real D
+           * diag_mat_of_real (pinv_list D)
+           * diag_mat_of_real D
+         = diag_mat_of_real D"
+proof (rule eq_matI)
+  let ?n = "length D"
+  let ?Dm = "diag_mat_of_real D"
+  let ?Pm = "diag_mat_of_real (pinv_list D)"
+  let ?DP = "?Dm * ?Pm"
+  let ?DPD = "?DP * ?Dm"
+  have Dm_c: "?Dm \<in> carrier_mat ?n ?n" by simp
+  have Pm_c: "?Pm \<in> carrier_mat ?n ?n"
+    using diag_mat_of_real_carrier[of "pinv_list D"] by simp
+  have DP_c: "?DP \<in> carrier_mat ?n ?n"
+    using Dm_c Pm_c by (rule mult_carrier_mat)
+  have DPD_c: "?DPD \<in> carrier_mat ?n ?n"
+    using DP_c Dm_c by (rule mult_carrier_mat)
+  show "dim_row ?DPD = dim_row ?Dm" using DPD_c by simp
+  show "dim_col ?DPD = dim_col ?Dm" using DPD_c by simp
+  fix i j assume i_a: "i < dim_row ?Dm" and j_a: "j < dim_col ?Dm"
+  hence i_lt: "i < ?n" and j_lt: "j < ?n" by auto
+
+  \<comment> \<open>A pointwise version of \<open>DP_idx\<close>: for any row index \<open>i'\<close> and any
+      column index \<open>c\<close>, the matrix-product entry is the diagonal-extracted
+      value.  We will instantiate with \<open>i' = i\<close> at two different column
+      indices below.\<close>
+  have DP_at: "\<And>c. c < ?n \<Longrightarrow> ?DP $$ (i, c) = ?Dm $$ (i, i) * ?Pm $$ (i, c)"
+  proof -
+    fix c assume c_lt: "c < ?n"
+    have "?DP $$ (i, c) = (\<Sum>l = 0..<?n. ?Dm $$ (i, l) * ?Pm $$ (l, c))"
+      using i_lt c_lt Dm_c Pm_c
+      by (simp add: scalar_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>l = 0..<?n.
+                       (if l = i then ?Dm $$ (i, i) * ?Pm $$ (i, c) else 0))"
+      using i_lt c_lt
+      by (intro sum.cong refl) auto
+    also have "\<dots> = ?Dm $$ (i, i) * ?Pm $$ (i, c)"
+      using i_lt by (simp add: sum.delta)
+    finally show "?DP $$ (i, c) = ?Dm $$ (i, i) * ?Pm $$ (i, c)" .
+  qed
+
+  have DPD_idx: "?DPD $$ (i, j)
+                  = ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j)"
+  proof -
+    have "?DPD $$ (i, j) = (\<Sum>l = 0..<?n. ?DP $$ (i, l) * ?Dm $$ (l, j))"
+      using i_lt j_lt DP_c Dm_c
+      by (simp add: scalar_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>l = 0..<?n.
+                       ?Dm $$ (i, i) * ?Pm $$ (i, l) * ?Dm $$ (l, j))"
+      using DP_at
+      by (intro sum.cong refl) auto
+    also have "\<dots> = (\<Sum>l = 0..<?n.
+                       (if l = i then ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j) else 0))"
+      using i_lt j_lt
+      by (intro sum.cong refl) auto
+    also have "\<dots> = ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j)"
+      using i_lt by (simp add: sum.delta)
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>And on the diagonal, the scalar identity \<open>D\<^sub>i \<cdot> D\<^sub>i\<^sup>+ \<cdot> D\<^sub>i = D\<^sub>i\<close>.\<close>
+  have scalar_id: "D ! i * pinv_list D ! i * D ! i = D ! i"
+  proof (cases "D ! i = 0")
+    case True
+    show ?thesis using True by simp
+  next
+    case False
+    have "pinv_list D ! i = 1 / D ! i"
+      using i_lt False by (simp add: pinv_list_index)
+    thus ?thesis using False by simp
+  qed
+
+  show "?DPD $$ (i, j) = ?Dm $$ (i, j)"
+  proof (cases "i = j")
+    case True
+    have e1: "?Dm $$ (i, i) = complex_of_real (D ! i)" using i_lt by simp
+    have e2: "?Pm $$ (i, i) = complex_of_real (pinv_list D ! i)" using i_lt by simp
+    have e3: "?Dm $$ (i, j) = complex_of_real (D ! i)" using True i_lt by simp
+    have "?DPD $$ (i, j) = complex_of_real (D ! i)
+                            * complex_of_real (pinv_list D ! i)
+                            * complex_of_real (D ! i)"
+      using DPD_idx e1 e2 e3 by simp
+    also have "\<dots> = complex_of_real (D ! i * pinv_list D ! i * D ! i)"
+      by simp
+    also have "\<dots> = complex_of_real (D ! i)"
+      using arg_cong[where f = complex_of_real, OF scalar_id] .
+    also have "\<dots> = ?Dm $$ (i, j)" using True i_lt by simp
+    finally show ?thesis .
+  next
+    case False
+    have e3: "?Dm $$ (i, j) = 0" using False i_lt j_lt by simp
+    have "?DPD $$ (i, j) = 0" using DPD_idx e3 by simp
+    also have "\<dots> = ?Dm $$ (i, j)" using e3 by simp
+    finally show ?thesis .
+  qed
+qed
+
+
 lemma dominated_outer_sum_param:
   fixes vs :: "complex Matrix.vec list"
     and B :: "complex Matrix.mat"
