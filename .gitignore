@@ -38,3 +38,6 @@ Polynomial_Interpolation/
 Quantum_Fourier_Transform/
 Regular-Sets/
 VectorSpace/
+
+# Separate standalone project (its own git repo)
+Applied_Math_Formalization/
