@@ -1,10 +1,5 @@
-(*
-  Title:      Completely_Positive_Maps and Quantum Computing
-  Author:     Dustin Bryant (based on notes of Vern Paulsen)
-  
-  Theory of completely positive maps on finite-dimensional Hilbert spaces.
-  We build on the Isabelle Marries Dirac quantum computing library and the
-  Quantum Fourier Transform entry.
+(*  Title:   Basic_Math.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lectures of 22 and 24 August 2011 (Days 1-2)
 *)
 
 
@@ -14,17 +9,13 @@ theory Basic_Math
     Quantum_Fourier_Transform.QFT
 begin
 
-(* ============================================================================
-   ABSTRACT LINEAR-SPACE ISOMORPHISMS
-   ============================================================================
+section \<open>Preliminaries: linear-space isomorphisms\<close>
 
-   Matrix spaces in this development are represented as carrier predicates over
-   the single type @{typ "complex Matrix.mat"}, rather than as separate HOL
-   types.  These lightweight records give a focused notion of linear
-   isomorphism over explicit carriers and operations.  The definition includes
-   an explicit inverse linear map, so it can later be shown to imply any more
-   general categorical notion of isomorphism without changing project proofs.
-   ============================================================================ *)
+text \<open>Matrix spaces are represented by carrier predicates on the single type
+\<^typ>\<open>complex Matrix.mat\<close>.  The record below packages a carrier with its zero,
+addition and scalar multiplication, so that statements such as
+$L(\Hil_A)\otimes L(\Hil_B)\cong L(\Hil_A\otimes\Hil_B)$ (Day 15) can be made as explicit
+linear isomorphisms with explicit inverses.\<close>
 
 record ('a, 'v) linear_structure =
   ls_carrier :: "'v set"
@@ -73,21 +64,26 @@ definition mat_linear_structure :: "nat \<Rightarrow> nat \<Rightarrow> (complex
        ls_add = (\<lambda>x y. x + y),
        ls_smul = (\<lambda>c x. c \<cdot>\<^sub>m x) \<rparr>"
 
-(*Day 1*)
 
-(* ============================================================================
-   SECTION 1: The Inner Product on Vectors
-   ============================================================================
+section \<open>Day 1 (22 August 2011): the inner product\<close>
 
-   Quantum.thy defines:
+text \<open>Paulsen opens with the dictionary between classical and quantum computing: a bit
+is an element of $\Z_2$, a qubit a unit vector in $\C^2$; $N$ bits form $\Z_2^N$, $N$ qubits
+a unit vector in $\C^{2^N}\cong\C^2\otimes\cdots\otimes\C^2$; operations are Boolean gates
+versus completely positive maps on $M_{2^N}$; information is a probability vector versus a
+positive semidefinite matrix of trace one.  He then fixes the physicists' notation.
 
-     inner_prod :: "complex vec \<Rightarrow> complex vec \<Rightarrow> complex"  (\<open>\<langle>_|_\<rangle>\<close>)
-     "inner_prod u v \<equiv> \<Sum> i \<in> {0..< dim_vec v}. cnj(u $ i) * (v $ i)"
+\begin{notesdef}
+$\C^n$ is the space of complex $n$-tuples with the inner product
+\[ \braket{y}{x} = \sum_{i=1}^{n} \overline{y_i}\, x_i , \]
+which is linear in the right-hand slot, conjugate linear in the left-hand slot
+(``sesquilinear''), and positive definite: $\braket{x}{x}\ge 0$ with equality only for
+$x=0$.  The Euclidean length is $\norm{x}=\sqrt{\braket{x}{x}}$.  A \emph{Hilbert space} is
+a complex vector space with a sesquilinear positive definite form, complete for this norm.
+\end{notesdef}
 
-   That is, \<langle>y|x\<rangle> = \<Sum>_{i=0}^{n-1} \<bar>y_i\<bar> * x_i.
-
-   We restate this as a lemma for clarity. 
-   ============================================================================ *)
+The library's inner product \<^term>\<open>\<langle>y|x\<rangle>\<close> is exactly this form, with indices
+running from $0$ to $n-1$.\<close>
 
 lemma inner_prod_expand:
   assumes "dim_vec u = n" and "dim_vec v = n"
@@ -95,17 +91,15 @@ lemma inner_prod_expand:
   using assms by (simp add: inner_prod_def)
 
 
-(* ============================================================================
-   SECTION 2: The Inner Product on Matrices (Hilbert-Schmidt Inner Product)
-   ============================================================================
+subsection \<open>The Hilbert--Schmidt inner product on matrices\<close>
 
-   For matrices x, y \<in> M_{m \<times> n}(\<complex>), the Hilbert-Schmidt inner product is:
-
-     \<langle>y | x\<rangle>_{HS} = \<Sum>_i \<Sum>_j  \<bar>Y_{ij}\<bar> * X_{ij}
-
-   This generalises the vector inner product to matrices.  It is also called
-   the Frobenius inner product.
-   ============================================================================ *)
+text \<open>\begin{notesdef}[Example]
+The space $M_{n,k}$ of complex $n\times k$ matrices is a Hilbert space for
+\[ \langle (y_{ij}) \,|\, (x_{ij}) \rangle = \sum_{i}\sum_{j} \overline{y_{ij}}\,x_{ij}, \]
+and $M_{n,k}\cong\C^{nk}$.
+\end{notesdef}
+We write \<open>\<langle>\<langle>y|x\<rangle>\<rangle>\<close> for this Hilbert--Schmidt (Frobenius) inner product; the
+double brackets distinguish it from the inner product of vectors.\<close>
 
 definition hs_inner_prod :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex" where
   "hs_inner_prod = (\<lambda> y x. 
@@ -113,11 +107,9 @@ definition hs_inner_prod :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat
        \<Sum> j \<in> {0 ..< dim_col x}. 
          cnj (y $$ (i,j)) * (x $$ (i,j)))"
 
-(* Notation: double angle brackets to distinguish from the vector inner product *)
 notation hs_inner_prod ("\<langle>\<langle> _ | _ \<rangle>\<rangle>")
 
 
-(* --- Basic simplification lemma: unfold the definition --- *)
 
 lemma hs_inner_prod_expand:
   assumes "dim_row x = m" and "dim_col x = n"
@@ -126,7 +118,6 @@ lemma hs_inner_prod_expand:
   using assms by (simp add: hs_inner_prod_def)
 
 
-(* --- For square matrices --- *)
 
 lemma hs_inner_prod_square:
   assumes "dim_row x = n" and "dim_col x = n"
@@ -135,11 +126,12 @@ lemma hs_inner_prod_square:
   using assms by (simp add: hs_inner_prod_def)
 
 
-(* ============================================================================
-   SECTION 3: Basic Properties of the Hilbert-Schmidt Inner Product
-   ============================================================================ *)
+subsection \<open>Properties of the inner product\<close>
 
-(* --- Conjugate symmetry: \<langle>\<langle>x|y\<rangle>\<rangle> = cnj(\<langle>\<langle>y|x\<rangle>\<rangle>) --- *)
+text \<open>The properties listed in the notes, verified for the matrix inner product:
+conjugate symmetry, linearity in the right-hand slot, conjugate linearity in the left-hand
+slot, and positive definiteness.\<close>
+
 
 lemma hs_inner_prod_cnj:
   assumes "dim_row x = dim_row y" and "dim_col x = dim_col y"
@@ -160,7 +152,6 @@ proof -
 qed
 
 
-(* --- Linearity in the second argument (right-linearity) --- *)
 
 lemma hs_inner_prod_right_add:
   assumes "dim_row X1 = dim_row y" and "dim_col X1 = dim_col y"
@@ -180,7 +171,6 @@ lemma hs_inner_prod_right_smult:
   unfolding hs_inner_prod_def using assms
   by (auto simp: mult.assoc sum_distrib_left intro!: sum.cong)
 
-(* --- Conjugate-linearity in the first argument (left-conjugate-linearity) --- *)
 
 lemma hs_inner_prod_left_smult:
   assumes "dim_row x = dim_row y" and "dim_col x = dim_col y"
@@ -189,7 +179,6 @@ lemma hs_inner_prod_left_smult:
   by (auto simp: mult.assoc sum_distrib_left intro!: sum.cong)
 
 
-(* --- Self inner product is real --- *)
 
 lemma hs_inner_prod_self_real:
   shows "\<langle>\<langle> x | x \<rangle>\<rangle> \<in> \<real>"
@@ -206,7 +195,6 @@ proof -
 qed
 
 
-(* --- Self inner product is non-negative --- *)
 
 lemma hs_inner_prod_self_nonneg:
   shows "Re (\<langle>\<langle> x | x \<rangle>\<rangle>) \<ge> 0"
@@ -221,7 +209,6 @@ proof -
 qed
 
 
-(* --- Positive definiteness: \<langle>\<langle>x|x\<rangle>\<rangle> = 0 implies x = 0 --- *)
 
 lemma hs_inner_prod_eq_zero_imp:
   assumes "\<langle>\<langle> x | x \<rangle>\<rangle> = 0"
@@ -270,16 +257,19 @@ proof -
     by simp
 qed
 
-(* ============================================================================
-   SECTION 4: Matrix Units E_{i,j}
-   ============================================================================
+section \<open>Day 2 (24 August 2011): bases, matrix units, trace, projections\<close>
 
-   E_{i,j} is the m \<times> n matrix with 1 in position (i,j) and 0 elsewhere.
-   These form an orthonormal basis for M_{m \<times> n}(\<complex>) under the 
-   Hilbert-Schmidt inner product.
-
-   Argument order: indices (i,j) first, then dimensions (m,n).
-   ============================================================================ *)
+text \<open>\begin{notesdef}[Examples]
+$\C^n$ has the orthonormal basis $e_1,\dots,e_n$ and every $x$ satisfies
+$x=\sum_i x_i e_i=\sum_i\braket{e_i}{x}e_i$.  The \emph{matrix units} $E_{ij}$ (entry $1$ in
+position $(i,j)$, $0$ elsewhere) form an orthonormal basis of $M_{n,m}$, and
+\[ X=\sum_{i,j}X_{ij}E_{ij}=\sum_{i,j}\langle E_{ij}|X\rangle E_{ij}. \]
+\end{notesdef}
+Formally \<open>E\<lbrakk>i,j ; m,n\<rbrakk>\<close> is the $m\times n$ matrix unit (indices first,
+dimensions second).  The notes also recall the conjugate $\overline X$, the transpose
+$X^t$, the adjoint $X^*=\overline{X}^{\,t}$ (written $X^\dagger$ by physicists, formally
+\<^term>\<open>X\<^sup>\<dagger>\<close>) and the row-times-column rule for matrix products; these are library
+notions.\<close>
 
 definition mat_unit :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "mat_unit i j m n = Matrix.mat m n (\<lambda>(r,c). if r = i \<and> c = j then 1 else 0)"
@@ -302,13 +292,8 @@ lemma mat_unit_index [simp]:
   using assms by (simp add: mat_unit_def)
 
 
-(* ============================================================================
-   SECTION 5: Extraction — \<langle>\<langle>E_{ij} | x\<rangle>\<rangle> = x $$ (i,j)
-   ============================================================================
-
-   Taking the Hilbert-Schmidt inner product with the matrix unit E_{ij}
-   extracts the (i,j) entry.  This is the matrix analogue of \<langle>e_i | v\<rangle> = v_i.
-   ============================================================================ *)
+text \<open>Pairing with $E_{ij}$ extracts the $(i,j)$ entry: the matrix analogue of
+$\braket{e_i}{v}=v_i$.\<close>
 
 lemma hs_inner_prod_mat_unit_left:
   assumes "i < dim_row x" and "j < dim_col x"
@@ -371,12 +356,6 @@ proof -
 qed
 
 
-(* ============================================================================
-   SECTION 6: Orthonormality of Matrix Units
-   ============================================================================
-
-   \<langle>\<langle>E_{ij} | E_{kl}\<rangle>\<rangle> = \<delta>_{ik} \<cdot> \<delta>_{jl}
-   ============================================================================ *)
 
 lemma mat_unit_orthonormal:
   assumes i_lt: "i < m"
@@ -389,15 +368,8 @@ lemma mat_unit_orthonormal:
 
 
 
-(* ============================================================================
-   SECTION 7: Expansion of a Matrix in the E_{ij} Basis
-   ============================================================================
-
-   x $$ (r,c) = \<Sum>_i \<Sum>_j x $$ (i,j) \<cdot> E_{ij} $$ (r,c)
-
-   Since JNF matrices of different dimensions cannot be added (Matrix.mat is
-   not a comm_monoid_add), we state the expansion entrywise.
-   ============================================================================ *)
+text \<open>Expansion in the basis $\{E_{ij}\}$, stated entrywise because matrices of
+different dimensions cannot be added in the library.\<close>
 
 lemma mat_unit_expansion:
   assumes "r < dim_row x" and "c < dim_col x"
@@ -460,16 +432,6 @@ proof -
 qed
 
 
-(* ============================================================================
-   SECTION 8: Expansion via Inner Product
-   ============================================================================
-
-   x $$ (r,c) = \<Sum>_{ij} \<langle>\<langle>E_{ij} | x\<rangle>\<rangle> \<cdot> E_{ij} $$ (r,c)
-
-   This combines the extraction lemma with the expansion, showing the E_{ij}
-   truly act as an orthonormal basis: the coefficients in the expansion are
-   exactly the inner products with the basis elements.
-   ============================================================================ *)
 
 lemma mat_unit_hs_expansion:
   assumes "r < dim_row x" and "c < dim_col x"
@@ -502,19 +464,14 @@ proof -
   finally show ?thesis by simp
 qed
 
-(* ============================================================================
-   SECTION 9: The Trace and Diagonal Matrix Units
-   ============================================================================
+subsection \<open>The trace\<close>
 
-   Tr x = \<Sum>_r x $$ (r,r)
-
-   The trace records the sum of the diagonal entries.  For the matrix units,
-   only the diagonal units E_{ii} contribute to the trace, while off-diagonal
-   units E_{ij} with i \<noteq> j have trace 0.
-
-   Using the extraction lemmas above, we can also express the trace as the
-   sum of the diagonal Hilbert-Schmidt coefficients.
-   ============================================================================ *)
+text \<open>\begin{notesdef}
+$\Tr:M_{n,n}\to\C$, $\Tr(X)=\sum_{i=1}^n x_{ii}$; we sometimes write $\Tr_n$.
+\end{notesdef}
+The formal \<open>Tr\<close> sums the diagonal of any matrix.  On matrix units, $\Tr(E_{ii})=1$
+and $\Tr(E_{ij})=0$ for $i\neq j$, so the trace is the sum of the diagonal
+Hilbert--Schmidt coefficients.\<close>
 
 definition Tr :: "complex Matrix.mat \<Rightarrow> complex" where
   "Tr x = (\<Sum>r < dim_row x. if r < dim_col x then x $$ (r,r) else 0)"
@@ -584,17 +541,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   SECTION 10: Linearity of the Trace
-   ============================================================================
-
-   Tr (x + y) = Tr x + Tr y
-   Tr (a \<cdot> x) = a * Tr x
-
-   The trace is linear: it distributes over matrix addition and factors out
-   scalar multiplication.  Since our trace was defined entrywise as a sum of
-   diagonal entries, both facts follow by simple sum manipulations.
-   ============================================================================ *)
+text \<open>The trace is linear.\<close>
 
 lemma Tr_add:
   assumes rows: "dim_row x = dim_row y"
@@ -661,9 +608,11 @@ lemma Tr_zero_mat [simp]:
   shows "Tr (Matrix.mat m n (\<lambda>(r,c). 0)) = 0"
   by (simp add: Tr_def, simp add: sum.neutral)
 
-(* ============================================================================
-   SECTION 11: Matrix-Unit Algebra and Cyclicity of Trace
-   ============================================================================ *)
+subsection \<open>Matrix-unit algebra and cyclicity of the trace\<close>
+
+text \<open>$E_{ij}^*=E_{ji}$, $E_{ij}E_{kl}=\delta_{jk}E_{il}$, $\Tr(AB)=\Tr(BA)$,
+$\Tr(U^*AU)=\Tr(A)$ for unitary $U$, and $\langle A|B\rangle=\Tr(A^*B)$: the facts about the
+trace that the notes use from Day 3 onwards.\<close>
 
 lemma mat_unit_dagger:
   shows "(E\<lbrakk>i,j ; m,n\<rbrakk>)\<^sup>\<dagger> = E\<lbrakk>j,i ; n,m\<rbrakk>"
@@ -777,45 +726,37 @@ corollary hs_inner_prod_self_as_trace:
   shows "\<langle>\<langle> A | A \<rangle>\<rangle> = Tr ((A\<^sup>\<dagger>) * A)"
   by (rule hs_inner_prod_as_trace) simp_all
 
-(* ============================================================================
-   SECTION 12: Orthogonal Projections
-   ============================================================================
+subsection \<open>Orthogonal projections and Parseval's identity\<close>
 
-   Given an orthonormal set v_0, ..., v_{k-1} in \<complex>^n (with k \<le> n),
-   define the projection matrix
+text \<open>\begin{notesdef}[Orthogonal projections]
+Let $V\subseteq\C^n$ be a subspace with orthonormal basis $\{v_1,\dots,v_k\}$ and put
+$P=\sum_{i=1}^k\ketbra{v_i}{v_i}$.  Then $Px=\sum_i\braket{v_i}{x}v_i\in V$ and
+$x-Px\perp V$, so every $x\in\C^n$ is uniquely $x=v+w$ with $v\in V$ and $w\in V^\perp$.
+Consequently $P$ does not depend on the orthonormal basis chosen for $V$, $Pv=v$ for
+$v\in V$, $P^2=P$ and $P=P^*$: $P$ is \emph{the} orthogonal projection onto $V$.
+\end{notesdef}
 
-     P = \<Sum>_{l=0}^{k-1} |v_l\<rangle>\<langle>v_l|
+\begin{notestheorem}[Parseval]
+If $\{v_1,\dots,v_k\}$ is an orthonormal basis of $V$ and $v\in V$, then
+$\norm{v}^2=\sum_{i=1}^k|\braket{v_i}{v}|^2$.  For $V=\C^n$ this holds for every $v$.
+\end{notestheorem}
 
-   which has (i,j)-entry  \<Sum>_l  (v_l)_i \<sqdot> cnj((v_l)_j).
+\begin{notestheorem}
+If $P\in M_n$ satisfies $P^2=P$ and $P=P^*$, and $V=\range(P)$, then $P$ is the orthogonal
+projection onto $V$.
+\end{notestheorem}
 
-   The main result is that Px lies in span{v_0, ..., v_{k-1}}, expressed
-   entrywise as:
-
-     (Px)_i = \<Sum>_l \<langle>v_l | x\<rangle> \<sqdot> (v_l)_i
-
-   i.e. Px is a linear combination of the v_l with coefficients \<langle>v_l|x\<rangle>.
-   ============================================================================ *)
-
-(* ============================================================================
-   SECTION 12: Orthogonal Projections and Parseval's Identity
-   ============================================================================
-
-   Given an orthonormal list of vectors vs in \<complex>^n, we form the matrix
-   V = mat_of_cols n vs (from JNF), whose l-th column is vs ! l.
-
-   The projection is P = V * V\<dagger>.
-
-   We show:
-     - V\<dagger>V = I                    (from orthonormality)
-     - VV\<dagger> = I when |vs| = n     (full basis \<Longrightarrow> completeness)
-     - Px = \<Sum>_l \<langle>v_l|x\<rangle> \<sqdot> v_l   (projection formula)
-     - P\<dagger> = P                     (self-adjointness)
-     - P² = P                     (idempotence)
-     - Parseval's identity
-   ============================================================================ *)
+Formally, an orthonormal list \<open>vs\<close> of vectors in $\C^n$ is \<^term>\<open>orthonormal_list n vs\<close>,
+the matrix with columns $v_1,\dots,v_k$ is \<^term>\<open>mat_of_cols n vs\<close>, and
+$P=\sum_i\ketbra{v_i}{v_i}=VV^\dagger$ is \<^term>\<open>outer_sum n vs\<close>.  The results below are the
+projection formula, $V^\dagger V=I_k$, the completeness relation $VV^\dagger=I_n$ for a full
+basis, $P=P^\dagger$, $P^2=P$, Parseval, the orthogonality of the residual, and the uniqueness
+of the decomposition.  Independence of $P$ from the basis is not formalised (it needs a
+notion of span); the characterisation of Hermitian idempotents as orthogonal projections is
+\<open>projection_annihilates_orthogonal\<close> in theory Quantum\_Computing11.\<close>
 
 
-(* --- Orthonormality predicate for a list of vectors --- *)
+
 
 definition orthonormal_list :: "nat \<Rightarrow> complex Matrix.vec list \<Rightarrow> bool" where
   "orthonormal_list n vs \<equiv>
@@ -839,8 +780,6 @@ lemma orthonormal_listD_carrier:
   using assms orthonormal_list_def by auto
 
 
-(* --- The projection matrix P = V * V\<dagger> --- *)
-(* --- The outer product sum: V * V\<dagger> = \<Sum>_l |v_l\<rangle>\<langle>v_l| --- *)
 
 definition outer_sum :: "nat \<Rightarrow> complex Matrix.vec list \<Rightarrow> complex Matrix.mat" where
   "outer_sum n vs = mat_of_cols n vs * ((mat_of_cols n vs)\<^sup>\<dagger>)"
@@ -857,7 +796,6 @@ lemma outer_sum_hermitian:
   by (simp add: dagger_of_prod dagger_of_dagger_is_id)
 
 
-(* --- V\<dagger>V = 1\<^sub>m k, from orthonormality --- *)
 
 lemma cols_mat_dagger_left:
   assumes orth: "orthonormal_list n vs"
@@ -889,7 +827,6 @@ proof (rule eq_matI)
 qed
 
 
-(* --- When length vs = n (full basis): VV\<dagger> = I --- *)
 
 lemma cols_mat_dagger_right:
   assumes orth: "orthonormal_list n vs"
@@ -909,7 +846,6 @@ proof -
 qed
 
 
-(* --- Completeness relation: \<Sum>_l (v_l)_i \<sqdot> cnj((v_l)_j) = \<delta>_{ij} --- *)
 
 lemma completeness_relation:
   assumes orth: "orthonormal_list n vs"
@@ -933,7 +869,6 @@ proof -
 qed
 
 
-(* --- Outer sum entry formula --- *)
 
 lemma outer_sum_index:
   assumes orth: "orthonormal_list n vs"
@@ -955,7 +890,6 @@ proof -
 qed
 
 
-(* --- Outer sum applies as: (\<Sum>|v_l\<rangle>\<langle>v_l| \<sqdot> x)_i = \<Sum>_l \<langle>v_l|x\<rangle> \<sqdot> (v_l)_i --- *)
 
 lemma outer_sum_apply:
   assumes orth: "orthonormal_list n vs"
@@ -986,7 +920,6 @@ proof -
 qed
 
 
-(* --- Under orthonormality, outer_sum is idempotent (hence a projection) --- *)
 
 lemma outer_sum_idempotent:
   assumes orth: "orthonormal_list n vs"
@@ -1010,7 +943,6 @@ proof -
 qed
 
 
-(* --- Parseval's identity (entrywise) --- *)
 
 lemma parseval:
   assumes orth: "orthonormal_list n vs"
@@ -1039,7 +971,6 @@ proof -
     by simp
 qed
 
-(* --- Parseval's norm identity: \<Parallel>v\<Parallel>² = \<Sum>_l |\<langle>v_l|v\<rangle>|² --- *)
 
 corollary parseval_norm:
   assumes orth: "orthonormal_list n vs"
@@ -1072,19 +1003,10 @@ proof -
     by (meson of_real_eq_iff) 
 qed
 
-(* ============================================================================
-   SECTION 14: Orthogonality of the Residual
-   ============================================================================
-
-   If P = outer_sum n vs = \<Sum>_l |v_l\<rangle>\<langle>v_l| and the v_l are orthonormal, then:
-
-     \<langle>v_l | Px\<rangle> = \<langle>v_l | x\<rangle>       (P reproduces inner products with basis vectors)
-     \<langle>v_l | x - Px\<rangle> = 0           (the residual is orthogonal to each v_l)
-     x = Px + (x - Px)            (orthogonal decomposition)
-   ============================================================================ *)
+text \<open>The residual $x-Px$ is orthogonal to every $v_l$, because
+$\braket{v_l}{Px}=\braket{v_l}{x}$; hence the orthogonal decomposition $x=Px+(x-Px)$.\<close>
 
 
-(* --- Key lemma: \<langle>v_l | Px\<rangle> = \<langle>v_l | x\<rangle> --- *)
 
 lemma inner_prod_outer_sum:
   assumes orth: "orthonormal_list n vs"
@@ -1122,7 +1044,6 @@ proof -
 qed
 
 
-(* --- The residual x - Px is orthogonal to each basis vector --- *)
 
 lemma residual_orthogonal:
   assumes orth: "orthonormal_list n vs"
@@ -1156,7 +1077,6 @@ proof -
 qed
 
 
-(* --- Orthogonal decomposition: x = Px + (x - Px) --- *)
 
 corollary orthogonal_decomposition:
   assumes xdim: "dim_vec x = n"
@@ -1168,16 +1088,10 @@ proof -
     by (intro eq_vecI, auto)
 qed
 
-(* ============================================================================
-   SECTION 15: Uniqueness of the Orthogonal Decomposition
-   ============================================================================
-
-   If x = v + w where Pv = v (v is in the image of P) and \<langle>v_l|w\<rangle> = 0
-   for all l (w is orthogonal to V), then v = Px and w = x - Px.
-   ============================================================================ *)
+text \<open>Uniqueness: if $x=v+w$ with $Pv=v$ and $w\perp v_l$ for all $l$, then $v=Px$
+and $w=x-Px$.\<close>
 
 
-(* --- Helper: If w is orthogonal to every basis vector, then Pw = 0 --- *)
 
 lemma outer_sum_orthogonal_zero:
   assumes orth: "orthonormal_list n vs"
@@ -1201,7 +1115,6 @@ next
 qed
 
 
-(* --- Helper: P is linear on vectors (distributes over +) --- *)
 
 lemma outer_sum_add:
   assumes vdim: "dim_vec v = n" and wdim: "dim_vec w = n"
@@ -1220,7 +1133,6 @@ proof -
 qed
 
 
-(* --- Uniqueness of the decomposition --- *)
 
 lemma orthogonal_decomposition_unique:
   assumes orth: "orthonormal_list n vs"
@@ -1254,7 +1166,11 @@ proof -
 qed
 
 
-section \<open> Unitary Algebra \<close>
+section \<open>Unitary algebra\<close>
+
+text \<open>Library-level consequences of unitarity ($U^\dagger U=I$ and $UU^\dagger=I$ in the
+library's definition) used throughout; Paulsen's Day 3 characterisations of unitaries are
+in theory Quantum\_Computing\_3\_10.\<close>
 
 lemma unitary_square_dim:
   assumes uA: "unitary A"
@@ -1402,7 +1318,12 @@ lemma unitary_mult2:
   by (metis UA UB dims unitary_carrier_square_row unitary_mult)
 
 
-section \<open> Tensor Product Infrastructure \<close>
+section \<open>Tensor product infrastructure\<close>
+
+text \<open>Kronecker products of matrices, \<^term>\<open>A \<Otimes> B\<close>: the tensor of identities, the
+adjoint $(R\otimes T)^*=R^*\otimes T^*$, the mixed-product property
+$(R_1\otimes T_1)(R_2\otimes T_2)=R_1R_2\otimes T_1T_2$ (both from Day 9), and unitarity of
+tensors of unitaries.\<close>
 
 subsection \<open> Tensor of Identities \<close>
 

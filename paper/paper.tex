@@ -1,0 +1,403 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1.05in]{geometry}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xspace}
+
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\crk}{cr}
+\DeclareMathOperator{\rank}{rank}
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle #1|}
+\newcommand{\braket}[2]{\langle #1|#2\rangle}
+\newcommand{\ketbra}[2]{|#1\rangle\langle #2|}
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\isa}[1]{\textsf{#1}}
+\newcommand{\IMD}{Isabelle Marries Dirac\xspace}
+
+\title{Paulsen's Lectures on Quantum Computing and Completely Positive Maps,
+  Formalised in Isabelle/HOL\\[0.4em]
+  \large with an assessment of the remaining gap to verified HHL}
+\author{Dustin Bryant}
+\date{October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report on a formalisation in Isabelle/HOL of the mathematical content of Vern
+Paulsen's 2011 lecture course \emph{Quantum Computing and Completely Positive Maps}
+(34 lectures): finite-dimensional Hilbert space theory, the postulates of quantum
+mechanics for pure and mixed states, partial traces, completely positive maps with
+Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
+unital and trace-preserving completely positive maps (Choi's Theorem~3), the
+Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
+entanglement witnesses.  The development comprises nine theories and about eight
+hundred checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
+builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
+audit records, for each statement in the notes, its formal counterpart or the reason
+it is absent, and an Isabelle-generated document reproduces the notes with the formal
+statements in place of the informal proofs.  We then ask what this body of verified
+mathematics contributes towards a machine-checked proof of the Harrow--Hassidim--Lloyd
+(HHL) algorithm in Isabelle: the spectral theorem, the measurement calculus, tensor
+products and partial traces are in place and in a representation compatible with the
+existing Isabelle quantum libraries, while Hamiltonian simulation, phase estimation,
+the controlled eigenvalue inversion and the error analysis remain to be done.
+\end{abstract}
+
+\section{Introduction}
+
+Machine-checked quantum computing in Isabelle/HOL has so far concentrated on
+algorithms: \IMD~\cite{bordg2021imd,bordg2020afp} formalises qubits, gates, the
+no-cloning theorem, teleportation and the Deutsch and Deutsch--Jozsa algorithms on
+concrete matrices; the quantum Hoare logic of Liu et al.~\cite{liu2019qhl,liu2019afp}
+verifies Grover's algorithm; Manrique~\cite{manrique2025qft} adds the quantum Fourier
+transform.  The mathematics that a graduate course on the subject spends most of its
+time on---positive matrices, the density-matrix formulation, partial traces,
+completely positive maps and their Choi matrices, the convex geometry of channels and
+of separable states---is covered unevenly.  Unruh's libraries~\cite{caballero2021cbo,
+unruh2024tensor,unruh2025kraus} develop much of this for arbitrary Hilbert spaces, in a
+type-based representation of operators; Echenim's entry~\cite{echenim2021pm}
+formalises projective measurements.
+
+This paper describes a different kind of project: the end-to-end formalisation of one
+set of lecture notes, Paulsen's \emph{Lectures on Quantum Computing and Completely
+Positive Maps} (Houston, Fall 2011)~\cite{paulsen2011notes}, taken as the specification.
+The notes are an unedited transcription of 34 lectures in five parts (basic
+mathematics; introduction to quantum computing; the theory of completely positive maps;
+entanglement; error correction).  Following them lecture by lecture forces one to
+formalise the whole supporting theory rather than the shortest path to a headline
+theorem, and it produces a natural, externally fixed measure of completeness: the audit
+of Section~\ref{sec:audit}.
+
+The project started as an autoformalisation experiment and was finished by the author
+with AI assistance; everything reported here is checked by Isabelle2025-2 with the
+strict build option \texttt{quick\_and\_dirty = false}, and the principal theorems have
+been checked to depend on no oracles.  The sources, the audit, and the generated
+document are available in the project repository.\footnote{\url{https://github.com/brydustin/Quantum_Computing}}
+
+Contributions.  (1)~A verified formalisation of Parts I--IV of the notes and of the
+elementary part of Part~V: in particular Schur's theorem, the spectral theorem for
+Hermitian matrices, four characterisations of positivity, Cholesky's reduction, the
+measurement postulates and POVMs, the characterisation of density matrices by
+ensembles, partial traces and their compatibility with local measurements, Choi's
+theorem and the Choi--Kraus representation of channels, the adjoint duality between
+unital and trace-preserving maps, Choi's Theorem~3 on extreme points, the Hahn--Banach
+theorem for matrix spaces, and the entanglement-witness characterisation of
+separability.  (2)~A lecture-by-lecture audit that classifies every definition and
+result of the notes as formalised, formalised in a variant form, not formalised, or
+deliberately omitted.  (3)~A document, generated by Isabelle from the theories, that
+restates the notes with the formal statements replacing the informal proofs.
+(4)~An assessment of how far this material goes towards a verified HHL algorithm.
+
+\section{The notes and the formalisation method}
+
+\paragraph{Representation.}  All objects of the notes are concrete: vectors in $\C^n$ and
+matrices in $M_{m,n}$.  We use the Jordan-Normal-Form library~\cite{thiemann2015jnf}:
+vectors are \isa{complex Matrix.vec} with a dimension hypothesis
+\isa{dim\_vec v = n}, matrices are \isa{complex Matrix.mat} with carrier hypotheses
+\isa{A $\in$ carrier\_mat m n}.  Dimensions are hypotheses rather than types, which is
+how the notes treat them and which is the convention of \IMD, so that its gates,
+inner product, adjoint (\isa{dagger}) and tensor products can be reused directly.  Maps
+$\Phi:M_n\to M_d$ are HOL functions \isa{complex Matrix.mat $\Rightarrow$ complex
+Matrix.mat} constrained only on the carrier; linearity, positivity and complete
+positivity are predicates on such functions.
+
+Two places in the notes genuinely need topology (compactness and the separation of a
+point from a closed convex cone, Days 22 and 27--28).  For these we introduce a typed
+wrapper \isa{('a,'m,'n) lmat} of matrices of fixed dimension, instantiate the
+HOL-Analysis type classes up to \isa{euclidean\_space} and \isa{heine\_borel}, and
+transport the relevant statements across the wrapper.  The carrier-predicate world and
+the typed world coexist; the former carries almost all of the development, the latter
+is used only where HOL-Analysis is applied.
+
+\paragraph{Fidelity.}  Statements are formalised as close to the notes as the
+representation permits.  The audit distinguishes faithful statements from
+\emph{variants}; the main variants are: the predicate \isa{psd} carries Hermiticity as an
+explicit conjunct (equivalent by the notes' own Theorem that $\braket{x}{Hx}\in\R$ for
+all $x$ iff $H=H^*$); Cholesky's reduction adds the hypothesis $p_{11}>0$ that the notes
+leave implicit; linear maps are given with explicit additivity and homogeneity
+hypotheses on the carrier; and Choi's Theorem~3 is proved in its trace-preserving form
+with a fixed Kraus list of linearly independent operators, see Section~\ref{sec:choi3}.
+Where the notes themselves are inconsistent we formalise the correct statement and say
+so in the commentary (the notes claim $H^2=X$ on Day~10 and correct it to $H^2=I$ on
+Day~11; they use two sign conventions for the Pauli matrix $Y$).
+
+\paragraph{Verification discipline.}  The project builds as three Isabelle sessions
+with \texttt{quick\_and\_dirty = false}, so no \texttt{sorry} can survive.  We also
+ran an oracle audit (\isa{Thm\_Deps.all\_oracles} over the principal theorems).  This
+turned up a methodological point worth recording: under \texttt{quick\_and\_dirty =
+true}, Isabelle's \isa{Goal.prove\_sorry} discharges package-internal goals of
+\isa{fun} and \isa{record} definitions with \isa{Skip\_Proof.cheat\_tac}, so every
+theorem downstream of such a definition reports the oracle \isa{Pure.skip\_proof} even
+in a development that contains no \texttt{sorry} at all.  Oracle audits are only
+meaningful on builds with the strict option.
+
+\section{What is formalised}\label{sec:what}
+
+Table~\ref{tab:theories} lists the theories.  We describe the content by lecture group;
+the names in brackets are the Isabelle theorems.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{llrr}
+\toprule
+Theory & Lectures & lines & results\\
+\midrule
+\isa{Basic\_Math} & 1--2: inner products, matrix units, trace, projections, Parseval & 1\,672 & 74\\
+\isa{Quantum\_Computing\_3\_10} & 3--10: unitaries, Schur, spectral theorem, positivity, tensors, postulates & 7\,945 & 162\\
+\isa{Quantum\_Computing11} & 11--22, 29--32: channels, density matrices, Choi, convexity, codes & 11\,217 & 316\\
+\isa{Day23\_ChoiExtremeUCP} & 23: Choi's Theorem~3, CP Radon--Nikodym & 7\,001 & 104\\
+\isa{Matrix\_Typed} & 25: Hahn--Banach on matrix spaces & 1\,346 & 44\\
+\isa{Essential\_Functional\_Analysis} & Hilbert--Schmidt analysis, Carath\'eodory & 2\,536 & 38\\
+\isa{Lmat\_Euclidean} & typed matrices as a Euclidean space & 780 & 24\\
+\isa{Separable\_Cone} & 27--28: separable cone, witnesses & 3\,107 & 63\\
+\isa{Day24\_Separability} & 26--28 restated lecture by lecture & 210 & 16\\
+\bottomrule
+\end{tabular}
+\caption{The nine theories after the commentary and gap-closure pass (results = lemmas, theorems, corollaries, propositions; 841 in all).}
+\label{tab:theories}
+\end{table}
+
+\paragraph{Lectures 1--10: linear algebra and the postulates.}  Besides the inner-product
+algebra, matrix units and the trace (\isa{Tr\_cyclic}, \isa{hs\_inner\_prod\_as\_trace}),
+the first part proves the projection formula $P=\sum\ketbra{v_i}{v_i}$ and Parseval
+(\isa{parseval\_norm}), the characterisations of unitaries, Householder unitaries and
+Schur's lemma (\isa{schur\_lemma}), Schur's triangularisation (\isa{schur\_theorem}) and
+$\Tr A=\sum\lambda_i$, the spectral theorem for Hermitian matrices
+(\isa{hermitian\_spectral\_decomp}: $U^\dagger HU$ is a real diagonal matrix), and the
+positivity theory: $P\ge0$ iff Hermitian with non-negative eigenvalues
+(\isa{psd\_iff\_nonneg\_eigenvalues}), iff $P=\sum\ketbra{v_i}{v_i}$
+(\isa{psd\_kraus\_decomp}, \isa{outer\_sum\_psd}), positive definiteness iff the $v_i$ span
+(\isa{pd\_iff\_spanning}), the positive square root, and Cholesky's reduction
+(\isa{cholesky\_reduction}).  Tensor products are Kronecker products with bilinearity,
+the multiplicativity of inner products and the orthonormal product basis
+(\isa{tensor\_onb}).  The postulates are definitions: \isa{quantum\_state},
+\isa{evolve}, \isa{measurement\_system}, \isa{meas\_prob}, with the probabilities summing
+to one, POVMs with their square-root measurement systems (\isa{povm\_from\_sqrt}),
+perfect distinguishability of orthogonal states, and local measurements in composite
+systems (\isa{composite\_measurement\_prob}).
+
+\paragraph{Lectures 11--22: channels and Choi's theorem.}  The no-cloning theorem
+(\isa{no\_cloning}) and the existence of oracles $U_f$ (\isa{oracle\_exists}) open the
+second part.  Ensembles and their density matrices are defined, and density matrices are
+characterised as the positive matrices of trace one (\isa{density\_matrix\_iff\_ensemble},
+via the spectral ensemble); the ensembles of a pure state consist of multiples of the
+state (\isa{pure\_ensemble\_parallel}).  Partial traces are defined by the block formulas
+of the notes; they are trace preserving and positivity preserving
+(\isa{partial\_trace\_B\_is\_density}) and compatible with local measurements:
+$\Tr((M^\dagger M\otimes I)\rho)=\Tr(M^\dagger M\,\mathrm{tr}_B\rho)$
+(\isa{partial\_trace\_measurement}).  The coordinate form of
+$L(\mathcal H_A)\otimes L(\mathcal H_B)\cong L(\mathcal H_A\otimes\mathcal H_B)$ is an
+explicit linear isomorphism.  Measurement maps $\rho\mapsto\sum M_\alpha\rho M_\alpha^\dagger$
+preserve density matrices; Kraus maps are completely positive (\isa{kraus\_is\_cp}), with
+complete positivity defined through the block amplification $\Phi^{(p)}$.  Choi's theorem
+is \isa{choi\_theorem}: a linear $\Phi$ on the carrier is completely positive iff its Choi
+matrix $(\Phi(E_{ij}))_{ij}$ is positive, and \isa{kraus\_rep\_of\_psd\_choi} extracts a
+Kraus representation with $nd$ operators from a positive Choi matrix, which gives the
+Choi--Kraus characterisation of channels (\isa{choi\_kraus\_cptp}) and the Kraus-rank bound
+(\isa{kraus\_rank\_bound}).  The Hilbert--Schmidt adjoint of a Kraus map is the Kraus map
+of the adjoint operators (\isa{kraus\_adjoint\_correct}), and $\Phi$ is unital iff $\Phi^*$ is
+trace preserving (\isa{cp\_unital\_iff\_adjoint\_tp}); positive functionals are
+completely positive (\isa{positive\_scalar\_is\_cp}); the sets UCP and CPTP are convex.
+
+\paragraph{Lecture 23: Choi's Theorem 3.}\label{sec:choi3}  Choi's characterisation of the
+extreme points of UCP~\cite{choi1975} is formalised in its trace-preserving form, for a
+channel given by a Kraus list $V_1,\dots,V_r$ of linearly independent operators
+(\isa{choi\_theorem\_3\_cptp\_iff}): $\Phi$ is extreme if and only if $\{V_j^\dagger V_i\}$ is
+linearly independent over $\C$.  (The perturbation argument of the notes produces a
+real-coefficient relation; a complex relation is first turned into a Hermitian one, using
+that the family $\{V_j^\dagger V_i\}$ is closed under adjoints, so both directions use the
+same notion of independence.)  Two aspects deserve comment.  First, because HOL functions are only
+constrained on the carrier, the naive definition of an extreme point (``$\Phi$ is not the
+midpoint of two \emph{different} CPTP maps'') is vacuous: any CPTP map agrees on the
+carrier with maps that differ from it elsewhere.  Extremality is therefore defined through
+disagreement on the carrier (\isa{extreme\_CPTP\_carrier}).  Second, the notes' proof uses
+the unitary freedom of Kraus representations (their ``Choi 2''), which is not formalised.
+The forward direction instead goes through a CP Radon--Nikodym theorem
+(\isa{cp\_radon\_nikodym\_linear}): if $\Psi$ and $\Phi-\Psi$ are completely positive and
+$\Phi(X)=\sum_iV_iXV_i^\dagger$, then $\Psi(X)=\sum_{ij}T_{ij}V_iXV_j^\dagger$ for a positive
+matrix $T$.  Its proof reduces to a statement about positive matrices dominated by an
+outer sum, $0\le B\le VV^\dagger$ implies $B=VTV^\dagger$ with $T\ge0$, which we prove with
+the Moore--Penrose pseudoinverse of $VV^\dagger$ built from the spectral theorem: the
+identities $AA^+A=A$ and, for $0\le B\le A$, $AA^+B=B$ follow from the kernel inclusion
+$\ker A\subseteq\ker B$, and $T=(A^+V)^\dagger B(A^+V)$.
+
+\paragraph{Lectures 25--28: Hahn--Banach and entanglement witnesses.}  The notes state the
+Hahn--Banach theorem for bounded functionals on normed spaces and use it in Arveson's
+extension theorem.  We prove it for matrix spaces with the Hilbert--Schmidt norm
+(\isa{matrix\_hahn\_banach\_lmat}): HOL's Hahn--Banach theorem gives a norm-preserving
+real-linear extension of the real part, and the Bohnenblust--Sobczyk formula
+$f(x)=F(x)-iF(ix)$ recovers a complex-linear extension with the same bound.  Arveson's
+correspondence and extension theorem are not formalised.  The entanglement theory of
+Days~27--28 is: the separable matrices form a closed convex cone
+(\isa{separable\_cone\_lmat\_closed}, using the closedness of the positive matrices, the
+compactness of the product density matrices and a Carath\'eodory bound on the number of
+generators), so a non-separable $\rho$ is separated from the cone by a real functional,
+which becomes a Hermitian witness $W$ with $\Re\Tr(W\rho)<0\le\Re\Tr(W\sigma)$ for all
+separable $\sigma$ (\isa{entanglement\_witness\_hermitian'}); this yields the
+Horodecki-type characterisation~\cite{horodecki1996}: a Hermitian $\rho$ is separable
+iff every such witness is non-negative on it (\isa{separable\_iff\_witness}), with a
+strict version for density matrices.  The notes phrase the criterion through positive
+maps, which needs the Arveson correspondence; the witness form is the equivalent
+statement that does not.
+
+\paragraph{Lectures 29--32: error correction.}  Hamming weight and distance, the parity
+check and repetition codes, the Pauli matrices and their orthogonality, the bit-flip,
+phase-flip and bit-phase-flip channels (as UCP and CPTP maps), the pure-state fidelity,
+and the code words of the three-qubit codes are formalised.  The recovery theorems for
+the three-qubit code and the Shor code, and the Knill--Laflamme conditions of the last
+lectures, are not.
+
+\section{The audit}\label{sec:audit}
+
+The file \texttt{NOTES\_AUDIT.md} in the repository lists, for each of the 34 lectures,
+every definition, theorem, proposition, corollary, example and remark of the notes with
+its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ formalised
+in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
+(overviews, history, numerical examples, classical asides such as stochastic matrices
+or cyclic codes).  Of the 170 items, 11 are deliberate omissions; of the remaining 159
+mathematical items, 91 are faithful, 21 are variants and 47 are gaps.\footnote{Counts as
+of the close-out of October 2026; the audit file is the authoritative record.}  The audit
+drove a final round of proofs: small statements omitted along the way (the converses
+isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
+expected value $\braket{\psi}{H\psi}$ of an observable, the phase invariance of
+$\ketbra\psi\psi$, that $\rho_1\otimes\rho_2$ is a density matrix, the unambiguous
+discrimination of linearly independent states, and the complex-coefficient form of
+Choi's Theorem~3) were proved during the close-out and are counted as faithful above.
+The remaining gaps fall into two groups.  Medium-sized results that the notes prove in a page (density-preserving iff positive and
+trace preserving; the three-qubit code recovery; the Pauli expansion identity
+$\sum|a_k|^2=1$ for unitaries; the Hadamard power $H^{\otimes N}\ket{0\cdots0}$ and the
+counting probability of Day~12) are open.  Substantial developments remain: the Choi
+rank theorem $\crk(\Phi)=\rank P_\Phi$ and the unitary freedom of Kraus representations;
+operator systems with Arveson's correspondence and extension theorem; the Stinespring
+environment model of noise; the Horodecki--Peres transpose criterion; the Shor code and
+the Knill--Laflamme conditions.
+
+Beyond the omissions, the audit documents where the formalisation strengthens the
+notes (strict witnesses for density matrices; Cholesky with the missing hypothesis;
+the vacuity of the naive extreme-point definition) and where it changes the route of a
+proof (Choi's Theorem~3 through CP Radon--Nikodym).
+
+\section{The generated document}
+
+Isabelle's document preparation turns the theories into a PDF in which proofs are
+folded and the commentary appears between the formal statements.  During this project
+we rewrote the top-level comments of all theories as document markup: each lecture is a
+section, and before each group of formal statements a text block restates the notes'
+definitions and results in their own words and LaTeX, says which Isabelle statements
+correspond to them and how they differ, and names the audit items for what is missing.
+The result is a 2011 lecture course in which every displayed theorem has been checked,
+organised by theory rather than strictly by date because later lectures reuse earlier
+infrastructure; a reading guide at the front gives the map from lectures to theories.
+The document is produced by a fourth session, \isa{Vern\_Paulsen\_QC\_Notes}, through
+Isabelle's \texttt{document\_theories} mechanism, so it is regenerated and re-checked by
+every build.
+
+\section{Relation to the Archive of Formal Proofs}
+
+\IMD~\cite{bordg2020afp} and the quantum Fourier transform entry~\cite{manrique2025qft}
+use the same matrix representation as this project (\isa{complex Matrix.mat} with
+carriers), and we import both; our tensor-product lemmas (mixed product, adjoint,
+unitarity, product bases), measurement calculus and density-matrix theory extend them
+in the same style.  The quantum Hoare logic entry~\cite{liu2019afp} contains a positivity
+predicate, the Loewner order and a decomposition of positive matrices, overlapping with
+our Days~4 and~18, but no Choi theory.  Unruh's \emph{Complex Bounded Operators},
+\emph{Tensor Products in Hilbert Spaces} and \emph{Kraus Maps}
+\cite{caballero2021cbo,unruh2024tensor,unruh2025kraus} are far more general---arbitrary
+Hilbert spaces, trace-class and Hilbert--Schmidt operators, the spectral theorem for
+compact operators, Kraus families for possibly infinite-dimensional channels---but live
+in a type-based representation of operators (\isa{'a $\Rightarrow_{CL}$ 'b}); they contain
+neither Choi's theorem nor the extreme-point and separability results, and connecting
+them to the matrix world would require a transfer layer of the kind our \isa{lmat}
+wrapper provides in miniature.  Echenim's projective measurements~\cite{echenim2021pm}
+are formulated on \isa{complex\^{}'n} vectors.  To our knowledge the results of Days~19--28
+(Choi's theorem in its matrix form with explicit Kraus extraction, Choi's Theorem~3, the
+Hahn--Banach theorem on matrix spaces, the closedness of the separable cone and the
+witness characterisation) have no counterpart in the Archive.
+
+\section{Towards a verified HHL algorithm}\label{sec:hhl}
+
+The HHL algorithm~\cite{hhl2009} prepares, for a Hermitian $A$ with eigen-decomposition
+$A=\sum_j\lambda_j\ketbra{u_j}{u_j}$ and a unit vector $\ket b=\sum_j\beta_j\ket{u_j}$, a
+state proportional to $A^{-1}\ket b$: phase estimation with the unitaries $e^{iAt}$ writes
+the eigenvalues into a register, a controlled rotation of an ancilla produces the
+amplitudes $C/\lambda_j$, uncomputation and a measurement of the ancilla postselect the
+branch $\sum_j(\beta_j/\lambda_j)\ket{u_j}$, up to the approximation error of phase
+estimation and with a success probability governed by the condition number.  Machine
+checked proofs exist in Coq, in the quantum Hoare logic of Zhou, Yu and Ying
+\cite{zhou2019applied,zhou2023coqq,feng2023coqqlr}; none exists in Isabelle/HOL, whose
+verified algorithms are Deutsch--Jozsa, Grover and the QFT (a recent HOL Light development
+treats Grover~\cite{sun2026grover}).
+
+What a HHL proof needs, and what this project supplies in the \IMD representation:
+\begin{itemize}
+\item \emph{The spectral theorem.}  The whole analysis is carried out in the eigenbasis of
+  $A$.  \isa{hermitian\_spectral\_decomp} provides the unitary $U$ and the real list $D$ of
+  eigenvalues with $U^\dagger AU=\mathrm{diag}(D)$, together with the facts that the columns
+  of $U$ are an orthonormal eigenbasis and that $\beta_j=\braket{u_j}{b}$ (Parseval).  It also
+  gives the functional calculus HHL needs: $f(A)=U\,\mathrm{diag}(f(D))\,U^\dagger$ is how
+  \isa{psd\_sqrt} and the pseudoinverse \isa{pinv\_list} are built, and $A^{-1}$ on the
+  range of $A$ is literally the pseudoinverse whose identities $AA^+A=A$ we prove.
+\item \emph{Unitarity and Hamiltonian simulation.}  $e^{iAt}=U\,\mathrm{diag}(e^{i\lambda_jt})\,U^\dagger$
+  can be defined through the same decomposition; its unitarity is the lemma that a
+  conjugate of a diagonal unitary by a unitary is unitary, which is a three-line
+  consequence of \isa{unitary\_mult} and the characterisation of unitaries.  What is
+  missing is the connection to an independently defined matrix exponential and the
+  Trotter-type approximation results; for the correctness of HHL as an idealised circuit
+  the spectral definition suffices.
+\item \emph{Registers, tensor products, controlled operations.}  Multi-register states are
+  Kronecker products; the lemmas \isa{tensor\_mat\_mult}, \isa{tensor\_mat\_adjoint},
+  \isa{tensor\_mat\_unitary} and \isa{tensor\_onb} are the algebra of composite registers.
+  Controlled unitaries are block matrices (\isa{four\_block\_mat}, with the block-action lemma
+  \isa{block\_mat\_apply}).  The QFT itself is available from the Archive in the same
+  representation~\cite{manrique2025qft}; quantum phase estimation is not yet formalised in
+  Isabelle and is the largest missing circuit-level component.
+\item \emph{Measurement and postselection.}  The ancilla measurement is a two-outcome
+  measurement system; \isa{meas\_prob} gives the success probability and
+  \isa{post\_meas\_state} the normalised output, and \isa{composite\_measurement\_prob}
+  together with \isa{partial\_trace\_measurement} express that measuring the ancilla alone
+  is a local measurement whose statistics are those of the reduced state.  The POVM
+  formalism and the density-matrix postulates allow the same analysis for mixed inputs
+  and for a noisy implementation, where the CP-map theory (Kraus representation, Choi
+  matrix, convexity of CPTP) is the natural language.
+\item \emph{Error analysis.}  The phase-estimation error, the dependence of the success
+  probability on the condition number $\kappa$, and the final fidelity bound are
+  analytic estimates that the notes do not touch; the Hilbert--Schmidt norm theory of
+  \isa{Essential\_Functional\_Analysis} and the fidelity of Day~31 are starting points,
+  but this part of a HHL proof would have to be built from scratch.
+\end{itemize}
+In short, the linear-algebraic and measurement-theoretic layer of a HHL proof---the
+part that a textbook treats in one line, ``work in the eigenbasis of $A$''---is now
+available and verified in the representation that the existing Isabelle quantum
+libraries use.  The remaining gap is concentrated in three places: a formalisation of
+quantum phase estimation on top of the QFT entry, the controlled eigenvalue-inversion
+step with its amplitude bookkeeping, and the quantitative error analysis.  Each is a
+project of a size comparable to one of the lecture groups above.
+
+\section{Conclusion}
+
+Taking a complete set of lecture notes as the specification turned out to be a productive
+way to build a library: it fixes the scope, orders the work, and makes completeness
+measurable.  The cost is visible in the audit: a course mentions many results it does
+not prove, and a formalisation faithful to the notes must decide, item by item, what to
+prove, what to restate, and what to leave.  The commentary pass that produced the
+generated document is the record of those decisions; we recommend it as a deliverable for
+any formalisation of a text, because it is the only place where the informal and the
+formal statements are read side by side.
+
+\paragraph{Acknowledgements.}  The notes were written by Vern Paulsen and transcribed by
+Brandon Lee.  The formalisation was carried out with the assistance of AI coding agents;
+all statements were checked by Isabelle.
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

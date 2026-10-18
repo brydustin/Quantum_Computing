@@ -5,10 +5,12 @@ Completely Positive Maps*, Houston, Fall 2011; notes by Brandon Lee), transcribe
 `QC_Notes_overleaf.tex`.  Formalisation: the nine theories of the sessions
 `Vern_Paulsen_QC_3_10`, `Vern_Paulsen_QC_3_10_Lmat`, `Vern_Paulsen_QC` (see `ROOT`).
 
-Verification status at the start of the audit (2026-10-18): all three sessions build
+Verification status (2026-10-18): all three sessions build
 with `quick_and_dirty = false`; no `sorry`, no `axiomatization`, no `oops`; a
-`Thm_Deps.all_oracles` check of the main theorems reports no oracles.  One theorem is
-inside a comment block and therefore neither built nor counted (D8-3 below).
+`Thm_Deps.all_oracles` check of the main theorems reports no oracles.  The theorem on
+unambiguous discrimination (D8-3), formerly kept in a comment block with a `sorry`, is now
+proved (`lin_indep_states_unambiguous`); the priority-A gap list and B1 below were closed in
+the same pass.
 
 Lecture numbering: Day k is the k-th lecture in the notes (Day 1 = 22 Aug 2011,
 Day 34 = 18 Nov 2011).  Status codes:
@@ -50,13 +52,13 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | D2-8 | P does not depend on the ONB chosen for V | ✗ (needs a notion of span; low value) | ✗ |
 | D2-9 | Parseval ‖v‖² = Σ\|⟨v_i\|v⟩\|² | BM `parseval_norm` | ✓ |
 | D2-10 | P² = P, P = P* | BM `outer_sum_idempotent`, `outer_sum_hermitian` | ✓ |
-| D2-11 | Theorem: P² = P = P* ⟹ P is the orthogonal projection onto range P | QC11 `projection` (definition only); the theorem (Pv = v on range, Pw = 0 on range⊥) is not stated | ✗ |
+| D2-11 | Theorem: P² = P = P* ⟹ P is the orthogonal projection onto range P | QC11 `projection`, `projection_fixes_range`, `projection_annihilates_orthogonal` | ✓ |
 
 ### Day 3 (31 Aug): unitaries, Householder, Schur
 | id | notes | formal | status |
 |---|---|---|---|
 | D3-1 | U unitary iff U*U = I | library `unitary` (bundles U*U = I and UU* = I); QC3 `unitary_left_right` | ✓ |
-| D3-2 | TFAE (a) unitary (b) invertible with U⁻¹ = U* (c) UU* = I (d) U* unitary (e) columns ONB (f) rows ONB (g) isometry (h) inner-product preserving | (a)⟹(b) `unitary_invertible`; (a)⟺(c) by definition; (a)⟹(d) `unitary_dagger_is_unitary` (converse by applying it to U*); (a)⟹(e) `unitary_cols_orthonormal`, (e)⟹(a) BM `orthonormal_mat_unitary`; (a)⟹(f) `unitary_rows_orthonormal`; (a)⟹(g) `unitary_isometry`; (a)⟹(h) `unitary_preserves_inner_prod`.  Missing: (g)⟹(a) and (h)⟹(a) for square U | ~ |
+| D3-2 | TFAE (a) unitary (b) invertible with U⁻¹ = U* (c) UU* = I (d) U* unitary (e) columns ONB (f) rows ONB (g) isometry (h) inner-product preserving | (a)⟹(b) `unitary_invertible`; (a)⟺(c) by definition; (a)⟹(d) `unitary_dagger_is_unitary` (converse by applying it to U*); (a)⟹(e) `unitary_cols_orthonormal`, (e)⟹(a) BM `orthonormal_mat_unitary`; (a)⟹(f) `unitary_rows_orthonormal`; (a)⟹(g) `unitary_isometry`; (a)⟹(h) `unitary_preserves_inner_prod`; (g)⟹(a) `unitary_of_isometry`, (h)⟹(a) `unitary_of_inner_prod_preserving` | ✓ |
 | D3-3 | Householder U_w = I − 2P_w is unitary (‖w‖ = 1) | QC3 `householder`, `householder_outer_prod`, `householder_hermitian`, `householder_unitary` | ✓ |
 | D3-4 | Schur's lemma: ‖x‖ = ‖y‖ ⟹ ∃w, θ. U_w x = e^{iθ} y | QC3 `schur_lemma` | ✓ |
 | D3-5 | Schur's theorem: U*AU upper triangular | QC3 `schur_theorem` | ✓ |
@@ -67,9 +69,9 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 |---|---|---|---|
 | D4-1 | Hermitian TFAE (a) H = H* (b) U*HU = D real diagonal (c) ONB of eigenvectors, real eigenvalues (d) ⟨x\|Hx⟩ ∈ ℝ | (a)⟹(b) `hermitian_spectral_decomp`; (b)⟹(c) `hermitian_spectral_decomp_right` + `unitary_cols_orthonormal`; (a)⟺(d) `hermitian_iff_real_quad_form`; real eigenvalues `hermitian_real_eigenvalues`.  (b)⟹(a) and (c)⟹(a) only implicitly (`diag_mat_of_real_hermitian`) | ~ |
 | D4-2 | Lemma: ⟨x\|Tx⟩ = 0 ∀x ⟹ T = 0 (fails over ℝ) | QC3 `quadratic_form_zero` (remark on ℝ not needed) | ✓ |
-| D4-3 | P ≥ 0 iff ⟨x\|Px⟩ ≥ 0; P > 0 iff > 0 for x ≠ 0 | QC3 `psd`, `pd`.  Variant: the formal definitions carry `hermitian P` as an explicit conjunct; the notes derive it from (d).  Equivalent by `hermitian_iff_real_quad_form` | ~ |
+| D4-3 | P ≥ 0 iff ⟨x\|Px⟩ ≥ 0; P > 0 iff > 0 for x ≠ 0 | QC3 `psd`, `pd` (with `hermitian P` as an explicit conjunct); the notes' form is `psd_iff_quad_form_nonneg` | ✓ |
 | D4-4 | P ≥ 0 iff P = P* and all eigenvalues ≥ 0 | QC3 `psd_iff_nonneg_eigenvalues` | ✓ |
-| D4-5 | Corollary: P > 0 iff P = P* and all eigenvalues > 0 | ✗ | ✗ |
+| D4-5 | Corollary: P > 0 iff P = P* and all eigenvalues > 0 | QC3 `pd_iff_pos_eigenvalues` | ✓ |
 | D4-6 | P ≥ 0 iff P = Σ\|v_i⟩⟨v_i\| | QC3 `psd_kraus_decomp` (⟹), `outer_sum_psd` (⟸) | ✓ |
 | D4-7 | Key: ⟨x\|Px⟩ = Σ\|⟨v_i\|x⟩\|² | QC3 `inner_prod_outer_sum_general` (as ⟨V*x\|V*x⟩) | ✓ |
 | D4-8 | P = Σ\|v_i⟩⟨v_i\| > 0 iff span{v_i} = ℂⁿ | QC3 `pd_iff_spanning` (spanning phrased as: no nonzero x ⊥ all v_i) | ~ |
@@ -108,9 +110,9 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 |---|---|---|---|
 | D8-1 | orthogonal states are perfectly distinguishable | QC3 `orthogonal_states_distinguishable` | ✓ |
 | D8-2 | non-orthogonal states cannot be: p₁(ψ₂) ≥ \|α\|² > 0 | ✗ | ✗ |
-| D8-3 | Theorem: linearly independent states admit unambiguous discrimination (M₀,…,M_n) | QC3 `linearly_independent_states_unambiguously_measurable` exists only inside a comment block (lines 6063–6902) and contains a `sorry` | ✗ |
-| D8-4 | P^{1/2} for P ≥ 0 | QC3 `psd_sqrt_exists` ✓; but the constant `psd_sqrt` is a placeholder defined as the zero matrix — misleading, unused | ~ |
-| D8-5 | expected value E = ⟨ψ\|Hψ⟩ with H = Σ λ_m M_m*M_m Hermitian | ✗ | ✗ |
+| D8-3 | Theorem: linearly independent states admit unambiguous discrimination (M₀,…,M_n) | QC3 `lin_indep_states_unambiguous` (replaces a commented-out attempt that contained a `sorry`); linear independence is `lin_indep_vecs`; the inconclusive outcome is listed last | ✓ |
+| D8-4 | P^{1/2} for P ≥ 0 | QC3 `psd_sqrt_exists`; `psd_sqrt` is now defined as a choice of square root with `psd_sqrt_props` (carrier, psd, Q·Q = P) | ✓ |
+| D8-5 | expected value E = ⟨ψ\|Hψ⟩ with H = Σ λ_m M_m*M_m Hermitian | QC3 `observable`, `observable_hermitian`, `expected_value_eq_quad_form` | ✓ |
 
 ### Day 9 (16 Sep): POVMs, composite systems, entanglement
 | id | notes | formal | status |
@@ -126,10 +128,10 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | id | notes | formal | status |
 |---|---|---|---|
 | D10-1 | superdense coding: the four Bell states from γ by I, Z, X, XZ | QC3 `bell_basis`, `bell_basis_orthonormal`; the action table ((Z⊗I)γ = … etc.) is not proved | ~ |
-| D10-2 | one-qubit gates X, Z, Y, H, S | QC11 `pauli_X/Y/Z` (+ unitary, involution, products), QC3 `H_gate`, `hadamard_e0/e1`; S (phase gate) not defined | ~ |
+| D10-2 | one-qubit gates X, Z, Y, H, S | QC11 `pauli_X/Y/Z` (+ unitary, involution, products), QC3 `H_gate`, `hadamard_e0/e1`, `S_gate`, `S_gate_unitary` | ✓ |
 | D10-3 | "H² = X" | the notes are wrong here (corrected on Day 11 to H² = I); formal `hadamard_squared` proves H² = I | ✓ |
 | D10-4 | classical gates AND/OR/XOR/NAND/NOR, Pierce/Sheffer remarks | – | – |
-| D10-5 | CNOT matrix, unitary | library `CNOT`; QC3 `CNOT_unitary`, `CNOT_00`, `CNOT_10` (rows 01 and 11 missing) | ~ |
+| D10-5 | CNOT matrix, unitary | library `CNOT`; QC3 `CNOT_unitary`, `CNOT_00`, `CNOT_01`, `CNOT_10`, `CNOT_11` | ✓ |
 | D10-6 | Toffoli CCNOT, unitary | QC11 `CCNOT`, `CCNOT_unitary`, `CCNOT_inv` | ✓ |
 
 ### Day 11 (21 Sep): corrections, circuits, no-cloning
@@ -146,7 +148,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 |---|---|---|---|
 | D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | QC11 `hadamard_uniform_1` (N = 1 only); general N available in AFP `Isabelle_Marries_Dirac.Deutsch_Jozsa` (`iter_tensor_of_H_on_zero_tensor`) but not connected | ✗ |
 | D12-2 | oracle U_f(e_J ⊗ e_i) = e_J ⊗ e_{i+f(J)} exists and is unitary | QC11 `oracle_unitary`, `oracle_exists` | ✓ |
-| D12-3 | Proposition: p₀(ψ) = \|⟨γ\|ψ⟩\|² for P₀ = \|γ⟩⟨γ\| | ✗ (pieces: `outer_proj_*`) | ✗ |
+| D12-3 | Proposition: p₀(ψ) = \|⟨γ\|ψ⟩\|² for P₀ = \|γ⟩⟨γ\| | QC3 `rank_one_meas_prob`, `meas_prob_quad_form` | ✓ |
 | D12-4 | counting: p₀(U_f(x⊗e₀)) = (M/2^N)² with M = #{J : f(J) = 0} | QC11 `count_zeros` (definition only, no theorem) | ✗ |
 | D12-5 | Bernoulli-trial remark | – | – |
 
@@ -154,9 +156,9 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | id | notes | formal | status |
 |---|---|---|---|
 | D13-1 | ensemble {p_i, ψ_i} | QC11 `ensemble` | ✓ |
-| D13-2 | p_α(ensemble) = Σ p_i ‖M_α ψ_i‖² = Tr(M_α*M_α ρ) | QC11 `pure_state_prob_trace` (single state); the ensemble identity itself is not stated (`ensemble_prob_trace` only gives ≥ 0) | ~ |
+| D13-2 | p_α(ensemble) = Σ p_i ‖M_α ψ_i‖² = Tr(M_α*M_α ρ) | QC11 `pure_state_prob_trace`, `ensemble_prob_trace_eq` | ✓ |
 | D13-3 | a vector in H_A ⊗ H_E behaves like an ensemble (environment motivation) | ✗ (narrative; the partial-trace theorem D15-6 is the rigorous form) | – |
-| D13-4 | measurements see \|ψ⟩⟨ψ\| only: \|e^{iθ}ψ⟩⟨e^{iθ}ψ\| = \|ψ⟩⟨ψ\| | ✗ (easy) | ✗ |
+| D13-4 | measurements see \|ψ⟩⟨ψ\| only: \|e^{iθ}ψ⟩⟨e^{iθ}ψ\| = \|ψ⟩⟨ψ\| | QC11 `pure_density_smult_unit` | ✓ |
 | D13-5 | ‖γ‖² = Tr\|γ⟩⟨γ\| | QC11 `Tr_outer_sum_single`, `rank1_projection_trace_inner` | ✓ |
 | D13-6 | density matrix of an ensemble | QC11 `ensemble_density`, `density_matrix`, `ensemble_density_is_dm` | ✓ |
 
@@ -167,7 +169,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | D14-2 | non-uniqueness remark (ρ = XX*) | – | – |
 | D14-3 | ensembles representing \|ψ⟩⟨ψ\| consist of multiples of ψ (pure states) | QC11 `pure_ensemble_parallel`, `pure_density_iff_idempotent` | ✓ |
 | D14-4 | \|ψ⊗φ⟩⟨ψ⊗φ\| = \|ψ⟩⟨ψ\| ⊗ \|φ⟩⟨φ\| | QC11 `tensor_pure_density` | ✓ |
-| D14-5 | composite ensemble density Σ p_i q_l (…⊗…) is a density matrix | ✗ (needs psd of tensor products, see D16-4) | ✗ |
+| D14-5 | composite ensemble density Σ p_i q_l (…⊗…) is a density matrix | QC11 `density_matrix_tensor` (for the product of two densities) | ~ |
 
 ### Day 15 (30 Sep): traces, L(H_A)⊗L(H_B) ≅ L(H_A⊗H_B), partial trace
 | id | notes | formal | status |
@@ -185,7 +187,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | D16-1 | tr_B((X_{ij})) = Σ X_{ii}, tr_A((X_{ij})) = (Tr X_{ij}) | these are the formal definitions `partial_trace_B/A` (A-major Kronecker indexing) | ✓ |
 | D16-2 | H_A ⊗ H_B ≅ H_A^{(p)}, L(H_A⊗H_B) ≅ M_p(L(H_A)) | QC11 `block_of_mat`, `amplification` (block action); isomorphism D15-3 | ~ |
 | D16-3 | Postulates 1′ (density matrices), 2′ (UρU*), 3′ (p_α = Tr(M*Mρ)) | QC11 `density_matrix`; `unitary_conj_channel_preserves_density_matrix`, `conjugation_channel`; `ensemble_prob_trace`, `meas_map_density` | ✓ |
-| D16-4 | Postulate 4′: ρ₁ ⊗ ρ₂ is a density matrix | ✗ (needs psd (A ⊗ B)) | ✗ |
+| D16-4 | Postulate 4′: ρ₁ ⊗ ρ₂ is a density matrix | QC11 `psd_tensor`, `density_matrix_tensor` | ✓ |
 
 ### Day 17 (5 Oct): measurement maps, noise, axiomatic channels
 | id | notes | formal | status |
@@ -245,7 +247,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 ### Day 23 (19 Oct): proof of Choi's Theorem 3, examples
 | id | notes | formal | status |
 |---|---|---|---|
-| D23-1 | Choi 3: Φ UCP with minimal Kraus rep (V_i) is extreme iff {V_i*V_j} linearly independent | D23 `choi_theorem_3_cptp` proves the CPTP form (the notes' corollary): for a CPTP Φ with Kraus representation (V_i) consisting of linearly independent operators, extreme (`extreme_CPTP_carrier`) ⟹ real-linear independence of {V_j*V_i}, and complex-linear independence ⟹ extreme.  Differences: (i) CPTP instead of UCP (the two are exchanged by Φ ↦ Φ*, D20-2); (ii) hypothesis "V_i linearly independent" replaces "r = cr Φ" (D22-1); (iii) the two directions use real vs. complex independence; (iv) extremality is the carrier-point notion, because functions on `complex Matrix.mat` are only constrained on `carrier_mat n n` | ~ |
+| D23-1 | Choi 3: Φ UCP with minimal Kraus rep (V_i) is extreme iff {V_i*V_j} linearly independent | D23 `choi_theorem_3_cptp` proves the CPTP form (the notes' corollary): for a CPTP Φ with Kraus representation (V_i) consisting of linearly independent operators, extreme (`extreme_CPTP_carrier`) ⟺ complex-linear independence of {V_j*V_i} (`choi_theorem_3_cptp_iff`; the perturbation step yields a real relation and `herm_witness_of_complex` converts a complex one).  Differences: (i) CPTP instead of UCP (the two are exchanged by Φ ↦ Φ*, D20-2); (ii) hypothesis "V_i linearly independent" replaces "r = cr Φ" (D22-1); (iii) extremality is the carrier-point notion, because functions on `complex Matrix.mat` are only constrained on `carrier_mat n n` | ~ |
 | D23-2 | forward direction via perturbation ψ_± | D23 `choi_theorem_3_cptp_reverse_carrier` (perturbation `kraus_quad_map`, `small_eps_psd`, `sym_or_antisym_witness`) | ✓ |
 | D23-3 | reverse direction via Choi 2 | D23 `choi_theorem_3_cptp_forward_complex` via CP Radon–Nikodym (`cp_radon_nikodym_linear`, `dominated_outer_sum_param`) instead of Choi 2 | ~ |
 | D23-4 | Examples: U*XU extreme; ½(U₁*XU₁+U₂*XU₂) not; Tr(X)I not; diag not | ✗ | ✗ |
@@ -273,7 +275,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 |---|---|---|---|
 | D26-1 | CP Φ with Φ(I) = P is V*ψ(X)V with ψ UCP; CP Φ = ψ(VXV*) with ψ CPTP | ✗ | ✗ |
 | D26-2 | Arveson extension theorem (proof) | ✗ | ✗ |
-| D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D24 `D25_separable_density_iff_convex_combination` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
+| D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D24 `D26_separable_density_iff_convex_combination` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
 
 ### Day 27 (31 Oct): positive maps detect entanglement; convex cones
 | id | notes | formal | status |
@@ -322,7 +324,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 ### Day 32 (14 Nov): phase-flip code, Shor code, Pauli magic
 | id | notes | formal | status |
 |---|---|---|---|
-| D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the encoded states are `shor_zero`/`shor_one` (misnamed: they are the 3-qubit phase-flip code words \|+++⟩, \|−−−⟩, not Shor's 9-qubit words) | ~ |
+| D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
 | D32-2 | Y-version with β = Y\|+⟩ | ✗ | ✗ |
 | D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | ✗ | ✗ |
 | D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | ✗ | ✗ |
@@ -360,26 +362,27 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 5. Choi's Theorem 3 is formalised in the CPTP form with a fixed linearly independent Kraus list and the carrier-point notion of extremality (D23-1).
 6. `extreme_CPTP` (raw function inequality) is provably vacuous; use `extreme_CPTP_carrier` (documented inside D23).
 7. The entanglement theory is formalised in witness form rather than the positive-map form (D28-3); the two are equivalent via the Arveson correspondence, which is not formalised.
-8. `shor_zero`/`shor_one` are the three-qubit phase-flip code words (D32-1), not the Shor code.
-9. `psd_sqrt` is a placeholder constant equal to the zero matrix (D8-4).
+8. The three-qubit phase-flip code words were called `shor_zero`/`shor_one`; renamed `phase_code_zero`/`phase_code_one` (D32-1).
+9. `psd_sqrt` was a placeholder constant equal to the zero matrix; now defined via `SOME` with `psd_sqrt_props` (D8-4).
+10. `Day24_Separability` attributed the separability material to Days 24–28; the theorem prefixes now follow the notes (D26 definition of separability, D27 cone and separation, D28 closedness and witnesses).
 
 ## Gap list and plan
-Priority A (cheap, improve fidelity; to be closed in this pass):
-A1 D3-2 converses: isometry ⟹ unitary, inner-product preserving ⟹ unitary (square U).
+Priority A (cheap, improve fidelity) — ALL CLOSED in the 2026-10-18 pass:
+A1 D3-2 converses: isometry ⟹ unitary is the library's `length_preserving_is_unitary` (Isabelle_Marries_Dirac); add a vector-form wrapper and the inner-product version.
 A2 D4-5 `pd_iff_pos_eigenvalues`.
 A3 D4-3 `psd_iff_quad_form_nonneg` (notes' definition).
-A4 D8-4 redefine `psd_sqrt` via `SOME` with `psd_sqrt_psd`, `psd_sqrt_square`.
+A4 D8-4 redefine `psd_sqrt` via `SOME` with `psd_sqrt_props`. DONE.
 A5 D10-5 `CNOT_01`, `CNOT_11`; D10-2 phase gate `S_gate` unitary.
 A6 D13-4 phase invariance of `pure_density`; D13-2 ensemble probability = Re Tr(M*M ρ).
 A7 D12-3 rank-one measurement probability \|⟨γ\|ψ⟩\|².
 A8 D8-5 expected value: Σ λ_m p_m(ψ) = ⟨ψ\|Hψ⟩, H Hermitian.
 A9 D16-4/D14-5 `psd_tensor`, `density_matrix_tensor`.
-A10 D23-1 bridge: real-linear independence of the Hermitian-closed family {V_j*V_i} implies complex-linear independence, turning `choi_theorem_3_cptp` into a genuine iff.
+A10 D23-1 complex-coefficient witness (`herm_witness_of_complex`, `mat_lin_indep_complex_neg_witness`) giving `choi_theorem_3_cptp_iff`: extreme ⟷ complex-linear independence. DONE.
 A11 D2-11 Hermitian idempotent is the orthogonal projection onto its range (Pv = v for v = Px; Pw = 0 for w ⊥ range).
-A12 D32-1 rename `shor_zero/one` → `phase_code_zero/one` (keep old names as abbreviations).
+A12 D32-1 rename `shor_zero/one` → `phase_code_zero/one`. DONE.
 
 Priority B (medium):
-B1 D8-3 unambiguous discrimination of linearly independent states (un-comment and prove).
+B1 D8-3 unambiguous discrimination of linearly independent states. DONE (`lin_indep_states_unambiguous`, new proof via dual vectors).
 B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving.
 B3 D19-1 n-positive ⟹ Choi matrix psd; D19-3 Choi-matrix form of TP/unital.
 B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error.

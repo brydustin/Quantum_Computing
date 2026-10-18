@@ -1,46 +1,6 @@
-(*
-  Title:    Lmat_Euclidean.thy
-  Purpose:  Equip the typed-dimension matrix wrapper lmat with the
-            full HOL-Analysis typeclass tower so that convex, closed,
-            compactness, and Caratheodory results apply directly.
-
-  Status:   COMPLETE.
-
-    Typeclass instances on (\<^typ>\<open>('a, 'm :: finite, 'n :: finite) lmat\<close>):
-
-      scaleR                  (for 'a :: real_vector)
-      real_vector             (for 'a :: real_vector)
-      dist                    (for 'a :: metric_space)
-      uniformity_dist         (for 'a :: metric_space)
-      metric_space            (for 'a :: metric_space)
-      norm                    (for 'a :: real_normed_vector)
-      sgn                     (for 'a :: real_normed_vector)
-      real_normed_vector      (for 'a :: real_normed_vector)
-      inner                   (for 'a :: real_inner)
-      real_inner              (for 'a :: real_inner)
-      Basis                   (for 'a :: euclidean_space)
-      euclidean_space         (for 'a :: euclidean_space)
-      heine_borel             (free; for 'a :: euclidean_space)
-
-    Specialisation: when 'a = complex, every (complex, 'm, 'n) lmat
-    is a finite-dimensional real Hilbert space, with dimension
-    \<open>2 * CARD('m) * CARD('n)\<close> (via DIM_lmat).  The norm/inner-product
-    are the Hilbert-Schmidt norm/Re-inner-product.
-
-    Useful technical lemmas:
-      lmat_eq_iff_entries          – pointwise equality test
-      lmat_axis                    – matrix-unit basis vector
-      lmat_axis_eq_iff             – equality criterion for axis vectors
-      inner_lmat_axis              – inner with axis picks one entry
-      inner_lmat_axis_axis         – axis inner product
-      Basis_lmat_set / Basis_lmat  – basis enumeration
-      Basis_lmat_orthonormal       – basis is orthonormal
-      Basis_lmat_perp_zero         – x \<perp> Basis \<Longleftrightarrow> x = 0
-      DIM_lmat                     – dimension formula
-      norm_lmat_index_le           – entry norm \<le> total norm
-      dist_lmat_index_le           – entry distance \<le> total distance
-      tendsto_unwrap_lm_index      – lmat convergence \<Longrightarrow> entry convergence
-      LIMSEQ_unwrap_lm_index       – sequential variant
+(*  Title:   Lmat/Lmat_Euclidean.thy
+    Author:  Dustin Bryant.  Infrastructure (not in the notes): the typed matrix space as a
+             finite-dimensional real Hilbert space, so that HOL-Analysis applies to it.
 *)
 
 theory Lmat_Euclidean
@@ -52,13 +12,22 @@ theory Lmat_Euclidean
     "HOL-Analysis.Topology_Euclidean_Space"
 begin
 
-text \<open>The HOL/Hahn_Banach development imports a locale also called \<open>norm\<close>
+text \<open>The HOL/Hahn\_Banach development imports a locale also called \<open>norm\<close>
 under the qualifier \<open>Normed_Space\<close>.  Hide its short names so that, inside
 our instantiation blocks, \<open>norm\<close> resolves to the class method from
 \<^theory>\<open>HOL.Real_Vector_Spaces\<close>.\<close>
 
 hide_const (open) Normed_Space.norm
 hide_const (open) Normed_Space.seminorm
+
+section \<open>Overview\<close>
+
+text \<open>Nothing in this theory is stated in the notes; it is the bridge that lets the
+HOL-Analysis theorems on convex sets (separating hyperplanes, compactness) be applied to
+matrices.  \<open>('a, 'm, 'n) lmat\<close> is given the typeclass tower \<open>real_vector\<close>,
+\<open>metric_space\<close>, \<open>real_normed_vector\<close>, \<open>real_inner\<close>, \<open>euclidean_space\<close>,
+\<open>heine_borel\<close>; for \<open>'a = complex\<close> the norm is the Hilbert--Schmidt norm, the inner
+product its real part, and the dimension is $2\,\mathrm{CARD}('m)\,\mathrm{CARD}('n)$.\<close>
 
 
 section \<open>Real scalar multiplication and \<open>real_vector\<close> instance\<close>

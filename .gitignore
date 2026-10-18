@@ -41,3 +41,6 @@ VectorSpace/
 
 # Separate standalone project (its own git repo)
 Applied_Math_Formalization/
+
+# generated notes document
+notes_doc/output/

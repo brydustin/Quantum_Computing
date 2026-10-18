@@ -1,9 +1,6 @@
-(*
-  Title:      Quantum_Computing11.thy
-  Author:     Dustin Bryant (based on lectures of Vern Paulsen)
-
-  Day 11 split from Quantum_Computing.thy.  Days 3 through 10 are
-  imported from Quantum_Computing_3_10 so they can live in the heap image.
+(*  Title:   Quantum_Computing11.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lectures of 21 September - 17 October 2011
+             (Days 11-22) and 7-14 November 2011 (Days 29-32), followed by extensions.
 *)
 
 theory Quantum_Computing11
@@ -12,17 +9,19 @@ theory Quantum_Computing11
     Vern_Paulsen_QC_3_10.Quantum_Computing_3_10
 begin
 
-(* ============================================================================
-   DAY 11 — 21 / Sep / 11
-   Topic: CNOT, CCNOT, Circuit Diagrams; No-Cloning Theorem
-   ============================================================================ *)
+section \<open>Day 11 (21 September 2011): gates revisited, circuit diagrams, no-cloning\<close>
 
-(* --------------------------------------------------------------------------
-   Toffoli (CCNOT) gate: |a,b,c\<rangle> \<mapsto> |a, b, c\<oplus>(a\<and>b)\<rangle>
-   -------------------------------------------------------------------------- *)
+text \<open>The lecture opens with two corrections: $H^2=I$ (not $X$), with $He_0=(e_0+e_1)/\sqrt2$,
+$Xe_0=e_1$, $Xe_1=e_0$, $He_1=(e_0-e_1)/\sqrt2$, so that $X$ and $H$ are reflections; and the
+truth tables of CNOT ($\ket{a,b}\mapsto\ket{a,b+a}$, arithmetic in $\Z_2$) and of CCNOT
+($\ket{a,b,c}\mapsto\ket{a,b,c+ab}$).  Circuit diagrams are introduced; the CNOT with
+control on the second wire has matrix $\begin{pmatrix}1&0&0&0\\0&0&0&1\\0&0&1&0\\0&1&0&0\end{pmatrix}$,
+and three alternating CNOTs compose to the swap of the two wires (not formalised).
 
-(* CCNOT is the 8\<times>8 matrix that is the identity on the first 6 basis vectors
-   and swaps |110\<rangle> and |111\<rangle>. *)
+\begin{notesdef}
+The Toffoli gate CCNOT is the $8\times8$ permutation matrix that fixes the first six basis
+vectors and exchanges $\ket{110}$ and $\ket{111}$.
+\end{notesdef}\<close>
 
 definition CCNOT :: "complex Matrix.mat" where
   "CCNOT \<equiv> Matrix.mat 8 8
@@ -43,9 +42,6 @@ lemma CCNOT_dim_col [simp]:
   "dim_col CCNOT = 8"
   by (simp add: CCNOT_def)
 
-(* CCNOT is the permutation matrix of the transposition 6 \<leftrightarrow> 7, so each row /
-   column has exactly one nonzero entry.  Encode that explicitly so we never
-   have to enumerate all 64 entries of the product. *)
 
 lemma CCNOT_inv [simp]:
   "CCNOT * CCNOT = 1\<^sub>m 8"
@@ -120,12 +116,18 @@ qed
 lemma CCNOT_unitary: "unitary CCNOT"
   by (simp add: unitary_def)
 
-(* --------------------------------------------------------------------------
-   No-Cloning Theorem
-   -------------------------------------------------------------------------- *)
+subsection \<open>Cloning and no-cloning\<close>
 
-(* A cloner for state space H would be a fixed state \<phi> and a unitary U on H\<otimes>H
-   such that U(\<psi>\<otimes>\<phi>) = \<psi>\<otimes>\<psi> for ALL unit vectors \<psi>. *)
+text \<open>CNOT clones the computational basis: $U(e_a\otimes e_0)=e_a\otimes e_a$, and
+more generally $\ket{i_1\cdots i_n}\otimes\ket{0\cdots0}\mapsto\ket{i_1\cdots i_n}\otimes
+\ket{i_1\cdots i_n}$ for some unitary.  But for $\psi=\alpha e_0+\beta e_1$ with
+$\alpha\beta\neq0$, $U(\psi\otimes e_0)\neq\psi\otimes\psi$.
+\begin{notestheorem}[No-cloning]
+There is no state $\phi$ and unitary $U$ on $\Hil\otimes\Hil$ with $U(\psi\otimes\phi)=\psi\otimes\psi$
+for all $\psi\in\Hil$.
+\end{notestheorem}
+The notes argue with $-\psi$; the formal proof (for $\dim\Hil=n\ge2$ and unit vectors $\psi$)
+uses two states with inner product neither $0$ nor $1$.\<close>
 
 definition is_cloner :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> bool" where
   "is_cloner n U \<phi> \<equiv>
@@ -133,10 +135,7 @@ definition is_cloner :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> comp
      (\<forall>\<psi>. quantum_state n \<psi> \<longrightarrow>
         U *\<^sub>v tensor_vec \<psi> \<phi> = tensor_vec \<psi> \<psi>)"
 
-(* Helper: when n \<ge> 2, there exist two quantum states whose inner product
-   is neither 0 nor 1.  Explicit witness: \<psi>\<^sub>1 = |0\<rangle>, \<psi>\<^sub>2 = (|0\<rangle> + |1\<rangle>)/\<surd>2,
-   giving \<langle>\<psi>\<^sub>1|\<psi>\<^sub>2\<rangle> = 1/\<surd>2.  The construction is standard but bureaucratic; we
-   leave the concrete computation for later. *)
+text \<open>Two states whose inner product is neither $0$ nor $1$ exist once $n\ge2$.\<close>
 
 lemma two_states_nontrivial_inner_prod:
   assumes n: "2 \<le> n"
@@ -237,7 +236,6 @@ proof -
   show thesis by simp
 qed
 
-(* No-Cloning Theorem: no cloner exists (for n \<ge> 2). *)
 
 theorem no_cloning:
   assumes n2: "2 \<le> n"
@@ -334,31 +332,34 @@ proof
 qed
 
 
-(* ============================================================================
-   DAY 12 — 23 / Sep / 11
-   Topic: Quantum Parallelism; Oracles
-   ============================================================================ *)
+section \<open>Day 12 (23 September 2011): quantum parallelism\<close>
 
-(* --------------------------------------------------------------------------
-   N-fold tensor product of Hadamard
-   -------------------------------------------------------------------------- *)
+text \<open>Since $He_0=(e_0+e_1)/\sqrt2$,
+\[ H^{\otimes N}(e_0\otimes\cdots\otimes e_0)=\Bigl(\tfrac1{\sqrt2}\Bigr)^N\sum_{J\in\Z_2^N}e_J
+   =\Bigl(\tfrac1{\sqrt2}\Bigr)^N\sum_J\ket J . \]
+Only the case $N=1$ is stated here; the general identity is available in the AFP entry
+Isabelle\_Marries\_Dirac (Deutsch--Jozsa) in its own matrix representation.
 
-(* H\<otimes>N applied to |00\<dots>0\<rangle> gives a uniform superposition:
-   H^\<otimes>N (e\<^sub>0 \<otimes> \<cdots> \<otimes> e\<^sub>0) = (1/\<surd>2)^N \<Sigma>_{J \<in> Z\<^sub>2^N} e_J  *)
-
-(* We state this for the case N=1 and build inductively. *)
+\begin{notesdef}[Oracle]
+For $f:\Z_2^N\to\Z_2$, the vectors $e_J\otimes e_{i+f(J)}$ form an orthonormal basis of
+$(\C^2)^{\otimes N}\otimes\C^2$, so there is a unitary $U_f$ with
+$U_f(e_J\otimes e_i)=e_J\otimes e_{i+f(J)}$, the \emph{oracle} for $f$.
+\end{notesdef}
+\begin{notesprop}
+For a unit vector $\gamma$, the measurement $P_0=\ketbra\gamma\gamma$, $P_1=I-P_0$ has
+$p_0(\psi)=|\braket\gamma\psi|^2$ and $p_1(\psi)=1-|\braket\gamma\psi|^2$.
+\end{notesprop}
+Application: with $x=(He_0)^{\otimes N}$, $U_f(x\otimes e_0)=2^{-N/2}\sum_J e_J\otimes e_{f(J)}$,
+and measuring against $\gamma=x\otimes e_0$ gives $\braket\gamma{U_f(x\otimes e_0)}=M/2^N$ with
+$M=\#\{J:f(J)=0\}$, hence $p_0=(M/2^N)^2$: repeating the experiment estimates $M$ (a
+Bernoulli trial).  The existence of the oracle is formalised below; the proposition is
+\<open>rank_one_meas_prob\<close> (Day 8); the counting identity is not formalised (audit item D12-4).\<close>
 
 lemma hadamard_uniform_1:
   "H_gate *\<^sub>v unit_vec 2 0 =
    (1/csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
   using hadamard_e0.
 
-(* --------------------------------------------------------------------------
-   Oracle for a function f : Z\<^sub>2^N \<rightarrow> Z\<^sub>2
-   -------------------------------------------------------------------------- *)
-
-(* The oracle U_f acts on (\<complex>\<^sup>2)^\<otimes>(N+1) by U_f(e_J \<otimes> e_i) = e_J \<otimes> e_{i\<oplus>f(J)}.
-   It is unitary because {e_J \<otimes> e_{i\<oplus>f(J)} : J, i} is an orthonormal basis. *)
 
 definition oracle_unitary :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> bool" where
   "oracle_unitary f N \<equiv>
@@ -369,7 +370,6 @@ definition oracle_unitary :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Righta
           U *\<^sub>v (tensor_vec (unit_vec (2^N) J) (unit_vec 2 i)) =
           tensor_vec (unit_vec (2^N) J) (unit_vec 2 ((i + f J) mod 2)))"
 
-(* The oracle exists for any f: Z\<^sub>2^N \<rightarrow> Z\<^sub>2. *)
 
 theorem oracle_exists:
   fixes f :: "nat \<Rightarrow> nat"
@@ -710,35 +710,51 @@ proof -
     by (metis d0_def d_def) 
 qed
 
-(* Probability of outcome 0 when measuring U_f(x \<otimes> e\<^sub>0) with respect to |x \<otimes> e\<^sub>0\<rangle>:
-   p\<^sub>0 = (#{J : f(J)=0} / 2^N)\<^sup>2 = (M/2^N)\<^sup>2 *)
+text \<open>$M=\#\{J<2^N : f(J)=0\}$, the quantity estimated by the counting experiment.\<close>
 
 definition count_zeros :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> nat" where
   "count_zeros f N \<equiv> card {J. J < 2^N \<and> f J = 0}"
 
 
-(* ============================================================================
-   DAY 13 — 26 / Sep / 11
-   Topic: Ensembles and Mixed States; Density Matrices
-   ============================================================================ *)
+section \<open>Day 13 (26 September 2011): ensembles and density matrices\<close>
 
-(* --------------------------------------------------------------------------
-   Ensembles
-   -------------------------------------------------------------------------- *)
+subsection \<open>Ensembles\<close>
+
+text \<open>Motivation: measuring $\psi=a\ket0+b\ket1$ with $M_0=\ketbra00$, $M_1=\ketbra11$ leaves
+the state $\tfrac a{|a|}\ket0$ with probability $|a|^2$ and $\tfrac b{|b|}\ket1$ with
+probability $|b|^2$; a later measurement $\{\tilde M_\alpha\}$ then has outcome probabilities
+$p_\alpha=|a|^2\norm{\tilde M_\alpha\tfrac a{|a|}\ket0}^2+|b|^2\norm{\tilde M_\alpha\tfrac b{|b|}\ket1}^2$.
+\begin{notesdef}
+An \emph{ensemble} $\{p_i,\psi_i\}_{i=1}^L$ is a set of states with probabilities $p_i\ge0$,
+$\sum_ip_i=1$.  For a measurement system $\{M_\alpha\}$ the probability of outcome $\alpha$ is
+$p_\alpha(\{p_i,\psi_i\})=\sum_ip_i\norm{M_\alpha\psi_i}^2$.
+\end{notesdef}
+A second source of ensembles: a unit vector $\psi=\sum_l\phi_l\otimes f_l\in\Hil_A\otimes\Hil_E$
+(environment $\Hil_E$ with orthonormal basis $f_l$) behaves, for measurements $M_\alpha\otimes I$,
+exactly like the ensemble $\{\norm{\phi_l}^2,\phi_l/\norm{\phi_l}\}$.\<close>
 
 definition ensemble :: "nat \<Rightarrow> (real \<times> complex Matrix.vec) list \<Rightarrow> bool" where
   "ensemble n E \<equiv>
      (\<forall>(p, \<psi>) \<in> set E. p \<ge> 0 \<and> quantum_state n \<psi>) \<and>
      (\<Sum>(p, _) \<leftarrow> E. p) = 1"
 
-(* --------------------------------------------------------------------------
-   Density Matrix
-   -------------------------------------------------------------------------- *)
+subsection \<open>Von Neumann's density matrix\<close>
+
+text \<open>Measurements cannot distinguish $\psi$ from $e^{i\theta}\psi$, and
+$\ketbra{e^{i\theta}\psi}{e^{i\theta}\psi}=\ketbra\psi\psi=(\alpha_i\overline{\alpha_j})$: the
+object attached to a state is the projection, not the vector.  For any $\gamma$,
+$\norm\gamma^2=\Tr\ketbra\gamma\gamma$, and
+\[ p_\alpha(\psi)=\norm{M_\alpha\psi}^2=\Tr\bigl((M_\alpha^*M_\alpha)(\psi\psi^*)\bigr),\qquad
+   p_\alpha(\{p_l,\psi_l\})=\Tr\Bigl((M_\alpha^*M_\alpha)\sum_lp_l\psi_l\psi_l^*\Bigr). \]
+\begin{notesdef}
+$P=\sum_lp_l\ketbra{\psi_l}{\psi_l}$ is the \emph{density matrix} of the ensemble.
+\end{notesdef}
+Formally \<open>pure_density \<psi>\<close> is $\ketbra\psi\psi$, \<open>ensemble_density n E\<close> is $P$, and
+\<open>density_matrix n \<rho>\<close> is the Day 14 characterisation ($\rho\ge0$, $\Tr\rho=1$).\<close>
 
 definition density_matrix :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "density_matrix n \<rho> \<equiv> \<rho> \<in> carrier_mat n n \<and> psd \<rho> \<and> Tr \<rho> = 1"
 
-(* Density matrix associated to a pure state *)
 
 definition pure_density :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
   "pure_density \<psi> \<equiv>
@@ -782,14 +798,12 @@ proof -
     using dim psd tr by fastforce
 qed
 
-(* Density matrix of an ensemble *)
 
 definition ensemble_density :: "nat \<Rightarrow> (real \<times> complex Matrix.vec) list \<Rightarrow> complex Matrix.mat" where
   "ensemble_density n E \<equiv>
      foldr (\<lambda>(p,\<psi>) acc. complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] + acc)
            E (0\<^sub>m n n)"
 
-(* -- Auxiliary: PSD preservation helpers (not in the imported library) -- *)
 
 lemma psd_zero_mat [simp]:
   "psd (0\<^sub>m n n)"
@@ -957,7 +971,6 @@ proof -
     using herm_AB quad by blast
 qed
 
-(* -- Auxiliary: structural lemmas about ensemble_density on a list -- *)
 
 lemma ensemble_density_Nil [simp]:
   "ensemble_density n [] = 0\<^sub>m n n"
@@ -1076,7 +1089,6 @@ next
   finally show ?case unfolding a_eq .
 qed
 
-(* The ensemble density is a density matrix *)
 
 theorem ensemble_density_is_dm:
   assumes E: "ensemble n E"
@@ -1099,11 +1111,11 @@ proof -
     using carr psd_ed tr_ed by blast
 qed
 
-(* --------------------------------------------------------------------------
-   Von Neumann's approach: probabilities via Tr(M\<dagger>M \<rho>)
-   -------------------------------------------------------------------------- *)
+subsection \<open>Probabilities via the trace\<close>
 
-(* For a pure state \<psi>: \<Parallel>M\<psi>\<Parallel>\<^sup>2 = Tr(M\<dagger>M |\<psi>\<rangle>\<langle>\<psi>|) *)
+text \<open>$p_\alpha(\psi)=\norm{M_\alpha\psi}^2=\Tr(M_\alpha^*M_\alpha\ketbra\psi\psi)$.  For an
+ensemble with density matrix $\rho$, $p_\alpha=\Tr(M_\alpha^*M_\alpha\rho)
+=\langle M_\alpha^*M_\alpha|\rho\rangle$ (\<open>ensemble_prob_trace_eq\<close> below).\<close>
 
 lemma pure_state_prob_trace:
   fixes M :: "complex Matrix.mat" and \<psi> :: "complex Matrix.vec"
@@ -1279,10 +1291,53 @@ proof -
   finally show ?thesis.
 qed
 
-(* For an ensemble with density \<rho>: p_\<alpha>(\<rho>) = Tr(M_\<alpha>\<dagger> M_\<alpha> \<rho>) *)
 
-(* Helper: the trace of a PSD matrix has non-negative real part (in fact
-   it is a non-negative real number). *)
+text \<open>For an ensemble: $p_\alpha(\{p_i,\psi_i\})=\sum_ip_i\norm{M_\alpha\psi_i}^2=\Tr(M_\alpha^*M_\alpha\rho)$.\<close>
+
+lemma ensemble_prob_trace_eq:
+  fixes M :: "complex Matrix.mat"
+  assumes M: "M \<in> carrier_mat n n"
+      and E: "\<forall>(p, \<psi>) \<in> set E. quantum_state n \<psi>"
+  shows "(\<Sum>(p, \<psi>) \<leftarrow> E. p * meas_prob M \<psi>)
+           = Re (Tr (((M\<^sup>\<dagger>) * M) * ensemble_density n E))"
+  using E
+proof (induction E)
+  case Nil
+  have "((M\<^sup>\<dagger>) * M) * ensemble_density n [] = 0\<^sub>m n n" using M by auto
+  thus ?case by simp
+next
+  case (Cons pe E)
+  obtain p \<psi> where pe: "pe = (p, \<psi>)" by (cases pe)
+  have qs: "quantum_state n \<psi>" using Cons.prems pe by auto
+  have \<psi>d: "dim_vec \<psi> = n" using qs by (simp add: quantum_state_def)
+  have rest: "\<forall>(p, \<psi>) \<in> set E. quantum_state n \<psi>" using Cons.prems by auto
+  have MM: "(M\<^sup>\<dagger>) * M \<in> carrier_mat n n" using M by auto
+  have os: "outer_sum n [\<psi>] \<in> carrier_mat n n" by (intro carrier_matI) auto
+  have ed: "ensemble_density n E \<in> carrier_mat n n" by (rule ensemble_density_carrier[OF rest])
+  have pos_c: "complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] \<in> carrier_mat n n" using os by auto
+  have "((M\<^sup>\<dagger>) * M) * ensemble_density n (pe # E)
+          = ((M\<^sup>\<dagger>) * M) * (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>])
+            + ((M\<^sup>\<dagger>) * M) * ensemble_density n E"
+    unfolding pe ensemble_density_Cons by (rule mult_add_distrib_mat[OF MM pos_c ed])
+  also have "((M\<^sup>\<dagger>) * M) * (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>])
+               = complex_of_real p \<cdot>\<^sub>m (((M\<^sup>\<dagger>) * M) * outer_sum n [\<psi>])"
+    by (rule mult_smult_distrib[OF MM os])
+  finally have "((M\<^sup>\<dagger>) * M) * ensemble_density n (pe # E)
+          = complex_of_real p \<cdot>\<^sub>m (((M\<^sup>\<dagger>) * M) * outer_sum n [\<psi>])
+            + ((M\<^sup>\<dagger>) * M) * ensemble_density n E" .
+  hence "Tr (((M\<^sup>\<dagger>) * M) * ensemble_density n (pe # E))
+          = complex_of_real p * Tr (((M\<^sup>\<dagger>) * M) * outer_sum n [\<psi>])
+            + Tr (((M\<^sup>\<dagger>) * M) * ensemble_density n E)"
+    using MM os ed by (simp add: Tr_add Tr_smult)
+  hence "Re (Tr (((M\<^sup>\<dagger>) * M) * ensemble_density n (pe # E)))
+          = p * Re (Tr (((M\<^sup>\<dagger>) * M) * outer_sum n [\<psi>]))
+            + Re (Tr (((M\<^sup>\<dagger>) * M) * ensemble_density n E))"
+    by simp
+  also have "Re (Tr (((M\<^sup>\<dagger>) * M) * outer_sum n [\<psi>])) = meas_prob M \<psi>"
+    using pure_state_prob_trace[OF qs M] by simp
+  finally show ?case
+    using Cons.IH[OF rest] pe by simp
+qed
 
 lemma Tr_psd_Re_nonneg:
   assumes P: "psd P" and Pc: "P \<in> carrier_mat n n"
@@ -1417,21 +1472,19 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 14 — 28 / Sep / 11
-   Topic: Characterisation of Density Matrices; Pure States;
-          Composite Ensembles; Partial Trace (motivation)
-   ============================================================================ *)
+section \<open>Day 14 (28 September 2011): density matrices, pure states, composite ensembles\<close>
 
-(* --------------------------------------------------------------------------
-   \<section>15.1 (Continuation).  Every density matrix is the density of some
-   ensemble (the spectral ensemble).  Combined with the Day-13 theorem
-   \<open>ensemble_density_is_dm\<close>, this characterises density matrices as exactly
-   those \<rho> with \<rho> \<ge> 0 and \<open>Tr \<rho> = 1\<close>.
-   -------------------------------------------------------------------------- *)
-
-(* Unfolding the definition: for square \<rho>, being a density matrix is just
-   \<open>\<rho> \<ge> 0 \<and> Tr \<rho> = 1\<close>.  This matches Paulsen's Definition on p.\ 43. *)
+text \<open>\begin{notesprop}
+$\rho\in L(\Hil_A)$ is the density matrix of some ensemble if and only if $\rho\ge0$ and
+$\Tr\rho=1$.
+\end{notesprop}
+\begin{notesdef}
+$\rho$ is a \emph{density matrix} when $\rho\ge0$ and $\Tr\rho=1$.  The ensemble
+$\{\lambda_i,\psi_i\}$ of eigenvalues and an orthonormal eigenbasis is the \emph{spectral
+ensemble}.
+\end{notesdef}
+Many ensembles have the same density matrix: writing $\rho=XX^*=\sum_ic_ic_i^*$ with columns
+$c_i$ gives the ensemble $\{\norm{c_i}^2,c_i/\norm{c_i}\}$.\<close>
 
 theorem density_matrix_characterisation:
   fixes \<rho> :: "complex Matrix.mat"
@@ -1439,7 +1492,6 @@ theorem density_matrix_characterisation:
   shows "density_matrix n \<rho> \<longleftrightarrow> psd \<rho> \<and> Tr \<rho> = 1"
   using sq by (simp add: density_matrix_def)
 
-(* --- Helpers for the spectral-ensemble construction -------------------- *)
 
 lemma ensemble_density_carrier_dim:
   shows "ensemble_density n E \<in> carrier_mat n n"
@@ -1482,6 +1534,33 @@ proof -
   finally show ?thesis.
 qed
 
+text \<open>Day 13: $\ketbra{e^{i\theta}\psi}{e^{i\theta}\psi}=\ketbra\psi\psi$; the density matrix forgets the phase.\<close>
+
+lemma pure_density_smult_unit:
+  fixes \<psi> :: "complex Matrix.vec" and c :: complex
+  assumes c: "cmod c = 1"
+  shows "pure_density (c \<cdot>\<^sub>v \<psi>) = pure_density \<psi>"
+proof -
+  let ?n = "dim_vec \<psi>"
+  have cc: "c * cnj c = 1"
+    using c by (metis complex_norm_square of_real_1 one_power2)
+  show ?thesis
+    unfolding pure_density_def Let_def
+  proof (rule eq_matI)
+    show "dim_row (outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>]) = dim_row (outer_sum ?n [\<psi>])" by simp
+    show "dim_col (outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>]) = dim_col (outer_sum ?n [\<psi>])" by simp
+    fix i j assume "i < dim_row (outer_sum ?n [\<psi>])" "j < dim_col (outer_sum ?n [\<psi>])"
+    hence ij: "i < ?n" "j < ?n" by auto
+    have "outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>] $$ (i, j) = (c * \<psi> $ i) * cnj (c * \<psi> $ j)"
+      using outer_sum_singleton_index[of i ?n j "c \<cdot>\<^sub>v \<psi>"] ij by simp
+    also have "\<dots> = (c * cnj c) * (\<psi> $ i * cnj (\<psi> $ j))" by (simp add: algebra_simps)
+    also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)" using cc by simp
+    also have "\<dots> = outer_sum ?n [\<psi>] $$ (i, j)"
+      using outer_sum_singleton_index[OF ij] by simp
+    finally show "outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>] $$ (i, j) = outer_sum ?n [\<psi>] $$ (i, j)" .
+  qed
+qed
+
 lemma ensemble_density_index:
   assumes r: "r < n" and c: "c < n"
   shows "ensemble_density n E $$ (r, c) =
@@ -1517,7 +1596,7 @@ next
     by (simp add: a mult.assoc)
 qed
 
-(* --- Spectral ensemble: main theorem ----------------------------------- *)
+text \<open>The spectral ensemble: every density matrix comes from an ensemble.\<close>
 
 theorem spectral_ensemble_exists:
   fixes \<rho> :: "complex Matrix.mat"
@@ -1769,11 +1848,13 @@ next
   with eq show "density_matrix n \<rho>" by simp
 qed
 
-(* --------------------------------------------------------------------------
-   \<section>15.1 (Pure states).  A density matrix of the form \<open>|\<psi>\<rangle>\<langle>\<psi>|\<close> is called
-   a \<^emph>\<open>pure state\<close>.  Any ensemble representing such a \<rho> uses only vectors
-   parallel to \<psi>.
-   -------------------------------------------------------------------------- *)
+subsection \<open>Pure states\<close>
+
+text \<open>If $\rho=\ketbra\psi\psi=\sum_ip_i\ketbra{\psi_i}{\psi_i}$ then for $\gamma\perp\psi$,
+$0=\braket\gamma{\rho\gamma}=\sum_ip_i|\braket{\psi_i}\gamma|^2$, so every $\psi_i$ with
+$p_i>0$ is parallel to $\psi$: $\psi_i=\beta_i\psi$ with $|\beta_i|=1$ and
+$\ketbra{\psi_i}{\psi_i}=\ketbra\psi\psi$.  These density matrices are the \emph{pure
+states}.\<close>
 
 definition pure_state_density :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "pure_state_density n \<rho> \<equiv>
@@ -1791,10 +1872,7 @@ lemma pure_density_is_pure_state_density:
   unfolding pure_state_density_def
   using assms pure_density_is_density_matrix by blast
 
-(* Rank-1 characterisation: a density matrix \<rho> is pure iff it is idempotent
-   (equivalently, iff it is a rank-one projection).  Not explicit in
-   Paulsen p.\ 44 but a standard companion fact whose proof uses the spectral
-   decomposition from Days 3\<endash>10. *)
+text \<open>A companion fact not in the notes: a density matrix is pure iff it is idempotent.\<close>
 
 theorem pure_density_iff_idempotent:
   fixes \<rho> :: "complex Matrix.mat"
@@ -2165,7 +2243,6 @@ next
     unfolding pure_state_density_def using dm rho_pure psi_qs by blast
 qed
 
-(* Helper: outer_sum n [\<psi>] acts on \<gamma> as multiplication by \<langle>\<psi>|\<gamma>\<rangle>. *)
 
 lemma outer_sum_singleton_mult_vec:
   assumes \<psi>_dim: "dim_vec \<psi> = n" and \<gamma>_dim: "dim_vec \<gamma> = n"
@@ -2194,8 +2271,6 @@ next
   finally show "(outer_sum n [\<psi>] *\<^sub>v \<gamma>) $ i = (\<langle>\<psi>|\<gamma>\<rangle> \<cdot>\<^sub>v \<psi>) $ i" .
 qed
 
-(* Helper: quadratic form of ensemble_density E at \<gamma>
-   is \<Sum>_E p \<cdot> |\<langle>\<psi>|\<gamma>\<rangle>|\<^sup>2 (complex form). *)
 
 lemma ensemble_density_quad_form:
   assumes E_dim: "\<forall>(p, \<psi>) \<in> set E. dim_vec \<psi> = n"
@@ -2314,7 +2389,6 @@ next
   finally show ?case using a by simp
 qed
 
-(* The main theorem. *)
 
 theorem pure_ensemble_parallel:
   fixes \<psi> :: "complex Matrix.vec"
@@ -2519,10 +2593,14 @@ proof -
   thus ?thesis by blast
 qed
 
-(* --------------------------------------------------------------------------
-   \<section>15.2 Composite Ensembles.  The pure density of a tensor is the tensor
-   of pure densities: \<open>|\<psi> \<otimes> \<phi>\<rangle>\<langle>\<psi> \<otimes> \<phi>| = |\<psi>\<rangle>\<langle>\<psi>| \<otimes> |\<phi>\<rangle>\<langle>\<phi>|\<close>.
-   -------------------------------------------------------------------------- *)
+subsection \<open>Composite ensembles\<close>
+
+text \<open>For ensembles $\{p_i,\psi_i\}$ in lab A and $\{q_l,\phi_l\}$ in lab B the composite is
+the ensemble $\{p_iq_l,\psi_i\otimes\phi_l\}$ with density matrix
+$\rho=\sum_{i,l}p_iq_l\ketbra{\psi_i}{\psi_i}\otimes\ketbra{\phi_l}{\phi_l}$, because
+$\ketbra{\psi\otimes\phi}{\psi\otimes\phi}=\ketbra\psi\psi\otimes\ketbra\phi\phi$ (checked on
+elementary tensors $h\otimes k$).  The identity is formalised below; that $\rho_1\otimes\rho_2$ is
+again a density matrix is \<open>density_matrix_tensor\<close> (Day 15).\<close>
 
 lemma tensor_pure_density:
   fixes \<psi> \<phi> :: "complex Matrix.vec"
@@ -2612,25 +2690,20 @@ proof -
   qed
 qed
 
-(* --------------------------------------------------------------------------
-   \<section>15.3 Partial Traces (motivation).
-   For a bipartite density matrix \<rho> \<in> L(H\<^sub>A \<otimes> H\<^sub>B), measurements acting only
-   on the A-side correspond to operators of the form \<open>M \<Otimes> 1\<^sub>m p\<close>.  One seeks
-   a linear "partial trace" map \<open>tr\<^sub>B : L(H\<^sub>A \<otimes> H\<^sub>B) \<rightarrow> L(H\<^sub>A)\<close> satisfying
-       \<open>Tr ((M \<Otimes> 1\<^sub>m p) * \<rho>) = Tr (M * tr\<^sub>B \<rho>)    \<forall>M\<close>.
-   Existence, uniqueness, and the construction of \<open>tr\<^sub>B\<close> are taken up in Day 15.
-   -------------------------------------------------------------------------- *)
+subsection \<open>Partial traces: motivation\<close>
+
+text \<open>For a density matrix $\rho\in L(\Hil_A\otimes\Hil_B)$ and measurements $\{M_\alpha\}$ in
+lab A, which act as $M_\alpha\otimes I$, $p_\alpha(\rho)=\Tr((M_\alpha^*M_\alpha\otimes I)\rho)$.
+The notes announce a density matrix $\rho_A\in L(\Hil_A)$ with
+$\Tr_{\Hil_A\otimes\Hil_B}((M^*M\otimes I)\rho)=\Tr_{\Hil_A}(M^*M\rho_A)$ for all $M$; it is
+constructed on Day 15.\<close>
 
 
-(* ============================================================================
-   DAY 15 — 30 / Sep / 11
-   Topic: Trace Formulas; Tensor Products of Operators; Partial Traces
-   ============================================================================ *)
+section \<open>Day 15 (30 September 2011): traces, tensor products of operators, partial traces\<close>
 
-(* --------------------------------------------------------------------------
-   Section 16.1.  Tr(A) equals the sum of quadratic forms in any orthonormal
-   basis.  (PDF p.46.)
-   -------------------------------------------------------------------------- *)
+text \<open>\begin{notesprop}
+For any orthonormal basis $\{u_1,\dots,u_n\}$ of $\C^n$, $\tr(A)=\sum_i\braket{u_i}{Au_i}$.
+\end{notesprop}\<close>
 
 theorem trace_via_onb:
   fixes A :: "complex Matrix.mat"
@@ -2696,9 +2769,9 @@ proof -
     by simp
 qed
 
-(* --------------------------------------------------------------------------
-   Tr(R tensor T) = Tr R times Tr T.  (PDF pp.46-47.)
-   -------------------------------------------------------------------------- *)
+text \<open>\begin{notesprop}
+$\tr(R\otimes T)=\tr(R)\tr(T)$.
+\end{notesprop}\<close>
 
 theorem trace_tensor:
   fixes R T :: "complex Matrix.mat"
@@ -2792,12 +2865,64 @@ proof -
   finally show ?thesis.
 qed
 
-(* --------------------------------------------------------------------------
-   Section 16.1 (cont'd).  The canonical map
-       Gamma : L(H_A) tensor L(H_B) -> L(H_A tensor H_B),  R tensor T |-> R tensor T
-   is a vector-space isomorphism in finite dimensions.  We record only the
-   dimension-counting half: both sides have dimension (m*p)^2.
-   -------------------------------------------------------------------------- *)
+subsection \<open>The isomorphism $L(\Hil_A)\otimes L(\Hil_B)\cong L(\Hil_A\otimes\Hil_B)$\<close>
+
+text \<open>\begin{notesprop}
+In finite dimensions the map $\Gamma:L(\Hil_A)\otimes L(\Hil_B)\to L(\Hil_A\otimes\Hil_B)$,
+$R\otimes T\mapsto R\otimes T$, is a vector-space isomorphism (both sides have dimension
+$m^2p^2$ and $\Gamma$ is injective).
+\end{notesprop}
+Formally, $L(\Hil_A)\otimes L(\Hil_B)$ is represented in coordinates as $M_{m^2,p^2}$ and
+$\Gamma$ as the reindexing $M_{m^2,p^2}\to M_{mp}$; it is an explicit linear isomorphism
+with explicit inverse.\<close>
+
+text \<open>Postulate 4$'$ (Day 16) and the composite ensembles of Day 14: tensor products of positive
+matrices are positive, and tensor products of density matrices are density matrices.\<close>
+
+lemma psd_tensor:
+  fixes A B :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat m m" and B: "B \<in> carrier_mat p p"
+      and pA: "psd A" and pB: "psd B"
+  shows "psd (A \<Otimes> B)"
+proof -
+  obtain vs :: "complex Matrix.vec list"
+    where vl: "length vs = m" and vd: "\<forall>v \<in> set vs. dim_vec v = m" and vA: "outer_sum m vs = A"
+    using psd_kraus_decomp[OF A pA] by blast
+  obtain ws :: "complex Matrix.vec list"
+    where wl: "length ws = p" and wd: "\<forall>w \<in> set ws. dim_vec w = p" and wB: "outer_sum p ws = B"
+    using psd_kraus_decomp[OF B pB] by blast
+  let ?V = "mat_of_cols m vs" and ?W = "mat_of_cols p ws"
+  have Vc: "?V \<in> carrier_mat m m" using mat_of_cols_carrier(1)[of m vs] vl by simp
+  have Wc: "?W \<in> carrier_mat p p" using mat_of_cols_carrier(1)[of p ws] wl by simp
+  have A_eq: "A = ?V * (?V\<^sup>\<dagger>)" using vA by (simp add: outer_sum_def)
+  have B_eq: "B = ?W * (?W\<^sup>\<dagger>)" using wB by (simp add: outer_sum_def)
+  have "A \<Otimes> B = (?V * (?V\<^sup>\<dagger>)) \<Otimes> (?W * (?W\<^sup>\<dagger>))" using A_eq B_eq by simp
+  also have "\<dots> = (?V \<Otimes> ?W) * ((?V\<^sup>\<dagger>) \<Otimes> (?W\<^sup>\<dagger>))"
+    using tensor_mat_mult[of ?V "?V\<^sup>\<dagger>" ?W "?W\<^sup>\<dagger>"] Vc Wc by simp
+  also have "(?V\<^sup>\<dagger>) \<Otimes> (?W\<^sup>\<dagger>) = (?V \<Otimes> ?W)\<^sup>\<dagger>" by (simp add: tensor_mat_adjoint)
+  finally have VW: "A \<Otimes> B = (?V \<Otimes> ?W) * ((?V \<Otimes> ?W)\<^sup>\<dagger>)" .
+  have VWc: "?V \<Otimes> ?W \<in> carrier_mat (m * p) (m * p)"
+    using Vc Wc unfolding carrier_mat_def by (simp add: dim_row_tensor_mat dim_col_tensor_mat)
+  have VWd: "(?V \<Otimes> ?W)\<^sup>\<dagger> \<in> carrier_mat (m * p) (m * p)"
+    using VWc unfolding carrier_mat_def by (simp add: dagger_def)
+  have "psd (((?V \<Otimes> ?W)\<^sup>\<dagger>)\<^sup>\<dagger> * ((?V \<Otimes> ?W)\<^sup>\<dagger>))" by (rule psd_MdagM[OF VWd])
+  thus ?thesis using VW by (simp add: dagger_of_dagger_is_id)
+qed
+
+lemma density_matrix_tensor:
+  fixes A B :: "complex Matrix.mat"
+  assumes dA: "density_matrix m A" and dB: "density_matrix p B"
+      and m: "0 < m" and p: "0 < p"
+  shows "density_matrix (m * p) (A \<Otimes> B)"
+proof -
+  have A: "A \<in> carrier_mat m m" and B: "B \<in> carrier_mat p p"
+    and pA: "psd A" and pB: "psd B" and tA: "Tr A = 1" and tB: "Tr B = 1"
+    using dA dB by (auto simp: density_matrix_def)
+  have car: "A \<Otimes> B \<in> carrier_mat (m * p) (m * p)" using A B by auto
+  show ?thesis
+    unfolding density_matrix_def
+    using car psd_tensor[OF A B pA pB] trace_tensor[OF A B m p] tA tB by simp
+qed
 
 proposition L_tensor_dim:
   fixes m p :: nat
@@ -3157,18 +3282,20 @@ corollary operator_tensor_space_isomorphic:
   using operator_tensor_space_isomorphism[OF assms]
   by (auto simp: is_isomorphic_to_def)
 
-(* --------------------------------------------------------------------------
-   Section 16.2.  Partial traces.  For X in L(H_A tensor H_B) we define
-       tr_B : L(H_A tensor H_B) -> L(H_A),     tr_B(R tensor T) = (Tr T) * R,
-       tr_A : L(H_A tensor H_B) -> L(H_B),     tr_A(R tensor T) = (Tr R) * T.
-   Concrete implementation: view X as an m*p by m*p matrix indexed by
-   pairs (i, k) with i < m, k < p and flat index i*p + k (so H_A is the
-   "block" factor and H_B is the "within-block" factor, matching Isabelle's
-   tensor convention (A tensor B)$$(r, c) = A$$(r div rB, c div cB) *
-   B$$(r mod rB, c mod cB)).  Then
-       (tr_B X)$$(i, j) = sum_k < p. X $$ (i*p + k, j*p + k),
-       (tr_A X)$$(i, j) = sum_k < m. X $$ (k*p + i, k*p + j).
-   -------------------------------------------------------------------------- *)
+subsection \<open>Partial traces\<close>
+
+text \<open>\begin{notesdef}
+Identify $L(\Hil_A\otimes\Hil_B)=L(\Hil_A)\otimes L(\Hil_B)$ and define
+$\tr_B(\sum_lR_l\otimes T_l)=\sum_l\tr(T_l)R_l\in L(\Hil_A)$ and
+$\tr_A(\sum_lR_l\otimes T_l)=\sum_l\tr(R_l)T_l\in L(\Hil_B)$; also written $X^A=\tr_B(X)$,
+$X^B=\tr_A(X)$.  Well defined by the universal property, since $(R,T)\mapsto\tr(T)R$ is
+bilinear.
+\end{notesdef}
+The formal definitions use the block formulas of Day 16: an $mp\times mp$ matrix is indexed by
+pairs $(i,k)$, $i<m$, $k<p$, with flat index $ip+k$ ($\Hil_A$ is the major factor, matching
+$(A\otimes B)_{(r,c)}=A_{(r\div p,\,c\div p)}B_{(r\bmod p,\,c\bmod p)}$), and
+$(\tr_BX)_{ij}=\sum_{k<p}X_{ip+k,\,jp+k}$, $(\tr_AX)_{ij}=\sum_{k<m}X_{kp+i,\,kp+j}$.  The
+defining property on elementary tensors is proved below.\<close>
 
 record 'lab qspace =
   qdim :: nat
@@ -3232,7 +3359,6 @@ lemma partial_trace_A_carrier [simp]:
   "partial_trace_A m p x \<in> carrier_mat p p"
   by auto
 
-(* Defining property on elementary tensors. *)
 
 lemma partial_trace_B_tensor:
   fixes R T :: "complex Matrix.mat"
@@ -3378,27 +3504,30 @@ next
   finally show "partial_trace_A m p (R \<Otimes> T) $$ (i, j) = (Tr R \<cdot>\<^sub>m T) $$ (i, j)" .
 qed
 
-(* --------------------------------------------------------------------------
-   Section 16.3.  Partial traces and measurements (motivation).
-   For a bipartite density matrix rho on H_A tensor H_B, an A-side
-   measurement system {M_alpha} acts as {M_alpha tensor I_{H_B}}, and
-       Tr ((M_alpha-dagger M_alpha) tensor I_{H_B} . rho)
-         = Tr ((M_alpha-dagger M_alpha) . tr_B(rho)).
-   Thus Lab A only sees rho^A = tr_B(rho).  Existence, uniqueness, and
-   density-matrix preservation of the partial trace, together with the
-   compatibility theorem above, are taken up in Day 16.
-   -------------------------------------------------------------------------- *)
+subsection \<open>Partial traces and measurements\<close>
+
+text \<open>Writing $\rho=\sum_lR_l\otimes T_l$,
+\[ p_\alpha(\rho)=\tr((M_\alpha^*M_\alpha\otimes I)\rho)=\sum_l\tr(M_\alpha^*M_\alpha R_l)\tr(T_l)
+   =\tr\bigl(M_\alpha^*M_\alpha\,\tr_B(\rho)\bigr)=p_\alpha(\rho^A): \]
+lab A only sees $\rho^A$, and symmetrically lab B only sees $\rho^B$.  Check: $\tr(\rho^A)=\tr\rho=1$,
+and $\rho\ge0$ implies $\rho^A\ge0$.\<close>
 
 
-(* ============================================================================
-   DAY 16 — 3 / Oct / 11
-   Topic: Partial Traces
-   ============================================================================ *)
+section \<open>Day 16 (3 October 2011): partial traces in block form; the postulates for density matrices\<close>
 
-(* The legacy file begins Day 16 by defining partial traces.  In this split
-   theory those definitions are already in Section 16.2 above, using the
-   flattened index i*p + k for H_A \<otimes> H_B.  We continue with the next
-   properties of that construction. *)
+text \<open>With matrix units $E_{ij}$ of $L(\Hil_B)$, every $X\in L(\Hil_A)\otimes L(\Hil_B)$ is uniquely
+$X=\sum_{i,j}X_{ij}\otimes E_{ij}$ with $X_{ij}\in L(\Hil_A)$, and
+$\tr_B(X)=\sum_iX_{ii}$, $\tr_A(X)=(\tr X_{ij})_{ij}$; symmetrically for
+$X=\sum E_{kl}\otimes Y_{kl}$.  Choosing a basis $f_1,\dots,f_p$ of $\Hil_B$ identifies
+$\Hil_A\otimes\Hil_B\cong\Hil_A^{(p)}=\Hil_A\oplus\cdots\oplus\Hil_A$ and
+$L(\Hil_A\otimes\Hil_B)\cong M_p(L(\Hil_A))$, block matrices $(X_{ij})$ acting by
+$(X_{ij})(h_j)_j=(\sum_jX_{ij}h_j)_i$; in block notation $\tr_B((X_{ij}))=X_{11}+\cdots+X_{pp}$ and
+$\tr_A((X_{ij}))=(\tr X_{ij})$.
+
+Reformulated postulates.  1$'$: the state of a system is a density matrix $\rho\in L(\Hil_A)$.
+2$'$: closed evolution is $\rho\mapsto U\rho U^*$.  3$'$: a measurement system $\{M_\alpha\}$ with
+$\sum M_\alpha^*M_\alpha=I$ yields outcome $\alpha$ with probability $\tr(M_\alpha^*M_\alpha\rho)$.
+4$'$: systems with densities $\rho_1,\rho_2$ compose to $\rho_1\otimes\rho_2$ on $\Hil_A\otimes\Hil_B$.\<close>
 
 lemma partial_trace_B_trace:
   fixes X :: "complex Matrix.mat"
@@ -3540,9 +3669,6 @@ proof -
   qed
 qed
 
-(* Partial trace of a density matrix is a density matrix.  The carrier, trace,
-   and Hermitian parts are now explicit; the remaining mathematical content is
-   positivity of the block trace. *)
 
 lemma partial_trace_B_is_density:
   fixes X :: "complex Matrix.mat"
@@ -3766,7 +3892,7 @@ proof -
     unfolding density_matrix_def using carr psd tr by simp
 qed
 
-(* Key identity: measurements in Lab A only see rho_A = tr_B(rho). *)
+text \<open>Key identity: measurements in lab A only see $\rho^A=\tr_B\rho$.\<close>
 
 theorem partial_trace_measurement:
   fixes meas :: "complex Matrix.mat" and \<rho> :: "complex Matrix.mat"
@@ -3998,10 +4124,42 @@ proof -
     using main_eq by (simp add: M_def)
 qed
 
-(* ============================================================================
-   DAY 17 — Measurement Maps
-   Topic: M(\<rho>) = \<Sum>_\<alpha> M_\<alpha> \<rho> M_\<alpha>\<^sup>\<dagger> sends density matrices to density matrices.
-   ============================================================================ *)
+section \<open>Day 17 (5 October 2011): measurement maps, quantum noise, completely positive maps\<close>
+
+subsection \<open>Measurement maps\<close>
+
+text \<open>Measuring $\psi$ with $\{M_\alpha\}$ and keeping the outcome as an ensemble gives the density
+matrix $\sum_\alpha p_\alpha(\psi)\ketbra{M_\alpha\psi/\norm{M_\alpha\psi}}{M_\alpha\psi/\norm{M_\alpha\psi}}
+=\sum_\alpha M_\alpha(\psi\psi^*)M_\alpha^*$; for an ensemble with density $\rho_1$ one obtains
+$M(\rho_1)=\sum_\alpha M_\alpha\rho_1M_\alpha^*$: a linear map on $L(\Hil_A)$ sending density
+matrices to density matrices.
+
+Classical noise flips a bit with some probability; probability vectors evolve by stochastic
+matrices (non-negative entries, columns summing to one; doubly stochastic if rows do too).
+Quantum noise: with an environment $\Hil_E$ in state $\ket\phi$, the system
+$\rho\otimes\ketbra\phi\phi$ evolves by a unitary $U=(U_{ij})$ on $\Hil_A\otimes\Hil_E$ and lab A sees
+\[ \tr_E\bigl(U(\rho\otimes\ketbra\phi\phi)U^*\bigr)=\sum_iW_i\rho W_i^*,\qquad
+   W_i=\sum_kU_{ik}\alpha_k,\qquad \sum_iW_i^*W_i=I. \]
+Measurement by an intruder and environmental noise are maps of the same form
+$\rho\mapsto\sum_\alpha X_\alpha\rho X_\alpha^*$ with $\sum X_\alpha^*X_\alpha=I$.  (The
+environment computation is not formalised; audit item D17-3.)
+
+Third way, axiomatic: a quantum event is a linear $\Phi:L(\Hil_A)\to L(\Hil_A)$.
+\begin{notesprop}
+$\Phi$ maps density matrices to density matrices iff $\Phi$ is positive ($\rho\ge0\Rightarrow\Phi(\rho)\ge0$)
+and trace preserving ($\tr\Phi(X)=\tr X$); then $\Phi\otimes I_{L(\Hil_B)}$ also maps density
+matrices to density matrices for every $\Hil_B$.
+\end{notesprop}
+\begin{notesdef}
+$\Phi$ is \emph{completely positive} if $\Phi\otimes I_{L(\Hil_B)}$ is positive for every
+finite-dimensional $\Hil_B$.
+\end{notesdef}
+\begin{notestheorem}[Choi--Kraus]
+$\Phi:L(\Hil_A)\to L(\Hil_A)$ is completely positive and trace preserving iff
+$\Phi(X)=\sum_iE_iXE_i^*$ for matrices $E_i$ with $\sum_iE_i^*E_i=I$.
+\end{notestheorem}
+The proposition is not formalised (audit item D17-4); complete positivity is defined below
+and the Choi--Kraus theorem is \<open>choi_kraus_cptp\<close> on Day 19.\<close>
 
 definition meas_map :: "complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "meas_map Ms \<rho> \<equiv>
@@ -4037,12 +4195,6 @@ next
   show ?case
     using term_c rec_c by simp
 qed
-
-lemma dagger_carrier:
-  assumes "M \<in> carrier_mat m n"
-  shows "(M\<^sup>\<dagger>) \<in> carrier_mat n m"
-  using assms
-  by (simp add: dagger_def) 
 
 lemma meas_map_psd:
   assumes Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
@@ -4216,9 +4368,15 @@ proof -
     unfolding density_matrix_def using map_carr map_psd map_tr by simp
 qed
 
-(* --------------------------------------------------------------------------
-   Quantum noise and completely positive maps
-   -------------------------------------------------------------------------- *)
+subsection \<open>Kraus maps, positive maps, complete positivity\<close>
+
+text \<open>A \emph{Kraus map} $\rho\mapsto\sum_iW_i\rho W_i^\dagger$ is \<open>kraus_map_dim d Ws\<close>; the list
+\<open>Ws\<close> is a list of \emph{Kraus operators} (\<open>kraus_operators n d Ws\<close>) when
+$\sum_iW_i^\dagger W_i=I_n$.  Positive, trace-preserving and unital maps are defined on the
+carrier $M_n$.  The amplification $\Phi^{(p)}=\Phi\otimes\mathrm{id}_p$ acts on block matrices by
+$(X_{ab})\mapsto(\Phi(X_{ab}))$ (\<open>amplification n d p \<Phi>\<close>), and $\Phi$ is $p$-positive when
+$\Phi^{(p)}$ is positive, completely positive when it is $p$-positive for all $p$.  The main result
+of the subsection: Kraus maps are completely positive.\<close>
 
 definition kraus_map_dim :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "kraus_map_dim d Ws \<rho> \<equiv>
@@ -5005,12 +5163,26 @@ proof -
   qed
 qed
 
-(* ============================================================================
-   DAY 18 — Theory of CP Maps; Span of M_n^+
-   ============================================================================ *)
+section \<open>Day 18 (7 October 2011): the theory of completely positive maps\<close>
 
-(* Any X \<in> M_n can be written as X = (P1 - P2) + i(P3 - P4) with each Pi \<ge> 0.
-   Hence span(M_n^+) = M_n. *)
+text \<open>\begin{notesprop}
+Every $X\in M_n$ is $X=(P_1-P_2)+i(P_3-P_4)$ with $P_i\ge0$: $\operatorname{span}(M_n^+)=M_n$.
+\end{notesprop}
+(Write $X=H+iK$ with $H,K$ Hermitian and split each spectral decomposition into its
+non-negative and negative eigenvalues.)
+\begin{notesdef}
+A linear $\Phi:M_n\to M_d$ is \emph{positive} if $P\ge0$ implies $\Phi(P)\ge0$; it is
+\emph{$p$-positive} if $\Phi^{(p)}:M_p(M_n)\to M_p(M_d)$, $(X_{ij})\mapsto(\Phi(X_{ij}))$, is
+positive, and \emph{completely positive} if it is $p$-positive for every $p$.
+\end{notesdef}
+\begin{notesprop}
+A linear $\Phi:M_n\to M_d$ maps density matrices to density matrices iff it is positive and
+trace preserving.
+\end{notesprop}
+Example (notes): the transpose $\Phi(A)=A^t$ on $M_2$ is positive but not $2$-positive, since
+$\Phi^{(2)}$ sends the positive matrix $(E_{ij})_{i,j}$ to a matrix of determinant $-1$.  The
+decomposition into positives is formalised below; the proposition and the example are not
+(audit items D18-2, D18-4).\<close>
 
 lemma diag_mat_of_real_hermitian:
   "((diag_mat_of_real D)\<^sup>\<dagger>) = diag_mat_of_real D"
@@ -5033,87 +5205,6 @@ next
   also have "\<dots> = diag_mat_of_real D $$ (i,j)"
     using iln jln by auto
   finally show "(diag_mat_of_real D)\<^sup>\<dagger> $$ (i,j) = diag_mat_of_real D $$ (i,j)".
-qed
-
-lemma psd_U_diag_Udag:
-  fixes U :: "complex Matrix.mat" and D :: "real list"
-  assumes Uc: "U \<in> carrier_mat n n"
-      and Dlen: "length D = n"
-      and Dnn: "\<And>i. i < n \<Longrightarrow> 0 \<le> D ! i"
-  shows "psd (U * diag_mat_of_real D * (U\<^sup>\<dagger>))"
-proof -
-  let ?D = "diag_mat_of_real D"
-  let ?P = "U * ?D * (U\<^sup>\<dagger>)"
-  have Udag_c: "(U\<^sup>\<dagger>) \<in> carrier_mat n n" using Uc by (rule dagger_carrier)
-  have D_c: "?D \<in> carrier_mat n n"
-    using Dlen diag_mat_of_real_carrier by metis
-  have UD_c: "U * ?D \<in> carrier_mat n n"
-    using Uc D_c by simp
-  have P_c: "?P \<in> carrier_mat n n"
-    using UD_c Udag_c by simp
-
-  have herm: "hermitian ?P"
-  proof -
-    have UD_dim: "dim_col U = dim_row ?D"
-      using Uc D_c by (metis carrier_matD)
-    have UDU_dim: "dim_col (U * ?D) = dim_row (U\<^sup>\<dagger>)"
-      using UD_c Udag_c by (metis carrier_matD)
-    have prep1: "(U * ?D)\<^sup>\<dagger> = ((?D)\<^sup>\<dagger>) * (U\<^sup>\<dagger>)"
-      using UD_dim by (rule dagger_of_prod)
-    have prep2: "((U * ?D) * (U\<^sup>\<dagger>))\<^sup>\<dagger> = ((U\<^sup>\<dagger>)\<^sup>\<dagger>) * ((U * ?D)\<^sup>\<dagger>)"
-      using UDU_dim by (rule dagger_of_prod)
-    have prep3: "((U\<^sup>\<dagger>)\<^sup>\<dagger>) = U" using Uc by (subst dagger_of_dagger_is_id, simp)
-    have prep4: "(?D)\<^sup>\<dagger> = ?D" using diag_mat_of_real_hermitian.
-    have "(?P)\<^sup>\<dagger> = ((U\<^sup>\<dagger>)\<^sup>\<dagger>) * ((U * ?D)\<^sup>\<dagger>)" using prep2 by simp
-    also have "\<dots> = U * ((U * ?D)\<^sup>\<dagger>)" using prep3 by simp
-    also have "\<dots> = U * ((?D)\<^sup>\<dagger> * (U\<^sup>\<dagger>))" using prep1 by simp
-    also have "\<dots> = U * (?D * (U\<^sup>\<dagger>))" using prep4 by simp
-    also have "\<dots> = U * ?D * (U\<^sup>\<dagger>)"
-      using Uc D_c Udag_c by (metis assoc_mult_mat)
-    finally show ?thesis by (simp add: hermitian_def)
-  qed
-
-  have nn: "\<forall>x :: complex Matrix.vec.
-              dim_vec x = dim_row ?P \<longrightarrow> 0 \<le> Re \<langle>x | ?P *\<^sub>v x\<rangle>"
-  proof (intro allI impI)
-    fix x :: "complex Matrix.vec"
-    assume "dim_vec x = dim_row ?P"
-    hence xdim: "dim_vec x = n" using P_c by auto
-    have xcar: "x \<in> carrier_vec n" using xdim by auto
-    let ?y = "(U\<^sup>\<dagger>) *\<^sub>v x"
-    have ydim: "dim_vec ?y = n"
-      using Udag_c by (metis carrier_matD(1) dim_mult_mat_vec)
-    have ycar: "?y \<in> carrier_vec n" using ydim carrier_vec_dim_vec by blast 
-
-    have step1: "?P *\<^sub>v x = U *\<^sub>v (?D *\<^sub>v ?y)"
-    proof -
-      have "?P *\<^sub>v x = (U * (?D * (U\<^sup>\<dagger>))) *\<^sub>v x"
-        using Uc D_c Udag_c by (metis assoc_mult_mat)
-      also have "\<dots> = U *\<^sub>v ((?D * (U\<^sup>\<dagger>)) *\<^sub>v x)"
-        using Uc D_c Udag_c xcar
-        by (intro assoc_mult_mat_vec) auto
-      also have "\<dots> = U *\<^sub>v (?D *\<^sub>v ((U\<^sup>\<dagger>) *\<^sub>v x))"
-        using D_c Udag_c xcar by (intro arg_cong[where f = "(*\<^sub>v) U"] assoc_mult_mat_vec) auto
-      finally show ?thesis .
-    qed
-
-    have step2: "\<langle>x | U *\<^sub>v (?D *\<^sub>v ?y)\<rangle> = \<langle>(U\<^sup>\<dagger>) *\<^sub>v x | ?D *\<^sub>v ?y\<rangle>"
-      using Uc xdim ydim
-      using Dlen inner_prod_adjoint_swap by auto
-
-
-    have qf_eq: "\<langle>x | ?P *\<^sub>v x\<rangle> = \<langle>?y | ?D *\<^sub>v ?y\<rangle>"
-      using step1 step2 by simp
-
-    have D_nn_idx: "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
-      using Dnn Dlen by auto
-    have "0 \<le> Re \<langle>?y | ?D *\<^sub>v ?y\<rangle>"
-      using diag_mat_of_real_quad_Re_nonneg[OF _ D_nn_idx] ydim Dlen by simp
-    thus "0 \<le> Re \<langle>x | ?P *\<^sub>v x\<rangle>" using qf_eq by simp
-  qed
-
-  show ?thesis
-    unfolding psd_def using herm nn P_c by simp
 qed
 
 lemma hermitian_decomp_psd:
@@ -5250,9 +5341,6 @@ proof -
   show ?thesis using c1 c2 p1 p2 eq by blast
 qed
 
-(* Proof: Let \<lambda>1,...,\<lambda>n be eigenvalues with ONB u1,...,un.
-   P1 = \<Sum>_{\<lambda>i\<ge>0} \<lambda>i |ui\<rangle>\<langle>ui|, P2 = \<Sum>_{\<lambda>i<0} (-\<lambda>i) |ui\<rangle>\<langle>ui|.
-   Both \<ge> 0 and H = P1 - P2. *)
 
 lemma matrix_decomp_psd:
   fixes X :: "complex Matrix.mat"
@@ -5438,10 +5526,26 @@ proof -
     using list_cond X_decomp by blast
 qed
 
-(* ============================================================================
-   DAY 19 — 10 / Oct / 11
-   Topic: Choi's Theorem
-   ============================================================================ *)
+section \<open>Day 19 (10 October 2011): Choi's theorem\<close>
+
+text \<open>\begin{notestheorem}[Choi, 1975]
+For linear $\Phi:M_n\to M_d$ the following are equivalent: (1) $\Phi$ is completely positive;
+(2) $\Phi$ is $n$-positive; (3) $P_\Phi=(\Phi(E_{ij}))_{i,j}\ge0$ in $M_n(M_d)$; (4) there are
+$d\times n$ matrices $B_1,\dots,B_K$ with $\Phi(X)=\sum_kB_kXB_k^*$.
+\end{notestheorem}
+Notes: (1) $\sum_kB_kXB_k^*$ is a \emph{Choi--Kraus representation}; (2) $P_\Phi$ is the
+\emph{Choi--Jamio{\l}kowski matrix}; (3) $CP(M_n,M_d)\leftrightarrow M_n(M_d)^+$ via
+$\Phi\leftrightarrow P_\Phi$; (4) $\Phi$ is trace preserving iff $\tr(\Phi(E_{ij}))=\delta_{ij}$;
+(5) $\Phi$ is unital iff $\sum_i\Phi(E_{ii})=I_d$.
+
+Formally $P_\Phi$ is \<open>choi_matrix n d \<Phi>\<close> (an $nd\times nd$ matrix built from the
+blocks $\Phi(E_{ij})$); \<open>choi_theorem\<close> is (1)$\Leftrightarrow$(3),
+\<open>kraus_rep_of_psd_choi\<close> is (3)$\Rightarrow$(4), and \<open>kraus_is_cp\<close> is (4)$\Rightarrow$(1).
+The step (2)$\Rightarrow$(3) is the observation that $P_\Phi=\Phi^{(n)}((E_{ij}))$ with
+$(E_{ij})\ge0$ (\<open>choi_matrix_as_amplification\<close>).  Linearity of $\Phi$ is assumed on the
+carrier $M_n$ (additivity and homogeneity hypotheses).  The trace-preserving case is
+\<open>choi_kraus_cptp\<close>; notes (4) and (5) in Choi-matrix form are not stated separately
+(audit item D19-3).\<close>
 
 definition choi_matrix :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
   "choi_matrix n d \<Phi> \<equiv>
@@ -5623,9 +5727,12 @@ proof -
     using choi_matrix_as_amplification[OF npos dpos, of \<Phi>] by simp
 qed
 
-(* ============================================================================
-   Helpers for the reverse direction of Choi's theorem.
-   ============================================================================ *)
+subsection \<open>From a positive Choi matrix to a Kraus representation\<close>
+
+text \<open>The notes' proof of (3)$\Rightarrow$(4): write $P_\Phi=\sum_kv_kv_k^*$ with
+$v_k\in\C^{nd}$, cut each $v_k$ into $n$ blocks $w^k_1,\dots,w^k_n\in\C^d$, and let
+$B_k=[w^k_1|\cdots|w^k_n]$; then $B_kE_{ij}B_k^*=w^k_i(w^k_j)^*$ and
+$\Phi(X)=\sum_{ij}x_{ij}\Phi(E_{ij})=\sum_kB_kXB_k^*$ by linearity.\<close>
 
 text \<open>
   Complete positivity from a Kraus list without the trace-preservation
@@ -6179,41 +6286,6 @@ next
   show "kraus_map_dim d (W # Ws) \<rho> $$ (i, j)
       = sum_list (map (\<lambda>W. (W * \<rho> * (W\<^sup>\<dagger>)) $$ (i, j)) (W # Ws))"
     using IH WrW_c rec_c i_lt j_lt by simp
-qed
-
-text \<open>Entry-wise formula for @{const outer_sum} without orthonormality.\<close>
-
-lemma outer_sum_entry_sum_list:
-  assumes vs_dim: "\<forall>v \<in> set vs. dim_vec v = n"
-      and i_lt: "i < n" and j_lt: "j < n"
-  shows "outer_sum n vs $$ (i, j) =
-         sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) vs)"
-proof -
-  let ?V = "mat_of_cols n vs"
-  let ?k = "length vs"
-  have V_c: "?V \<in> carrier_mat n ?k"
-    using vs_dim by (simp add: mat_of_cols_def)
-  have Vdag_c: "?V\<^sup>\<dagger> \<in> carrier_mat ?k n"
-    using V_c by (rule dagger_carrier)
-  have "outer_sum n vs $$ (i, j) = (?V * (?V\<^sup>\<dagger>)) $$ (i, j)"
-    by (simp add: outer_sum_def)
-  also have "\<dots> = (\<Sum>l<?k. ?V $$ (i, l) * (?V\<^sup>\<dagger>) $$ (l, j))"
-    using i_lt j_lt V_c Vdag_c by simp
-  also have "\<dots> = (\<Sum>l<?k. (vs ! l) $ i * cnj ((vs ! l) $ j))"
-  proof (intro sum.cong refl)
-    fix l assume "l \<in> {..<?k}"
-    hence l_lt: "l < ?k" by simp
-    have vl_dim: "dim_vec (vs ! l) = n" using vs_dim l_lt by auto
-    have V_idx: "?V $$ (i, l) = (vs ! l) $ i"
-      using i_lt l_lt by (simp add: mat_of_cols_def)
-    have Vdag_idx: "(?V\<^sup>\<dagger>) $$ (l, j) = cnj ((vs ! l) $ j)"
-      using j_lt l_lt vl_dim by (simp add: dagger_def mat_of_cols_def)
-    show "?V $$ (i, l) * (?V\<^sup>\<dagger>) $$ (l, j) = (vs ! l) $ i * cnj ((vs ! l) $ j)"
-      using V_idx Vdag_idx by simp
-  qed
-  also have "\<dots> = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) vs)"
-    by (simp add: sum_list_sum_nth atLeast0LessThan)
-  finally show ?thesis.
 qed
 
 text \<open>Kraus representation extracted from a psd Choi matrix: reshape each
@@ -6971,19 +7043,35 @@ next
 qed
 
 
-(* ============================================================================
-   DAY 20 \<mdash> 12 / Oct / 11
-   Topic: d = 1 case of Choi; adjoint of a CP map;
-          UCP / CPTP duality; Choi rank.
-   ============================================================================ *)
+section \<open>Day 20 (12 October 2011): positive functionals, adjoints, Choi rank\<close>
 
-(* --------------------------------------------------------------------------
-   1. Adjoint of a Kraus-represented map.
+text \<open>\begin{notesprop}
+For linear $\phi:M_n\to\C$: $\phi$ positive $\Leftrightarrow$ $\phi$ completely positive
+$\Leftrightarrow$ $(\phi(E_{ij}))\in M_n^+$.
+\end{notesprop}
+\begin{notesprop}
+Let $\Phi:M_n\to M_d$ with Hilbert--Schmidt adjoint $\Phi^*:M_d\to M_n$ ($\langle Y|X\rangle=\tr(Y^*X)$).
+(1) If $\Phi(X)=\sum_iA_iXA_i^*$ then $\Phi^*(Y)=\sum_iA_i^*YA_i$.
+(2) $\Phi$ is completely positive iff $\Phi^*$ is.
+(3) $\Phi$ is unital and completely positive iff $\Phi^*$ is completely positive and trace
+preserving.
+\end{notesprop}
+\begin{notesdef}
+The \emph{Choi rank} of a completely positive $\Phi$ is
+$\crk(\Phi)=\min\{L:\Phi(X)=\sum_{l=1}^LB_lXB_l^*\}$.
+\end{notesdef}
+\begin{notestheorem}[Choi]
+$\crk(\Phi)=\rank(P_\Phi)$.
+\end{notestheorem}
+The functional proposition, the adjoint proposition (for Kraus maps) and the definition of
+the Choi rank are formalised below; the rank theorem and its lemma $\rank((E_{ij}))=1$ are not
+(audit item D20-4), only the bound $\crk(\Phi)\le nd$.\<close>
 
-   If \<Phi>(X) = \<Sum>\<^sub>i A\<^sub>i X A\<^sub>i\<^sup>\<dagger> with A\<^sub>i \<in> M\<^sub>d\<^sub>,\<^sub>n, the Hilbert-Schmidt
-   adjoint \<Phi>\<^sup>* : M\<^sub>d \<rightarrow> M\<^sub>n is \<Phi>\<^sup>*(Y) = \<Sum>\<^sub>i A\<^sub>i\<^sup>\<dagger> Y A\<^sub>i.
-   The output dimension \<open>n\<close> is kept explicit (needed when \<open>As\<close> is empty).
-   -------------------------------------------------------------------------- *)
+subsection \<open>The adjoint of a Kraus map\<close>
+
+text \<open>For $\Phi(X)=\sum_iA_iXA_i^\dagger$ with $A_i\in M_{d,n}$, the adjoint is
+$\Phi^*(Y)=\sum_iA_i^\dagger YA_i$ (\<open>kraus_adjoint_dim n As\<close>; the output dimension $n$ is
+kept explicit for the empty list).\<close>
 
 definition kraus_adjoint_dim ::
   "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -7025,7 +7113,6 @@ next
     using term_c rec_c by simp
 qed
 
-(* Adjoint is itself a Kraus map whose operators are the daggers. *)
 
 lemma kraus_adjoint_dim_as_kraus_map_dim:
   fixes Y :: "complex Matrix.mat"
@@ -7052,15 +7139,8 @@ next
     using dd_eq IH by simp
 qed
 
-(* --------------------------------------------------------------------------
-   2. Hilbert-Schmidt adjoint identity.
-
-      \<langle>\<langle> Y | kraus_map_dim d As X \<rangle>\<rangle>
-        = \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>.
-
-   Induction on \<open>As\<close>; each summand reduces via trace cyclicity and
-   \<open>((A\<^sup>\<dagger>) Y A)\<^sup>\<dagger> = (A\<^sup>\<dagger>) Y\<^sup>\<dagger> A\<close> (applied in the Tr-form of \<langle>\<langle>\<cdot>|\<cdot>\<rangle>\<rangle>).
-   -------------------------------------------------------------------------- *)
+text \<open>The adjoint identity $\langle Y|\Phi(X)\rangle=\langle\Phi^*(Y)|X\rangle$, by induction on
+the Kraus list and cyclicity of the trace.\<close>
 
 lemma hs_inner_prod_left_add:
   assumes d1r: "dim_row Y1 = dim_row X" and d1c: "dim_col Y1 = dim_col X"
@@ -7116,10 +7196,6 @@ proof -
   finally show ?thesis.
 qed
 
-(* Single-Kraus-term identity:
-     \<langle>\<langle> Y | A X A\<^sup>\<dagger> \<rangle>\<rangle> = \<langle>\<langle> A\<^sup>\<dagger> Y A | X \<rangle>\<rangle>
-   for A \<in> M_{d,n}, X \<in> M_n, Y \<in> M_d.  Proved via
-   hs_inner_prod_as_trace + Tr_cyclic + (A\<^sup>\<dagger> Y A)\<^sup>\<dagger> = A\<^sup>\<dagger> Y\<^sup>\<dagger> A. *)
 
 lemma hs_inner_prod_kraus_term:
   fixes A X Y :: "complex Matrix.mat"
@@ -7254,13 +7330,11 @@ next
   finally show ?case.
 qed
 
-(* --------------------------------------------------------------------------
-   3. CP \<leftrightarrow> CP of the adjoint; UCP \<leftrightarrow> CPTP of the adjoint.
+subsection \<open>Complete positivity and the UCP/CPTP duality\<close>
 
-   When \<Phi> has a Kraus representation (A\<^sub>i), \<Phi>\<^sup>* is the Kraus map with
-   operators (A\<^sub>i\<^sup>\<dagger>) \<mdash> cf. \<open>kraus_adjoint_dim_as_kraus_map_dim\<close>.
-   Hence \<open>kraus_is_cp\<close> applies in both directions.
-   -------------------------------------------------------------------------- *)
+text \<open>$\Phi^*$ is the Kraus map of the adjoint operators, hence completely positive, and
+$\Phi$ is unital iff $\Phi^*$ is trace preserving: $\sum_iA_iA_i^*=I$ in both cases, using that
+$\tr(BY)=\tr(Y)$ for all $Y$ forces $B=I$.\<close>
 
 theorem adjoint_cp_from_kraus:
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
@@ -7338,8 +7412,6 @@ proof -
   qed
 qed
 
-(* Helper: kraus_map_dim d As (1\<^sub>m n) = \<Sum> A A\<^sup>\<dagger>, which is
-   sum_wdag_w d (map dagger As) since (A\<^sup>\<dagger>)\<^sup>\<dagger> A\<^sup>\<dagger> = A A\<^sup>\<dagger>. *)
 
 lemma kraus_map_dim_one_eq_sum_wdag_w_dagger:
   fixes As :: "complex Matrix.mat list"
@@ -7469,18 +7541,11 @@ proof -
   show ?thesis using unital_iff tp_iff by simp
 qed
 
-(* --------------------------------------------------------------------------
-   4. d = 1 case of Choi's theorem: positive \<Leftrightarrow> CP for \<phi> : M\<^sub>n \<rightarrow> \<complex>.
+subsection \<open>Positive functionals are completely positive\<close>
 
-   The direction CP \<Leftrightarrow> P\<^sub>\<phi> \<ge> 0 is already Choi's theorem with d = 1.
-   Only "positive \<Rightarrow> CP" is new content.  Given P = (P\<^sub>i\<^sub>j) \<in> M\<^sub>r(M\<^sub>n)\<^sup>+
-   and v = (\<alpha>\<^sub>i), form Y with \<alpha>\<^sub>i\<cdot>I as the i-th block row.  Then
-   Y\<^sup>* P Y = \<Sum> cnj(\<alpha>\<^sub>i)\<alpha>\<^sub>j P\<^sub>i\<^sub>j \<ge> 0, so \<phi> positive gives
-   \<langle>v | \<phi>\<^sup>(\<^sup>r\<^sup>)(P) v\<rangle> = \<phi>(Y\<^sup>* P Y) \<ge> 0.
-   -------------------------------------------------------------------------- *)
-
-(* Linearity-over-double-sum: a linear map evaluated at a matrix M
-   produces an entry-wise double sum over the matrix-unit basis. *)
+text \<open>The case $d=1$ of Choi's theorem: for $P=(P_{ij})\in M_r(M_n)^+$ and $v=(\alpha_i)\in\C^r$,
+$\braket v{(\phi(P_{ij}))v}=\phi(\sum_{ij}\overline{\alpha_i}\alpha_jP_{ij})=\phi(Y^*PY)\ge0$ with
+$Y$ the block column $(\alpha_iI)_i$.\<close>
 
 lemma phi_entry_double_sum:
   fixes \<phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -7730,13 +7795,12 @@ proof -
     using choi_theorem[OF linear smult range npos one_pos] psd_choi by simp
 qed
 
-(* --------------------------------------------------------------------------
-   5. Choi rank.
+subsection \<open>Choi rank\<close>
 
-   \<open>choi_rank n d \<Phi>\<close> := the smallest \<open>length As\<close> over all Kraus
-   representations of \<Phi>.  Choi's theorem gives
-   \<open>choi_rank n d \<Phi> = rank (P\<^sub>\<Phi>)\<close>, which we state but defer.
-   -------------------------------------------------------------------------- *)
+text \<open>\<open>choi_rank n d \<Phi>\<close> is the least length of a Kraus list representing $\Phi$ on the
+carrier.  The theorem $\crk(\Phi)=\rank(P_\Phi)$ is not formalised; the bound $\crk(\Phi)\le nd$
+follows from the Kraus-rank bound of Day 21.\<close>
+
 
 definition choi_rank ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> nat" where
@@ -7745,25 +7809,37 @@ definition choi_rank ::
              (\<forall>A \<in> set As. A \<in> carrier_mat d n)
              \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X) }"
 
-(* Choi-rank = rank(P_\<Phi>) is deferred; it relies on a matrix-rank predicate
-   for complex matrices that has not been set up in this development. *)
+section \<open>Day 21 (14 October 2011): the Kraus rank bound; unitary freedom of representations\<close>
 
-
-(* ============================================================================
-   DAY 21 \<mdash> 14 / Oct / 11
-   Topic: Kraus Rank Bound; Uniqueness of Minimal Kraus Representation
-   ============================================================================ *)
-
-(* --------------------------------------------------------------------------
-   1. Kraus rank bound.
-
-   For any CP map \<Phi>: M\<^sub>n \<rightarrow> M\<^sub>d, there is a Kraus representation with at
-   most \<open>n*d\<close> operators.  Indeed, \<open>P\<^sub>\<Phi> \<in> M\<^sub>n\<^sub>d\<close> is psd by
-   \<open>choi_theorem\<close>, hence factors as \<open>\<Sum>\<^sub>k v\<^sub>k v\<^sub>k\<^sup>\<dagger>\<close> with at most \<open>n*d\<close>
-   vectors (one per coordinate of an eigenbasis of P\<^sub>\<Phi>).  The
-   length-aware variants of \<open>psd_kraus_decomp\<close> and
-   \<open>kraus_rep_of_psd_choi\<close> directly give the bound.
-   -------------------------------------------------------------------------- *)
+text \<open>\begin{notescor}
+A completely positive $\Phi:M_n\to M_d$ has a Kraus representation $\Phi(X)=\sum_{l=1}^KA_lXA_l^*$
+with $K\le nd$.
+\end{notescor}
+The notes then record a conjecture (every CP map is an average of $n$ UCP maps of Choi rank
+$\le d$) and develop the uniqueness theory:
+\begin{noteslemma}
+If $T:\C^r\to\C^m$ is one-to-one then $T^*$ is onto.
+\end{noteslemma}
+\begin{notesprop}
+If $v_1,\dots,v_r\in\C^k$ are linearly independent then so are $\{v_iv_j^*\}_{i,j}\subseteq M_k$.
+\end{notesprop}
+\begin{noteslemma}
+If $0\le ww^*\le P$ then $w\in\range(P)$; hence for $P=\sum_lw_lw_l^*\ge0$,
+$\range(P)=\operatorname{span}\{w_l\}$.
+\end{noteslemma}
+\begin{notestheorem}
+If $P=\sum_{j=1}^rv_jv_j^*=\sum_{l=1}^mw_lw_l^*$ with $\rank P=r$, there is $U=(\alpha_{ij})_{m\times r}$
+with $w_i=\sum_j\alpha_{ij}v_j$ and $U^*U=I_r$.
+\end{notestheorem}
+\begin{notestheorem}[Choi 2]
+If $\Phi$ is completely positive with $\crk(\Phi)=r$ and
+$\Phi(X)=\sum_{j=1}^rV_jXV_j^*=\sum_{l=1}^mW_lXW_l^*$, then $W_i=\sum_j\alpha_{ij}V_j$ for a unique
+$U=(\alpha_{ij})$ with $U^*U=I_r$.
+\end{notestheorem}
+Only the Kraus rank bound is formalised here.  The kernel form of the lemma
+($\ker A\subseteq\ker B$ when $0\le B\le A$) is proved in theory Day23 and used there to
+prove Choi's Theorem 3 without the unitary-freedom theorem; the remaining statements are
+audit items D21-3, D21-5, D21-6.\<close>
 
 corollary kraus_rank_bound:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -7792,15 +7868,7 @@ proof -
 qed
 
 
-(* --------------------------------------------------------------------------
-   2. Trivial preservation: an injective linear map T : \<complex>\<^sup>r \<rightarrow> \<complex>\<^sup>m
-      gives an onto adjoint T\<^sup>\<dagger> : \<complex>\<^sup>m \<rightarrow> \<complex>\<^sup>r.
-
-   The Isabelle formalisation here is a thin wrapper: for any vector \<open>w\<close>
-   of dimension \<open>m\<close>, the value \<open>T\<^sup>\<dagger> w\<close> exists and lies in \<complex>\<^sup>r.
-   The deeper "onto" property (every \<open>h \<in> \<complex>\<^sup>r\<close> is hit) requires a
-   rank-nullity argument and is deferred.
-   -------------------------------------------------------------------------- *)
+text \<open>Dimension bookkeeping for $T^\dagger$ (the onto statement is not formalised).\<close>
 
 lemma adjoint_image_in_dom:
   fixes T :: "complex Matrix.mat"
@@ -7810,14 +7878,7 @@ lemma adjoint_image_in_dom:
   using sq by auto
 
 
-(* --------------------------------------------------------------------------
-   3. Choi rank: bounded by \<open>n*d\<close>.
-
-   The set whose infimum defines \<open>choi_rank\<close> is non-empty (Day 21 above)
-   and consists of natural numbers, so the Inf is realised and bounded by
-   \<open>n*d\<close>.  This is the abstract content of the rank inequality
-   cr(\<Phi>) \<le> n d.
-   -------------------------------------------------------------------------- *)
+text \<open>$\crk(\Phi)\le nd$: the defining set of the Choi rank is non-empty.\<close>
 
 corollary choi_rank_le:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -7850,18 +7911,42 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 22 \<mdash> 17 / Oct / 11
-   Topic: Linear Independence of Kraus Operators; Convex Sets; Krein-Milman
-   ============================================================================ *)
+section \<open>Day 22 (17 October 2011): minimal Kraus representations, convex sets, UCP and CPTP\<close>
 
-(* --------------------------------------------------------------------------
-   1. Convex sets and extreme points (abstract).
+text \<open>\begin{notesprop}
+If $\Phi$ is completely positive, $\crk(\Phi)=r$ and $\Phi(X)=\sum_{i=1}^rV_i^*XV_i$, then
+$V_1,\dots,V_r$ are linearly independent.
+\end{notesprop}
+(Not formalised: on Day 23 linear independence of the Kraus operators is a hypothesis.)
+\begin{notesdef}
+$C\subseteq V$ is \emph{convex} if $tv_1+(1-t)v_2\in C$ for $v_1,v_2\in C$, $0\le t\le1$;
+$v\in C$ is \emph{extreme} if $v=\tfrac12(v_1+v_2)$ with $v_1,v_2\in C$ forces $v=v_1=v_2$.
+The \emph{convex hull} of $E$ is the set of convex combinations of points of $E$; a map
+between convex sets is \emph{affine} if it preserves convex combinations.
+\end{notesdef}
+\begin{notestheorem}[Krein--Milman]
+A compact convex subset of a finite-dimensional real vector space is the convex hull of its
+extreme points.
+\end{notestheorem}
+Examples: $UCP(M_n,M_d)$, the unital completely positive maps, is convex ($P_{t\Phi_1+(1-t)\Phi_2}
+=tP_{\Phi_1}+(1-t)P_{\Phi_2}\ge0$) and compact (closed; bounded because $0\le\Phi(E_{ii})\le I$ gives
+$|r_{ij}|\le1$ for the entries of $P_\Phi$); $CPTP(M_d,M_n)$ is convex and compact, being the
+image of $UCP(M_n,M_d)$ under the affine bijection $\Gamma(\Phi)=\Phi^*$.
+\begin{notestheorem}[Choi 3]
+If $\Phi:M_n\to M_d$ is unital and completely positive, $\Phi(X)=\sum_{i=1}^rV_i^*XV_i$ with
+$r=\crk(\Phi)$, then $\Phi$ is an extreme point of $UCP(M_n,M_d)$ iff
+$\{V_i^*V_j:1\le i,j\le r\}$ is linearly independent in $M_d$.
+\end{notestheorem}
+\begin{notescor}
+If $\Phi$ is extreme then $\crk(\Phi)\le d$.  If $\Phi:M_d\to M_n$ is CPTP with
+$\Phi(X)=\sum_{i=1}^rV_iXV_i^*$, $r=\crk(\Phi)$, then $\Phi$ is extreme in $CPTP(M_d,M_n)$ iff
+$\{V_i^*V_j\}$ is linearly independent.
+\end{notescor}
+Convexity of UCP and CPTP is proved below; compactness, the affine bijection and the
+corollary $\crk(\Phi)\le d$ are not formalised; Choi's Theorem 3 is proved in theory Day23 in
+its CPTP form.  Krein--Milman is available in HOL-Analysis (\<open>Krein_Milman_Minkowski\<close>).\<close>
 
-   Used as scaffolding for the next few days.  The definitions are
-   parametric in subsets of \<open>complex Matrix.mat\<close>, viewing them as
-   subsets of a real vector space via complex matrix arithmetic.
-   -------------------------------------------------------------------------- *)
+subsection \<open>Convex sets and extreme points\<close>
 
 definition convex_set_mat :: "complex Matrix.mat set \<Rightarrow> bool" where
   "convex_set_mat C \<equiv>
@@ -7886,9 +7971,7 @@ definition affine_map_mat ::
        + (1 - complex_of_real t) \<cdot>\<^sub>m tmap B"
 
 
-(* --------------------------------------------------------------------------
-   2. UCP and CPTP function-spaces.
-   -------------------------------------------------------------------------- *)
+subsection \<open>The convex sets UCP and CPTP\<close>
 
 definition UCP ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) set" where
@@ -7899,10 +7982,6 @@ definition CPTP ::
   "CPTP n d \<equiv> {\<Phi>. completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>}"
 
 
-(* --------------------------------------------------------------------------
-   3. Amplification commutes with scalar multiplication
-   (companion to \<open>amplification_add\<close>).
-   -------------------------------------------------------------------------- *)
 
 lemma amplification_smult:
   assumes dpos: "0 < d"
@@ -7934,20 +8013,8 @@ next
 qed
 
 
-(* --------------------------------------------------------------------------
-   4. UCP is convex: \<open>t \<Phi>\<^sub>1 + (1-t) \<Phi>\<^sub>2 \<in> UCP\<close> for \<open>t \<in> [0,1]\<close>.
-
-   The proof has two halves: CP closed under non-negative linear
-   combinations (via \<open>amplification_add\<close>, \<open>amplification_smult\<close>,
-   \<open>psd_smult_nonneg\<close>, \<open>psd_add_psd\<close>) and unitality preserved
-   (since \<open>t \<sqdot> I + (1-t) \<sqdot> I = I\<close>).
-
-   We strengthen the hypotheses slightly with explicit range conditions
-   on each \<open>\<Phi>\<^sub>i\<close>; these are implicit in the standard reading of
-   \<open>completely_positive n d\<close> (output in M_d), but \<open>completely_positive\<close>
-   itself does not constrain the output type, so we make the range a
-   formal assumption.
-   -------------------------------------------------------------------------- *)
+text \<open>UCP is convex.  The range hypotheses are explicit because \<open>completely_positive\<close> does
+not constrain the values of $\Phi_i$ off the carrier.\<close>
 
 lemma UCP_convex:
   fixes t :: real
@@ -8087,13 +8154,7 @@ proof -
 qed
 
 
-(* --------------------------------------------------------------------------
-   5. CPTP is convex.
-
-   The CP half re-uses the argument from \<open>UCP_convex\<close>; trace-preservation
-   reduces to \<open>Tr (\<Psi> X) = t \<sqdot> Tr X + (1-t) \<sqdot> Tr X = Tr X\<close> via
-   \<open>Tr_add\<close> and \<open>Tr_smult\<close>.
-   -------------------------------------------------------------------------- *)
+text \<open>CPTP is convex.\<close>
 
 lemma CPTP_convex:
   fixes t :: real
@@ -8241,21 +8302,26 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 29 \<mdash> 7 / Nov / 11
-   Topic: Classical Error Correction; Hamming Weight and Distance
+section \<open>Day 29 (7 November 2011): classical error detection and correction\<close>
 
-   Days 24-28 (separability, entanglement witnesses) are now covered
-   in the sibling theory \<^theory>\<open>Vern_Paulsen_QC.Day24_Separability\<close>,
-   which is built on top of \<^theory>\<open>Vern_Paulsen_QC_3_10_Lmat.Separable_Cone\<close>.
-   Day 23 (Choi Theorem 3 / extreme-point classification of UCP)
-   still requires partial-isometry machinery and is not yet
-   formalised; we skip directly from Day 22 to Day 29 in this file.
-   ============================================================================ *)
+text \<open>Days 23--28 are formalised in the theories Day23\_ChoiExtremeUCP, Separable\_Cone and
+Day24\_Separability.
 
-(* --------------------------------------------------------------------------
-   Classical binary strings as \<open>nat list\<close>s with entries in \<open>{0,1}\<close>.
-   -------------------------------------------------------------------------- *)
+To transmit $v\in\Z_2^n$ through a channel that may flip bits ($+1$ in $\Z_2$), one encodes
+$v\mapsto\phi(v)\in\Z_2^{n+k}$, transmits, and decodes.  Examples: repetition $v\mapsto(v,v)$
+detects one error but corrects none and doubles the cost; the parity check
+$(a_1,\dots,a_n)\mapsto(a_1,\dots,a_n;a_1+\cdots+a_n)$ detects one error cheaply; the Hamming
+$[7,1,3]$ code (not formalised) detects and corrects one error.
+\begin{notesdef}
+The \emph{Hamming weight} $\norm w$ of $w\in\Z_2^m$ is its number of non-zero entries; the
+weight of a code $S\subseteq\Z_2^m$ is $\min\{\norm{v-w}:v\neq w\in S\}$, the least number of
+errors turning one code word into another; for a subspace code it is $\min\{\norm v:0\neq v\in S\}$.
+\end{notesdef}
+Decoding amounts to choosing a left inverse of $\phi$ (different left inverses correct
+differently); the best binary codes are cyclic codes, ideals in $\Z_2[x]/\langle x^m-1\rangle$
+(not formalised).\<close>
+
+subsection \<open>Binary strings, Hamming weight and distance\<close>
 
 definition hamming_weight :: "nat list \<Rightarrow> nat" where
   "hamming_weight v \<equiv> length (filter (\<lambda>b. b \<noteq> 0) v)"
@@ -8332,9 +8398,10 @@ lemma hamming_dist_self [simp]:
   by (induction v, auto simp: hamming_dist_Cons)
 
 
-(* --------------------------------------------------------------------------
-   Code distance and error-correction capacity.
-   -------------------------------------------------------------------------- *)
+subsection \<open>Code distance\<close>
+
+text \<open>A code of distance at least $2t+1$ can correct $t$ errors (recorded as the definition
+\<open>corrects_errors\<close>; the decoding theorem itself is not formalised).\<close>
 
 definition code_distance :: "nat list set \<Rightarrow> nat" where
   "code_distance code \<equiv>
@@ -8346,12 +8413,10 @@ definition corrects_errors :: "nat list set \<Rightarrow> nat \<Rightarrow> bool
   "corrects_errors code t \<equiv> code_distance code \<ge> 2*t + 1"
 
 
-(* --------------------------------------------------------------------------
-   Parity-check encoding: append the XOR of all bits.
+subsection \<open>The parity-check and repetition codes\<close>
 
-   Adding any single-bit error changes one bit of the codeword, so the
-   corrupted word differs from the original.
-   -------------------------------------------------------------------------- *)
+text \<open>Parity check: append the sum of the bits; any single error changes the code word.
+Repetition doubles Hamming distances.\<close>
 
 definition parity_bit :: "nat list \<Rightarrow> nat" where
   "parity_bit v \<equiv> foldr (\<lambda>a b. (a + b) mod 2) v 0"
@@ -8383,10 +8448,6 @@ lemma parity_check_encode_binary:
   using assms parity_bit_lt_2
   by (auto simp: parity_check_encode_def)
 
-(* Adding any single-bit error to a parity-check codeword changes that bit:
-   the corrupted word differs from the original.  Both \<open>v\<close> and \<open>e\<close>
-   are required to be binary; without that, a non-binary error of even
-   value could leave the codeword unchanged modulo 2. *)
 
 lemma parity_check_detects_one_error:
   assumes lenE:   "length e = length v + 1"
@@ -8448,17 +8509,34 @@ lemma hamming_dist_repetition_doubles:
   by (simp add: zip_append1 zip_append2 mult_2)
 
 
-(* ============================================================================
-   DAY 30 \<mdash> 9 / Nov / 11
-   Topic: Quantum Error Correction; Bit Flip and Phase Flip Codes
-   ============================================================================ *)
+section \<open>Day 30 (9 November 2011): error probabilities; the three-qubit bit-flip code\<close>
 
-(* --------------------------------------------------------------------------
-   The Pauli matrices.  We use the names \<open>pauli_X / Y / Z\<close> rather than
-   the imported \<open>X / Y / Z\<close> from Quantum.thy so they can serve as locally
-   stable, fixed-name constants in the rest of this development.  (The
-   imported \<open>X / Y / Z\<close> are the same matrices.)
-   -------------------------------------------------------------------------- *)
+text \<open>If a bit flips with probability $p$ (independently), the repetition code on three bits
+leaves an error undetected with probability $3p^2(1-p)^4+3p^4(1-p)^2+p^6$, the parity code with
+probability $\binom42p^2(1-p)^2+p^4$ (the former is smaller for $p<\tfrac12$), and the
+majority-rule code $0\mapsto000$, $1\mapsto111$ decodes wrongly with probability $3p^2(1-p)+p^3$
+(not formalised).
+
+Quantum error correction: one cannot clone, but basis vectors can be copied and measurements
+can decode.  With $X=\begin{pmatrix}0&1\\1&0\end{pmatrix}$ the allowed errors are qubit flips
+$X\otimes I\otimes I$, $I\otimes X\otimes I$, \dots.  The \emph{three-qubit bit-flip code} encodes
+$a\ket0+b\ket1\mapsto a\ket{000}+b\ket{111}$ (two CNOTs).  Decoding: (1) syndrome measurement with
+$P_0=\ketbra{000}{000}+\ketbra{111}{111}$, $P_1=\ketbra{100}{100}+\ketbra{011}{011}$,
+$P_2=\ketbra{010}{010}+\ketbra{101}{101}$, $P_3=\ketbra{001}{001}+\ketbra{110}{110}$,
+$\sum P_i^2=I$, which leaves a state with at most one flip unchanged and reveals where the flip
+occurred; (2) recovery
+$R(Y)=P_0YP_0+(X\otimes I\otimes I)P_1YP_1(X\otimes I\otimes I)+\cdots$, a completely positive
+trace-preserving map with $R(\ketbra{\psi_i}{\psi_i})=\ketbra\psi\psi$ after zero or one error.
+The code's recovery theorem is not formalised (audit items D30-3, D30-4); the Pauli
+matrices and the bit-flip channel are.\<close>
+
+subsection \<open>The Pauli matrices\<close>
+
+text \<open>The notes use two sign conventions for $Y$: $\begin{pmatrix}0&-i\\i&0\end{pmatrix}$ on
+Day 10 (the library's \<open>Y\<close>) and $\begin{pmatrix}0&i\\-i&0\end{pmatrix}$ on Day 32.
+\<open>pauli_Y\<close> follows Day 32; both are Hermitian unitary involutions, and the Pauli
+identities below carry the corresponding signs.  \<open>pauli_X\<close> and \<open>pauli_Z\<close> are the
+library's \<open>X\<close> and \<open>Z\<close> under stable local names.\<close>
 
 definition pauli_X :: "complex Matrix.mat" where
   "pauli_X \<equiv> Matrix.mat 2 2
@@ -8568,10 +8646,11 @@ lemma pauli_Z_unitary: "unitary pauli_Z"
   using pauli_Z_dagger pauli_Z_squared by (simp add: pauli_Z_def)
 
 
-(* --------------------------------------------------------------------------
-   I, X, Y, Z form an orthogonal basis of M\<^sub>2 with respect to the
-   Hilbert-Schmidt inner product, each having squared norm 2.
-   -------------------------------------------------------------------------- *)
+subsection \<open>Pauli magic (Day 32)\<close>
+
+text \<open>\begin{notesprop}
+$I,X,Y,Z$ are orthogonal in $M_2$ and all have $2$-norm $\sqrt2$.
+\end{notesprop}\<close>
 
 proposition pauli_orthogonal:
   shows "\<langle>\<langle> 1\<^sub>m 2 | pauli_X \<rangle>\<rangle> = 0"
@@ -8612,9 +8691,11 @@ proof -
 qed
 
 
-(* --------------------------------------------------------------------------
-   The bit-flip channel: with probability \<open>p\<close>, apply Pauli X.
-   -------------------------------------------------------------------------- *)
+subsection \<open>The bit-flip channel (Day 31)\<close>
+
+text \<open>Doing nothing to $\psi$ while a flip occurs with probability $p$ produces the ensemble
+$\{1-p,\psi\},\{p,X\psi\}$, i.e. the error map $E(Y)=(1-p)Y+pXYX^*$, which is completely
+positive and trace preserving.\<close>
 
 definition bit_flip_channel ::
   "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -8637,8 +8718,6 @@ proof -
     using assms x\<rho>xd_c by (auto simp: bit_flip_channel_def)
 qed
 
-(* The bit-flip channel preserves trace: Tr(X rho X^dagger) = Tr rho
-   since X^dagger X = I, then add the (1-p) and p contributions. *)
 
 lemma bit_flip_channel_trace_preserving:
   fixes p :: real
@@ -8697,8 +8776,6 @@ proof -
   finally show ?thesis.
 qed
 
-(* The bit-flip channel preserves PSD: convex combination of two PSD
-   matrices, where X . rho . X^dagger is PSD via X^2 = I. *)
 
 lemma bit_flip_channel_psd:
   fixes p :: real
@@ -8778,14 +8855,15 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 31 \<mdash> 11 / Nov / 11
-   Topic: Three Qubit Bit Flip Code; Fidelity
-   ============================================================================ *)
+section \<open>Day 31 (11 November 2011): the bit-flip code as a channel; fidelity\<close>
 
-(* Logical encoding |\<psi>\<rangle> = a|0\<rangle> + b|1\<rangle> \<mapsto> a|000\<rangle> + b|111\<rangle>, expressed as
-   a 8\<times>2 isometry sending the i-th computational basis vector of \<complex>\<^sup>2 to
-   the i-th computational basis vector of \<complex>\<^sup>8 (with i \<in> {0, 7}). *)
+text \<open>Encoding $\tilde\psi=a\ket{000}+b\ket{111}$ and flipping each qubit independently with
+probability $p$ gives the error map
+$E(Y)=(1-p)^3Y+p(1-p)^2\sum_j(X_j)Y(X_j)^*+\cdots+p^3(X\otimes X\otimes X)Y(X\otimes X\otimes X)^*$,
+and with the recovery $R$ of Day 30,
+\[ R\circ E(Y)=\bigl((1-p)^3+3p(1-p)^2\bigr)Y+\bigl(3p^2(1-p)+p^3\bigr)(X\otimes X\otimes X)Y(X\otimes X\otimes X). \]
+The code helps iff $(1-p)^3+3p(1-p)^2\ge1-p$ iff $p\le\tfrac12$ (not formalised; audit item D31-2).
+Below: the encoding isometry.\<close>
 
 definition encode_mat :: "complex Matrix.mat" where
   "encode_mat \<equiv> Matrix.mat 8 2 (\<lambda>(i,j).
@@ -8796,7 +8874,16 @@ definition encode_mat :: "complex Matrix.mat" where
 lemma encode_mat_carrier [simp]: "encode_mat \<in> carrier_mat 8 2"
   by (auto simp: encode_mat_def)
 
-(* Fidelity between a pure state \<psi> and a density matrix \<rho>. *)
+subsection \<open>Fidelity\<close>
+
+text \<open>A state $\psi$ perturbed to $\psi'=a\psi+b\psi^\perp$ is close to $\psi$ when $|a|$ is
+close to $1$, so the \emph{fidelity} of states is $F=|\braket{\psi'}\psi|$; for the density
+matrices $\rho=\ketbra\psi\psi$, $\rho'=\ketbra{\psi'}{\psi'}$ one has
+$\langle\rho|\rho'\rangle=\Tr(\rho\rho')=|\braket{\psi'}\psi|^2$, so $F=\sqrt{\Tr(\rho\rho')}$.
+Error correction is compared by $F=\sqrt{\braket\psi{R\circ E(\ketbra\psi\psi)\psi}}$, minimised
+or averaged over $\psi$: doing nothing gives $\min F=\sqrt{1-p}$, the bit-flip code gives
+$\min F=\sqrt{(1-p)^3+3p(1-p)^2}$ (not formalised; audit item D31-4).  Formally
+\<open>fidelity \<psi> \<rho>\<close> is $\sqrt{\Re\braket\psi{\rho\psi}}$.\<close>
 
 definition fidelity ::
   "complex Matrix.vec \<Rightarrow> complex Matrix.mat \<Rightarrow> real" where
@@ -8806,7 +8893,6 @@ lemma fidelity_def_eq:
   "fidelity \<psi> \<rho> = sqrt (Re (\<langle>\<psi> | \<rho> *\<^sub>v \<psi>\<rangle>))"
   by (simp add: fidelity_def)
 
-(* For a pure state \<rho> = |\<psi>'\<rangle>\<langle>\<psi>'|, fidelity = |\<langle>\<psi> | \<psi>'\<rangle>|. *)
 
 lemma fidelity_pure_states:
   fixes \<psi> \<psi>' :: "complex Matrix.vec"
@@ -8863,8 +8949,6 @@ proof -
   finally show ?thesis.
 qed
 
-(* Pure-state fidelity to itself: a unit vector has fidelity 1 with its own
-   density matrix. *)
 
 lemma fidelity_self:
   fixes \<psi> :: "complex Matrix.vec"
@@ -8885,7 +8969,6 @@ proof -
   finally show ?thesis .
 qed
 
-(* Pure-state fidelity is zero on orthogonal states. *)
 
 lemma fidelity_orthogonal:
   fixes \<psi> \<psi>' :: "complex Matrix.vec"
@@ -8896,12 +8979,35 @@ lemma fidelity_orthogonal:
   using fidelity_pure_states[OF \<psi>_qs \<psi>'_qs] ortho by simp
 
 
-(* ============================================================================
-   DAY 32 \<mdash> 14 / Nov / 11
-   Topic: Phase Flip Code; Plus and Minus States
-   ============================================================================ *)
+section \<open>Day 32 (14 November 2011): the phase-flip code, the Shor code, Pauli magic\<close>
 
-(* The X-eigenbasis of \<complex>\<^sup>2: |+\<rangle> = (|0\<rangle> + |1\<rangle>)/\<surd>2, |-\<rangle> = (|0\<rangle> - |1\<rangle>)/\<surd>2. *)
+subsection \<open>The phase-flip code\<close>
+
+text \<open>With $Z\ket0=\ket0$, $Z\ket1=-\ket1$ and $\ket\pm=(\ket0\pm\ket1)/\sqrt2$ one has
+$\ket+\perp\ket-$, $Z\ket+=\ket-$, $Z\ket-=\ket+$: $Z$ acts on $\{\ket+,\ket-\}$ as the bit flip
+acts on $\{\ket0,\ket1\}$.  Encoding $\ket0\mapsto\ket{+++}$, $\ket1\mapsto\ket{---}$ gives the
+three-qubit \emph{phase-flip code}, which detects and corrects phase flips exactly as the
+bit-flip code corrects bit flips; with $\beta=Y\ket+$ (orthogonal to $\ket+$, $Y\beta=\ket+$) the
+same works for $Y$.
+
+The \emph{Shor code} encodes $\ket0\mapsto\ket{0_L}=2^{-3/2}(\ket{000}+\ket{111})^{\otimes3}$ and
+$\ket1\mapsto\ket{1_L}=2^{-3/2}(\ket{000}-\ket{111})^{\otimes3}$ in $\C^{2^9}$.
+\begin{notestheorem}[Shor]
+There is a completely positive trace-preserving $R:M_{2^9}\to M_{2^9}$ such that for every
+$2\times2$ unitary $U$, every position $j$, $\tilde U=I\otimes\cdots\otimes U\otimes\cdots\otimes I$,
+and every $\psi=a\ket{0_L}+b\ket{1_L}$, $R(\tilde U\ketbra\psi\psi\tilde U^*)=\ketbra\psi\psi$.
+\end{notestheorem}
+\begin{notesprop}
+If $V\subseteq\C^n$ is a subspace and $U_1,\dots,U_t$ are unitaries with $U_iV\perp U_jV$ for
+$i\neq j$, then there is a CPTP $R$ with $R(U_i\ketbra\psi\psi U_i^*)=\ketbra\psi\psi$ for all
+$\psi\in V$ and all $i$ (take $R(X)=\sum_iU_i^*P_iXP_iU_i$ with $P_i$ the projection onto
+$U_iV$, $P_0=I-\sum P_i$, $U_0=I$).
+\end{notesprop}
+The $3\cdot9+1$ \emph{1-Pauli} operators $I\otimes\cdots\otimes U\otimes\cdots\otimes I$ ($U$ a
+Pauli matrix) map $V=\operatorname{span}\{\ket{0_L},\ket{1_L}\}$ to mutually orthogonal subspaces
+(up to the coincidences $Z_1v=Z_2v=Z_3v$ etc.).  Of this material only the states $\ket\pm$, the
+action of $Z$ and $X$ on them, and the phase-flip code words are formalised (audit items
+D32-2 to D32-5, D33).\<close>
 
 definition ket_plus :: "complex Matrix.vec" where
   "ket_plus \<equiv> (1 / sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
@@ -8990,7 +9096,6 @@ proof -
   finally show ?thesis .
 qed
 
-(* Pauli Z swaps |+\<rangle> and |-\<rangle>:  Z|+\<rangle> = |-\<rangle>, Z|-\<rangle> = |+\<rangle>. *)
 
 lemma pauli_Z_ket_plus: "pauli_Z *\<^sub>v ket_plus = ket_minus"
 proof (rule eq_vecI)
@@ -9024,7 +9129,6 @@ proof -
   finally show ?thesis .
 qed
 
-(* |+\<rangle> and |-\<rangle> are eigenvectors of X with eigenvalues +1 and -1. *)
 
 lemma pauli_X_ket_plus: "pauli_X *\<^sub>v ket_plus = ket_plus"
 proof (rule eq_vecI)
@@ -9067,47 +9171,41 @@ next
 qed
 
 
-(* --------------------------------------------------------------------------
-   Shor 9-qubit logical states.
+text \<open>The code words $\ket{+++}$ and $\ket{---}$ of the three-qubit phase-flip code (an
+earlier version of this file called them \<open>phase_code_zero\<close>/\<open>phase_code_one\<close>; the nine-qubit Shor
+code words are not defined).\<close>
 
-   We package only the explicit vector-valued definitions; the recovery
-   theorem (Day 33) and Knill-Laflamme conditions (Day 34) are deep
-   results that lie beyond the current development.
-   -------------------------------------------------------------------------- *)
-
-definition shor_zero :: "complex Matrix.vec" where
-  "shor_zero \<equiv>
+definition phase_code_zero :: "complex Matrix.vec" where
+  "phase_code_zero \<equiv>
      let v = unit_vec 2 0 + unit_vec 2 1 in
      (1 / (2 * sqrt 2) :: complex)
        \<cdot>\<^sub>v tensor_vec (tensor_vec v v) v"
 
-definition shor_one :: "complex Matrix.vec" where
-  "shor_one \<equiv>
+definition phase_code_one :: "complex Matrix.vec" where
+  "phase_code_one \<equiv>
      let v = unit_vec 2 0 - unit_vec 2 1 in
      (1 / (2 * sqrt 2) :: complex)
        \<cdot>\<^sub>v tensor_vec (tensor_vec v v) v"
 
-lemma shor_zero_dim [simp]: "dim_vec shor_zero = 8"
-  by (simp add: shor_zero_def Let_def, simp add: tensor_vec_dim)
+lemma phase_code_zero_dim [simp]: "dim_vec phase_code_zero = 8"
+  by (simp add: phase_code_zero_def Let_def, simp add: tensor_vec_dim)
 
-lemma shor_one_dim [simp]: "dim_vec shor_one = 8"
+lemma phase_code_one_dim [simp]: "dim_vec phase_code_one = 8"
   by (smt (verit, best) index_minus_vec(2) index_smult_vec(2) index_unit_vec(3) 
-      mult_2 mult_commute_abs numeral_Bit0 shor_one_def tensor_vec_dim)
+      mult_2 mult_commute_abs numeral_Bit0 phase_code_one_def tensor_vec_dim)
 
-lemma shor_zero_carrier [simp]: "shor_zero \<in> carrier_vec 8"
+lemma phase_code_zero_carrier [simp]: "phase_code_zero \<in> carrier_vec 8"
   by (simp add: carrier_dim_vec)
 
-lemma shor_one_carrier [simp]: "shor_one \<in> carrier_vec 8"
+lemma phase_code_one_carrier [simp]: "phase_code_one \<in> carrier_vec 8"
   by (simp add: carrier_dim_vec)
 
 
-(* --------------------------------------------------------------------------
-   Projection operators.
+subsection \<open>Projections\<close>
 
-   A projection P on \<complex>\<^sup>n is a hermitian idempotent: P\<^sup>\<dagger> = P
-   and P * P = P.  These are the building blocks of the syndrome-recovery
-   construction (Days 33-34).
-   -------------------------------------------------------------------------- *)
+text \<open>A \emph{projection} on $\C^n$ is a Hermitian idempotent, the notion of Day 2; projections
+are the building blocks of syndrome measurements and recovery maps (Days 30--34).  Day 2's
+theorem that such a $P$ is the orthogonal projection onto its range follows the basic facts.\<close>
 
 definition projection :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "projection n P \<equiv>
@@ -9131,7 +9229,6 @@ lemma projection_zero: "projection n (0\<^sub>m n n)"
 lemma projection_one: "projection n (1\<^sub>m n)"
   by (auto simp: projection_def hermitian_def dagger_def)
 
-(* A projection is psd: it equals P\<^sup>\<dagger> P, which is psd by psd_MdagM. *)
 
 lemma projection_psd:
   assumes "projection n P"
@@ -9147,7 +9244,44 @@ proof -
   show ?thesis using eq psd_PdP by simp
 qed
 
-(* Complementary projection P0 = I - P, when P is a projection. *)
+
+text \<open>The theorem of Day 2: a Hermitian idempotent $P$ is the orthogonal projection onto its
+range, i.e. $Pv=v$ for $v$ in the range and $Pw=0$ for $w$ orthogonal to the range.\<close>
+
+lemma projection_fixes_range:
+  fixes P :: "complex Matrix.mat" and x :: "complex Matrix.vec"
+  assumes P: "projection n P" and x: "dim_vec x = n"
+  shows "P *\<^sub>v (P *\<^sub>v x) = P *\<^sub>v x"
+proof -
+  have Pc: "P \<in> carrier_mat n n" and idem: "P * P = P" using P by (auto simp: projection_def)
+  have xc: "x \<in> carrier_vec n" using x by auto
+  have "P *\<^sub>v (P *\<^sub>v x) = (P * P) *\<^sub>v x" using assoc_mult_mat_vec[OF Pc Pc xc] by simp
+  thus ?thesis using idem by simp
+qed
+
+lemma projection_annihilates_orthogonal:
+  fixes P :: "complex Matrix.mat" and w :: "complex Matrix.vec"
+  assumes P: "projection n P" and w: "dim_vec w = n"
+      and orth: "\<And>x :: complex Matrix.vec. dim_vec x = n \<Longrightarrow> \<langle>P *\<^sub>v x | w\<rangle> = 0"
+  shows "P *\<^sub>v w = 0\<^sub>v n"
+proof -
+  have Pc: "P \<in> carrier_mat n n" and herm: "hermitian P" and idem: "P * P = P"
+    using P by (auto simp: projection_def)
+  have Ph: "P\<^sup>\<dagger> = P" using herm by (simp add: hermitian_def)
+  have Pw: "dim_vec (P *\<^sub>v w) = n" using Pc w by auto
+  have "\<langle>P *\<^sub>v w | P *\<^sub>v w\<rangle> = \<langle>P\<^sup>\<dagger> *\<^sub>v w | P *\<^sub>v w\<rangle>" using Ph by simp
+  also have "\<dots> = \<langle>w | P *\<^sub>v (P *\<^sub>v w)\<rangle>"
+    using inner_prod_adjoint_swap[OF Pc w Pw] by simp
+  also have "\<dots> = \<langle>w | P *\<^sub>v w\<rangle>" using projection_fixes_range[OF P w] by simp
+  also have "\<dots> = cnj \<langle>P *\<^sub>v w | w\<rangle>"
+  proof -
+    have dims: "dim_vec (P *\<^sub>v w) = dim_vec w" using Pw w by simp
+    show ?thesis using inner_prod_cnj[OF dims] .
+  qed
+  also have "\<dots> = 0" using orth[OF w] by simp
+  finally have "\<langle>P *\<^sub>v w | P *\<^sub>v w\<rangle> = 0" .
+  thus ?thesis using inner_prod_self_eq_zero_iff[of "P *\<^sub>v w"] Pw by simp
+qed
 
 lemma projection_complement_idempotent:
   assumes "projection n P"
@@ -9184,9 +9318,7 @@ proof -
 qed
 
 
-(* --------------------------------------------------------------------------
-   Bonus: classical-code helpers extending Day 29.
-   -------------------------------------------------------------------------- *)
+subsection \<open>More on the repetition code\<close>
 
 lemma hamming_weight_append:
   "hamming_weight (xs @ ys) = hamming_weight xs + hamming_weight ys"
@@ -9202,17 +9334,27 @@ lemma repetition_encode_binary:
   using assms by (auto simp: repetition_encode_def)
 
 
-(* ============================================================================
-   DAY 34 \<mdash> 18 / Nov / 11
-   Topic: Algebra of Projections (Building Blocks for Knill-Laflamme)
+subsection \<open>Algebra of projections; towards Days 33 and 34\<close>
 
-   The standard algebraic facts about projections that underlie the
-   orthogonal-syndrome / Knill-Laflamme construction.  The full
-   Knill-Laflamme theorems remain deferred; they need eigenbasis
-   decomposition machinery beyond the current scope.
-   ============================================================================ *)
+text \<open>Day 33 constructs the Shor recovery map from the projections onto the $28$ orthogonal
+subspaces $V,X_1V,\dots,X_9V,Y_1V,\dots,Y_9V,Z_1V,Z_4V,Z_7V$ and proves, using
+$U=a_0I+a_1X+a_2Y+a_3Z$ with $\sum|a_k|^2=1$ for unitary $U$ (Pauli magic), that it corrects
+every single-qubit unitary error.  Day 34 gives the general theory:
+\begin{notesprop}
+For $V\subseteq\C^n$ with projection $P$ and CPTP maps $E$ (errors) and $R$ (recovery),
+$R\circ E(\ketbra\psi\psi)=\ketbra\psi\psi$ for all $\psi\in V$ iff $R\circ E(PXP)=PXP$ for all $X$.
+\end{notesprop}
+\begin{notestheorem}[1]
+Let $E(X)=\sum_{i=1}^rE_iXE_i^*$ be CPTP.  There is a CPTP $R$ with $R\circ E(PXP)=PXP$ for all $X$
+iff $PE_i^*E_jP=\alpha_{ij}P$ for some scalars $\alpha_{ij}$.
+\end{notestheorem}
+\begin{notestheorem}[2]
+If $R$ corrects $E$ as in Theorem 1 and $G_i\in\operatorname{span}\{E_j\}$ with $\sum G_i^*G_i=I$,
+then $R$ also corrects $G(X)=\sum_iG_iXG_i^*$.
+\end{notestheorem}
+These Knill--Laflamme results are not formalised (audit item D34); the elementary algebra of
+orthogonal projections used by their proofs is.\<close>
 
-(* The complementary projection \<open>1 - P\<close> is itself a projection. *)
 
 lemma projection_complement:
   assumes "projection n P"
@@ -9260,7 +9402,7 @@ proof -
     unfolding projection_def using IP_c IP_h IP_idem by blast
 qed
 
-(* Two projections are *orthogonal* if their product (in either order) is zero. *)
+text \<open>Two projections are orthogonal if their products in both orders vanish.\<close>
 
 definition orthogonal_projections ::
   "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
@@ -9280,7 +9422,6 @@ lemma orthogonal_projections_symm:
   "orthogonal_projections n P Q \<longleftrightarrow> orthogonal_projections n Q P"
   by (auto simp: orthogonal_projections_def)
 
-(* The sum of orthogonal projections is a projection. *)
 
 lemma orthogonal_projections_sum:
   assumes opq: "orthogonal_projections n P Q"
@@ -9332,9 +9473,6 @@ proof -
   show ?thesis unfolding projection_def using PQ_c PQ_h PQ_idem by blast
 qed
 
-(* Pythagorean decomposition: P + Q + (I - P - Q) = I when P, Q are
-   orthogonal projections.  Building block for the Day-33 syndrome
-   decomposition I = (sum P_i) + (I - sum P_i). *)
 
 lemma orthogonal_projections_decomp_id:
   assumes "orthogonal_projections n P Q"
@@ -9348,28 +9486,15 @@ proof -
 qed
 
 
-(* ############################################################################
-   END OF PAULSEN'S NOTES (Day 34)
+section \<open>Extensions beyond the notes\<close>
 
-   The original Quantum_Computing.thy contains lecture material up through
-   Day 34 (Knill-Laflamme conditions, mostly as `True` placeholders).
-   Everything from "Day 35" onward is NOT from Paulsen.  These sections
-   are bonus extensions written to exercise the developed machinery and
-   produce useful corollaries: standard quantum-information results
-   (channels, Pauli algebra, density-matrix preservation, etc.).  The
-   "Day NN" headers are continuation labels for our own organisation,
-   not Paulsen's lecture days.
-   ############################################################################ *)
+text \<open>Nothing from here on is in Paulsen's notes.  These are standard quantum-information
+facts proved with the machinery above: rank-one projections, the bit-flip, phase-flip,
+bit-phase-flip and unitary-conjugation channels and their membership in UCP and CPTP,
+composition of channels, Kraus lists, the maximally mixed state, and the Pauli product
+identities.\<close>
 
-
-(* ============================================================================
-   DAY 35 (extension)
-   Topic: Rank-One Projections from Unit Vectors
-
-   For a unit vector \<psi> \<in> \<complex>\<^sup>n, the operator |\<psi>\<rangle>\<langle>\<psi>| =
-   outer_sum n [\<psi>] is a rank-one orthogonal projection: hermitian and
-   idempotent (using \<langle>\<psi>|\<psi>\<rangle> = 1).
-   ============================================================================ *)
+subsection \<open>Rank-one projections\<close>
 
 lemma outer_sum_singleton_hermitian:
   fixes \<psi> :: "complex Matrix.vec"
@@ -9464,16 +9589,6 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 36
-   Topic: Trace of a Rank-One Projection; Projection Action on its Image
-
-   Two concrete corollaries of the rank-one projection machinery:
-     - The rank-1 projection |\<psi>\<rangle>\<langle>\<psi>| acts as the identity on \<psi>
-       itself (the defining eigenvector property).
-     - The trace of |\<psi>\<rangle>\<langle>\<psi>| equals \<langle>\<psi>|\<psi>\<rangle>, hence 1
-       for a normalised state.
-   ============================================================================ *)
 
 lemma rank1_projection_acts_identity:
   fixes \<psi> :: "complex Matrix.vec"
@@ -9533,14 +9648,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 37
-   Topic: Bit-Flip Channel Boundary Cases
-
-   The bit-flip channel \<open>bit_flip_channel p\<close> at \<open>p = 0\<close> is the
-   identity (no errors), and at \<open>p = 1\<close> is the X-conjugation channel
-   (every qubit flipped).  Useful sanity checks and corner-case tools.
-   ============================================================================ *)
+subsection \<open>The bit-flip channel at $p=0$ and $p=1$\<close>
 
 lemma bit_flip_channel_zero:
   assumes "\<rho> \<in> carrier_mat 2 2"
@@ -9601,15 +9709,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 38
-   Topic: Phase-Flip Channel
-
-   The phase-flip channel applies Pauli-Z with probability \<open>p\<close>:
-   \<open>phase_flip_channel p \<rho> = (1-p) \<sqdot> \<rho> + p \<sqdot> Z \<rho> Z\<^sup>\<dagger>\<close>.
-   It is the Z-analogue of \<open>bit_flip_channel\<close>; the same proof skeleton
-   gives carrier preservation, trace preservation and PSD preservation.
-   ============================================================================ *)
+subsection \<open>The phase-flip channel\<close>
 
 definition phase_flip_channel ::
   "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -9764,15 +9864,10 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 39
-   Topic: General Unitary-Conjugation Channel
+subsection \<open>Unitary-conjugation channels\<close>
 
-   Abstract the bit-flip / phase-flip pattern: for a unitary \<open>U \<in> M\<^sub>n\<close>,
-   the channel \<open>\<rho> \<mapsto> (1-p) \<sqdot> \<rho> + p \<sqdot> U \<rho> U\<^sup>\<dagger>\<close> is
-   trace-preserving and PSD-preserving for \<open>0 \<le> p \<le> 1\<close>.
-   The bit-flip and phase-flip channels are immediate instances.
-   ============================================================================ *)
+text \<open>For a unitary $U\in M_n$ and $0\le p\le1$, $\rho\mapsto(1-p)\rho+pU\rho U^\dagger$ is trace
+preserving and positive; the bit-flip and phase-flip channels are the instances $U=X$, $U=Z$.\<close>
 
 definition unitary_conj_channel ::
   "complex Matrix.mat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -9917,8 +10012,6 @@ proof -
   thus ?thesis by (simp add: unitary_conj_channel_def)
 qed
 
-(* The bit-flip and phase-flip channels are instances of the unitary-
-   conjugation channel for the Pauli matrices X and Z. *)
 
 lemma bit_flip_eq_unitary_conj:
   "bit_flip_channel p \<rho> = unitary_conj_channel pauli_X p \<rho>"
@@ -9929,16 +10022,7 @@ lemma phase_flip_eq_unitary_conj:
   by (simp add: phase_flip_channel_def unitary_conj_channel_def)
 
 
-(* ============================================================================
-   DAY 40
-   Topic: Bit-Phase-Flip (Y) Channel; Identity Channel
-
-   Two further channels assembled from the unitary-conjugation
-   framework of Day 39:
-     - The bit-phase-flip channel applies Pauli-Y with probability p.
-     - The identity channel is the unitary-conjugation channel with
-       p = 0 (or with U = I), trivially CPTP.
-   ============================================================================ *)
+subsection \<open>The bit-phase-flip channel and the identity channel\<close>
 
 definition bit_phase_flip_channel ::
   "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -9971,7 +10055,6 @@ lemma bit_phase_flip_channel_psd:
   by (rule unitary_conj_channel_psd)
 
 
-(* The identity channel is CPTP: trace and PSD preserved trivially. *)
 
 definition identity_channel ::
   "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -9989,8 +10072,6 @@ lemma identity_channel_psd:
   "\<rho> \<in> carrier_mat n n \<Longrightarrow> psd \<rho> \<Longrightarrow> psd (identity_channel \<rho>)"
   by (simp add: identity_channel_def)
 
-(* The identity channel is the unitary-conjugation channel with p = 0
-   (any U works, but the natural choice is U = 1\<^sub>m n). *)
 
 lemma identity_channel_eq_unitary_conj_zero:
   assumes \<rho>_c: "\<rho> \<in> carrier_mat n n"
@@ -10024,14 +10105,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 41
-   Topic: Channel Composition
-
-   The composition \<open>G \<circ> F\<close> of two trace-preserving maps is again
-   trace-preserving (subject to carrier-preservation of \<open>F\<close>).  The
-   identity channel is a left and right unit for composition.
-   ============================================================================ *)
+subsection \<open>Composition of channels\<close>
 
 lemma compose_trace_preserving:
   assumes F_tp:    "trace_preserving n F"
@@ -10049,7 +10123,6 @@ proof (unfold trace_preserving_def, intro allI impI)
   finally show "Tr (G (F \<rho>)) = Tr \<rho>" .
 qed
 
-(* The identity channel is a unit for composition. *)
 
 lemma identity_channel_compose_left:
   "(\<lambda>\<rho>. identity_channel (F \<rho>)) = F"
@@ -10060,13 +10133,6 @@ lemma identity_channel_compose_right:
   by (simp add: identity_channel_def)
 
 
-(* ============================================================================
-   DAY 42
-   Topic: More composition properties; unital composition
-
-   Building further on Day 41: unital channel composition, and the
-   identity-channel preservation properties.
-   ============================================================================ *)
 
 lemma compose_unital_map:
   assumes F_un: "unital_map n n F"
@@ -10082,7 +10148,6 @@ proof -
   finally show ?thesis by (simp add: unital_map_def)
 qed
 
-(* identity_channel is unital and trace-preserving. *)
 
 lemma identity_channel_unital: "unital_map n n identity_channel"
   by (simp add: unital_map_def identity_channel_def)
@@ -10091,8 +10156,6 @@ lemma identity_channel_trace_preserving_full:
   "trace_preserving n identity_channel"
   by (simp add: trace_preserving_def identity_channel_def)
 
-(* identity_channel is a UCP / CPTP map (taking its CP property as
-   self-evident from \<rho> \<mapsto> \<rho> being completely positive). *)
 
 lemma identity_channel_completely_positive:
   assumes "0 < n"
@@ -10139,15 +10202,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 43
-   Topic: Kraus-map CP (without TP); unitary conjugation is CP
-
-   Extract a Kraus-map CP lemma without the trace-preserving condition
-   that \<open>kraus_is_cp\<close> imposes via \<open>kraus_operators\<close>.  Use it to give
-   single-Kraus-operator (\<rho> \<mapsto> U \<rho> U^dagger) CP, and assemble
-   identity_channel CPTP / UCP membership.
-   ============================================================================ *)
+subsection \<open>Conjugation channels are completely positive\<close>
 
 lemma kraus_map_dim_is_cp:
   fixes Ws :: "complex Matrix.mat list"
@@ -10175,7 +10230,6 @@ proof (unfold completely_positive_def p_positive_def, intro allI impI)
 qed
 
 
-(* Single-operator conjugation \<rho> \<mapsto> U \<rho> U^dagger is CP. *)
 
 definition conjugation_channel ::
   "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -10210,7 +10264,6 @@ proof -
 qed
 
 
-(* identity_channel is CPTP / UCP. *)
 
 lemma identity_channel_UCP:
   assumes "0 < n"
@@ -10229,17 +10282,7 @@ lemma identity_channel_CPTP:
   by simp
 
 
-(* ============================================================================
-   DAY 44
-   Topic: Pure conjugation \<rho> \<mapsto> U \<rho> U^dagger is a CPTP map
 
-   We package the single-Kraus-operator conjugation channel as an
-   actual function and show it is CP and (for unitary U) trace-
-   preserving and unital.  This gives us a clean witness that the
-   building blocks of \<open>unitary_conj_channel\<close> are CPTP.
-   ============================================================================ *)
-
-(* The conjugation channel \<rho> \<mapsto> U \<rho> U^dagger is CP. *)
 
 lemma map_conj_cp:
   assumes U_c: "U \<in> carrier_mat d n"
@@ -10295,7 +10338,6 @@ proof -
   qed
 qed
 
-(* For unitary U, conjugation is unital and trace-preserving. *)
 
 lemma map_conj_unital:
   fixes U :: "complex Matrix.mat"
@@ -10313,15 +10355,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 45
-   Topic: Unitary conjugation belongs to UCP; unitary_conj_channel in UCP
-
-   Combine \<open>map_conj_cp\<close> (CP) and \<open>map_conj_unital\<close>
-   (unitality) to put unitary conjugation in UCP n n, then apply
-   UCP_convex to put \<open>unitary_conj_channel U p\<close> in UCP for any
-   p \<in> [0,1] and unitary U.
-   ============================================================================ *)
+subsection \<open>Unitary-conjugation channels are UCP and CPTP\<close>
 
 lemma map_conj_in_UCP:
   fixes U :: "complex Matrix.mat"
@@ -10404,8 +10438,6 @@ proof -
   show ?thesis using convex_ucp func_eq by simp
 qed
 
-(* unitary_conj_channel is therefore CPTP: CP from UCP, plus the
-   already-proved trace preservation. *)
 
 lemma unitary_conj_channel_in_CPTP:
   fixes U :: "complex Matrix.mat" and p :: real
@@ -10428,14 +10460,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 46
-   Topic: bit-flip, phase-flip, bit-phase-flip channels are CPTP / UCP
-
-   Each Pauli channel is a unitary_conj_channel applied to the
-   corresponding Pauli matrix.  Since X, Y, Z are all unitary in M_2,
-   the Day-45 result puts each in UCP 2 2 and CPTP 2 2 for p \<in> [0,1].
-   ============================================================================ *)
+subsection \<open>The Pauli channels are UCP and CPTP\<close>
 
 lemma bit_flip_channel_eq:
   "bit_flip_channel p = unitary_conj_channel pauli_X p"
@@ -10522,15 +10547,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 47
-   Topic: Singleton Pauli lists are valid Kraus-operator lists
-
-   The singleton list [P], where P is a self-adjoint involution
-   (P^dagger = P, P^2 = I), satisfies the kraus_operators predicate
-   on M_2.  This recovers the Pauli channels' \<open>p = 1\<close> case as a
-   genuine Kraus map.
-   ============================================================================ *)
+subsection \<open>Pauli matrices as Kraus operators\<close>
 
 lemma pauli_X_kraus_operators:
   "kraus_operators 2 2 [pauli_X]"
@@ -10602,16 +10619,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 48
-   Topic: kraus_map_dim from kraus_operators is trace-preserving;
-          combined with kraus_is_cp this gives CPTP.
-
-   For any \<open>kraus_operators n d Ws\<close> list, the corresponding
-   \<open>kraus_map_dim d Ws\<close> is trace-preserving (since
-   \<open>sum_wdag_w n Ws = I_n\<close>) and CP (already known via
-   \<open>kraus_is_cp\<close>).  Putting these together yields CPTP membership.
-   ============================================================================ *)
+subsection \<open>Kraus maps of Kraus-operator lists are CPTP\<close>
 
 lemma kraus_is_trace_preserving:
   fixes Ws :: "complex Matrix.mat list"
@@ -10642,15 +10650,6 @@ lemma kraus_is_cptp:
   by simp
 
 
-(* ============================================================================
-   DAY 49
-   Topic: Pauli singleton Kraus maps are CPTP
-
-   Specialise kraus_is_cptp to each Pauli matrix to obtain that
-   the conjugation channel \<rho> \<mapsto> P \<rho> P^dagger is CPTP for
-   P \<in> {X, Y, Z}.  Each kraus_map_dim 2 [P] inherits CPTP membership
-   directly from the Day-47 / Day-48 plumbing.
-   ============================================================================ *)
 
 lemma pauli_X_kraus_map_CPTP:
   "kraus_map_dim 2 [pauli_X] \<in> CPTP 2 2"
@@ -10677,14 +10676,6 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 50
-   Topic: Identity channel is the singleton-identity Kraus map
-
-   The list [1_n] is a valid kraus_operators list, and kraus_map_dim n
-   on it produces exactly the identity channel.  This gives a Kraus
-   form for the identity channel matching the abstract \<open>identity_channel\<close>.
-   ============================================================================ *)
 
 lemma identity_kraus_operators:
   "kraus_operators n n [1\<^sub>m n]"
@@ -10733,16 +10724,7 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 51
-   Topic: sum_wdag_w distributes over list concatenation
-
-   For Ws and Vs each consisting of operators in M_{d,n},
-     sum_wdag_w n (Ws @ Vs) = sum_wdag_w n Ws + sum_wdag_w n Vs.
-
-   This is the building block for combining Kraus operators into
-   larger lists with predictable normalisation behaviour.
-   ============================================================================ *)
+subsection \<open>Concatenation of Kraus lists\<close>
 
 lemma sum_wdag_w_append:
   fixes Ws Vs :: "complex Matrix.mat list"
@@ -10788,15 +10770,6 @@ next
 qed
 
 
-(* ============================================================================
-   DAY 52
-   Topic: kraus_map_dim distributes over list concatenation
-
-   Companion of Day 51 for the actual Kraus map: for Ws, Vs of
-   operators in M_{d,n} and \<rho> in M_n,
-     kraus_map_dim d (Ws @ Vs) \<rho>
-       = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>.
-   ============================================================================ *)
 
 lemma kraus_map_dim_append:
   fixes Ws Vs :: "complex Matrix.mat list"
@@ -10845,14 +10818,7 @@ next
 qed
 
 
-(* ============================================================================
-   DAY 53
-   Topic: Pauli channels fix commuting states
-
-   If a matrix M in M_2 commutes with the Pauli matrix P, then
-   conjugation by P fixes M (using P^2 = I and P^dagger = P), and
-   therefore the corresponding Pauli channel does too.
-   ============================================================================ *)
+subsection \<open>Fixed points of Pauli channels\<close>
 
 lemma pauli_X_conj_commute:
   fixes M :: "complex Matrix.mat"
@@ -10892,7 +10858,6 @@ proof -
   finally show ?thesis .
 qed
 
-(* Analogously for phase_flip / Z and bit_phase_flip / Y. *)
 
 lemma pauli_Z_conj_commute:
   fixes M :: "complex Matrix.mat"
@@ -10933,14 +10898,6 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 54
-   Topic: unitary_conj_channel with U = I_n is trivial
-
-   The unitary-conjugation channel using the identity matrix is the
-   identity channel (regardless of p): both summands equal \<rho>, and
-   the convex coefficients sum to 1.
-   ============================================================================ *)
 
 lemma unitary_conj_channel_identity_op:
   fixes p :: real
@@ -10963,8 +10920,6 @@ proof -
   finally show ?thesis.
 qed
 
-(* Corollary: as a function on M_n, unitary_conj_channel of I_n agrees
-   with identity_channel. *)
 
 lemma unitary_conj_channel_identity_op_eq:
   fixes p :: real
@@ -10974,14 +10929,7 @@ lemma unitary_conj_channel_identity_op_eq:
   by (rule ext, simp add: unitary_conj_channel_identity_op identity_channel_def)
 
 
-(* ============================================================================
-   DAY 55
-   Topic: Maximally mixed state is a density matrix
-
-   maximally_mixed_state n = (1/n) . I_n.  For n > 0 this is psd
-   (scalar multiple of the identity, which is psd as a projection)
-   and has trace 1.
-   ============================================================================ *)
+subsection \<open>The maximally mixed state\<close>
 
 definition maximally_mixed_state :: "nat \<Rightarrow> complex Matrix.mat" where
   "maximally_mixed_state n \<equiv> complex_of_real (1 / real n) \<cdot>\<^sub>m (1\<^sub>m n)"
@@ -11041,15 +10989,7 @@ lemma maximally_mixed_state_density_matrix:
   by blast
 
 
-(* ============================================================================
-   DAY 56
-   Topic: unitary_conj_channel fixes commuting matrices; the
-   maximally mixed state is a fixed point of every unitary_conj_channel
-
-   Generalises the bit-flip / phase-flip commute fixed-point lemmas
-   to any unitary U on M_n.  Specialising to U I_n = I_n U (always)
-   shows that the maximally mixed state is preserved.
-   ============================================================================ *)
+subsection \<open>Fixed points of unitary-conjugation channels\<close>
 
 lemma unitary_conj_commute:
   fixes M :: "complex Matrix.mat"
@@ -11091,8 +11031,6 @@ proof -
   finally show ?thesis.
 qed
 
-(* The maximally mixed state commutes with every U \<in> M_n: scalar
-   matrices commute with everything. *)
 
 lemma maximally_mixed_state_commutes:
   fixes U :: "complex Matrix.mat"
@@ -11140,12 +11078,6 @@ proof -
 qed
 
 
-(* ============================================================================
-   DAY 57
-   Topic: Pauli channels fix the maximally mixed state
-
-   Direct corollaries of Day 56 specialised to X, Y, Z.
-   ============================================================================ *)
 
 lemma bit_flip_channel_fixes_max_mixed:
   fixes p :: real
@@ -11172,14 +11104,7 @@ lemma bit_phase_flip_channel_fixes_max_mixed:
   by (simp add: bit_phase_flip_channel_eq)
 
 
-(* ============================================================================
-   DAY 58
-   Topic: Pauli channels preserve density_matrix
-
-   For any unitary U and 0 \<le> p \<le> 1, the unitary_conj_channel maps
-   density matrices to density matrices: carrier preservation, PSD
-   preservation, and trace preservation are all already proved.
-   ============================================================================ *)
+subsection \<open>Channels preserve density matrices\<close>
 
 lemma unitary_conj_channel_preserves_density_matrix:
   fixes p :: real
@@ -11231,15 +11156,9 @@ lemma bit_phase_flip_channel_preserves_density_matrix:
   by (simp add: bit_phase_flip_channel_eq)
 
 
-(* ============================================================================
-   DAY 59
-   Topic: Pauli product identities
+subsection \<open>Pauli product identities\<close>
 
-   The Pauli matrices satisfy
-     X Y =  i Z,  Y Z =  i X,  Z X =  i Y,
-   the structure relations of the Lie algebra su(2).
-   Each is a direct 2x2 computation.
-   ============================================================================ *)
+text \<open>With the Day 32 convention for $Y$: $XY=-iZ$, $YZ=-iX$, $ZX=-iY$.\<close>
 
 lemma pauli_X_times_pauli_Y: "pauli_X * pauli_Y = -\<i> \<cdot>\<^sub>m pauli_Z"
 proof (rule eq_matI)

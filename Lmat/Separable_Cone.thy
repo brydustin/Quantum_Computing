@@ -1,36 +1,6 @@
-(*
-  Title:    Lmat/Separable_Cone.thy
-  Purpose:  Develop the separable-state cone in the typed lmat space.
-            Define it, show it is closed in the Hilbert-Schmidt topology,
-            apply HOL-Analysis separating_hyperplane_closed_point, and
-            convert the separating direction to a hermitian entanglement
-            witness; conclude with the Horodecki-style characterisation
-            "separable iff every hermitian witness sees it nonneg".
-
-  Status:   FULLY PROVEN.  No sorries.
-
-            The main pieces (in order of appearance):
-              separable_cone_lmat_closed
-                - the separable cone is closed in HS topology.
-              separable_cone_lmat_separating_hyperplane
-                - rho not in cone => exists a in lmat with
-                    inner a rho < 0 <= inner a sigma for all sigma in cone.
-              entanglement_witness_re_tr
-                - Re-Tr-form of the previous: witness is unwrap_lm-dagger.
-              entanglement_witness_hermitian
-                - witness can be chosen hermitian, side condition on sigma.
-              separable_cone_lmat_hermitian
-                - every element of the cone has hermitian unwrap (PSD).
-              entanglement_witness_hermitian'
-                - the side condition is automatic; clean witness statement.
-              separable_iff_witness
-                - Horodecki characterisation: rho in cone iff every
-                  hermitian witness W that is nonneg-trace on the cone
-                  is also nonneg-trace on rho.
-
-            All built on Lmat_Euclidean's real_inner / euclidean_space /
-            heine_borel typeclass instances and the HS norm / inner
-            product / spectral machinery from Quantum_Computing.thy.
+(*  Title:   Lmat/Separable_Cone.thy
+    Author:  Dustin Bryant.  Days 27-28 of Paulsen's lectures: the separable cone is closed,
+             separating hyperplanes, entanglement witnesses, the Horodecki characterisation.
 *)
 
 theory Separable_Cone
@@ -44,12 +14,26 @@ theory Separable_Cone
     "HOL-Analysis.Starlike"
 begin
 
-text \<open>HOL-Hahn_Banach defines a locale also called \<open>continuous\<close>.
+text \<open>HOL-Hahn\_Banach defines a locale also called \<open>continuous\<close>.
 Hide its short name so that, in the proofs below, \<open>continuous\<close>
 resolves to the topological-space predicate from
 \<^theory>\<open>HOL.Topological_Spaces\<close>.\<close>
 
 hide_const (open) Function_Norm.continuous
+
+section \<open>Overview (Days 27--28 of the notes)\<close>
+
+text \<open>This theory proves the results restated lecture by lecture in theory
+Day24\_Separability.  The notes argue in the real vector space of Hermitian matrices with a
+closed-cone separation theorem; formally we work in the typed matrix space
+\<open>(complex, 'm \<times> 'p, 'm \<times> 'p) lmat\<close>, a real inner-product space (Lmat\_Euclidean), and use
+HOL-Analysis' \<open>separating_hyperplane_closed_point\<close>.  Steps: the positive matrices form a
+closed set; the unit-trace positive matrices form a compact set; the tensor product is
+continuous, so the product density matrices \<open>Sprime\<close> form a compact set not containing
+$0$; by Carath\'eodory (Essential\_Functional\_Analysis) every element of the separable cone is
+a bounded combination of at most $2(mp)^2+1$ generators, and the cone is closed.  Separation
+then yields a real functional, which is converted into a Hermitian witness $W$ with
+$\Re\Tr(W\rho)<0\le\Re\Tr(W\sigma)$ on the cone.\<close>
 
 section \<open>Typed PSD predicate\<close>
 
@@ -407,7 +391,7 @@ proof -
 qed
 
 
-section \<open>Trace on lmat (sorried)\<close>
+section \<open>Trace on lmat\<close>
 
 definition Tr_lmat :: "(complex, 'k :: finite, 'k) lmat \<Rightarrow> complex" where
   "Tr_lmat M = (\<Sum>i = 0..<CARD('k). unwrap_lm M $$ (i, i))"
@@ -1043,26 +1027,26 @@ be the unit-trace product slice.
         continuous in entries, via \<open>tendsto_unwrap_lm_index\<close>).
   \item PSD + unit-trace is bounded: \<open>norm \<sigma>\<^sup>2 = Re Tr (\<sigma>\<^sup>\<dagger> \<sigma>) \<le> Tr \<sigma> \<cdot> \<lambda>\<^sub>m\<^sub>a\<^sub>x \<le> 1\<close>.
   \item Closed + bounded in finite-dimensional \<open>real_inner\<close> = compact
-        (\<open>bounded_closed_imp_seq_compact\<close> + heine_borel).
+        (\<open>bounded_closed_imp_seq_compact\<close> + heine\_borel).
   \item \<open>tensor_lmat\<close> is continuous (entries are bilinear in
         the entries of the factors, lifts via the typeclass).
-  \item \<open>S'\<close> is the image of (compact) \<times> (compact) under
+  \item \<open>S'\<close> is the image of (compact) \<open>\<times>\<close> (compact) under
         \<open>tensor_lmat\<close>, hence compact.
   \end{itemize}
 
 \item \textbf{convex hull S' is compact} via \<open>compact_convex_hull\<close>
-  (applies because every euclidean_space is a real_inner finite-dimensional
+  (applies because every euclidean\_space is a real\_inner finite-dimensional
   space).
 
-\item \textbf{0 \<notin> convex hull S'.} Every element of \<open>convex hull S'\<close> has
+\item \textbf{0 \<open>\<notin>\<close> convex hull S'.} Every element of \<open>convex hull S'\<close> has
   trace 1 (linear combinations of trace-1 matrices with nonneg
   coefficients summing to 1), while 0 has trace 0.
 
-\item \textbf{separable_lmat_gen = conic hull S'.} Each \<open>tensor_lmat \<sigma> \<tau>\<close>
+\item \textbf{separable\_lmat\_gen = conic hull S'.} Each \<open>tensor_lmat \<sigma> \<tau>\<close>
   with \<open>\<sigma>, \<tau>\<close> PSD equals \<open>(Tr \<sigma> \<cdot> Tr \<tau>) \<cdot> tensor_lmat (\<sigma>/Tr \<sigma>) (\<tau>/Tr \<tau>)\<close>
   when traces are positive, and equals \<open>0\<close> when one trace is 0
   (in which case the corresponding factor is itself 0 because
-  PSD + Tr = 0 \<Rightarrow> 0).
+  PSD + Tr = 0 \<open>\<Rightarrow>\<close> 0).
 
 \item \textbf{Putting it together.}
   \<open>separable_cone_lmat = convex_cone hull separable_lmat_gen
@@ -1076,7 +1060,7 @@ be the unit-trace product slice.
 The infrastructure for all of these steps is now available
 (\<open>norm\<close>, \<open>inner\<close>, \<open>dist\<close>, \<open>compact\<close>,
 \<open>convex\<close>, \<open>convex_cone\<close>, etc. all defined for typed lmat
-via the euclidean_space + heine_borel instances).
+via the euclidean\_space + heine\_borel instances).
 \<close>
 
 text \<open>The convex cone hulls of \<open>separable_lmat_gen\<close> and \<open>Sprime\<close>
@@ -1087,10 +1071,10 @@ into \<open>Sprime\<close> by dividing by traces (when nonzero) or replaced by
 text \<open>The hard direction depends on three facts that each lift a
 spectral / bilinearity property:
 
-  psd_lmat_scaleR     – PSD preserved under nonneg real scaling
-  psd_lmat_zero_trace_zero  – PSD with Tr = 0 is the zero matrix
-  tensor_lmat_scaleR_{left,right}  – tensor is bilinear over real scaling
-  psd_lmat_Tr_real_nonneg   – Tr of PSD is a real nonneg complex.
+  psd\_lmat\_scaleR     – PSD preserved under nonneg real scaling
+  psd\_lmat\_zero\_trace\_zero  – PSD with Tr = 0 is the zero matrix
+  tensor\_lmat\_scaleR\_{left,right}  – tensor is bilinear over real scaling
+  psd\_lmat\_Tr\_real\_nonneg   – Tr of PSD is a real nonneg complex.
 
 These reduce \<open>tensor \<sigma> \<tau>\<close> with \<open>\<sigma>, \<tau>\<close> PSD to
 \<open>(Tr \<sigma> * Tr \<tau>) *\<^sub>R tensor (\<sigma>/Tr \<sigma>) (\<tau>/Tr \<tau>)\<close> when traces are positive,

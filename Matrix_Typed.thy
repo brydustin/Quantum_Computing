@@ -1,10 +1,7 @@
-(*
-  Title:    Matrix_Typed.thy
-  Purpose:  Typed-dimension wrapper around Jordan_Normal_Form matrices, with
-            real-vector-space typeclass instances, an overloading of HOL's
-            Hahn-Banach scalar-multiplication constant, and a real-vectorspace
-            locale instantiation.  Used by Quantum_Computing.thy to apply
-            HOL/Hahn_Banach's norm_Hahn_Banach to matrix subspaces.
+(*  Title:   Matrix_Typed.thy
+    Author:  Dustin Bryant.  Typed-dimension matrices and Day 25 of Paulsen's lectures:
+             the Hahn-Banach theorem for bounded linear functionals on matrix spaces,
+             derived from HOL/Hahn_Banach.
 *)
 
 theory Matrix_Typed
@@ -207,7 +204,7 @@ lemma unwrap_lm_prod [simp]:
 section \<open>Real-vectorspace locale on the full type\<close>
 
 text \<open>Every \<open>(complex, 'm, 'n) lmat\<close> with the universe set is a real
-vector space in HOL/Hahn_Banach's sense.\<close>
+vector space in HOL/Hahn\_Banach's sense.\<close>
 
 lemma vectorspace_UNIV_lmat:
   "Vector_Space.vectorspace (UNIV :: (complex, 'm :: finite, 'n :: finite) lmat set)"
@@ -626,7 +623,7 @@ lemma normed_vectorspace_UNIV_lmat:
 text \<open>A complex-linear subspace V of \<open>(complex, 'm, 'n) lmat\<close>
 (i.e.\ nonempty, closed under addition and complex-scalar
 multiplication) is in particular a real-linear subspace, hence a
-\<open>subspace\<close> of \<open>UNIV\<close> in HOL/Hahn_Banach's sense.\<close>
+\<open>subspace\<close> of \<open>UNIV\<close> in HOL/Hahn\_Banach's sense.\<close>
 
 definition cmat_subspace_lmat ::
     "(complex, 'm :: finite, 'n :: finite) lmat set \<Rightarrow> bool"
@@ -784,6 +781,25 @@ lemma hs_norm_lmat_cmult_i [simp]:
   by (simp add: hs_norm_lmat_cmult)
 
 
+section \<open>Day 25 (26 October 2011): the Hahn--Banach theorem\<close>
+
+text \<open>\begin{notesdef}
+Let $W$ be a normed space.  A linear functional $f:W\to\C$ is \emph{bounded} if
+$|f(w)|\le C\norm w$ for some constant $C$; the least such $C$ is the norm
+$\norm f=\sup\{|f(w)|:\norm w\le1\}$.
+\end{notesdef}
+\begin{notestheorem}[Hahn--Banach]
+Let $W$ be a normed space, $V\subseteq W$ a subspace and $g:V\to\C$ a bounded linear
+functional.  Then there is a bounded linear functional $f:W\to\C$ with $\norm f=\norm g$ and
+$f(v)=g(v)$ for all $v\in V$.
+\end{notestheorem}
+In the notes the theorem is used (Day 26) to extend the state $S_\Phi$ from $M_d(S)$ to
+$M_d(M_n)$ in the proof of Arveson's extension theorem, which is not formalised.  Here it is
+proved for $W=(\C$-valued $m\times n$ matrices$)$ with the Hilbert--Schmidt norm: HOL's
+Hahn--Banach gives a real-linear norm-preserving extension of $\Re g$, and the
+Bohnenblust--Sobczyk construction $f(x)=F(x)-iF(ix)$ recovers a complex-linear extension with
+the same bound.\<close>
+
 section \<open>Bounded complex-linear functionals on lmat\<close>
 
 definition clinear_functional_on ::
@@ -865,9 +881,9 @@ proof -
 qed
 
 
-section \<open>Application of HOL/Hahn_Banach (norm-preserving extension)\<close>
+section \<open>Application of HOL/Hahn\_Banach (norm-preserving extension)\<close>
 
-text \<open>Apply HOL/Hahn_Banach to extend the real-linearform
+text \<open>Apply HOL/Hahn\_Banach to extend the real-linearform
 \<open>re_part_lmat g\<close> to all of UNIV preserving the function norm.\<close>
 
 theorem hahn_banach_re_part_lmat:
@@ -1198,7 +1214,7 @@ text \<open>The explicit-bound form of the matrix Hahn-Banach theorem:
 any \<open>C\<close>-bound on \<open>\<bar>Re \<circ> g\<bar>\<close> over the subspace \<open>V\<close> lifts
 verbatim to a \<open>C\<close>-bound on \<open>cmod \<circ> f\<close> over the whole space.
 
-The proof unfolds HOL/Hahn_Banach's locale-local \<open>fn_norm\<close>
+The proof unfolds HOL/Hahn\_Banach's locale-local \<open>fn_norm\<close>
 to its \<open>Sup\<close>-based definition, bounds the supremum on the
 subspace side by \<open>C\<close> via \<open>g_re_C\<close>, transports the bound to
 the extension side via \<open>norm_Hahn_Banach\<close>'s norm-preservation

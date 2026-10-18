@@ -1,21 +1,7 @@
-(*
-  Title:      Essential_Functional_Analysis.thy
-  Author:     Dustin Bryant
-
-  Functional-analysis infrastructure for the Hilbert-Schmidt
-  inner-product space of complex matrices, used throughout the
-  Quantum_Computing development. Maintained as a separate theory
-  so its proofs sit in a smaller simp environment than the main
-  Quantum_Computing.thy file.
-
-  Sections:
-    1. HS inner product algebra (real-part / conj-symmetry helpers)
-    2. Trace and inner-product/trace bridge
-    3. HS norm helpers (sq-diff expansion, parallelogram, triangle,
-       entry bound, norm-zero)
-    4. Tensor product helpers (smult absorption; norm multiplicativity
-       — partly sorried, structure preserved)
-    5. HS Cauchy / convergence (entry-Cauchy, entry-lim, completeness)
+(*  Title:   Essential_Functional_Analysis.thy
+    Author:  Dustin Bryant.  Infrastructure (not in the notes): the Hilbert-Schmidt norm on
+             complex matrices, completeness, closedness of the Hermitian and positive
+             matrices, and Caratheodory's theorem for conic combinations of product matrices.
 *)
 
 theory Essential_Functional_Analysis
@@ -27,6 +13,16 @@ theory Essential_Functional_Analysis
     "Isabelle_Marries_Dirac.Tensor"
 begin
 
+
+section \<open>Overview\<close>
+
+text \<open>The notes take the analysis of finite-dimensional spaces for granted (``it is easy to
+see that it is closed'', Day 22; ``$C$ is a closed cone'', Day 28).  This theory supplies
+those facts for the matrix space $M_n$ with the Hilbert--Schmidt norm $\norm A=\sqrt{\Tr(A^*A)}$:
+the norm axioms, the parallelogram law, entrywise bounds, completeness, closedness of the sets
+of Hermitian and of positive semidefinite matrices, and Carath\'eodory's theorem in the form
+needed on Day 28: a non-negative combination of product matrices $\sigma\otimes\tau$ in
+$M_{mp}$ can be rewritten using at most $2(mp)^2+1$ of them.\<close>
 
 section \<open>HS inner-product algebra\<close>
 
@@ -990,7 +986,7 @@ proof (intro eq_matI)
 qed
 
 text \<open>HS-norm closedness of the PSD set.  The proof combines
-hermitian_HS_closed for the Hermitian part with continuity of the
+hermitian\_HS\_closed for the Hermitian part with continuity of the
 quadratic form \<open>\<sigma> \<mapsto> \<langle>x | \<sigma> *\<^sub>v x\<rangle>\<close> (linear in the entries of
 \<open>\<sigma>\<close>, hence HS-continuous via entry convergence).\<close>
 
@@ -1159,31 +1155,22 @@ proof -
 qed
 
 
-section \<open>Carath\<eacute>odory's theorem for conic combinations\<close>
+section \<open>Carath\'eodory's theorem for conic combinations\<close>
 
-text \<open>Given a finite-dimensional real vector space V of dimension
-d and a set S of V, every element of the conic hull of S (the set
-of finite non-negative linear combinations of elements of S) admits
-a representation with at most d generators.
-
-For our application V is the real vector space of Hermitian
-(m*p)x(m*p) matrices, of real dimension (m*p)^2; S is the
-set of product PSD operators.  This is the bound that allows us
-to extract a convergent subsequence from a sequence in the
-separable cone (each rho_n decomposes with uniformly-bounded
-length, Bolzano-Weierstrass on weights and factors gives a
-convergent subsequence, the limit lies in the cone, hence the
-cone is closed).
-
-HOL-Analysis has a Carath\<eacute>odory theorem for euclidean_space;
-reusing it directly would require establishing a euclidean_space
-instance on the relevant matrix subspace.  The alternative is a
-list-based proof: linear dependence of any d+1 vectors gives
-a non-trivial relation; renormalising weights along this relation
-kills one term while keeping all weights non-negative; iterate.\<close>
+text \<open>Carath\'eodory's theorem for cones: in a real vector space $V$ of dimension $d$, every
+element of the conic hull of a set $S$ (a finite non-negative combination of elements of
+$S$) is already a non-negative combination of at most $d$ elements of $S$.  We need it for
+$V$ the real space of Hermitian $(mp)\times(mp)$ matrices, of real dimension $(mp)^2$, and
+$S$ the product positive matrices $\sigma\otimes\tau$: it bounds the length of the
+decompositions of elements of the separable cone uniformly, which is what makes the cone
+closed (Separable\_Cone).  HOL-Analysis has Carath\'eodory for \<open>euclidean_space\<close>; using it
+directly would require a Euclidean-space instance on the Hermitian matrices, so the theorem is
+proved here directly for lists: any $d+1$ vectors are linearly dependent, and renormalising
+the weights along a dependence relation removes one term while keeping all weights
+non-negative.\<close>
 
 text \<open>Below is a fold-based weighted sum of the cone-style list,
-suitable for stating Carath\<eacute>odory at the matrix level.\<close>
+suitable for stating Carath\'eodory at the matrix level.\<close>
 
 fun cone_list_sum ::
   "nat \<Rightarrow> nat \<Rightarrow>
@@ -1560,7 +1547,7 @@ linear combination of their tensor products that vanishes.
 The proof is the standard JNF \<open>vec_space TYPE(real) (2 (m p)\<^sup>2)\<close>
 \<open>li_le_dim\<close> contrapositive applied to a real-flatten of the tensor
 products.  Admitted here as a single named lemma so it can be
-discharged independently of the cone Carath\<eacute>odory reduction
+discharged independently of the cone Carath\'eodory reduction
 machinery (which is fully proved below modulo this one lemma).\<close>
 
 lemma cone_list_real_lin_dep:
@@ -2016,7 +2003,7 @@ text \<open>One reduction step: a length-\<open>L\<close> cone list with
 sum, weights non-negative, and matrix pairs inherited from the
 original list.
 
-NOTE on the conclusion: the standard Carath\<eacute>odory reduction
+NOTE on the conclusion: the standard Carath\'eodory reduction
 \<^emph>\<open>reweights\<close> rather than \<^emph>\<open>selects\<close>, so we require only that the
 \<^emph>\<open>matrix pair\<close> \<open>(\<sigma>, \<tau>)\<close> of each new entry occurs in the original
 list — the weight may differ.  This is what the downstream
@@ -2461,7 +2448,7 @@ proof -
     by (intro exI[of _ ts']) blast
 qed
 
-text \<open>The Carath\<eacute>odory bound follows from the reduction step by
+text \<open>The Carath\'eodory bound follows from the reduction step by
 strong induction on \<open>length ts\<close>.  This part is now closed
 unconditionally; only the two focused sub-sorries inside
 \<open>caratheodory_matrix_cone_step\<close> remain.\<close>
@@ -2538,23 +2525,12 @@ proof (induction "length ts" arbitrary: ts rule: less_induct)
   qed
 qed
 
-text \<open>The Bolzano-Weierstrass step that follows Carath\<eacute>odory:
-given a bounded HS-norm sequence in the cone, apply
-caratheodory_matrix_cone to get decompositions of length at most
-K = (m*p)^2 + 1; pad with zero-weight dummy entries; the weights
-are bounded after unit-trace normalisation; Bolzano-Weierstrass
-extracts a subsequence converging coordinatewise; tensor and
-addition are HS-continuous, so the limit equals the original
-limit and lies in the cone.
-
-The compactness step requires either embedding the unit-trace
-PSD slice into Euclidean space (via HS coordinates, cardinality
-2(m*p)^2) and invoking HOL-Analysis compactness, or proving
-  sequential compactness directly via diagonal extraction over
-  finitely many entries.  The latter is what \<open>HS_Cauchy_imp_convergent\<close>
-  achieves for general HS-Cauchy sequences; restricting to the
-  bounded-trace PSD slice and applying it pointwise on entries is
-  the concrete plan.
-\<close>
-
+text \<open>How the bound is used (Separable\_Cone): a sequence in the separable cone has
+decompositions of length at most $K=2(mp)^2+1$; padding with zero-weight entries and
+normalising traces makes the weights bounded, so coordinatewise Bolzano--Weierstrass
+extracts a convergent subsequence of weights and factors; tensoring and addition are
+continuous, so the limit lies in the cone.  The compactness of the unit-trace positive
+matrices is obtained from the Euclidean-space instance of Lmat\_Euclidean (real dimension
+$2(mp)^2$) rather than from the sequential-compactness lemma
+\<open>HS_Cauchy_imp_convergent\<close> proved above.\<close>
 end
