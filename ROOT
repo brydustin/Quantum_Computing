@@ -1,7 +1,7 @@
 chapter AFP
 
 session Vern_Paulsen_QC_3_10 in "." = Isabelle_Marries_Dirac +
-  options [document = false, quick_and_dirty = true, timeout = 3600]
+  options [document = false, quick_and_dirty = false, timeout = 3600]
   sessions
     Quantum_Fourier_Transform
     "HOL-Hahn_Banach"
@@ -18,13 +18,13 @@ session Vern_Paulsen_QC_3_10 in "." = Isabelle_Marries_Dirac +
     Essential_Functional_Analysis
 
 session Vern_Paulsen_QC_3_10_Lmat in "Lmat" = Vern_Paulsen_QC_3_10 +
-  options [document = false, quick_and_dirty = true, timeout = 3600]
+  options [document = false, quick_and_dirty = false, timeout = 3600]
   theories
     Lmat_Euclidean
     Separable_Cone
 
 session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
-  options [document = false, quick_and_dirty = true, timeout = 3600]
+  options [document = false, quick_and_dirty = false, timeout = 3600]
   theories
     Quantum_Computing11
     Day23_ChoiExtremeUCP

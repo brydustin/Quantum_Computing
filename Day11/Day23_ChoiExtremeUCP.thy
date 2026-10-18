@@ -3893,7 +3893,7 @@ next
 qed
 
 
-subsection \<open>CP Radon\<dash>Nikodym \<mdash> the irreducible classical kernel\<close>
+subsection \<open>CP Radon\<dash>Nikodym \<mdash> the dominated-PSD kernel\<close>
 
 text \<open>\<^bold>\<open>Dominated PSD parametrisation\<close>.  This is the genuinely
 classical fact behind CP Radon\<dash>Nikodym: any PSD matrix \<open>B\<close>
@@ -3906,9 +3906,8 @@ Geometric content: \<open>range(B) \<subseteq> range(outer_sum k vs)\<close>
 and that range is spanned by the columns of \<open>V\<close>.  Pulling B back
 through that span gives \<open>T\<close>.
 
-Proving this needs Loewner-order / SVD-style infrastructure not
-present in the project; we take it as a single named axiom and use
-it to discharge the higher-level CP Radon\<dash>Nikodym lemma below.\<close>
+Proved below as @{text dominated_outer_sum_param} through the
+Moore\<dash>Penrose pseudoinverse of the outer sum (no axioms).\<close>
 
 text \<open>\<^bold>\<open>Loewner\<dash>kernel inclusion.\<close>  If \<open>A \<ge> B \<ge> 0\<close>
 in Loewner order, then every vector annihilated by \<open>A\<close> is also
@@ -4349,6 +4348,244 @@ proof -
 qed
 
 
+text \<open>Two square matrices agreeing on every vector are equal.\<close>
+
+lemma mat_eq_of_mult_vec_eq:
+  fixes M N :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat k k"
+      and N_c: "N \<in> carrier_mat k k"
+      and eq: "\<And>x. x \<in> carrier_vec k \<Longrightarrow> M *\<^sub>v x = N *\<^sub>v x"
+  shows "M = N"
+proof (rule eq_matI)
+  show "dim_row M = dim_row N" using M_c N_c by auto
+  show "dim_col M = dim_col N" using M_c N_c by auto
+  fix i j assume "i < dim_row N" and "j < dim_col N"
+  hence ilt: "i < k" and jlt: "j < k" using N_c by auto
+  have one_c: "1\<^sub>m k \<in> carrier_mat k k" by auto
+  have e_c: "Matrix.col (1\<^sub>m k) j \<in> carrier_vec k" by (rule carrier_vecI) simp
+  have "Matrix.col M j = Matrix.col (M * 1\<^sub>m k) j"
+    using right_mult_one_mat[OF M_c] by simp
+  also have "\<dots> = M *\<^sub>v Matrix.col (1\<^sub>m k) j"
+    by (rule col_mult2[OF M_c one_c jlt])
+  also have "\<dots> = N *\<^sub>v Matrix.col (1\<^sub>m k) j"
+    by (rule eq[OF e_c])
+  also have "\<dots> = Matrix.col (N * 1\<^sub>m k) j"
+    by (rule col_mult2[OF N_c one_c jlt, symmetric])
+  also have "\<dots> = Matrix.col N j"
+    using right_mult_one_mat[OF N_c] by simp
+  finally have cols: "Matrix.col M j = Matrix.col N j" .
+  have "M $$ (i, j) = Matrix.col M j $ i" using ilt jlt M_c by auto
+  also have "\<dots> = Matrix.col N j $ i" using cols by simp
+  also have "\<dots> = N $$ (i, j)" using ilt jlt N_c by auto
+  finally show "M $$ (i, j) = N $$ (i, j)" .
+qed
+
+text \<open>Loewner-implied pseudoinverse identity, proved at operator level:
+with \<open>Q = A\<^sup>+ A\<close> one has \<open>A Q = A\<close>, so \<open>x - Q x \<in> ker A \<subseteq> ker B\<close>, whence
+\<open>B = B Q\<close>; taking adjoints gives \<open>B = A A\<^sup>+ B\<close>.\<close>
+
+lemma A_Aplus_B_eq_B:
+  fixes U :: "complex Matrix.mat" and D :: "real list" and B :: "complex Matrix.mat"
+  assumes Uc: "U \<in> carrier_mat k k"
+      and UU: "unitary U"
+      and Dlen: "length D = k"
+      and Dnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> D ! i"
+      and B_c: "B \<in> carrier_mat k k"
+      and B_psd: "psd B"
+      and dom_psd: "psd ((U * diag_mat_of_real D * (U\<^sup>\<dagger>)) - B)"
+  shows "(U * diag_mat_of_real D * (U\<^sup>\<dagger>))
+            * (U * diag_mat_of_real (pinv_list D) * (U\<^sup>\<dagger>)) * B = B"
+proof -
+  let ?Dm  = "diag_mat_of_real D"
+  let ?Pm  = "diag_mat_of_real (pinv_list D)"
+  let ?Ud  = "U\<^sup>\<dagger>"
+  let ?A   = "U * ?Dm * ?Ud"
+  let ?Ap  = "U * ?Pm * ?Ud"
+  let ?Q   = "?Ap * ?A"
+
+  have Dm_c: "?Dm \<in> carrier_mat k k" using Dlen by auto
+  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
+  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
+  have A_c: "?A \<in> carrier_mat k k" using Uc Dm_c Ud_c by simp
+  have Ap_c: "?Ap \<in> carrier_mat k k" using Uc Pm_c Ud_c by simp
+  have Q_c: "?Q \<in> carrier_mat k k" using Ap_c A_c by simp
+  have BQ_c: "B * ?Q \<in> carrier_mat k k" using B_c Q_c by simp
+
+  have Pnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> pinv_list D ! i"
+  proof -
+    fix i assume "i < k"
+    thus "0 \<le> pinv_list D ! i" using Dnn Dlen by (simp add: pinv_list_index)
+  qed
+  have A_psd: "psd ?A"
+    by (rule psd_U_diag_Udag[OF Uc Dlen]) (use Dnn in auto)
+  have Ap_psd: "psd ?Ap"
+  proof (rule psd_U_diag_Udag[OF Uc])
+    show "length (pinv_list D) = k" using Dlen by simp
+  next
+    fix i assume "i < k" thus "0 \<le> pinv_list D ! i" by (rule Pnn)
+  qed
+  have A_herm: "?A\<^sup>\<dagger> = ?A"
+    using psd_hermitian[OF A_psd] unfolding hermitian_def .
+  have Ap_herm: "?Ap\<^sup>\<dagger> = ?Ap"
+    using psd_hermitian[OF Ap_psd] unfolding hermitian_def .
+  have B_herm: "B\<^sup>\<dagger> = B"
+    using psd_hermitian[OF B_psd] unfolding hermitian_def .
+
+  \<comment> \<open>\<open>A Q = A\<close> from \<open>A A\<^sup>+ A = A\<close>.\<close>
+  have AApA: "?A * ?Ap * ?A = ?A" by (rule A_Aplus_A_eq[OF Uc UU Dlen])
+  have AQ: "?A * ?Q = ?A"
+  proof -
+    have "?A * ?Q = ?A * ?Ap * ?A"
+      by (rule assoc_mult_mat[OF A_c Ap_c A_c, symmetric])
+    also have "\<dots> = ?A" by (rule AApA)
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>Pointwise: \<open>B x = B Q x\<close>, since \<open>x - Q x \<in> ker A \<subseteq> ker B\<close>.\<close>
+  have pointwise: "\<And>x. x \<in> carrier_vec k \<Longrightarrow> B *\<^sub>v x = (B * ?Q) *\<^sub>v x"
+  proof -
+    fix x :: "complex Matrix.vec" assume x_c: "x \<in> carrier_vec k"
+    let ?y = "x - ?Q *\<^sub>v x"
+    have Qx_c: "?Q *\<^sub>v x \<in> carrier_vec k" using Q_c x_c by auto
+    have y_c: "?y \<in> carrier_vec k" using x_c Qx_c by auto
+    have y_dim: "dim_vec ?y = k" by (rule carrier_vecD[OF y_c])
+    have Ax_c: "?A *\<^sub>v x \<in> carrier_vec k" using A_c x_c by auto
+    have Ay: "?A *\<^sub>v ?y = 0\<^sub>v k"
+    proof -
+      have e1: "?A *\<^sub>v (?Q *\<^sub>v x) = (?A * ?Q) *\<^sub>v x"
+        by (rule assoc_mult_mat_vec[OF A_c Q_c x_c, symmetric])
+      have e2: "(?A * ?Q) *\<^sub>v x = ?A *\<^sub>v x" using AQ by simp
+      have "?A *\<^sub>v ?y = ?A *\<^sub>v x - ?A *\<^sub>v (?Q *\<^sub>v x)"
+        by (rule mult_minus_distrib_mat_vec[OF A_c x_c Qx_c])
+      also have "\<dots> = ?A *\<^sub>v x - ?A *\<^sub>v x" using e1 e2 by simp
+      also have "\<dots> = 0\<^sub>v k" using Ax_c by simp
+      finally show ?thesis .
+    qed
+    have By: "B *\<^sub>v ?y = 0\<^sub>v k"
+      by (rule loewner_ker_subset[OF A_c B_c B_psd dom_psd y_dim Ay])
+    have Bx_c: "B *\<^sub>v x \<in> carrier_vec k" using B_c x_c by auto
+    have BQx_c: "B *\<^sub>v (?Q *\<^sub>v x) \<in> carrier_vec k" using B_c Qx_c by auto
+    have diff0: "B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x) = 0\<^sub>v k"
+      using mult_minus_distrib_mat_vec[OF B_c x_c Qx_c] By by simp
+    have "B *\<^sub>v x = B *\<^sub>v (?Q *\<^sub>v x)"
+    proof (rule eq_vecI)
+      show "dim_vec (B *\<^sub>v x) = dim_vec (B *\<^sub>v (?Q *\<^sub>v x))"
+        using Bx_c BQx_c by auto
+    next
+      fix i assume "i < dim_vec (B *\<^sub>v (?Q *\<^sub>v x))"
+      hence ilt: "i < k" using B_c by auto
+      have "(B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x)) $ i = 0"
+        using diff0 ilt by simp
+      moreover have "(B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x)) $ i
+                       = (B *\<^sub>v x) $ i - (B *\<^sub>v (?Q *\<^sub>v x)) $ i"
+        using ilt B_c by simp
+      ultimately show "(B *\<^sub>v x) $ i = (B *\<^sub>v (?Q *\<^sub>v x)) $ i" by simp
+    qed
+    also have "\<dots> = (B * ?Q) *\<^sub>v x"
+      by (rule assoc_mult_mat_vec[OF B_c Q_c x_c, symmetric])
+    finally show "B *\<^sub>v x = (B * ?Q) *\<^sub>v x" .
+  qed
+  have B_eq_BQ: "B = B * ?Q"
+    by (rule mat_eq_of_mult_vec_eq[OF B_c BQ_c pointwise])
+
+  \<comment> \<open>Adjoint: \<open>B = B\<^sup>\<dagger> = (B Q)\<^sup>\<dagger> = Q\<^sup>\<dagger> B = A A\<^sup>+ B\<close>.\<close>
+  have Q_dag: "?Q\<^sup>\<dagger> = ?A * ?Ap"
+  proof -
+    have "?Q\<^sup>\<dagger> = ?A\<^sup>\<dagger> * (?Ap\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use Ap_c A_c in auto)
+    also have "\<dots> = ?A * ?Ap" using A_herm Ap_herm by simp
+    finally show ?thesis .
+  qed
+  have "B = B\<^sup>\<dagger>" using B_herm by simp
+  also have "\<dots> = (B * ?Q)\<^sup>\<dagger>"
+    by (rule arg_cong[where f = dagger, OF B_eq_BQ])
+  also have "\<dots> = ?Q\<^sup>\<dagger> * (B\<^sup>\<dagger>)"
+    by (rule dagger_of_prod) (use B_c Q_c in auto)
+  also have "\<dots> = ?A * ?Ap * B" using Q_dag B_herm by simp
+  finally show ?thesis by (rule sym)
+qed
+
+text \<open>Spectral decomposition of a psd matrix with non-negative diagonal.\<close>
+
+lemma psd_spectral_decomp_nonneg:
+  fixes P :: "complex Matrix.mat"
+  assumes sq: "P \<in> carrier_mat n n"
+      and pos: "psd P"
+  shows "\<exists>(U :: complex Matrix.mat) (D :: real list).
+           U \<in> carrier_mat n n \<and> unitary U \<and> length D = n \<and>
+           (\<forall>i < n. 0 \<le> D ! i) \<and>
+           P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+proof -
+  have herm: "hermitian P" using pos by (rule psd_hermitian)
+  obtain U :: "complex Matrix.mat" and D :: "real list" where
+      Uc: "U \<in> carrier_mat n n"
+    and UU: "unitary U"
+    and Dlen: "length D = n"
+    and spec: "U\<^sup>\<dagger> * P * U = diag_mat_of_real D"
+    using hermitian_spectral_decomp[OF sq herm] by blast
+  have P_eq: "P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+    using hermitian_spectral_decomp_eq[OF Uc sq UU spec] .
+  have PU_eq_UD: "P * U = U * diag_mat_of_real D"
+    using hermitian_spectral_decomp_right[OF Uc sq UU spec] .
+  have eig_nonneg:
+    "\<forall>mu::complex. \<forall>v::complex Matrix.vec.
+       v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0"
+    using psd_iff_nonneg_eigenvalues[OF sq] pos by blast
+  have D_nonneg: "\<forall>i < n. D ! i \<ge> 0"
+  proof (intro allI impI)
+    fix i assume iltn: "i < n"
+    let ?ui = "Matrix.col U i"
+    have uidim: "dim_vec ?ui = n" using Uc by simp
+    have ui_nonzero: "?ui \<noteq> 0\<^sub>v n"
+    proof
+      assume zero: "?ui = 0\<^sub>v n"
+      have "\<parallel>?ui\<parallel> = (1 :: real)"
+        using UU iltn Uc by (metis carrier_matD(2) unitary_unit_col)
+      moreover have "\<parallel>?ui\<parallel> = 0"
+        using zero uidim cpx_vec_length_zero_iff by metis
+      ultimately show False by simp
+    qed
+    have eig: "P *\<^sub>v ?ui = complex_of_real (D ! i) \<cdot>\<^sub>v ?ui"
+    proof (rule eq_vecI)
+      show "dim_vec (P *\<^sub>v ?ui) = dim_vec (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui)"
+        using sq uidim by simp
+    next
+      fix k
+      assume k: "k < dim_vec (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui)"
+      then have klt: "k < n" using uidim by simp
+      have "(P *\<^sub>v ?ui) $ k = (P * U) $$ (k, i)"
+        using sq Uc iltn klt by (metis carrier_matD(1,2) index_mult_mat(1) index_mult_mat_vec)
+      also have "\<dots> = (U * diag_mat_of_real D) $$ (k, i)"
+        using PU_eq_UD by simp
+      also have "\<dots> = complex_of_real (D ! i) * U $$ (k, i)"
+      proof -
+        have "(U * diag_mat_of_real D) $$ (k, i) =
+              (\<Sum>j = 0..<n. U $$ (k, j) * diag_mat_of_real D $$ (j, i))"
+          using Uc Dlen klt iltn by (simp add: scalar_prod_def lessThan_atLeast0)
+        also have "\<dots> =
+              (\<Sum>j = 0..<n. (if j = i then U $$ (k, j) * complex_of_real (D ! i) else 0))"
+          using Dlen iltn by (intro sum.cong refl, auto)
+        also have "\<dots> = U $$ (k, i) * complex_of_real (D ! i)"
+          using iltn by simp
+        also have "\<dots> = complex_of_real (D ! i) * U $$ (k, i)"
+          by (simp add: mult.commute)
+        finally show ?thesis .
+      qed
+      also have "\<dots> = (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui) $ k"
+        using klt Uc by (simp add: iltn)
+      finally show "(P *\<^sub>v ?ui) $ k = (complex_of_real (D ! i) \<cdot>\<^sub>v ?ui) $ k" .
+    qed
+    have "0 \<le> Re (complex_of_real (D ! i))"
+      using eig eig_nonneg ui_nonzero uidim by blast
+    thus "D ! i \<ge> 0" by simp
+  qed
+  show ?thesis using Uc UU Dlen D_nonneg P_eq by blast
+qed
+
+text \<open>Dominated psd matrices are parametrised through the dominating
+frame: if \<open>0 \<le> B \<le> V V\<^sup>\<dagger>\<close> then \<open>B = V T V\<^sup>\<dagger>\<close> with \<open>T = V\<^sup>\<dagger> A\<^sup>+ B A\<^sup>+ V \<ge> 0\<close>,
+\<open>A = V V\<^sup>\<dagger>\<close>, \<open>A\<^sup>+\<close> the Moore\<dash>Penrose pseudoinverse.\<close>
+
 lemma dominated_outer_sum_param:
   fixes vs :: "complex Matrix.vec list"
     and B :: "complex Matrix.mat"
@@ -4359,7 +4596,136 @@ lemma dominated_outer_sum_param:
       and B_dom: "psd (outer_sum k vs - B)"
   shows "\<exists>T. T \<in> carrier_mat (length vs) (length vs) \<and> psd T \<and>
               B = (mat_of_cols k vs) * T * ((mat_of_cols k vs)\<^sup>\<dagger>)"
-  sorry
+proof -
+  let ?m = "length vs"
+  let ?V = "mat_of_cols k vs"
+  let ?Vd = "(mat_of_cols k vs)\<^sup>\<dagger>"
+  let ?A = "outer_sum k vs"
+  have V_c: "?V \<in> carrier_mat k ?m" by (rule mat_of_cols_carrier(1))
+  have Vd_c: "?Vd \<in> carrier_mat ?m k" using V_c by (rule dagger_carrier)
+  have A_eq: "?V * ?Vd = ?A" by (simp add: outer_sum_def)
+  have A_c: "?A \<in> carrier_mat k k" using V_c Vd_c A_eq by auto
+  have A_psd: "psd ?A" by (rule outer_sum_psd[OF refl vs_dim])
+  have A_herm: "?A\<^sup>\<dagger> = ?A" by (rule outer_sum_hermitian)
+  have B_herm: "B\<^sup>\<dagger> = B"
+    using psd_hermitian[OF B_psd] unfolding hermitian_def .
+
+  obtain U :: "complex Matrix.mat" and D :: "real list"
+    where Uc: "U \<in> carrier_mat k k" and UU: "unitary U" and Dlen: "length D = k"
+      and Dnn0: "\<forall>i < k. 0 \<le> D ! i"
+      and A_spec: "?A = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+    using psd_spectral_decomp_nonneg[OF A_c A_psd] by blast
+  have Dnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> D ! i" using Dnn0 by simp
+
+  let ?Pm = "diag_mat_of_real (pinv_list D)"
+  let ?Ud = "U\<^sup>\<dagger>"
+  let ?Ap = "U * ?Pm * ?Ud"
+  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
+  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
+  have Ap_c: "?Ap \<in> carrier_mat k k" using Uc Pm_c Ud_c by simp
+  have Pnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> pinv_list D ! i"
+  proof -
+    fix i assume "i < k"
+    thus "0 \<le> pinv_list D ! i" using Dnn Dlen by (simp add: pinv_list_index)
+  qed
+  have Ap_psd: "psd ?Ap"
+  proof (rule psd_U_diag_Udag[OF Uc])
+    show "length (pinv_list D) = k" using Dlen by simp
+  next
+    fix i assume "i < k" thus "0 \<le> pinv_list D ! i" by (rule Pnn)
+  qed
+  have Ap_herm: "?Ap\<^sup>\<dagger> = ?Ap"
+    using psd_hermitian[OF Ap_psd] unfolding hermitian_def .
+
+  \<comment> \<open>\<open>A A\<^sup>+ B = B\<close> and, by adjoints, \<open>B A\<^sup>+ A = B\<close>.\<close>
+  have dom': "psd ((U * diag_mat_of_real D * (U\<^sup>\<dagger>)) - B)"
+    using B_dom A_spec by simp
+  have AApB: "?A * ?Ap * B = B"
+    using A_Aplus_B_eq_B[OF Uc UU Dlen Dnn B_c B_psd dom'] A_spec by simp
+  have AAp_c: "?A * ?Ap \<in> carrier_mat k k" using A_c Ap_c by simp
+  have BApA: "B * ?Ap * ?A = B"
+  proof -
+    have "B = (?A * ?Ap * B)\<^sup>\<dagger>" using AApB B_herm by simp
+    also have "\<dots> = B\<^sup>\<dagger> * ((?A * ?Ap)\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use AAp_c B_c in auto)
+    also have "(?A * ?Ap)\<^sup>\<dagger> = ?Ap\<^sup>\<dagger> * (?A\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use A_c Ap_c in auto)
+    also have "B\<^sup>\<dagger> * (?Ap\<^sup>\<dagger> * (?A\<^sup>\<dagger>)) = B * (?Ap * ?A)"
+      using B_herm Ap_herm A_herm by simp
+    also have "\<dots> = B * ?Ap * ?A"
+      by (rule assoc_mult_mat[OF B_c Ap_c A_c, symmetric])
+    finally show ?thesis by (rule sym)
+  qed
+
+  \<comment> \<open>The parameter \<open>T = V\<^sup>\<dagger> A\<^sup>+ B A\<^sup>+ V\<close>.\<close>
+  let ?Y1 = "?Vd * ?Ap"
+  let ?Y2 = "?Y1 * B"
+  let ?Y3 = "?Y2 * ?Ap"
+  let ?Tm = "?Y3 * ?V"
+  have Y1_c: "?Y1 \<in> carrier_mat ?m k" using Vd_c Ap_c by simp
+  have Y2_c: "?Y2 \<in> carrier_mat ?m k" using Y1_c B_c by simp
+  have Y3_c: "?Y3 \<in> carrier_mat ?m k" using Y2_c Ap_c by simp
+  have Tm_c: "?Tm \<in> carrier_mat ?m ?m" using Y3_c V_c by simp
+
+  have ApV_c: "?Ap * ?V \<in> carrier_mat k ?m" using Ap_c V_c by simp
+  have ApV_dag: "(?Ap * ?V)\<^sup>\<dagger> = ?Y1"
+  proof -
+    have "(?Ap * ?V)\<^sup>\<dagger> = ?Vd * (?Ap\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use Ap_c V_c in auto)
+    also have "\<dots> = ?Y1" using Ap_herm by simp
+    finally show ?thesis .
+  qed
+  have Tm_psd: "psd ?Tm"
+  proof -
+    have "psd ((?Ap * ?V)\<^sup>\<dagger> * B * (?Ap * ?V))"
+      by (rule psd_conjugate[OF B_c B_psd ApV_c])
+    also have "(?Ap * ?V)\<^sup>\<dagger> * B * (?Ap * ?V) = ?Y2 * (?Ap * ?V)"
+      using ApV_dag by simp
+    also have "\<dots> = ?Tm"
+      by (rule assoc_mult_mat[OF Y2_c Ap_c V_c, symmetric])
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>\<open>V T V\<^sup>\<dagger> = (V V\<^sup>\<dagger>) A\<^sup>+ B A\<^sup>+ (V V\<^sup>\<dagger>) = A A\<^sup>+ B A\<^sup>+ A = B\<close>.\<close>
+  have VY1: "?V * ?Y1 = ?A * ?Ap"
+  proof -
+    have "?V * ?Y1 = ?V * ?Vd * ?Ap"
+      by (rule assoc_mult_mat[OF V_c Vd_c Ap_c, symmetric])
+    also have "\<dots> = ?A * ?Ap" using A_eq by simp
+    finally show ?thesis .
+  qed
+  have VY2: "?V * ?Y2 = B"
+  proof -
+    have "?V * ?Y2 = ?V * ?Y1 * B"
+      by (rule assoc_mult_mat[OF V_c Y1_c B_c, symmetric])
+    also have "\<dots> = ?A * ?Ap * B" using VY1 by simp
+    also have "\<dots> = B" by (rule AApB)
+    finally show ?thesis .
+  qed
+  have VY3: "?V * ?Y3 = B * ?Ap"
+  proof -
+    have "?V * ?Y3 = ?V * ?Y2 * ?Ap"
+      by (rule assoc_mult_mat[OF V_c Y2_c Ap_c, symmetric])
+    also have "\<dots> = B * ?Ap" using VY2 by simp
+    finally show ?thesis .
+  qed
+  have BAp_c: "B * ?Ap \<in> carrier_mat k k" using B_c Ap_c by simp
+  have VTVd: "?V * ?Tm * ?Vd = B"
+  proof -
+    have "?V * ?Tm = ?V * ?Y3 * ?V"
+      by (rule assoc_mult_mat[OF V_c Y3_c V_c, symmetric])
+    also have "\<dots> = B * ?Ap * ?V" using VY3 by simp
+    finally have VT: "?V * ?Tm = B * ?Ap * ?V" .
+    have "?V * ?Tm * ?Vd = B * ?Ap * ?V * ?Vd" using VT by simp
+    also have "\<dots> = B * ?Ap * (?V * ?Vd)"
+      by (rule assoc_mult_mat[OF BAp_c V_c Vd_c])
+    also have "\<dots> = B * ?Ap * ?A" using A_eq by simp
+    also have "\<dots> = B" by (rule BApA)
+    finally show ?thesis .
+  qed
+  show ?thesis
+    by (intro exI[of _ ?Tm] conjI Tm_c Tm_psd VTVd[symmetric])
+qed
 
 
 subsection \<open>Linearity of @{const kraus_quad_map} in its matrix argument\<close>
@@ -4669,7 +5035,7 @@ qed
 subsection \<open>CP Radon\<dash>Nikodym\<close>
 
 text \<open>\<^bold>\<open>CP Radon\<dash>Nikodym (Choi level)\<close>.  At the Choi-matrix level,
-the parametrisation falls out from the classical
+the parametrisation falls out from
 @{thm dominated_outer_sum_param} composed with the structural identities
 @{thm choi_matrix_kraus_eq} and @{thm choi_matrix_kraus_quad_eq}.  This
 proves what is needed at the matrix level; passing to the
@@ -4752,8 +5118,8 @@ includes linearity; we make it explicit so the consumer can supply it.\<close>
 
 text \<open>\<^bold>\<open>Operator-level CP Radon\<dash>Nikodym, with linearity assumption.\<close>
 This version is fully discharged via @{thm cp_radon_nikodym_choi} +
-@{thm map_eq_from_choi_when_linear}, modulo the classical
-@{thm dominated_outer_sum_param} axiom.  It requires @{term Psi} to be
+@{thm map_eq_from_choi_when_linear}, which rest on
+@{thm dominated_outer_sum_param}.  It requires @{term Psi} to be
 linear on @{term \<open>carrier_mat n n\<close>}, which is not implied by the
 project's @{const completely_positive} predicate.\<close>
 
