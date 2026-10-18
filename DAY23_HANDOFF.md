@@ -1,3 +1,11 @@
+> **FINAL STATUS (2026-10-18): closed.** `Day23_ChoiExtremeUCP.thy` has no
+> `sorry`; `dominated_outer_sum_param` and `A_Aplus_B_eq_B` are proved
+> (operator-level pseudoinverse argument, see `instructions.md`), so
+> `cp_radon_nikodym_choi`/`_linear` and `choi_theorem_3_cptp*` are
+> unconditional. The whole project builds with `quick_and_dirty = false`
+> and the oracle audit is clean. Everything below is the historical
+> handoff and is partly out of date.
+
 # Day 23 / Choi's Theorem 3 — Focused Session Handoff
 
 This document briefs a dedicated session for closing **Choi's Theorem 3**
@@ -186,8 +194,8 @@ All in `Day11/Day23_ChoiExtremeUCP.thy`:
 | `mat_lin_indep_complex`, `mat_lin_indep_complex_imp_real` | ✅ defined / proved |
 | `extreme_CPTP_carrier` | ✅ defined (replaces vacuously-false `extreme_CPTP`) |
 | `Tr_mat_unit_mult`, `mat_trace_pairing_unique` | ✅ proved |
-| `cp_radon_nikodym` | ❌ `sorry` (axiom; substantial classical result) |
-| `choi_theorem_3_cptp_forward_complex` | ✅ proved modulo R-N axiom + `Phi_i_range` sorries (CP-property gaps closed) |
+| `cp_radon_nikodym_choi`, `cp_radon_nikodym_linear` | ✅ proved (2026-10-18; via `dominated_outer_sum_param`) |
+| `choi_theorem_3_cptp_forward_complex` | ✅ proved (unconditional since 2026-10-18) |
 | `choi_theorem_3_cptp`         | ✅ \<^bold>forward direction proved\<^bold>; reverse sorried with documented `extreme_CPTP` vacuity issue |
 | `choi_theorem_3` (UCP form)   | ❌ `sorry` — documented convention mismatch (project uses CPTP-side products) |
 
@@ -205,8 +213,8 @@ inequality).
 - Step D (ps_T1 via trace pairing duality)
 - Step E (assembly: S nonzero, build complex c, contradict lin_indep)
 
-\<^bold>Remaining sorries\<^bold>:</br>
-- `cp_radon_nikodym` (axiom): substantial classical result.
+\<^bold>Remaining sorries\<^bold> (historical; none remain as of 2026-10-18):</br>
+- `cp_radon_nikodym` (axiom): substantial classical result. — CLOSED 2026-10-18.
 - `Phi1_range`, `Phi2_range`: CPTP maps map carrier to carrier.
   Should be added as side hypotheses to `extreme_CPTP_carrier` (the
   project's CPTP definition doesn't enforce range, but it should).
