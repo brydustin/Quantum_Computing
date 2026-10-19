@@ -9013,9 +9013,9 @@ Pauli matrix) map $V=\operatorname{span}\{\ket{0_L},\ket{1_L}\}$ to mutually ort
 (up to the coincidences $Z_1v=Z_2v=Z_3v$ etc.).  The proposition is \<open>recovery_single_error\<close>
 in \<open>Day32_Recovery_Proposition\<close>, together with its linear-combination form
 \<open>recovery_linear_combination\<close> (Day 33); the Pauli expansion identity is
-\<open>pauli_expansion_unitary\<close> in \<open>Day32_Pauli_Expansion\<close>.  Of the Shor code itself only the
-states $\ket\pm$, the action of $Z$ and $X$ on them, and the phase-flip code words are
-formalised (audit items D32-5, D33-1).\<close>
+\<open>pauli_expansion_unitary\<close> in \<open>Day32_Pauli_Expansion\<close>.  The Shor code and Shor's theorem
+are \<open>Day33_Shor_Code\<close> (\<open>shor_code_theorem\<close>).  As first stated, the orthogonality claim is false
+($Z_1\ne Z_2$ but $Z_1\ket{0_L}=Z_2\ket{0_L}$, \<open>shor_notes_Z1_Z2\<close>); Day 33 corrects it.\<close>
 
 definition ket_plus :: "complex Matrix.vec" where
   "ket_plus \<equiv> (1 / sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
@@ -9344,7 +9344,7 @@ lemma repetition_encode_binary:
 
 subsection \<open>Algebra of projections; towards Days 33 and 34\<close>
 
-text \<open>Day 33 constructs the Shor recovery map from the projections onto the $28$ orthogonal
+text \<open>Day 33 constructs the Shor recovery map from the projections onto the $22$ orthogonal
 subspaces $V,X_1V,\dots,X_9V,Y_1V,\dots,Y_9V,Z_1V,Z_4V,Z_7V$ and proves, using
 $U=a_0I+a_1X+a_2Y+a_3Z$ with $\sum|a_k|^2=1$ for unitary $U$ (Pauli magic), that it corrects
 every single-qubit unitary error.  Day 34 gives the general theory:

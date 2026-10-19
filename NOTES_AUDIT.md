@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, with shared lemmas in `QC_Prelims`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, with shared lemmas in `QC_Prelims`.
 
 ---
 
@@ -330,17 +330,17 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
 | D32-2 | Y-version with β = Y\|+⟩ | ✗ | ✗ |
-| D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | ✗ | ✗ |
+| D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | D33 `shor_cw_notes` (the code words), `shor_code_theorem`: one CPTP R with R(Ũ\|ψ⟩⟨ψ\|Ũ*) = \|ψ⟩⟨ψ\| for every 2×2 unitary U, every position i < 9 (Ũ = `qubit_op i U` = I⊗…⊗U⊗…⊗I) and every ψ = a\|0_L⟩ + b\|1_L⟩; via `pauli_decomp`, D32 `pauli_expansion_unitary` and D32R `recovery_linear_combination` | ✓ |
 | D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | D32R `recovery_ops_kraus_operators`, `recovery_map_CPTP'`, `recovery_single_error` (hypotheses bundled as `recovery_setting n P Us`: P projection, PU_i*U_jP = δ_ij P; for unitaries this is the notes' hypothesis, `recovery_setting_unitaries`) | ✓ |
-| D32-5 | 1-Pauli operators; orthogonality of their images of V | ✗ | ✗ |
+| D32-5 | 1-Pauli operators; orthogonality of their images of V | false as stated: D33 `shor_notes_Z1_Z2` (Z₁ ≠ Z₂ but ⟨Z₁\|0_L⟩, Z₂\|0_L⟩⟩ = 1); the notes correct it on Day 33 (D33-1) | ~ |
 | D32-6 | Pauli magic: I, X, Y, Z orthogonal with norm √2 | QC11 `pauli_orthogonal`, `pauli_norm` | ✓ |
 | D32-7 | U = a₀I + a₁X + a₂Y + a₃Z unitary ⟹ Σ\|a_i\|² = 1 | D32 `pauli_expansion_unitary` | ✓ |
 
 ### Day 33 (16 Nov): Shor code recovery
 | id | notes | formal | status |
 |---|---|---|---|
-| D33-1 | 28 orthogonal subspaces; Z₁v = Z₂v = Z₃v on V | ✗ | ✗ |
-| D33-2 | recovery R corrects every single-qubit unitary error | D32R `recovery_linear_combination`: for ψ ∈ V and φ = Σ_i a_i U_i ψ, R(\|φ⟩⟨φ\|) = (Σ\|a_i\|²)\|ψ⟩⟨ψ\| (the general form; the Pauli instance is this with U_i = I, X, Y, Z) | ~ |
+| D33-1 | V, X_iV, Y_iV, Z_1V, Z_4V, Z_7V orthogonal (22 subspaces of the 3·9+1 = 28 tensors); Z₁v = Z₂v = Z₃v on V | D33 `shor_orthogonal_images` (PU_i*U_jP = 0 for the 22 errors `shor_errors`; computed block by block: nine qubits = three blocks of three, `qubit_op_blk`, labels decided by `code_simp`), `shor_Z_coincide` | ✓ |
+| D33-2 | recovery R corrects every single-qubit unitary error | D33 `shor_code_theorem`, from D32R `recovery_linear_combination` (for ψ ∈ V and φ = Σ_i a_i U_i ψ, R(\|φ⟩⟨φ\|) = (Σ\|a_i\|²)\|ψ⟩⟨ψ\|) | ✓ |
 
 ### Day 34 (18 Nov): Knill–Laflamme conditions
 | id | notes | formal | status |
@@ -403,5 +403,5 @@ C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27
 C4 D17-3 environment (Stinespring) model of noise.
 C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
 C6 D22-4 compactness of UCP/CPTP.
-C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 DONE (`Day34_KL_Sufficiency`); the Shor code (D32-5, D33-1) remains open.
+C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 DONE (`Day34_KL_Sufficiency`); the Shor code D32-3, D33-1, D33-2 DONE (`Day33_Shor_Code`; D32-5 is false as stated). C7 closed.
 C8 D5-1 Sylvester's criterion; D29-3 Hamming code.

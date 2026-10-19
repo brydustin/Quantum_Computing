@@ -19,6 +19,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day34_Knill_Laflamme
     Vern_Paulsen_QC.Day20_Choi_Rank
     Vern_Paulsen_QC.Day34_KL_Sufficiency
+    Vern_Paulsen_QC.Day33_Shor_Code
 begin
 
 section \<open>Reading guide\<close>
@@ -49,14 +50,14 @@ reuse earlier infrastructure.  The table gives the correspondence.
 28     & the two-qubit Horodecki--Peres criterion & \texttt{Day28\_Horodecki\_Peres}\\
 30     & the three-qubit bit-flip code and its recovery theorem & \texttt{Day30\_BitFlip\_Code}\\
 32--33 & Pauli expansion of unitaries; the general recovery proposition & \texttt{Day32\_Pauli\_Expansion}, \texttt{Day32\_Recovery\_Proposition}\\
+32--33 & the nine-qubit Shor code and Shor's theorem & \texttt{Day33\_Shor\_Code}\\
 34     & Knill--Laflamme: states vs.\ $PXP$, Theorem~1 (both directions), closure & \texttt{Day34\_Knill\_Laflamme}, \texttt{Day34\_KL\_Sufficiency}\\
 \end{tabular}
 \end{center}
 
 The theories of the second block (shared lemmas in \texttt{QC\_Prelims}) close the gaps
 recorded by the first audit.  Still not formalised: lectures 24 and 26 (operator systems,
-Arveson's extension theorem and correspondence), the Stinespring environment model and
-the Shor code; see
+Arveson's extension theorem and correspondence) and the Stinespring environment model; see
 \texttt{NOTES\_AUDIT.md}.
 \<close>
 

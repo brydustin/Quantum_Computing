@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises twenty-two theories and about a
+entanglement witnesses.  The development comprises twenty-three theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -175,9 +175,10 @@ Theory & Lectures & lines & results\\
 \isa{Day34\_Knill\_Laflamme} & 34: Knill--Laflamme necessity and closure & 591 & 18\\
 \isa{Day20\_Choi\_Rank} & 20: $\crk(\Phi)=\rank P_\Phi$ & 217 & 7\\
 \isa{Day34\_KL\_Sufficiency} & 34: Knill--Laflamme sufficiency and the full Theorem~1 & 491 & 13\\
+\isa{Day33\_Shor\_Code} & 32--33: the nine-qubit Shor code, Shor's theorem & 1\,011 & 69\\
 \bottomrule
 \end{tabular}
-\caption{The twenty-two theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,041 in all).  The middle block closes the medium-sized gaps of the first audit, the lower block the Choi-rank, unitary-freedom and Knill--Laflamme developments.}
+\caption{The twenty-three theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,110 in all).  The middle block closes the medium-sized gaps of the first audit, the lower block the Choi-rank, unitary-freedom, Knill--Laflamme and Shor-code developments.}
 \label{tab:theories}
 \end{table}
 
@@ -280,7 +281,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 11 are deliberate omissions; of the remaining 159
-mathematical items, 110 are faithful, 21 are variants and 28 are gaps.\footnote{Counts as
+mathematical items, 113 are faithful, 21 are variants and 25 are gaps.\footnote{Counts as
 of the second close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -316,8 +317,16 @@ between correcting the states of $V$ and fixing $PXP$, Theorem~1 in both directi
 (\isa{knill\_laflamme}; necessity through Choi's Theorem~2, sufficiency by diagonalising
 $(\alpha_{ij})$ and applying the recovery proposition to the rescaled mixed errors, which
 need not be restrictions of unitaries) and the closure of the corrected errors under
-linear combinations.  What remains open: the Shor code, operator systems with Arveson's
-correspondence and extension theorem, and the Stinespring environment model of noise.
+linear combinations.  Finally the Shor code: one CPTP map corrects every single-qubit
+unitary error on each of the nine qubits (\isa{shor\_code\_theorem}).  The $2^9$-dimensional
+space is never handled entrywise; nine qubits are three blocks of three, each single-qubit
+operator acts inside one block, inner products factor over the blocks, and the
+orthogonality of the $22$ error images reduces to the distinctness of $44$ block labels,
+decided by \isa{code\_simp}.  Here the formalisation found a false statement: the Day~32
+proposition that distinct 1-Paulis map the code space to orthogonal subspaces fails for
+$Z_1\ne Z_2$, which agree on the code space (\isa{shor\_notes\_Z1\_Z2}); the notes correct it
+on Day~33.  What remains open: operator systems with Arveson's correspondence and
+extension theorem, and the Stinespring environment model of noise.
 
 Beyond the omissions, the audit documents where the formalisation strengthens the
 notes (strict witnesses for density matrices; Cholesky with the missing hypothesis;
