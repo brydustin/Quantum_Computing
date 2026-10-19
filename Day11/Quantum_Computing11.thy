@@ -9363,8 +9363,8 @@ then $R$ also corrects $G(X)=\sum_iG_iXG_i^*$.
 Of the Knill--Laflamme results, the equivalence of Theorem 1's two readings
 (\<open>recovery_states_iff_PXP\<close>), the necessity of $PE_i^*E_jP=\alpha_{ij}P$
 (\<open>knill_laflamme_necessity\<close>) and Theorem 2 (\<open>knill_laflamme_closure\<close>) are proved in
-\<open>Day34_Knill_Laflamme\<close>; the converse of Theorem 1, the construction of $R$ from the
-conditions, is not formalised (audit item D34-2).  The elementary algebra of orthogonal
+\<open>Day34_Knill_Laflamme\<close>; the converse, the construction of $R$ from the conditions, and
+the equivalence itself (\<open>knill_laflamme\<close>) are in \<open>Day34_KL_Sufficiency\<close>.  The elementary algebra of orthogonal
 projections used by the proofs follows.\<close>
 
 

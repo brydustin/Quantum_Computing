@@ -41,6 +41,7 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day22_Minimal_Kraus
     Day34_Knill_Laflamme
     Day20_Choi_Rank
+    Day34_KL_Sufficiency
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
@@ -73,5 +74,6 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day22_Minimal_Kraus
     Vern_Paulsen_QC.Day34_Knill_Laflamme
     Vern_Paulsen_QC.Day20_Choi_Rank
+    Vern_Paulsen_QC.Day34_KL_Sufficiency
   document_files
     "root.tex"

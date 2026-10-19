@@ -382,18 +382,36 @@ definition image_proj_sum :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow>
 definition recovery_ops :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list" where
   "recovery_ops n P Us = (1\<^sub>m n - image_proj_sum n P Us) # map (\<lambda>i. P * ((Us ! i)\<^sup>\<dagger>)) [0..<length Us]"
 
-text \<open>The hypotheses of the proposition, bundled: $P$ a projection, the $U_i$ unitaries with
-$PU_i^*U_jP=0$ for $i\ne j$.\<close>
+text \<open>The hypotheses of the proposition, bundled: $P$ a projection and $PU_i^*U_jP=\delta_{ij}P$.
+For unitaries $U_i$ the case $i=j$ is automatic (\<open>recovery_setting_unitaries\<close>); the weaker form
+also covers the rescaled errors of the Knill--Laflamme theorem.\<close>
 
 definition recovery_setting :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool" where
-  "recovery_setting n P Us \<longleftrightarrow> projection n P \<and> (\<forall>U \<in> set Us. U \<in> carrier_mat n n \<and> unitary U)
-     \<and> (\<forall>i < length Us. \<forall>j < length Us. i \<noteq> j \<longrightarrow> P * (((Us ! i)\<^sup>\<dagger>) * Us ! j) * P = 0\<^sub>m n n)"
+  "recovery_setting n P Us \<longleftrightarrow> projection n P \<and> (\<forall>U \<in> set Us. U \<in> carrier_mat n n)
+     \<and> (\<forall>i < length Us. \<forall>j < length Us. P * (((Us ! i)\<^sup>\<dagger>) * Us ! j) * P = (if i = j then P else 0\<^sub>m n n))"
 
 lemma recovery_settingD:
   assumes "recovery_setting n P Us"
-  shows "projection n P" "\<forall>U \<in> set Us. U \<in> carrier_mat n n \<and> unitary U"
+  shows "projection n P" "\<forall>U \<in> set Us. U \<in> carrier_mat n n"
     "\<forall>i < length Us. \<forall>j < length Us. i \<noteq> j \<longrightarrow> P * (((Us ! i)\<^sup>\<dagger>) * Us ! j) * P = 0\<^sub>m n n"
-  using assms unfolding recovery_setting_def by blast+
+    "\<forall>i < length Us. P * (((Us ! i)\<^sup>\<dagger>) * Us ! i) * P = P"
+  using assms unfolding recovery_setting_def by auto
+
+lemma recovery_setting_unitaries:
+  assumes P: "projection n P" and Us: "\<forall>U \<in> set Us. U \<in> carrier_mat n n \<and> unitary U"
+      and orth: "\<forall>i < length Us. \<forall>j < length Us. i \<noteq> j \<longrightarrow> P * (((Us ! i)\<^sup>\<dagger>) * Us ! j) * P = 0\<^sub>m n n"
+  shows "recovery_setting n P Us"
+  unfolding recovery_setting_def
+proof (intro conjI ballI allI impI)
+  show "projection n P" by (rule P)
+  fix U assume "U \<in> set Us" thus "U \<in> carrier_mat n n" using Us by blast
+next
+  fix i j assume i: "i < length Us" and j: "j < length Us"
+  have Pc: "P \<in> carrier_mat n n" and PP: "P * P = P" using P by (auto simp: projection_def)
+  have "((Us ! i)\<^sup>\<dagger>) * Us ! i = 1\<^sub>m n" using Us nth_mem[OF i] by (auto simp: unitary_def)
+  hence "P * (((Us ! i)\<^sup>\<dagger>) * Us ! i) * P = P" by (simp only: right_mult_one_mat[OF Pc] PP)
+  thus "P * (((Us ! i)\<^sup>\<dagger>) * Us ! j) * P = (if i = j then P else 0\<^sub>m n n)" using orth i j by auto
+qed
 
 lemma
   assumes S: "recovery_setting n P Us"
@@ -403,9 +421,8 @@ lemma
 lemma
   assumes S: "recovery_setting n P Us"
   shows rec_Uc: "i < length Us \<Longrightarrow> Us ! i \<in> carrier_mat n n"
-    and rec_UU: "i < length Us \<Longrightarrow> ((Us ! i)\<^sup>\<dagger>) * Us ! i = 1\<^sub>m n"
-    and rec_UUd: "i < length Us \<Longrightarrow> Us ! i * ((Us ! i)\<^sup>\<dagger>) = 1\<^sub>m n"
-  using recovery_settingD(2)[OF S] by (auto simp: unitary_def)
+    and rec_PUUP: "i < length Us \<Longrightarrow> P * (((Us ! i)\<^sup>\<dagger>) * Us ! i) * P = P"
+  using recovery_settingD(2,4)[OF S] by auto
 
 lemma rec_Pi_c:
   assumes S: "recovery_setting n P Us" and i: "i < length Us"
@@ -443,7 +460,7 @@ proof -
   proof (cases "i = j")
     case True
     have PP: "P * (?Uid * ?Ui) * P = P"
-      unfolding rec_UU[OF S i] by (simp only: right_mult_one_mat[OF Pc] rec_PP[OF S])
+      by (rule rec_PUUP[OF S i])
     show ?thesis unfolding True[symmetric] key[unfolded True[symmetric]] PP by simp
   next
     case False
@@ -613,7 +630,7 @@ proof -
   proof (cases "i = j")
     case True
     have "P * (?Uid * ?Uj) * P = P"
-      unfolding True[symmetric] rec_UU[OF S i] by (simp only: right_mult_one_mat[OF Pc] rec_PP[OF S])
+      unfolding True[symmetric] by (rule rec_PUUP[OF S i])
     thus ?thesis using True \<psi>V by simp
   next
     case False

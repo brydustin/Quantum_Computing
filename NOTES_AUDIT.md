@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, with shared lemmas in `QC_Prelims`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, with shared lemmas in `QC_Prelims`.
 
 ---
 
@@ -331,7 +331,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
 | D32-2 | Y-version with β = Y\|+⟩ | ✗ | ✗ |
 | D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | ✗ | ✗ |
-| D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | D32R `recovery_ops_kraus_operators`, `recovery_map_CPTP'`, `recovery_single_error` (hypotheses bundled as `recovery_setting n P Us`: P projection, U_i unitary, PU_i*U_jP = 0 for i ≠ j) | ✓ |
+| D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | D32R `recovery_ops_kraus_operators`, `recovery_map_CPTP'`, `recovery_single_error` (hypotheses bundled as `recovery_setting n P Us`: P projection, PU_i*U_jP = δ_ij P; for unitaries this is the notes' hypothesis, `recovery_setting_unitaries`) | ✓ |
 | D32-5 | 1-Pauli operators; orthogonality of their images of V | ✗ | ✗ |
 | D32-6 | Pauli magic: I, X, Y, Z orthogonal with norm √2 | QC11 `pauli_orthogonal`, `pauli_norm` | ✓ |
 | D32-7 | U = a₀I + a₁X + a₂Y + a₃Z unitary ⟹ Σ\|a_i\|² = 1 | D32 `pauli_expansion_unitary` | ✓ |
@@ -346,7 +346,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D34-1 | R∘E fixes \|ψ⟩⟨ψ\| on V iff it fixes PXP | D34 `recovery_states_iff_PXP` (via `psd_PXP_decomp_in_range` and the decomposition of X into four positives) | ✓ |
-| D34-2 | Theorem 1: correctable iff PE_i*E_jP = α_{ij}P | D34 `knill_laflamme_necessity` (⟹: from a CPTP R with R∘E fixing PXP, PE_i*E_jP = α_{ij}P; via Choi 2 applied to the two Kraus representations {P} and {A_lE_iP} of X ↦ PXP, `kl_kraus_scalars`); the converse (constructing R) is not formalised | ~ |
+| D34-2 | Theorem 1: correctable iff PE_i*E_jP = α_{ij}P | D34S `knill_laflamme` (the iff). ⟹ D34 `knill_laflamme_necessity` (via Choi 2 applied to the two Kraus representations {P} and {A_lE_iP} of X ↦ PXP, `kl_kraus_scalars`); ⟸ D34S `knill_laflamme_sufficiency` (α Hermitian, diagonalised by `hermitian_spectral_decomp`; the mixed errors F_k = Σ_i u_ik E_i give the same channel and satisfy PF_k*F_lP = δ_kl d_k P (`kl_mix_bracket`); the F_k/√d_k with d_k > 0 satisfy the hypotheses of the recovery proposition) | ✓ |
 | D34-3 | Theorem 2: closure under linear combinations of the errors | D34 `knill_laflamme_closure`: if R∘E fixes PXP and G_i = Σ_j g_{ij}E_j with Σ G_i*G_i = I (`kraus_mix`), then R∘G fixes PXP | ✓ |
 
 ---
@@ -403,5 +403,5 @@ C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27
 C4 D17-3 environment (Stinespring) model of noise.
 C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
 C6 D22-4 compactness of UCP/CPTP.
-C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 and the Shor code (D32-5, D33-1) remain open.
+C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 DONE (`Day34_KL_Sufficiency`); the Shor code (D32-5, D33-1) remains open.
 C8 D5-1 Sylvester's criterion; D29-3 Hamming code.
