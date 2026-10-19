@@ -31,3 +31,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
 - **Environment model (D17-3).** Proved as stated, with the index of ℂ^m⊗ℂ^p read as a·p+i
   (the notes' block form indexes blocks by the environment; the identity is the same up to
   this ordering).  Only ⟨φ|φ⟩ = 1 and U*U = I are used.  (`Day17_Environment_Model`.)
+- **Arveson's extension theorem (D26-2), a different route.** The notes extend the state S_Φ
+  by Hahn–Banach and need two lemmas (D25-4: a unital functional is positive iff it has norm
+  one; D26-1: reduction to the unital case).  The formalisation extends the positive
+  functional S_Φ directly: separate the positive definite cone from ker S_Φ (plus the
+  anti-Hermitian part) with `separating_hyperplane_set_0` in the typed matrix space; the
+  extension is X ↦ Tr(DX) with D ≥ 0 (`positive_functional_extension`).  No norms, no unital
+  reduction.  Dimensions are CARD of finite types, as in `Separable_Cone`.
+- **A latent issue in the Day 11–22 theory.** QC11 lemmas such as `block_of_mat_index`,
+  `block_of_mat_carrier`, `amplification_index`, `amplification_carrier` are stated with a free
+  `X`, which is Isabelle_Marries_Dirac's Pauli constant, so they hold only for that one matrix.
+  The Arveson theories use their own general versions (`block_of_mat_idx`,
+  `block_of_mat_carrier'`, `amplification_idx`, `amplification_carrier'`).

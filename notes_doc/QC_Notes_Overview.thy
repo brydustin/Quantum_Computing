@@ -21,6 +21,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day34_KL_Sufficiency
     Vern_Paulsen_QC.Day33_Shor_Code
     Vern_Paulsen_QC.Day17_Environment_Model
+    Vern_Paulsen_QC.Day27_Positive_Map_Criterion
 begin
 
 section \<open>Reading guide\<close>
@@ -49,6 +50,10 @@ reuse earlier infrastructure.  The table gives the correspondence.
 20     & $\crk(\Phi)=\rank P_\Phi$ & \texttt{Day20\_Choi\_Rank}\\
 21     & rank-one decompositions and Kraus representations up to an isometry (Choi 2) & \texttt{Day21\_Unitary\_Freedom}\\
 22     & $\crk(\Phi)\le n$ for extreme maps; minimal Kraus lists are independent & \texttt{Day22\_Kraus\_Independence}, \texttt{Day22\_Minimal\_Kraus}\\
+24     & operator systems, $M_p(S)$, completely positive maps on $S$ & \texttt{Day24\_Operator\_Systems}\\
+24--25 & Arveson: CP $\iff$ $d$-positive $\iff$ $S_\Phi\ge0$; the correspondence $\Phi\leftrightarrow S_\Phi$ & \texttt{Day25\_Arveson\_Correspondence}\\
+26     & Arveson's extension theorem; Kraus form on operator systems & \texttt{Day26\_Arveson\_Extension}\\
+27--28 & positive maps and separability: $f(\mathrm{Sep})\ge0\iff\Phi_f$ positive, the positive-map criterion & \texttt{Day27\_Positive\_Map\_Criterion}\\
 28     & the two-qubit Horodecki--Peres criterion & \texttt{Day28\_Horodecki\_Peres}\\
 30     & the three-qubit bit-flip code and its recovery theorem & \texttt{Day30\_BitFlip\_Code}\\
 32--33 & Pauli expansion of unitaries; the general recovery proposition & \texttt{Day32\_Pauli\_Expansion}, \texttt{Day32\_Recovery\_Proposition}\\
@@ -58,8 +63,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 \end{center}
 
 The theories of the second block (shared lemmas in \texttt{QC\_Prelims}) close the gaps
-recorded by the first audit.  Still not formalised: lectures 24 and 26 (operator systems,
-Arveson's extension theorem and correspondence); see
+recorded by the first audit; the remaining unformalised items are listed in
 \texttt{NOTES\_AUDIT.md}.
 \<close>
 

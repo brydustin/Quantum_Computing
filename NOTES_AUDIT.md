@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, with shared lemmas in `QC_Prelims`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`.
 
 ---
 
@@ -261,15 +261,15 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 24 (24 Oct): operator systems, Arveson's extension and correspondence
 | id | notes | formal | status |
 |---|---|---|---|
-| D24-1 | operator systems, M_p(S), CP maps on S | ✗ | ✗ |
-| D24-2 | X ∈ S is a combination of four positives in S | ✗ (M_n case: `matrix_decomp_psd`) | ✗ |
-| D24-3 | Arveson's extension theorem (statement, corollary) | ✗ | ✗ |
-| D24-4 | S_Φ and Arveson: CP ⟺ d-positive ⟺ S_Φ positive | ✗ | ✗ |
+| D24-1 | operator systems, M_p(S), CP maps on S | OS `operator_system`, `Mp`, `p_positive_on`, `cp_on` (ampliation = QC11 `amplification`), `Mp_operator_system` (the note: M_p(S) is an operator system), `cp_on_full` (S = M_n gives QC11 `completely_positive`) | ✓ |
+| D24-2 | X ∈ S is a combination of four positives in S | OS `operator_system_four_positives` (via `herm_bound`: −cI ≤ H ≤ cI from the spectral decomposition) | ✓ |
+| D24-3 | Arveson's extension theorem (statement, corollary) | AE `arveson_extension` (CP Φ on S ⊆ M_n extends to a CP Ψ on M_n), corollary `arveson_kraus` (Φ(X) = Σ W_i X W_i* on S); n, d are cardinalities of finite types, as in SC | ✓ |
+| D24-4 | S_Φ and Arveson: CP ⟺ d-positive ⟺ S_Φ positive | AC `arveson_functional` (S_Φ), `arveson_cp_iff` (both equivalences; (3)⟹(1) by the congruence Y = A*XA with A = (v_r^t) ⊗ I, `conj_block`) | ✓ |
 
 ### Day 25 (26 Oct): Arveson correspondence, Hahn–Banach
 | id | notes | formal | status |
 |---|---|---|---|
-| D25-1 | f ↦ Φ_f, S_Φ ↔ Φ mutual inverses; CP(S,M_d) ≅ P(M_d(S),ℂ) affinely | ✗ | ✗ |
+| D25-1 | f ↦ Φ_f, S_Φ ↔ Φ mutual inverses; CP(S,M_d) ≅ P(M_d(S),ℂ) affinely | AC `arveson_map` (Φ_f), `arveson_functional_of_map`, `arveson_map_of_functional`, `arveson_correspondence` (onto the positive functionals), `arveson_functional_affine`, `arveson_functional_unital` (unital ↦ state) | ✓ |
 | D25-2 | bounded functionals, ‖f‖ | MT `bounded_clinear_functional_on` | ✓ |
 | D25-3 | Hahn–Banach: norm-preserving extension of a bounded linear functional | MT `matrix_hahn_banach_lmat`, `matrix_hahn_banach_lmat_with_bound` (complex HB on matrix spaces, derived from HOL-Hahn_Banach via Bohnenblust–Sobczyk) | ✓ |
 | D25-4 | Proposition: f(I) = 1 ⟹ (f positive iff ‖f‖ = 1) | ✗ | ✗ |
@@ -278,15 +278,15 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D26-1 | CP Φ with Φ(I) = P is V*ψ(X)V with ψ UCP; CP Φ = ψ(VXV*) with ψ CPTP | ✗ | ✗ |
-| D26-2 | Arveson extension theorem (proof) | ✗ | ✗ |
+| D26-2 | Arveson extension theorem (proof) | ~ : AE `arveson_extension` by a different route: S_Φ is extended to a positive functional on M_d(M_n) directly (`positive_functional_extension`: separate the positive definite cone from ker S_Φ with HOL-Analysis `separating_hyperplane_set_0` in the typed matrix space, giving X ↦ Tr(DX) with D ≥ 0), so neither the norm proposition D25-4 nor the reduction D26-1 to the unital case is needed | ~ |
 | D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D24 `D26_separable_density_iff_convex_combination` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
 
 ### Day 27 (31 Oct): positive maps detect entanglement; convex cones
 | id | notes | formal | status |
 |---|---|---|---|
-| D27-1 | Φ positive, R separable ⟹ Φ^{(r)}(R) ≥ 0 | ✗ | ✗ |
+| D27-1 | Φ positive, R separable ⟹ Φ^{(r)}(R) ≥ 0 | PMC `positive_map_separable` (for the separable cone of SC; generators by `amplification_tensor`: Φ^{(r)}(Q⊗P) = Q⊗Φ(P)) | ✓ |
 | D27-2 | Examples of entangled matrices via the transpose | ✗ | ✗ |
-| D27-3 | f(Sep) ≥ 0 iff Φ_f positive | ✗ (needs Arveson correspondence) | ✗ |
+| D27-3 | f(Sep) ≥ 0 iff Φ_f positive | PMC `positive_map_iff_sep_nonneg` (via `quad_arveson_map`: ⟨w\|Φ_f(P)w⟩ = r f((w̄_i w_j) ⊗ P)) | ✓ |
 | D27-4 | cones; separation of a point from a closed convex set / closed cone | HOL-Analysis `separating_hyperplane_closed_point`; SC `separable_cone_lmat_closed`, `separable_cone_lmat_separating_hyperplane` | ✓ |
 
 ### Day 28 (2 Nov): entanglement witnesses, Horodecki, Peres
@@ -294,7 +294,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D28-1 | the separable matrices form a closed cone in the Hermitian matrices | SC `separable_cone_lmat_closed`, `separable_cone_lmat_hermitian`, `separable_cone_lmat_convex_cone` | ✓ |
 | D28-2 | real functional f with f(R) < 0 ≤ f(C); complexification f̃ | SC `separable_cone_lmat_separating_hyperplane`, `hermitian_witness_from_lmat`, `entanglement_witness_hermitian'` | ✓ |
-| D28-3 | Theorem: R ≥ 0 separable iff Φ^{(r)}(R) ≥ 0 for all positive Φ : M_n → M_r | ~ : formalised in the witness form `separable_iff_witness`, `separable_density_iff_witness` (R separable iff every Hermitian W nonneg on the cone has Tr(WR) ≥ 0); the positive-map form needs the Arveson correspondence | ~ |
+| D28-3 | Theorem: R ≥ 0 separable iff Φ^{(r)}(R) ≥ 0 for all positive Φ : M_n → M_r | PMC `separable_iff_positive_maps` (for Hermitian R; from the witness form SC `separable_iff_witness` through Φ_f with f = Tr(W·)) | ✓ |
 | D28-4 | strict witnesses for density matrices | SC `entanglement_witness_strict`, `entanglement_witness_for_density` | ✓ (beyond the notes) |
 | D28-5 | Horodecki–Peres: for v ∈ ℂ²⊗ℂ², separable iff partial transpose of \|v⟩⟨v\| ≥ 0 | D28 `horodecki_peres_two_qubits`: psd (id⊗t)(\|v⟩⟨v\|) ⟷ v = α⊗β (pure states: separable = product); `horodecki_peres_entangled`; witness value −2\|v₀v₃−v₁v₂\|² (`partial_transpose_witness_value`) | ✓ |
 
@@ -365,7 +365,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 4. Partial traces are defined by the block formulas of Day 16 with A-major Kronecker indexing; `partial_trace_B_tensor` and `partial_trace_A_tensor` show they agree with the Day 15 definition on elementary tensors.
 5. Choi's Theorem 3 is formalised in the CPTP form with a fixed linearly independent Kraus list and the carrier-point notion of extremality (D23-1).
 6. `extreme_CPTP` (raw function inequality) is provably vacuous; use `extreme_CPTP_carrier` (documented inside D23).
-7. The entanglement theory is formalised in witness form rather than the positive-map form (D28-3); the two are equivalent via the Arveson correspondence, which is not formalised.
+7. The entanglement theory is formalised in witness form (SC) and, through the Arveson correspondence, also in the notes' positive-map form (D28-3, `Day27_Positive_Map_Criterion`).
 8. The three-qubit phase-flip code words were called `shor_zero`/`shor_one`; renamed `phase_code_zero`/`phase_code_one` (D32-1).
 9. `psd_sqrt` was a placeholder constant equal to the zero matrix; now defined via `SOME` with `psd_sqrt_props` (D8-4).
 10. `Day24_Separability` attributed the separability material to Days 24–28; the theorem prefixes now follow the notes (D26 definition of separability, D27 cone and separation, D28 closedness and witnesses).
@@ -399,7 +399,7 @@ B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independenc
 Priority C (substantial developments, recorded as open):
 C1 D20-4 cr(Φ) = rank(P_Φ). DONE (`Day20_Choi_Rank`).
 C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2). DONE (`Day21_Unitary_Freedom`, with D21-3); D22-1 DONE (`Day22_Minimal_Kraus`).
-C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion.
+C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion. DONE (`Day24_Operator_Systems`, `Day25_Arveson_Correspondence`, `Day26_Arveson_Extension`, `Day27_Positive_Map_Criterion`); D25-4 and D26-1, used only by the notes' proof route, remain open.
 C4 D17-3 environment (Stinespring) model of noise. DONE (`Day17_Environment_Model`).
 C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
 C6 D22-4 compactness of UCP/CPTP.

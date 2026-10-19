@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises twenty-four theories and about a
+entanglement witnesses.  The development comprises twenty-eight theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -177,9 +177,13 @@ Theory & Lectures & lines & results\\
 \isa{Day34\_KL\_Sufficiency} & 34: Knill--Laflamme sufficiency and the full Theorem~1 & 491 & 13\\
 \isa{Day33\_Shor\_Code} & 32--33: the nine-qubit Shor code, Shor's theorem & 1\,011 & 69\\
 \isa{Day17\_Environment\_Model} & 17: noise from a unitary interaction with an environment & 212 & 8\\
+\isa{Day24\_Operator\_Systems} & 24: operator systems, $M_p(S)$, CP maps on $S$ & 254 & 16\\
+\isa{Day25\_Arveson\_Correspondence} & 24--25: CP iff $d$-positive iff $S_\Phi\ge0$; $\Phi\leftrightarrow S_\Phi$ & 682 & 42\\
+\isa{Day26\_Arveson\_Extension} & 26: positive extensions, Arveson's extension theorem & 651 & 19\\
+\isa{Day27\_Positive\_Map\_Criterion} & 27--28: positive maps and separability & 440 & 16\\
 \bottomrule
 \end{tabular}
-\caption{The twenty-four theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,118 in all).  The middle block closes the medium-sized gaps of the first audit, the lower block the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code and environment-model developments.}
+\caption{The twenty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,211 in all).  The middle block closes the medium-sized gaps of the first audit, the lower block the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments.}
 \label{tab:theories}
 \end{table}
 
@@ -282,7 +286,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 11 are deliberate omissions; of the remaining 159
-mathematical items, 114 are faithful, 21 are variants and 24 are gaps.\footnote{Counts as
+mathematical items, 122 are faithful, 21 are variants and 16 are gaps.\footnote{Counts as
 of the second close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -328,8 +332,18 @@ proposition that distinct 1-Paulis map the code space to orthogonal subspaces fa
 $Z_1\ne Z_2$, which agree on the code space (\isa{shor\_notes\_Z1\_Z2}); the notes correct it
 on Day~33.  The environment model of Day~17 is proved as stated:
 $\operatorname{tr}_E(U(\rho\otimes\ketbra\varphi\varphi)U^*)=\sum_iW_i\rho W_i^*$ with
-$\sum_iW_i^*W_i=I$ (\isa{environment\_model}).  What remains open: operator systems with
-Arveson's correspondence and extension theorem.
+$\sum_iW_i^*W_i=I$ (\isa{environment\_model}).  Last, the operator-system part of the
+course: Arveson's theorem that a linear map on an operator system is completely positive iff
+it is $d$-positive iff $S_\Phi$ is positive, the correspondence $\Phi\leftrightarrow S_\Phi$,
+the extension theorem (\isa{arveson\_extension}) with the Kraus form of completely positive
+maps on operator systems, and the positive-map criterion for separability
+(\isa{separable\_iff\_positive\_maps}).  The extension is not proved as in the notes (a state
+of norm one, Hahn--Banach, and a reduction to the unital case): the positive functional
+$S_\Phi$ on $M_d(S)$ is extended directly, by separating the positive definite cone from its
+kernel with HOL-Analysis' separating hyperplane theorem in the Euclidean space of typed
+matrices, which gives the extension $X\mapsto\operatorname{Tr}(DX)$ with $D\ge0$.  All items
+of the first audit's gap list are now closed; the 16 remaining gaps are examples, a few small
+propositions, and the two lemmas that only the notes' route to the extension theorem uses.
 
 Beyond the omissions, the audit documents where the formalisation strengthens the
 notes (strict witnesses for density matrices; Cholesky with the missing hypothesis;
