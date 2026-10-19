@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, with shared lemmas in `QC_Prelims`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, with shared lemmas in `QC_Prelims`.
 
 ---
 
@@ -198,7 +198,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D17-1 | measurement map M(ρ) = Σ M_α ρ M_α* maps densities to densities | QC11 `meas_map`, `meas_map_psd`, `meas_map_density` | ✓ |
 | D17-2 | stochastic matrices, Markov chains | – | – |
-| D17-3 | environment model: tr_E(U(ρ ⊗ \|φ⟩⟨φ\|)U*) = Σ W_i ρ W_i*, Σ W_i*W_i = I | ✗ | ✗ |
+| D17-3 | environment model: tr_E(U(ρ ⊗ \|φ⟩⟨φ\|)U*) = Σ W_i ρ W_i*, Σ W_i*W_i = I | D17 `environment_model` (U unitary on ℂ^m⊗ℂ^p, ⟨φ\|φ⟩ = 1, tr_E = `partial_trace_B m p`, W_i = `env_kraus m p U φ i` with entries Σ_k U_{(a,i),(c,k)} φ_k; both the identity and `kraus_operators`) | ✓ |
 | D17-4 | Proposition: Φ maps densities to densities iff positive and trace-preserving | D18 `density_preserving_iff_positive_tp` (linear Φ, n > 0) | ✓ |
 | D17-5 | definition of completely positive | QC11 `p_positive`, `completely_positive` | ✓ |
 | D17-6 | Choi–Kraus: CPTP iff Φ(X) = Σ E_i X E_i*, Σ E_i*E_i = I | QC11 `choi_kraus_cptp` | ✓ |
@@ -400,7 +400,7 @@ Priority C (substantial developments, recorded as open):
 C1 D20-4 cr(Φ) = rank(P_Φ). DONE (`Day20_Choi_Rank`).
 C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2). DONE (`Day21_Unitary_Freedom`, with D21-3); D22-1 DONE (`Day22_Minimal_Kraus`).
 C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion.
-C4 D17-3 environment (Stinespring) model of noise.
+C4 D17-3 environment (Stinespring) model of noise. DONE (`Day17_Environment_Model`).
 C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
 C6 D22-4 compactness of UCP/CPTP.
 C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 DONE (`Day34_KL_Sufficiency`); the Shor code D32-3, D33-1, D33-2 DONE (`Day33_Shor_Code`; D32-5 is false as stated). C7 closed.

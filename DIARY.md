@@ -28,3 +28,6 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   (`tensor_inner_prod`), and orthogonality of all 22 images is distinctness of 44 labels
   (`code_simp`, 1 s).  Shor's theorem then follows from the recovery proposition and the
   Pauli expansion identity.  (`Day33_Shor_Code`.)
+- **Environment model (D17-3).** Proved as stated, with the index of ℂ^m⊗ℂ^p read as a·p+i
+  (the notes' block form indexes blocks by the environment; the identity is the same up to
+  this ordering).  Only ⟨φ|φ⟩ = 1 and U*U = I are used.  (`Day17_Environment_Model`.)

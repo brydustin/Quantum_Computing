@@ -43,6 +43,7 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day20_Choi_Rank
     Day34_KL_Sufficiency
     Day33_Shor_Code
+    Day17_Environment_Model
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
@@ -77,5 +78,6 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day20_Choi_Rank
     Vern_Paulsen_QC.Day34_KL_Sufficiency
     Vern_Paulsen_QC.Day33_Shor_Code
+    Vern_Paulsen_QC.Day17_Environment_Model
   document_files
     "root.tex"

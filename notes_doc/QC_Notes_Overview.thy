@@ -20,6 +20,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day20_Choi_Rank
     Vern_Paulsen_QC.Day34_KL_Sufficiency
     Vern_Paulsen_QC.Day33_Shor_Code
+    Vern_Paulsen_QC.Day17_Environment_Model
 begin
 
 section \<open>Reading guide\<close>
@@ -43,6 +44,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 26--28 & separable cone, separating hyperplanes, entanglement witnesses & \isa{Separable{\isacharunderscore}Cone}, \isa{Day{\isadigit{2}}{\isadigit{4}}{\isacharunderscore}Separability}\\
 29--32 & classical codes, bit/phase-flip channels, fidelity, Pauli algebra & \isa{Quantum{\isacharunderscore}Computing{\isadigit{1}}{\isadigit{1}}}\\\hline
 12     & $H^{\otimes N}\ket{0\cdots0}$, the counting probability & \texttt{Day12\_Counting\_Probability}\\
+17     & the environment model of noise, $\tr_E(U(\rho\otimes\ketbra\varphi\varphi)U^*)=\sum W_i\rho W_i^*$ & \texttt{Day17\_Environment\_Model}\\
 17--18 & densities to densities iff positive and TP; the transpose & \texttt{Day18\_Positive\_Maps}\\
 20     & $\crk(\Phi)=\rank P_\Phi$ & \texttt{Day20\_Choi\_Rank}\\
 21     & rank-one decompositions and Kraus representations up to an isometry (Choi 2) & \texttt{Day21\_Unitary\_Freedom}\\
@@ -57,7 +59,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 
 The theories of the second block (shared lemmas in \texttt{QC\_Prelims}) close the gaps
 recorded by the first audit.  Still not formalised: lectures 24 and 26 (operator systems,
-Arveson's extension theorem and correspondence) and the Stinespring environment model; see
+Arveson's extension theorem and correspondence); see
 \texttt{NOTES\_AUDIT.md}.
 \<close>
 

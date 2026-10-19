@@ -4142,8 +4142,8 @@ $\rho\otimes\ketbra\phi\phi$ evolves by a unitary $U=(U_{ij})$ on $\Hil_A\otimes
 \[ \tr_E\bigl(U(\rho\otimes\ketbra\phi\phi)U^*\bigr)=\sum_iW_i\rho W_i^*,\qquad
    W_i=\sum_kU_{ik}\alpha_k,\qquad \sum_iW_i^*W_i=I. \]
 Measurement by an intruder and environmental noise are maps of the same form
-$\rho\mapsto\sum_\alpha X_\alpha\rho X_\alpha^*$ with $\sum X_\alpha^*X_\alpha=I$.  (The
-environment computation is not formalised; audit item D17-3.)
+$\rho\mapsto\sum_\alpha X_\alpha\rho X_\alpha^*$ with $\sum X_\alpha^*X_\alpha=I$.  The environment
+computation is \<open>environment_model\<close> in \<open>Day17_Environment_Model\<close>.
 
 Third way, axiomatic: a quantum event is a linear $\Phi:L(\Hil_A)\to L(\Hil_A)$.
 \begin{notesprop}
