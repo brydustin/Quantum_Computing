@@ -28,7 +28,7 @@ SC = `Lmat/Separable_Cone`, QC11 = `Day11/Quantum_Computing11`,
 D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closure theories
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
-D32 = `Day32_Pauli_Expansion`, with shared lemmas in `QC_Prelims`.
+D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, with shared lemmas in `QC_Prelims`.
 
 ---
 
@@ -232,10 +232,10 @@ D32 = `Day32_Pauli_Expansion`, with shared lemmas in `QC_Prelims`.
 |---|---|---|---|
 | D21-1 | CP maps have Kraus representations with K ≤ nd terms | QC11 `kraus_rank_bound`, `choi_rank_le` | ✓ |
 | D21-2 | conjecture on averages of UCP maps | – | – |
-| D21-3 | T injective ⟹ T* onto; v_i independent ⟹ v_i v_j* independent | ✗ | ✗ |
+| D21-3 | T injective ⟹ T* onto; v_i independent ⟹ v_i v_j* independent | D21 `outer_prods_lin_indep` (v_i independent ⟹ the r² matrices v_i v_j* independent over ℂ, via dual vectors `dual_vectors_exist` from the Gram inverse); the T injective ⟹ T* onto remark is not used | ✓ |
 | D21-4 | 0 ≤ ww* ≤ P ⟹ w ∈ range P; range of Σ w_l w_l* | D23 `loewner_ker_subset` (kernel form: ker A ⊆ ker B when 0 ≤ B ≤ A) | ~ |
-| D21-5 | Theorem: two rank-one decompositions of P are related by an isometry U | ✗ | ✗ |
-| D21-6 | Choi 2: unitary freedom of Kraus representations | ✗ | ✗ |
+| D21-5 | Theorem: two rank-one decompositions of P are related by an isometry U | D21 `rank_one_decomp_isometry`: if VV* = WW* with the columns of V independent (the notes: rank P = r) then W = V Uᵗ for an m × r isometry U; `rank_one_decomp_isometry_cols` gives w_l = Σ_j α_{lj} v_j | ✓ |
+| D21-6 | Choi 2: unitary freedom of Kraus representations | D21 `choi_2_unitary_freedom`: Σ V_j X V_j* = Σ W_l X W_l* on M_n with the V_j linearly independent ⟹ W_l = Σ_j α_{lj} V_j with (α_{lj}) an isometry (proof through the Choi matrix and D21-5) | ✓ |
 
 ### Day 22 (17 Oct): minimal Kraus representations, convexity, UCP/CPTP
 | id | notes | formal | status |
@@ -397,7 +397,7 @@ B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independenc
 
 Priority C (substantial developments, recorded as open):
 C1 D20-4 cr(Φ) = rank(P_Φ).
-C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2); D22-1.
+C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2). DONE (`Day21_Unitary_Freedom`, with D21-3); D22-1 open.
 C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion.
 C4 D17-3 environment (Stinespring) model of noise.
 C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.

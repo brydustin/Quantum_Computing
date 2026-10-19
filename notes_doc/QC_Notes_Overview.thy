@@ -13,6 +13,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day28_Horodecki_Peres
     Vern_Paulsen_QC.Day30_BitFlip_Code
     Vern_Paulsen_QC.Day32_Pauli_Expansion
+    Vern_Paulsen_QC.Day21_Unitary_Freedom
 begin
 
 section \<open>Reading guide\<close>
