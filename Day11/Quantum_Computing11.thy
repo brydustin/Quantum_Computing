@@ -337,8 +337,8 @@ section \<open>Day 12 (23 September 2011): quantum parallelism\<close>
 text \<open>Since $He_0=(e_0+e_1)/\sqrt2$,
 \[ H^{\otimes N}(e_0\otimes\cdots\otimes e_0)=\Bigl(\tfrac1{\sqrt2}\Bigr)^N\sum_{J\in\Z_2^N}e_J
    =\Bigl(\tfrac1{\sqrt2}\Bigr)^N\sum_J\ket J . \]
-Only the case $N=1$ is stated here; the general identity is available in the AFP entry
-Isabelle\_Marries\_Dirac (Deutsch--Jozsa) in its own matrix representation.
+Only the case $N=1$ is stated here; the general identity is \<open>hadamard_uniform_N\<close> in
+\<open>Day12_Counting_Probability\<close> (with \<open>tensor_pow_mat\<close> for $H^{\otimes N}$).
 
 \begin{notesdef}[Oracle]
 For $f:\Z_2^N\to\Z_2$, the vectors $e_J\otimes e_{i+f(J)}$ form an orthonormal basis of
@@ -353,7 +353,8 @@ Application: with $x=(He_0)^{\otimes N}$, $U_f(x\otimes e_0)=2^{-N/2}\sum_J e_J\
 and measuring against $\gamma=x\otimes e_0$ gives $\braket\gamma{U_f(x\otimes e_0)}=M/2^N$ with
 $M=\#\{J:f(J)=0\}$, hence $p_0=(M/2^N)^2$: repeating the experiment estimates $M$ (a
 Bernoulli trial).  The existence of the oracle is formalised below; the proposition is
-\<open>rank_one_meas_prob\<close> (Day 8); the counting identity is not formalised (audit item D12-4).\<close>
+\<open>rank_one_meas_prob\<close> (Day 8); the counting identity is \<open>counting_probability\<close> in
+\<open>Day12_Counting_Probability\<close>.\<close>
 
 lemma hadamard_uniform_1:
   "H_gate *\<^sub>v unit_vec 2 0 =
@@ -5181,8 +5182,9 @@ trace preserving.
 \end{notesprop}
 Example (notes): the transpose $\Phi(A)=A^t$ on $M_2$ is positive but not $2$-positive, since
 $\Phi^{(2)}$ sends the positive matrix $(E_{ij})_{i,j}$ to a matrix of determinant $-1$.  The
-decomposition into positives is formalised below; the proposition and the example are not
-(audit items D18-2, D18-4).\<close>
+decomposition into positives is formalised below; the proposition is
+\<open>density_preserving_iff_positive_tp\<close> and the example \<open>transpose_not_2_positive\<close>, both in
+\<open>Day18_Positive_Maps\<close>.\<close>
 
 lemma diag_mat_of_real_hermitian:
   "((diag_mat_of_real D)\<^sup>\<dagger>) = diag_mat_of_real D"
@@ -8527,8 +8529,9 @@ $\sum P_i^2=I$, which leaves a state with at most one flip unchanged and reveals
 occurred; (2) recovery
 $R(Y)=P_0YP_0+(X\otimes I\otimes I)P_1YP_1(X\otimes I\otimes I)+\cdots$, a completely positive
 trace-preserving map with $R(\ketbra{\psi_i}{\psi_i})=\ketbra\psi\psi$ after zero or one error.
-The code's recovery theorem is not formalised (audit items D30-3, D30-4); the Pauli
-matrices and the bit-flip channel are.\<close>
+The code's recovery theorem is \<open>bit_flip_code_recovery\<close> in \<open>Day30_BitFlip_Code\<close>
+(syndrome projections, $\sum P_i=I$, $R$ CPTP); the Pauli matrices and the bit-flip channel
+are below.\<close>
 
 subsection \<open>The Pauli matrices\<close>
 

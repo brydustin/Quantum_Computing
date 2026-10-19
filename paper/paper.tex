@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises nine theories and about eight
+entanglement witnesses.  The development comprises sixteen theories and some nine
 hundred checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -160,9 +160,17 @@ Theory & Lectures & lines & results\\
 \isa{Lmat\_Euclidean} & typed matrices as a Euclidean space & 780 & 24\\
 \isa{Separable\_Cone} & 27--28: separable cone, witnesses & 3\,107 & 63\\
 \isa{Day24\_Separability} & 26--28 restated lecture by lecture & 210 & 16\\
+\midrule
+\isa{QC\_Prelims} & shared matrix and vector lemmas of the gap-closure pass & 315 & 25\\
+\isa{Day12\_Counting\_Probability} & 12: $H^{\otimes N}\ket{0\cdots0}$, the counting probability & 267 & 15\\
+\isa{Day18\_Positive\_Maps} & 17--18: density-preserving iff positive and TP; the transpose & 257 & 6\\
+\isa{Day22\_Kraus\_Independence} & 22: $\crk(\Phi)\le n$ for extreme CPTP maps & 181 & 9\\
+\isa{Day28\_Horodecki\_Peres} & 28: the two-qubit transpose criterion & 251 & 5\\
+\isa{Day30\_BitFlip\_Code} & 30: syndromes, recovery map, the recovery theorem & 441 & 31\\
+\isa{Day32\_Pauli\_Expansion} & 32: $\sum|a_k|^2=1$ for Pauli expansions of unitaries & 59 & 2\\
 \bottomrule
 \end{tabular}
-\caption{The nine theories after the commentary and gap-closure pass (results = lemmas, theorems, corollaries, propositions; 841 in all).}
+\caption{The sixteen theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 934 in all).  The lower block closes the medium-sized gaps of the first audit.}
 \label{tab:theories}
 \end{table}
 
@@ -264,22 +272,32 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 11 are deliberate omissions; of the remaining 159
-mathematical items, 91 are faithful, 21 are variants and 47 are gaps.\footnote{Counts as
-of the close-out of October 2026; the audit file is the authoritative record.}  The audit
+mathematical items, 101 are faithful, 20 are variants and 38 are gaps.\footnote{Counts as
+of the second close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
 expected value $\braket{\psi}{H\psi}$ of an observable, the phase invariance of
 $\ketbra\psi\psi$, that $\rho_1\otimes\rho_2$ is a density matrix, the unambiguous
 discrimination of linearly independent states, and the complex-coefficient form of
 Choi's Theorem~3) were proved during the close-out and are counted as faithful above.
-The remaining gaps fall into two groups.  Medium-sized results that the notes prove in a page (density-preserving iff positive and
-trace preserving; the three-qubit code recovery; the Pauli expansion identity
-$\sum|a_k|^2=1$ for unitaries; the Hadamard power $H^{\otimes N}\ket{0\cdots0}$ and the
-counting probability of Day~12) are open.  Substantial developments remain: the Choi
-rank theorem $\crk(\Phi)=\rank P_\Phi$ and the unitary freedom of Kraus representations;
-operator systems with Arveson's correspondence and extension theorem; the Stinespring
-environment model of noise; the Horodecki--Peres transpose criterion; the Shor code and
-the Knill--Laflamme conditions.
+A second pass closed the medium-sized gaps that the notes prove in a page, each in its
+own theory (the lower block of Table~\ref{tab:theories}): a linear map sends density
+matrices to density matrices iff it is positive and trace preserving
+(\isa{density\_preserving\_iff\_positive\_tp}); the transpose on $M_2$ is positive but not
+$2$-positive, with the notes' witness $(E_{ij})$; the Hadamard power
+$H^{\otimes N}\ket{0\cdots0}=2^{-N/2}\sum_J\ket J$ and the counting probability
+$p_0=(M/2^N)^2$ of Day~12, for any unitary acting as the oracle on the basis; the Pauli
+expansion identity $\sum|a_k|^2=1$ for unitaries; the bound $\crk(\Phi)\le n$ for extreme
+CPTP maps (linear independence bounds the length, through the vector-space library of
+the Jordan-Normal-Form entry); the two-qubit Horodecki--Peres criterion, $(\mathrm{id}\otimes
+t)(\ketbra vv)\ge0$ iff $v$ is a product vector, with the witness value
+$-2|v_0v_3-v_1v_2|^2$; and the three-qubit bit-flip code, whose syndrome projections,
+CPTP recovery map and recovery theorem $R(\ketbra{\psi_i}{\psi_i})=\ketbra\psi\psi$ for at
+most one flip are proved on explicit $8\times8$ matrices.  Substantial developments
+remain: the Choi rank theorem $\crk(\Phi)=\rank P_\Phi$ and the unitary freedom of Kraus
+representations; operator systems with Arveson's correspondence and extension theorem;
+the Stinespring environment model of noise; the Shor code and the Knill--Laflamme
+conditions.
 
 Beyond the omissions, the audit documents where the formalisation strengthens the
 notes (strict witnesses for density matrices; Cholesky with the missing hypothesis;

@@ -7,6 +7,12 @@ theory QC_Notes_Overview
   imports
     Vern_Paulsen_QC.Day23_ChoiExtremeUCP
     Vern_Paulsen_QC.Day24_Separability
+    Vern_Paulsen_QC.Day12_Counting_Probability
+    Vern_Paulsen_QC.Day18_Positive_Maps
+    Vern_Paulsen_QC.Day22_Kraus_Independence
+    Vern_Paulsen_QC.Day28_Horodecki_Peres
+    Vern_Paulsen_QC.Day30_BitFlip_Code
+    Vern_Paulsen_QC.Day32_Pauli_Expansion
 begin
 
 section \<open>Reading guide\<close>

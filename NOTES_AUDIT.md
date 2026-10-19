@@ -25,7 +25,10 @@ Day 34 = 18 Nov 2011).  Status codes:
 Theory abbreviations: BM = `Basic_Math`, QC3 = `Quantum_Computing_3_10`,
 MT = `Matrix_Typed`, EFA = `Essential_Functional_Analysis`, LE = `Lmat/Lmat_Euclidean`,
 SC = `Lmat/Separable_Cone`, QC11 = `Day11/Quantum_Computing11`,
-D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
+D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closure theories
+(2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
+D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
+D32 = `Day32_Pauli_Expansion`, with shared lemmas in `QC_Prelims`.
 
 ---
 
@@ -146,10 +149,10 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 ### Day 12 (23 Sep): quantum parallelism
 | id | notes | formal | status |
 |---|---|---|---|
-| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | QC11 `hadamard_uniform_1` (N = 1 only); general N available in AFP `Isabelle_Marries_Dirac.Deutsch_Jozsa` (`iter_tensor_of_H_on_zero_tensor`) but not connected | ✗ |
+| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | D12 `hadamard_uniform_N` (`tensor_pow_mat H_gate N *v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N`), with `uniform_tensor_e0_as_sum` the Σ_J form; QC11 `hadamard_uniform_1` is N = 1 | ✓ |
 | D12-2 | oracle U_f(e_J ⊗ e_i) = e_J ⊗ e_{i+f(J)} exists and is unitary | QC11 `oracle_unitary`, `oracle_exists` | ✓ |
 | D12-3 | Proposition: p₀(ψ) = \|⟨γ\|ψ⟩\|² for P₀ = \|γ⟩⟨γ\| | QC3 `rank_one_meas_prob`, `meas_prob_quad_form` | ✓ |
-| D12-4 | counting: p₀(U_f(x⊗e₀)) = (M/2^N)² with M = #{J : f(J) = 0} | QC11 `count_zeros` (definition only, no theorem) | ✗ |
+| D12-4 | counting: p₀(U_f(x⊗e₀)) = (M/2^N)² with M = #{J : f(J) = 0} | D12 `counting_probability`: for any unitary U acting as the oracle on the basis vectors e_J⊗e_i, `meas_prob (γ ⊘ γ) (U *v γ) = (count_zeros f N / 2^N)²` with γ = x⊗e₀ | ✓ |
 | D12-5 | Bernoulli-trial remark | – | – |
 
 ### Day 13 (26 Sep): ensembles, density matrices
@@ -195,7 +198,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | D17-1 | measurement map M(ρ) = Σ M_α ρ M_α* maps densities to densities | QC11 `meas_map`, `meas_map_psd`, `meas_map_density` | ✓ |
 | D17-2 | stochastic matrices, Markov chains | – | – |
 | D17-3 | environment model: tr_E(U(ρ ⊗ \|φ⟩⟨φ\|)U*) = Σ W_i ρ W_i*, Σ W_i*W_i = I | ✗ | ✗ |
-| D17-4 | Proposition: Φ maps densities to densities iff positive and trace-preserving | `positive_map`, `trace_preserving` defined; the proposition itself ✗ | ✗ |
+| D17-4 | Proposition: Φ maps densities to densities iff positive and trace-preserving | D18 `density_preserving_iff_positive_tp` (linear Φ, n > 0) | ✓ |
 | D17-5 | definition of completely positive | QC11 `p_positive`, `completely_positive` | ✓ |
 | D17-6 | Choi–Kraus: CPTP iff Φ(X) = Σ E_i X E_i*, Σ E_i*E_i = I | QC11 `choi_kraus_cptp` | ✓ |
 
@@ -205,9 +208,9 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | id | notes | formal | status |
 |---|---|---|---|
 | D18-1 | X = (P₁−P₂) + i(P₃−P₄) with P_i ≥ 0 | QC11 `hermitian_decomp_psd`, `matrix_decomp_psd` | ✓ |
-| D18-2 | positive maps; densities to densities iff positive and TP | `positive_map`; proposition ✗ (= D17-4) | ✗ |
+| D18-2 | positive maps; densities to densities iff positive and TP | `positive_map`; proposition = D17-4, D18 `density_preserving_iff_positive_tp` | ✓ |
 | D18-3 | p-positive, completely positive, Φ^{(p)}((X_{ij})) = (Φ(X_{ij})) | QC11 `p_positive`, `completely_positive`, `amplification`, `amplification_index` | ✓ |
-| D18-4 | Example: transpose on M₂ is positive but not 2-positive | ✗ | ✗ |
+| D18-4 | Example: transpose on M₂ is positive but not 2-positive | D18 `transpose_positive_map`, `transpose_not_2_positive` (witness (E_{ij}) = `choi_seed 2`, test vector (0,1,−1,0)), `transpose_not_completely_positive` | ✓ |
 
 ### Day 19 (10 Oct): Choi's theorem
 | id | notes | formal | status |
@@ -242,7 +245,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | D22-3 | Krein–Milman (stated) | – (available as HOL-Analysis `Krein_Milman_Minkowski`) | – |
 | D22-4 | UCP(M_n,M_d) convex and compact | QC11 `UCP`, `UCP_convex`; compactness ✗ | ~ |
 | D22-5 | CPTP convex; Γ(Φ) = Φ* affine bijection UCP → CPTP | QC11 `CPTP`, `CPTP_convex`; affineness of Γ ✗ | ~ |
-| D22-6 | Choi 3 (statement) and corollaries: extreme ⟹ cr(Φ) ≤ d; CPTP version | see D23; corollary cr ≤ d ✗ | ~ |
+| D22-6 | Choi 3 (statement) and corollaries: extreme ⟹ cr(Φ) ≤ d; CPTP version | see D23; corollary: D22 `extreme_CPTP_kraus_length_le` (r ≤ n for a Kraus representation with independent products) and `extreme_CPTP_choi_rank_le` (cr Φ ≤ n for extreme CPTP Φ: M_n → M_d, the notes' d) | ✓ |
 
 ### Day 23 (19 Oct): proof of Choi's Theorem 3, examples
 | id | notes | formal | status |
@@ -292,7 +295,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | D28-2 | real functional f with f(R) < 0 ≤ f(C); complexification f̃ | SC `separable_cone_lmat_separating_hyperplane`, `hermitian_witness_from_lmat`, `entanglement_witness_hermitian'` | ✓ |
 | D28-3 | Theorem: R ≥ 0 separable iff Φ^{(r)}(R) ≥ 0 for all positive Φ : M_n → M_r | ~ : formalised in the witness form `separable_iff_witness`, `separable_density_iff_witness` (R separable iff every Hermitian W nonneg on the cone has Tr(WR) ≥ 0); the positive-map form needs the Arveson correspondence | ~ |
 | D28-4 | strict witnesses for density matrices | SC `entanglement_witness_strict`, `entanglement_witness_for_density` | ✓ (beyond the notes) |
-| D28-5 | Horodecki–Peres: for v ∈ ℂ²⊗ℂ², separable iff partial transpose of \|v⟩⟨v\| ≥ 0 | ✗ | ✗ |
+| D28-5 | Horodecki–Peres: for v ∈ ℂ²⊗ℂ², separable iff partial transpose of \|v⟩⟨v\| ≥ 0 | D28 `horodecki_peres_two_qubits`: psd (id⊗t)(\|v⟩⟨v\|) ⟷ v = α⊗β (pure states: separable = product); `horodecki_peres_entangled`; witness value −2\|v₀v₃−v₁v₂\|² (`partial_transpose_witness_value`) | ✓ |
 
 ## Part V: Error correction (Days 29–34)
 
@@ -310,8 +313,8 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 |---|---|---|---|
 | D30-1 | undetected-error probabilities, majority rule | ✗ (elementary arithmetic) | ✗ |
 | D30-2 | encoding a\|0⟩+b\|1⟩ ↦ a\|000⟩+b\|111⟩ | QC11 `encode_mat` | ✓ |
-| D30-3 | syndrome projections P₀…P₃, Σ P_i = I | ✗ | ✗ |
-| D30-4 | recovery map R is CPTP and R(\|ψ_i⟩⟨ψ_i\|) = \|ψ⟩⟨ψ\| for ≤ 1 error | ✗ | ✗ |
+| D30-3 | syndrome projections P₀…P₃, Σ P_i = I | D30 `syndrome_proj`, `syndrome_proj_sum`, `syndrome_proj_idem`, `syndrome_proj_hermitian`; flips `flip_bit_mat` = the tensors X⊗I⊗I, … (`flips_as_tensors`) | ✓ |
+| D30-4 | recovery map R is CPTP and R(\|ψ_i⟩⟨ψ_i\|) = \|ψ⟩⟨ψ\| for ≤ 1 error | D30 `recovery_map_CPTP`, `bit_flip_code_recovery` (four statements: no error and a flip on each qubit) | ✓ |
 
 ### Day 31 (11 Nov): operator viewpoint, fidelity
 | id | notes | formal | status |
@@ -330,7 +333,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`.
 | D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | ✗ | ✗ |
 | D32-5 | 1-Pauli operators; orthogonality of their images of V | ✗ | ✗ |
 | D32-6 | Pauli magic: I, X, Y, Z orthogonal with norm √2 | QC11 `pauli_orthogonal`, `pauli_norm` | ✓ |
-| D32-7 | U = a₀I + a₁X + a₂Y + a₃Z unitary ⟹ Σ\|a_i\|² = 1 | ✗ | ✗ |
+| D32-7 | U = a₀I + a₁X + a₂Y + a₃Z unitary ⟹ Σ\|a_i\|² = 1 | D32 `pauli_expansion_unitary` | ✓ |
 
 ### Day 33 (16 Nov): Shor code recovery
 | id | notes | formal | status |
@@ -383,21 +386,21 @@ A12 D32-1 rename `shor_zero/one` → `phase_code_zero/one`. DONE.
 
 Priority B (medium):
 B1 D8-3 unambiguous discrimination of linearly independent states. DONE (`lin_indep_states_unambiguous`, new proof via dual vectors).
-B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving.
+B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving. DONE (`Day18_Positive_Maps`).
 B3 D19-1 n-positive ⟹ Choi matrix psd; D19-3 Choi-matrix form of TP/unital.
-B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error.
-B5 D32-7 Pauli expansion identity for unitaries.
+B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error. DONE (`Day30_BitFlip_Code`).
+B5 D32-7 Pauli expansion identity for unitaries. DONE (`Day32_Pauli_Expansion`).
 B6 D11-3 SWAP from three CNOTs; D10-1 superdense coding table.
-B7 D12-1/D12-4 N-fold Hadamard and the counting probability (connect to AFP Deutsch_Jozsa).
+B7 D12-1/D12-4 N-fold Hadamard and the counting probability. DONE (`Day12_Counting_Probability`, proved directly with `tensor_pow_mat` rather than via AFP Deutsch_Jozsa).
 B8 D15-6 A-side partial-trace lemmas.
-B9 D22-6 corollary cr(Φ) ≤ d for extreme maps (needs linear independence ⟹ size ≤ dimension).
+B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independence`, via JNF `vec_space.li_le_dim`).
 
 Priority C (substantial developments, recorded as open):
 C1 D20-4 cr(Φ) = rank(P_Φ).
 C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2); D22-1.
 C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion.
 C4 D17-3 environment (Stinespring) model of noise.
-C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres.
+C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
 C6 D22-4 compactness of UCP/CPTP.
 C7 D32–D34 Shor code and Knill–Laflamme conditions.
 C8 D5-1 Sylvester's criterion; D29-3 Hamming code.
