@@ -39,8 +39,8 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises sixteen theories and some nine
-hundred checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
+entanglement witnesses.  The development comprises twenty-one theories and about a
+thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
 it is absent, and an Isabelle-generated document reproduces the notes with the formal
@@ -168,9 +168,15 @@ Theory & Lectures & lines & results\\
 \isa{Day28\_Horodecki\_Peres} & 28: the two-qubit transpose criterion & 251 & 5\\
 \isa{Day30\_BitFlip\_Code} & 30: syndromes, recovery map, the recovery theorem & 441 & 31\\
 \isa{Day32\_Pauli\_Expansion} & 32: $\sum|a_k|^2=1$ for Pauli expansions of unitaries & 59 & 2\\
+\midrule
+\isa{Day21\_Unitary\_Freedom} & 21: rank-one decompositions, Choi's Theorem~2 & 709 & 15\\
+\isa{Day32\_Recovery\_Proposition} & 32--33: Kraus composition, the general recovery proposition & 806 & 42\\
+\isa{Day22\_Minimal\_Kraus} & 22: minimal Kraus representations are independent & 253 & 11\\
+\isa{Day34\_Knill\_Laflamme} & 34: Knill--Laflamme necessity and closure & 591 & 18\\
+\isa{Day20\_Choi\_Rank} & 20: $\crk(\Phi)=\rank P_\Phi$ & 217 & 7\\
 \bottomrule
 \end{tabular}
-\caption{The sixteen theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 934 in all).  The lower block closes the medium-sized gaps of the first audit.}
+\caption{The twenty-one theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,027 in all).  The middle block closes the medium-sized gaps of the first audit, the lower block the Choi-rank, unitary-freedom and Knill--Laflamme developments.}
 \label{tab:theories}
 \end{table}
 
@@ -228,8 +234,9 @@ constrained on the carrier, the naive definition of an extreme point (``$\Phi$ i
 midpoint of two \emph{different} CPTP maps'') is vacuous: any CPTP map agrees on the
 carrier with maps that differ from it elsewhere.  Extremality is therefore defined through
 disagreement on the carrier (\isa{extreme\_CPTP\_carrier}).  Second, the notes' proof uses
-the unitary freedom of Kraus representations (their ``Choi 2''), which is not formalised.
-The forward direction instead goes through a CP Radon--Nikodym theorem
+the unitary freedom of Kraus representations (their ``Choi 2''), which was formalised only
+afterwards (\isa{choi\_2\_unitary\_freedom} in \isa{Day21\_Unitary\_Freedom}).  The forward
+direction instead goes through a CP Radon--Nikodym theorem
 (\isa{cp\_radon\_nikodym\_linear}): if $\Psi$ and $\Phi-\Psi$ are completely positive and
 $\Phi(X)=\sum_iV_iXV_i^\dagger$, then $\Psi(X)=\sum_{ij}T_{ij}V_iXV_j^\dagger$ for a positive
 matrix $T$.  Its proof reduces to a statement about positive matrices dominated by an
@@ -272,7 +279,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 11 are deliberate omissions; of the remaining 159
-mathematical items, 101 are faithful, 20 are variants and 38 are gaps.\footnote{Counts as
+mathematical items, 109 are faithful, 22 are variants and 28 are gaps.\footnote{Counts as
 of the second close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -293,11 +300,22 @@ the Jordan-Normal-Form entry); the two-qubit Horodecki--Peres criterion, $(\math
 t)(\ketbra vv)\ge0$ iff $v$ is a product vector, with the witness value
 $-2|v_0v_3-v_1v_2|^2$; and the three-qubit bit-flip code, whose syndrome projections,
 CPTP recovery map and recovery theorem $R(\ketbra{\psi_i}{\psi_i})=\ketbra\psi\psi$ for at
-most one flip are proved on explicit $8\times8$ matrices.  Substantial developments
-remain: the Choi rank theorem $\crk(\Phi)=\rank P_\Phi$ and the unitary freedom of Kraus
-representations; operator systems with Arveson's correspondence and extension theorem;
-the Stinespring environment model of noise; the Shor code and the Knill--Laflamme
-conditions.
+most one flip are proved on explicit $8\times8$ matrices.  A third pass added the
+structural results of lectures 20--22 and 32--34: two rank-one decompositions
+$\sum v_jv_j^*=\sum w_lw_l^*$ with the $v_j$ independent are related by an isometry, and
+hence two Kraus representations of one map by an isometry (Choi's Theorem~2,
+\isa{choi\_2\_unitary\_freedom}, proved through the Choi matrix); a Kraus representation
+of minimal length $\crk(\Phi)$ is linearly independent; the Choi rank theorem
+$\crk(\Phi)=\rank P_\Phi$ (\isa{choi\_rank\_eq\_rank}, with the rank taken in the
+Jordan-Normal-Form vector-space library); the general recovery proposition of Day~32,
+$R(\ketbra\varphi\varphi)=(\sum_i|a_i|^2)\ketbra\psi\psi$ for $\varphi=\sum_ia_iU_i\psi$ with
+$PU_i^*U_jP=0$ (\isa{recovery\_linear\_combination}); and, of the Knill--Laflamme theory,
+the equivalence between correcting the states of $V$ and fixing $PXP$, the necessity
+of $PE_i^*E_jP=\alpha_{ij}P$ (again through Choi's Theorem~2) and the closure of the
+corrected errors under linear combinations.  What remains open: the sufficiency half of
+the Knill--Laflamme theorem (the construction of the recovery map from the conditions),
+the Shor code, operator systems with Arveson's correspondence and extension theorem,
+and the Stinespring environment model of noise.
 
 Beyond the omissions, the audit documents where the formalisation strengthens the
 notes (strict witnesses for density matrices; Cholesky with the missing hypothesis;

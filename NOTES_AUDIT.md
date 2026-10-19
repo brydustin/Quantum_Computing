@@ -28,7 +28,8 @@ SC = `Lmat/Separable_Cone`, QC11 = `Day11/Quantum_Computing11`,
 D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closure theories
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
-D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, with shared lemmas in `QC_Prelims`.
+D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, with shared lemmas in `QC_Prelims`.
 
 ---
 
@@ -225,7 +226,7 @@ D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, with shared lemmas
 | D20-1 | φ : M_n → ℂ positive ⟺ CP ⟺ (φ(E_{ij})) ≥ 0 | QC11 `positive_scalar_is_cp` (positive ⟹ CP; the rest is `choi_theorem` with d = 1) | ✓ |
 | D20-2 | Φ* for Φ(X) = Σ A_i X A_i* is Y ↦ Σ A_i* Y A_i; Φ CP ⟺ Φ* CP; Φ UCP ⟺ Φ* CPTP | QC11 `kraus_adjoint_dim`, `kraus_adjoint_correct`, `adjoint_cp_from_kraus`, `cp_unital_iff_adjoint_tp` | ✓ |
 | D20-3 | Choi rank cr(Φ) | QC11 `choi_rank` | ✓ |
-| D20-4 | Theorem: cr(Φ) = rank(P_Φ); Lemma rank((E_{ij})) = 1 | ✗ (only `choi_rank_le`: cr ≤ nd) | ✗ |
+| D20-4 | Theorem: cr(Φ) = rank(P_Φ); Lemma rank((E_{ij})) = 1 | D20 `choi_rank_eq_rank` (`choi_rank n d Φ = vec_space.rank (n*d) (choi_matrix n d Φ)` for CP Φ, n d > 0), via `rank_outer_sum_le`, `rank_ge_indep_in_colspace` and the minimal-representation independence of D22-1; the rank-one lemma for (E_{ij}) is not stated separately | ✓ |
 
 ### Day 21 (14 Oct): Kraus rank bound, unitary freedom (Choi 2)
 | id | notes | formal | status |
@@ -240,7 +241,7 @@ D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, with shared lemmas
 ### Day 22 (17 Oct): minimal Kraus representations, convexity, UCP/CPTP
 | id | notes | formal | status |
 |---|---|---|---|
-| D22-1 | minimal (r = cr Φ) Kraus operators are linearly independent | ✗ (taken as the hypothesis `lin_indep_complex_mat` in D23) | ✗ |
+| D22-1 | minimal (r = cr Φ) Kraus operators are linearly independent | D22M `minimal_kraus_rep_lin_indep` (a Kraus list of length cr Φ is `lin_indep_complex_mat`; proof: a dependence is rotated by a unitary with prescribed first row into a representation with a zero operator, `kraus_mix_same_map`) | ✓ |
 | D22-2 | convex sets, extreme points, convex hull, affine maps | QC11 `convex_set_mat`, `extreme_point_mat`, `affine_map_mat` | ✓ |
 | D22-3 | Krein–Milman (stated) | – (available as HOL-Analysis `Krein_Milman_Minkowski`) | – |
 | D22-4 | UCP(M_n,M_d) convex and compact | QC11 `UCP`, `UCP_convex`; compactness ✗ | ~ |
@@ -330,7 +331,7 @@ D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, with shared lemmas
 | D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
 | D32-2 | Y-version with β = Y\|+⟩ | ✗ | ✗ |
 | D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | ✗ | ✗ |
-| D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | ✗ | ✗ |
+| D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | D32R `recovery_ops_kraus_operators`, `recovery_map_CPTP'`, `recovery_single_error` (hypotheses bundled as `recovery_setting n P Us`: P projection, U_i unitary, PU_i*U_jP = 0 for i ≠ j) | ✓ |
 | D32-5 | 1-Pauli operators; orthogonality of their images of V | ✗ | ✗ |
 | D32-6 | Pauli magic: I, X, Y, Z orthogonal with norm √2 | QC11 `pauli_orthogonal`, `pauli_norm` | ✓ |
 | D32-7 | U = a₀I + a₁X + a₂Y + a₃Z unitary ⟹ Σ\|a_i\|² = 1 | D32 `pauli_expansion_unitary` | ✓ |
@@ -339,14 +340,14 @@ D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, with shared lemmas
 | id | notes | formal | status |
 |---|---|---|---|
 | D33-1 | 28 orthogonal subspaces; Z₁v = Z₂v = Z₃v on V | ✗ | ✗ |
-| D33-2 | recovery R corrects every single-qubit unitary error | ✗ | ✗ |
+| D33-2 | recovery R corrects every single-qubit unitary error | D32R `recovery_linear_combination`: for ψ ∈ V and φ = Σ_i a_i U_i ψ, R(\|φ⟩⟨φ\|) = (Σ\|a_i\|²)\|ψ⟩⟨ψ\| (the general form; the Pauli instance is this with U_i = I, X, Y, Z) | ~ |
 
 ### Day 34 (18 Nov): Knill–Laflamme conditions
 | id | notes | formal | status |
 |---|---|---|---|
-| D34-1 | R∘E fixes \|ψ⟩⟨ψ\| on V iff it fixes PXP | ✗ | ✗ |
-| D34-2 | Theorem 1: correctable iff PE_i*E_jP = α_{ij}P | ✗ | ✗ |
-| D34-3 | Theorem 2: closure under linear combinations of the errors | ✗ | ✗ |
+| D34-1 | R∘E fixes \|ψ⟩⟨ψ\| on V iff it fixes PXP | D34 `recovery_states_iff_PXP` (via `psd_PXP_decomp_in_range` and the decomposition of X into four positives) | ✓ |
+| D34-2 | Theorem 1: correctable iff PE_i*E_jP = α_{ij}P | D34 `knill_laflamme_necessity` (⟹: from a CPTP R with R∘E fixing PXP, PE_i*E_jP = α_{ij}P; via Choi 2 applied to the two Kraus representations {P} and {A_lE_iP} of X ↦ PXP, `kl_kraus_scalars`); the converse (constructing R) is not formalised | ~ |
+| D34-3 | Theorem 2: closure under linear combinations of the errors | D34 `knill_laflamme_closure`: if R∘E fixes PXP and G_i = Σ_j g_{ij}E_j with Σ G_i*G_i = I (`kraus_mix`), then R∘G fixes PXP | ✓ |
 
 ---
 
@@ -396,11 +397,11 @@ B8 D15-6 A-side partial-trace lemmas.
 B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independence`, via JNF `vec_space.li_le_dim`).
 
 Priority C (substantial developments, recorded as open):
-C1 D20-4 cr(Φ) = rank(P_Φ).
-C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2). DONE (`Day21_Unitary_Freedom`, with D21-3); D22-1 open.
+C1 D20-4 cr(Φ) = rank(P_Φ). DONE (`Day20_Choi_Rank`).
+C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2). DONE (`Day21_Unitary_Freedom`, with D21-3); D22-1 DONE (`Day22_Minimal_Kraus`).
 C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion.
 C4 D17-3 environment (Stinespring) model of noise.
 C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
 C6 D22-4 compactness of UCP/CPTP.
-C7 D32–D34 Shor code and Knill–Laflamme conditions.
+C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 and the Shor code (D32-5, D33-1) remain open.
 C8 D5-1 Sylvester's criterion; D29-3 Hamming code.

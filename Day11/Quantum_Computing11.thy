@@ -4159,8 +4159,9 @@ finite-dimensional $\Hil_B$.
 $\Phi:L(\Hil_A)\to L(\Hil_A)$ is completely positive and trace preserving iff
 $\Phi(X)=\sum_iE_iXE_i^*$ for matrices $E_i$ with $\sum_iE_i^*E_i=I$.
 \end{notestheorem}
-The proposition is not formalised (audit item D17-4); complete positivity is defined below
-and the Choi--Kraus theorem is \<open>choi_kraus_cptp\<close> on Day 19.\<close>
+The proposition is \<open>density_preserving_iff_positive_tp\<close> in \<open>Day18_Positive_Maps\<close>;
+complete positivity is defined below and the Choi--Kraus theorem is \<open>choi_kraus_cptp\<close> on
+Day 19.\<close>
 
 definition meas_map :: "complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "meas_map Ms \<rho> \<equiv>
@@ -7066,8 +7067,9 @@ $\crk(\Phi)=\min\{L:\Phi(X)=\sum_{l=1}^LB_lXB_l^*\}$.
 $\crk(\Phi)=\rank(P_\Phi)$.
 \end{notestheorem}
 The functional proposition, the adjoint proposition (for Kraus maps) and the definition of
-the Choi rank are formalised below; the rank theorem and its lemma $\rank((E_{ij}))=1$ are not
-(audit item D20-4), only the bound $\crk(\Phi)\le nd$.\<close>
+the Choi rank are formalised below; the rank theorem is \<open>choi_rank_eq_rank\<close> in
+\<open>Day20_Choi_Rank\<close> (its lemma $\rank((E_{ij}))=1$ is not stated separately), and the bound
+$\crk(\Phi)\le nd$ is below.\<close>
 
 subsection \<open>The adjoint of a Kraus map\<close>
 
@@ -7800,8 +7802,8 @@ qed
 subsection \<open>Choi rank\<close>
 
 text \<open>\<open>choi_rank n d \<Phi>\<close> is the least length of a Kraus list representing $\Phi$ on the
-carrier.  The theorem $\crk(\Phi)=\rank(P_\Phi)$ is not formalised; the bound $\crk(\Phi)\le nd$
-follows from the Kraus-rank bound of Day 21.\<close>
+carrier.  The theorem $\crk(\Phi)=\rank(P_\Phi)$ is \<open>choi_rank_eq_rank\<close> in
+\<open>Day20_Choi_Rank\<close>; the bound $\crk(\Phi)\le nd$ follows from the Kraus-rank bound of Day 21.\<close>
 
 
 definition choi_rank ::
@@ -7944,9 +7946,9 @@ If $\Phi$ is extreme then $\crk(\Phi)\le d$.  If $\Phi:M_d\to M_n$ is CPTP with
 $\Phi(X)=\sum_{i=1}^rV_iXV_i^*$, $r=\crk(\Phi)$, then $\Phi$ is extreme in $CPTP(M_d,M_n)$ iff
 $\{V_i^*V_j\}$ is linearly independent.
 \end{notescor}
-Convexity of UCP and CPTP is proved below; compactness, the affine bijection and the
-corollary $\crk(\Phi)\le d$ are not formalised; Choi's Theorem 3 is proved in theory Day23 in
-its CPTP form.  Krein--Milman is available in HOL-Analysis (\<open>Krein_Milman_Minkowski\<close>).\<close>
+Convexity of UCP and CPTP is proved below; compactness and the affine bijection are not
+formalised; the corollary $\crk(\Phi)\le d$ is \<open>extreme_CPTP_choi_rank_le\<close> in
+\<open>Day22_Kraus_Independence\<close>, and Choi's Theorem 3 is proved in theory Day23 in its CPTP form.  Krein--Milman is available in HOL-Analysis (\<open>Krein_Milman_Minkowski\<close>).\<close>
 
 subsection \<open>Convex sets and extreme points\<close>
 
@@ -9008,9 +9010,12 @@ $U_iV$, $P_0=I-\sum P_i$, $U_0=I$).
 \end{notesprop}
 The $3\cdot9+1$ \emph{1-Pauli} operators $I\otimes\cdots\otimes U\otimes\cdots\otimes I$ ($U$ a
 Pauli matrix) map $V=\operatorname{span}\{\ket{0_L},\ket{1_L}\}$ to mutually orthogonal subspaces
-(up to the coincidences $Z_1v=Z_2v=Z_3v$ etc.).  Of this material only the states $\ket\pm$, the
-action of $Z$ and $X$ on them, and the phase-flip code words are formalised (audit items
-D32-2 to D32-5, D33).\<close>
+(up to the coincidences $Z_1v=Z_2v=Z_3v$ etc.).  The proposition is \<open>recovery_single_error\<close>
+in \<open>Day32_Recovery_Proposition\<close>, together with its linear-combination form
+\<open>recovery_linear_combination\<close> (Day 33); the Pauli expansion identity is
+\<open>pauli_expansion_unitary\<close> in \<open>Day32_Pauli_Expansion\<close>.  Of the Shor code itself only the
+states $\ket\pm$, the action of $Z$ and $X$ on them, and the phase-flip code words are
+formalised (audit items D32-5, D33-1).\<close>
 
 definition ket_plus :: "complex Matrix.vec" where
   "ket_plus \<equiv> (1 / sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
@@ -9355,8 +9360,12 @@ iff $PE_i^*E_jP=\alpha_{ij}P$ for some scalars $\alpha_{ij}$.
 If $R$ corrects $E$ as in Theorem 1 and $G_i\in\operatorname{span}\{E_j\}$ with $\sum G_i^*G_i=I$,
 then $R$ also corrects $G(X)=\sum_iG_iXG_i^*$.
 \end{notestheorem}
-These Knill--Laflamme results are not formalised (audit item D34); the elementary algebra of
-orthogonal projections used by their proofs is.\<close>
+Of the Knill--Laflamme results, the equivalence of Theorem 1's two readings
+(\<open>recovery_states_iff_PXP\<close>), the necessity of $PE_i^*E_jP=\alpha_{ij}P$
+(\<open>knill_laflamme_necessity\<close>) and Theorem 2 (\<open>knill_laflamme_closure\<close>) are proved in
+\<open>Day34_Knill_Laflamme\<close>; the converse of Theorem 1, the construction of $R$ from the
+conditions, is not formalised (audit item D34-2).  The elementary algebra of orthogonal
+projections used by the proofs follows.\<close>
 
 
 lemma projection_complement:

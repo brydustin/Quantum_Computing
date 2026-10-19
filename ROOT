@@ -37,6 +37,10 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day30_BitFlip_Code
     Day32_Pauli_Expansion
     Day21_Unitary_Freedom
+    Day32_Recovery_Proposition
+    Day22_Minimal_Kraus
+    Day34_Knill_Laflamme
+    Day20_Choi_Rank
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
@@ -65,5 +69,9 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day30_BitFlip_Code
     Vern_Paulsen_QC.Day32_Pauli_Expansion
     Vern_Paulsen_QC.Day21_Unitary_Freedom
+    Vern_Paulsen_QC.Day32_Recovery_Proposition
+    Vern_Paulsen_QC.Day22_Minimal_Kraus
+    Vern_Paulsen_QC.Day34_Knill_Laflamme
+    Vern_Paulsen_QC.Day20_Choi_Rank
   document_files
     "root.tex"

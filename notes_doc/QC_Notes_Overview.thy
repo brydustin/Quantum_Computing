@@ -14,6 +14,10 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day30_BitFlip_Code
     Vern_Paulsen_QC.Day32_Pauli_Expansion
     Vern_Paulsen_QC.Day21_Unitary_Freedom
+    Vern_Paulsen_QC.Day32_Recovery_Proposition
+    Vern_Paulsen_QC.Day22_Minimal_Kraus
+    Vern_Paulsen_QC.Day34_Knill_Laflamme
+    Vern_Paulsen_QC.Day20_Choi_Rank
 begin
 
 section \<open>Reading guide\<close>
@@ -35,14 +39,24 @@ reuse earlier infrastructure.  The table gives the correspondence.
 25     & Hahn--Banach on matrix spaces & \isa{Matrix{\isacharunderscore}Typed}\\
 --     & Hilbert--Schmidt analysis, Carath\'eodory, typed matrices as a Euclidean space & \isa{Essential{\isacharunderscore}Functional{\isacharunderscore}Analysis}, \isa{Lmat{\isacharunderscore}Euclidean}\\
 26--28 & separable cone, separating hyperplanes, entanglement witnesses & \isa{Separable{\isacharunderscore}Cone}, \isa{Day{\isadigit{2}}{\isadigit{4}}{\isacharunderscore}Separability}\\
-29--32 & classical codes, bit/phase-flip channels, fidelity, Pauli algebra & \isa{Quantum{\isacharunderscore}Computing{\isadigit{1}}{\isadigit{1}}}\\
+29--32 & classical codes, bit/phase-flip channels, fidelity, Pauli algebra & \isa{Quantum{\isacharunderscore}Computing{\isadigit{1}}{\isadigit{1}}}\\\hline
+12     & $H^{\otimes N}\ket{0\cdots0}$, the counting probability & \texttt{Day12\_Counting\_Probability}\\
+17--18 & densities to densities iff positive and TP; the transpose & \texttt{Day18\_Positive\_Maps}\\
+20     & $\crk(\Phi)=\rank P_\Phi$ & \texttt{Day20\_Choi\_Rank}\\
+21     & rank-one decompositions and Kraus representations up to an isometry (Choi 2) & \texttt{Day21\_Unitary\_Freedom}\\
+22     & $\crk(\Phi)\le n$ for extreme maps; minimal Kraus lists are independent & \texttt{Day22\_Kraus\_Independence}, \texttt{Day22\_Minimal\_Kraus}\\
+28     & the two-qubit Horodecki--Peres criterion & \texttt{Day28\_Horodecki\_Peres}\\
+30     & the three-qubit bit-flip code and its recovery theorem & \texttt{Day30\_BitFlip\_Code}\\
+32--33 & Pauli expansion of unitaries; the general recovery proposition & \texttt{Day32\_Pauli\_Expansion}, \texttt{Day32\_Recovery\_Proposition}\\
+34     & Knill--Laflamme: states vs.\ $PXP$, necessity, closure & \texttt{Day34\_Knill\_Laflamme}\\
 \end{tabular}
 \end{center}
 
-Lectures 24 and 26 (operator systems, Arveson's extension theorem and
-correspondence), the Choi-rank theorem and unitary freedom of Kraus
-representations (lectures 20--21), and the Shor code and Knill--Laflamme
-conditions (lectures 32--34) are not formalised; see \texttt{NOTES\_AUDIT.md}.
+The theories of the second block (shared lemmas in \texttt{QC\_Prelims}) close the gaps
+recorded by the first audit.  Still not formalised: lectures 24 and 26 (operator systems,
+Arveson's extension theorem and correspondence), the Stinespring environment model, the
+Shor code, and the sufficiency half of the Knill--Laflamme theorem; see
+\texttt{NOTES\_AUDIT.md}.
 \<close>
 
 section \<open>Conventions\<close>

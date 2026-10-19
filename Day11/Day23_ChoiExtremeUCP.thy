@@ -39,8 +39,9 @@ the products $V_j^\dagger V_i$ are linearly independent over $\C$
 (\<open>choi_theorem_3_cptp_iff\<close>).  The direction ($\Rightarrow$) follows the notes' perturbation argument
 (\<open>kraus_quad_map\<close>, \<open>small_eps_psd\<close>); the direction ($\Leftarrow$) replaces Choi 2 by a
 CP Radon--Nikodym theorem proved below from the Moore--Penrose pseudoinverse of the Choi
-matrix.  Unitary freedom itself, the UCP form, and the examples are not formalised
-(audit items D21-6, D23-4).\<close>
+matrix.  Unitary freedom itself is \<open>choi_2_unitary_freedom\<close> in \<open>Day21_Unitary_Freedom\<close>,
+proved afterwards and independently of this theory; the UCP form and the examples are not
+formalised (audit item D23-4).\<close>
 
 
 subsection \<open>Extreme UCP maps\<close>
