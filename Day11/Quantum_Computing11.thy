@@ -16,7 +16,8 @@ $Xe_0=e_1$, $Xe_1=e_0$, $He_1=(e_0-e_1)/\sqrt2$, so that $X$ and $H$ are reflect
 truth tables of CNOT ($\ket{a,b}\mapsto\ket{a,b+a}$, arithmetic in $\Z_2$) and of CCNOT
 ($\ket{a,b,c}\mapsto\ket{a,b,c+ab}$).  Circuit diagrams are introduced; the CNOT with
 control on the second wire has matrix $\begin{pmatrix}1&0&0&0\\0&0&0&1\\0&0&1&0\\0&1&0&0\end{pmatrix}$,
-and three alternating CNOTs compose to the swap of the two wires (not formalised).
+and three alternating CNOTs compose to the swap of the two wires (\<open>SWAP_three_CNOTs\<close> in
+theory Day02\_11\_Supplement).
 
 \begin{notesdef}
 The Toffoli gate CCNOT is the $8\times8$ permutation matrix that fixes the first six basis
@@ -8315,7 +8316,8 @@ To transmit $v\in\Z_2^n$ through a channel that may flip bits ($+1$ in $\Z_2$), 
 $v\mapsto\phi(v)\in\Z_2^{n+k}$, transmits, and decodes.  Examples: repetition $v\mapsto(v,v)$
 detects one error but corrects none and doubles the cost; the parity check
 $(a_1,\dots,a_n)\mapsto(a_1,\dots,a_n;a_1+\cdots+a_n)$ detects one error cheaply; the Hamming
-$[7,1,3]$ code (not formalised) detects and corrects one error.
+$[7,1,3]$ code detects and corrects one error (theory Day29\_Classical\_Codes: the code as
+written detects one error but cannot correct it; the $[7,4,3]$ code corrects one).
 \begin{notesdef}
 The \emph{Hamming weight} $\norm w$ of $w\in\Z_2^m$ is its number of non-zero entries; the
 weight of a code $S\subseteq\Z_2^m$ is $\min\{\norm{v-w}:v\neq w\in S\}$, the least number of
@@ -8519,7 +8521,7 @@ text \<open>If a bit flips with probability $p$ (independently), the repetition 
 leaves an error undetected with probability $3p^2(1-p)^4+3p^4(1-p)^2+p^6$, the parity code with
 probability $\binom42p^2(1-p)^2+p^4$ (the former is smaller for $p<\tfrac12$), and the
 majority-rule code $0\mapsto000$, $1\mapsto111$ decodes wrongly with probability $3p^2(1-p)+p^3$
-(not formalised).
+(theory Day29\_Classical\_Codes; the comparison holds for all $0<p<1$).
 
 Quantum error correction: one cannot clone, but basis vectors can be copied and measurements
 can decode.  With $X=\begin{pmatrix}0&1\\1&0\end{pmatrix}$ the allowed errors are qubit flips
@@ -8867,7 +8869,8 @@ probability $p$ gives the error map
 $E(Y)=(1-p)^3Y+p(1-p)^2\sum_j(X_j)Y(X_j)^*+\cdots+p^3(X\otimes X\otimes X)Y(X\otimes X\otimes X)^*$,
 and with the recovery $R$ of Day 30,
 \[ R\circ E(Y)=\bigl((1-p)^3+3p(1-p)^2\bigr)Y+\bigl(3p^2(1-p)+p^3\bigr)(X\otimes X\otimes X)Y(X\otimes X\otimes X). \]
-The code helps iff $(1-p)^3+3p(1-p)^2\ge1-p$ iff $p\le\tfrac12$ (not formalised; audit item D31-2).
+The code helps iff $(1-p)^3+3p(1-p)^2\ge1-p$ iff $p\le\tfrac12$ (theory Day31\_Code\_Fidelity, where the formula for $R\circ E$ holds for $Y$ supported on
+the code space).
 Below: the encoding isometry.\<close>
 
 definition encode_mat :: "complex Matrix.mat" where
@@ -8887,7 +8890,7 @@ matrices $\rho=\ketbra\psi\psi$, $\rho'=\ketbra{\psi'}{\psi'}$ one has
 $\langle\rho|\rho'\rangle=\Tr(\rho\rho')=|\braket{\psi'}\psi|^2$, so $F=\sqrt{\Tr(\rho\rho')}$.
 Error correction is compared by $F=\sqrt{\braket\psi{R\circ E(\ketbra\psi\psi)\psi}}$, minimised
 or averaged over $\psi$: doing nothing gives $\min F=\sqrt{1-p}$, the bit-flip code gives
-$\min F=\sqrt{(1-p)^3+3p(1-p)^2}$ (not formalised; audit item D31-4).  Formally
+$\min F=\sqrt{(1-p)^3+3p(1-p)^2}$ (theory Day31\_Code\_Fidelity).  Formally
 \<open>fidelity \<psi> \<rho>\<close> is $\sqrt{\Re\braket\psi{\rho\psi}}$.\<close>
 
 definition fidelity ::

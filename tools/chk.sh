@@ -13,7 +13,7 @@ rc=$?
 if [ "$rc" = 124 ]; then
   # poly's cmdline does not name the session; kill the poly processes started by this check
   for pid in $(comm -13 <(echo "$before") <(pgrep -x poly | sort)); do kill "$pid" && echo "killed poly $pid"; done
-  grep "running for" "$LOG" | tail -5
+  grep -a "running for" "$LOG" | tail -5
 fi
-grep -v "^Session\|^Building\|^Running\|^Finished\|^Timing\|^Loading\|running for\|^ML_\|^ISABELLE\|^Started\|^$" "$LOG" | tail -60
+grep -av "^Session\|^Building\|^Running\|^Finished\|^Timing\|^Loading\|running for\|^ML_\|^ISABELLE\|^Started\|^$" "$LOG" | tail -60
 echo "EXIT $rc"

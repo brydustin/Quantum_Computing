@@ -48,6 +48,10 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day25_Arveson_Correspondence
     Day26_Arveson_Extension
     Day27_Positive_Map_Criterion
+    Day02_11_Supplement
+    Day29_Classical_Codes
+    Day31_Code_Fidelity
+    Day32_Y_Code
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
@@ -87,5 +91,9 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day25_Arveson_Correspondence
     Vern_Paulsen_QC.Day26_Arveson_Extension
     Vern_Paulsen_QC.Day27_Positive_Map_Criterion
+    Vern_Paulsen_QC.Day02_11_Supplement
+    Vern_Paulsen_QC.Day29_Classical_Codes
+    Vern_Paulsen_QC.Day31_Code_Fidelity
+    Vern_Paulsen_QC.Day32_Y_Code
   document_files
     "root.tex"

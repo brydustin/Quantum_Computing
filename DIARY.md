@@ -43,3 +43,25 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `X`, which is Isabelle_Marries_Dirac's Pauli constant, so they hold only for that one matrix.
   The Arveson theories use their own general versions (`block_of_mat_idx`,
   `block_of_mat_carrier'`, `amplification_idx`, `amplification_carrier'`).
+
+## Second gap-closure push, 2026-10-19 (examples and small propositions)
+
+- **Day 29 "Hamming [7,1,3]" (D29-3) is not single-error-correcting.** The notes' code (seven
+  data bits, checks a₀+a₁+a₂+a₃, a₀+a₁+a₄+a₅, a₀+a₂+a₄+a₆) detects one error but has distance 2:
+  the word e₄ is at distance 1 from 0 and from the code word e₄+e₇ (`notes_hamming_ambiguous_word`,
+  `notes_hamming_not_correcting`).  The standard [7,4,3] code corrects one error
+  (`hamming74_corrects_one_error`).  Single-flip detection is proved by linearity over Z₂
+  (c+eᵢ is a code word iff eᵢ is), not by enumerating 128×10 cases.
+- **Day 30 comparison (D30-1).** The repetition code beats the parity code for all 0 < p < 1,
+  not only p < ½ (`repetition_better_than_parity`).
+- **Day 31 formula for R∘E (D31-2) holds only on the code space.** For Y off the code space it
+  fails, e.g. R(|100⟩⟨100|) = |000⟩⟨000|.  `three_bit_code_recovery` states it for ψψ* with ψ in
+  the code space, which is what the fidelity comparison (D31-4) uses.
+- **Day 32 Y code (D32-2)** is an instance of a general lemma: a code with orthonormal basis
+  whose unitary errors have mutually orthogonal images of the basis is corrected by one CPTP
+  map (`orthogonal_images_recovery`, `orthogonal_images_correct`).
+- **Day 6 coordinates (D6-3)** are proved for any basis (columns of an invertible matrix),
+  with the inverse in place of the adjoint; the sum Σ x_j⊗f_j is written as in `schmidt_rank`.
+- **Transcription error in `QC_Notes_overleaf.tex`.** The SWAP equation on PDF p.37 showed the
+  identity on the left and CNOT′ as the third factor; the PDF has SWAP = CNOT·CNOT′·CNOT
+  (`SWAP_three_CNOTs`).  Fixed.

@@ -6162,7 +6162,8 @@ and $M_3=I-M_1-M_2$; this distinguishes with certainty (formalised below).
 Case II, $\psi_1\not\perp\psi_2$: write $\psi_2=\alpha\psi_1+\beta\gamma$ with
 $\gamma\perp\psi_1$ a unit vector, so $\alpha\neq 0$; any measurement system with
 $\norm{M_1\psi_1}=1$ satisfies $|\alpha|^2\le\norm{M_1\psi_2}^2$, so outcome $1$ also
-occurs with probability at least $|\alpha|^2$ when $\psi_2$ is sent (not formalised).
+occurs with probability at least $|\alpha|^2$ when $\psi_2$ is sent
+(\<open>nonorthogonal_outcome_prob\<close> in theory Day02\_11\_Supplement).
 
 \begin{notestheorem}
 Given linearly independent states $\psi_1,\dots,\psi_n$ there is a measurement system
@@ -7523,7 +7524,7 @@ text \<open>A state $\psi\in\Hil_A\otimes\Hil_B$ is \emph{entangled} if it is no
 state $u\otimes v$.  The Bell state $\gamma=\tfrac1{\sqrt2}(\ket{00}+\ket{11})$ is
 entangled.  The notes' first application of entanglement (A and B share $\gamma$; A measures
 $\ketbra00,\ketbra11$ and gets each outcome with probability $\tfrac12$, after which B's
-measurement is determined) is not formalised.\<close>
+measurement is determined) is \<open>bell_measurement\<close> in theory Day02\_11\_Supplement.\<close>
 
 definition entangled :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> bool" where
   "entangled n m \<psi> \<equiv>

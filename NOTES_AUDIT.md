@@ -5,7 +5,7 @@ Completely Positive Maps*, Houston, Fall 2011; notes by Brandon Lee), transcribe
 `QC_Notes_overleaf.tex`.  Formalisation: the nine theories of the sessions
 `Vern_Paulsen_QC_3_10`, `Vern_Paulsen_QC_3_10_Lmat`, `Vern_Paulsen_QC` (see `ROOT`).
 
-Verification status (2026-10-18): all three sessions build
+Verification status (2026-10-19): all three sessions build
 with `quick_and_dirty = false`; no `sorry`, no `axiomatization`, no `oops`; a
 `Thm_Deps.all_oracles` check of the main theorems reports no oracles.  The theorem on
 unambiguous discrimination (D8-3), formerly kept in a comment block with a `sorry`, is now
@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`.
 
 ---
 
@@ -53,7 +53,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D2-5 | bra-ket notation, \|x⟩⟨y\| = (x_i ȳ_j), Σ\|e_i⟩⟨e_i\| = I | QC3 `outer_prod` (⊘), `outer_prod_index`, `outer_prod_mult_vec`; BM `completeness_relation`, `cols_mat_dagger_right` | ✓ |
 | D2-6 | linear maps are matrices ⟨e_i\|Te_j⟩ | library; QC3 `inner_unit_T_unit` | ✓ |
 | D2-7 | P = Σ\|v_i⟩⟨v_i\| projects onto V; x − Px ⊥ V; unique decomposition | BM `outer_sum`, `outer_sum_apply`, `residual_orthogonal`, `orthogonal_decomposition`, `orthogonal_decomposition_unique`, `outer_sum_orthogonal_zero` | ✓ |
-| D2-8 | P does not depend on the ONB chosen for V | ✗ (needs a notion of span; low value) | ✗ |
+| D2-8 | P does not depend on the ONB chosen for V | S211 `outer_sum_basis_independent`: two orthonormal lists with the same column span (`col_span`) have the same `outer_sum` | ✓ |
 | D2-9 | Parseval ‖v‖² = Σ\|⟨v_i\|v⟩\|² | BM `parseval_norm` | ✓ |
 | D2-10 | P² = P, P = P* | BM `outer_sum_idempotent`, `outer_sum_hermitian` | ✓ |
 | D2-11 | Theorem: P² = P = P* ⟹ P is the orthogonal projection onto range P | QC11 `projection`, `projection_fixes_range`, `projection_annihilates_orthogonal` | ✓ |
@@ -95,7 +95,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D6-1 | bilinear maps, universal property (axiom) | concrete Kronecker model `tensor_vec`; bilinearity `tensor_vec_bilinear_left/right`, `tensor_vec_smult_left/right` | ~ |
 | D6-2 | {e_i ⊗ f_j} basis; dim(X ⊗ Y) = dim X · dim Y | QC3 `tensor_vec_dim`, `tensor_onb` (ONB version, Day 7) | ✓ |
-| D6-3 | unique x_j with u = Σ x_j ⊗ f_j; X ⊗ Y ≅ X ⊕ ⋯ ⊕ X | ✗ (implicit in QC11 `operator_tensor_space_isomorphism` for operators) | ✗ |
+| D6-3 | unique x_j with u = Σ x_j ⊗ f_j; X ⊗ Y ≅ X ⊕ ⋯ ⊕ X | S211 `tensor_right_coordinates`, `tensor_left_coordinates` (any basis: the column matrix is invertible; Σ x_j ⊗ f_j is `tensor_combination`, the sum form of `schmidt_rank`); the isomorphism is `tensor_iso_direct_sum` (bijection) with `tensor_combination_add_left`, `tensor_combination_smult_left` (linearity) | ✓ |
 | D6-4 | Schmidt rank | QC3 `schmidt_rank` (definition only) | ~ |
 
 ### Day 7 (12 Sep): tensor products of Hilbert spaces; postulates 1–3
@@ -113,7 +113,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D8-1 | orthogonal states are perfectly distinguishable | QC3 `orthogonal_states_distinguishable` | ✓ |
-| D8-2 | non-orthogonal states cannot be: p₁(ψ₂) ≥ \|α\|² > 0 | ✗ | ✗ |
+| D8-2 | non-orthogonal states cannot be: p₁(ψ₂) ≥ \|α\|² > 0 | S211 `nonorthogonal_outcome_prob` (\|⟨ψ₁\|ψ₂⟩\|² ≤ p_i(ψ₂) whenever p_i(ψ₁) = 1), `nonorthogonal_not_distinguishable`; via `meas_sum_norm` (Σ‖M_l v‖² = ‖v‖²) | ✓ |
 | D8-3 | Theorem: linearly independent states admit unambiguous discrimination (M₀,…,M_n) | QC3 `lin_indep_states_unambiguous` (replaces a commented-out attempt that contained a `sorry`); linear independence is `lin_indep_vecs`; the inconclusive outcome is listed last | ✓ |
 | D8-4 | P^{1/2} for P ≥ 0 | QC3 `psd_sqrt_exists`; `psd_sqrt` is now defined as a choice of square root with `psd_sqrt_props` (carrier, psd, Q·Q = P) | ✓ |
 | D8-5 | expected value E = ⟨ψ\|Hψ⟩ with H = Σ λ_m M_m*M_m Hermitian | QC3 `observable`, `observable_hermitian`, `expected_value_eq_quad_form` | ✓ |
@@ -126,7 +126,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D9-3 | two-photon example; entangled iff Schmidt rank > 1 | QC3 `entangled` (defined as "not a product"), `bell_state_entangled` | ✓ |
 | D9-4 | R ⊗ T exists uniquely; (R₁⊗T₁)(R₂⊗T₂) = R₁R₂ ⊗ T₁T₂; (R⊗T)* = R*⊗T* | library `tensor_mat`; BM `tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary` | ✓ |
 | D9-5 | p^{AB}_m(ψ⊗φ) = p^A_m(ψ) | QC3 `composite_measurement_prob`, `tensor_mat_vec_mult` | ✓ |
-| D9-6 | eavesdropping example p₀(γ) = ½ with Bell state | ✗ (example) | ✗ |
+| D9-6 | eavesdropping example p₀(γ) = ½ with Bell state | S211 `bell_measurement` (p₀ = p₁ = ½, post-measurement states e₀⊗e₀, e₁⊗e₁, then B's outcome has probability 1), `proj_measurement_system` | ✓ |
 
 ### Day 10 (19 Sep): superdense coding, gates
 | id | notes | formal | status |
@@ -143,7 +143,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D11-1 | H² = I, He₀, He₁, Xe₀, Xe₁ | QC3 `hadamard_squared`, `hadamard_e0`, `hadamard_e1`; X on basis vectors via `pauli_X_ket_plus/minus` only | ✓ |
 | D11-2 | CNOT, CCNOT truth tables | QC3 `CNOT_00`, `CNOT_10`; QC11 `CCNOT` definition | ~ |
-| D11-3 | circuit diagrams; SWAP = CNOT·CNOT′·CNOT | ✗ | ✗ |
+| D11-3 | circuit diagrams; SWAP = CNOT·CNOT′·CNOT | S211 `SWAP_three_CNOTs` (`SWAP` from the AFP entry Quantum_Fourier_Transform), `SWAP_basis`, `CNOT'_basis`; the diagrams themselves are notation | ✓ |
 | D11-4 | CNOT clones the computational basis | QC3 `CNOT_00`, `CNOT_10` | ✓ |
 | D11-5 | No-cloning theorem | QC11 `is_cloner`, `no_cloning` (proof via two non-orthogonal states, `two_states_nontrivial_inner_prod`; the notes use −ψ) | ✓ |
 
@@ -305,14 +305,14 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D29-1 | repetition code | QC11 `repetition_encode`, `hamming_dist_repetition_doubles`, `hamming_weight_repetition_encode` | ✓ |
 | D29-2 | parity check detects one error | QC11 `parity_check_encode`, `parity_check_detects_one_error` | ✓ |
-| D29-3 | Hamming [7,1,3] code | ✗ | ✗ |
+| D29-3 | Hamming [7,1,3] code | CC: the notes' code (`notes_hamming_encode`) detects one error (`notes_hamming_detects_one_error`) but has distance 2 and cannot correct one (`notes_hamming_ambiguous_word`, `notes_hamming_not_correcting`); the standard [7,4,3] code corrects one error (`hamming74_unique_decoding`, `hamming74_corrects_one_error`) | ✓ |
 | D29-4 | Hamming weight, distance of a code, subspace codes | QC11 `hamming_weight`, `hamming_dist`, `code_distance`, `corrects_errors` (definitions; `hamming_dist_zero`, `_symm`) | ~ |
 | D29-5 | left inverses, cyclic codes | – | – |
 
 ### Day 30 (9 Nov): error probabilities; three-qubit bit-flip code
 | id | notes | formal | status |
 |---|---|---|---|
-| D30-1 | undetected-error probabilities, majority rule | ✗ (elementary arithmetic) | ✗ |
+| D30-1 | undetected-error probabilities, majority rule | CC `repetition_undetected_prob`, `parity_undetected_prob`, `repetition_better_than_parity` (all 0 < p < 1; the notes say p < ½), `majority_uncorrected_prob` | ✓ |
 | D30-2 | encoding a\|0⟩+b\|1⟩ ↦ a\|000⟩+b\|111⟩ | QC11 `encode_mat` | ✓ |
 | D30-3 | syndrome projections P₀…P₃, Σ P_i = I | D30 `syndrome_proj`, `syndrome_proj_sum`, `syndrome_proj_idem`, `syndrome_proj_hermitian`; flips `flip_bit_mat` = the tensors X⊗I⊗I, … (`flips_as_tensors`) | ✓ |
 | D30-4 | recovery map R is CPTP and R(\|ψ_i⟩⟨ψ_i\|) = \|ψ⟩⟨ψ\| for ≤ 1 error | D30 `recovery_map_CPTP`, `bit_flip_code_recovery` (four statements: no error and a flip on each qubit) | ✓ |
@@ -321,15 +321,15 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D31-1 | error map E(Y) = (1−p)Y + pXYX is CPTP | QC11 `bit_flip_channel`, `_trace_preserving`, `_psd`, `_CPTP`, `_UCP` | ✓ |
-| D31-2 | R∘E on the encoded state; code better iff p ≤ ½ | ✗ | ✗ |
+| D31-2 | R∘E on the encoded state; code better iff p ≤ ½ | CF `three_bit_code_recovery` (R(E(ψψ*)) = c₁ψψ* + c₂φφ* for ψ in the code space), `three_bit_code_better_iff`; the notes' formula for a general Y fails off the code space | ✓ |
 | D31-3 | fidelity F = \|⟨ψ′\|ψ⟩\| = √Tr(ρρ′); F = √⟨ψ\|R∘E(\|ψ⟩⟨ψ\|)ψ⟩ | QC11 `fidelity`, `fidelity_pure_states`, `fidelity_self`, `fidelity_orthogonal` | ✓ |
-| D31-4 | min F = √(1−p) (do nothing) vs √((1−p)³+3p(1−p)²) (code) | ✗ | ✗ |
+| D31-4 | min F = √(1−p) (do nothing) vs √((1−p)³+3p(1−p)²) (code) | CF `nothing_min_fidelity`, `code_min_fidelity` (lower bounds attained at e₀ resp. its encoding) | ✓ |
 
 ### Day 32 (14 Nov): phase-flip code, Shor code, Pauli magic
 | id | notes | formal | status |
 |---|---|---|---|
 | D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
-| D32-2 | Y-version with β = Y\|+⟩ | ✗ | ✗ |
+| D32-2 | Y-version with β = Y\|+⟩ | YC `y_code_corrects` (one CPTP map corrects every single Y flip on a\|+++⟩ + b\|βββ⟩), from the general `orthogonal_images_recovery` | ✓ |
 | D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | D33 `shor_cw_notes` (the code words), `shor_code_theorem`: one CPTP R with R(Ũ\|ψ⟩⟨ψ\|Ũ*) = \|ψ⟩⟨ψ\| for every 2×2 unitary U, every position i < 9 (Ũ = `qubit_op i U` = I⊗…⊗U⊗…⊗I) and every ψ = a\|0_L⟩ + b\|1_L⟩; via `pauli_decomp`, D32 `pauli_expansion_unitary` and D32R `recovery_linear_combination` | ✓ |
 | D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | D32R `recovery_ops_kraus_operators`, `recovery_map_CPTP'`, `recovery_single_error` (hypotheses bundled as `recovery_setting n P Us`: P projection, PU_i*U_jP = δ_ij P; for unitaries this is the notes' hypothesis, `recovery_setting_unitaries`) | ✓ |
 | D32-5 | 1-Pauli operators; orthogonality of their images of V | false as stated: D33 `shor_notes_Z1_Z2` (Z₁ ≠ Z₂ but ⟨Z₁\|0_L⟩, Z₂\|0_L⟩⟩ = 1); the notes correct it on Day 33 (D33-1) | ~ |
@@ -391,7 +391,7 @@ B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving. DONE (`Day1
 B3 D19-1 n-positive ⟹ Choi matrix psd; D19-3 Choi-matrix form of TP/unital.
 B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error. DONE (`Day30_BitFlip_Code`).
 B5 D32-7 Pauli expansion identity for unitaries. DONE (`Day32_Pauli_Expansion`).
-B6 D11-3 SWAP from three CNOTs; D10-1 superdense coding table.
+B6 D11-3 SWAP from three CNOTs (DONE, `Day02_11_Supplement`); D10-1 superdense coding table.
 B7 D12-1/D12-4 N-fold Hadamard and the counting probability. DONE (`Day12_Counting_Probability`, proved directly with `tensor_pow_mat` rather than via AFP Deutsch_Jozsa).
 B8 D15-6 A-side partial-trace lemmas.
 B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independence`, via JNF `vec_space.li_le_dim`).
@@ -404,4 +404,4 @@ C4 D17-3 environment (Stinespring) model of noise. DONE (`Day17_Environment_Mode
 C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
 C6 D22-4 compactness of UCP/CPTP.
 C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 DONE (`Day34_KL_Sufficiency`); the Shor code D32-3, D33-1, D33-2 DONE (`Day33_Shor_Code`; D32-5 is false as stated). C7 closed.
-C8 D5-1 Sylvester's criterion; D29-3 Hamming code.
+C8 D5-1 Sylvester's criterion; D29-3 Hamming code (DONE, `Day29_Classical_Codes`).

@@ -22,6 +22,10 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day33_Shor_Code
     Vern_Paulsen_QC.Day17_Environment_Model
     Vern_Paulsen_QC.Day27_Positive_Map_Criterion
+    Vern_Paulsen_QC.Day02_11_Supplement
+    Vern_Paulsen_QC.Day29_Classical_Codes
+    Vern_Paulsen_QC.Day31_Code_Fidelity
+    Vern_Paulsen_QC.Day32_Y_Code
 begin
 
 section \<open>Reading guide\<close>
@@ -58,12 +62,16 @@ reuse earlier infrastructure.  The table gives the correspondence.
 30     & the three-qubit bit-flip code and its recovery theorem & \texttt{Day30\_BitFlip\_Code}\\
 32--33 & Pauli expansion of unitaries; the general recovery proposition & \texttt{Day32\_Pauli\_Expansion}, \texttt{Day32\_Recovery\_Proposition}\\
 32--33 & the nine-qubit Shor code and Shor's theorem & \texttt{Day33\_Shor\_Code}\\
-34     & Knill--Laflamme: states vs.\ $PXP$, Theorem~1 (both directions), closure & \texttt{Day34\_Knill\_Laflamme}, \texttt{Day34\_KL\_Sufficiency}\\
+34     & Knill--Laflamme: states vs.\ $PXP$, Theorem~1 (both directions), closure & \texttt{Day34\_Knill\_Laflamme}, \texttt{Day34\_KL\_Sufficiency}\\\hline
+2--11  & basis-independent projections, tensor coordinates, non-orthogonal states, a Bell measurement, SWAP from CNOTs & \texttt{Day02\_11\_Supplement}\\
+29--30 & the notes' Hamming code, the $[7,4,3]$ code, undetected-error probabilities & \texttt{Day29\_Classical\_Codes}\\
+31     & the bit-flip code against independent flips: $R\circ E$, minimum fidelities & \texttt{Day31\_Code\_Fidelity}\\
+32     & the code for $Y$ flips; codes with orthogonal error images & \texttt{Day32\_Y\_Code}\\
 \end{tabular}
 \end{center}
 
-The theories of the second block (shared lemmas in \texttt{QC\_Prelims}) close the gaps
-recorded by the first audit; the remaining unformalised items are listed in
+The theories of the second and third blocks (shared lemmas in \texttt{QC\_Prelims}) close
+the gaps recorded by the first and second audits; the remaining unformalised items are listed in
 \texttt{NOTES\_AUDIT.md}.
 \<close>
 

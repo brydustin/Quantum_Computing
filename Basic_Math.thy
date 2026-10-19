@@ -751,8 +751,8 @@ the matrix with columns $v_1,\dots,v_k$ is \<^term>\<open>mat_of_cols n vs\<clos
 $P=\sum_i\ketbra{v_i}{v_i}=VV^\dagger$ is \<^term>\<open>outer_sum n vs\<close>.  The results below are the
 projection formula, $V^\dagger V=I_k$, the completeness relation $VV^\dagger=I_n$ for a full
 basis, $P=P^\dagger$, $P^2=P$, Parseval, the orthogonality of the residual, and the uniqueness
-of the decomposition.  Independence of $P$ from the basis is not formalised (it needs a
-notion of span); the characterisation of Hermitian idempotents as orthogonal projections is
+of the decomposition.  Independence of $P$ from the basis is \<open>outer_sum_basis_independent\<close> in
+theory Day02\_11\_Supplement; the characterisation of Hermitian idempotents as orthogonal projections is
 \<open>projection_annihilates_orthogonal\<close> in theory Quantum\_Computing11.\<close>
 
 

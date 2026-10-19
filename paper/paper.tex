@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises twenty-eight theories and about a
+entanglement witnesses.  The development comprises thirty-two theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -152,14 +152,14 @@ the names in brackets are the Isabelle theorems.
 Theory & Lectures & lines & results\\
 \midrule
 \isa{Basic\_Math} & 1--2: inner products, matrix units, trace, projections, Parseval & 1\,672 & 74\\
-\isa{Quantum\_Computing\_3\_10} & 3--10: unitaries, Schur, spectral theorem, positivity, tensors, postulates & 7\,945 & 162\\
-\isa{Quantum\_Computing11} & 11--22, 29--32: channels, density matrices, Choi, convexity, codes & 11\,217 & 316\\
-\isa{Day23\_ChoiExtremeUCP} & 23: Choi's Theorem~3, CP Radon--Nikodym & 7\,001 & 104\\
+\isa{Quantum\_Computing\_3\_10} & 3--10: unitaries, Schur, spectral theorem, positivity, tensors, postulates & 7\,946 & 162\\
+\isa{Quantum\_Computing11} & 11--22, 29--32: channels, density matrices, Choi, convexity, codes & 11\,232 & 315\\
+\isa{Day23\_ChoiExtremeUCP} & 23: Choi's Theorem~3, CP Radon--Nikodym & 7\,002 & 104\\
 \isa{Matrix\_Typed} & 25: Hahn--Banach on matrix spaces & 1\,346 & 44\\
 \isa{Essential\_Functional\_Analysis} & Hilbert--Schmidt analysis, Carath\'eodory & 2\,536 & 38\\
 \isa{Lmat\_Euclidean} & typed matrices as a Euclidean space & 780 & 24\\
 \isa{Separable\_Cone} & 27--28: separable cone, witnesses & 3\,107 & 63\\
-\isa{Day24\_Separability} & 26--28 restated lecture by lecture & 210 & 16\\
+\isa{Day24\_Separability} & 26--28 restated lecture by lecture & 211 & 16\\
 \midrule
 \isa{QC\_Prelims} & shared matrix and vector lemmas of the gap-closure pass & 315 & 25\\
 \isa{Day12\_Counting\_Probability} & 12: $H^{\otimes N}\ket{0\cdots0}$, the counting probability & 267 & 15\\
@@ -181,9 +181,14 @@ Theory & Lectures & lines & results\\
 \isa{Day25\_Arveson\_Correspondence} & 24--25: CP iff $d$-positive iff $S_\Phi\ge0$; $\Phi\leftrightarrow S_\Phi$ & 682 & 42\\
 \isa{Day26\_Arveson\_Extension} & 26: positive extensions, Arveson's extension theorem & 651 & 19\\
 \isa{Day27\_Positive\_Map\_Criterion} & 27--28: positive maps and separability & 440 & 16\\
+\midrule
+\isa{Day02\_11\_Supplement} & 2--11: projections, tensor coordinates, SWAP & 674 & 41\\
+\isa{Day29\_Classical\_Codes} & 29--30: Hamming codes, error probabilities & 311 & 24\\
+\isa{Day31\_Code\_Fidelity} & 31: independent bit flips, fidelities & 297 & 14\\
+\isa{Day32\_Y\_Code} & 32: the code for $Y$ flips & 238 & 22\\
 \bottomrule
 \end{tabular}
-\caption{The twenty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,211 in all).  The middle block closes the medium-sized gaps of the first audit, the lower block the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments.}
+\caption{The thirty-two theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,311 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit.}
 \label{tab:theories}
 \end{table}
 
@@ -286,7 +291,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 11 are deliberate omissions; of the remaining 159
-mathematical items, 122 are faithful, 21 are variants and 16 are gaps.\footnote{Counts as
+mathematical items, 132 are faithful, 21 are variants and 6 are gaps.\footnote{Counts as
 of the second close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -295,7 +300,7 @@ $\ketbra\psi\psi$, that $\rho_1\otimes\rho_2$ is a density matrix, the unambiguo
 discrimination of linearly independent states, and the complex-coefficient form of
 Choi's Theorem~3) were proved during the close-out and are counted as faithful above.
 A second pass closed the medium-sized gaps that the notes prove in a page, each in its
-own theory (the lower block of Table~\ref{tab:theories}): a linear map sends density
+own theory (the second block of Table~\ref{tab:theories}): a linear map sends density
 matrices to density matrices iff it is positive and trace preserving
 (\isa{density\_preserving\_iff\_positive\_tp}); the transpose on $M_2$ is positive but not
 $2$-positive, with the notes' witness $(E_{ij})$; the Hadamard power
@@ -341,9 +346,20 @@ maps on operator systems, and the positive-map criterion for separability
 of norm one, Hahn--Banach, and a reduction to the unital case): the positive functional
 $S_\Phi$ on $M_d(S)$ is extended directly, by separating the positive definite cone from its
 kernel with HOL-Analysis' separating hyperplane theorem in the Euclidean space of typed
-matrices, which gives the extension $X\mapsto\operatorname{Tr}(DX)$ with $D\ge0$.  All items
-of the first audit's gap list are now closed; the 16 remaining gaps are examples, a few small
-propositions, and the two lemmas that only the notes' route to the extension theorem uses.
+matrices, which gives the extension $X\mapsto\operatorname{Tr}(DX)$ with $D\ge0$.  A fourth pass (the last block of Table~\ref{tab:theories}) proved the examples and small
+propositions that remained: the projection does not depend on the orthonormal basis; the
+unique coordinates $u=\sum_jx_j\otimes f_j$ for any basis and $X\otimes Y\cong X\oplus\cdots\oplus X$;
+outcome $i$ fires on $\psi_2$ with probability at least $|\braket{\psi_1}{\psi_2}|^2$ if it is
+certain on $\psi_1$; the Bell-pair measurement of Day~9; $\mathrm{SWAP}=\mathrm{CNOT}\cdot
+\mathrm{CNOT}'\cdot\mathrm{CNOT}$; the classical error probabilities of Day~30; the bit-flip
+code under independent flips, with $R\circ E$ and both minimum fidelities of Day~31; and the
+code for $Y$ flips.  Two statements of the notes needed correction.  The Day~29 ``Hamming
+$[7,1,3]$'' code (seven data bits, three parity bits) has distance $2$: it detects one error but
+cannot correct one (\isa{notes\_hamming\_not\_correcting}); the standard $[7,4,3]$ code corrects
+one.  The Day~31 formula $R\circ E(Y)=c_1Y+c_2XYX$ holds for $Y$ supported on the code space,
+not for a general $Y$.  The 6 remaining gaps are Sylvester's criterion (stated without proof
+in the notes), the Choi-matrix form of trace preservation and unitality, two lists of
+examples, and the two lemmas that only the notes' route to the extension theorem uses.
 
 Beyond the omissions, the audit documents where the formalisation strengthens the
 notes (strict witnesses for density matrices; Cholesky with the missing hypothesis;
