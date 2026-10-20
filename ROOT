@@ -53,6 +53,14 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day31_Code_Fidelity
     Day32_Y_Code
 
+session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
+  description "
+    Part VI: Quantum Algorithms, beyond the notes: functional calculus,
+    phase estimation and the HHL algorithm."
+  options [quick_and_dirty = false, timeout = 3600]
+  theories
+    Hermitian_Functional_Calculus
+
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
     Paulsen's lecture notes, formalised: the document session that typesets

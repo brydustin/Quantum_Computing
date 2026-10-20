@@ -80,3 +80,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
 - **Project names.** `pauli_X/Y/Z`, `H_gate`, `S_gate` are renamed `Pauli_X/Y/Z`, `Hadamard`,
   `Phase_S` (lemma names follow, e.g. `Pauli_X_carrier`).  `Pauli_Y` keeps the Day 32 sign, the
   negative of the library's `Y`.
+
+## Part VI: Quantum Algorithms (beyond the notes), 2026-10-19
+
+- Separate session `Vern_Paulsen_QC_Algorithms` (directory `Algorithms/`, parent
+  `Vern_Paulsen_QC_3_10`), so the notes' formalisation and its audit stay closed.  Target: HHL.
+- **Functional calculus** (`Hermitian_Functional_Calculus`).  g(A) is defined by its action on
+  eigenvectors (Av = λv ⟹ g(A)v = g(λ)v), which determines it because the eigenvectors span;
+  no interpolation or independence-of-decomposition argument is needed.  It equals
+  U diag(g∘D) U* for every spectral decomposition, is multiplicative, (g(A))* = ḡ(A), and only
+  depends on g on the spectrum.  Instances: e^{itA} (unitary, group and power laws) and A⁻¹
+  (`herm_inv`; the pseudo-inverse when 0 is an eigenvalue, since 1/0 = 0 in HOL).
+
