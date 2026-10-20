@@ -41,6 +41,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day16_Block_Form
     Vern_Paulsen_QC.Day22_UCP_Compact
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
+    Vern_Paulsen_QC_Algorithms.HHL_Window
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -103,6 +104,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the AFP circuit \<open>ordered_QFT\<close> is the Fourier matrix $F_{2^n}$ & \texttt{QFT\_Fourier}\\
 --     & the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
 --     & inexact phase estimation: the error identity; for the clamped circuit and every $b$, $\norm{\text{output}-\text{ideal}}^2\le\frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda_{\min}^2}\bigr)\norm b^2$ & \texttt{HHL\_Approximate}\\
+--     & sine-window register: amplitudes decay like $1/(N\delta)^2$; for every $b$, $\norm{\text{output}-\text{ideal}}^2\le\bigl(\frac{8\pi^2(2+\pi^2)\theta^4}{N^2t_0^2C^2(1-\theta^2)}+\frac{512\pi^6}{N^3t_0^4\lambda_{\min}^4}\bigr)\norm b^2$, so $N\sim1/\varepsilon$ suffices & \texttt{HHL\_Window}\\
 \end{tabular}
 \end{center}
 

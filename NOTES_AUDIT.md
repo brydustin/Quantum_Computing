@@ -361,9 +361,10 @@ Not part of the notes and not counted in the rows above; session `Vern_Paulsen_Q
 | `Phase_Estimation` | Fourier matrix unitary; controlled powers, phase kickback; output state; exact case; success ≥ 4/π² |
 | `QFT_Fourier` | the AFP `ordered_QFT n` equals `fourier (2^n)`, so phase estimation runs on the AFP circuit |
 | `HHL_Approximate` | eigenvalue not a register value: ‖output − ideal‖² = ‖u‖² Σ_j \|α_j\|² ‖R(C/λ_j)\|0⟩ − R(C/λ)\|0⟩‖² (`hhl_approx_error`); Σ_j \|α_j\|² = 1; \|α_j\| ≤ 1/(2N\|δ_j\|); for the clamped circuit, λ ≥ 2C/θ and t₀λ ≤ π/2: ‖output − ideal‖² ≤ ‖u‖² (π²/(N t₀²)) (θ⁴/(C²(1−θ²)) + 16/λ²) (`hhl_clamped_error_bound`); for every b, with the spectrum in [λ_min, π/(2t₀)] and λ_min ≥ 2C/θ: ‖output − exact-HHL output‖² ≤ (π²/(N t₀²)) (θ⁴/(C²(1−θ²)) + 16/λ_min²) ‖b‖² (`hhl_clamped_bound`, via orthogonality of the eigenvectors' error vectors) |
+| `HHL_Window` | register prepared in the sine window ψ_τ = √(2/N) sin(π(τ+½)/N): phase estimation with any register state (`phase_estimation_reg`); \|α_j\|² ≤ π²/(2N⁴δ_j⁴) for 1/N ≤ \|δ_j\| ≤ ½ (`win_amp_tail`, from a closed form of the window sum); for every b, under the hypotheses of `hhl_clamped_bound`: ‖output − exact-HHL output‖² ≤ (8π²(2+π²)θ⁴/(N²t₀²C²(1−θ²)) + 512π⁶/(N³t₀⁴λ_min⁴)) ‖b‖² (`hhl_window_bound`), so ‖output − exact-HHL output‖ ≤ ε‖b‖ once N ≥ Q/ε (`hhl_window_precision`) |
 | `HHL` | circuit W*·CR·W; output for every b; Ax = b for x = A⁻¹b, success probability C²‖x‖² ≥ 1/κ²; signed eigenvalues; non-Hermitian A via [[0,A],[A*,0]] |
 
-Open: sharper constants (the filter-function analysis of the HHL paper).
+Sharper constants: closed by `HHL_Window` (register size N ~ 1/ε instead of 1/ε²; the sine window is the optimal window of the HHL paper's filter-function analysis, here with explicit constants).  Not modelled: preparation of the window state and of |b⟩, Hamiltonian simulation of e^{iAt}, amplitude amplification, gate counts.
 
 ## Infrastructure not in the notes (formalised to make the above possible)
 * BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary`), unitary algebra.

@@ -298,3 +298,19 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   (D23-3, D26-2), concrete model (D6-1, D15-3), or the notes need a hypothesis / are wrong (D5-2,
   D23-4, D32-5).  D21-2 (the conjecture) is held for a possible proof attempt.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.
+- **Sharper HHL constants** (`HHL_Window`).  The uniform register gives squared error O(1/N), i.e.
+  N ~ 1/ε².  With the sine window ψ_τ = √(2/N) sin(π(τ+½)/N) the amplitude is
+  (√2/N) Σ_τ sin(a τ + a/2) e^{iτx}, a = π/N; writing sin as a difference of exponentials and
+  using N a = π the two geometric sums collapse to |Σ| ≤ |sin(a/2)|/(|sin((x+a)/2)||sin((x−a)/2)|)
+  (`window_sum_bound`), and Jordan-type bounds on the sines give |α| ≤ 2√2π³/(N²x²) for
+  2π/N ≤ |x| ≤ π.  Error sum: good branches cost K·w(Nφ − k)/N² with w(t) = 2 near (|t| < 1, at
+  most two k) and π²/(2t²) far (Σ 1/(y−k)² ≤ 4 by reindexing through ⌊|y−k|⌋ onto Σ 1/(m+1)² ≤ 2);
+  clamped and negative branches have |δ| ≥ φ/2 and |α|² ≤ π²/(2N⁴(φ/2)⁴) (the crude |α|² ≤ 2
+  covers |δ| < 1/N since π² ≥ 4).  Result: ε² ≤ (8π²(2+π²)θ⁴/(N²t₀²C²(1−θ²)) + 512π⁶/(N³t₀⁴λ⁴))
+  per eigenvector and for every b (orthogonality argument reused with ψ in place of u_N).  The
+  phase-estimation context of `HHL_Approximate` is duplicated with a general register state ψ
+  (about 250 lines) rather than refactoring the verified theory.  Traps: `M` is an implicit
+  structure name here (rename bound sets); `Max` needs `Lattices_Big.Max`; `term` is reserved;
+  `pi_gt3` does not exist (use `pi_ge_two`); field_simps leaves π·π·π·π·π·π vs π^6 — unfold
+  π^6 = π²·π⁴ first; `[of …]` on lemmas with `fixes y` before an implicit N picks the wrong
+  order — use `[where …]`.

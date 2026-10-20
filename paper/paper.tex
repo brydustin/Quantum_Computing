@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises forty-seven theories and about a
+entanglement witnesses.  The development comprises forty-eight theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -214,9 +214,10 @@ Theory & Lectures & lines & results\\
 \isa{QFT\_Fourier} & VI: the Archive's QFT circuit is $F_{2^n}$ & 103 & 4\\
 \isa{HHL} & VI: the HHL algorithm & 815 & 46\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
+\isa{HHL\_Window} & VI: sine-window register, $N\sim1/\varepsilon$ & 1210 & 46\\
 \bottomrule
 \end{tabular}
-\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,599 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -552,8 +553,20 @@ $\norm{\text{output}-\text{exact output}}^2\le
  \frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda_{\min}^2}\bigr)\norm b^2$
 (\isa{hhl\_clamped\_bound}), with no loss in the dimension.
 
-\paragraph{What remains.}  The constants are cruder than those of the original
-filter-function analysis, which is the natural next refinement.
+\paragraph{Sharper constants.}  The bound above is $O(1/N)$ in the squared error, so precision
+$\varepsilon$ needs a register of size $N\sim1/\varepsilon^2$.  The uniform register state is the
+culprit: its amplitudes decay only like $1/(N\delta)$.  Preparing the register in the sine window
+$\psi_\tau=\sqrt{2/N}\,\sin(\pi(\tau+\frac12)/N)$, as in the HHL paper, the window sum has a
+closed form and $|\alpha_j|^2\le\pi^2/(2N^4\delta_j^4)$ for $1/N\le|\delta_j|\le\frac12$
+(\isa{win\_amp\_tail}).  On good branches the distance is $O(\delta_j^2)$, so each term is at
+most $K\,w(N\varphi-j)/N^2$ for a weight $w$ with $\sum_jw(N\varphi-j)\le4+2\pi^2$; clamped and
+negative branches have $|\delta_j|\ge\varphi/2$ and contribute $O(1/N^3)$ in total.  For every $b$,
+$\norm{\text{output}-\text{exact output}}^2\le
+ \bigl(\frac{8\pi^2(2+\pi^2)\theta^4}{N^2t_0^2C^2(1-\theta^2)}+\frac{512\pi^6}{N^3t_0^4\lambda_{\min}^4}\bigr)\norm b^2$
+(\isa{hhl\_window\_bound}), so $N\ge Q/\varepsilon$ gives error at most $\varepsilon\norm b$
+(\isa{hhl\_window\_precision}).
+
+\paragraph{What remains.}  The window state, like $\ket b$, is assumed to be prepared exactly.
 Hamiltonian simulation enters only through the spectral $e^{itA}$; Trotter-type
 approximation from sparse access and the complexity claims (which need a cost model) are
 outside the matrix framework.
