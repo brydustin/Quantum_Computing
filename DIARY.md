@@ -288,6 +288,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   index variables without a type annotation are generic, and `{..<q}` is then not known finite
   (sum.delta fails) — annotate `nat`; lighter imports lose simp facts the scratch relied on —
   give carriers explicitly.
-- **Audit after this pass:** ✓152 ~8 ✗0 –10 of 170; of the 8 variants only D22-4 (compactness of
-  UCP) is open, the other 7 are permanent (different route, or the notes need a correction).  D21-2 (the notes' conjecture on averages of
+- **D22-4, UCP compact** (`Day22_UCP_Compact`), stated in Choi coordinates since maps carry no
+  topology: the linear UCP maps' Choi matrices are exactly {P ≥ 0 : Σ_i P_ii = I_d} (inverse Choi
+  map `choi_inv`), a closed set (entry sums are continuous: `continuous_on_unwrap_lm_index`) inside
+  d·{P ≥ 0, Tr P = 1}, compact by `compact_unit_trace_psd_lmat`.  Traps: `simp add:
+  sum.distrib[symmetric]` hung — prove sums equal with `intro sum.cong refl` (bounds in context)
+  and then `sum.distrib`; `Tr_lmat_scaleR` already existed (Separable_Cone).
+- **Audit after this pass:** ✓153 ~7 ✗0 –10 of 170.  The 7 variants are deliberate: different route
+  (D23-3, D26-2), concrete model (D6-1, D15-3), or the notes need a hypothesis / are wrong (D5-2,
+  D23-4, D32-5).  D21-2 (the conjecture) is held for a possible proof attempt.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.
