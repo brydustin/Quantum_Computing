@@ -360,10 +360,10 @@ Not part of the notes and not counted in the rows above; session `Vern_Paulsen_Q
 | `Hermitian_Functional_Calculus` | g(A) for Hermitian A via eigenvectors; = U diag(g∘D) U*; multiplicative, adjoint, unitary for \|g\|=1; e^{itA}; A⁻¹ |
 | `Phase_Estimation` | Fourier matrix unitary; controlled powers, phase kickback; output state; exact case; success ≥ 4/π² |
 | `QFT_Fourier` | the AFP `ordered_QFT n` equals `fourier (2^n)`, so phase estimation runs on the AFP circuit |
-| `HHL_Approximate` | eigenvalue not a register value: ‖output − ideal‖² = ‖u‖² Σ_j \|α_j\|² ‖R(C/λ_j)\|0⟩ − R(C/λ)\|0⟩‖² (`hhl_approx_error`); Σ_j \|α_j\|² = 1; \|α_j\| ≤ 1/(2N\|δ_j\|); for the clamped circuit, λ ≥ 2C/θ and t₀λ ≤ π/2: ‖output − ideal‖² ≤ ‖u‖² (π²/(N t₀²)) (θ⁴/(C²(1−θ²)) + 16/λ²) (`hhl_clamped_error_bound`) |
+| `HHL_Approximate` | eigenvalue not a register value: ‖output − ideal‖² = ‖u‖² Σ_j \|α_j\|² ‖R(C/λ_j)\|0⟩ − R(C/λ)\|0⟩‖² (`hhl_approx_error`); Σ_j \|α_j\|² = 1; \|α_j\| ≤ 1/(2N\|δ_j\|); for the clamped circuit, λ ≥ 2C/θ and t₀λ ≤ π/2: ‖output − ideal‖² ≤ ‖u‖² (π²/(N t₀²)) (θ⁴/(C²(1−θ²)) + 16/λ²) (`hhl_clamped_error_bound`); for every b, with the spectrum in [λ_min, π/(2t₀)] and λ_min ≥ 2C/θ: ‖output − exact-HHL output‖² ≤ (π²/(N t₀²)) (θ⁴/(C²(1−θ²)) + 16/λ_min²) ‖b‖² (`hhl_clamped_bound`, via orthogonality of the eigenvectors' error vectors) |
 | `HHL` | circuit W*·CR·W; output for every b; Ax = b for x = A⁻¹b, success probability C²‖x‖² ≥ 1/κ²; signed eigenvalues; non-Hermitian A via [[0,A],[A*,0]] |
 
-Open: the ε-bound for a general right-hand side b (the eigenvector case is `hhl_clamped_error_bound`), and sharper constants (filter functions).
+Open: sharper constants (the filter-function analysis of the HHL paper).
 
 ## Infrastructure not in the notes (formalised to make the above possible)
 * BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary`), unitary algebra.

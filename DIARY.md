@@ -161,4 +161,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   b₂ = 4/(Nφ)² on the others (weight ≤ 1/(Nφ)², distance ≤ 2; the negative half uses the
   periodicity α_k(φ) = α_k(φ+1)); sum over N branches.  Crude compared with the HHL paper's
   filter-function analysis, but explicit and checked.
+- **Every right-hand side** (`hhl_clamped_bound`).  The naive extension of the eigenvector bound to
+  b = Σ β_j u_j by the triangle inequality loses a factor √n.  Instead: the error vectors
+  E u_j = W*(Σ_k α_k^{(j)} |k⟩ ⊗ u_j ⊗ (…)) of distinct eigenvectors are orthogonal
+  (`hhl_err_orth`, from ⟨u_i|u_j⟩ = 0 and the branch structure, whatever the angles), so
+  U*E*EU is diagonal with entries ‖E u_j‖² ≤ ε², hence ε²I − E*E = U diag(ε² − ‖E u_j‖²) U* is
+  positive (`psd_U_diag_Udag`) and ‖E b‖² ≤ ε²‖b‖² (`orth_image_bound`, a general lemma).  The
+  ideal output is the exact-HHL output of theorem `hhl` (matrix `lift_mat n u G₀ G₁`), so the
+  theorem reads: output of the clamped circuit on u_N ⊗ b ⊗ |0⟩ is within ε‖b‖ of
+  u_N ⊗ (√(I−C²A⁻²) b ⊗ |0⟩ + C A⁻¹b ⊗ |1⟩), ε² = (π²/(N t₀²))(θ⁴/(C²(1−θ²)) + 16/λ_min²).
 

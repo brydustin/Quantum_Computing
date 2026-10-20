@@ -52,7 +52,8 @@ $4/\pi^2$ success bound, on the Archive's QFT circuit) and the HHL algorithm for
 eigenvalues representable in the register, with the output state, the solution
 property, a $1/\kappa^2$ success bound and the reduction of non-Hermitian systems.  The
 for an eigenvalue that is not representable, the output of the physical (angle-clamped)
-circuit on the eigenvector is within an explicit $O(1/(t_0\sqrt N))$ of the ideal output.
+circuit is within an explicit $O(1/(t_0\sqrt N))$ of the exact-HHL output, for every
+right-hand side.
 \end{abstract}
 
 \section{Introduction}
@@ -199,10 +200,10 @@ Theory & Lectures & lines & results\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 501 & 26\\
 \isa{QFT\_Fourier} & VI: the Archive's QFT circuit is $F_{2^n}$ & 103 & 4\\
 \isa{HHL} & VI: the HHL algorithm & 815 & 46\\
-\isa{HHL\_Approximate} & VI: inexact phase estimation, error bound & 847 & 42\\
+\isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \bottomrule
 \end{tabular}
-\caption{The thirty-five theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,384 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it.  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 2\,692 lines, 154 results, not included in the counts above).}
+\caption{The thirty-five theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,384 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it.  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -489,10 +490,17 @@ $\sum_j|\alpha_j|^2=1$, the tail bound $|\alpha_j|\le1/(2N|\delta_j|)$, Jordan's
 and a Lipschitz estimate for $c\mapsto R(c)\ket0$ on $[0,\theta]$, we prove: if
 $\lambda\ge2C/\theta$ and $t_0\lambda\le\pi/2$ then the squared distance is at most
 $\norm u^2\,\frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda^2}\bigr)$
-(\isa{hhl\_clamped\_error\_bound}).
+(\isa{hhl\_clamped\_error\_bound}).  The error vectors of distinct eigenvectors are
+orthogonal (each lies in $\C^N\otimes\mathrm{span}(u_j)\otimes\C^2$), so with $U$ the
+eigenbasis, $U^*E^*EU$ is diagonal for the error operator $E$ and $\varepsilon^2I-E^*E$ is
+positive: for every $b$, with the spectrum in $[\lambda_{\min},\pi/2t_0]$ and
+$\lambda_{\min}\ge2C/\theta$,
+$\norm{\text{output}-\text{exact output}}^2\le
+ \frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda_{\min}^2}\bigr)\norm b^2$
+(\isa{hhl\_clamped\_bound}), with no loss in the dimension.
 
-\paragraph{What remains.}  The bound is for one eigenvector; the general right-hand side
-and the sharper constants of the original filter-function analysis are the next steps.
+\paragraph{What remains.}  The constants are cruder than those of the original
+filter-function analysis, which is the natural next refinement.
 Hamiltonian simulation enters only through the spectral $e^{itA}$; Trotter-type
 approximation from sparse access and the complexity claims (which need a cost model) are
 outside the matrix framework.
