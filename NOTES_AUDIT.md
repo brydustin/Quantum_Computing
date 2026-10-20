@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`.
 
 ---
 
@@ -245,7 +245,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D22-2 | convex sets, extreme points, convex hull, affine maps | QC11 `convex_set_mat`, `extreme_point_mat`, `affine_map_mat` | ✓ |
 | D22-3 | Krein–Milman (stated) | – (available as HOL-Analysis `Krein_Milman_Minkowski`) | – |
 | D22-4 | UCP(M_n,M_d) convex and compact | QC11 `UCP`, `UCP_convex`; compactness ✗ | ~ |
-| D22-5 | CPTP convex; Γ(Φ) = Φ* affine bijection UCP → CPTP | QC11 `CPTP`, `CPTP_convex`; affineness of Γ ✗ | ~ |
+| D22-5 | CPTP convex; Γ(Φ) = Φ* affine bijection UCP → CPTP | QC11 `CPTP`, `CPTP_convex`; AM `map_adjoint` (Φ*(Y)_ij = ⟨Φ(E_ij)\|Y⟩, `map_adjoint_correct`: ⟨Y\|Φ X⟩ = ⟨Φ*Y\|X⟩), `adjoint_ucp_imp_cptp`, `adjoint_cptp_imp_ucp`, `map_adjoint_adjoint` (Φ** = Φ, so Γ is bijective with Γ⁻¹ = Γ, up to agreement on M_n), `map_adjoint_affine`; linearity is assumed since `UCP` does not record it | ✓ |
 | D22-6 | Choi 3 (statement) and corollaries: extreme ⟹ cr(Φ) ≤ d; CPTP version | see D23; corollary: D22 `extreme_CPTP_kraus_length_le` (r ≤ n for a Kraus representation with independent products) and `extreme_CPTP_choi_rank_le` (cr Φ ≤ n for extreme CPTP Φ: M_n → M_d, the notes' d) | ✓ |
 
 ### Day 23 (19 Oct): proof of Choi's Theorem 3, examples

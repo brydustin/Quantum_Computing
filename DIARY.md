@@ -262,5 +262,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
 - **Min on infinite sets, the other uses**: `code_distance` takes `Min` over the distances in a
   code; correct for every finite code (all uses), unspecified only for infinite sets of words.
   The other `Min` (Essential_Functional_Analysis) is over a finite set.
-- **Audit after this pass:** ✓149 ~11 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **D22-5, Γ(Φ) = Φ*** (`Day22_Adjoint_Maps`).  The adjoint existed only for Kraus maps; now
+  Φ*(Y)_ij = ⟨Φ(E_ij)|Y⟩ for any linear Φ, with ⟨Y|ΦX⟩ = ⟨Φ*Y|X⟩ (from `lin_expansion`),
+  uniqueness by testing with E_ij, Φ** = Φ, agreement with `kraus_adjoint_dim`, and the UCP ⟷ CPTP
+  correspondence through Kraus forms and `cp_unital_iff_adjoint_tp`.  Γ is a bijection only up to
+  agreement on M_n (maps are total functions); `UCP` lacks linearity, so it is assumed.  Traps:
+  `simp_all add: sum.swap` loops — reorder nested sums with explicit `sum.swap` steps; an
+  `obtains` lemma whose case has a ⋀-premise leaves goals after `rule` — state it with ∃ and
+  `blast`; `fix X` without a type gives `'a mat` — annotate `complex Matrix.mat`.
+- **Audit after this pass:** ✓150 ~10 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.
