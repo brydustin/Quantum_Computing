@@ -107,6 +107,7 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   output = uniform ⊗ (√(I−C²A⁻²) b ⊗ |0⟩ + C A⁻¹b ⊗ |1⟩), proved on eigenvectors and extended
   by `eigvec_mat_eqI` (matrices agreeing on all eigenvectors are equal), so no vector sums over
   an eigenbasis are needed.  `hhl_solution`: x = A⁻¹b solves Ax = b, the ancilla-|1⟩ part is
-  C·(uniform ⊗ x ⊗ |1⟩) with squared norm C²‖x‖².  Open: the 1/κ² bound for C = λ_min, the
-  non-exact (ε) version, the Hermitian embedding of non-Hermitian A, and the AFP QFT bridge.
+  C·(uniform ⊗ x ⊗ |1⟩) with squared norm C²‖x‖².  `hhl_success_bound`: spectrum in [C, Λ] gives
+  C²‖A⁻¹b‖² ≥ (C/Λ)²‖b‖², i.e. 1/κ² for C = λ_min (via `mat_fun_psd`: g ≥ 0 on the spectrum
+  makes g(A) positive).  Open: the non-exact (ε) version, the Hermitian embedding of non-Hermitian A, and the AFP QFT bridge.
 

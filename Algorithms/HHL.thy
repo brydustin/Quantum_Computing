@@ -622,4 +622,111 @@ proof -
          tensor_vec ?u (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1))\<rangle> = complex_of_real (C\<^sup>2) * \<langle>x|x\<rangle>" .
 qed
 
+subsection \<open>The success probability\<close>
+
+text \<open>The diagonal of a spectral decomposition consists of eigenvalues.\<close>
+
+lemma spectral_decomp_eig_in_spectrum:
+  assumes A: "A \<in> carrier_mat n n" and sd: "spectral_decomp A U D" and j: "j < n"
+  shows "D ! j \<in> herm_spectrum A"
+proof -
+  note d = spectral_decompD[OF A sd]
+  have cd: "dim_vec (Matrix.col U j) = n" using d(1) by simp
+  have nz: "Matrix.col U j \<noteq> 0\<^sub>v n"
+  proof
+    assume z: "Matrix.col U j = 0\<^sub>v n"
+    have "(U\<^sup>\<dagger> * U) $$ (j, j) = Matrix.row (U\<^sup>\<dagger>) j \<bullet> Matrix.col U j"
+      by (rule index_mult_mat(1)) (use d(1) j in simp_all)
+    also have "\<dots> = 0" unfolding z by (rule scalar_prod_right_zero) (use d(1) j in \<open>simp add: dagger_def\<close>)
+    finally show False using d(4) j by simp
+  qed
+  show ?thesis unfolding herm_spectrum_def
+    using spectral_decomp_col[OF A sd j] cd nz A by (intro CollectI exI[of _ "Matrix.col U j"]) simp
+qed
+
+text \<open>A real function non-negative on the spectrum gives a positive matrix.\<close>
+
+lemma mat_fun_psd:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and f: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> 0 \<le> f l"
+  shows "psd (mat_fun (\<lambda>x. complex_of_real (f x)) A)"
+proof -
+  obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
+  note d = spectral_decompD[OF A(1) sd]
+  have "mat_fun (\<lambda>x. complex_of_real (f x)) A = U * diag_cmat (map (\<lambda>x. complex_of_real (f x)) D) * (U\<^sup>\<dagger>)"
+    by (rule mat_fun_decomp[OF A sd])
+  also have "diag_cmat (map (\<lambda>x. complex_of_real (f x)) D) = diag_mat_of_real (map f D)"
+    by (simp add: diag_mat_of_real_cmat o_def)
+  finally have e: "mat_fun (\<lambda>x. complex_of_real (f x)) A = U * diag_mat_of_real (map f D) * (U\<^sup>\<dagger>)" .
+  show ?thesis unfolding e
+    by (rule psd_U_diag_Udag[OF d(1)]) (use d(3) f spectral_decomp_eig_in_spectrum[OF A(1) sd] in simp_all)
+qed
+
+lemma mat_fun_add:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "mat_fun (\<lambda>x. g x + h x) A = mat_fun g A + mat_fun h A"
+proof (rule mat_fun_eqI[OF A])
+  show "mat_fun g A + mat_fun h A \<in> carrier_mat n n" using A by simp
+  show "fun_on_eigen A (\<lambda>x. g x + h x) (mat_fun g A + mat_fun h A)" unfolding fun_on_eigen_def
+  proof (intro allI impI)
+    fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
+    have vn: "dim_vec v = n" using v A(1) by simp
+    have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF vn])
+    have "(mat_fun g A + mat_fun h A) *\<^sub>v v = mat_fun g A *\<^sub>v v + mat_fun h A *\<^sub>v v"
+      by (rule add_mult_distrib_mat_vec[OF mat_fun_carrier[OF A] mat_fun_carrier[OF A] vc])
+    also have "\<dots> = g l \<cdot>\<^sub>v v + h l \<cdot>\<^sub>v v" by (simp add: mat_fun_eigen[OF A vn ev])
+    also have "\<dots> = (g l + h l) \<cdot>\<^sub>v v" by (simp add: add_smult_distrib_vec)
+    finally show "(mat_fun g A + mat_fun h A) *\<^sub>v v = (g l + h l) \<cdot>\<^sub>v v" .
+  qed
+qed
+
+lemma inner_prod_add_right:
+  assumes "dim_vec a = n" "dim_vec b = n" "dim_vec c = n"
+  shows "\<langle>a|b + c\<rangle> = \<langle>a|b\<rangle> + \<langle>a|c\<rangle>"
+  using assms by (simp add: inner_prod_def scalar_prod_def sum.distrib algebra_simps)
+
+text \<open>If the spectrum lies in $[C,\Lambda]$ with $C>0$, the probability $C^2\norm{A^{-1}b}^2$ of the
+ancilla outcome $\ket1$ is at least $(C/\Lambda)^2\norm b^2$: for unit $b$ and $C=\lambda_{\min}$ this
+is $1/\kappa^2$.\<close>
+
+theorem hhl_success_bound:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and C: "0 < C"
+      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> C \<le> l \<and> l \<le> \<Lambda>"
+      and b: "dim_vec b = n"
+  shows "(C / \<Lambda>)\<^sup>2 * Re \<langle>b|b\<rangle> \<le> C\<^sup>2 * Re \<langle>herm_inv A *\<^sub>v b|herm_inv A *\<^sub>v b\<rangle>"
+proof -
+  let ?Ai = "herm_inv A" and ?P = "mat_fun (\<lambda>x. complex_of_real (1 / x\<^sup>2 - 1 / \<Lambda>\<^sup>2)) A"
+  have Ai: "?Ai \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
+  have bc: "b \<in> carrier_vec n" by (rule carrier_vecI[OF b])
+  have Pc: "?P \<in> carrier_mat n n" using A by simp
+  have Ad: "dim_vec (?Ai *\<^sub>v b) = n" using Ai by simp
+  have L: "C \<le> \<Lambda>" if "l \<in> herm_spectrum A" for l using spec[OF that] by linarith
+  have psd: "psd ?P"
+  proof (rule mat_fun_psd[OF A])
+    fix l assume l: "l \<in> herm_spectrum A"
+    have "0 < l" "l \<le> \<Lambda>" using spec[OF l] C by linarith+
+    hence "l\<^sup>2 \<le> \<Lambda>\<^sup>2" by (intro power_mono) simp_all
+    thus "0 \<le> 1 / l\<^sup>2 - 1 / \<Lambda>\<^sup>2" using \<open>0 < l\<close> by (simp add: frac_le)
+  qed
+  have "\<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle> = \<langle>b|?Ai *\<^sub>v (?Ai *\<^sub>v b)\<rangle>"
+    using inner_prod_adjoint_swap[OF Ai b Ad] herm_inv_hermitian[OF A] unfolding hermitian_def by simp
+  also have "?Ai *\<^sub>v (?Ai *\<^sub>v b) = (?Ai * ?Ai) *\<^sub>v b" by (rule assoc_mult_mat_vec[OF Ai Ai bc, symmetric])
+  also have "?Ai * ?Ai = mat_fun (\<lambda>x. complex_of_real (inverse x) * complex_of_real (inverse x)) A"
+    unfolding herm_inv_def by (rule mat_fun_mult[OF A])
+  also have "\<dots> = mat_fun (\<lambda>x. complex_of_real (1 / x\<^sup>2 - 1 / \<Lambda>\<^sup>2) + complex_of_real (1 / \<Lambda>\<^sup>2)) A"
+    by (rule mat_fun_cong[OF A]) (simp add: power2_eq_square field_simps flip: of_real_mult of_real_add)
+  also have "\<dots> = ?P + complex_of_real (1 / \<Lambda>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m n"
+    unfolding mat_fun_add[OF A] mat_fun_const[OF A] ..
+  also have "(?P + complex_of_real (1 / \<Lambda>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m n) *\<^sub>v b = ?P *\<^sub>v b + complex_of_real (1 / \<Lambda>\<^sup>2) \<cdot>\<^sub>v b"
+    using add_mult_distrib_mat_vec[OF Pc _ bc, of "complex_of_real (1 / \<Lambda>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m n"]
+          smult_mat_mult_vec[of "1\<^sub>m n" n n b] b bc by simp
+  also have "\<langle>b|?P *\<^sub>v b + complex_of_real (1 / \<Lambda>\<^sup>2) \<cdot>\<^sub>v b\<rangle> = \<langle>b|?P *\<^sub>v b\<rangle> + complex_of_real (1 / \<Lambda>\<^sup>2) * \<langle>b|b\<rangle>"
+    using inner_prod_add_right[of b n "?P *\<^sub>v b" "complex_of_real (1 / \<Lambda>\<^sup>2) \<cdot>\<^sub>v b"] inner_prod_distrib_right[of b b]
+          b Pc by simp
+  finally have e: "Re \<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle> = Re \<langle>b|?P *\<^sub>v b\<rangle> + 1 / \<Lambda>\<^sup>2 * Re \<langle>b|b\<rangle>" by simp
+  have "0 \<le> Re \<langle>b|?P *\<^sub>v b\<rangle>" using psd Pc b unfolding psd_def by auto
+  hence "1 / \<Lambda>\<^sup>2 * Re \<langle>b|b\<rangle> \<le> Re \<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle>" using e by linarith
+  hence "C\<^sup>2 * (1 / \<Lambda>\<^sup>2 * Re \<langle>b|b\<rangle>) \<le> C\<^sup>2 * Re \<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle>" by (rule mult_left_mono) simp
+  thus ?thesis by (simp add: power_divide)
+qed
+
 end
