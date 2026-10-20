@@ -314,3 +314,18 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `pi_gt3` does not exist (use `pi_ge_two`); field_simps leaves π·π·π·π·π·π vs π^6 — unfold
   π^6 = π²·π⁴ first; `[of …]` on lemmas with `fixes y` before an implicit N picks the wrong
   order — use `[where …]`.
+- **The surrounding algorithm** (`HHL_Simulation`, `HHL_Complete`).  A tiny circuit language
+  (`Gate M | Call P d | Seq a b`, oracle on the blocks with P k) with semantics, call count and
+  syntactic adjoint; `sem_robust`: if the oracle is η-close (‖Ov − O'v‖ ≤ η‖v‖) every circuit is
+  calls·η-close — induction, using that the gates are unitary.  Controlled powers are a chain of
+  N−1 calls (block k receives O^min(k,j)), so HHL = Prep; W; R; W* has 2(N−1) calls and equals the
+  verified clamped circuit for O = e^{iAt₀}⊗I.  Closeness lifts through ⊗I₂ by splitting vectors
+  into even/odd halves, and through adjoints of unitaries.  Readout: ‖a/‖a‖ − b/‖b‖‖ ≤ 2‖a−b‖/‖b‖
+  plus post-selection (`post1`, odd indices = ancilla 1).  Amplitude amplification in the plane
+  span{g,h} with diagonal ±1 reflections (`sign_diag`), so unitarity is an entry computation;
+  U(2|0⟩⟨0|−I)U* = 2|Uе₀⟩⟨Uе₀| − I.  `hhl_complete`: success ≥ 1 − p after k ≤ π²/(4Ct₀) rounds and
+  (2k+1)·2(N−1) oracle calls, post-selected state within 2(ε+2(N−1)η)/(C‖A⁻¹b‖) of the answer.
+  Traps: `simp add: carrier_vec_def` hangs exactly like `carrier_vecI` — use `rule carrier_vecI`;
+  `O` and `R` are reserved/constant names (rename the oracle V, the rotation stage Rg);
+  trailing `\<^sup>\<dagger>` still needs parentheses; context definitions (`comb`) export
+  with the context assumptions, so use `comb_def[OF …]`.

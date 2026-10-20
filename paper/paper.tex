@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises forty-eight theories and about a
+entanglement witnesses.  The development comprises fifty theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -215,9 +215,11 @@ Theory & Lectures & lines & results\\
 \isa{HHL} & VI: the HHL algorithm & 815 & 46\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \isa{HHL\_Window} & VI: sine-window register, $N\sim1/\varepsilon$ & 1210 & 46\\
+\isa{HHL\_Simulation} & VI: oracle circuits, simulation error & 745 & 49\\
+\isa{HHL\_Complete} & VI: readout, amplitude amplification & 865 & 42\\
 \bottomrule
 \end{tabular}
-\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,599 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The fifty theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,690 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -566,10 +568,24 @@ $\norm{\text{output}-\text{exact output}}^2\le
 (\isa{hhl\_window\_bound}), so $N\ge Q/\varepsilon$ gives error at most $\varepsilon\norm b$
 (\isa{hhl\_window\_precision}).
 
-\paragraph{What remains.}  The window state, like $\ket b$, is assumed to be prepared exactly.
-Hamiltonian simulation enters only through the spectral $e^{itA}$; Trotter-type
-approximation from sparse access and the complexity claims (which need a cost model) are
-outside the matrix framework.
+\paragraph{The surrounding algorithm.}  The circuit uses $e^{iAt_0}$ only through controlled
+powers, so we write it in a small language of fixed gates and controlled oracle calls with a
+semantics and a call count: HHL makes $2(N-1)$ calls, and replacing the oracle by any unitary $V$
+with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most $2(N-1)\eta$
+(\isa{hhl\_sim\_robust}, from a general lemma: each call adds at most $\eta$).  End to end the
+output is within $(\varepsilon+2(N-1)\eta)\norm b$ of the exact one.  The answer is read by
+post-selecting the ancilla; normalisation is stable, so the post-selected state is within
+$2\delta/(C\norm{A^{-1}b})$ of $\psi\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$
+(\isa{hhl\_readout}).  Amplitude amplification is proved in the plane of the good and bad
+components ($k$ rounds give $\sin^2((2k+1)\theta)$), and as a circuit it uses the HHL circuit and
+its inverse once per round.  Theorem \isa{hhl\_complete} combines state preparation, the window,
+the simulation oracle, amplification and readout: success probability at least $1-p$ after
+$k\le\pi^2/(4Ct_0)$ rounds, i.e.\ $O(\kappa)$, with $(2k+1)\cdot2(N-1)$ oracle calls.
+
+\paragraph{What remains.}  The window state and $\ket b$ are prepared by given unitaries.
+Hamiltonian simulation enters as an $\eta$-accurate oracle: building one from sparse access
+(Trotter-type formulas) and counting its gates is outside the matrix framework, so the
+complexity statement is in oracle calls.
 
 \section{Conclusion}
 

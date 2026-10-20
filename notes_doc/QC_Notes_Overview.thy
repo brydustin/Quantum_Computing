@@ -42,6 +42,8 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day22_UCP_Compact
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.HHL_Window
+    Vern_Paulsen_QC_Algorithms.HHL_Simulation
+    Vern_Paulsen_QC_Algorithms.HHL_Complete
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -105,6 +107,8 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
 --     & inexact phase estimation: the error identity; for the clamped circuit and every $b$, $\norm{\text{output}-\text{ideal}}^2\le\frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda_{\min}^2}\bigr)\norm b^2$ & \texttt{HHL\_Approximate}\\
 --     & sine-window register: amplitudes decay like $1/(N\delta)^2$; for every $b$, $\norm{\text{output}-\text{ideal}}^2\le\bigl(\frac{8\pi^2(2+\pi^2)\theta^4}{N^2t_0^2C^2(1-\theta^2)}+\frac{512\pi^6}{N^3t_0^4\lambda_{\min}^4}\bigr)\norm b^2$, so $N\sim1/\varepsilon$ suffices & \texttt{HHL\_Window}\\
+--     & circuits with oracle calls: HHL makes $2(N-1)$ calls of $e^{iAt_0}$; an oracle $V$ with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most (calls)$\cdot\eta$; end to end $\norm{\text{output}-\text{ideal}}\le(\varepsilon+2(N-1)\eta)\norm b$ & \texttt{HHL\_Simulation}\\
+--     & readout by post-selection, stable to $2\delta/(C\norm{A^{-1}b})$; amplitude amplification ($k$ rounds give $\sin^2((2k+1)\theta)$); the complete algorithm: success $\ge1-p$ with $k\le\pi^2/(4Ct_0)$ rounds and $(2k+1)\cdot2(N-1)$ oracle calls & \texttt{HHL\_Complete}\\
 \end{tabular}
 \end{center}
 

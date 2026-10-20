@@ -79,6 +79,8 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL
     HHL_Approximate
     HHL_Window
+    HHL_Simulation
+    HHL_Complete
 
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
@@ -158,5 +160,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.HHL_Window
+    Vern_Paulsen_QC_Algorithms.HHL_Simulation
+    Vern_Paulsen_QC_Algorithms.HHL_Complete
   document_files
     "root.tex"
