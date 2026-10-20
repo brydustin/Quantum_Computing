@@ -187,7 +187,7 @@ Theory & Lectures & lines & results\\
 \isa{Day26\_Arveson\_Extension} & 26: positive extensions, Arveson's extension theorem & 651 & 19\\
 \isa{Day27\_Positive\_Map\_Criterion} & 27--28: positive maps and separability & 440 & 16\\
 \midrule
-\isa{Day02\_11\_Supplement} & 2--11: projections, tensor coordinates, SWAP & 674 & 41\\
+\isa{Day02\_11\_Supplement} & 2--11: projections, $V\oplus W$, tensor coordinates, SWAP & 744 & 43\\
 \isa{Day29\_Classical\_Codes} & 29--30: Hamming codes, error probabilities & 311 & 24\\
 \isa{Day31\_Code\_Fidelity} & 31: independent bit flips, fidelities & 297 & 14\\
 \isa{Day32\_Y\_Code} & 32: the code for $Y$ flips & 238 & 22\\
@@ -212,7 +212,7 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \bottomrule
 \end{tabular}
-\caption{The forty-three theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,504 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and ten variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The forty-three theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,506 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and eleven variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -316,7 +316,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 10 are deliberate omissions; of the remaining 160
-mathematical items, 148 are faithful, 12 are variants and none is a gap.\footnote{Counts as
+mathematical items, 149 are faithful, 11 are variants and none is a gap.\footnote{Counts as
 of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -426,7 +426,8 @@ The Schmidt rank was defined as the \emph{minimum} of the set of lengths of repr
 elementary tensors; that set is infinite, and Isabelle's \isa{Min} is unspecified on infinite sets,
 so the definition was replaced by the least element.  With it, a nonzero vector has Schmidt rank~$1$
 iff it is a product state, and is entangled iff its Schmidt rank exceeds~$1$
-(\isa{entangled\_iff\_schmidt\_rank}).
+(\isa{entangled\_iff\_schmidt\_rank}).  Finally, bases of $\C^n$ and $\C^k$ give a basis of
+$\C^n\oplus\C^k$ (Day~5, \isa{direct\_sum\_basis\_is\_basis}).
 
 \section{The generated document}
 

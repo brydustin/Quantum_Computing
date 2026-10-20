@@ -75,7 +75,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 32--33 & Pauli expansion of unitaries; the general recovery proposition & \texttt{Day32\_Pauli\_Expansion}, \texttt{Day32\_Recovery\_Proposition}\\
 32--33 & the nine-qubit Shor code and Shor's theorem & \texttt{Day33\_Shor\_Code}\\
 34     & Knill--Laflamme: states vs.\ $PXP$, Theorem~1 (both directions), closure & \texttt{Day34\_Knill\_Laflamme}, \texttt{Day34\_KL\_Sufficiency}\\\hline
-2--11  & basis-independent projections, tensor coordinates, non-orthogonal states, a Bell measurement, SWAP from CNOTs & \texttt{Day02\_11\_Supplement}\\
+2--11  & basis-independent projections, a basis of $V\oplus W$, tensor coordinates, non-orthogonal states, a Bell measurement, SWAP from CNOTs & \texttt{Day02\_11\_Supplement}\\
 29--30 & the notes' Hamming code, the $[7,4,3]$ code, undetected-error probabilities & \texttt{Day29\_Classical\_Codes}\\
 31     & the bit-flip code against independent flips: $R\circ E$, minimum fidelities & \texttt{Day31\_Code\_Fidelity}\\
 32     & the code for $Y$ flips; codes with orthogonal error images & \texttt{Day32\_Y\_Code}\\

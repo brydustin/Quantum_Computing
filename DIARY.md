@@ -256,5 +256,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   rank 0 iff u = 0, for u ≠ 0 rank 1 iff product, entangled iff rank > 1 (D9-3 had claimed this
   without proof), Bell state rank 2.  Traps: `LeastI[OF …]` has multiple unifiers — give
   `[where P = …]`; `metis` with many facts hung — explicit steps instead.
-- **Audit after this pass:** ✓148 ~12 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **D5-5, basis of V ⊕ W** (in `Day02_11_Supplement`): with "basis" = invertible column matrix (the
+  D6-3 convention), the column matrix of (v_i,0), (0,w_j) is `four_block_mat V 0 0 W`, inverse
+  `four_block_mat V⁻¹ 0 0 W⁻¹` by `mult_four_block_mat` (needs `right_mult_zero_mat` facts).
+- **Min on infinite sets, the other uses**: `code_distance` takes `Min` over the distances in a
+  code; correct for every finite code (all uses), unspecified only for infinite sets of words.
+  The other `Min` (Essential_Functional_Analysis) is over a finite set.
+- **Audit after this pass:** ✓149 ~11 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.

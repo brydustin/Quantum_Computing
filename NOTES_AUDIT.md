@@ -87,7 +87,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D5-2 | Cholesky reduction: P ≥ 0 iff P − p_{i1}p_{1j}/p_{11} ≥ 0 | QC3 `cholesky_reduction` (adds the hypothesis p₁₁ > 0 that the notes leave implicit) | ~ |
 | D5-3 | two 3×3 numerical examples | CE `notes_example_1` ([[1,2,3],[2,4,5],[3,5,7]] is Hermitian and not ≥ 0) and `notes_example_2` ([[4,2,3],[2,5,6],[3,6,8]] ≥ 0), every intermediate matrix of the notes checked (`notes_P1_R`, `notes_P1_diff`, `notes_P1_next`, `notes_P2_R`, `notes_P2_diff`, `notes_Q2_R`, `notes_Q2_diff`, `notes_Q2_next`) through one Cholesky step `chol_R`/`chol_next` and the test `chol_test` (from `cholesky_reduction`); the remark on rank-one sums: `notes_P2_rank_one_sum` | ✓ |
 | D5-4 | direct sum V ⊕ W, inner product | QC3 `direct_sum_vec` (⊕ᵥ), `direct_sum_inner_prod`, `direct_sum_dim` | ✓ |
-| D5-5 | basis of V ⊕ W, dim(V ⊕ W) = dim V + dim W | `direct_sum_dim` (vector form only) | ~ |
+| D5-5 | basis of V ⊕ W, dim(V ⊕ W) = dim V + dim W | `direct_sum_dim`; S211 `direct_sum_basis_is_basis` (bases of ℂⁿ and ℂᵏ, i.e. lists with invertible column matrix as in D6-3, give the basis (v_i,0), (0,w_j) of ℂⁿ ⊕ ℂᵏ with n + k elements; the column matrix is block diagonal, `direct_sum_basis_block`) | ✓ |
 | D5-6 | block matrices act on (v, w) | QC3 `block_mat_apply` | ✓ |
 
 ### Day 6 (9 Sep): tensor products
