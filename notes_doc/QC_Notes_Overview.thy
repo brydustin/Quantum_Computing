@@ -46,6 +46,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Complete
     Vern_Paulsen_QC_Algorithms.HHL_Filter
     Vern_Paulsen_QC_Algorithms.HHL_Filter_Bounds
+    Vern_Paulsen_QC_Algorithms.HHL_Runtime
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -113,6 +114,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & readout by post-selection, stable to $2\delta/(C\norm{A^{-1}b})$; amplitude amplification ($k$ rounds give $\sin^2((2k+1)\theta)$); the complete algorithm: success $\ge1-p$ with $k\le\pi^2/(4Ct_0)$ rounds and $(2k+1)\cdot2(N-1)$ oracle calls & \texttt{HHL\_Complete}\\
 --     & the paper's filter functions and flag register; Lemma 2; Lemma 3 with the corrected constant $\pi^2$ & \texttt{HHL\_Filter}\\
 --     & Theorem 1 of the HHL paper for every $b$: errors $O(\kappa/t)$, $t$ the total evolution time & \texttt{HHL\_Filter\_Bounds}\\
+--     & (A32), BHMT averaging, run time in the paper's normalisation: $t=O(\kappa/\varepsilon)$, $O(\kappa)$ rounds & \texttt{HHL\_Runtime}\\
 \end{tabular}
 \end{center}
 

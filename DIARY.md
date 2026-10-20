@@ -350,3 +350,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
 - **Paper counts convention**: the totals (forty-seven theories, 1 553 results) exclude Part VI;
   Part VI's lines/results go in the table caption.  Two earlier commits had added Part VI rows to
   the totals; corrected.
+- **HHL_Runtime.**  (A32) from the window-sum identity with sin y ≥ y − y³/6 (Maclaurin n = 3);
+  the paper's hypothesis δ ≤ T/10 is not needed, δ ≤ T suffices.  The paper's unknown-p
+  amplification ("doubling until ≥ κ gives constant success") is a paraphrase of BHMT; the
+  precise result is the averaging lemma Σ_{k<M} sin²((2k+1)θ)/M = ½ − sin(4Mθ)/(4M sin 2θ),
+  proved by the telescoping 2 sin 2θ cos((4k+2)θ) = sin(4(k+1)θ) − sin(4kθ).  The run-time
+  theorem `hhl_paper_runtime` composes Theorem 1(3), the success bound ‖A⁻¹b‖ ≥ ‖b‖ for ‖A‖ ≤ 1,
+  and flag amplification.  Trap: a `metis order_trans` step took 61 s — state the chain.

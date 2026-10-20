@@ -366,6 +366,7 @@ Not part of the notes and not counted in the rows above; session `Vern_Paulsen_Q
 | `HHL_Complete` | readout: post-selection on the ancilla, success amplitude within δ of C‖A⁻¹b‖ and post-selected state within 2δ/(C‖A⁻¹b‖) of ψ ⊗ A⁻¹b/‖A⁻¹b‖ ⊗ \|1⟩ (`hhl_readout`); amplitude amplification: k rounds give success sin²((2k+1)θ) (`grover_success`, `amplitude_amplification`), k = ⌊π/(4θ)⌋ gives ≥ 1 − sin²θ (`grover_rounds`), as a circuit with (2k+1)·calls(u) calls (`circuit_amplification`); the complete algorithm (state preparation, window, simulation oracle, amplification, readout) with success ≥ 1 − p, k ≤ π²/(4Ct₀) rounds and (2k+1)·2(N−1) oracle calls (`hhl_complete`) |
 | `HHL_Filter` | the paper's filter functions f, g and flag state \|h(λ)⟩; Lemma 2 (`hflag_lipschitz`); Lemma 3 with the corrected constant π² (`lemma3`); the circuit with a d-level flag and its error identity (`flag_error`); Theorem 1(1),(2) on eigenvectors with the window register (`flag_window_eigen`, `flag_post_eigen`) |
 | `HHL_Filter_Bounds` | Theorem 1 of the paper for every b: (1) `flag_bound`, (2) `flag_post_bound`, `flag_post_normalized`, (3) `flag_well_normalized`, `flag_H_well_conditioned`; Householder flag gates (`flag_gates_exist`) |
+| `HHL_Runtime` | error metric (`unit_dist`); (A32) with the paper's constant (`win_amp_A32`); BHMT averaging (`bhmt_average`, `bhmt_quarter`); amplification of any flag post-selection (`circuit_amplificationP`); the flag circuit as an oracle circuit (`flag_full_exact`); run time in the paper's normalisation (`hhl_paper_runtime`) |
 | `HHL` | circuit W*·CR·W; output for every b; Ax = b for x = A⁻¹b, success probability C²‖x‖² ≥ 1/κ²; signed eigenvalues; non-Hermitian A via [[0,A],[A*,0]] |
 
 Sharper constants: closed by `HHL_Window` (register size N ~ 1/ε instead of 1/ε²; the sine window is the optimal window of the HHL paper's filter-function analysis, here with explicit constants).  Surrounding algorithm: closed by `HHL_Simulation` and `HHL_Complete` (simulation enters as an η-accurate oracle; state preparation as a given unitary; readout and amplitude amplification proved; oracle calls counted).
@@ -384,8 +385,8 @@ in a variant (stated), ✗ not yet, – out of scope (reason given).
 | H-5 | §II: rotation, uncomputation, post-selection on 1 gives ∝ Σ β_j C/λ_j \|u_j⟩ | `hhl`, `hhl_readout` | ✓ |
 | H-6 | §II: success probability Ω(1/κ²) | `hhl_success_bound` | ✓ |
 | H-7 | §II/App. A1: amplitude amplification, O(κ) rounds, operators R_succ, R_init | `HHL_Complete`: `grover_prog`, `circuit_amplification`, `hhl_complete` | ✓ |
-| H-8 | App. A1: unknown p̃, geometric schedule of rounds gives constant success with ≤ 4κ rounds | — | ✗ |
-| H-9 | §II/A1: run time Õ(κ(T_B + t₀s² log N)), t₀ = O(κ/ε), total Õ(κT_B + κ²s² log N/ε) | oracle-call count (2k+1)·2(N−1) in `hhl_complete`; not in the paper's normalisation | ~ |
+| H-8 | App. A1: unknown p̃, geometric schedule of rounds gives constant success with ≤ 4κ rounds | BHMT's averaging lemma, the precise result behind the cited procedure: for k uniform below M ≥ 1/sin 2θ the mean success probability is ≥ 1/4 (`bhmt_average`, `bhmt_quarter`) | ~ |
+| H-9 | §II/A1: run time Õ(κ(T_B + t₀s² log N)), t₀ = O(κ/ε), total Õ(κT_B + κ²s² log N/ε) | `hhl_paper_runtime` (spectrum in [1/κ, 1]): total evolution time t ≥ cκ/ε gives accuracy ε, success amplitude ≥ 1/(4κ), ≤ πκ amplification rounds with 2(N−1) calls each: O(κ) uses of B, total simulated time O(κ²/ε). The s² log N factor is the cost of the cited sparse simulation [3] per unit time (not formalised) | ✓ |
 | H-10 | App. A1: three-level flag register S (nothing/well/ill) and filter functions f, g (A3) | `HHL_Filter`: `filt_f`, `filt_g`, `hflag`, `flag_circuit`; gates exist (`flag_gates_exist`, Householder) | ✓ |
 | H-11 | Lemma 2: λ ↦ \|h(λ)⟩ is (π/2)κ-Lipschitz | `hflag_lipschitz` (constant π/2, sharp) | ✓ |
 | H-12 | Lemma 3: \|f−f̃\|² + \|g−g̃\|² ≤ c κ²δ²/t₀² (f²+g²) with c = π²/2 | `lemma3` with c = π² (sharp). The paper's c = π²/2 is false: on [1/2κ, 1/κ) its proof uses f²+g² = 1/2, but there f²+g² = 1/4 | ~ (paper wrong) |
@@ -393,12 +394,12 @@ in a variant (stated), ✗ not yet, – out of scope (reason given).
 | H-14 | Theorem 1(2): post-selected on {well, ill}, error O(κ/t₀) | `flag_post_bound` (relative error ρ = 6π²√(4+2π²)κ/(Nt₀)), normalised states within 2ρ (`flag_post_normalized`) | ✓ |
 | H-15 | Theorem 1(3): b in the well-conditioned subspace, post-selected on well, error O(κ/t₀) | `flag_well_normalized` (g(A)b = 0 ⇒ within 2ρ of f(A)b/‖f(A)b‖ ⊗ \|well⟩); `flag_H_well_conditioned`: f(A) = A⁻¹/(2κ) when the spectrum is ≥ 1/κ | ✓ |
 | H-16 | (A23)–(A31): closed form of α_{k\|j} | `window_sum_bound` (its modulus) | ✓ |
-| H-17 | (A32): \|α_{k\|j}\| ≤ 8π/δ² for 2π ≤ δ ≤ T/10 | `win_amp_tail`: 2√2π³/δ² for 2π ≤ \|δ\| ≤ πT (rigorous, other constant) | ~ |
+| H-17 | (A32): \|α_{k\|j}\| ≤ 8π/δ² for 2π ≤ δ ≤ T/10 | `win_amp_A32`: 8π/δ² for 2π ≤ \|δ\| ≤ T (weaker hypothesis than the paper's) | ✓ |
 | H-18 | App. A4: rectangular A, eigenstructure of H, minimum-norm solution (M ≤ N), projected solution (M ≥ N) | — (square invertible case only) | ✗ |
 | H-19 | §III eq. (4)–(5), (A34)–(A37): the circuit-to-matrix reduction U, A = I − Ue^{−1/T}, A⁻¹ = Σ U^k e^{−k/T}, κ = O(T), post-selection probability ≥ 1/10 | — | ✗ |
 | H-20 | Theorems 4, 5, 6: BQP = PSPACE / BPP = BQP / BQP = PP consequences, oracle lower bounds | complexity classes and oracle lower bounds (Simon, OR, parity) are not available in the library | – |
 | H-21 | App. A5: matrix inversion estimation in Õ(log N κ²s²/ε³) by sampling | — | ✗ |
-| H-22 | App. A: error metric ‖\|α⟩−\|β⟩‖ = √(2(1−Re⟨α\|β⟩)) for unit vectors | — | ✗ |
+| H-22 | App. A: error metric ‖\|α⟩−\|β⟩‖ = √(2(1−Re⟨α\|β⟩)) for unit vectors | `unit_dist` | ✓ |
 | H-23 | §IV: estimating ⟨x\|M\|x⟩, k-copy polynomials, sampling, f(A)\|b⟩, SWAP test, preconditioning | f(A) via `mat_fun`; the rest — | ✗ |
 
 ## Infrastructure not in the notes (formalised to make the above possible)
