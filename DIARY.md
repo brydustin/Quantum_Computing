@@ -91,4 +91,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   U diag(g∘D) U* for every spectral decomposition, is multiplicative, (g(A))* = ḡ(A), and only
   depends on g on the spectrum.  Instances: e^{itA} (unitary, group and power laws) and A⁻¹
   (`herm_inv`; the pseudo-inverse when 0 is an eigenvalue, since 1/0 = 0 in HOL).
+- **Phase estimation** (`Phase_Estimation`).  The Fourier matrix F_N (entries ω^{jk}/√N) is
+  defined directly and proved unitary from the roots-of-unity sum; the AFP
+  `Quantum_Fourier_Transform` gives the circuit's output only in product form, so the bridge
+  `ordered_QFT n = F_{2^n}` is a separate (open) step.  Controlled powers Σ_k |k⟩⟨k| ⊗ U^k and
+  phase kickback; output (F*⊗I)·CU·(uniform ⊗ u) = (Σ_j α_j|j⟩) ⊗ u with
+  α_j = (1/N)Σ_k e^{2πik(φ−j/N)}; exact case φ = j₀/N gives |j₀⟩; otherwise the outcome nearest
+  Nφ (mod N) has probability ≥ 4/π² (Jordan's inequality, |e^{ix}−1| = 2|sin(x/2)|).
+- Proof hygiene learned here: `simp` on `carrier_vec_def`/carrier facts and on conditional
+  lemmas passed as simp rules can loop; a periodicity lemma f φ = f (φ−1) loops under `simp`.
 

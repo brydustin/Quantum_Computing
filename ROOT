@@ -60,6 +60,7 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
   options [quick_and_dirty = false, timeout = 3600]
   theories
     Hermitian_Functional_Calculus
+    Phase_Estimation
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
