@@ -186,4 +186,72 @@ next
   qed
 qed
 
+subsection \<open>Day 4 revisited: positive definiteness and spanning (D4-8)\<close>
+
+text \<open>The notes: $P=\sum_i|v_i\rangle\langle v_i|>0$ iff $\operatorname{span}\{v_i\}=\mathbb C^n$.\<close>
+
+theorem pd_iff_span_all:
+  assumes vs: "\<forall>v \<in> set vs. dim_vec v = n"
+  shows "pd (outer_sum n vs) \<longleftrightarrow> col_span n vs = carrier_vec n"
+proof
+  let ?P = "outer_sum n vs"
+  have Pc: "?P \<in> carrier_mat n n" by (rule outer_sum_carrier)
+  assume pd: "pd ?P"
+  have Ph: "hermitian ?P" unfolding hermitian_def by (rule outer_sum_hermitian)
+  show "col_span n vs = carrier_vec n"
+  proof (intro equalityI subsetI)
+    fix y assume "y \<in> col_span n vs"
+    then obtain c where y: "y = mat_of_cols n vs *\<^sub>v c" unfolding col_span_def by blast
+    show "y \<in> carrier_vec n" unfolding y by (intro carrier_vecI) simp
+  next
+    fix w :: "complex Matrix.vec" assume "w \<in> carrier_vec n"
+    hence w: "dim_vec w = n" by simp
+    have "w \<in> mat_range n ?P"
+    proof (rule hermitian_perp_ker_in_range[OF Pc Ph w])
+      fix x assume x: "dim_vec x = n" and Px: "?P *\<^sub>v x = 0\<^sub>v n"
+      have "x = 0\<^sub>v n"
+      proof (rule ccontr)
+        assume "x \<noteq> 0\<^sub>v n"
+        hence "0 < Re (Quantum.inner_prod x (?P *\<^sub>v x))" using pd x carrier_matD(1)[OF Pc] unfolding pd_def by auto
+        thus False unfolding Px by (simp add: Quantum.inner_prod_def)
+      qed
+      thus "Quantum.inner_prod x w = 0" using w by (simp add: Quantum.inner_prod_def)
+    qed
+    thus "w \<in> col_span n vs" using outer_sum_range[OF vs] by simp
+  qed
+next
+  let ?P = "outer_sum n vs" and ?V = "mat_of_cols n vs"
+  have Pc: "?P \<in> carrier_mat n n" by (rule outer_sum_carrier)
+  assume span: "col_span n vs = carrier_vec n"
+  show "pd ?P"
+    unfolding pd_iff_spanning[OF Pc refl vs]
+  proof (intro allI impI)
+    fix x :: "complex Matrix.vec" assume x: "dim_vec x = n" and x0: "x \<noteq> 0\<^sub>v n"
+    show "\<exists>v \<in> set vs. Quantum.inner_prod v x \<noteq> 0"
+    proof (rule ccontr)
+      assume "\<not> (\<exists>v \<in> set vs. Quantum.inner_prod v x \<noteq> 0)"
+      hence all: "\<And>v. v \<in> set vs \<Longrightarrow> Quantum.inner_prod v x = 0" by blast
+      have Vc: "?V \<in> carrier_mat n (length vs)" by (rule mat_of_cols_carrier(1))
+      have Vx: "?V\<^sup>\<dagger> *\<^sub>v x = 0\<^sub>v (length vs)"
+      proof (rule eq_vecI)
+        fix j assume "j < dim_vec (0\<^sub>v (length vs) :: complex Matrix.vec)"
+        hence j: "j < length vs" by simp
+        have "(?V\<^sup>\<dagger> *\<^sub>v x) $ j = (\<Sum>i<n. cnj (vs ! j $ i) * x $ i)"
+          using j x by (simp add: dagger_def mat_of_cols_def scalar_prod_def atLeast0LessThan)
+        also have "\<dots> = Quantum.inner_prod (vs ! j) x"
+          using vs j x by (simp add: Quantum.inner_prod_def atLeast0LessThan)
+        also have "\<dots> = 0" using all j by simp
+        finally show "(?V\<^sup>\<dagger> *\<^sub>v x) $ j = 0\<^sub>v (length vs) $ j" using j by simp
+      qed (simp add: dagger_def)
+      have "x \<in> col_span n vs" using span carrier_vecI[OF x] by simp
+      then obtain c where c: "dim_vec c = length vs" and xc: "x = ?V *\<^sub>v c" unfolding col_span_def by blast
+      have "Quantum.inner_prod x x = Quantum.inner_prod (?V\<^sup>\<dagger> *\<^sub>v x) c"
+        using inner_prod_adjoint_swap[OF Vc x c] xc by simp
+      also have "\<dots> = 0" unfolding Vx using c by (simp add: Quantum.inner_prod_def)
+      finally have "x = 0\<^sub>v (dim_vec x)" using inner_prod_self_eq_zero_iff by blast
+      thus False using x0 x by simp
+    qed
+  qed
+qed
+
 end

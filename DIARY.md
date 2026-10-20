@@ -245,5 +245,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   w ∈ R(P) (with `loewner_ker_subset`) and R(Σ w_l w_l*) = col_span (V*x = 0 on ker P).  Traps
   again: `simp add: carrier_vecI` hung (> 60 s); explicit `assoc_mult_mat_vec[OF …, symmetric]`
   and `one_mult_mat_vec` are instant; no JNF lemma for M *v 0 — prove by `eq_vecI`.
-- **Audit after this pass:** ✓146 ~14 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **D4-8 in the notes' form** (`pd_iff_span_all`, in `Day21_Ranges`): pd (Σ v v*) ⟺ col_span = ℂⁿ;
+  ⟹ by `hermitian_perp_ker_in_range` (trivial kernel) and `outer_sum_range`, ⟸ via
+  `pd_iff_spanning` (x in the span and ⊥ every v_i gives ⟨x|x⟩ = ⟨V*x|c⟩ = 0).  The `simp add:
+  carrier_vecI` hang struck a third time.
+- **Audit after this pass:** ✓147 ~13 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.

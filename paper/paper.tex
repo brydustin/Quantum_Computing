@@ -202,7 +202,7 @@ Theory & Lectures & lines & results\\
 \isa{Day05\_Cholesky\_Examples} & 5: Cholesky's algorithm on the two examples & 233 & 27\\
 \isa{Day10\_15\_Supplement} & 10--15: superdense coding, CCNOT, $\tr_A$ & 377 & 25\\
 \isa{Day04\_29\_Supplement} & 4--29: Hermitian tests, ensembles, Choi, codes & 344 & 22\\
-\isa{Day21\_Ranges} & 21: ranges of positive matrices & 189 & 4\\
+\isa{Day21\_Ranges} & 4, 21: ranges of positive matrices, spanning & 257 & 5\\
 \midrule
 \isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 422 & 36\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 501 & 26\\
@@ -211,7 +211,7 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \bottomrule
 \end{tabular}
-\caption{The forty-two theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,494 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and eight variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The forty-two theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,495 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and nine variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -315,7 +315,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 10 are deliberate omissions; of the remaining 160
-mathematical items, 146 are faithful, 14 are variants and none is a gap.\footnote{Counts as
+mathematical items, 147 are faithful, 13 are variants and none is a gap.\footnote{Counts as
 of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -419,7 +419,8 @@ the $B$ side by the index permutation that exchanges the factors
 (\isa{partial\_trace\_A\_is\_density}); the converse directions of the Hermitian tests, the density
 of a composite ensemble, Choi's theorem with $n$-positivity as its own condition
 (\isa{choi\_four\_conditions}), and the distance of subspace codes with unique decoding; and the ranges of
-positive matrices on Day~21 ($R(\sum_lw_lw_l^*)=\operatorname{span}\{w_l\}$, \isa{outer\_sum\_range}).
+positive matrices on Day~21 ($R(\sum_lw_lw_l^*)=\operatorname{span}\{w_l\}$, \isa{outer\_sum\_range}), which
+also gives the Day~4 statement in its literal form: $\sum_iv_iv_i^*>0$ iff the $v_i$ span $\C^n$.
 
 \section{The generated document}
 

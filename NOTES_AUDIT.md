@@ -78,7 +78,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D4-5 | Corollary: P > 0 iff P = P* and all eigenvalues > 0 | QC3 `pd_iff_pos_eigenvalues` | ✓ |
 | D4-6 | P ≥ 0 iff P = Σ\|v_i⟩⟨v_i\| | QC3 `psd_kraus_decomp` (⟹), `outer_sum_psd` (⟸) | ✓ |
 | D4-7 | Key: ⟨x\|Px⟩ = Σ\|⟨v_i\|x⟩\|² | QC3 `inner_prod_outer_sum_general` (as ⟨V*x\|V*x⟩) | ✓ |
-| D4-8 | P = Σ\|v_i⟩⟨v_i\| > 0 iff span{v_i} = ℂⁿ | QC3 `pd_iff_spanning` (spanning phrased as: no nonzero x ⊥ all v_i) | ~ |
+| D4-8 | P = Σ\|v_i⟩⟨v_i\| > 0 iff span{v_i} = ℂⁿ | QC3 `pd_iff_spanning` (no nonzero x ⊥ all v_i); RG `pd_iff_span_all` (the notes' form: pd ⟺ `col_span n vs = carrier_vec n`) | ✓ |
 
 ### Day 5 (7 Sep): tests for positivity, direct sums, block matrices
 | id | notes | formal | status |
