@@ -329,3 +329,24 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `O` and `R` are reserved/constant names (rename the oracle V, the rotation stage Rg);
   trailing `\<^sup>\<dagger>` still needs parentheses; context definitions (`comb`) export
   with the context assumptions, so use `comb_def[OF …]`.
+- **Audit against the HHL paper** (table H-1..H-23 in NOTES_AUDIT, Part VI).  **Lemma 3 of the paper
+  is false as stated**: |f−f̃|² + |g−g̃|² ≤ c κ²(λ−λ̃)²(f²+g²) with c = π²/2 fails on [1/2κ, 1/κ);
+  the proof writes f²+g² = 1/2 there but it is 1/4 (f = ½ sin, g = ½ cos).  Numerically the sup of
+  the ratio is π² (attained as λ̃ → λ in the middle region); proved with c = π² (`lemma3`).  Lemma 2
+  (π/2)κ-Lipschitz holds and is sharp.  Proof route for Lemma 3 in the mixed case λ ≥ 1/κ > λ̃:
+  triangle through 1/κ and clip λ̃ at 1/2κ, then the inequality reduces to q ≤ (π−1)/π · (1/κ).
+- **Theorem 1 of the paper** (`HHL_Filter`, `HHL_Filter_Bounds`).  d-level flag circuit (error
+  identity copied from the two-level one with 2 → d); the register eigenvalues' offsets from
+  λ are bounded by 3× the wrapped distance; window weights summed over points with pairwise
+  non-zero integer differences (floor-injectivity).  Post-selection commutes with phase
+  estimation because W is "flag-diagonal" (entries vanish between different flag values);
+  exact Pythagoras for maps sending an eigenbasis to orthogonal vectors (`orth_image_eq`) gives
+  the relative bound for every b.  Constants: (1) 9π⁴(4+2π²)κ²/(Nt₀)², (2)/(3) ρ = 6π²√(4+2π²)κ/(Nt₀),
+  normalised error 2ρ.  Traps: in theories that load HOL-Analysis, `inner_prod_def` and
+  `mult.assoc`/`mult.commute` resolve to Product_Vector / Matrix_Tensor facts — use
+  `Quantum.inner_prod_def`, `mult_ac`, `algebra_simps`; `OF` with a ⋀-premise like
+  `G: ⋀k. k < N ⟹ G k ∈ …` instantiates G higher-order (λk. G (?f k)) — give `[where G = G]`;
+  `where` on a variable named t0 needs `?t0.0`; literal `1 = 0` inside an `if` needs `(1::nat)`.
+- **Paper counts convention**: the totals (forty-seven theories, 1 553 results) exclude Part VI;
+  Part VI's lines/results go in the table caption.  Two earlier commits had added Part VI rows to
+  the totals; corrected.

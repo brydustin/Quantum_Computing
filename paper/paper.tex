@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises fifty theories and about a
+entanglement witnesses.  The development comprises forty-seven theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -217,9 +217,11 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Window} & VI: sine-window register, $N\sim1/\varepsilon$ & 1210 & 46\\
 \isa{HHL\_Simulation} & VI: oracle circuits, simulation error & 745 & 49\\
 \isa{HHL\_Complete} & VI: readout, amplitude amplification & 865 & 42\\
+\isa{HHL\_Filter} & VI: filter functions, Lemmas 2--3, flag register & 1428 & 65\\
+\isa{HHL\_Filter\_Bounds} & VI: Theorem 1 of the HHL paper for every $b$ & 816 & 29\\
 \bottomrule
 \end{tabular}
-\caption{The fifty theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,690 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 8\,083 lines, 396 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -581,6 +583,20 @@ components ($k$ rounds give $\sin^2((2k+1)\theta)$), and as a circuit it uses th
 its inverse once per round.  Theorem \isa{hhl\_complete} combines state preparation, the window,
 the simulation oracle, amplification and readout: success probability at least $1-p$ after
 $k\le\pi^2/(4Ct_0)$ rounds, i.e.\ $O(\kappa)$, with $(2k+1)\cdot2(N-1)$ oracle calls.
+
+\paragraph{The paper's error analysis.}  Appendix~A of the HHL paper uses a three-level flag
+register (nothing, well, ill) set by filter functions $f,g$.  We formalise $f,g$ and
+$\ket{h(\lambda)}$, Lemma~2 ($\lambda\mapsto\ket{h(\lambda)}$ is $\frac\pi2\kappa$-Lipschitz; the constant is
+attained) and Lemma~3, the relative bound
+$|f-\tilde f|^2+|g-\tilde g|^2\le c\,\kappa^2(\lambda-\tilde\lambda)^2(f^2+g^2)$.  The paper states $c=\pi^2/2$;
+this is false.  On $[1/2\kappa,1/\kappa)$ the proof uses $f^2+g^2=\frac12$, but there $f^2+g^2=\frac14$, and the
+ratio of the two sides tends to $\pi^2$.  We prove the lemma with $c=\pi^2$, which is sharp, by gluing
+region estimates (\isa{lemma3}).  With the window register and the wrapped distances of the
+register eigenvalues, all three parts of Theorem~1 follow for every $b$ with explicit constants:
+$\norm{(\tilde U-U)b}\le3\pi^2\sqrt{4+2\pi^2}\,\kappa\norm b/t$, and the post-selected states are within
+$12\pi^2\sqrt{4+2\pi^2}\,\kappa/t$ of the ideal ones, $t=Nt_0$ the total evolution time
+(\isa{flag\_bound}, \isa{flag\_post\_normalized}, \isa{flag\_well\_normalized}).  The audit of the
+paper's results against the formalisation is part of the notes audit.
 
 \paragraph{What remains.}  The window state and $\ket b$ are prepared by given unitaries.
 Hamiltonian simulation enters as an $\eta$-accurate oracle: building one from sparse access

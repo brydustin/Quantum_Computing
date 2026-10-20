@@ -44,6 +44,8 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Window
     Vern_Paulsen_QC_Algorithms.HHL_Simulation
     Vern_Paulsen_QC_Algorithms.HHL_Complete
+    Vern_Paulsen_QC_Algorithms.HHL_Filter
+    Vern_Paulsen_QC_Algorithms.HHL_Filter_Bounds
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -109,6 +111,8 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & sine-window register: amplitudes decay like $1/(N\delta)^2$; for every $b$, $\norm{\text{output}-\text{ideal}}^2\le\bigl(\frac{8\pi^2(2+\pi^2)\theta^4}{N^2t_0^2C^2(1-\theta^2)}+\frac{512\pi^6}{N^3t_0^4\lambda_{\min}^4}\bigr)\norm b^2$, so $N\sim1/\varepsilon$ suffices & \texttt{HHL\_Window}\\
 --     & circuits with oracle calls: HHL makes $2(N-1)$ calls of $e^{iAt_0}$; an oracle $V$ with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most (calls)$\cdot\eta$; end to end $\norm{\text{output}-\text{ideal}}\le(\varepsilon+2(N-1)\eta)\norm b$ & \texttt{HHL\_Simulation}\\
 --     & readout by post-selection, stable to $2\delta/(C\norm{A^{-1}b})$; amplitude amplification ($k$ rounds give $\sin^2((2k+1)\theta)$); the complete algorithm: success $\ge1-p$ with $k\le\pi^2/(4Ct_0)$ rounds and $(2k+1)\cdot2(N-1)$ oracle calls & \texttt{HHL\_Complete}\\
+--     & the paper's filter functions and flag register; Lemma 2; Lemma 3 with the corrected constant $\pi^2$ & \texttt{HHL\_Filter}\\
+--     & Theorem 1 of the HHL paper for every $b$: errors $O(\kappa/t)$, $t$ the total evolution time & \texttt{HHL\_Filter\_Bounds}\\
 \end{tabular}
 \end{center}
 
