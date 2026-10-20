@@ -5,7 +5,7 @@ Completely Positive Maps*, Houston, Fall 2011; notes by Brandon Lee), transcribe
 `QC_Notes_overleaf.tex`.  Formalisation: the nine theories of the sessions
 `Vern_Paulsen_QC_3_10`, `Vern_Paulsen_QC_3_10_Lmat`, `Vern_Paulsen_QC` (see `ROOT`).
 
-Verification status (2026-10-19): all three sessions build
+Verification status (2026-10-19): all sessions build
 with `quick_and_dirty = false`; no `sorry`, no `axiomatization`, no `oops`; a
 `Thm_Deps.all_oracles` check of the main theorems reports no oracles.  The theorem on
 unambiguous discrimination (D8-3), formerly kept in a comment block with a `sorry`, is now
@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`.
 
 ---
 
@@ -218,7 +218,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D19-1 | Choi: (1) CP ⟺ (2) n-positive ⟺ (3) P_Φ = (Φ(E_{ij})) ≥ 0 ⟺ (4) Φ(X) = Σ B_i X B_i* | QC11 `choi_matrix`, `choi_theorem` ((1)⟺(3)), `choi_psd_if_cp`, `kraus_rep_of_psd_choi` ((3)⟹(4)), `kraus_is_cp`/`kraus_cp_no_tp` ((4)⟹(1)).  (2)⟹(3) not isolated: `choi_matrix_as_amplification` is the key step | ~ |
 | D19-2 | Notes: Choi–Kraus representation, Choi–Jamiołkowski matrix, CP ↔ M_n(M_d)⁺ | `choi_matrix_kraus_eq` (D23), `choi_theorem` | ✓ |
-| D19-3 | TP iff Tr(R_{ij}) = δ_{ij}; unital iff Σ R_{ii} = I (Choi-matrix form) | ✗ (TP/unital are characterised via Kraus lists instead: `kraus_is_trace_preserving`, `kraus_map_dim_one`) | ✗ |
+| D19-3 | TP iff Tr(R_{ij}) = δ_{ij}; unital iff Σ R_{ii} = I (Choi-matrix form) | CTU `choi_trace_preserving_iff`, `choi_unital_iff` (blocks of the Choi matrix via `block_of_mat`; `choi_cptp_iff`, `choi_ucp_iff`) | ✓ |
 
 ### Day 20 (12 Oct): functionals, adjoints, Choi rank
 | id | notes | formal | status |
@@ -254,7 +254,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D23-1 | Choi 3: Φ UCP with minimal Kraus rep (V_i) is extreme iff {V_i*V_j} linearly independent | D23 `choi_theorem_3_cptp` proves the CPTP form (the notes' corollary): for a CPTP Φ with Kraus representation (V_i) consisting of linearly independent operators, extreme (`extreme_CPTP_carrier`) ⟺ complex-linear independence of {V_j*V_i} (`choi_theorem_3_cptp_iff`; the perturbation step yields a real relation and `herm_witness_of_complex` converts a complex one).  Differences: (i) CPTP instead of UCP (the two are exchanged by Φ ↦ Φ*, D20-2); (ii) hypothesis "V_i linearly independent" replaces "r = cr Φ" (D22-1); (iii) extremality is the carrier-point notion, because functions on `complex Matrix.mat` are only constrained on `carrier_mat n n` | ~ |
 | D23-2 | forward direction via perturbation ψ_± | D23 `choi_theorem_3_cptp_reverse_carrier` (perturbation `kraus_quad_map`, `small_eps_psd`, `sym_or_antisym_witness`) | ✓ |
 | D23-3 | reverse direction via Choi 2 | D23 `choi_theorem_3_cptp_forward_complex` via CP Radon–Nikodym (`cp_radon_nikodym_linear`, `dominated_outer_sum_param`) instead of Choi 2 | ~ |
-| D23-4 | Examples: U*XU extreme; ½(U₁*XU₁+U₂*XU₂) not; Tr(X)I not; diag not | ✗ | ✗ |
+| D23-4 | Examples: U*XU extreme; ½(U₁*XU₁+U₂*XU₂) not; Tr(X)I not; diag not | EE `unitary_conjugation_extreme`, `avg2_not_extreme` (needs U₁, U₂ linearly independent; `avg2_proportional_extreme` otherwise), `tr_map_not_extreme` (the map is X ↦ Tr(X)I_d/d), `diag_not_extreme` | ~ |
 
 ## Part IV: Operator systems, Arveson, entanglement (Days 24–28)
 
@@ -272,7 +272,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D25-1 | f ↦ Φ_f, S_Φ ↔ Φ mutual inverses; CP(S,M_d) ≅ P(M_d(S),ℂ) affinely | AC `arveson_map` (Φ_f), `arveson_functional_of_map`, `arveson_map_of_functional`, `arveson_correspondence` (onto the positive functionals), `arveson_functional_affine`, `arveson_functional_unital` (unital ↦ state) | ✓ |
 | D25-2 | bounded functionals, ‖f‖ | MT `bounded_clinear_functional_on` | ✓ |
 | D25-3 | Hahn–Banach: norm-preserving extension of a bounded linear functional | MT `matrix_hahn_banach_lmat`, `matrix_hahn_banach_lmat_with_bound` (complex HB on matrix spaces, derived from HOL-Hahn_Banach via Bohnenblust–Sobczyk) | ✓ |
-| D25-4 | Proposition: f(I) = 1 ⟹ (f positive iff ‖f‖ = 1) | ✗ | ✗ |
+| D25-4 | Proposition: f(I) = 1 ⟹ (f positive iff ‖f‖ = 1) | UFN `unital_positive_iff_norm_one` (operator norm `op_norm`, functional norm `fun_norm`; proved without the spectral theorem via P² ≤ ‖P‖P) | ✓ |
 
 ### Day 26 (28 Oct): Arveson extension proof; separability defined
 | id | notes | formal | status |
@@ -401,7 +401,7 @@ A12 D32-1 rename `shor_zero/one` → `phase_code_zero/one`. DONE.
 Priority B (medium):
 B1 D8-3 unambiguous discrimination of linearly independent states. DONE (`lin_indep_states_unambiguous`, new proof via dual vectors).
 B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving. DONE (`Day18_Positive_Maps`).
-B3 D19-1 n-positive ⟹ Choi matrix psd; D19-3 Choi-matrix form of TP/unital.
+B3 D19-1 n-positive ⟹ Choi matrix psd; D19-3 Choi-matrix form of TP/unital. DONE (`Day19_Choi_TP_Unital`).
 B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error. DONE (`Day30_BitFlip_Code`).
 B5 D32-7 Pauli expansion identity for unitaries. DONE (`Day32_Pauli_Expansion`).
 B6 D11-3 SWAP from three CNOTs (DONE, `Day02_11_Supplement`); D10-1 superdense coding table.

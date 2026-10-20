@@ -52,6 +52,9 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day29_Classical_Codes
     Day31_Code_Fidelity
     Day32_Y_Code
+    Day19_Choi_TP_Unital
+    Day23_Extremality_Examples
+    Day25_Unital_Functional_Norm
 
 session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
   description "
@@ -108,6 +111,9 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day29_Classical_Codes
     Vern_Paulsen_QC.Day31_Code_Fidelity
     Vern_Paulsen_QC.Day32_Y_Code
+    Vern_Paulsen_QC.Day19_Choi_TP_Unital
+    Vern_Paulsen_QC.Day23_Extremality_Examples
+    Vern_Paulsen_QC.Day25_Unital_Functional_Norm
     Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier

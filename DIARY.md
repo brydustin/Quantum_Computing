@@ -124,3 +124,21 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   list [a..b], its k-th entry is e^{2πijk/2^b} (the binary digits of k pick the factors), so
   `ordered_QFT n = fourier (2^n)` and phase estimation runs on the AFP circuit.
 
+## Third gap-closure pass, 2026-10-19 (D19-3, D23-4, D25-4)
+
+- **Day 19 Choi-matrix form of TP/unital (D19-3).**  Trace preserving iff Tr R_ij = δ_ij, unital
+  iff Σ_i R_ii = I, with R_ij = Φ(E_ij) the blocks of the Choi matrix (`choi_block`); proved
+  through the expansion X = Σ x_ij E_ij (`lin_expansion`) and matrix sums `msum`.
+- **Day 23 examples (D23-4).**  Two of the notes' four claims need hypotheses: the average
+  ½(U₁*XU₁ + U₂*XU₂) is not extreme when U₁, U₂ are linearly independent
+  (`avg2_not_extreme`), but is extreme when U₂ = zU₁ with |z| = 1 (`avg2_proportional_extreme`);
+  and X ↦ Tr(X)I_d is not trace preserving — the CPTP map is X ↦ Tr(X)I_d/d (`tr_kraus_map`),
+  not extreme for d ≥ 2.  U*XU is extreme and the diagonal map is not (n ≥ 2).
+- **Day 25 norm proposition (D25-4), a different route.**  For f(I) = 1 on an operator system,
+  positive iff ‖f‖ = 1.  The notes use the spectral theorem; the formalisation avoids it:
+  for P ≥ 0, P² ≤ ‖P‖P via `psd_sqrt`, and ‖P − sI + itI‖² ≤ s² + t² gives the bound, with
+  Hermitian/anti-Hermitian parts handled by `herm_bound`.  Norms are the operator norm on
+  the carrier (`op_norm`, a `Sup` over the unit ball) and `fun_norm`.
+- **Audit after this pass:** ✓134 ~22 ✗3 –11 of 170 (D23-4 is ~ because of the corrected
+  hypotheses).  Remaining ✗: D26-1, D27-2, D5-1.
+

@@ -5548,8 +5548,8 @@ blocks $\Phi(E_{ij})$); \<open>choi_theorem\<close> is (1)$\Leftrightarrow$(3),
 The step (2)$\Rightarrow$(3) is the observation that $P_\Phi=\Phi^{(n)}((E_{ij}))$ with
 $(E_{ij})\ge0$ (\<open>choi_matrix_as_amplification\<close>).  Linearity of $\Phi$ is assumed on the
 carrier $M_n$ (additivity and homogeneity hypotheses).  The trace-preserving case is
-\<open>choi_kraus_cptp\<close>; notes (4) and (5) in Choi-matrix form are not stated separately
-(audit item D19-3).\<close>
+\<open>choi_kraus_cptp\<close>; notes (4) and (5) in Choi-matrix form are \<open>choi_trace_preserving_iff\<close>
+and \<open>choi_unital_iff\<close> in theory Day19\_Choi\_TP\_Unital.\<close>
 
 definition choi_matrix :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
   "choi_matrix n d \<Phi> \<equiv>

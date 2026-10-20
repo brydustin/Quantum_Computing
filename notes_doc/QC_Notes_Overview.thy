@@ -26,6 +26,9 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day29_Classical_Codes
     Vern_Paulsen_QC.Day31_Code_Fidelity
     Vern_Paulsen_QC.Day32_Y_Code
+    Vern_Paulsen_QC.Day19_Choi_TP_Unital
+    Vern_Paulsen_QC.Day23_Extremality_Examples
+    Vern_Paulsen_QC.Day25_Unital_Functional_Norm
     Vern_Paulsen_QC_Algorithms.HHL
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
@@ -68,7 +71,10 @@ reuse earlier infrastructure.  The table gives the correspondence.
 2--11  & basis-independent projections, tensor coordinates, non-orthogonal states, a Bell measurement, SWAP from CNOTs & \texttt{Day02\_11\_Supplement}\\
 29--30 & the notes' Hamming code, the $[7,4,3]$ code, undetected-error probabilities & \texttt{Day29\_Classical\_Codes}\\
 31     & the bit-flip code against independent flips: $R\circ E$, minimum fidelities & \texttt{Day31\_Code\_Fidelity}\\
-32     & the code for $Y$ flips; codes with orthogonal error images & \texttt{Day32\_Y\_Code}\\\hline
+32     & the code for $Y$ flips; codes with orthogonal error images & \texttt{Day32\_Y\_Code}\\
+19     & trace preservation and unitality read off the Choi matrix & \texttt{Day19\_Choi\_TP\_Unital}\\
+23     & extreme and non-extreme CPTP maps: $U^*XU$, averages, $\Tr(X)I/d$, diagonals & \texttt{Day23\_Extremality\_Examples}\\
+25     & a unital functional is positive iff it has norm one & \texttt{Day25\_Unital\_Functional\_Norm}\\\hline
 --     & functional calculus $g(A)$ for Hermitian $A$; $e^{itA}$, $A^{-1}$ & \texttt{Hermitian\_Functional\_Calculus}\\
 --     & Fourier matrix, phase kickback, phase estimation (exact; $\ge4/\pi^2$) & \texttt{Phase\_Estimation}\\
 --     & the AFP circuit \<open>ordered_QFT\<close> is the Fourier matrix $F_{2^n}$ & \texttt{QFT\_Fourier}\\
