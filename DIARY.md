@@ -141,4 +141,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   the carrier (`op_norm`, a `Sup` over the unit ball) and `fun_norm`.
 - **Audit after this pass:** ✓134 ~22 ✗3 –11 of 170 (D23-4 is ~ because of the corrected
   hypotheses).  Remaining ✗: D26-1, D27-2, D5-1.
+- **Inexact phase estimation** (`HHL_Approximate`).  Register sums Σ_j |j⟩ ⊗ f_j (`reg_sum`):
+  block operators act branch by branch, branches are orthogonal.  For an eigenvector u with
+  eigenvalue λ not a register value, W(u_N ⊗ u ⊗ w) = α ⊗ u ⊗ w for every ancilla w, so
+  output − ideal = W*(Σ_j α_j |j⟩ ⊗ u ⊗ (R(C/λ_j)|0⟩ − R(C/λ)|0⟩)) and
+  ‖output − ideal‖² = ‖u‖² Σ_j |α_j|² ((√(1−c_j²) − √(1−c²))² + (c_j − c)²), c_j = C/λ_j, c = C/λ
+  (`hhl_approx_error`, `hhl_approx_error_real`): an exact identity, no inequality.  For the
+  bound: Σ_j |α_j|² = 1 (`pe_amp_sum_sq`, α = F*b with b unit) and |α_j| ≤ 1/(2N|δ_j|) for
+  δ_j = φ − j/N (`pe_amp_tail`).  Still open: combining them with a Lipschitz bound on
+  c ↦ R(c)|0⟩ (which needs C/λ bounded away from 1) into an explicit ε(N, t₀, κ).
 

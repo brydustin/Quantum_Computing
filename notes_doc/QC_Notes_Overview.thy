@@ -29,7 +29,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day19_Choi_TP_Unital
     Vern_Paulsen_QC.Day23_Extremality_Examples
     Vern_Paulsen_QC.Day25_Unital_Functional_Norm
-    Vern_Paulsen_QC_Algorithms.HHL
+    Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -79,6 +79,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & Fourier matrix, phase kickback, phase estimation (exact; $\ge4/\pi^2$) & \texttt{Phase\_Estimation}\\
 --     & the AFP circuit \<open>ordered_QFT\<close> is the Fourier matrix $F_{2^n}$ & \texttt{QFT\_Fourier}\\
 --     & the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
+--     & inexact phase estimation: output vs.\ ideal output, $\sum_j|\alpha_j|^2=1$, tail bound & \texttt{HHL\_Approximate}\\
 \end{tabular}
 \end{center}
 

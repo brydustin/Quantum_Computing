@@ -66,6 +66,7 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     Phase_Estimation
     QFT_Fourier
     HHL
+    HHL_Approximate
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
@@ -118,5 +119,6 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
     Vern_Paulsen_QC_Algorithms.HHL
+    Vern_Paulsen_QC_Algorithms.HHL_Approximate
   document_files
     "root.tex"
