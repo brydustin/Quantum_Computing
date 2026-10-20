@@ -1,0 +1,625 @@
+theory HHL
+  imports Phase_Estimation
+begin
+
+section \<open>The HHL algorithm\<close>
+
+text \<open>Harrow, Hassidim and Lloyd's algorithm for $Ax=b$, $A$ Hermitian: phase estimation of
+$e^{it_0A}$ writes the eigenvalue $\lambda$ of each eigencomponent into a register, a rotation
+controlled by the register puts $C/\lambda$ into the amplitude of an ancilla $\ket1$, and phase
+estimation is undone.  Measuring the ancilla in $\ket1$ leaves the system in
+$A^{-1}b/\norm{A^{-1}b}$.  The space is register $\otimes$ (system $\otimes$ ancilla).\<close>
+
+subsection \<open>Block-diagonal controlled operations\<close>
+
+text \<open>$\sum_k\ket k\bra k\otimes B_k$ on $\C^N\otimes\C^m$.\<close>
+
+definition ctrl_blocks :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
+  "ctrl_blocks N m B = Matrix.mat (N * m) (N * m)
+     (\<lambda>(r, c). if r div m = c div m then B (r div m) $$ (r mod m, c mod m) else 0)"
+
+lemma ctrl_blocks_carrier [simp]: "ctrl_blocks N m B \<in> carrier_mat (N * m) (N * m)"
+  by (simp add: ctrl_blocks_def)
+
+lemma dim_ctrl_blocks [simp]: "dim_row (ctrl_blocks N m B) = N * m" "dim_col (ctrl_blocks N m B) = N * m"
+  by (simp_all add: ctrl_blocks_def)
+
+lemma ctrl_blocks_index:
+  "r < N * m \<Longrightarrow> c < N * m \<Longrightarrow>
+   ctrl_blocks N m B $$ (r, c) = (if r div m = c div m then B (r div m) $$ (r mod m, c mod m) else 0)"
+  by (simp add: ctrl_blocks_def)
+
+lemma ctrl_pow_blocks: "ctrl_pow N m U = ctrl_blocks N m (\<lambda>k. U ^\<^sub>m k)"
+  by (simp add: ctrl_pow_def ctrl_blocks_def)
+
+lemma div_mod_eq_iff:
+  fixes r c m :: nat
+  shows "r = c \<longleftrightarrow> r div m = c div m \<and> r mod m = c mod m"
+  by (metis div_mult_mod_eq)
+
+lemma ctrl_blocks_cong:
+  assumes "\<And>k. k < N \<Longrightarrow> B k = B' k"
+  shows "ctrl_blocks N m B = ctrl_blocks N m B'"
+proof (rule eq_matI)
+  fix r c assume "r < dim_row (ctrl_blocks N m B')" "c < dim_col (ctrl_blocks N m B')"
+  hence r: "r < N * m" and c: "c < N * m" by simp_all
+  have "r div m < N" using r by (simp add: less_mult_imp_div_less)
+  thus "ctrl_blocks N m B $$ (r, c) = ctrl_blocks N m B' $$ (r, c)"
+    using r c assms by (simp add: ctrl_blocks_index)
+qed simp_all
+
+lemma ctrl_blocks_one: "ctrl_blocks N m (\<lambda>_. 1\<^sub>m m) = 1\<^sub>m (N * m)"
+proof (rule eq_matI)
+  fix r c assume "r < dim_row (1\<^sub>m (N * m) :: complex Matrix.mat)" "c < dim_col (1\<^sub>m (N * m) :: complex Matrix.mat)"
+  hence r: "r < N * m" and c: "c < N * m" by simp_all
+  hence m: "0 < m" by (cases m) auto
+  show "ctrl_blocks N m (\<lambda>_. 1\<^sub>m m) $$ (r, c) = 1\<^sub>m (N * m) $$ (r, c)"
+    using r c m div_mod_eq_iff[of r c m] by (auto simp: ctrl_blocks_index)
+qed simp_all
+
+lemma sum_if_const: "(\<Sum>i\<in>A. if P then f i else 0) = (if P then (\<Sum>i\<in>A. f i) else 0)"
+  by (cases P) simp_all
+
+lemma tensor_unit_index:
+  assumes "k' < N" "i' < m" "dim_vec w = m"
+  shows "tensor_vec (unit_vec N k) w $ (k' * m + i') = (if k' = k then w $ i' else 0)"
+  using tensor_vec_index[of "unit_vec N k" N w m "k' * m + i'"] block_index[OF assms(1,2)] assms
+  by (simp add: unit_vec_def)
+
+lemma ctrl_blocks_col_index:
+  assumes "r < N * m" "k' < N" "i' < m"
+  shows "ctrl_blocks N m B $$ (r, k' * m + i') = (if r div m = k' then B k' $$ (r mod m, i') else 0)"
+  using block_index[OF assms(2,3)] assms(1) by (auto simp: ctrl_blocks_index)
+
+lemma ctrl_blocks_row_index:
+  assumes "c < N * m" "k' < N" "i' < m"
+  shows "ctrl_blocks N m B $$ (k' * m + i', c) = (if k' = c div m then B k' $$ (i', c mod m) else 0)"
+  using block_index[OF assms(2,3)] assms(1) by (auto simp: ctrl_blocks_index)
+
+text \<open>On a basis state of the register, $\sum_k\ket k\bra k\otimes B_k$ applies $B_k$.\<close>
+
+lemma ctrl_blocks_basis:
+  assumes k: "k < N" and w: "dim_vec w = m" and B: "B k \<in> carrier_mat m m"
+  shows "ctrl_blocks N m B *\<^sub>v tensor_vec (unit_vec N k) w = tensor_vec (unit_vec N k) (B k *\<^sub>v w)"
+proof -
+  have dt: "dim_vec (tensor_vec (unit_vec N k) w) = N * m" by (rule tensor_vec_dim) (simp_all add: w)
+  have dt2: "dim_vec (tensor_vec (unit_vec N k) (B k *\<^sub>v w)) = N * m"
+    by (rule tensor_vec_dim) (use B in simp_all)
+  show ?thesis
+  proof (rule eq_vecI)
+    fix r assume "r < dim_vec (tensor_vec (unit_vec N k) (B k *\<^sub>v w))"
+    hence r: "r < N * m" using dt2 by simp
+    hence m: "0 < m" by (cases m) auto
+    define k1 i where "k1 = r div m" and "i = r mod m"
+    have k1: "k1 < N" unfolding k1_def using r by (simp add: less_mult_imp_div_less)
+    have i: "i < m" unfolding i_def using m by simp
+    have Bd: "dim_row (B k) = m" "dim_col (B k) = m" using B by auto
+    have "(ctrl_blocks N m B *\<^sub>v tensor_vec (unit_vec N k) w) $ r =
+          (\<Sum>c<N * m. ctrl_blocks N m B $$ (r, c) * tensor_vec (unit_vec N k) w $ c)"
+      using r dt by (simp add: scalar_prod_def atLeast0LessThan)
+    also have "\<dots> = (\<Sum>k'<N. \<Sum>i'<m. ctrl_blocks N m B $$ (r, k' * m + i') *
+                                       tensor_vec (unit_vec N k) w $ (k' * m + i'))"
+      by (rule sum_blocks)
+    also have "\<dots> = (\<Sum>k'<N. if k' = k \<and> k1 = k then (\<Sum>i'<m. B k $$ (i, i') * w $ i') else 0)"
+    proof (rule sum.cong[OF refl])
+      fix k' assume "k' \<in> {..<N}"
+      hence k': "k' < N" by simp
+      have "(\<Sum>i'<m. ctrl_blocks N m B $$ (r, k' * m + i') * tensor_vec (unit_vec N k) w $ (k' * m + i')) =
+            (\<Sum>i'<m. if k' = k \<and> k1 = k then B k $$ (i, i') * w $ i' else 0)"
+        by (rule sum.cong[OF refl])
+           (auto simp: ctrl_blocks_col_index[OF r k'] tensor_unit_index[OF k' _ w] k1_def i_def)
+      also have "\<dots> = (if k' = k \<and> k1 = k then (\<Sum>i'<m. B k $$ (i, i') * w $ i') else 0)"
+        by (rule sum_if_const)
+      finally show "(\<Sum>i'<m. ctrl_blocks N m B $$ (r, k' * m + i') * tensor_vec (unit_vec N k) w $ (k' * m + i')) =
+            (if k' = k \<and> k1 = k then (\<Sum>i'<m. B k $$ (i, i') * w $ i') else 0)" .
+    qed
+    also have "\<dots> = (if k1 = k then (\<Sum>i'<m. B k $$ (i, i') * w $ i') else 0)" using k by auto
+    also have "\<dots> = (if k1 = k then (B k *\<^sub>v w) $ i else 0)"
+      using k i Bd w by (simp add: scalar_prod_def atLeast0LessThan)
+    also have "\<dots> = tensor_vec (unit_vec N k) (B k *\<^sub>v w) $ r"
+      using tensor_vec_index[of "unit_vec N k" N "B k *\<^sub>v w" m r] r Bd k1
+      by (simp add: k1_def i_def unit_vec_def)
+    finally show "(ctrl_blocks N m B *\<^sub>v tensor_vec (unit_vec N k) w) $ r =
+                  tensor_vec (unit_vec N k) (B k *\<^sub>v w) $ r" .
+  qed (use dt2 in simp)
+qed
+
+lemma ctrl_blocks_dagger:
+  assumes B: "\<And>k. k < N \<Longrightarrow> B k \<in> carrier_mat m m"
+  shows "(ctrl_blocks N m B)\<^sup>\<dagger> = ctrl_blocks N m (\<lambda>k. (B k)\<^sup>\<dagger>)"
+proof (rule eq_matI)
+  fix r c assume "r < dim_row (ctrl_blocks N m (\<lambda>k. (B k)\<^sup>\<dagger>))" "c < dim_col (ctrl_blocks N m (\<lambda>k. (B k)\<^sup>\<dagger>))"
+  hence r: "r < N * m" and c: "c < N * m" by simp_all
+  hence m: "0 < m" by (cases m) auto
+  have rN: "r div m < N" using r by (simp add: less_mult_imp_div_less)
+  have Bd: "dim_row (B (r div m)) = m" "dim_col (B (r div m)) = m" using B[OF rN] by auto
+  show "(ctrl_blocks N m B)\<^sup>\<dagger> $$ (r, c) = ctrl_blocks N m (\<lambda>k. (B k)\<^sup>\<dagger>) $$ (r, c)"
+    using r c m Bd by (auto simp: dagger_def ctrl_blocks_index)
+qed (simp_all add: dagger_def)
+
+lemma ctrl_blocks_mult:
+  assumes B1: "\<And>k. k < N \<Longrightarrow> B1 k \<in> carrier_mat m m" and B2: "\<And>k. k < N \<Longrightarrow> B2 k \<in> carrier_mat m m"
+  shows "ctrl_blocks N m B1 * ctrl_blocks N m B2 = ctrl_blocks N m (\<lambda>k. B1 k * B2 k)"
+proof (rule eq_matI)
+  fix r c assume "r < dim_row (ctrl_blocks N m (\<lambda>k. B1 k * B2 k))" "c < dim_col (ctrl_blocks N m (\<lambda>k. B1 k * B2 k))"
+  hence r: "r < N * m" and c: "c < N * m" by simp_all
+  hence m: "0 < m" by (cases m) auto
+  define k i j where "k = r div m" and "i = r mod m" and "j = c mod m"
+  have k: "k < N" unfolding k_def using r by (simp add: less_mult_imp_div_less)
+  have i: "i < m" and j: "j < m" unfolding i_def j_def using m by simp_all
+  have Bd: "dim_row (B1 k) = m" "dim_col (B1 k) = m" "dim_row (B2 k) = m" "dim_col (B2 k) = m"
+    using B1[OF k] B2[OF k] by auto
+  have "(ctrl_blocks N m B1 * ctrl_blocks N m B2) $$ (r, c) =
+        (\<Sum>x<N * m. ctrl_blocks N m B1 $$ (r, x) * ctrl_blocks N m B2 $$ (x, c))"
+    using r c by (simp add: scalar_prod_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>k'<N. \<Sum>i'<m. ctrl_blocks N m B1 $$ (r, k' * m + i') * ctrl_blocks N m B2 $$ (k' * m + i', c))"
+    by (rule sum_blocks)
+  also have "\<dots> = (\<Sum>k'<N. if k' = k \<and> c div m = k then (\<Sum>i'<m. B1 k $$ (i, i') * B2 k $$ (i', j)) else 0)"
+  proof (rule sum.cong[OF refl])
+    fix k' assume "k' \<in> {..<N}"
+    hence k': "k' < N" by simp
+    have "(\<Sum>i'<m. ctrl_blocks N m B1 $$ (r, k' * m + i') * ctrl_blocks N m B2 $$ (k' * m + i', c)) =
+          (\<Sum>i'<m. if k' = k \<and> c div m = k then B1 k $$ (i, i') * B2 k $$ (i', j) else 0)"
+      by (rule sum.cong[OF refl])
+         (auto simp: ctrl_blocks_col_index[OF r k'] ctrl_blocks_row_index[OF c k'] k_def i_def j_def)
+    also have "\<dots> = (if k' = k \<and> c div m = k then (\<Sum>i'<m. B1 k $$ (i, i') * B2 k $$ (i', j)) else 0)"
+      by (rule sum_if_const)
+    finally show "(\<Sum>i'<m. ctrl_blocks N m B1 $$ (r, k' * m + i') * ctrl_blocks N m B2 $$ (k' * m + i', c)) =
+          (if k' = k \<and> c div m = k then (\<Sum>i'<m. B1 k $$ (i, i') * B2 k $$ (i', j)) else 0)" .
+  qed
+  also have "\<dots> = (if c div m = k then (\<Sum>i'<m. B1 k $$ (i, i') * B2 k $$ (i', j)) else 0)" using k by auto
+  also have "\<dots> = (if r div m = c div m then (B1 k * B2 k) $$ (i, j) else 0)"
+    using k i j Bd by (auto simp: scalar_prod_def atLeast0LessThan k_def)
+  also have "\<dots> = ctrl_blocks N m (\<lambda>k. B1 k * B2 k) $$ (r, c)"
+    using r c by (simp add: ctrl_blocks_index k_def i_def j_def)
+  finally show "(ctrl_blocks N m B1 * ctrl_blocks N m B2) $$ (r, c) = ctrl_blocks N m (\<lambda>k. B1 k * B2 k) $$ (r, c)" .
+qed simp_all
+
+lemma ctrl_blocks_unitary:
+  assumes B: "\<And>k. k < N \<Longrightarrow> B k \<in> carrier_mat m m" and u: "\<And>k. k < N \<Longrightarrow> unitary (B k)"
+  shows "unitary (ctrl_blocks N m B)"
+proof -
+  have Bd: "\<And>k. k < N \<Longrightarrow> (B k)\<^sup>\<dagger> \<in> carrier_mat m m" using B dagger_carrier by blast
+  have D: "(ctrl_blocks N m B)\<^sup>\<dagger> = ctrl_blocks N m (\<lambda>k. (B k)\<^sup>\<dagger>)"
+    by (rule ctrl_blocks_dagger) (simp add: B)
+  have "(ctrl_blocks N m B)\<^sup>\<dagger> * ctrl_blocks N m B = ctrl_blocks N m (\<lambda>k. (B k)\<^sup>\<dagger> * B k)"
+    unfolding D by (rule ctrl_blocks_mult) (simp_all add: B Bd)
+  also have "\<dots> = ctrl_blocks N m (\<lambda>_. 1\<^sub>m m)"
+    by (rule ctrl_blocks_cong) (use B u in \<open>auto simp: unitary_def\<close>)
+  finally have l: "(ctrl_blocks N m B)\<^sup>\<dagger> * ctrl_blocks N m B = 1\<^sub>m (N * m)" by (simp add: ctrl_blocks_one)
+  have "ctrl_blocks N m B * ((ctrl_blocks N m B)\<^sup>\<dagger>) = ctrl_blocks N m (\<lambda>k. B k * ((B k)\<^sup>\<dagger>))"
+    unfolding D by (rule ctrl_blocks_mult) (simp_all add: B Bd)
+  also have "\<dots> = ctrl_blocks N m (\<lambda>_. 1\<^sub>m m)"
+    by (rule ctrl_blocks_cong) (use B u in \<open>auto simp: unitary_def\<close>)
+  finally have r: "ctrl_blocks N m B * ((ctrl_blocks N m B)\<^sup>\<dagger>) = 1\<^sub>m (N * m)" by (simp add: ctrl_blocks_one)
+  show ?thesis unfolding unitary_def using l r by simp
+qed
+
+lemma unitary_pow:
+  assumes U: "U \<in> carrier_mat m m" and u: "unitary U"
+  shows "unitary (U ^\<^sub>m k)"
+proof (induction k)
+  case 0
+  show ?case by (simp add: id_is_unitary)
+next
+  case (Suc k)
+  have "unitary (U ^\<^sub>m k * U)" by (rule unitary_mult[OF Suc u pow_carrier_mat[OF U] U])
+  thus ?case by simp
+qed
+
+subsection \<open>The circuit\<close>
+
+text \<open>The ancilla rotation $R(c)\ket0=\sqrt{1-c^2}\ket0+c\ket1$.\<close>
+
+definition rot :: "real \<Rightarrow> complex Matrix.mat" where
+  "rot c = Matrix.mat 2 2 (\<lambda>(i, j). if i = j then complex_of_real (sqrt (1 - c\<^sup>2))
+                                     else if i = 1 then complex_of_real c else - complex_of_real c)"
+
+lemma rot_carrier [simp]: "rot c \<in> carrier_mat 2 2"
+  by (simp add: rot_def)
+
+lemma dim_rot [simp]: "dim_row (rot c) = 2" "dim_col (rot c) = 2"
+  by (simp_all add: rot_def)
+
+lemma rot_e0: "rot c *\<^sub>v unit_vec 2 0 =
+  complex_of_real (sqrt (1 - c\<^sup>2)) \<cdot>\<^sub>v unit_vec 2 0 + complex_of_real c \<cdot>\<^sub>v unit_vec 2 1"
+  by (rule eq_vecI) (auto simp: rot_def scalar_prod_def unit_vec_def less_2_cases numeral_2_eq_2)
+
+lemma rot_unitary:
+  assumes c: "\<bar>c\<bar> \<le> 1"
+  shows "unitary (rot c)"
+proof -
+  have c2: "0 \<le> 1 - c\<^sup>2" using c by (simp add: abs_square_le_1)
+  have ab: "\<bar>1 - c * c\<bar> = 1 - c * c" using c2 by (simp add: power2_eq_square)
+  have s: "complex_of_real (sqrt (1 - c\<^sup>2)) * complex_of_real (sqrt (1 - c\<^sup>2)) = complex_of_real (1 - c\<^sup>2)"
+    using c2 by (simp flip: of_real_mult)
+  have l: "(rot c)\<^sup>\<dagger> * rot c = 1\<^sub>m 2"
+    by (rule eq_matI)
+       (auto simp: rot_def dagger_def scalar_prod_def less_2_cases numeral_2_eq_2 s ab algebra_simps
+             simp flip: of_real_mult of_real_add)
+  have r: "rot c * ((rot c)\<^sup>\<dagger>) = 1\<^sub>m 2"
+    by (rule eq_matI)
+       (auto simp: rot_def dagger_def scalar_prod_def less_2_cases numeral_2_eq_2 s ab algebra_simps
+             simp flip: of_real_mult of_real_add)
+  show ?thesis unfolding unitary_def using l r by simp
+qed
+
+text \<open>Register value $k$ encodes the eigenvalue $\lambda_k=2\pi k/(t_0N)$, since
+$e^{it_0\lambda_k}=e^{2\pi ik/N}$.\<close>
+
+definition reg_eig :: "real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> real" where
+  "reg_eig t0 N k = 2 * pi * real k / (t0 * real N)"
+
+definition hhl_rot :: "real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "hhl_rot C t0 N n k = 1\<^sub>m n \<Otimes> rot (C / reg_eig t0 N k)"
+
+definition pe_unitary :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "pe_unitary N m V = (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) * ctrl_pow N m V"
+
+definition hhl_W :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "hhl_W A t0 N = pe_unitary N (dim_row A * 2) (evolution A t0 \<Otimes> 1\<^sub>m 2)"
+
+definition hhl_circuit :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat" where
+  "hhl_circuit A t0 N C = (hhl_W A t0 N)\<^sup>\<dagger> * (ctrl_blocks N (dim_row A * 2) (hhl_rot C t0 N (dim_row A)) * hhl_W A t0 N)"
+
+lemma hhl_rot_carrier [simp]: "hhl_rot C t0 N n k \<in> carrier_mat (n * 2) (n * 2)"
+  by (rule carrier_matI) (simp_all add: hhl_rot_def)
+
+lemma pe_unitary_carrier [simp]: "pe_unitary N m V \<in> carrier_mat (N * m) (N * m)"
+  by (rule carrier_matI) (simp_all add: pe_unitary_def)
+
+lemma pe_unitary_unitary:
+  assumes N: "0 < N" and V: "V \<in> carrier_mat m m" "unitary V"
+  shows "unitary (pe_unitary N m V)"
+proof -
+  have F: "unitary (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m)"
+    by (rule tensor_mat_unitary_one_right) (rule unitary_dagger[OF fourier_unitary[OF N]])
+  have Fc: "((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m \<in> carrier_mat (N * m) (N * m)" by (rule carrier_matI) simp_all
+  have C: "unitary (ctrl_pow N m V)"
+    unfolding ctrl_pow_blocks by (rule ctrl_blocks_unitary) (simp_all add: V unitary_pow[OF V])
+  show ?thesis unfolding pe_unitary_def by (rule unitary_mult[OF F C Fc ctrl_pow_carrier])
+qed
+
+text \<open>On $\frac1{\sqrt N}\sum_k\ket k\otimes w$ with $Vw=e^{2\pi ik/N}w$, phase estimation gives $\ket k\otimes w$.\<close>
+
+lemma pe_unitary_exact:
+  assumes N: "0 < N" and k: "k < N" and V: "V \<in> carrier_mat m m" and w: "dim_vec w = m"
+      and ev: "V *\<^sub>v w = cis (2 * pi * (real k / real N)) \<cdot>\<^sub>v w"
+  shows "pe_unitary N m V *\<^sub>v tensor_vec (uniform_state N) w = tensor_vec (unit_vec N k) w"
+proof -
+  have Fc: "((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m \<in> carrier_mat (N * m) (N * m)" by (rule carrier_matI) simp_all
+  have xc: "tensor_vec (uniform_state N) w \<in> carrier_vec (N * m)"
+    by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: uniform_state_def w)
+  have "pe_unitary N m V *\<^sub>v tensor_vec (uniform_state N) w =
+        (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v (ctrl_pow N m V *\<^sub>v tensor_vec (uniform_state N) w)"
+    unfolding pe_unitary_def by (rule assoc_mult_mat_vec[OF Fc ctrl_pow_carrier xc])
+  also have "\<dots> = tensor_vec (Matrix.vec N (pe_amp N (real k / real N))) w"
+    by (rule phase_estimation[OF V w ev])
+  also have "Matrix.vec N (pe_amp N (real k / real N)) = unit_vec N k"
+    by (rule phase_estimation_exact[OF N k])
+  finally show ?thesis .
+qed
+
+lemma unitary_undo:
+  assumes W: "W \<in> carrier_mat K K" "unitary W" and x: "dim_vec x = K" and y: "W *\<^sub>v x = y"
+  shows "W\<^sup>\<dagger> *\<^sub>v y = x"
+proof -
+  have xc: "x \<in> carrier_vec K" using x by (rule carrier_vecI)
+  have "W\<^sup>\<dagger> *\<^sub>v y = (W\<^sup>\<dagger> * W) *\<^sub>v x"
+    unfolding y[symmetric] by (rule assoc_mult_mat_vec[OF dagger_carrier[OF W(1)] W(1) xc, symmetric])
+  also have "W\<^sup>\<dagger> * W = 1\<^sub>m K" using W unfolding unitary_def by auto
+  finally show ?thesis using xc by simp
+qed
+
+subsection \<open>The circuit on an eigenvector\<close>
+
+theorem hhl_eigen:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
+      and k: "k < N" and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real (reg_eig t0 N k) \<cdot>\<^sub>v u"
+  shows "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+         tensor_vec (uniform_state N) (tensor_vec u (rot (C / reg_eig t0 N k) *\<^sub>v unit_vec 2 0))"
+proof -
+  let ?E = "evolution A t0" and ?V = "evolution A t0 \<Otimes> 1\<^sub>m 2" and ?W = "hhl_W A t0 N"
+  let ?CR = "ctrl_blocks N (n * 2) (hhl_rot C t0 N n)" and ?r = "rot (C / reg_eig t0 N k) *\<^sub>v unit_vec 2 0"
+  have nA: "dim_row A = n" using A(1) by simp
+  have Ec: "?E \<in> carrier_mat n n" using A by (rule evolution_carrier)
+  have Vc: "?V \<in> carrier_mat (n * 2) (n * 2)" using Ec by (intro carrier_matI) auto
+  have Vu: "unitary ?V" by (rule tensor_mat_unitary_one_right) (rule evolution_unitary[OF A])
+  have W: "?W = pe_unitary N (n * 2) ?V" unfolding hhl_W_def nA ..
+  have Wc: "?W \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" unfolding W by simp
+  have Wu: "unitary ?W" unfolding W by (rule pe_unitary_unitary[OF N Vc Vu])
+  have phase: "cis (t0 * reg_eig t0 N k) = cis (2 * pi * (real k / real N))"
+    using t0 N by (simp add: reg_eig_def)
+  have Vev: "?V *\<^sub>v tensor_vec u v = cis (2 * pi * (real k / real N)) \<cdot>\<^sub>v tensor_vec u v"
+    if v: "dim_vec v = 2" for v
+  proof -
+    have "?V *\<^sub>v tensor_vec u v = tensor_vec (?E *\<^sub>v u) (1\<^sub>m 2 *\<^sub>v v)"
+      by (rule tensor_mat_vec_mult[OF Ec one_carrier_mat u v])
+    also have "?E *\<^sub>v u = cis (t0 * reg_eig t0 N k) \<cdot>\<^sub>v u" by (rule evolution_eigen[OF A u ev])
+    also have "1\<^sub>m 2 *\<^sub>v v = v" using carrier_vecI[OF v] by simp
+    finally show ?thesis unfolding phase using tensor_vec_smult_left[OF _ v, of u n] u by simp
+  qed
+  have uv: "dim_vec (tensor_vec u v) = n * 2" if "dim_vec v = 2" for v by (rule tensor_vec_dim[OF u that])
+  have dr: "dim_vec ?r = 2" by simp
+  have s1: "?W *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+        tensor_vec (unit_vec N k) (tensor_vec u (unit_vec 2 0))"
+    unfolding W by (rule pe_unitary_exact[OF N k Vc uv Vev]) simp_all
+  have s2: "?CR *\<^sub>v tensor_vec (unit_vec N k) (tensor_vec u (unit_vec 2 0)) =
+                 tensor_vec (unit_vec N k) (tensor_vec u ?r)"
+  proof -
+    have "?CR *\<^sub>v tensor_vec (unit_vec N k) (tensor_vec u (unit_vec 2 0)) =
+          tensor_vec (unit_vec N k) (hhl_rot C t0 N n k *\<^sub>v tensor_vec u (unit_vec 2 0))"
+      by (rule ctrl_blocks_basis[OF k uv]) simp_all
+    also have "hhl_rot C t0 N n k *\<^sub>v tensor_vec u (unit_vec 2 0) = tensor_vec (1\<^sub>m n *\<^sub>v u) ?r"
+      unfolding hhl_rot_def by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier u]) simp
+    also have "1\<^sub>m n *\<^sub>v u = u" using carrier_vecI[OF u] by simp
+    finally show ?thesis .
+  qed
+  have s3: "?W\<^sup>\<dagger> *\<^sub>v tensor_vec (unit_vec N k) (tensor_vec u ?r) = tensor_vec (uniform_state N) (tensor_vec u ?r)"
+  proof (rule unitary_undo[OF Wc Wu])
+    show "dim_vec (tensor_vec (uniform_state N) (tensor_vec u ?r)) = N * (n * 2)"
+      by (rule tensor_vec_dim) (simp_all add: uniform_state_def uv[OF dr])
+    show "?W *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u ?r) = tensor_vec (unit_vec N k) (tensor_vec u ?r)"
+      unfolding W by (rule pe_unitary_exact[OF N k Vc uv[OF dr] Vev[OF dr]])
+  qed
+  have x0: "tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) \<in> carrier_vec (N * (n * 2))"
+    by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: uniform_state_def uv)
+  have CRc: "?CR \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" by simp
+  have "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+        ?W\<^sup>\<dagger> *\<^sub>v ((?CR * ?W) *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)))"
+    unfolding hhl_circuit_def nA by (rule assoc_mult_mat_vec[OF dagger_carrier[OF Wc] mult_carrier_mat[OF CRc Wc] x0])
+  also have "(?CR * ?W) *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+             ?CR *\<^sub>v (?W *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)))"
+    by (rule assoc_mult_mat_vec[OF CRc Wc x0])
+  finally show ?thesis unfolding s1 s2 s3 .
+qed
+
+subsection \<open>All right-hand sides\<close>
+
+lemma mult_zero_vec_right: "B \<in> carrier_mat K n \<Longrightarrow> B *\<^sub>v 0\<^sub>v n = 0\<^sub>v K"
+  by (rule eq_vecI) (auto simp: scalar_prod_def)
+
+text \<open>Two matrices that agree on every eigenvector of a Hermitian $A$ are equal.\<close>
+
+lemma eigvec_mat_eqI:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+      and B1: "B1 \<in> carrier_mat K n" and B2: "B2 \<in> carrier_mat K n"
+      and eq: "\<And>v l. dim_vec v = n \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow> B1 *\<^sub>v v = B2 *\<^sub>v v"
+  shows "B1 = B2"
+proof -
+  obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
+  note d = spectral_decompD[OF A(1) sd]
+  have BU: "B1 * U = B2 * U"
+  proof (rule Matrix.mat_col_eqI)
+    fix j assume "j < dim_col (B2 * U)"
+    hence j: "j < n" using d(1) by simp
+    have cU: "dim_vec (Matrix.col U j) = n" using d(1) by simp
+    have "Matrix.col (B1 * U) j = B1 *\<^sub>v Matrix.col U j" by (rule col_mult2[OF B1 d(1) j])
+    also have "\<dots> = B2 *\<^sub>v Matrix.col U j" by (rule eq[OF cU spectral_decomp_col[OF A(1) sd j]])
+    also have "\<dots> = Matrix.col (B2 * U) j" by (rule col_mult2[OF B2 d(1) j, symmetric])
+    finally show "Matrix.col (B1 * U) j = Matrix.col (B2 * U) j" .
+  qed (use B1 B2 d(1) in simp_all)
+  have "B1 = (B1 * U) * (U\<^sup>\<dagger>)"
+    using assoc_mult_mat[OF B1 d(1) dagger_carrier[OF d(1)]] d(5) B1 by simp
+  also have "\<dots> = (B2 * U) * (U\<^sup>\<dagger>)" by (simp only: BU)
+  also have "\<dots> = B2"
+    using assoc_mult_mat[OF B2 d(1) dagger_carrier[OF d(1)]] d(5) B2 by simp
+  finally show ?thesis .
+qed
+
+text \<open>The matrix of $b\mapsto a\otimes(M_0b\otimes\ket0+M_1b\otimes\ket1)$.\<close>
+
+definition lift_mat :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "lift_mat n a M0 M1 = Matrix.mat (dim_vec a * (n * 2)) n
+     (\<lambda>(r, s). a $ (r div (n * 2)) *
+        (if r mod 2 = 0 then M0 $$ (r mod (n * 2) div 2, s) else M1 $$ (r mod (n * 2) div 2, s)))"
+
+lemma lift_mat_carrier [simp]: "lift_mat n a M0 M1 \<in> carrier_mat (dim_vec a * (n * 2)) n"
+  by (simp add: lift_mat_def)
+
+lemma lift_mat_mult_vec:
+  assumes M0: "M0 \<in> carrier_mat n n" and M1: "M1 \<in> carrier_mat n n" and b: "dim_vec b = n"
+  shows "lift_mat n a M0 M1 *\<^sub>v b =
+         tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1))"
+proof -
+  let ?N = "dim_vec a"
+  have d0: "dim_vec (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0)) = n * 2" by (rule tensor_vec_dim) (use M0 in simp_all)
+  have d1: "dim_vec (tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) = n * 2" by (rule tensor_vec_dim) (use M1 in simp_all)
+  have dX: "dim_vec (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) = n * 2"
+    using d1 by simp
+  have dt: "dim_vec (tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1))) = ?N * (n * 2)"
+    by (rule tensor_vec_dim[OF refl dX])
+  show ?thesis
+  proof (rule eq_vecI)
+    fix r assume "r < dim_vec (tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)))"
+    hence r: "r < ?N * (n * 2)" using dt by simp
+    hence n: "0 < n" by (cases n) auto
+    define q where "q = r mod (n * 2)"
+    have q: "q < n * 2" unfolding q_def using n by simp
+    have s0: "q div 2 < n" using q by linarith
+    have t: "q mod 2 = r mod 2" unfolding q_def by (simp add: mod_mod_cancel)
+    have Md: "dim_row M0 = n" "dim_col M0 = n" "dim_row M1 = n" "dim_col M1 = n" using M0 M1 by auto
+    have "(lift_mat n a M0 M1 *\<^sub>v b) $ r =
+          (\<Sum>s<n. a $ (r div (n * 2)) * (if r mod 2 = 0 then M0 $$ (q div 2, s) else M1 $$ (q div 2, s)) * b $ s)"
+      unfolding q_def using r b by (simp add: lift_mat_def scalar_prod_def atLeast0LessThan)
+    also have "\<dots> = a $ (r div (n * 2)) * (if r mod 2 = 0 then (M0 *\<^sub>v b) $ (q div 2) else (M1 *\<^sub>v b) $ (q div 2))"
+      using s0 Md b by (simp add: scalar_prod_def atLeast0LessThan sum_distrib_left mult_ac)
+    also have "\<dots> = tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) $ r"
+    proof -
+      have "(tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) $ q =
+            (M0 *\<^sub>v b) $ (q div 2) * unit_vec 2 0 $ (q mod 2) + (M1 *\<^sub>v b) $ (q div 2) * unit_vec 2 1 $ (q mod 2)"
+        using q d1 Md tensor_vec_index[of "M0 *\<^sub>v b" n "unit_vec 2 0" 2 q] tensor_vec_index[of "M1 *\<^sub>v b" n "unit_vec 2 1" 2 q]
+        by simp
+      also have "\<dots> = (if r mod 2 = 0 then (M0 *\<^sub>v b) $ (q div 2) else (M1 *\<^sub>v b) $ (q div 2))"
+        using t by (auto simp: unit_vec_def)
+      finally show ?thesis
+        using tensor_vec_index[OF refl dX r] by (simp add: q_def)
+    qed
+    finally show "(lift_mat n a M0 M1 *\<^sub>v b) $ r =
+      tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) $ r" .
+  qed (use dt in \<open>simp add: lift_mat_def\<close>)
+qed
+
+theorem hhl:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
+      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>k. 0 < k \<and> k < N \<and> l = reg_eig t0 N k"
+      and b: "dim_vec b = n"
+  shows "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec b (unit_vec 2 0)) =
+         tensor_vec (uniform_state N)
+           (tensor_vec (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A *\<^sub>v b) (unit_vec 2 0) +
+            tensor_vec ((complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b) (unit_vec 2 1))"
+proof -
+  let ?G0 = "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A"
+  let ?G1 = "complex_of_real C \<cdot>\<^sub>m herm_inv A"
+  let ?H = "hhl_circuit A t0 N C" and ?u = "uniform_state N"
+  let ?Emb = "lift_mat n ?u (1\<^sub>m n) (0\<^sub>m n n)" and ?Out = "lift_mat n ?u ?G0 ?G1"
+  have du: "dim_vec ?u = N" by (simp add: uniform_state_def)
+  have nA: "dim_row A = n" using A(1) by simp
+  have G0: "?G0 \<in> carrier_mat n n" using A by simp
+  have G1: "?G1 \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
+  have Hc: "?H \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
+    unfolding hhl_circuit_def hhl_W_def nA
+    by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
+  have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
+  have Oc: "?Out \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
+  have emb: "?Emb *\<^sub>v v = tensor_vec ?u (tensor_vec v (unit_vec 2 0))" if v: "dim_vec v = n" for v
+  proof -
+    have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
+    have z: "tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1) = 0\<^sub>v (n * 2)"
+      using vc by (intro eq_vecI) (simp_all add: tensor_vec_index tensor_vec_dim scalar_prod_left_zero)
+    have "?Emb *\<^sub>v v = tensor_vec ?u (tensor_vec (1\<^sub>m n *\<^sub>v v) (unit_vec 2 0) + tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1))"
+      by (rule lift_mat_mult_vec[OF one_carrier_mat zero_carrier_mat v])
+    also have "1\<^sub>m n *\<^sub>v v = v" using vc by simp
+    also note z
+    also have "tensor_vec v (unit_vec 2 0) + 0\<^sub>v (n * 2) = tensor_vec v (unit_vec 2 0)"
+      by (rule right_zero_vec[OF carrier_vecI[OF tensor_vec_dim[OF v]]]) simp
+    finally show ?thesis .
+  qed
+  have HE: "?H * ?Emb = ?Out"
+  proof (rule eigvec_mat_eqI[OF A mult_carrier_mat[OF Hc Ec] Oc])
+    fix v l assume v: "dim_vec v = n" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
+    have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
+    show "(?H * ?Emb) *\<^sub>v v = ?Out *\<^sub>v v"
+    proof (cases "v = 0\<^sub>v n")
+      case True
+      thus ?thesis using mult_zero_vec_right[OF mult_carrier_mat[OF Hc Ec]] mult_zero_vec_right[OF Oc] by simp
+    next
+      case False
+      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_def nA using v ev by (intro CollectI exI[of _ v]) simp
+      then obtain k where k: "0 < k" "k < N" and l: "l = reg_eig t0 N k" using spec by blast
+      have l0: "l \<noteq> 0" using l k t0 N by (simp add: reg_eig_def)
+      let ?c = "C / l" and ?s = "sqrt (1 - (C / l)\<^sup>2)"
+      have "(?H * ?Emb) *\<^sub>v v = ?H *\<^sub>v (?Emb *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Hc Ec vc])
+      also have "\<dots> = tensor_vec ?u (tensor_vec v (rot ?c *\<^sub>v unit_vec 2 0))"
+        unfolding emb[OF v] l by (rule hhl_eigen[OF A t0 N k(2) v ev[unfolded l]])
+      also have "rot ?c *\<^sub>v unit_vec 2 0 = complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0 + complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1"
+        by (rule rot_e0)
+      also have "tensor_vec v (complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0 + complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1) =
+                 tensor_vec (?G0 *\<^sub>v v) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v v) (unit_vec 2 1)"
+      proof -
+        have g0: "?G0 *\<^sub>v v = complex_of_real ?s \<cdot>\<^sub>v v" by (rule mat_fun_eigen[OF A v ev])
+        have g1: "?G1 *\<^sub>v v = complex_of_real ?c \<cdot>\<^sub>v v"
+          using smult_mat_mult_vec[of "herm_inv A" n n v "complex_of_real C"] herm_inv_eigen[OF A v ev]
+                herm_inv_def A v l0
+          by (simp add: smult_smult_assoc divide_inverse)
+        show ?thesis unfolding g0 g1
+          using tensor_vec_bilinear_right[OF v, of "complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0" 2 "complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1"]
+                tensor_vec_smult_right[OF v, of "unit_vec 2 0" 2] tensor_vec_smult_right[OF v, of "unit_vec 2 1" 2]
+                tensor_vec_smult_left[OF v, of "unit_vec 2 0" 2] tensor_vec_smult_left[OF v, of "unit_vec 2 1" 2]
+          by simp
+      qed
+      also have "tensor_vec ?u (tensor_vec (?G0 *\<^sub>v v) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v v) (unit_vec 2 1)) = ?Out *\<^sub>v v"
+        by (rule lift_mat_mult_vec[OF G0 G1 v, symmetric])
+      finally show ?thesis .
+    qed
+  qed
+  have bc: "b \<in> carrier_vec n" using b by (rule carrier_vecI)
+  have "?H *\<^sub>v tensor_vec ?u (tensor_vec b (unit_vec 2 0)) = ?H *\<^sub>v (?Emb *\<^sub>v b)" unfolding emb[OF b] ..
+  also have "\<dots> = (?H * ?Emb) *\<^sub>v b" by (rule assoc_mult_mat_vec[OF Hc Ec bc, symmetric])
+  also have "\<dots> = ?Out *\<^sub>v b" unfolding HE ..
+  also have "\<dots> = tensor_vec ?u (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v b) (unit_vec 2 1))"
+    by (rule lift_mat_mult_vec[OF G0 G1 b])
+  finally show ?thesis .
+qed
+
+text \<open>Reading off the solution: $x=A^{-1}b$ solves $Ax=b$, the ancilla-$\ket1$ part of the output is
+$C\,(u\otimes x\otimes\ket1)$, and its squared norm (the probability of measuring the ancilla in
+$\ket1$) is $C^2\norm x^2$.\<close>
+
+lemma uniform_state_norm: "0 < N \<Longrightarrow> \<langle>uniform_state N|uniform_state N\<rangle> = 1"
+proof -
+  assume N: "0 < N"
+  have "\<langle>uniform_state N|uniform_state N\<rangle> = (\<Sum>i<N. cnj (1 / complex_of_real (sqrt (real N))) * (1 / complex_of_real (sqrt (real N))))"
+    by (simp add: uniform_state_def inner_prod_def scalar_prod_def atLeast0LessThan)
+  also have "\<dots> = of_nat N * (1 / (complex_of_real (sqrt (real N)) * complex_of_real (sqrt (real N))))" by simp
+  also have "\<dots> = 1" using N by (simp add: sqrt_N_sq)
+  finally show ?thesis .
+qed
+
+corollary hhl_solution:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
+      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>k. 0 < k \<and> k < N \<and> l = reg_eig t0 N k"
+      and b: "dim_vec b = n"
+  defines "x \<equiv> herm_inv A *\<^sub>v b"
+  shows "A *\<^sub>v x = b"
+    and "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec b (unit_vec 2 0)) =
+         tensor_vec (uniform_state N) (tensor_vec (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A *\<^sub>v b) (unit_vec 2 0)) +
+         complex_of_real C \<cdot>\<^sub>v tensor_vec (uniform_state N) (tensor_vec x (unit_vec 2 1))"
+    and "\<langle>tensor_vec (uniform_state N) (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1)) |
+          tensor_vec (uniform_state N) (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1))\<rangle> =
+         complex_of_real (C\<^sup>2) * \<langle>x|x\<rangle>"
+proof -
+  let ?G0 = "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A" and ?u = "uniform_state N"
+  have Hi: "herm_inv A \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
+  have bc: "b \<in> carrier_vec n" using b by (rule carrier_vecI)
+  have xd: "dim_vec x = n" unfolding x_def using Hi by simp
+  have du: "dim_vec ?u = N" by (simp add: uniform_state_def)
+  have z: "0 \<notin> herm_spectrum A"
+  proof
+    assume "0 \<in> herm_spectrum A"
+    then obtain k where "0 < k" "k < N" "0 = reg_eig t0 N k" using spec by blast
+    thus False using t0 N by (simp add: reg_eig_def)
+  qed
+  have "A *\<^sub>v x = (A * herm_inv A) *\<^sub>v b" unfolding x_def by (rule assoc_mult_mat_vec[OF A(1) Hi bc, symmetric])
+  also have "A * herm_inv A = 1\<^sub>m n" by (rule herm_inv(2)[OF A z])
+  finally show "A *\<^sub>v x = b" using bc by simp
+  have g1: "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b = complex_of_real C \<cdot>\<^sub>v x"
+    unfolding x_def by (rule smult_mat_mult_vec[OF Hi b])
+  have G0d: "dim_vec (?G0 *\<^sub>v b) = n" using carrier_matD(1)[OF mat_fun_carrier[OF A]] by simp
+  have d0: "dim_vec (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0)) = n * 2" by (rule tensor_vec_dim[OF G0d]) simp
+  have d1: "dim_vec (tensor_vec x (unit_vec 2 1)) = n * 2" by (rule tensor_vec_dim[OF xd]) simp
+  have d1': "dim_vec (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1)) = n * 2" by (rule tensor_vec_dim) (simp_all add: xd)
+  show "hhl_circuit A t0 N C *\<^sub>v tensor_vec ?u (tensor_vec b (unit_vec 2 0)) =
+        tensor_vec ?u (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0)) + complex_of_real C \<cdot>\<^sub>v tensor_vec ?u (tensor_vec x (unit_vec 2 1))"
+  proof -
+    have e1: "tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1) = complex_of_real C \<cdot>\<^sub>v tensor_vec x (unit_vec 2 1)"
+      by (rule tensor_vec_smult_left[OF xd]) simp
+    have d2: "dim_vec (complex_of_real C \<cdot>\<^sub>v tensor_vec x (unit_vec 2 1)) = n * 2" using d1 by simp
+    have "hhl_circuit A t0 N C *\<^sub>v tensor_vec ?u (tensor_vec b (unit_vec 2 0)) =
+          tensor_vec ?u (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0) + complex_of_real C \<cdot>\<^sub>v tensor_vec x (unit_vec 2 1))"
+      unfolding g1[symmetric] e1[symmetric] by (rule hhl[OF A t0 N _ b]) (rule spec)
+    also have "\<dots> = tensor_vec ?u (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0)) +
+                     tensor_vec ?u (complex_of_real C \<cdot>\<^sub>v tensor_vec x (unit_vec 2 1))"
+      by (rule tensor_vec_bilinear_right[OF du d0 d2])
+    also have "tensor_vec ?u (complex_of_real C \<cdot>\<^sub>v tensor_vec x (unit_vec 2 1)) =
+               complex_of_real C \<cdot>\<^sub>v tensor_vec ?u (tensor_vec x (unit_vec 2 1))"
+      by (rule tensor_vec_smult_right[OF du d1])
+    finally show ?thesis .
+  qed
+  have "\<langle>tensor_vec ?u (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1)) |
+         tensor_vec ?u (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1))\<rangle> =
+        \<langle>?u|?u\<rangle> * (\<langle>complex_of_real C \<cdot>\<^sub>v x|complex_of_real C \<cdot>\<^sub>v x\<rangle> * \<langle>unit_vec 2 1|unit_vec 2 1\<rangle>)"
+  proof -
+    have cx: "dim_vec (complex_of_real C \<cdot>\<^sub>v x) = n" using xd by simp
+    have e: "dim_vec (unit_vec 2 1) = 2" by simp
+    show ?thesis unfolding tensor_inner_prod[OF du du d1' d1'] tensor_inner_prod[OF cx cx e e] ..
+  qed
+  also have "\<dots> = complex_of_real (C\<^sup>2) * \<langle>x|x\<rangle>"
+    using uniform_state_norm[OF N] xd
+    by (simp add: inner_prod_def scalar_prod_def unit_vec_def sum_distrib_left power2_eq_square
+                  atLeast0LessThan less_2_cases numeral_2_eq_2 mult_ac)
+  finally show "\<langle>tensor_vec ?u (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1)) |
+         tensor_vec ?u (tensor_vec (complex_of_real C \<cdot>\<^sub>v x) (unit_vec 2 1))\<rangle> = complex_of_real (C\<^sup>2) * \<langle>x|x\<rangle>" .
+qed
+
+end

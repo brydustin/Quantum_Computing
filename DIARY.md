@@ -100,4 +100,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Nφ (mod N) has probability ≥ 4/π² (Jordan's inequality, |e^{ix}−1| = 2|sin(x/2)|).
 - Proof hygiene learned here: `simp` on `carrier_vec_def`/carrier facts and on conditional
   lemmas passed as simp rules can loop; a periodicity lemma f φ = f (φ−1) loops under `simp`.
+- **HHL** (`HHL`).  Space register ⊗ (system ⊗ ancilla), so phase estimation is reused with
+  U = e^{it₀A} ⊗ I₂.  Circuit W*·CR·W with W = (F*⊗I)·CU and CR = Σ_k |k⟩⟨k| ⊗ I ⊗ R(C/λ_k),
+  λ_k = 2πk/(t₀N) (block-diagonal operators `ctrl_blocks`, with adjoint, product, unitarity).
+  Assumption (exact HHL): every eigenvalue of A is some λ_k with 0 < k < N.  Theorem `hhl`:
+  output = uniform ⊗ (√(I−C²A⁻²) b ⊗ |0⟩ + C A⁻¹b ⊗ |1⟩), proved on eigenvectors and extended
+  by `eigvec_mat_eqI` (matrices agreeing on all eigenvectors are equal), so no vector sums over
+  an eigenbasis are needed.  `hhl_solution`: x = A⁻¹b solves Ax = b, the ancilla-|1⟩ part is
+  C·(uniform ⊗ x ⊗ |1⟩) with squared norm C²‖x‖².  Open: the 1/κ² bound for C = λ_min, the
+  non-exact (ε) version, the Hermitian embedding of non-Hermitian A, and the AFP QFT bridge.
 
