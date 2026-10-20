@@ -27,6 +27,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day31_Code_Fidelity
     Vern_Paulsen_QC.Day32_Y_Code
     Vern_Paulsen_QC_Algorithms.HHL
+    Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
 section \<open>Reading guide\<close>
@@ -70,6 +71,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 32     & the code for $Y$ flips; codes with orthogonal error images & \texttt{Day32\_Y\_Code}\\\hline
 --     & functional calculus $g(A)$ for Hermitian $A$; $e^{itA}$, $A^{-1}$ & \texttt{Hermitian\_Functional\_Calculus}\\
 --     & Fourier matrix, phase kickback, phase estimation (exact; $\ge4/\pi^2$) & \texttt{Phase\_Estimation}\\
+--     & the AFP circuit \<open>ordered_QFT\<close> is the Fourier matrix $F_{2^n}$ & \texttt{QFT\_Fourier}\\
 --     & the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
 \end{tabular}
 \end{center}

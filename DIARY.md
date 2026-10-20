@@ -112,11 +112,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   makes g(A) positive).  Register values k ≥ N/2 encode negative eigenvalues 2π(k−N)/(t₀N)
   (`reg_eig`, same phase), so A need only be invertible Hermitian; `herm_embed` handles a general
   invertible A via [[0, A], [A*, 0]] with Ã⁻¹(b ⊕ 0) = 0 ⊕ x.  Open: the non-exact (ε) version and
-  the AFP QFT bridge.
+  the AFP QFT bridge (done below).
 - **The notes PDF was missing 23 theories.**  `root.tex` only `\input` the original theories, so
   everything added by the gap-closure pushes (Day 2–11 supplement, Days 12–34 theories) was
   listed in the overview table but never typeset.  All are now input by lecture, and Part VI is
   typeset as its own part (159 → 229 pages).  Their section titles contain math that lualatex
   cannot put into PDF bookmarks (`\rangle` etc.); `\pdfstringdefDisableCommands` in `root.tex`
   gives plain-text bookmark forms.
+- **AFP Fourier circuit = Fourier matrix** (`QFT_Fourier`).  The AFP's correctness theorem gives
+  the output as a Kronecker product ⊗_{l=1}^n (|0⟩ + e^{2πij/2^l}|1⟩)/√2^n; by induction on the
+  list [a..b], its k-th entry is e^{2πijk/2^b} (the binary digits of k pick the factors), so
+  `ordered_QFT n = fourier (2^n)` and phase estimation runs on the AFP circuit.
 

@@ -61,6 +61,7 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
   theories
     Hermitian_Functional_Calculus
     Phase_Estimation
+    QFT_Fourier
     HHL
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
@@ -109,6 +110,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day32_Y_Code
     Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
+    Vern_Paulsen_QC_Algorithms.QFT_Fourier
     Vern_Paulsen_QC_Algorithms.HHL
   document_files
     "root.tex"

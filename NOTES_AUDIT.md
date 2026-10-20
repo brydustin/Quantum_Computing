@@ -359,9 +359,10 @@ Not part of the notes and not counted in the rows above; session `Vern_Paulsen_Q
 |---|---|
 | `Hermitian_Functional_Calculus` | g(A) for Hermitian A via eigenvectors; = U diag(g∘D) U*; multiplicative, adjoint, unitary for \|g\|=1; e^{itA}; A⁻¹ |
 | `Phase_Estimation` | Fourier matrix unitary; controlled powers, phase kickback; output state; exact case; success ≥ 4/π² |
+| `QFT_Fourier` | the AFP `ordered_QFT n` equals `fourier (2^n)`, so phase estimation runs on the AFP circuit |
 | `HHL` | circuit W*·CR·W; output for every b; Ax = b for x = A⁻¹b, success probability C²‖x‖² ≥ 1/κ²; signed eigenvalues; non-Hermitian A via [[0,A],[A*,0]] |
 
-Open: the non-exact (ε) HHL; `ordered_QFT n = fourier (2^n)` (AFP circuit = Fourier matrix).
+Open: the non-exact (ε) HHL.
 
 ## Infrastructure not in the notes (formalised to make the above possible)
 * BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary`), unitary algebra.
