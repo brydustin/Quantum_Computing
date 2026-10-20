@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`.
 
 ---
 
@@ -71,7 +71,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 4 (2 Sep): Hermitian and positive matrices
 | id | notes | formal | status |
 |---|---|---|---|
-| D4-1 | Hermitian TFAE (a) H = H* (b) U*HU = D real diagonal (c) ONB of eigenvectors, real eigenvalues (d) ⟨x\|Hx⟩ ∈ ℝ | (a)⟹(b) `hermitian_spectral_decomp`; (b)⟹(c) `hermitian_spectral_decomp_right` + `unitary_cols_orthonormal`; (a)⟺(d) `hermitian_iff_real_quad_form`; real eigenvalues `hermitian_real_eigenvalues`.  (b)⟹(a) and (c)⟹(a) only implicitly (`diag_mat_of_real_hermitian`) | ~ |
+| D4-1 | Hermitian TFAE (a) H = H* (b) U*HU = D real diagonal (c) ONB of eigenvectors, real eigenvalues (d) ⟨x\|Hx⟩ ∈ ℝ | (a)⟹(b) `hermitian_spectral_decomp`; (b)⟹(c) `hermitian_spectral_decomp_right` + `unitary_cols_orthonormal`; (a)⟺(d) `hermitian_iff_real_quad_form`; real eigenvalues `hermitian_real_eigenvalues`.  (b)⟹(a) S0429 `unitary_real_diag_imp_hermitian`; (c)⟹(a) S0429 `eigenbasis_real_imp_hermitian` | ✓ |
 | D4-2 | Lemma: ⟨x\|Tx⟩ = 0 ∀x ⟹ T = 0 (fails over ℝ) | QC3 `quadratic_form_zero` (remark on ℝ not needed) | ✓ |
 | D4-3 | P ≥ 0 iff ⟨x\|Px⟩ ≥ 0; P > 0 iff > 0 for x ≠ 0 | QC3 `psd`, `pd` (with `hermitian P` as an explicit conjunct); the notes' form is `psd_iff_quad_form_nonneg` | ✓ |
 | D4-4 | P ≥ 0 iff P = P* and all eigenvalues ≥ 0 | QC3 `psd_iff_nonneg_eigenvalues` | ✓ |
@@ -173,7 +173,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D14-2 | non-uniqueness remark (ρ = XX*) | – | – |
 | D14-3 | ensembles representing \|ψ⟩⟨ψ\| consist of multiples of ψ (pure states) | QC11 `pure_ensemble_parallel`, `pure_density_iff_idempotent` | ✓ |
 | D14-4 | \|ψ⊗φ⟩⟨ψ⊗φ\| = \|ψ⟩⟨ψ\| ⊗ \|φ⟩⟨φ\| | QC11 `tensor_pure_density` | ✓ |
-| D14-5 | composite ensemble density Σ p_i q_l (…⊗…) is a density matrix | QC11 `density_matrix_tensor` (for the product of two densities) | ~ |
+| D14-5 | composite ensemble density Σ p_i q_l (…⊗…) is a density matrix | QC11 `density_matrix_tensor` (product of two densities); S0429 `composite_density_is_dm`: for ensembles {p_i,ψ_i}, {q_j,φ_j}, Σ p_i q_j \|ψ_i⟩⟨ψ_i\| ⊗ \|φ_j⟩⟨φ_j\| (`composite_density`) is a density matrix, being the density of the ensemble {p_i q_j, ψ_i⊗φ_j} (`product_ensemble_ensemble`, `composite_density_eq`, via `outer_sum_tensor`) | ✓ |
 
 ### Day 15 (30 Sep): traces, L(H_A)⊗L(H_B) ≅ L(H_A⊗H_B), partial trace
 | id | notes | formal | status |
@@ -216,7 +216,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 19 (10 Oct): Choi's theorem
 | id | notes | formal | status |
 |---|---|---|---|
-| D19-1 | Choi: (1) CP ⟺ (2) n-positive ⟺ (3) P_Φ = (Φ(E_{ij})) ≥ 0 ⟺ (4) Φ(X) = Σ B_i X B_i* | QC11 `choi_matrix`, `choi_theorem` ((1)⟺(3)), `choi_psd_if_cp`, `kraus_rep_of_psd_choi` ((3)⟹(4)), `kraus_is_cp`/`kraus_cp_no_tp` ((4)⟹(1)).  (2)⟹(3) not isolated: `choi_matrix_as_amplification` is the key step | ~ |
+| D19-1 | Choi: (1) CP ⟺ (2) n-positive ⟺ (3) P_Φ = (Φ(E_{ij})) ≥ 0 ⟺ (4) Φ(X) = Σ B_i X B_i* | QC11 `choi_matrix`, `choi_theorem` ((1)⟺(3)), `choi_psd_if_cp`, `kraus_rep_of_psd_choi` ((3)⟹(4)), `kraus_is_cp`/`kraus_cp_no_tp` ((4)⟹(1)).  (2)⟹(3) S0429 `choi_psd_if_n_positive`; all four conditions together: S0429 `choi_four_conditions` | ✓ |
 | D19-2 | Notes: Choi–Kraus representation, Choi–Jamiołkowski matrix, CP ↔ M_n(M_d)⁺ | `choi_matrix_kraus_eq` (D23), `choi_theorem` | ✓ |
 | D19-3 | TP iff Tr(R_{ij}) = δ_{ij}; unital iff Σ R_{ii} = I (Choi-matrix form) | CTU `choi_trace_preserving_iff`, `choi_unital_iff` (blocks of the Choi matrix via `block_of_mat`; `choi_cptp_iff`, `choi_ucp_iff`) | ✓ |
 
@@ -306,7 +306,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D29-1 | repetition code | QC11 `repetition_encode`, `hamming_dist_repetition_doubles`, `hamming_weight_repetition_encode` | ✓ |
 | D29-2 | parity check detects one error | QC11 `parity_check_encode`, `parity_check_detects_one_error` | ✓ |
 | D29-3 | Hamming [7,1,3] code | CC: the notes' code (`notes_hamming_encode`) detects one error (`notes_hamming_detects_one_error`) but has distance 2 and cannot correct one (`notes_hamming_ambiguous_word`, `notes_hamming_not_correcting`); the standard [7,4,3] code corrects one error (`hamming74_unique_decoding`, `hamming74_corrects_one_error`) | ✓ |
-| D29-4 | Hamming weight, distance of a code, subspace codes | QC11 `hamming_weight`, `hamming_dist`, `code_distance`, `corrects_errors` (definitions; `hamming_dist_zero`, `_symm`) | ~ |
+| D29-4 | Hamming weight, distance of a code, subspace codes | QC11 `hamming_weight`, `hamming_dist`, `code_distance`, `corrects_errors`; S0429 `hamming_dist_triangle`, `subspace_code_distance` (for a code closed under addition mod 2 the distance is the least weight of a nonzero word), `corrects_errors_unique_decoding` (distance ≥ 2t+1: at most one code word within distance t of any received word) | ✓ |
 | D29-5 | left inverses, cyclic codes | – | – |
 
 ### Day 30 (9 Nov): error probabilities; three-qubit bit-flip code
@@ -402,7 +402,7 @@ A12 D32-1 rename `shor_zero/one` → `phase_code_zero/one`. DONE.
 Priority B (medium):
 B1 D8-3 unambiguous discrimination of linearly independent states. DONE (`lin_indep_states_unambiguous`, new proof via dual vectors).
 B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving. DONE (`Day18_Positive_Maps`).
-B3 D19-1 n-positive ⟹ Choi matrix psd; D19-3 Choi-matrix form of TP/unital. DONE (`Day19_Choi_TP_Unital`).
+B3 D19-1 n-positive ⟹ Choi matrix psd (DONE, `Day04_29_Supplement`); D19-3 Choi-matrix form of TP/unital (DONE, `Day19_Choi_TP_Unital`).
 B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error. DONE (`Day30_BitFlip_Code`).
 B5 D32-7 Pauli expansion identity for unitaries. DONE (`Day32_Pauli_Expansion`).
 B6 D11-3 SWAP from three CNOTs (DONE, `Day02_11_Supplement`); D10-1 superdense coding table (DONE, `Day10_15_Supplement`).

@@ -228,5 +228,16 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   after exchanging the factors: `partial_trace_A_as_B` with σ(i m + k) = k p + i (`swap_index`,
   inverse `swap_index p m`); `perm_conj` keeps trace, Hermiticity and positivity, so all three
   A-side lemmas follow from the B side.
-- **Audit after this pass:** ✓141 ~19 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **Variant rows D4-1, D14-5, D19-1, D29-4** (`Day04_29_Supplement`).  D4-1: (b)⟹(a) from
+  H = UDU* and D* = D; (c)⟹(a) via U = mat_of_cols of the eigenbasis, HU = UD.  D19-1: the
+  plan entry claimed Day19 already had "n-positive ⟹ Choi psd"; it did not.  It follows from
+  `choi_matrix_as_amplification` and psd (E_ij) (Day27's `unit_blocks_psd`); `choi_four_conditions`
+  ties CP, n-positivity, psd Choi and Kraus form.  D14-5: the composite ensemble
+  {p_i q_j, ψ_i⊗φ_j} (`product_ensemble`) and |ψ⊗φ⟩⟨ψ⊗φ| = |ψ⟩⟨ψ|⊗|φ⟩⟨φ| (`outer_sum_tensor`).
+  D29-4: distance of a subspace code = least nonzero weight; unique decoding within t errors
+  when the distance is ≥ 2t+1 (the decoding statement behind `corrects_errors`).  Traps: `χ` is
+  reserved syntax (HOL-Analysis vectors); sums over pairs need `split_def`, not
+  `case_prod_beta`; `index_tensor_mat` needs explicit dimensions `[of _ n n _ m m]` when used
+  backwards.
+- **Audit after this pass:** ✓145 ~15 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.
