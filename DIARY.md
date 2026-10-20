@@ -109,5 +109,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   an eigenbasis are needed.  `hhl_solution`: x = A⁻¹b solves Ax = b, the ancilla-|1⟩ part is
   C·(uniform ⊗ x ⊗ |1⟩) with squared norm C²‖x‖².  `hhl_success_bound`: spectrum in [C, Λ] gives
   C²‖A⁻¹b‖² ≥ (C/Λ)²‖b‖², i.e. 1/κ² for C = λ_min (via `mat_fun_psd`: g ≥ 0 on the spectrum
-  makes g(A) positive).  Open: the non-exact (ε) version, the Hermitian embedding of non-Hermitian A, and the AFP QFT bridge.
+  makes g(A) positive).  Register values k ≥ N/2 encode negative eigenvalues 2π(k−N)/(t₀N)
+  (`reg_eig`, same phase), so A need only be invertible Hermitian; `herm_embed` handles a general
+  invertible A via [[0, A], [A*, 0]] with Ã⁻¹(b ⊕ 0) = 0 ⊕ x.  Open: the non-exact (ε) version and
+  the AFP QFT bridge.
 

@@ -244,11 +244,29 @@ proof -
   show ?thesis unfolding unitary_def using l r by simp
 qed
 
-text \<open>Register value $k$ encodes the eigenvalue $\lambda_k=2\pi k/(t_0N)$, since
-$e^{it_0\lambda_k}=e^{2\pi ik/N}$.\<close>
+text \<open>Register value $k$ encodes the eigenvalue $\lambda_k=2\pi k/(t_0N)$ for $k<N/2$ and
+$2\pi(k-N)/(t_0N)$ otherwise (negative eigenvalues), since $e^{it_0\lambda_k}=e^{2\pi ik/N}$.\<close>
 
 definition reg_eig :: "real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> real" where
-  "reg_eig t0 N k = 2 * pi * real k / (t0 * real N)"
+  "reg_eig t0 N k = 2 * pi * (if 2 * k < N then real k else real k - real N) / (t0 * real N)"
+
+lemma reg_eig_phase:
+  assumes t0: "0 < t0" and N: "0 < N"
+  shows "cis (t0 * reg_eig t0 N k) = cis (2 * pi * (real k / real N))"
+proof (cases "2 * k < N")
+  case True
+  thus ?thesis using t0 N by (simp add: reg_eig_def)
+next
+  case False
+  have "t0 * reg_eig t0 N k = 2 * pi * (real k / real N) - 2 * pi"
+    using False t0 N by (simp add: reg_eig_def field_simps)
+  hence "cis (t0 * reg_eig t0 N k) = cis (2 * pi * (real k / real N)) / cis (2 * pi)"
+    by (simp only: cis_divide)
+  thus ?thesis by simp
+qed
+
+lemma reg_eig_nonzero: "0 < t0 \<Longrightarrow> 0 < k \<Longrightarrow> k < N \<Longrightarrow> reg_eig t0 N k \<noteq> 0"
+  by (auto simp: reg_eig_def)
 
 definition hhl_rot :: "real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "hhl_rot C t0 N n k = 1\<^sub>m n \<Otimes> rot (C / reg_eig t0 N k)"
@@ -329,7 +347,7 @@ proof -
   have Wc: "?W \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" unfolding W by simp
   have Wu: "unitary ?W" unfolding W by (rule pe_unitary_unitary[OF N Vc Vu])
   have phase: "cis (t0 * reg_eig t0 N k) = cis (2 * pi * (real k / real N))"
-    using t0 N by (simp add: reg_eig_def)
+    by (rule reg_eig_phase[OF t0 N])
   have Vev: "?V *\<^sub>v tensor_vec u v = cis (2 * pi * (real k / real N)) \<cdot>\<^sub>v tensor_vec u v"
     if v: "dim_vec v = 2" for v
   proof -
@@ -507,7 +525,7 @@ proof -
       case False
       hence "l \<in> herm_spectrum A" unfolding herm_spectrum_def nA using v ev by (intro CollectI exI[of _ v]) simp
       then obtain k where k: "0 < k" "k < N" and l: "l = reg_eig t0 N k" using spec by blast
-      have l0: "l \<noteq> 0" using l k t0 N by (simp add: reg_eig_def)
+      have l0: "l \<noteq> 0" using reg_eig_nonzero[OF t0 k] l by simp
       let ?c = "C / l" and ?s = "sqrt (1 - (C / l)\<^sup>2)"
       have "(?H * ?Emb) *\<^sub>v v = ?H *\<^sub>v (?Emb *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Hc Ec vc])
       also have "\<dots> = tensor_vec ?u (tensor_vec v (rot ?c *\<^sub>v unit_vec 2 0))"
@@ -578,7 +596,7 @@ proof -
   proof
     assume "0 \<in> herm_spectrum A"
     then obtain k where "0 < k" "k < N" "0 = reg_eig t0 N k" using spec by blast
-    thus False using t0 N by (simp add: reg_eig_def)
+    thus False using reg_eig_nonzero[OF t0] by metis
   qed
   have "A *\<^sub>v x = (A * herm_inv A) *\<^sub>v b" unfolding x_def by (rule assoc_mult_mat_vec[OF A(1) Hi bc, symmetric])
   also have "A * herm_inv A = 1\<^sub>m n" by (rule herm_inv(2)[OF A z])
@@ -684,13 +702,13 @@ lemma inner_prod_add_right:
   shows "\<langle>a|b + c\<rangle> = \<langle>a|b\<rangle> + \<langle>a|c\<rangle>"
   using assms by (simp add: inner_prod_def scalar_prod_def sum.distrib algebra_simps)
 
-text \<open>If the spectrum lies in $[C,\Lambda]$ with $C>0$, the probability $C^2\norm{A^{-1}b}^2$ of the
+text \<open>If $C\le|\lambda|\le\Lambda$ on the spectrum, $C>0$, the probability $C^2\norm{A^{-1}b}^2$ of the
 ancilla outcome $\ket1$ is at least $(C/\Lambda)^2\norm b^2$: for unit $b$ and $C=\lambda_{\min}$ this
 is $1/\kappa^2$.\<close>
 
 theorem hhl_success_bound:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and C: "0 < C"
-      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> C \<le> l \<and> l \<le> \<Lambda>"
+      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> C \<le> \<bar>l\<bar> \<and> \<bar>l\<bar> \<le> \<Lambda>"
       and b: "dim_vec b = n"
   shows "(C / \<Lambda>)\<^sup>2 * Re \<langle>b|b\<rangle> \<le> C\<^sup>2 * Re \<langle>herm_inv A *\<^sub>v b|herm_inv A *\<^sub>v b\<rangle>"
 proof -
@@ -703,9 +721,11 @@ proof -
   have psd: "psd ?P"
   proof (rule mat_fun_psd[OF A])
     fix l assume l: "l \<in> herm_spectrum A"
-    have "0 < l" "l \<le> \<Lambda>" using spec[OF l] C by linarith+
-    hence "l\<^sup>2 \<le> \<Lambda>\<^sup>2" by (intro power_mono) simp_all
-    thus "0 \<le> 1 / l\<^sup>2 - 1 / \<Lambda>\<^sup>2" using \<open>0 < l\<close> by (simp add: frac_le)
+    have "0 < \<bar>l\<bar>" "\<bar>l\<bar> \<le> \<Lambda>" using spec[OF l] C by linarith+
+    hence "\<bar>l\<bar>\<^sup>2 \<le> \<Lambda>\<^sup>2" by (intro power_mono) simp_all
+    hence "l\<^sup>2 \<le> \<Lambda>\<^sup>2" by simp
+    moreover have "0 < l\<^sup>2" using \<open>0 < \<bar>l\<bar>\<close> by simp
+    ultimately show "0 \<le> 1 / l\<^sup>2 - 1 / \<Lambda>\<^sup>2" by (simp add: frac_le)
   qed
   have "\<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle> = \<langle>b|?Ai *\<^sub>v (?Ai *\<^sub>v b)\<rangle>"
     using inner_prod_adjoint_swap[OF Ai b Ad] herm_inv_hermitian[OF A] unfolding hermitian_def by simp
@@ -727,6 +747,69 @@ proof -
   hence "1 / \<Lambda>\<^sup>2 * Re \<langle>b|b\<rangle> \<le> Re \<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle>" using e by linarith
   hence "C\<^sup>2 * (1 / \<Lambda>\<^sup>2 * Re \<langle>b|b\<rangle>) \<le> C\<^sup>2 * Re \<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle>" by (rule mult_left_mono) simp
   thus ?thesis by (simp add: power_divide)
+qed
+
+subsection \<open>Non-Hermitian systems\<close>
+
+text \<open>For square $A$, the Hermitian $\tilde A=\begin{pmatrix}0&A\\A^*&0\end{pmatrix}$ has
+$\tilde A(0\oplus x)=b\oplus0$ when $Ax=b$, so HHL applied to $\tilde A$ and $b\oplus0$ returns
+$0\oplus x$.\<close>
+
+definition herm_embed :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "herm_embed A = four_block_mat (0\<^sub>m (dim_row A) (dim_row A)) A (A\<^sup>\<dagger>) (0\<^sub>m (dim_col A) (dim_col A))"
+
+lemma herm_embed_carrier: "A \<in> carrier_mat n n \<Longrightarrow> herm_embed A \<in> carrier_mat (n + n) (n + n)"
+  by (auto simp: herm_embed_def)
+
+lemma zero_dagger: "(0\<^sub>m n m :: complex Matrix.mat)\<^sup>\<dagger> = 0\<^sub>m m n"
+  by (rule eq_matI) (simp_all add: dagger_def)
+
+lemma herm_embed_hermitian:
+  assumes A: "A \<in> carrier_mat n n"
+  shows "hermitian (herm_embed A)"
+proof -
+  have "(herm_embed A)\<^sup>\<dagger> = four_block_mat ((0\<^sub>m n n)\<^sup>\<dagger>) ((A\<^sup>\<dagger>)\<^sup>\<dagger>) (A\<^sup>\<dagger>) ((0\<^sub>m n n)\<^sup>\<dagger>)"
+    unfolding herm_embed_def using A
+    by (simp add: dagger_four_block_mat_complex[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat])
+  also have "\<dots> = herm_embed A" using A by (simp add: herm_embed_def zero_dagger dagger_of_dagger_is_id)
+  finally show ?thesis unfolding hermitian_def .
+qed
+
+lemma zero_mat_mult_vec: "dim_vec v = n \<Longrightarrow> 0\<^sub>m K n *\<^sub>v v = 0\<^sub>v K"
+  by (rule eq_vecI) (auto simp: scalar_prod_def)
+
+lemma herm_embed_solve:
+  assumes A: "A \<in> carrier_mat n n" and x: "dim_vec x = n" and ax: "A *\<^sub>v x = b"
+  shows "herm_embed A *\<^sub>v (0\<^sub>v n @\<^sub>v x) = b @\<^sub>v 0\<^sub>v n"
+proof -
+  have xc: "x \<in> carrier_vec n" by (rule carrier_vecI[OF x])
+  have bc: "b \<in> carrier_vec n" unfolding ax[symmetric] using A xc by simp
+  have "herm_embed A *\<^sub>v (0\<^sub>v n @\<^sub>v x) =
+        (0\<^sub>m n n *\<^sub>v 0\<^sub>v n + A *\<^sub>v x) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v n + 0\<^sub>m n n *\<^sub>v x)"
+    unfolding herm_embed_def using A
+    by (simp add: four_block_mat_mult_vec[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat zero_carrier_vec xc])
+  also have "\<dots> = b @\<^sub>v 0\<^sub>v n"
+    unfolding zero_mat_mult_vec[of "0\<^sub>v n" n n, OF index_zero_vec(2)] zero_mat_mult_vec[OF x, of n]
+              mult_zero_vec_right[OF dagger_carrier[OF A]] ax
+    using bc by simp
+  finally show ?thesis .
+qed
+
+lemma herm_embed_inverse:
+  assumes A: "A \<in> carrier_mat n n" and x: "dim_vec x = n" and ax: "A *\<^sub>v x = b"
+      and z: "0 \<notin> herm_spectrum (herm_embed A)"
+  shows "herm_inv (herm_embed A) *\<^sub>v (b @\<^sub>v 0\<^sub>v n) = 0\<^sub>v n @\<^sub>v x"
+proof -
+  let ?T = "herm_embed A"
+  have T: "?T \<in> carrier_mat (n + n) (n + n)" "hermitian ?T"
+    using herm_embed_carrier[OF A] herm_embed_hermitian[OF A] by auto
+  have Ti: "herm_inv ?T \<in> carrier_mat (n + n) (n + n)" using T unfolding herm_inv_def by simp
+  have yc: "0\<^sub>v n @\<^sub>v x \<in> carrier_vec (n + n)" using x by (intro carrier_vecI) simp
+  have "herm_inv ?T *\<^sub>v (b @\<^sub>v 0\<^sub>v n) = herm_inv ?T *\<^sub>v (?T *\<^sub>v (0\<^sub>v n @\<^sub>v x))"
+    unfolding herm_embed_solve[OF A x ax] ..
+  also have "\<dots> = (herm_inv ?T * ?T) *\<^sub>v (0\<^sub>v n @\<^sub>v x)" by (rule assoc_mult_mat_vec[OF Ti T(1) yc, symmetric])
+  also have "herm_inv ?T * ?T = 1\<^sub>m (n + n)" by (rule herm_inv(1)[OF T z])
+  finally show ?thesis using yc by simp
 qed
 
 end
