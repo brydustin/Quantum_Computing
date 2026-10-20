@@ -368,6 +368,37 @@ Not part of the notes and not counted in the rows above; session `Vern_Paulsen_Q
 
 Sharper constants: closed by `HHL_Window` (register size N ~ 1/ε instead of 1/ε²; the sine window is the optimal window of the HHL paper's filter-function analysis, here with explicit constants).  Surrounding algorithm: closed by `HHL_Simulation` and `HHL_Complete` (simulation enters as an η-accurate oracle; state preparation as a given unitary; readout and amplitude amplification proved; oracle calls counted).
 
+### Audit against the HHL paper (Harrow, Hassidim, Lloyd, arXiv:0811.3171v3)
+
+Each numbered result or claim of the paper and its formal counterpart.  ✓ formalised, ~ formalised
+in a variant (stated), ✗ not yet, – out of scope (reason given).
+
+| # | Paper | Formal counterpart | Status |
+|---|---|---|---|
+| H-1 | §II: exact algorithm, output ∝ A⁻¹\|b⟩ when eigenvalues are register values | `HHL`: `hhl` | ✓ |
+| H-2 | §II eq. (1): non-Hermitian square A via [[0,A],[A†,0]] | `HHL`: `herm_embed` inverse | ✓ |
+| H-3 | eq. (2)/(A1): the window state \|Ψ₀⟩ | `HHL_Window`: `win_state`, unit norm `win_state_norm` | ✓ |
+| H-4 | eq. (3): conditional evolution and Fourier transform give Σ α_{k\|j} β_j \|k⟩\|u_j⟩ | `phase_estimation_reg`, `pe_amp_reg_formula` | ✓ |
+| H-5 | §II: rotation, uncomputation, post-selection on 1 gives ∝ Σ β_j C/λ_j \|u_j⟩ | `hhl`, `hhl_readout` | ✓ |
+| H-6 | §II: success probability Ω(1/κ²) | `hhl_success_bound` | ✓ |
+| H-7 | §II/App. A1: amplitude amplification, O(κ) rounds, operators R_succ, R_init | `HHL_Complete`: `grover_prog`, `circuit_amplification`, `hhl_complete` | ✓ |
+| H-8 | App. A1: unknown p̃, geometric schedule of rounds gives constant success with ≤ 4κ rounds | — | ✗ |
+| H-9 | §II/A1: run time Õ(κ(T_B + t₀s² log N)), t₀ = O(κ/ε), total Õ(κT_B + κ²s² log N/ε) | oracle-call count (2k+1)·2(N−1) in `hhl_complete`; not in the paper's normalisation | ~ |
+| H-10 | App. A1: three-level flag register S (nothing/well/ill) and filter functions f, g (A3) | — (two-level ancilla with clamping instead) | ✗ |
+| H-11 | Lemma 2: λ ↦ \|h(λ)⟩ is (π/2)κ-Lipschitz | — (two-level analogue `rot_dist_lipschitz`) | ✗ |
+| H-12 | Lemma 3: \|f−f̃\|² + \|g−g̃\|² ≤ c κ²δ²/t₀² (f²+g²) with c = π²/2 | — ; numerically false for c = π²/2 (sup of the ratio is π², attained in the middle region: the proof uses f²+g² = 1/2 there, but it is 1/4) | ✗ |
+| H-13 | Theorem 1(1): ‖Ũ − U‖ ≤ O(κ/t₀) (no post-selection) | `hhl_window_bound` for the clamped two-level circuit, explicit constants, not in κ/t₀ form | ~ |
+| H-14 | Theorem 1(2): post-selected on {well, ill}, error O(κ/t₀) | — | ✗ |
+| H-15 | Theorem 1(3): b in the well-conditioned subspace, post-selected on well, error O(κ/t₀) | `hhl_readout`: 2δ/(C‖A⁻¹b‖), i.e. O(κ²/t₀) | ~ |
+| H-16 | (A23)–(A31): closed form of α_{k\|j} | `window_sum_bound` (its modulus) | ✓ |
+| H-17 | (A32): \|α_{k\|j}\| ≤ 8π/δ² for 2π ≤ δ ≤ T/10 | `win_amp_tail`: 2√2π³/δ² for 2π ≤ \|δ\| ≤ πT (rigorous, other constant) | ~ |
+| H-18 | App. A4: rectangular A, eigenstructure of H, minimum-norm solution (M ≤ N), projected solution (M ≥ N) | — (square invertible case only) | ✗ |
+| H-19 | §III eq. (4)–(5), (A34)–(A37): the circuit-to-matrix reduction U, A = I − Ue^{−1/T}, A⁻¹ = Σ U^k e^{−k/T}, κ = O(T), post-selection probability ≥ 1/10 | — | ✗ |
+| H-20 | Theorems 4, 5, 6: BQP = PSPACE / BPP = BQP / BQP = PP consequences, oracle lower bounds | complexity classes and oracle lower bounds (Simon, OR, parity) are not available in the library | – |
+| H-21 | App. A5: matrix inversion estimation in Õ(log N κ²s²/ε³) by sampling | — | ✗ |
+| H-22 | App. A: error metric ‖\|α⟩−\|β⟩‖ = √(2(1−Re⟨α\|β⟩)) for unit vectors | — | ✗ |
+| H-23 | §IV: estimating ⟨x\|M\|x⟩, k-copy polynomials, sampling, f(A)\|b⟩, SWAP test, preconditioning | f(A) via `mat_fun`; the rest — | ✗ |
+
 ## Infrastructure not in the notes (formalised to make the above possible)
 * BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary`), unitary algebra.
 * EFA: Hilbert–Schmidt norm, completeness of M_n in HS norm, closedness of the Hermitian and PSD sets, Carathéodory for conic combinations of product matrices.
