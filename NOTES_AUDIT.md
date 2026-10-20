@@ -351,6 +351,18 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 
 ---
 
+## Part VI: Quantum Algorithms (beyond the notes)
+
+Not part of the notes and not counted in the rows above; session `Vern_Paulsen_QC_Algorithms`.
+
+| Theory | Content |
+|---|---|
+| `Hermitian_Functional_Calculus` | g(A) for Hermitian A via eigenvectors; = U diag(g∘D) U*; multiplicative, adjoint, unitary for \|g\|=1; e^{itA}; A⁻¹ |
+| `Phase_Estimation` | Fourier matrix unitary; controlled powers, phase kickback; output state; exact case; success ≥ 4/π² |
+| `HHL` | circuit W*·CR·W; output for every b; Ax = b for x = A⁻¹b, success probability C²‖x‖² ≥ 1/κ²; signed eigenvalues; non-Hermitian A via [[0,A],[A*,0]] |
+
+Open: the non-exact (ε) HHL; `ordered_QFT n = fourier (2^n)` (AFP circuit = Fourier matrix).
+
 ## Infrastructure not in the notes (formalised to make the above possible)
 * BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary`), unitary algebra.
 * EFA: Hilbert–Schmidt norm, completeness of M_n in HS norm, closedness of the Hermitian and PSD sets, Carathéodory for conic combinations of product matrices.

@@ -26,6 +26,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day29_Classical_Codes
     Vern_Paulsen_QC.Day31_Code_Fidelity
     Vern_Paulsen_QC.Day32_Y_Code
+    Vern_Paulsen_QC_Algorithms.HHL
 begin
 
 section \<open>Reading guide\<close>
@@ -66,13 +67,17 @@ reuse earlier infrastructure.  The table gives the correspondence.
 2--11  & basis-independent projections, tensor coordinates, non-orthogonal states, a Bell measurement, SWAP from CNOTs & \texttt{Day02\_11\_Supplement}\\
 29--30 & the notes' Hamming code, the $[7,4,3]$ code, undetected-error probabilities & \texttt{Day29\_Classical\_Codes}\\
 31     & the bit-flip code against independent flips: $R\circ E$, minimum fidelities & \texttt{Day31\_Code\_Fidelity}\\
-32     & the code for $Y$ flips; codes with orthogonal error images & \texttt{Day32\_Y\_Code}\\
+32     & the code for $Y$ flips; codes with orthogonal error images & \texttt{Day32\_Y\_Code}\\\hline
+--     & functional calculus $g(A)$ for Hermitian $A$; $e^{itA}$, $A^{-1}$ & \texttt{Hermitian\_Functional\_Calculus}\\
+--     & Fourier matrix, phase kickback, phase estimation (exact; $\ge4/\pi^2$) & \texttt{Phase\_Estimation}\\
+--     & the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
 \end{tabular}
 \end{center}
 
 The theories of the second and third blocks (shared lemmas in \texttt{QC\_Prelims}) close
 the gaps recorded by the first and second audits; the remaining unformalised items are listed in
-\texttt{NOTES\_AUDIT.md}.
+\texttt{NOTES\_AUDIT.md}.  The last block, Part~VI, goes beyond the notes (session
+\texttt{Vern\_Paulsen\_QC\_Algorithms}).
 \<close>
 
 section \<open>Conventions\<close>

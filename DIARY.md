@@ -113,4 +113,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   (`reg_eig`, same phase), so A need only be invertible Hermitian; `herm_embed` handles a general
   invertible A via [[0, A], [A*, 0]] with Ã⁻¹(b ⊕ 0) = 0 ⊕ x.  Open: the non-exact (ε) version and
   the AFP QFT bridge.
+- **The notes PDF was missing 23 theories.**  `root.tex` only `\input` the original theories, so
+  everything added by the gap-closure pushes (Day 2–11 supplement, Days 12–34 theories) was
+  listed in the overview table but never typeset.  All are now input by lecture, and Part VI is
+  typeset as its own part (159 → 229 pages).  Their section titles contain math that lualatex
+  cannot put into PDF bookmarks (`\rangle` etc.); `\pdfstringdefDisableCommands` in `root.tex`
+  gives plain-text bookmark forms.
 

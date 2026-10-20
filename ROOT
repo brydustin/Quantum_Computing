@@ -70,6 +70,8 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   options [document = pdf, document_output = "output",
            document_variants = "document=/proof,/ML",
            quick_and_dirty = false, timeout = 3600]
+  sessions
+    Vern_Paulsen_QC_Algorithms
   theories
     QC_Notes_Overview
   document_theories
@@ -105,5 +107,8 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day29_Classical_Codes
     Vern_Paulsen_QC.Day31_Code_Fidelity
     Vern_Paulsen_QC.Day32_Y_Code
+    Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
+    Vern_Paulsen_QC_Algorithms.Phase_Estimation
+    Vern_Paulsen_QC_Algorithms.HHL
   document_files
     "root.tex"

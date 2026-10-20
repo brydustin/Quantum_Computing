@@ -41,6 +41,9 @@
 \newtheorem*{notespost}{Postulate (notes)}
 \newtheorem*{notesremark}{Remark}
 
+% math in section titles: plain-text forms for PDF bookmarks
+\pdfstringdefDisableCommands{\def\rangle{>}\def\langle{<}\def\otimes{x}\def\cdots{...}%
+  \def\le{<=}\def\ge{>=}\def\to{->}\def\mapsto{|->}\def\oplus{+}\def\kappa{kappa}\def\pi{pi}}
 \begin{document}
 
 \title{Lectures on Quantum Computing and Completely Positive Maps\\[0.5em]
@@ -57,7 +60,8 @@ the notes' own language, each followed by the formal statement.  The informal
 proofs of the notes are omitted; the formal proofs replace them.  Where the
 formalisation deviates from the notes, the commentary says so.  The companion
 file \texttt{NOTES\_AUDIT.md} lists, for every lecture, what is formalised and
-what is not.
+what is not.  Part~VI goes beyond the notes: the functional calculus, phase
+estimation and the HHL algorithm, built on the same library.
 \end{abstract}
 
 \tableofcontents
@@ -70,12 +74,33 @@ what is not.
 \part{Lectures 1--10: basic mathematics and the postulates of quantum mechanics}
 \input{Basic_Math}
 \input{Quantum_Computing_3_10}
+\input{Day02_11_Supplement}
 
-\part{Lectures 11--22 and 29--32: quantum computing, density matrices, completely positive maps, error correction}
+\part{Lectures 11--22 and 29--34: quantum computing, density matrices, completely positive maps, error correction}
 \input{Quantum_Computing11}
+\input{QC_Prelims}
+\input{Day12_Counting_Probability}
+\input{Day17_Environment_Model}
+\input{Day18_Positive_Maps}
+\input{Day20_Choi_Rank}
+\input{Day21_Unitary_Freedom}
+\input{Day22_Kraus_Independence}
+\input{Day22_Minimal_Kraus}
+\input{Day29_Classical_Codes}
+\input{Day30_BitFlip_Code}
+\input{Day31_Code_Fidelity}
+\input{Day32_Pauli_Expansion}
+\input{Day32_Recovery_Proposition}
+\input{Day32_Y_Code}
+\input{Day33_Shor_Code}
+\input{Day34_Knill_Laflamme}
+\input{Day34_KL_Sufficiency}
 
-\part{Lecture 23: extreme points of the CP cone (Choi's Theorem 3)}
+\part{Lectures 23--26: extreme points, operator systems and Arveson's theorem}
 \input{Day23_ChoiExtremeUCP}
+\input{Day24_Operator_Systems}
+\input{Day25_Arveson_Correspondence}
+\input{Day26_Arveson_Extension}
 
 \part{Functional-analytic infrastructure (Lecture 25: Hahn--Banach)}
 \input{Matrix_Typed}
@@ -85,5 +110,12 @@ what is not.
 \part{Lectures 26--28: separability and entanglement witnesses}
 \input{Separable_Cone}
 \input{Day24_Separability}
+\input{Day27_Positive_Map_Criterion}
+\input{Day28_Horodecki_Peres}
+
+\part{Quantum Algorithms (beyond the notes)}
+\input{Hermitian_Functional_Calculus}
+\input{Phase_Estimation}
+\input{HHL}
 
 \end{document}
