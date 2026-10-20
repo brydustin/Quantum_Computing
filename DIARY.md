@@ -210,4 +210,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
     and the main document states the criterion in the Day 5 text (user's choice).
   * editing a theory while a build that includes it is running makes the build fail with
     "Incoherent digest" for that file.
-- **Audit after this pass:** ✓137 ~22 ✗0 –11 of 170.
+- **Day 5 Cholesky examples (D5-3)**, at the user's request although counted as illustrations
+  (`Day05_Cholesky_Examples`).  One step: `chol_R` (p_{i1}p_{1j}/p_{11}) and `chol_next` (P − R
+  without its zero first row and column); `chol_test` (psd P ⟺ psd (chol_next P)) restates
+  `cholesky_reduction` using p_{1j} = conj p_{j1}.  Every matrix of the notes is checked entry by
+  entry (`mat3_eqI`, `mat2_eqI` reduce to i, j ∈ {0,1,2}; `simp` with `mat_of_rows_list_def`
+  evaluates the entries).  Matrices have no executable equality here (no `equal` instance for
+  `mat`), so `code_simp` cannot decide them.  `simp` expands `⊘` into ket·bra and `vec_of_list`
+  into `vCons`: state rank-one terms through `outer_prod_of_list` (|l⟩⟨l| = (l_i conj l_j)).
+- **Audit after this pass:** ✓138 ~22 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+  UCP maps) is kept in mind for a possible proof attempt.

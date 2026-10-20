@@ -57,6 +57,7 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day25_Unital_Functional_Norm
     Day26_CP_Factorization
     Day27_Entangled_Examples
+    Day05_Cholesky_Examples
 
 session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
   description "
@@ -133,6 +134,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day25_Unital_Functional_Norm
     Vern_Paulsen_QC.Day26_CP_Factorization
     Vern_Paulsen_QC.Day27_Entangled_Examples
+    Vern_Paulsen_QC.Day05_Cholesky_Examples
     Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier

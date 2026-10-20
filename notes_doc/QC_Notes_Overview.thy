@@ -31,6 +31,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day25_Unital_Functional_Norm
     Vern_Paulsen_QC.Day26_CP_Factorization
     Vern_Paulsen_QC.Day27_Entangled_Examples
+    Vern_Paulsen_QC.Day05_Cholesky_Examples
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
@@ -78,6 +79,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 23     & extreme and non-extreme CPTP maps: $U^*XU$, averages, $\Tr(X)I/d$, diagonals & \texttt{Day23\_Extremality\_Examples}\\
 25     & a unital functional is positive iff it has norm one & \texttt{Day25\_Unital\_Functional\_Norm}\\
 5      & Sylvester's criterion, imported from the AFP (separate session and PDF, see Day~5) & \texttt{Day05\_Sylvester\_Criterion}\\
+5      & Cholesky's algorithm on the notes' two $3\times3$ examples; the rank-one decomposition & \texttt{Day05\_Cholesky\_Examples}\\
 26     & CP maps as $V^*\psi(X)V$ with $\psi$ UCP and as $\psi(VXV^*)$ with $\psi$ CPTP & \texttt{Day26\_CP\_Factorization}\\
 27     & the transpose detects $\left(\begin{smallmatrix}E_{ii}&E_{ij}\\ E_{ji}&E_{jj}\end{smallmatrix}\right)$ and $(E_{ij})$ as entangled & \texttt{Day27\_Entangled\_Examples}\\\hline
 --     & functional calculus $g(A)$ for Hermitian $A$; $e^{itA}$, $A^{-1}$ & \texttt{Hermitian\_Functional\_Calculus}\\

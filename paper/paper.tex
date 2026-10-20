@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises thirty-eight theories and about a
+entanglement witnesses.  The development comprises thirty-nine theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -199,6 +199,7 @@ Theory & Lectures & lines & results\\
 \isa{Day26\_CP\_Factorization} & 26: CP maps through UCP and CPTP maps & 301 & 14\\
 \isa{Day27\_Entangled\_Examples} & 27: entanglement detected by the transpose & 178 & 12\\
 \isa{Day05\_Sylvester\_Criterion} & 5: Sylvester's criterion, imported from the AFP & 101 & 6\\
+\isa{Day05\_Cholesky\_Examples} & 5: Cholesky's algorithm on the two examples & 233 & 27\\
 \midrule
 \isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 422 & 36\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 501 & 26\\
@@ -207,7 +208,7 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \bottomrule
 \end{tabular}
-\caption{The thirty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,416 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The thirty-nine theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,443 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps and the Day~5 examples (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -310,8 +311,8 @@ every definition, theorem, proposition, corollary, example and remark of the not
 its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ formalised
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
-or cyclic codes).  Of the 170 items, 11 are deliberate omissions; of the remaining 159
-mathematical items, 137 are faithful, 22 are variants and none is a gap.\footnote{Counts as
+or cyclic codes).  Of the 170 items, 10 are deliberate omissions; of the remaining 160
+mathematical items, 138 are faithful, 22 are variants and none is a gap.\footnote{Counts as
 of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -406,7 +407,10 @@ Sylvester's criterion is not reproved: it is imported from the AFP entry \emph{T
 Results}, whose notions of Hermitian and positive definite matrices are shown to agree with ours
 (\isa{pd\_iff\_leading\_minors\_pos}).  Because that entry builds on HOL-Analysis,
 HOL-Probability and QHLProver, the bridge is a separate session with its own document; the
-main document states the criterion in its Day~5 commentary.
+main document states the criterion in its Day~5 commentary.  The two numerical $3\times3$ examples
+of Cholesky's algorithm on Day~5, first counted as illustrations, are also checked step by step
+(\isa{notes\_example\_1}, \isa{notes\_example\_2}), together with the rank-one decomposition
+the algorithm produces.
 
 \section{The generated document}
 
