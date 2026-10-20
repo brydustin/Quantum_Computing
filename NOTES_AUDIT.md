@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`, BF = `Day16_Block_Form`.
 
 ---
 
@@ -189,7 +189,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D16-1 | tr_B((X_{ij})) = Σ X_{ii}, tr_A((X_{ij})) = (Tr X_{ij}) | these are the formal definitions `partial_trace_B/A` (A-major Kronecker indexing) | ✓ |
-| D16-2 | H_A ⊗ H_B ≅ H_A^{(p)}, L(H_A⊗H_B) ≅ M_p(L(H_A)) | QC11 `block_of_mat`, `amplification` (block action); isomorphism D15-3 | ~ |
+| D16-2 | H_A ⊗ H_B ≅ H_A^{(p)}, L(H_A⊗H_B) ≅ M_p(L(H_A)) | BF `vcomp_expansion` (v = Σ h_i ⊗ e_i with h_i = `vcomp`), `vcomp_inner_prod` (⟨v\|w⟩ = Σ ⟨h_i\|k_i⟩: the identification is isometric), `tensor_block_decomposition` (X = Σ X_ij ⊗ E_ij with blocks `bblock`) and `tensor_block_decomposition_unique`, `bblock_action` ((Xv)_i = Σ_j X_ij h_j), `partial_trace_B_blocks`, `partial_trace_A_blocks`; f_i = e_i, A-major indices | ✓ |
 | D16-3 | Postulates 1′ (density matrices), 2′ (UρU*), 3′ (p_α = Tr(M*Mρ)) | QC11 `density_matrix`; `unitary_conj_channel_preserves_density_matrix`, `conjugation_channel`; `ensemble_prob_trace`, `meas_map_density` | ✓ |
 | D16-4 | Postulate 4′: ρ₁ ⊗ ρ₂ is a density matrix | QC11 `psd_tensor`, `density_matrix_tensor` | ✓ |
 

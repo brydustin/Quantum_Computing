@@ -280,6 +280,14 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   hypothesis `[OF fz]` to the named fact; after `intro allI impI` the pending goal is the
   innermost `c k = 0`.  Also: `foldr_add_index` in Day26_CP_Factorization duplicates QC_Prelims'
   `foldr_add_mat_index_rect` (left as is).
-- **Audit after this pass:** ✓151 ~9 ✗0 –10 of 170; the 9 variants are permanent (different
-  route, or the notes need a correction) except D16-2 and D22-4.  D21-2 (the notes' conjecture on averages of
+- **D16-2, block form** (`Day16_Block_Form`).  With A-major indices: coordinates h_i = (v_{ap+i})_a
+  (`vcomp`), blocks X_ij = (X_{ap+i,bp+j})_{ab} (`bblock`); one reindexing lemma
+  Σ_{r<mp} f r = Σ_b Σ_j f (bp+j) gives the isometry, the expansion and the block action; the
+  decomposition X = Σ X_ij ⊗ E_ij and its uniqueness are entry computations with a double-delta
+  lemma.  Traps: names `block_decomposition` (Day25) and `tensor_unit_index` (HHL) already taken;
+  index variables without a type annotation are generic, and `{..<q}` is then not known finite
+  (sum.delta fails) — annotate `nat`; lighter imports lose simp facts the scratch relied on —
+  give carriers explicitly.
+- **Audit after this pass:** ✓152 ~8 ✗0 –10 of 170; of the 8 variants only D22-4 (compactness of
+  UCP) is open, the other 7 are permanent (different route, or the notes need a correction).  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.

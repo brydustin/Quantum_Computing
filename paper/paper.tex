@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises forty-five theories and about a
+entanglement witnesses.  The development comprises forty-six theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -206,6 +206,7 @@ Theory & Lectures & lines & results\\
 \isa{Day06\_Schmidt\_Rank} & 6: the Schmidt rank & 143 & 9\\
 \isa{Day22\_Adjoint\_Maps} & 22: $\Phi\mapsto\Phi^*$, UCP $\cong$ CPTP & 255 & 16\\
 \isa{Day23\_Choi3\_UCP} & 23: Choi's Theorem~3 for unital maps & 250 & 9\\
+\isa{Day16\_Block\_Form} & 16: block form on $H_A\otimes H_B$ & 206 & 13\\
 \midrule
 \isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 422 & 36\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 501 & 26\\
@@ -214,7 +215,7 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \bottomrule
 \end{tabular}
-\caption{The forty-five theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,531 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and thirteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The forty-six theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,544 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fourteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -318,7 +319,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 10 are deliberate omissions; of the remaining 160
-mathematical items, 151 are faithful, 9 are variants and none is a gap.\footnote{Counts as
+mathematical items, 152 are faithful, 8 are variants and none is a gap.\footnote{Counts as
 of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -433,7 +434,8 @@ $\C^n\oplus\C^k$ (Day~5, \isa{direct\_sum\_basis\_is\_basis}), and the adjoint $
 makes $\Gamma(\Phi)=\Phi^*$ an affine bijection from the unital onto the trace-preserving
 completely positive maps (Day~22, \isa{adjoint\_ucp\_imp\_cptp}, \isa{map\_adjoint\_adjoint}); through it,
 Choi's Theorem~3 is transported from the trace-preserving to the unital form stated in the notes
-(\isa{choi\_theorem\_3\_ucp}).
+(\isa{choi\_theorem\_3\_ucp}).  The block picture of Day~16, $X=\sum_{i,j}X_{ij}\otimes E_{ij}$ with
+$H_A\otimes H_B\cong H_A^{(p)}$ isometric, is proved as well (\isa{tensor\_block\_decomposition}).
 
 \section{The generated document}
 

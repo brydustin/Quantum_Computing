@@ -38,6 +38,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day06_Schmidt_Rank
     Vern_Paulsen_QC.Day22_Adjoint_Maps
     Vern_Paulsen_QC.Day23_Choi3_UCP
+    Vern_Paulsen_QC.Day16_Block_Form
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
@@ -88,6 +89,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 5      & Cholesky's algorithm on the notes' two $3\times3$ examples; the rank-one decomposition & \texttt{Day05\_Cholesky\_Examples}\\
 22     & the adjoint $\Phi^*$ of a linear map; $\Gamma(\Phi)=\Phi^*$ is an affine bijection UCP $\to$ CPTP & \texttt{Day22\_Adjoint\_Maps}\\
 23     & Choi's Theorem~3 for unital maps, via the adjoint & \texttt{Day23\_Choi3\_UCP}\\
+16     & $H_A\otimes H_B\cong H_A^{(p)}$ isometrically; $X=\sum X_{ij}\otimes E_{ij}$; block action, partial traces & \texttt{Day16\_Block\_Form}\\
 6, 10  & the Schmidt rank: rank $1$ iff a product state, entangled iff rank $>1$ & \texttt{Day06\_Schmidt\_Rank}\\
 10--15 & superdense coding table, the CCNOT truth table, the partial trace over $A$ & \texttt{Day10\_15\_Supplement}\\
 4--29  & converse Hermitian tests, composite ensembles, Choi's four conditions, subspace codes & \texttt{Day04\_29\_Supplement}\\
