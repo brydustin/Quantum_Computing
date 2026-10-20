@@ -270,5 +270,16 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `simp_all add: sum.swap` loops — reorder nested sums with explicit `sum.swap` steps; an
   `obtains` lemma whose case has a ⋀-premise leaves goals after `rule` — state it with ∃ and
   `blast`; `fix X` without a type gives `'a mat` — annotate `complex Matrix.mat`.
-- **Audit after this pass:** ✓150 ~10 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **D23-1, Choi's Theorem 3 in the notes' UCP form** (`Day23_Choi3_UCP`).  The Day 23 author had
+  left the UCP form open and named the duality route; with Day 22's adjoint it goes through:
+  `ucp_pair_mid` mirrors `cptp_pair_mid`; Γ maps midpoints both ways (differences survive because
+  Φ** = Φ); the Kraus operators of Φ* are the W_i*, linearly independent with the W_i (entrywise,
+  Σ c_k W_k* = 0 gives Σ conj(c_k) W_k = 0), and unital Φ makes them a trace-preserving Kraus
+  family.  Traps: `blast+` over a large unfolded definition took 10-12 s per call — project the
+  conjuncts with `simp`; `blast` cannot find the coefficient function conj ∘ c — apply the
+  hypothesis `[OF fz]` to the named fact; after `intro allI impI` the pending goal is the
+  innermost `c k = 0`.  Also: `foldr_add_index` in Day26_CP_Factorization duplicates QC_Prelims'
+  `foldr_add_mat_index_rect` (left as is).
+- **Audit after this pass:** ✓151 ~9 ✗0 –10 of 170; the 9 variants are permanent (different
+  route, or the notes need a correction) except D16-2 and D22-4.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.

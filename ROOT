@@ -63,6 +63,7 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day21_Ranges
     Day06_Schmidt_Rank
     Day22_Adjoint_Maps
+    Day23_Choi3_UCP
 
 session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
   description "
@@ -145,6 +146,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day21_Ranges
     Vern_Paulsen_QC.Day06_Schmidt_Rank
     Vern_Paulsen_QC.Day22_Adjoint_Maps
+    Vern_Paulsen_QC.Day23_Choi3_UCP
     Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier

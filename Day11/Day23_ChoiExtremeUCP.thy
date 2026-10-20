@@ -6953,7 +6953,7 @@ development.  A proper UCP form of Choi's theorem requires either:
 \<^item> a Hilbert--Schmidt duality between @{const extreme_UCP} and
    @{const extreme_CPTP} that transports the CPTP theorem above.
 
-We leave both routes for future work and state no UCP form here.\<close>
+The second route is taken in theory Day23\_Choi3\_UCP, which states the UCP form.\<close>
 
 
 subsection \<open>Sanity / easy facts about extreme UCP\<close>
