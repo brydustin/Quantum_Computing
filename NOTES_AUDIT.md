@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`.
 
 ---
 
@@ -96,7 +96,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D6-1 | bilinear maps, universal property (axiom) | concrete Kronecker model `tensor_vec`; bilinearity `tensor_vec_bilinear_left/right`, `tensor_vec_smult_left/right` | ~ |
 | D6-2 | {e_i ⊗ f_j} basis; dim(X ⊗ Y) = dim X · dim Y | QC3 `tensor_vec_dim`, `tensor_onb` (ONB version, Day 7) | ✓ |
 | D6-3 | unique x_j with u = Σ x_j ⊗ f_j; X ⊗ Y ≅ X ⊕ ⋯ ⊕ X | S211 `tensor_right_coordinates`, `tensor_left_coordinates` (any basis: the column matrix is invertible; Σ x_j ⊗ f_j is `tensor_combination`, the sum form of `schmidt_rank`); the isomorphism is `tensor_iso_direct_sum` (bijection) with `tensor_combination_add_left`, `tensor_combination_smult_left` (linearity) | ✓ |
-| D6-4 | Schmidt rank | QC3 `schmidt_rank` (definition only) | ~ |
+| D6-4 | Schmidt rank | QC3 `schmidt_rank` (the least length of a representation by elementary tensors; corrected from `Min` to `LEAST`, since `Min` of the infinite set of lengths is unspecified); SR `schmidt_repr_exists` (a representation of length n exists), `schmidt_rank_zero_iff`, `schmidt_rank_one_iff_product` (for u ≠ 0: rank 1 iff a product), `schmidt_rank_bell_state` (= 2) | ✓ |
 
 ### Day 7 (12 Sep): tensor products of Hilbert spaces; postulates 1–3
 | id | notes | formal | status |
@@ -123,7 +123,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 |---|---|---|---|
 | D9-1 | POVM {P_m}, P_m ≥ 0, Σ P_m = I; M_m = P_m^{1/2} is a measurement system | QC3 `povm`, `measurement_induces_povm`, `povm_from_sqrt`, `povm_prob` | ✓ |
 | D9-2 | Postulate 4: composite state ψ₁ ⊗ ψ₂ | QC3 `tensor_of_states_is_state` | ✓ |
-| D9-3 | two-photon example; entangled iff Schmidt rank > 1 | QC3 `entangled` (defined as "not a product"), `bell_state_entangled` | ✓ |
+| D9-3 | two-photon example; entangled iff Schmidt rank > 1 | QC3 `entangled` (defined as "not a product"), `bell_state_entangled`; SR `entangled_iff_schmidt_rank` (for u ≠ 0) | ✓ |
 | D9-4 | R ⊗ T exists uniquely; (R₁⊗T₁)(R₂⊗T₂) = R₁R₂ ⊗ T₁T₂; (R⊗T)* = R*⊗T* | library `tensor_mat`; BM `tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary` | ✓ |
 | D9-5 | p^{AB}_m(ψ⊗φ) = p^A_m(ψ) | QC3 `composite_measurement_prob`, `tensor_mat_vec_mult` | ✓ |
 | D9-6 | eavesdropping example p₀(γ) = ½ with Bell state | S211 `bell_measurement` (p₀ = p₁ = ½, post-measurement states e₀⊗e₀, e₁⊗e₁, then B's outcome has probability 1), `proj_measurement_system` | ✓ |

@@ -39,7 +39,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises forty-two theories and about a
+entanglement witnesses.  The development comprises forty-three theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -203,6 +203,7 @@ Theory & Lectures & lines & results\\
 \isa{Day10\_15\_Supplement} & 10--15: superdense coding, CCNOT, $\tr_A$ & 377 & 25\\
 \isa{Day04\_29\_Supplement} & 4--29: Hermitian tests, ensembles, Choi, codes & 344 & 22\\
 \isa{Day21\_Ranges} & 4, 21: ranges of positive matrices, spanning & 257 & 5\\
+\isa{Day06\_Schmidt\_Rank} & 6: the Schmidt rank & 143 & 9\\
 \midrule
 \isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 422 & 36\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 501 & 26\\
@@ -211,7 +212,7 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \bottomrule
 \end{tabular}
-\caption{The forty-two theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,495 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and nine variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
+\caption{The forty-three theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,504 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and ten variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 3\,019 lines, 165 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -315,7 +316,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 10 are deliberate omissions; of the remaining 160
-mathematical items, 147 are faithful, 13 are variants and none is a gap.\footnote{Counts as
+mathematical items, 148 are faithful, 12 are variants and none is a gap.\footnote{Counts as
 of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -421,6 +422,11 @@ of a composite ensemble, Choi's theorem with $n$-positivity as its own condition
 (\isa{choi\_four\_conditions}), and the distance of subspace codes with unique decoding; and the ranges of
 positive matrices on Day~21 ($R(\sum_lw_lw_l^*)=\operatorname{span}\{w_l\}$, \isa{outer\_sum\_range}), which
 also gives the Day~4 statement in its literal form: $\sum_iv_iv_i^*>0$ iff the $v_i$ span $\C^n$.
+The Schmidt rank was defined as the \emph{minimum} of the set of lengths of representations by
+elementary tensors; that set is infinite, and Isabelle's \isa{Min} is unspecified on infinite sets,
+so the definition was replaced by the least element.  With it, a nonzero vector has Schmidt rank~$1$
+iff it is a product state, and is entangled iff its Schmidt rank exceeds~$1$
+(\isa{entangled\_iff\_schmidt\_rank}).
 
 \section{The generated document}
 

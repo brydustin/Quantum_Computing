@@ -249,5 +249,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   ⟹ by `hermitian_perp_ker_in_range` (trivial kernel) and `outer_sum_range`, ⟸ via
   `pd_iff_spanning` (x in the span and ⊥ every v_i gives ⟨x|x⟩ = ⟨V*x|c⟩ = 0).  The `simp add:
   carrier_vecI` hang struck a third time.
-- **Audit after this pass:** ✓147 ~13 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **Schmidt rank (D6-4), a definition bug** (`Day06_Schmidt_Rank`).  `schmidt_rank` was
+  `Min {k. a representation of length k exists}`; that set is infinite (pad with 0 ⊗ 0) and `Min`
+  of an infinite set is unspecified, so nothing could be proved about it.  Now `LEAST`.  Results:
+  a length-n representation always exists (u = Σ e_i ⊗ u_i, via `tensor_combination_index`),
+  rank 0 iff u = 0, for u ≠ 0 rank 1 iff product, entangled iff rank > 1 (D9-3 had claimed this
+  without proof), Bell state rank 2.  Traps: `LeastI[OF …]` has multiple unifiers — give
+  `[where P = …]`; `metis` with many facts hung — explicit steps instead.
+- **Audit after this pass:** ✓148 ~12 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.

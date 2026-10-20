@@ -5545,17 +5545,19 @@ next
 qed
 
 
-text \<open>The Schmidt rank, as the minimum length of a representation by elementary
-tensors (no properties of it are needed later):\<close>
+text \<open>The Schmidt rank, the least length of a representation by elementary tensors.  It is
+\<open>LEAST\<close>, not \<open>Min\<close> of the set of lengths: that set is infinite (zero terms can be added),
+and \<open>Min\<close> is unspecified on infinite sets.  Its properties (rank $1$ iff a product state) are
+in theory Day06\_Schmidt\_Rank.\<close>
 
 definition schmidt_rank :: "complex Matrix.vec \<Rightarrow> nat \<Rightarrow> nat" where
   "schmidt_rank u m \<equiv>
-     Min {k. \<exists>vs :: complex Matrix.vec list. \<exists>ws :: complex Matrix.vec list.
+     LEAST k. \<exists>vs :: complex Matrix.vec list. \<exists>ws :: complex Matrix.vec list.
               length vs = k \<and> length ws = k \<and>
               (\<forall>i < k. dim_vec (vs ! i) = dim_vec u div m) \<and>
               (\<forall>i < k. dim_vec (ws ! i) = m) \<and>
               u = foldr (\<lambda>(v,w) acc. tensor_vec v w + acc)
-                        (zip vs ws) (0\<^sub>v (dim_vec u))}"
+                        (zip vs ws) (0\<^sub>v (dim_vec u))"
 
 
 section \<open>Day 7 (12 September 2011): tensor products of Hilbert spaces; the postulates\<close>

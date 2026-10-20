@@ -35,6 +35,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day10_15_Supplement
     Vern_Paulsen_QC.Day04_29_Supplement
     Vern_Paulsen_QC.Day21_Ranges
+    Vern_Paulsen_QC.Day06_Schmidt_Rank
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
@@ -83,6 +84,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 25     & a unital functional is positive iff it has norm one & \texttt{Day25\_Unital\_Functional\_Norm}\\
 5      & Sylvester's criterion, imported from the AFP (separate session and PDF, see Day~5) & \texttt{Day05\_Sylvester\_Criterion}\\
 5      & Cholesky's algorithm on the notes' two $3\times3$ examples; the rank-one decomposition & \texttt{Day05\_Cholesky\_Examples}\\
+6, 10  & the Schmidt rank: rank $1$ iff a product state, entangled iff rank $>1$ & \texttt{Day06\_Schmidt\_Rank}\\
 10--15 & superdense coding table, the CCNOT truth table, the partial trace over $A$ & \texttt{Day10\_15\_Supplement}\\
 4--29  & converse Hermitian tests, composite ensembles, Choi's four conditions, subspace codes & \texttt{Day04\_29\_Supplement}\\
 4, 21  & $0\le ww^*\le P\Rightarrow w\in R(P)$; $R(\sum w_lw_l^*)=\operatorname{span}\{w_l\}$; $\sum v_iv_i^*>0$ iff the $v_i$ span & \texttt{Day21\_Ranges}\\
