@@ -4616,10 +4616,23 @@ section \<open>Day 5 (7 September 2011): tests for positivity; direct sums and p
 subsection \<open>Practical tests for positivity\<close>
 
 text \<open>Given $P=P^*$, how does one decide whether $P\ge 0$ or $P>0$?  The notes give two
-tests.  (1) $P>0$ iff every leading principal minor
-$\det(p_{ij})_{i,j\le k}$, $k=1,\dots,n$, is positive; the same test with $\ge 0$ does
-\emph{not} characterise $P\ge 0$.  This criterion (Sylvester's) is stated without proof
-in the notes and is not formalised.  (2) Cholesky's algorithm:
+tests.  (1) Sylvester's criterion, in terms of the leading principal submatrices
+$P_k=(p_{ij})_{1\le i,j\le k}$ (the upper left $k\times k$ corners):
+\begin{notestheorem}[Sylvester's criterion]
+Let $P=P^*\in M_n$.  Then $P>0$ if and only if $\det P_k>0$ for $k=1,\dots,n$.
+\end{notestheorem}
+Each $\det P_k$ is real, as $P_k$ is Hermitian.  The same test with $\ge 0$ does \emph{not}
+characterise $P\ge 0$: $\begin{pmatrix}0&0\\0&-1\end{pmatrix}$ has leading minors $0$ and $0$
+but is not positive.  For $n=2$ the criterion says
+$\begin{pmatrix}a&b\\\bar b&c\end{pmatrix}>0$ iff $a>0$ and $ac-|b|^2>0$.  The notes state it
+without proof.  It is not reproved in this development: it is imported from the AFP entry
+\emph{Two Hermitian Results} and restated for \<^const>\<open>pd\<close> and \<^const>\<open>hermitian\<close> as
+\texttt{pd\_iff\_leading\_minors\_pos} (for $P\in M_n$ Hermitian, \<^term>\<open>pd P\<close> iff
+$\det P_k>0$ for all $k\le n$) in the theory \texttt{Day05\_Sylvester\_Criterion}.  That theory
+forms the separate session \texttt{Vern\_Paulsen\_QC\_Sylvester} with its own document
+(\texttt{Sylvester\_Criterion.pdf}), because the AFP entry builds on HOL-Analysis,
+HOL-Probability and QHLProver, which this document's sessions do not load.  (2) Cholesky's
+algorithm:
 \begin{notestheorem}
 If $P=(p_{ij})$ is $n\times n$ with $P=P^*$, then $P\ge 0$ if and only if
 $P-\bigl(\tfrac{p_{i1}p_{1j}}{p_{11}}\bigr)_{ij}\ge 0$.

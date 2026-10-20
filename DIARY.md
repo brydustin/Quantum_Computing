@@ -171,3 +171,43 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   theorem reads: output of the clamped circuit on u_N ⊗ b ⊗ |0⟩ is within ε‖b‖ of
   u_N ⊗ (√(I−C²A⁻²) b ⊗ |0⟩ + C A⁻¹b ⊗ |1⟩), ε² = (π²/(N t₀²))(θ⁴/(C²(1−θ²)) + 16/λ_min²).
 
+
+## Fourth gap-closure pass, 2026-10-20 (D26-1, D27-2, D5-1): no gaps left
+
+- **Day 26 factorisations (D26-1), a different route** (`Day26_CP_Factorization`).  The notes
+  compress Φ to the range of P = Φ(I) (using −‖H‖P ≤ Φ(H) ≤ ‖H‖P) and get the CPTP form by
+  duality.  Here both come from the Kraus form Φ(X) = Σ W_i X W_i* on the operator system
+  (`arveson_kraus`) and the block embeddings B_i : ℂⁿ → ℂ^{kn} (`blk_emb`), isometries with
+  orthogonal ranges and Σ B_iB_i* = I (`blk_emb_gram`).  Unital form: ψ(X) = Σ B_iXB_i*,
+  V = stack of the W_i* (`kraus_stack_dag`), V*B_i = W_i, so V*ψ(X)V = Φ(X) by
+  `kraus_map_dim_compose` and V*V = Φ(I) (`cp_unital_factor`; ψ is UCP on all of M_n).  CPTP
+  form: ψ(Y) = Σ B_i*YB_i, V = stack of the W_i, B_i*V = W_i (`cp_tp_factor`).  A zero Kraus
+  operator is prepended so that r = kn > 0.
+- **Day 27 examples (D27-2)** (`Day27_Entangled_Examples`).  Both examples are (E_{f(a)f(b)})_{a,b}
+  for an injective f (`unit_blocks`), = |v⟩⟨v| with v = Σ e_a ⊗ e_{f(a)}, so positive.  The
+  partial transpose has entries [l = f(a)][k = f(b)]; at h = e_0⊗e_{f(1)} − e_1⊗e_{f(0)} its
+  quadratic form is −2, so by `positive_map_separable` the matrix is not separable.  The notes'
+  (E_ij) is `choi_seed n` (`choi_seed_unit_blocks`).
+- **Sylvester's criterion (D5-1), imported** (`Sylvester/Day05_Sylvester_Criterion`, session
+  `Vern_Paulsen_QC_Sylvester`).  The AFP entry `Two_Hermitian_Results` proves it for QHLProver's
+  `Complex_Matrix.hermitian` (adjoint A = A) and its own `positive_definite` (quadratic form
+  > 0 in the complex order).  Bridges: dagger = `mat_adjoint` (via QHLProver's `adjoint_def`),
+  `pd ⟺ positive_definite`.  Lessons:
+  * the project's `hermitian` and `pd` are `Quantum_Computing_3_10.hermitian`/`pd`, not
+    IMD's theory `Quantum` (which has only `dagger`, `inner_prod`); qualify both sides;
+  * QHLProver's `inner_prod` is an abbreviation (w ∙c v), IMD's a constant: no clash, but
+    printing shows both as `inner_prod`;
+  * `quadratic_form_def` is [simp] in the entry; `simp add: … carrier_vecI` on a goal that
+    instantiates a quantified definition hung (> 30 s): use `blast` after `unfolding` and
+    supply dimensions by `carrier_matD`;
+  * the entry's import closure includes all of HOL-Analysis and HOL-Probability (via
+    Projective_Measurements and Commuting_Hermitian); its heap takes ≈ 15 min and is only
+    saved when it is the parent of the requested session (or with `-b`); `eval_at` cannot
+    load that closure from source (Scala-backed `export_code`/bibtex commands fail);
+  * Isabelle accepts a `document_theories` entry only if the document session imports it or it
+    lies in its ancestry, so including the bridge in the main PDF would load the closure in
+    every notes build: the bridge has its own document (`notes_doc/Sylvester_Criterion.pdf`)
+    and the main document states the criterion in the Day 5 text (user's choice).
+  * editing a theory while a build that includes it is running makes the build fail with
+    "Incoherent digest" for that file.
+- **Audit after this pass:** ✓137 ~22 ✗0 –11 of 170.

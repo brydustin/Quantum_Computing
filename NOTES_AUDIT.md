@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`).
 
 ---
 
@@ -83,7 +83,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 5 (7 Sep): tests for positivity, direct sums, block matrices
 | id | notes | formal | status |
 |---|---|---|---|
-| D5-1 | leading principal minors test (stated, no proof) | ✗ (Sylvester's criterion; outside the notes' proofs) | ✗ |
+| D5-1 | leading principal minors test (stated, no proof) | SYL `pd_iff_leading_minors_pos`: for Hermitian P ∈ M_n, pd P ⟺ det P_k > 0 for all k ≤ n (P_k = `lps P k`); `pd_iff_leading_minors_real_pos` (each minor real and positive).  Not reproved: imported from AFP `Two_Hermitian_Results` (`Sylvester_Criterion.sylvester_criterion`) via the bridges `hermitian_iff_Complex_Matrix_hermitian` and `pd_iff_positive_definite`.  Separate session `Vern_Paulsen_QC_Sylvester` with its own PDF (`notes_doc/Sylvester_Criterion.pdf`), since the entry loads HOL-Analysis, HOL-Probability and QHLProver; the criterion is stated in the Day 5 text of the main document | ✓ |
 | D5-2 | Cholesky reduction: P ≥ 0 iff P − p_{i1}p_{1j}/p_{11} ≥ 0 | QC3 `cholesky_reduction` (adds the hypothesis p₁₁ > 0 that the notes leave implicit) | ~ |
 | D5-3 | two 3×3 numerical examples | – | – |
 | D5-4 | direct sum V ⊕ W, inner product | QC3 `direct_sum_vec` (⊕ᵥ), `direct_sum_inner_prod`, `direct_sum_dim` | ✓ |
@@ -277,7 +277,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 26 (28 Oct): Arveson extension proof; separability defined
 | id | notes | formal | status |
 |---|---|---|---|
-| D26-1 | CP Φ with Φ(I) = P is V*ψ(X)V with ψ UCP; CP Φ = ψ(VXV*) with ψ CPTP | ✗ | ✗ |
+| D26-1 | CP Φ with Φ(I) = P is V*ψ(X)V with ψ UCP; CP Φ = ψ(VXV*) with ψ CPTP | CPF `cp_unital_factor` (Φ CP on an operator system S ⊆ M_n: Φ(X) = V*ψ(X)V on S with ψ UCP on all of M_n and V*V = Φ(I)), `cp_tp_factor` (Φ CP on M_n: Φ(X) = ψ(VXV*) with ψ CPTP).  Proved from the Kraus form on S (AE `arveson_kraus`) with the block embeddings B_i (Σ B_iB_i* = I, `blk_emb_gram`) instead of compressing to the range of P and dualising | ✓ |
 | D26-2 | Arveson extension theorem (proof) | ~ : AE `arveson_extension` by a different route: S_Φ is extended to a positive functional on M_d(M_n) directly (`positive_functional_extension`: separate the positive definite cone from ker S_Φ with HOL-Analysis `separating_hyperplane_set_0` in the typed matrix space, giving X ↦ Tr(DX) with D ≥ 0), so neither the norm proposition D25-4 nor the reduction D26-1 to the unital case is needed | ~ |
 | D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D24 `D26_separable_density_iff_convex_combination` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
 
@@ -285,7 +285,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D27-1 | Φ positive, R separable ⟹ Φ^{(r)}(R) ≥ 0 | PMC `positive_map_separable` (for the separable cone of SC; generators by `amplification_tensor`: Φ^{(r)}(Q⊗P) = Q⊗Φ(P)) | ✓ |
-| D27-2 | Examples of entangled matrices via the transpose | ✗ | ✗ |
+| D27-2 | Examples of entangled matrices via the transpose | EEX `entangled_example_2` ([[E_ii, E_ij],[E_ji, E_jj]] ∈ M_2(M_n), i ≠ j, with its four blocks), `entangled_example_choi_seed` ((E_ij) = `choi_seed n`, n ≥ 2): both positive and not in the separable cone; general form `unit_blocks_entangled` for (E_{f(a)f(b)}), via `unit_blocks_partial_transpose_not_psd` (test vector e_0⊗e_{f(1)} − e_1⊗e_{f(0)}, value −2) and PMC `positive_map_separable` | ✓ |
 | D27-3 | f(Sep) ≥ 0 iff Φ_f positive | PMC `positive_map_iff_sep_nonneg` (via `quad_arveson_map`: ⟨w\|Φ_f(P)w⟩ = r f((w̄_i w_j) ⊗ P)) | ✓ |
 | D27-4 | cones; separation of a point from a closed convex set / closed cone | HOL-Analysis `separating_hyperplane_closed_point`; SC `separable_cone_lmat_closed`, `separable_cone_lmat_separating_hyperplane` | ✓ |
 
@@ -413,9 +413,9 @@ B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independenc
 Priority C (substantial developments, recorded as open):
 C1 D20-4 cr(Φ) = rank(P_Φ). DONE (`Day20_Choi_Rank`).
 C2 D21-5/D21-6 unitary freedom of rank-one decompositions and Kraus representations (Choi 2). DONE (`Day21_Unitary_Freedom`, with D21-3); D22-1 DONE (`Day22_Minimal_Kraus`).
-C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion. DONE (`Day24_Operator_Systems`, `Day25_Arveson_Correspondence`, `Day26_Arveson_Extension`, `Day27_Positive_Map_Criterion`); D25-4 and D26-1, used only by the notes' proof route, remain open.
+C3 D24–D26 operator systems, Arveson correspondence and extension theorem; D27-3, D28-3 positive-map criterion. DONE (`Day24_Operator_Systems`, `Day25_Arveson_Correspondence`, `Day26_Arveson_Extension`, `Day27_Positive_Map_Criterion`); D25-4 DONE (`Day25_Unital_Functional_Norm`), D26-1 DONE (`Day26_CP_Factorization`).
 C4 D17-3 environment (Stinespring) model of noise. DONE (`Day17_Environment_Model`).
-C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. D18-4 and D28-5 DONE (`Day18_Positive_Maps`, `Day28_Horodecki_Peres`); D27-2 open.
+C5 D18-4, D27-2, D28-5 transpose examples and Horodecki–Peres. DONE (`Day18_Positive_Maps`, `Day27_Entangled_Examples`, `Day28_Horodecki_Peres`).
 C6 D22-4 compactness of UCP/CPTP.
 C7 D32–D34 Shor code and Knill–Laflamme conditions. Knill–Laflamme: D34-1, D34-3 and the necessity half of D34-2 DONE (`Day34_Knill_Laflamme`), the general recovery proposition D32-4/D33-2 DONE (`Day32_Recovery_Proposition`); the sufficiency half of D34-2 DONE (`Day34_KL_Sufficiency`); the Shor code D32-3, D33-1, D33-2 DONE (`Day33_Shor_Code`; D32-5 is false as stated). C7 closed.
-C8 D5-1 Sylvester's criterion; D29-3 Hamming code (DONE, `Day29_Classical_Codes`).
+C8 D5-1 Sylvester's criterion (DONE, `Day05_Sylvester_Criterion`, imported from the AFP); D29-3 Hamming code (DONE, `Day29_Classical_Codes`).

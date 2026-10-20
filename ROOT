@@ -55,6 +55,8 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day19_Choi_TP_Unital
     Day23_Extremality_Examples
     Day25_Unital_Functional_Norm
+    Day26_CP_Factorization
+    Day27_Entangled_Examples
 
 session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
   description "
@@ -67,6 +69,20 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     QFT_Fourier
     HHL
     HHL_Approximate
+
+session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
+  description "
+    D5-1: Sylvester's criterion, imported from the AFP entry Two_Hermitian_Results
+    (separate session: that entry loads HOL-Analysis and HOL-Probability)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    Vern_Paulsen_QC_3_10
+  theories
+    Day05_Sylvester_Criterion
+  document_files
+    "root.tex"
 
 session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
   description "
@@ -115,6 +131,8 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day19_Choi_TP_Unital
     Vern_Paulsen_QC.Day23_Extremality_Examples
     Vern_Paulsen_QC.Day25_Unital_Functional_Norm
+    Vern_Paulsen_QC.Day26_CP_Factorization
+    Vern_Paulsen_QC.Day27_Entangled_Examples
     Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
