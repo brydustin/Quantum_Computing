@@ -239,5 +239,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   reserved syntax (HOL-Analysis vectors); sums over pairs need `split_def`, not
   `case_prod_beta`; `index_tensor_mat` needs explicit dimensions `[of _ n n _ m m]` when used
   backwards.
-- **Audit after this pass:** ✓145 ~15 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **D21-4, ranges of positive matrices** (`Day21_Ranges`).  Core lemma `hermitian_perp_ker_in_range`:
+  for Hermitian P = UDU*, w ⊥ ker P gives (U*w)_i = ⟨Ue_i|w⟩ = 0 whenever D_i = 0 (Ue_i ∈ ker P),
+  so h = U z with z_i = (U*w)_i / D_i (0 where D_i = 0) solves Ph = w.  Then 0 ≤ ww* ≤ P ⟹
+  w ∈ R(P) (with `loewner_ker_subset`) and R(Σ w_l w_l*) = col_span (V*x = 0 on ker P).  Traps
+  again: `simp add: carrier_vecI` hung (> 60 s); explicit `assoc_mult_mat_vec[OF …, symmetric]`
+  and `one_mult_mat_vec` are instant; no JNF lemma for M *v 0 — prove by `eq_vecI`.
+- **Audit after this pass:** ✓146 ~14 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.
