@@ -249,24 +249,52 @@ lemma pe_amp_tail:
   shows "cmod (pe_amp N \<phi> j) \<le> 1 / (2 * real N * \<bar>\<phi> - real j / real N\<bar>)"
   unfolding pe_amp_def using geometric_amp_tail[OF N d] d0 by simp
 
+text \<open>The circuit with an arbitrary angle $f(k)$ on register value $k$; \<^const>\<open>hhl_circuit\<close> is
+$f(k)=C/\lambda_k$, the physical circuit clamps the angle to $[-1,1]$.\<close>
+
+definition hhl_gen :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> complex Matrix.mat" where
+  "hhl_gen A t0 N f = (hhl_W A t0 N)\<^sup>\<dagger> * (ctrl_blocks N (dim_row A * 2) (\<lambda>k. 1\<^sub>m (dim_row A) \<Otimes> rot (f k)) * hhl_W A t0 N)"
+
+definition clamp :: "real \<Rightarrow> real" where
+  "clamp x = max (-1) (min 1 x)"
+
+definition hhl_circuit_clamped :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat" where
+  "hhl_circuit_clamped A t0 N C = hhl_gen A t0 N (\<lambda>k. clamp (C / reg_eig t0 N k))"
+
+lemma hhl_circuit_gen: "hhl_circuit A t0 N C = hhl_gen A t0 N (\<lambda>k. C / reg_eig t0 N k)"
+  by (simp add: hhl_circuit_def hhl_gen_def hhl_rot_def[abs_def])
+
+lemma rot_blk_carrier [simp]: "1\<^sub>m n \<Otimes> rot x \<in> carrier_mat (n * 2) (n * 2)"
+  by (rule carrier_matI) simp_all
+
+lemma clamp_abs: "\<bar>clamp x\<bar> \<le> 1"
+  by (simp add: clamp_def)
+
+lemma clamp_id: "\<bar>x\<bar> \<le> 1 \<Longrightarrow> clamp x = x"
+  by (simp add: clamp_def)
+
+definition hhl_phi :: "real \<Rightarrow> real \<Rightarrow> real" where
+  "hhl_phi t0 l = t0 * l / (2 * pi)"
+
 context
-  fixes A :: "complex Matrix.mat" and n N :: nat and t0 C l :: real and u :: "complex Matrix.vec"
+  fixes A :: "complex Matrix.mat" and n N :: nat and t0 l :: real and u :: "complex Matrix.vec"
+    and f :: "nat \<Rightarrow> real" and c :: real
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
       and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
 begin
 
 text \<open>The phase of $u$, the register amplitudes, the ideal and the branch rotations.\<close>
 
-definition "phi = t0 * l / (2 * pi)"
+abbreviation "phi \<equiv> hhl_phi t0 l"
 definition "alpha = Matrix.vec N (pe_amp N phi)"
-definition "r_ideal = rot (C / l) *\<^sub>v unit_vec 2 0"
-definition "r_br k = rot (C / reg_eig t0 N k) *\<^sub>v unit_vec 2 0"
+abbreviation "r_ideal \<equiv> rot c *\<^sub>v unit_vec 2 0"
+definition "r_br k = rot (f k) *\<^sub>v unit_vec 2 0"
 
 lemma phi_phase: "cis (t0 * l) = cis (2 * pi * phi)"
-  unfolding phi_def by simp
+  unfolding hhl_phi_def by simp
 
 lemma dim_alpha [simp]: "dim_vec alpha = N" by (simp add: alpha_def)
-lemma dim_r_ideal [simp]: "dim_vec r_ideal = 2" by (simp add: r_ideal_def)
+lemma dim_r_ideal: "dim_vec r_ideal = 2" by simp
 lemma dim_r_br [simp]: "dim_vec (r_br k) = 2" by (simp add: r_br_def)
 
 lemma W_branch:
@@ -300,29 +328,29 @@ qed
 text \<open>The output of the circuit and the ideal output as register sums.\<close>
 
 lemma hhl_output_branches:
-  "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+  "hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
    (hhl_W A t0 N)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. alpha $ k \<cdot>\<^sub>v tensor_vec u (r_br k))"
 proof -
-  let ?W = "hhl_W A t0 N" and ?CR = "ctrl_blocks N (n * 2) (hhl_rot C t0 N n)"
+  let ?W = "hhl_W A t0 N" and ?CR = "ctrl_blocks N (n * 2) (\<lambda>k. 1\<^sub>m n \<Otimes> rot (f k))"
   have nA: "dim_row A = n" using A(1) by simp
   have Wc: "?W \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" unfolding hhl_W_def nA by simp
   have CRc: "?CR \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" by simp
   have u0: "dim_vec (tensor_vec u (unit_vec 2 0)) = n * 2" by (rule tensor_vec_dim[OF u]) simp
   have x0: "tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) \<in> carrier_vec (N * (n * 2))"
     by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: uniform_state_def u0)
-  have br: "hhl_rot C t0 N n k *\<^sub>v (alpha $ k \<cdot>\<^sub>v tensor_vec u (unit_vec 2 0)) = alpha $ k \<cdot>\<^sub>v tensor_vec u (r_br k)" for k
+  have br: "(1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v (alpha $ k \<cdot>\<^sub>v tensor_vec u (unit_vec 2 0)) = alpha $ k \<cdot>\<^sub>v tensor_vec u (r_br k)" for k
   proof -
-    have "hhl_rot C t0 N n k *\<^sub>v (alpha $ k \<cdot>\<^sub>v tensor_vec u (unit_vec 2 0)) =
-          alpha $ k \<cdot>\<^sub>v (hhl_rot C t0 N n k *\<^sub>v tensor_vec u (unit_vec 2 0))"
-      by (rule mult_mat_vec[OF hhl_rot_carrier carrier_vecI[OF u0]])
-    also have "hhl_rot C t0 N n k *\<^sub>v tensor_vec u (unit_vec 2 0) = tensor_vec (1\<^sub>m n *\<^sub>v u) (r_br k)"
-      unfolding hhl_rot_def r_br_def by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier u]) simp
+    have "(1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v (alpha $ k \<cdot>\<^sub>v tensor_vec u (unit_vec 2 0)) =
+          alpha $ k \<cdot>\<^sub>v ((1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v tensor_vec u (unit_vec 2 0))"
+      by (rule mult_mat_vec[OF rot_blk_carrier carrier_vecI[OF u0]])
+    also have "(1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v tensor_vec u (unit_vec 2 0) = tensor_vec (1\<^sub>m n *\<^sub>v u) (r_br k)"
+      unfolding r_br_def by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier u]) simp
     also have "1\<^sub>m n *\<^sub>v u = u" using carrier_vecI[OF u] by simp
     finally show ?thesis .
   qed
-  have "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+  have "hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
         ?W\<^sup>\<dagger> *\<^sub>v (?CR *\<^sub>v (?W *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0))))"
-    unfolding hhl_circuit_def nA
+    unfolding hhl_gen_def nA
     using assoc_mult_mat_vec[OF dagger_carrier[OF Wc] mult_carrier_mat[OF CRc Wc] x0] assoc_mult_mat_vec[OF CRc Wc x0]
     by simp
   also have "?W *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) = tensor_vec alpha (tensor_vec u (unit_vec 2 0))"
@@ -358,8 +386,8 @@ qed
 text \<open>The squared distance between output and ideal output.\<close>
 
 theorem hhl_approx_error:
-  "\<langle>hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) |
-    hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal)\<rangle> =
+  "\<langle>hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) |
+    hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal)\<rangle> =
    \<langle>u|u\<rangle> * (\<Sum>k<N. complex_of_real ((cmod (pe_amp N phi k))\<^sup>2) * \<langle>r_br k - r_ideal|r_br k - r_ideal\<rangle>)"
 proof -
   let ?W = "hhl_W A t0 N"
@@ -386,7 +414,7 @@ proof -
     show ?thesis unfolding split
       using did ddf[of k] by (intro eq_vecI) (simp_all add: algebra_simps)
   qed
-  have "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) =
+  have "hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) =
         ?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. alpha $ k \<cdot>\<^sub>v tensor_vec u (r_br k)) - ?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. alpha $ k \<cdot>\<^sub>v tensor_vec u r_ideal)"
     unfolding hhl_output_branches hhl_ideal_branches ..
   also have "\<dots> = ?W\<^sup>\<dagger> *\<^sub>v (reg_sum N (n * 2) (\<lambda>k. alpha $ k \<cdot>\<^sub>v tensor_vec u (r_br k)) - reg_sum N (n * 2) (\<lambda>k. alpha $ k \<cdot>\<^sub>v tensor_vec u r_ideal))"
@@ -394,7 +422,7 @@ proof -
   also have "reg_sum N (n * 2) (\<lambda>k. alpha $ k \<cdot>\<^sub>v tensor_vec u (r_br k)) - reg_sum N (n * 2) (\<lambda>k. alpha $ k \<cdot>\<^sub>v tensor_vec u r_ideal) =
              reg_sum N (n * 2) ?f"
     by (subst reg_sum_diff) (simp_all add: did diff_br)
-  finally have E: "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) =
+  finally have E: "hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) =
                    ?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) ?f" .
   have "\<langle>?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) ?f|?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) ?f\<rangle> = \<langle>reg_sum N (n * 2) ?f|reg_sum N (n * 2) ?f\<rangle>"
     by (rule unitary_inner_self[OF Wc Wu]) simp
@@ -423,21 +451,396 @@ proof -
 qed
 
 
-text \<open>The branch distance in real terms, $c_k=C/\lambda_k$, $c=C/\lambda$.\<close>
+text \<open>The branch distance in real terms.\<close>
 
 corollary hhl_approx_error_real:
-  "\<langle>hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) |
-    hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal)\<rangle> =
+  "\<langle>hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal) |
+    hhl_gen A t0 N f *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) - tensor_vec (uniform_state N) (tensor_vec u r_ideal)\<rangle> =
    \<langle>u|u\<rangle> * complex_of_real (\<Sum>k<N. (cmod (pe_amp N phi k))\<^sup>2 *
-      ((sqrt (1 - (C / reg_eig t0 N k)\<^sup>2) - sqrt (1 - (C / l)\<^sup>2))\<^sup>2 + (C / reg_eig t0 N k - C / l)\<^sup>2))"
+      ((sqrt (1 - (f k)\<^sup>2) - sqrt (1 - c\<^sup>2))\<^sup>2 + (f k - c)\<^sup>2))"
 proof -
   have "(\<Sum>k<N. complex_of_real ((cmod (pe_amp N phi k))\<^sup>2) * \<langle>r_br k - r_ideal|r_br k - r_ideal\<rangle>) =
         complex_of_real (\<Sum>k<N. (cmod (pe_amp N phi k))\<^sup>2 *
-          ((sqrt (1 - (C / reg_eig t0 N k)\<^sup>2) - sqrt (1 - (C / l)\<^sup>2))\<^sup>2 + (C / reg_eig t0 N k - C / l)\<^sup>2))"
-    unfolding r_br_def r_ideal_def rot_diff_inner by (simp add: of_real_sum)
+          ((sqrt (1 - (f k)\<^sup>2) - sqrt (1 - c\<^sup>2))\<^sup>2 + (f k - c)\<^sup>2))"
+    unfolding r_br_def rot_diff_inner by (simp add: of_real_sum)
   thus ?thesis unfolding hhl_approx_error by (rule arg_cong[where f = "\<lambda>x. \<langle>u|u\<rangle> * x"])
 qed
 
 end
+
+
+subsection \<open>Bounds on the branch distances and amplitudes\<close>
+
+text \<open>$\norm{R(a)\ket0-R(b)\ket0}^2\le4$ for $|a|,|b|\le1$.\<close>
+
+lemma rot_dist_le_four:
+  assumes "\<bar>a\<bar> \<le> 1" "\<bar>b\<bar> \<le> 1"
+  shows "(sqrt (1 - a\<^sup>2) - sqrt (1 - b\<^sup>2))\<^sup>2 + (a - b)\<^sup>2 \<le> 4"
+proof -
+  have a2: "a\<^sup>2 \<le> 1" and b2: "b\<^sup>2 \<le> 1" using assms abs_square_le_1 by auto
+  have sq: "(x - y)\<^sup>2 \<le> 2 * x\<^sup>2 + 2 * y\<^sup>2" for x y :: real
+    using sum_squares_bound[of x y] sum_squares_bound[of x "- y"] by (simp add: power2_diff algebra_simps)
+  have "(sqrt (1 - a\<^sup>2) - sqrt (1 - b\<^sup>2))\<^sup>2 \<le> 2 * (sqrt (1 - a\<^sup>2))\<^sup>2 + 2 * (sqrt (1 - b\<^sup>2))\<^sup>2" by (rule sq)
+  also have "\<dots> = 2 * (1 - a\<^sup>2) + 2 * (1 - b\<^sup>2)" using a2 b2 by simp
+  finally show ?thesis using sq[of a b] by simp
+qed
+
+text \<open>Lipschitz estimate for $0\le a,b\le\theta<1$:
+$\norm{R(a)\ket0-R(b)\ket0}^2\le(a-b)^2/(1-\theta^2)$.\<close>
+
+lemma rot_dist_lipschitz:
+  assumes th: "0 < \<theta>" "\<theta> < 1" and a: "0 \<le> a" "a \<le> \<theta>" and b: "0 \<le> b" "b \<le> \<theta>"
+  shows "(sqrt (1 - a\<^sup>2) - sqrt (1 - b\<^sup>2))\<^sup>2 + (a - b)\<^sup>2 \<le> (a - b)\<^sup>2 / (1 - \<theta>\<^sup>2)"
+proof -
+  let ?sa = "sqrt (1 - a\<^sup>2)" and ?sb = "sqrt (1 - b\<^sup>2)" and ?st = "sqrt (1 - \<theta>\<^sup>2)"
+  have t2: "0 < 1 - \<theta>\<^sup>2" using th mult_strict_mono[of \<theta> 1 \<theta> 1] by (simp add: power2_eq_square)
+  have a2: "a\<^sup>2 \<le> \<theta>\<^sup>2" and b2: "b\<^sup>2 \<le> \<theta>\<^sup>2" using a b by (auto intro: power_mono)
+  have sa: "?st \<le> ?sa" and sb: "?st \<le> ?sb" using a2 b2 by (auto intro: real_sqrt_le_mono)
+  have st: "0 < ?st" using t2 by simp
+  have den: "2 * ?st \<le> ?sa + ?sb" using sa sb by linarith
+  have sa2: "?sa * ?sa = 1 - a\<^sup>2" and sb2: "?sb * ?sb = 1 - b\<^sup>2"
+    using a2 b2 t2 by (auto intro!: real_sqrt_mult_self)
+  have pa: "\<bar>1 - a\<^sup>2\<bar> = 1 - a\<^sup>2" and pb: "\<bar>1 - b\<^sup>2\<bar> = 1 - b\<^sup>2" using a2 b2 t2 by simp_all
+  have prod: "(?sa - ?sb) * (?sa + ?sb) = b\<^sup>2 - a\<^sup>2"
+    by (simp add: algebra_simps pa pb)
+  have "\<bar>?sa - ?sb\<bar> * (2 * ?st) \<le> \<bar>?sa - ?sb\<bar> * (?sa + ?sb)" by (rule mult_left_mono[OF den]) simp
+  also have "\<dots> = \<bar>(?sa - ?sb) * (?sa + ?sb)\<bar>"
+  proof -
+    have pos: "0 \<le> ?sa + ?sb" using a2 b2 t2 by (intro add_nonneg_nonneg real_sqrt_ge_zero) linarith+
+    show ?thesis unfolding abs_mult abs_of_nonneg[OF pos] ..
+  qed
+  also have "\<dots> = \<bar>b\<^sup>2 - a\<^sup>2\<bar>" unfolding prod ..
+  also have "\<dots> = \<bar>a - b\<bar> * (a + b)"
+  proof -
+    have "b\<^sup>2 - a\<^sup>2 = (a - b) * (- (a + b))" by (simp add: algebra_simps power2_eq_square)
+    thus ?thesis using abs_of_nonneg[of "a + b"] a b by (simp add: abs_mult)
+  qed
+  also have "\<dots> \<le> \<bar>a - b\<bar> * (2 * \<theta>)" using a b by (intro mult_left_mono) auto
+  finally have "\<bar>?sa - ?sb\<bar> \<le> \<bar>a - b\<bar> * \<theta> / ?st" using st by (simp add: field_simps)
+  hence "(?sa - ?sb)\<^sup>2 \<le> (\<bar>a - b\<bar> * \<theta> / ?st)\<^sup>2"
+    using power_mono[OF _ abs_ge_zero, of "?sa - ?sb" "\<bar>a - b\<bar> * \<theta> / ?st" 2] by (simp add: power2_abs)
+  also have "\<dots> = (a - b)\<^sup>2 * (\<theta>\<^sup>2 / (1 - \<theta>\<^sup>2))" using t2 by (simp add: power_divide power_mult_distrib)
+  finally have "(?sa - ?sb)\<^sup>2 + (a - b)\<^sup>2 \<le> (a - b)\<^sup>2 * (\<theta>\<^sup>2 / (1 - \<theta>\<^sup>2)) + (a - b)\<^sup>2" by simp
+  also have "\<dots> = (a - b)\<^sup>2 / (1 - \<theta>\<^sup>2)" using t2 by (simp add: field_simps)
+  finally show ?thesis .
+qed
+
+text \<open>The amplitudes are $1$-periodic in $\varphi$.\<close>
+
+lemma pe_amp_shift_up: "pe_amp N \<phi> j = pe_amp N (\<phi> + 1) j"
+proof -
+  have "cis (2 * pi * real k * (\<phi> + 1 - real j / real N)) = cis (2 * pi * real k * (\<phi> - real j / real N))" for k
+  proof -
+    have "cis (2 * pi * real k * (\<phi> + 1 - real j / real N)) = cis (2 * pi * real k * (\<phi> - real j / real N)) * cis (2 * pi * real k)"
+      by (subst cis_mult) (simp add: algebra_simps)
+    also have "cis (2 * pi * real k) = 1" by (rule cis_multiple_2pi) simp
+    finally show ?thesis by simp
+  qed
+  thus ?thesis unfolding pe_amp_def by simp
+qed
+
+
+subsection \<open>The error bound\<close>
+
+lemma pe_amp_tail_sq:
+  assumes N: "0 < N" and d: "\<bar>\<phi> - real j / real N\<bar> \<le> 1 / 2" and d0: "\<phi> \<noteq> real j / real N"
+  shows "(cmod (pe_amp N \<phi> j))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * (\<phi> - real j / real N)\<^sup>2)"
+proof -
+  have "(cmod (pe_amp N \<phi> j))\<^sup>2 \<le> (1 / (2 * real N * \<bar>\<phi> - real j / real N\<bar>))\<^sup>2"
+    by (rule power_mono[OF pe_amp_tail[OF N d d0]]) simp
+  also have "\<dots> = 1 / (4 * (real N)\<^sup>2 * (\<phi> - real j / real N)\<^sup>2)"
+    by (simp add: power_divide power_mult_distrib power2_abs)
+  finally show ?thesis .
+qed
+
+text \<open>Standing hypotheses of the bound: $0<C$, $0<\theta<1$, $\lambda\ge2C/\theta$ (the eigenvalue
+is at least twice the threshold $\lambda_{\mathrm{lo}}=C/\theta$ below which the angle is clamped)
+and $t_0\lambda\le\pi/2$ (the phase $\varphi=t_0\lambda/2\pi$ is at most $\tfrac14$).\<close>
+
+lemma hhl_param_facts:
+  assumes t0: "0 < t0" and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1"
+      and l_lo: "2 * C / \<theta> \<le> l" and l_hi: "t0 * l \<le> pi / 2"
+  shows "0 < l" "0 < hhl_phi t0 l" "hhl_phi t0 l \<le> 1 / 4" "C / l \<le> \<theta> / 2" "0 \<le> C / l" "\<bar>C / l\<bar> \<le> 1"
+    "2 * C \<le> \<theta> * l"
+proof -
+  have "0 < 2 * C / \<theta>" using C th by simp
+  thus l0: "0 < l" using l_lo by linarith
+  show "0 < hhl_phi t0 l" unfolding hhl_phi_def using t0 l0 by simp
+  show "hhl_phi t0 l \<le> 1 / 4" unfolding hhl_phi_def using l_hi t0 by (simp add: field_simps)
+  show Cl: "2 * C \<le> \<theta> * l" using l_lo th by (simp add: field_simps)
+  have "C / l \<le> C / (2 * C / \<theta>)" by (rule divide_left_mono[OF l_lo]) (use C th l0 in simp_all)
+  also have "C / (2 * C / \<theta>) = \<theta> / 2" using C th by (simp add: field_simps)
+  finally show cle: "C / l \<le> \<theta> / 2" .
+  show c0: "0 \<le> C / l" using C l0 by simp
+  show "\<bar>C / l\<bar> \<le> 1" unfolding abs_of_nonneg[OF c0] using cle th by linarith
+qed
+
+text \<open>Good branches: register value $\lambda_k\ge C/\theta$ in the positive half.\<close>
+
+lemma hhl_branch_good:
+  assumes N: "0 < N" and t0: "0 < t0" and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1"
+      and l_lo: "2 * C / \<theta> \<le> l" and l_hi: "t0 * l \<le> pi / 2"
+      and k: "2 * k < N" and lam: "C / \<theta> \<le> reg_eig t0 N k"
+  shows "(cmod (pe_amp N (hhl_phi t0 l) k))\<^sup>2 *
+           ((sqrt (1 - (clamp (C / reg_eig t0 N k))\<^sup>2) - sqrt (1 - (C / l)\<^sup>2))\<^sup>2 + (clamp (C / reg_eig t0 N k) - C / l)\<^sup>2)
+         \<le> pi\<^sup>2 * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2))"
+proof -
+  note pf = hhl_param_facts[OF t0 C th l_lo l_hi]
+  let ?lam = "reg_eig t0 N k" and ?ph = "hhl_phi t0 l" and ?c = "C / l"
+  let ?d = "\<lambda>x. (sqrt (1 - x\<^sup>2) - sqrt (1 - ?c\<^sup>2))\<^sup>2 + (x - ?c)\<^sup>2"
+  define \<delta> where "\<delta> = ?ph - real k / real N"
+  have lamv: "?lam = 2 * pi * real k / (t0 * real N)" using k by (simp add: reg_eig_def)
+  have Ct: "0 < C / \<theta>" using C th by simp
+  have lam_pos: "0 < ?lam" using lam Ct by linarith
+  have t2: "0 < 1 - \<theta>\<^sup>2" using th mult_strict_mono[of \<theta> 1 \<theta> 1] by (simp add: power2_eq_square)
+  have fk_le: "C / ?lam \<le> \<theta>"
+  proof -
+    have "C / ?lam \<le> C / (C / \<theta>)" by (rule divide_left_mono[OF lam]) (use C Ct lam_pos th in simp_all)
+    thus ?thesis using C by simp
+  qed
+  have fk0: "0 \<le> C / ?lam" using C lam_pos by simp
+  have fk: "clamp (C / ?lam) = C / ?lam" by (rule clamp_id) (use fk_le fk0 th in simp)
+  have c_le: "?c \<le> \<theta>" using pf(4) th by linarith
+  have lip: "?d (C / ?lam) \<le> (C / ?lam - ?c)\<^sup>2 / (1 - \<theta>\<^sup>2)"
+    by (rule rot_dist_lipschitz[OF th fk0 fk_le pf(5) c_le])
+  have diff: "l - ?lam = 2 * pi / t0 * \<delta>"
+    unfolding lamv \<delta>_def hhl_phi_def using t0 N by (simp add: field_simps)
+  have cd: "C / ?lam - ?c = C * (l - ?lam) / (?lam * l)" using lam_pos pf(1) by (simp add: field_simps)
+  have ll: "C\<^sup>2 / \<theta>\<^sup>2 \<le> ?lam * l"
+  proof -
+    have "C / \<theta> \<le> l" using l_lo Ct by linarith
+    hence "C / \<theta> * (C / \<theta>) \<le> ?lam * l" by (intro mult_mono lam) (use Ct lam_pos in simp_all)
+    thus ?thesis by (simp add: power_divide power2_eq_square)
+  qed
+  have sq: "(C / ?lam - ?c)\<^sup>2 \<le> 4 * pi\<^sup>2 * \<theta> ^ 4 * \<delta>\<^sup>2 / (t0\<^sup>2 * C\<^sup>2)"
+  proof -
+    have "(C / ?lam - ?c)\<^sup>2 = C\<^sup>2 * (l - ?lam)\<^sup>2 / (?lam * l)\<^sup>2" unfolding cd by (simp add: power_divide power_mult_distrib)
+    also have "\<dots> \<le> C\<^sup>2 * (l - ?lam)\<^sup>2 / (C\<^sup>2 / \<theta>\<^sup>2)\<^sup>2"
+      by (rule divide_left_mono[OF power_mono[OF ll]]) (use C th lam_pos pf(1) in \<open>simp_all add: power2_eq_square\<close>)
+    also have "\<dots> = (l - ?lam)\<^sup>2 * \<theta> ^ 4 / C\<^sup>2" using C th by (simp add: power_divide field_simps)
+    also have "\<dots> = 4 * pi\<^sup>2 * \<theta> ^ 4 * \<delta>\<^sup>2 / (t0\<^sup>2 * C\<^sup>2)" unfolding diff using t0 by (simp add: power_divide power_mult_distrib field_simps)
+    finally show ?thesis .
+  qed
+  have d_le: "?d (C / ?lam) \<le> 4 * pi\<^sup>2 * \<theta> ^ 4 * \<delta>\<^sup>2 / (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2))"
+    using lip divide_right_mono[OF sq, of "1 - \<theta>\<^sup>2"] t2 by (simp add: divide_divide_eq_left)
+  have d0: "0 \<le> ?d (C / ?lam)" by simp
+  have a0: "0 \<le> (cmod (pe_amp N ?ph k))\<^sup>2" by simp
+  have dabs: "\<bar>\<delta>\<bar> \<le> 1 / 2"
+  proof -
+    have "real k / real N < 1 / 2" using k N by (simp add: field_simps)
+    moreover have "0 \<le> real k / real N" by simp
+    ultimately show ?thesis unfolding \<delta>_def using pf(2,3) by (intro abs_leI; linarith)
+  qed
+  show ?thesis
+  proof (cases "\<delta> = 0")
+    case True
+    hence "?d (C / ?lam) = 0" using d_le d0 by simp
+    thus ?thesis unfolding fk using t2 C t0 N th by simp
+  next
+    case False
+    have a: "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * \<delta>\<^sup>2)"
+      using pe_amp_tail_sq[OF N, of ?ph k] dabs False unfolding \<delta>_def by simp
+    have "(cmod (pe_amp N ?ph k))\<^sup>2 * ?d (C / ?lam) \<le>
+          1 / (4 * (real N)\<^sup>2 * \<delta>\<^sup>2) * (4 * pi\<^sup>2 * \<theta> ^ 4 * \<delta>\<^sup>2 / (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)))"
+      by (rule mult_mono[OF a d_le]) (simp_all add: d0)
+    also have "\<dots> = pi\<^sup>2 * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2))"
+      using False N t0 C t2 by (simp add: field_simps)
+    finally show ?thesis unfolding fk .
+  qed
+qed
+
+text \<open>Branches below the threshold in the positive half: weight at most $1/(N\varphi)^2$.\<close>
+
+lemma hhl_branch_low:
+  assumes N: "0 < N" and t0: "0 < t0" and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1"
+      and l_lo: "2 * C / \<theta> \<le> l" and l_hi: "t0 * l \<le> pi / 2"
+      and k: "2 * k < N" and lam: "reg_eig t0 N k < C / \<theta>"
+  shows "(cmod (pe_amp N (hhl_phi t0 l) k))\<^sup>2 \<le> 1 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2)"
+proof -
+  note pf = hhl_param_facts[OF t0 C th l_lo l_hi]
+  let ?ph = "hhl_phi t0 l"
+  define \<delta> where "\<delta> = ?ph - real k / real N"
+  have lamv: "reg_eig t0 N k = 2 * pi * real k / (t0 * real N)" using k by (simp add: reg_eig_def)
+  have kN: "real k / real N < C * t0 / (2 * pi * \<theta>)"
+    using lam unfolding lamv using t0 th N by (simp add: field_simps)
+  have ph2: "C * t0 / (2 * pi * \<theta>) \<le> ?ph / 2"
+    unfolding hhl_phi_def using pf(7) t0 th by (simp add: field_simps)
+  have dgt: "?ph / 2 < \<delta>" unfolding \<delta>_def using kN ph2 by linarith
+  have dle: "\<delta> \<le> ?ph" unfolding \<delta>_def by simp
+  have dabs: "\<bar>\<delta>\<bar> \<le> 1 / 2" using dgt dle pf(2,3) by (intro abs_leI; linarith)
+  have d0: "\<delta> \<noteq> 0" using dgt pf(2) by simp
+  have "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * \<delta>\<^sup>2)"
+    using pe_amp_tail_sq[OF N, of ?ph k] dabs d0 unfolding \<delta>_def by simp
+  also have "\<dots> \<le> 1 / (4 * (real N)\<^sup>2 * (?ph / 2)\<^sup>2)"
+  proof (rule divide_left_mono)
+    have "(?ph / 2)\<^sup>2 \<le> \<delta>\<^sup>2" using dgt pf(2) by (intro power_mono) simp_all
+    thus "4 * (real N)\<^sup>2 * (?ph / 2)\<^sup>2 \<le> 4 * (real N)\<^sup>2 * \<delta>\<^sup>2" by (intro mult_left_mono) simp_all
+    show "0 \<le> (1::real)" by simp
+    show "0 < 4 * (real N)\<^sup>2 * \<delta>\<^sup>2 * (4 * (real N)\<^sup>2 * (?ph / 2)\<^sup>2)" using N d0 pf(2) by simp
+  qed
+  also have "\<dots> = 1 / ((real N)\<^sup>2 * ?ph\<^sup>2)" by (simp add: power_divide)
+  finally show ?thesis .
+qed
+
+text \<open>Branches in the negative half: weight at most $1/(N\varphi)^2$.\<close>
+
+lemma hhl_branch_neg:
+  assumes N: "0 < N" and t0: "0 < t0" and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1"
+      and l_lo: "2 * C / \<theta> \<le> l" and l_hi: "t0 * l \<le> pi / 2"
+      and k: "k < N" and k2: "\<not> 2 * k < N"
+  shows "(cmod (pe_amp N (hhl_phi t0 l) k))\<^sup>2 \<le> 1 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2)"
+proof -
+  note pf = hhl_param_facts[OF t0 C th l_lo l_hi]
+  let ?ph = "hhl_phi t0 l"
+  define \<delta> where "\<delta> = ?ph - real k / real N"
+  have kN1: "1 / 2 \<le> real k / real N" using k2 N by (simp add: field_simps)
+  have kN2: "real k / real N < 1" using k N by simp
+  have ph16: "?ph\<^sup>2 \<le> (1 / 4)\<^sup>2" using pf(2,3) by (intro power_mono) simp_all
+  have bound_from: "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * g\<^sup>2) \<Longrightarrow> ?ph \<le> 2 * g \<Longrightarrow> 0 < g \<Longrightarrow>
+                    (cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / ((real N)\<^sup>2 * ?ph\<^sup>2)" for g
+  proof -
+    assume a: "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * g\<^sup>2)" and g: "?ph \<le> 2 * g" "0 < g"
+    have "?ph\<^sup>2 \<le> (2 * g)\<^sup>2" using g pf(2) by (intro power_mono) simp_all
+    hence "(real N)\<^sup>2 * ?ph\<^sup>2 \<le> 4 * (real N)\<^sup>2 * g\<^sup>2"
+      using mult_left_mono[of "?ph\<^sup>2" "4 * g\<^sup>2" "(real N)\<^sup>2"] by (simp add: power_mult_distrib algebra_simps)
+    hence "1 / (4 * (real N)\<^sup>2 * g\<^sup>2) \<le> 1 / ((real N)\<^sup>2 * ?ph\<^sup>2)"
+      by (rule divide_left_mono) (use N pf(2) g in simp_all)
+    with a show ?thesis by linarith
+  qed
+  show ?thesis
+  proof (cases "- (1 / 2) \<le> \<delta>")
+    case True
+    have dneg: "\<delta> \<le> - (1 / 4)" unfolding \<delta>_def using kN1 pf(3) by linarith
+    have dabs: "\<bar>\<delta>\<bar> \<le> 1 / 2" using True dneg by (intro abs_leI; linarith)
+    have d0: "\<delta> \<noteq> 0" using dneg by simp
+    have a: "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * \<delta>\<^sup>2)"
+      using pe_amp_tail_sq[OF N, of ?ph k] dabs d0 unfolding \<delta>_def by simp
+    have "(1 / 4)\<^sup>2 \<le> \<delta>\<^sup>2"
+    proof -
+      have "1 / 4 \<le> \<bar>\<delta>\<bar>" using dneg by simp
+      from power_mono[OF this, of 2] show ?thesis by (simp add: power2_abs)
+    qed
+    hence "1 / (4 * (real N)\<^sup>2 * \<delta>\<^sup>2) \<le> 1 / (4 * (real N)\<^sup>2 * (1 / 4)\<^sup>2)"
+      by (rule divide_left_mono[OF mult_left_mono]) (use N d0 in simp_all)
+    with a have "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * (1 / 4)\<^sup>2)" by linarith
+    thus ?thesis by (rule bound_from) (use pf(3) in simp_all)
+  next
+    case False
+    define \<delta>' where "\<delta>' = (?ph + 1) - real k / real N"
+    have d'1: "\<delta>' < 1 / 2" unfolding \<delta>'_def using False \<delta>_def by linarith
+    have d'2: "?ph < \<delta>'" unfolding \<delta>'_def using kN2 by linarith
+    have dabs: "\<bar>\<delta>'\<bar> \<le> 1 / 2" using d'1 d'2 pf(2) by (intro abs_leI; linarith)
+    have d0: "\<delta>' \<noteq> 0" using d'2 pf(2) by simp
+    have a: "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * \<delta>'\<^sup>2)"
+      using pe_amp_tail_sq[OF N, of "?ph + 1" k] dabs d0 unfolding \<delta>'_def pe_amp_shift_up[of N ?ph k] by simp
+    have "?ph\<^sup>2 \<le> \<delta>'\<^sup>2" using d'2 pf(2) by (intro power_mono) simp_all
+    hence "1 / (4 * (real N)\<^sup>2 * \<delta>'\<^sup>2) \<le> 1 / (4 * (real N)\<^sup>2 * ?ph\<^sup>2)"
+      by (rule divide_left_mono[OF mult_left_mono]) (use N d0 pf(2) in simp_all)
+    with a have "(cmod (pe_amp N ?ph k))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * ?ph\<^sup>2)" by linarith
+    thus ?thesis by (rule bound_from) (use pf(2) in simp_all)
+  qed
+qed
+
+text \<open>Every branch: $|\alpha_k|^2d_k^2\le b_1+b_2$ with
+$b_1=\pi^2\theta^4/(N^2t_0^2C^2(1-\theta^2))$, $b_2=4/(N\varphi)^2$.\<close>
+
+lemma hhl_branch_bound:
+  assumes N: "0 < N" and t0: "0 < t0" and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1"
+      and l_lo: "2 * C / \<theta> \<le> l" and l_hi: "t0 * l \<le> pi / 2" and k: "k < N"
+  shows "(cmod (pe_amp N (hhl_phi t0 l) k))\<^sup>2 *
+           ((sqrt (1 - (clamp (C / reg_eig t0 N k))\<^sup>2) - sqrt (1 - (C / l)\<^sup>2))\<^sup>2 + (clamp (C / reg_eig t0 N k) - C / l)\<^sup>2)
+         \<le> pi\<^sup>2 * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 4 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2)"
+proof -
+  note pf = hhl_param_facts[OF t0 C th l_lo l_hi]
+  let ?a = "(cmod (pe_amp N (hhl_phi t0 l) k))\<^sup>2"
+  let ?d = "(sqrt (1 - (clamp (C / reg_eig t0 N k))\<^sup>2) - sqrt (1 - (C / l)\<^sup>2))\<^sup>2 + (clamp (C / reg_eig t0 N k) - C / l)\<^sup>2"
+  have t2: "0 < 1 - \<theta>\<^sup>2" using th mult_strict_mono[of \<theta> 1 \<theta> 1] by (simp add: power2_eq_square)
+  have b1: "0 \<le> pi\<^sup>2 * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2))" using t2 by simp
+  have b2: "0 \<le> 4 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2)" by simp
+  have d4: "?d \<le> 4" by (rule rot_dist_le_four[OF clamp_abs pf(6)])
+  have d0: "0 \<le> ?d" by simp
+  have weight: "?a \<le> 1 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2) \<Longrightarrow> ?thesis"
+  proof -
+    assume a: "?a \<le> 1 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2)"
+    have "?a * ?d \<le> 1 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2) * 4" by (rule mult_mono[OF a d4]) simp_all
+    thus ?thesis using b1 by simp
+  qed
+  show ?thesis
+  proof (cases "2 * k < N")
+    case True
+    show ?thesis
+    proof (cases "C / \<theta> \<le> reg_eig t0 N k")
+      case True
+      with \<open>2 * k < N\<close> show ?thesis using hhl_branch_good[OF N t0 C th l_lo l_hi] b2 by (simp add: add_increasing2)
+    next
+      case False
+      thus ?thesis by (intro weight hhl_branch_low[OF N t0 C th l_lo l_hi True]) simp
+    qed
+  next
+    case False
+    thus ?thesis by (intro weight hhl_branch_neg[OF N t0 C th l_lo l_hi k])
+  qed
+qed
+
+text \<open>The error bound for the clamped circuit on an eigenvector: with $\varphi=t_0\lambda/2\pi$,
+\[\norm{\text{output}-u_N\otimes u\otimes R(C/\lambda)\ket0}^2
+  \le\norm u^2\,\frac{\pi^2}{N t_0^2}\Bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda^2}\Bigr).\]\<close>
+
+lemma hhl_bound_algebra:
+  assumes N: "0 < N" and t0: "0 < t0" and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1" and l0: "0 < l"
+  shows "real N * (pi\<^sup>2 * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 4 / ((real N)\<^sup>2 * (hhl_phi t0 l)\<^sup>2)) =
+         pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / l\<^sup>2)"
+proof -
+  have t2: "0 < 1 - \<theta>\<^sup>2" using th mult_strict_mono[of \<theta> 1 \<theta> 1] by (simp add: power2_eq_square)
+  have Nn: "real N \<noteq> 0" using N by simp
+  have cancel: "real N * (X / ((real N)\<^sup>2 * Y)) = X / (real N * Y)" for X Y :: real
+    using Nn by (cases "Y = 0") (simp_all add: power2_eq_square field_simps)
+  have p2: "(hhl_phi t0 l)\<^sup>2 = t0\<^sup>2 * l\<^sup>2 / (4 * pi\<^sup>2)"
+    unfolding hhl_phi_def by (simp add: power_divide power_mult_distrib)
+  have e1: "pi\<^sup>2 * \<theta> ^ 4 / (real N * (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2))) = pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)))"
+    by (simp add: field_simps)
+  have e2: "4 / (real N * (hhl_phi t0 l)\<^sup>2) = pi\<^sup>2 / (real N * t0\<^sup>2) * (16 / l\<^sup>2)"
+    unfolding p2 using N t0 l0 by (simp add: field_simps)
+  have g: "(real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2) = (real N)\<^sup>2 * (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2))"
+    by (simp add: mult.assoc)
+  show ?thesis unfolding distrib_left g cancel e1 e2 by simp
+qed
+
+theorem hhl_clamped_error_bound:
+  fixes A :: "complex Matrix.mat" and u :: "complex Matrix.vec"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
+      and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
+      and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1"
+      and l_lo: "2 * C / \<theta> \<le> l" and l_hi: "t0 * l \<le> pi / 2"
+  shows "Re \<langle>hhl_circuit_clamped A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) -
+              tensor_vec (uniform_state N) (tensor_vec u (rot (C / l) *\<^sub>v unit_vec 2 0)) |
+            hhl_circuit_clamped A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) -
+              tensor_vec (uniform_state N) (tensor_vec u (rot (C / l) *\<^sub>v unit_vec 2 0))\<rangle>
+         \<le> Re \<langle>u|u\<rangle> * (pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / l\<^sup>2))"
+proof -
+  note pf = hhl_param_facts[OF t0 C th l_lo l_hi]
+  let ?f = "\<lambda>k. clamp (C / reg_eig t0 N k)" and ?c = "C / l" and ?ph = "hhl_phi t0 l"
+  let ?S = "\<Sum>k<N. (cmod (pe_amp N ?ph k))\<^sup>2 * ((sqrt (1 - (?f k)\<^sup>2) - sqrt (1 - ?c\<^sup>2))\<^sup>2 + (?f k - ?c)\<^sup>2)"
+  let ?b = "pi\<^sup>2 * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 4 / ((real N)\<^sup>2 * ?ph\<^sup>2)"
+  define ru where "ru = (\<Sum>i<n. (cmod (u $ i))\<^sup>2)"
+  have uu: "\<langle>u|u\<rangle> = complex_of_real ru" unfolding ru_def by (simp add: inner_self_sum[OF u])
+  have ru0: "0 \<le> ru" unfolding ru_def by (simp add: sum_nonneg)
+  have E: "\<langle>hhl_circuit_clamped A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) -
+              tensor_vec (uniform_state N) (tensor_vec u (rot ?c *\<^sub>v unit_vec 2 0)) |
+            hhl_circuit_clamped A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) -
+              tensor_vec (uniform_state N) (tensor_vec u (rot ?c *\<^sub>v unit_vec 2 0))\<rangle> = complex_of_real (ru * ?S)"
+    unfolding hhl_circuit_clamped_def
+    using hhl_approx_error_real[OF A t0 N u ev, of ?f ?c] unfolding uu by simp
+  have S: "?S \<le> real N * ?b"
+  proof -
+    have "?S \<le> (\<Sum>k<N. ?b)" by (rule sum_mono) (rule hhl_branch_bound[OF N t0 C th l_lo l_hi], simp)
+    thus ?thesis by simp
+  qed
+  have Nb: "real N * ?b = pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / l\<^sup>2)"
+    by (rule hhl_bound_algebra[OF N t0 C th pf(1)])
+  have "Re (complex_of_real (ru * ?S)) = ru * ?S" by simp
+  also have "\<dots> \<le> ru * (real N * ?b)" by (rule mult_left_mono[OF S ru0])
+  finally show ?thesis unfolding E Nb uu by simp
+qed
 
 end

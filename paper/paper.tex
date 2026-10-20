@@ -51,7 +51,8 @@ functional calculus for Hermitian matrices, quantum phase estimation (exact case
 $4/\pi^2$ success bound, on the Archive's QFT circuit) and the HHL algorithm for
 eigenvalues representable in the register, with the output state, the solution
 property, a $1/\kappa^2$ success bound and the reduction of non-Hermitian systems.  The
-error analysis for eigenvalues that are not representable remains.
+for an eigenvalue that is not representable, the output of the physical (angle-clamped)
+circuit on the eigenvector is within an explicit $O(1/(t_0\sqrt N))$ of the ideal output.
 \end{abstract}
 
 \section{Introduction}
@@ -198,9 +199,10 @@ Theory & Lectures & lines & results\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 501 & 26\\
 \isa{QFT\_Fourier} & VI: the Archive's QFT circuit is $F_{2^n}$ & 103 & 4\\
 \isa{HHL} & VI: the HHL algorithm & 815 & 46\\
+\isa{HHL\_Approximate} & VI: inexact phase estimation, error bound & 847 & 42\\
 \bottomrule
 \end{tabular}
-\caption{The thirty-five theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,384 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it.  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 1\,841 lines, 112 results, not included in the counts above).}
+\caption{The thirty-five theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,384 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it.  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 2\,692 lines, 154 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -474,12 +476,26 @@ i.e.\ $1/\kappa^2$ for unit $b$ and $C=\lambda_{\min}$.  A non-Hermitian inverti
 handled through $\left(\begin{smallmatrix}0&A\\A^\dagger&0\end{smallmatrix}\right)$, whose
 inverse maps $b\oplus0$ to $0\oplus x$.
 
-\paragraph{What remains.}  The theorems describe the idealised circuit for eigenvalues that
-the register represents exactly.  The general case, in which phase estimation spreads
-each eigencomponent over several register values and uncomputation is inexact, needs a
-quantitative error bound; it is the next step.  Hamiltonian simulation enters only
-through the spectral $e^{itA}$; Trotter-type approximation from sparse access and the
-complexity claims (which need a cost model) are outside the matrix framework.
+\paragraph{Inexact phase estimation.}  When $\lambda$ is not a register value, phase
+estimation leaves the register in $\sum_j\alpha_j\ket j$, the rotation acts with
+$C/\lambda_j$ on the $j$-th branch and uncomputation is inexact.  Writing states as
+register sums $\sum_j\ket j\otimes f_j$ (block operators act branch by branch, branches
+are orthogonal) gives the exact identity
+$\norm{\text{output}-u_N\otimes u\otimes R(C/\lambda)\ket0}^2
+ =\norm u^2\sum_j|\alpha_j|^2\norm{R(c_j)\ket0-R(c)\ket0}^2$.
+For register values below $C$ the rotation $R(C/\lambda_j)$ is not unitary and the branch
+error is unbounded, so the physical circuit clamps the angle to $[-1,1]$; for it, with
+$\sum_j|\alpha_j|^2=1$, the tail bound $|\alpha_j|\le1/(2N|\delta_j|)$, Jordan's inequality
+and a Lipschitz estimate for $c\mapsto R(c)\ket0$ on $[0,\theta]$, we prove: if
+$\lambda\ge2C/\theta$ and $t_0\lambda\le\pi/2$ then the squared distance is at most
+$\norm u^2\,\frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda^2}\bigr)$
+(\isa{hhl\_clamped\_error\_bound}).
+
+\paragraph{What remains.}  The bound is for one eigenvector; the general right-hand side
+and the sharper constants of the original filter-function analysis are the next steps.
+Hamiltonian simulation enters only through the spectral $e^{itA}$; Trotter-type
+approximation from sparse access and the complexity claims (which need a cost model) are
+outside the matrix framework.
 
 \section{Conclusion}
 

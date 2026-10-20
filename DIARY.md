@@ -150,4 +150,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   bound: Σ_j |α_j|² = 1 (`pe_amp_sum_sq`, α = F*b with b unit) and |α_j| ≤ 1/(2N|δ_j|) for
   δ_j = φ − j/N (`pe_amp_tail`).  Still open: combining them with a Lipschitz bound on
   c ↦ R(c)|0⟩ (which needs C/λ bounded away from 1) into an explicit ε(N, t₀, κ).
+- **The clamp is necessary.**  For register values λ_k < C the rotation R(C/λ_k) is not unitary
+  (HOL's √ of a negative is negative) and the branch error |α_k|²‖R(C/λ_k)|0⟩ − R(c)|0⟩‖² is of
+  order (C/λ_k)²/(N δ_k)², not small; the physical circuit uses the angle max(−1, min(1, C/λ_k))
+  (`hhl_circuit_clamped`, same as `hhl_circuit` on exact eigenvalues ≥ C).
+- **The error bound** (`hhl_clamped_error_bound`).  For an eigenvector u with eigenvalue
+  λ ≥ 2C/θ (0 < θ < 1) and t₀λ ≤ π/2: ‖output − u_N ⊗ u ⊗ R(C/λ)|0⟩‖² ≤
+  ‖u‖² (π²/(N t₀²)) (θ⁴/(C²(1−θ²)) + 16/λ²).  Proof: per branch |α_k|²d_k² ≤ b₁ + b₂ with
+  b₁ = π²θ⁴/(N²t₀²C²(1−θ²)) on good branches (tail bound × Lipschitz, the δ_k² cancels) and
+  b₂ = 4/(Nφ)² on the others (weight ≤ 1/(Nφ)², distance ≤ 2; the negative half uses the
+  periodicity α_k(φ) = α_k(φ+1)); sum over N branches.  Crude compared with the HHL paper's
+  filter-function analysis, but explicit and checked.
 
