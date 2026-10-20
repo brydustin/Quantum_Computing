@@ -20,13 +20,13 @@ lemma ket_beta_index: "ket_beta $ 0 = \<i> / sqrt 2" "ket_beta $ 1 = - \<i> / sq
 lemma ket_plus_index: "ket_plus $ 0 = 1 / sqrt 2" "ket_plus $ 1 = 1 / sqrt 2"
   by (simp_all add: ket_plus_def)
 
-lemma Y_plus: "pauli_Y *\<^sub>v ket_plus = ket_beta"
-  by (rule eq_vecI) (auto simp: pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
+lemma Y_plus: "Pauli_Y *\<^sub>v ket_plus = ket_beta"
+  by (rule eq_vecI) (auto simp: Pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
 
-lemma Y_beta: "pauli_Y *\<^sub>v ket_beta = ket_plus"
-  by (rule eq_vecI) (auto simp: pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
+lemma Y_beta: "Pauli_Y *\<^sub>v ket_beta = ket_plus"
+  by (rule eq_vecI) (auto simp: Pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
 
-lemma Y_ub: "pauli_Y *\<^sub>v ub s = ub (\<not> s)"
+lemma Y_ub: "Pauli_Y *\<^sub>v ub s = ub (\<not> s)"
   by (cases s) (simp_all add: ub_def Y_plus Y_beta)
 
 lemma inner2: "dim_vec u = 2 \<Longrightarrow> dim_vec v = 2 \<Longrightarrow> \<langle>u|v\<rangle> = cnj (u $ 0) * v $ 0 + cnj (u $ 1) * v $ 1"
@@ -41,7 +41,7 @@ proof -
     by (cases s; cases t) (simp_all add: ub_def ket_plus_index ket_beta_index ket_plus_index(2)[unfolded One_nat_def] ket_beta_index(2)[unfolded One_nat_def] field_simps s2)
 qed
 
-theorem ket_beta_props: "\<langle>ket_plus | ket_beta\<rangle> = 0" "pauli_Y *\<^sub>v ket_plus = ket_beta" "pauli_Y *\<^sub>v ket_beta = ket_plus"
+theorem ket_beta_props: "\<langle>ket_plus | ket_beta\<rangle> = 0" "Pauli_Y *\<^sub>v ket_plus = ket_beta" "Pauli_Y *\<^sub>v ket_beta = ket_plus"
   using ub_inner[of True False] Y_plus Y_beta by (simp_all add: ub_def)
 
 subsection \<open>Codes with orthogonal error images\<close>
@@ -164,7 +164,7 @@ definition tv2 :: "bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> comp
   "tv2 a b c = tensor_vec (tensor_vec (ub a) (ub b)) (ub c)"
 
 definition y_errors :: "complex Matrix.mat list" where
-  "y_errors = [1\<^sub>m 8, bop 0 pauli_Y, bop 1 pauli_Y, bop 2 pauli_Y]"
+  "y_errors = [1\<^sub>m 8, bop 0 Pauli_Y, bop 1 Pauli_Y, bop 2 Pauli_Y]"
 
 definition y_codewords :: "complex Matrix.vec list" where
   "y_codewords = [tv2 True True True, tv2 False False False]"
@@ -182,23 +182,23 @@ proof -
 qed
 
 lemma y_actions:
-  "bop 0 pauli_Y *\<^sub>v tv2 a b c = tv2 (\<not> a) b c"
-  "bop 1 pauli_Y *\<^sub>v tv2 a b c = tv2 a (\<not> b) c"
-  "bop 2 pauli_Y *\<^sub>v tv2 a b c = tv2 a b (\<not> c)"
+  "bop 0 Pauli_Y *\<^sub>v tv2 a b c = tv2 (\<not> a) b c"
+  "bop 1 Pauli_Y *\<^sub>v tv2 a b c = tv2 a (\<not> b) c"
+  "bop 2 Pauli_Y *\<^sub>v tv2 a b c = tv2 a b (\<not> c)"
 proof -
-  have Y: "pauli_Y \<in> carrier_mat 2 2" by simp
+  have Y: "Pauli_Y \<in> carrier_mat 2 2" by simp
   have I: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
   have ab: "dim_vec (tensor_vec (ub a) (ub b)) = 4" by (simp add: tensor_vec_dim)
   have c4: "\<And>A B. A \<in> carrier_mat 2 2 \<Longrightarrow> B \<in> carrier_mat 2 2 \<Longrightarrow> Tensor.tensor_mat A B \<in> carrier_mat 4 4"
     by auto
   have one: "\<And>v :: complex Matrix.vec. dim_vec v = 2 \<Longrightarrow> 1\<^sub>m 2 *\<^sub>v v = v" by (rule one_mult_mat_vec, rule carrier_vecI)
-  show "bop 0 pauli_Y *\<^sub>v tv2 a b c = tv2 (\<not> a) b c"
+  show "bop 0 Pauli_Y *\<^sub>v tv2 a b c = tv2 (\<not> a) b c"
     unfolding bop_cases[OF Y] tv2_def tensor_mat_vec_mult[OF c4[OF Y I] I ab ub_dim]
       tensor_mat_vec_mult[OF Y I ub_dim ub_dim] by (simp add: one Y_ub)
-  show "bop 1 pauli_Y *\<^sub>v tv2 a b c = tv2 a (\<not> b) c"
+  show "bop 1 Pauli_Y *\<^sub>v tv2 a b c = tv2 a (\<not> b) c"
     unfolding bop_cases[OF Y] tv2_def tensor_mat_vec_mult[OF c4[OF I Y] I ab ub_dim]
       tensor_mat_vec_mult[OF I Y ub_dim ub_dim] by (simp add: one Y_ub)
-  show "bop 2 pauli_Y *\<^sub>v tv2 a b c = tv2 a b (\<not> c)"
+  show "bop 2 Pauli_Y *\<^sub>v tv2 a b c = tv2 a b (\<not> c)"
     unfolding bop_cases[OF Y] tv2_def tensor_mat_vec_mult[OF c4[OF I I] Y ab ub_dim]
       tensor_mat_vec_mult[OF I I ub_dim ub_dim] by (simp add: one Y_ub)
 qed
@@ -208,9 +208,9 @@ lemma y_codewords_orthonormal: "orthonormal_list 8 y_codewords"
   by (auto simp: tv2_inner less_Suc_eq)
 
 lemma y_errors_unitary: "\<forall>U \<in> set y_errors. U \<in> carrier_mat 8 8 \<and> unitary U"
-  unfolding y_errors_def using bop_carrier[OF pauli_Y_carrier, of 0] bop_carrier[OF pauli_Y_carrier, of 1]
-    bop_carrier[OF pauli_Y_carrier, of 2]
-  by (auto simp: bop_def pauli_Y_unitary simp del: One_nat_def)
+  unfolding y_errors_def using bop_carrier[OF Pauli_Y_carrier, of 0] bop_carrier[OF Pauli_Y_carrier, of 1]
+    bop_carrier[OF Pauli_Y_carrier, of 2]
+  by (auto simp: bop_def Pauli_Y_unitary simp del: One_nat_def)
 
 lemma y_images_orthogonal:
   "\<forall>i < length y_errors. \<forall>j < length y_errors. i \<noteq> j \<longrightarrow>

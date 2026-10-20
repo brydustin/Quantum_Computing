@@ -12,20 +12,20 @@ lemma cmod_parallelogram:
 proposition pauli_expansion_unitary:
   fixes U :: "complex Matrix.mat" and a0 a1 a2 a3 :: complex
   assumes Uu: "unitary U"
-      and U_eq: "U = a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m pauli_X + a2 \<cdot>\<^sub>m pauli_Y + a3 \<cdot>\<^sub>m pauli_Z"
+      and U_eq: "U = a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m Pauli_X + a2 \<cdot>\<^sub>m Pauli_Y + a3 \<cdot>\<^sub>m Pauli_Z"
   shows "(cmod a0)\<^sup>2 + (cmod a1)\<^sup>2 + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2 = 1"
 proof -
   have Uc: "U \<in> carrier_mat 2 2"
-    unfolding U_eq by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+    unfolding U_eq by (simp add: Pauli_X_def Pauli_Y_def Pauli_Z_def)
   have dr: "dim_row U = 2" and dc: "dim_col U = 2" using Uc by auto
   have e00: "U $$ (0,0) = a0 + a3"
-    by (simp add: U_eq pauli_X_def pauli_Y_def pauli_Z_def)
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
   have e01: "U $$ (0,1) = a1 + \<i> * a2"
-    by (simp add: U_eq pauli_X_def pauli_Y_def pauli_Z_def)
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
   have e10: "U $$ (1,0) = a1 - \<i> * a2"
-    by (simp add: U_eq pauli_X_def pauli_Y_def pauli_Z_def)
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
   have e11: "U $$ (1,1) = a0 - a3"
-    by (simp add: U_eq pauli_X_def pauli_Y_def pauli_Z_def)
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
   have UdU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m 2" using Uu dc by (simp add: unitary_def)
   have tr2: "Tr ((U\<^sup>\<dagger>) * U) = 2" unfolding UdU by (simp add: Tr_one_mat)
   have hs: "\<langle>\<langle> U | U \<rangle>\<rangle> = Tr ((U\<^sup>\<dagger>) * U)"

@@ -62,7 +62,7 @@ definition uniform_vec :: "nat \<Rightarrow> complex Matrix.vec" where
 lemma uniform_vec_dim [simp]: "dim_vec (uniform_vec N) = 2^N"
   by (simp add: uniform_vec_def)
 
-lemma hadamard_e0_const: "H_gate *\<^sub>v unit_vec 2 0 = Matrix.vec 2 (\<lambda>_. complex_of_real (1 / sqrt 2))"
+lemma hadamard_e0_const: "Hadamard *\<^sub>v unit_vec 2 0 = Matrix.vec 2 (\<lambda>_. complex_of_real (1 / sqrt 2))"
 proof -
   have c: "1 / csqrt 2 = complex_of_real (1 / sqrt 2)" by (simp add: csqrt_two)
   show ?thesis unfolding hadamard_e0 c
@@ -70,10 +70,10 @@ proof -
 qed
 
 theorem hadamard_uniform_N:
-  "tensor_pow_mat H_gate N *\<^sub>v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N"
+  "tensor_pow_mat Hadamard N *\<^sub>v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N"
 proof -
-  have Hc: "H_gate \<in> carrier_mat 2 2" by (simp add: H_gate_def H_def)
-  have "tensor_pow_mat H_gate N *\<^sub>v tensor_pow_vec (unit_vec 2 0) N = tensor_pow_vec (H_gate *\<^sub>v unit_vec 2 0) N"
+  have Hc: "Hadamard \<in> carrier_mat 2 2" by (simp add: Hadamard_def Quantum.H_def)
+  have "tensor_pow_mat Hadamard N *\<^sub>v tensor_pow_vec (unit_vec 2 0) N = tensor_pow_vec (Hadamard *\<^sub>v unit_vec 2 0) N"
     by (rule tensor_pow_mat_vec[OF Hc]) simp
   also have "\<dots> = tensor_pow_vec (Matrix.vec 2 (\<lambda>_. complex_of_real (1 / sqrt 2))) N"
     unfolding hadamard_e0_const ..

@@ -358,7 +358,7 @@ Bernoulli trial).  The existence of the oracle is formalised below; the proposit
 \<open>Day12_Counting_Probability\<close>.\<close>
 
 lemma hadamard_uniform_1:
-  "H_gate *\<^sub>v unit_vec 2 0 =
+  "Hadamard *\<^sub>v unit_vec 2 0 =
    (1/csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
   using hadamard_e0.
 
@@ -8541,116 +8541,116 @@ subsection \<open>The Pauli matrices\<close>
 
 text \<open>The notes use two sign conventions for $Y$: $\begin{pmatrix}0&-i\\i&0\end{pmatrix}$ on
 Day 10 (the library's \<open>Y\<close>) and $\begin{pmatrix}0&i\\-i&0\end{pmatrix}$ on Day 32.
-\<open>pauli_Y\<close> follows Day 32; both are Hermitian unitary involutions, and the Pauli
-identities below carry the corresponding signs.  \<open>pauli_X\<close> and \<open>pauli_Z\<close> are the
-library's \<open>X\<close> and \<open>Z\<close> under stable local names.\<close>
+\<open>Pauli_Y\<close> follows Day 32; both are Hermitian unitary involutions, and the Pauli
+identities below carry the corresponding signs.  \<open>Pauli_X\<close> and \<open>Pauli_Z\<close> are the
+library's \<open>Quantum.X\<close> and \<open>Quantum.Z\<close>.\<close>
 
-definition pauli_X :: "complex Matrix.mat" where
-  "pauli_X \<equiv> Matrix.mat 2 2
+definition Pauli_X :: "complex Matrix.mat" where
+  "Pauli_X \<equiv> Matrix.mat 2 2
        (\<lambda>(i,j). if (i = 0 \<and> j = 1) \<or> (i = 1 \<and> j = 0) then 1 else 0)"
 
-definition pauli_Y :: "complex Matrix.mat" where
-  "pauli_Y \<equiv> Matrix.mat 2 2
+definition Pauli_Y :: "complex Matrix.mat" where
+  "Pauli_Y \<equiv> Matrix.mat 2 2
        (\<lambda>(i,j). if i = 0 \<and> j = 1 then \<i>
                 else if i = 1 \<and> j = 0 then -\<i> else 0)"
 
-definition pauli_Z :: "complex Matrix.mat" where
-  "pauli_Z \<equiv> Matrix.mat 2 2
+definition Pauli_Z :: "complex Matrix.mat" where
+  "Pauli_Z \<equiv> Matrix.mat 2 2
        (\<lambda>(i,j). if i = 0 \<and> j = 0 then 1
                 else if i = 1 \<and> j = 1 then -1 else 0)"
 
-lemma pauli_X_carrier [simp]: "pauli_X \<in> carrier_mat 2 2"
-  by (auto simp: pauli_X_def)
+lemma Pauli_X_carrier [simp]: "Pauli_X \<in> carrier_mat 2 2"
+  by (auto simp: Pauli_X_def)
 
-lemma pauli_Y_carrier [simp]: "pauli_Y \<in> carrier_mat 2 2"
-  by (auto simp: pauli_Y_def)
+lemma Pauli_Y_carrier [simp]: "Pauli_Y \<in> carrier_mat 2 2"
+  by (auto simp: Pauli_Y_def)
 
-lemma pauli_Z_carrier [simp]: "pauli_Z \<in> carrier_mat 2 2"
-  by (auto simp: pauli_Z_def)
+lemma Pauli_Z_carrier [simp]: "Pauli_Z \<in> carrier_mat 2 2"
+  by (auto simp: Pauli_Z_def)
 
-lemma pauli_X_dagger: "pauli_X\<^sup>\<dagger> = pauli_X"
+lemma Pauli_X_dagger: "Pauli_X\<^sup>\<dagger> = Pauli_X"
 proof (rule eq_matI)
-  show "dim_row (pauli_X\<^sup>\<dagger>) = dim_row pauli_X" by (simp add: pauli_X_def)
-  show "dim_col (pauli_X\<^sup>\<dagger>) = dim_col pauli_X" by (simp add: pauli_X_def)
+  show "dim_row (Pauli_X\<^sup>\<dagger>) = dim_row Pauli_X" by (simp add: Pauli_X_def)
+  show "dim_col (Pauli_X\<^sup>\<dagger>) = dim_col Pauli_X" by (simp add: Pauli_X_def)
 next
-  fix i j assume "i < dim_row pauli_X" "j < dim_col pauli_X"
-  thus "(pauli_X\<^sup>\<dagger>) $$ (i, j) = pauli_X $$ (i, j)"
-    by (cases "i = 0"; cases "j = 0"; simp add: pauli_X_def dagger_def)
+  fix i j assume "i < dim_row Pauli_X" "j < dim_col Pauli_X"
+  thus "(Pauli_X\<^sup>\<dagger>) $$ (i, j) = Pauli_X $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: Pauli_X_def dagger_def)
 qed
 
-lemma pauli_X_squared: "pauli_X * pauli_X = 1\<^sub>m 2"
+lemma Pauli_X_squared: "Pauli_X * Pauli_X = 1\<^sub>m 2"
 proof (rule eq_matI)
-  show "dim_row (pauli_X * pauli_X) = dim_row (1\<^sub>m 2)"
-    by (simp add: pauli_X_def)
-  show "dim_col (pauli_X * pauli_X) = dim_col (1\<^sub>m 2)"
-    by (simp add: pauli_X_def)
-next
-  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
-  hence ij: "i < 2" "j < 2" by auto
-  thus "(pauli_X * pauli_X) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    unfolding pauli_X_def scalar_prod_def
-    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
-qed
-
-lemma pauli_X_unitary: "unitary pauli_X"
-  unfolding unitary_def
-  using pauli_X_dagger pauli_X_squared by (simp add: pauli_X_def)
-
-lemma pauli_Y_dagger: "pauli_Y\<^sup>\<dagger> = pauli_Y"
-proof (rule eq_matI)
-  show "dim_row (pauli_Y\<^sup>\<dagger>) = dim_row pauli_Y" by (simp add: pauli_Y_def)
-  show "dim_col (pauli_Y\<^sup>\<dagger>) = dim_col pauli_Y" by (simp add: pauli_Y_def)
-next
-  fix i j assume "i < dim_row pauli_Y" "j < dim_col pauli_Y"
-  thus "(pauli_Y\<^sup>\<dagger>) $$ (i, j) = pauli_Y $$ (i, j)"
-    by (cases "i = 0"; cases "j = 0"; simp add: pauli_Y_def dagger_def)
-qed
-
-lemma pauli_Y_squared: "pauli_Y * pauli_Y = 1\<^sub>m 2"
-proof (rule eq_matI)
-  show "dim_row (pauli_Y * pauli_Y) = dim_row (1\<^sub>m 2)"
-    by (simp add: pauli_Y_def)
-  show "dim_col (pauli_Y * pauli_Y) = dim_col (1\<^sub>m 2)"
-    by (simp add: pauli_Y_def)
+  show "dim_row (Pauli_X * Pauli_X) = dim_row (1\<^sub>m 2)"
+    by (simp add: Pauli_X_def)
+  show "dim_col (Pauli_X * Pauli_X) = dim_col (1\<^sub>m 2)"
+    by (simp add: Pauli_X_def)
 next
   fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
   hence ij: "i < 2" "j < 2" by auto
-  thus "(pauli_Y * pauli_Y) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    unfolding pauli_Y_def scalar_prod_def
+  thus "(Pauli_X * Pauli_X) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    unfolding Pauli_X_def scalar_prod_def
     by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
-lemma pauli_Y_unitary: "unitary pauli_Y"
+lemma Pauli_X_unitary: "unitary Pauli_X"
   unfolding unitary_def
-  using pauli_Y_dagger pauli_Y_squared by (simp add: pauli_Y_def)
+  using Pauli_X_dagger Pauli_X_squared by (simp add: Pauli_X_def)
 
-lemma pauli_Z_dagger: "pauli_Z\<^sup>\<dagger> = pauli_Z"
+lemma Pauli_Y_dagger: "Pauli_Y\<^sup>\<dagger> = Pauli_Y"
 proof (rule eq_matI)
-  show "dim_row (pauli_Z\<^sup>\<dagger>) = dim_row pauli_Z" by (simp add: pauli_Z_def)
-  show "dim_col (pauli_Z\<^sup>\<dagger>) = dim_col pauli_Z" by (simp add: pauli_Z_def)
+  show "dim_row (Pauli_Y\<^sup>\<dagger>) = dim_row Pauli_Y" by (simp add: Pauli_Y_def)
+  show "dim_col (Pauli_Y\<^sup>\<dagger>) = dim_col Pauli_Y" by (simp add: Pauli_Y_def)
 next
-  fix i j assume "i < dim_row pauli_Z" "j < dim_col pauli_Z"
-  thus "(pauli_Z\<^sup>\<dagger>) $$ (i, j) = pauli_Z $$ (i, j)"
-    by (cases "i = 0"; cases "j = 0"; simp add: pauli_Z_def dagger_def)
+  fix i j assume "i < dim_row Pauli_Y" "j < dim_col Pauli_Y"
+  thus "(Pauli_Y\<^sup>\<dagger>) $$ (i, j) = Pauli_Y $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: Pauli_Y_def dagger_def)
 qed
 
-lemma pauli_Z_squared: "pauli_Z * pauli_Z = 1\<^sub>m 2"
+lemma Pauli_Y_squared: "Pauli_Y * Pauli_Y = 1\<^sub>m 2"
 proof (rule eq_matI)
-  show "dim_row (pauli_Z * pauli_Z) = dim_row (1\<^sub>m 2)"
-    by (simp add: pauli_Z_def)
-  show "dim_col (pauli_Z * pauli_Z) = dim_col (1\<^sub>m 2)"
-    by (simp add: pauli_Z_def)
+  show "dim_row (Pauli_Y * Pauli_Y) = dim_row (1\<^sub>m 2)"
+    by (simp add: Pauli_Y_def)
+  show "dim_col (Pauli_Y * Pauli_Y) = dim_col (1\<^sub>m 2)"
+    by (simp add: Pauli_Y_def)
 next
   fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
   hence ij: "i < 2" "j < 2" by auto
-  thus "(pauli_Z * pauli_Z) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
-    unfolding pauli_Z_def scalar_prod_def
+  thus "(Pauli_Y * Pauli_Y) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    unfolding Pauli_Y_def scalar_prod_def
     by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
-lemma pauli_Z_unitary: "unitary pauli_Z"
+lemma Pauli_Y_unitary: "unitary Pauli_Y"
   unfolding unitary_def
-  using pauli_Z_dagger pauli_Z_squared by (simp add: pauli_Z_def)
+  using Pauli_Y_dagger Pauli_Y_squared by (simp add: Pauli_Y_def)
+
+lemma Pauli_Z_dagger: "Pauli_Z\<^sup>\<dagger> = Pauli_Z"
+proof (rule eq_matI)
+  show "dim_row (Pauli_Z\<^sup>\<dagger>) = dim_row Pauli_Z" by (simp add: Pauli_Z_def)
+  show "dim_col (Pauli_Z\<^sup>\<dagger>) = dim_col Pauli_Z" by (simp add: Pauli_Z_def)
+next
+  fix i j assume "i < dim_row Pauli_Z" "j < dim_col Pauli_Z"
+  thus "(Pauli_Z\<^sup>\<dagger>) $$ (i, j) = Pauli_Z $$ (i, j)"
+    by (cases "i = 0"; cases "j = 0"; simp add: Pauli_Z_def dagger_def)
+qed
+
+lemma Pauli_Z_squared: "Pauli_Z * Pauli_Z = 1\<^sub>m 2"
+proof (rule eq_matI)
+  show "dim_row (Pauli_Z * Pauli_Z) = dim_row (1\<^sub>m 2)"
+    by (simp add: Pauli_Z_def)
+  show "dim_col (Pauli_Z * Pauli_Z) = dim_col (1\<^sub>m 2)"
+    by (simp add: Pauli_Z_def)
+next
+  fix i j assume "i < dim_row (1\<^sub>m 2)" "j < dim_col (1\<^sub>m 2)"
+  hence ij: "i < 2" "j < 2" by auto
+  thus "(Pauli_Z * Pauli_Z) $$ (i, j) = (1\<^sub>m 2) $$ (i, j)"
+    unfolding Pauli_Z_def scalar_prod_def
+    by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
+qed
+
+lemma Pauli_Z_unitary: "unitary Pauli_Z"
+  unfolding unitary_def
+  using Pauli_Z_dagger Pauli_Z_squared by (simp add: Pauli_Z_def)
 
 
 subsection \<open>Pauli magic (Day 32)\<close>
@@ -8660,41 +8660,41 @@ $I,X,Y,Z$ are orthogonal in $M_2$ and all have $2$-norm $\sqrt2$.
 \end{notesprop}\<close>
 
 proposition pauli_orthogonal:
-  shows "\<langle>\<langle> 1\<^sub>m 2 | pauli_X \<rangle>\<rangle> = 0"
-    and "\<langle>\<langle> 1\<^sub>m 2 | pauli_Y \<rangle>\<rangle> = 0"
-    and "\<langle>\<langle> 1\<^sub>m 2 | pauli_Z \<rangle>\<rangle> = 0"
-    and "\<langle>\<langle> pauli_X | pauli_Y \<rangle>\<rangle> = 0"
-    and "\<langle>\<langle> pauli_X | pauli_Z \<rangle>\<rangle> = 0"
-    and "\<langle>\<langle> pauli_Y | pauli_Z \<rangle>\<rangle> = 0"
+  shows "\<langle>\<langle> 1\<^sub>m 2 | Pauli_X \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Y \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Z \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> Pauli_X | Pauli_Y \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> Pauli_X | Pauli_Z \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> Pauli_Y | Pauli_Z \<rangle>\<rangle> = 0"
 proof -
-  show "\<langle>\<langle> 1\<^sub>m 2 | pauli_X \<rangle>\<rangle> = 0"
-    by (simp add: hs_inner_prod_def pauli_X_def numeral_2_eq_2)
-  show "\<langle>\<langle> 1\<^sub>m 2 | pauli_Y \<rangle>\<rangle> = 0"
-    by (simp add: hs_inner_prod_def pauli_Y_def numeral_2_eq_2)
-  show "\<langle>\<langle> 1\<^sub>m 2 | pauli_Z \<rangle>\<rangle> = 0"
-    by (simp add: hs_inner_prod_def pauli_Z_def numeral_2_eq_2)
-  show "\<langle>\<langle> pauli_X | pauli_Y \<rangle>\<rangle> = 0"
-    by (simp add: hs_inner_prod_def pauli_X_def pauli_Y_def numeral_2_eq_2)
-  show "\<langle>\<langle> pauli_X | pauli_Z \<rangle>\<rangle> = 0"
-    by (simp add: hs_inner_prod_def pauli_X_def pauli_Z_def numeral_2_eq_2)
-  show "\<langle>\<langle> pauli_Y | pauli_Z \<rangle>\<rangle> = 0"
-    by (simp add: hs_inner_prod_def pauli_Y_def pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> 1\<^sub>m 2 | Pauli_X \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Y \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_X | Pauli_Y \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_X_def Pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_X | Pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_X_def Pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_Y | Pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_Y_def Pauli_Z_def numeral_2_eq_2)
 qed
 
 proposition pauli_norm:
   shows "\<langle>\<langle> 1\<^sub>m 2 | (1\<^sub>m 2 :: complex Matrix.mat) \<rangle>\<rangle> = 2"
-    and "\<langle>\<langle> pauli_X | pauli_X \<rangle>\<rangle> = 2"
-    and "\<langle>\<langle> pauli_Y | pauli_Y \<rangle>\<rangle> = 2"
-    and "\<langle>\<langle> pauli_Z | pauli_Z \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> Pauli_X | Pauli_X \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> Pauli_Y | Pauli_Y \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> Pauli_Z | Pauli_Z \<rangle>\<rangle> = 2"
 proof -
   show "\<langle>\<langle> 1\<^sub>m 2 | (1\<^sub>m 2 :: complex Matrix.mat) \<rangle>\<rangle> = 2"
     by (simp add: hs_inner_prod_def numeral_2_eq_2)
-  show "\<langle>\<langle> pauli_X | pauli_X \<rangle>\<rangle> = 2"
-    by (simp add: hs_inner_prod_def pauli_X_def numeral_2_eq_2)
-  show "\<langle>\<langle> pauli_Y | pauli_Y \<rangle>\<rangle> = 2"
-    by (simp add: hs_inner_prod_def pauli_Y_def numeral_2_eq_2)
-  show "\<langle>\<langle> pauli_Z | pauli_Z \<rangle>\<rangle> = 2"
-    by (simp add: hs_inner_prod_def pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_X | Pauli_X \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def Pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_Y | Pauli_Y \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def Pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_Z | Pauli_Z \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def Pauli_Z_def numeral_2_eq_2)
 qed
 
 
@@ -8708,18 +8708,18 @@ definition bit_flip_channel ::
   "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "bit_flip_channel p \<rho> \<equiv>
      complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
-     + complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+     + complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
 
 lemma bit_flip_channel_carrier:
   assumes "\<rho> \<in> carrier_mat 2 2"
   shows "bit_flip_channel p \<rho> \<in> carrier_mat 2 2"
 proof -
-  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
     using x_c assms by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using x\<rho>_c xd_c by (rule mult_carrier_mat)
   show ?thesis
     using assms x\<rho>xd_c by (auto simp: bit_flip_channel_def)
@@ -8731,27 +8731,27 @@ lemma bit_flip_channel_trace_preserving:
   assumes \<rho>_c: "\<rho> \<in> carrier_mat 2 2"
   shows "Tr (bit_flip_channel p \<rho>) = Tr \<rho>"
 proof -
-  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
     using x_c \<rho>_c by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using x\<rho>_c xd_c by (rule mult_carrier_mat)
-  have xdx_eq: "(pauli_X\<^sup>\<dagger>) * pauli_X = 1\<^sub>m 2"
-    using pauli_X_dagger pauli_X_squared by simp
+  have xdx_eq: "(Pauli_X\<^sup>\<dagger>) * Pauli_X = 1\<^sub>m 2"
+    using Pauli_X_dagger Pauli_X_squared by simp
 
   (* Tr(X \<rho> X^dagger) = Tr(X^dagger X \<rho>) = Tr(I \<rho>) = Tr \<rho>, by cyclicity. *)
-  have tr_conj: "Tr (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)) = Tr \<rho>"
+  have tr_conj: "Tr (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)) = Tr \<rho>"
   proof -
-    have "Tr (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)) = Tr (pauli_X\<^sup>\<dagger> * (pauli_X * \<rho>))"
+    have "Tr (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)) = Tr (Pauli_X\<^sup>\<dagger> * (Pauli_X * \<rho>))"
     proof (rule Tr_cyclic)
-      show "dim_col (pauli_X * \<rho>) = dim_row (pauli_X\<^sup>\<dagger>)"
+      show "dim_col (Pauli_X * \<rho>) = dim_row (Pauli_X\<^sup>\<dagger>)"
         using x\<rho>_c xd_c by (metis carrier_matD)
-      show "dim_row (pauli_X * \<rho>) = dim_col (pauli_X\<^sup>\<dagger>)"
+      show "dim_row (Pauli_X * \<rho>) = dim_col (Pauli_X\<^sup>\<dagger>)"
         using x\<rho>_c xd_c by (metis carrier_matD)
     qed
-    also have "\<dots> = Tr ((pauli_X\<^sup>\<dagger> * pauli_X) * \<rho>)"
+    also have "\<dots> = Tr ((Pauli_X\<^sup>\<dagger> * Pauli_X) * \<rho>)"
       by (metis xd_c x_c \<rho>_c assoc_mult_mat)
     also have "\<dots> = Tr ((1\<^sub>m 2) * \<rho>)" using xdx_eq by simp
     also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
@@ -8759,18 +8759,18 @@ proof -
   qed
 
   have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
-                  = dim_row (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+                  = dim_row (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
     using \<rho>_c x\<rho>xd_c by (metis carrier_matD(1) index_smult_mat(2))
   have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
-                  = dim_col (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+                  = dim_col (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
     using \<rho>_c x\<rho>xd_c by (metis carrier_matD(2) index_smult_mat(3))
   have "Tr (bit_flip_channel p \<rho>)
           = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
-            + Tr (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+            + Tr (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
     unfolding bit_flip_channel_def
     using row_eq col_eq by (rule Tr_add)
   also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
-                  + complex_of_real p * Tr (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+                  + complex_of_real p * Tr (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
     by (simp add: Tr_smult)
   also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
                   + complex_of_real p * Tr \<rho>"
@@ -8792,19 +8792,19 @@ lemma bit_flip_channel_psd:
       and \<rho>_psd:  "psd \<rho>"
   shows "psd (bit_flip_channel p \<rho>)"
 proof -
-  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
     using x_c \<rho>_c by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using x\<rho>_c xd_c by (rule mult_carrier_mat)
 
   have one_minus_nn: "0 \<le> 1 - p" using p_le_1 by simp
 
   (* X . \<rho> . X^dagger is PSD: factor \<rho> = Q*Q via the psd-sqrt, then
      X . Q*Q . X^dagger = (X Q) (X Q)^dagger which is psd by psd_MdagM. *)
-  have conj_psd: "psd (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+  have conj_psd: "psd (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
   proof -
     obtain Q where Q_c:    "Q \<in> carrier_mat 2 2"
                and Q_psd:  "psd Q"
@@ -8812,51 +8812,51 @@ proof -
       using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
     have Q_dagger: "Q\<^sup>\<dagger> = Q"
       using Q_psd by (simp add: psd_def hermitian_def)
-    have XQ_c: "pauli_X * Q \<in> carrier_mat 2 2"
+    have XQ_c: "Pauli_X * Q \<in> carrier_mat 2 2"
       using x_c Q_c by (rule mult_carrier_mat)
-    have XQd_c: "(pauli_X * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    have XQd_c: "(Pauli_X * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
       using XQ_c by (rule dagger_carrier)
-    have eq: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) = (pauli_X * Q) * ((pauli_X * Q)\<^sup>\<dagger>)"
+    have eq: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) = (Pauli_X * Q) * ((Pauli_X * Q)\<^sup>\<dagger>)"
     proof -
-      have dim_eq: "dim_col pauli_X = dim_row Q"
+      have dim_eq: "dim_col Pauli_X = dim_row Q"
         using x_c Q_c by (metis carrier_matD)
-      have dagprod: "(pauli_X * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (pauli_X\<^sup>\<dagger>)"
+      have dagprod: "(Pauli_X * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (Pauli_X\<^sup>\<dagger>)"
         using dim_eq by (rule dagger_of_prod)
-      hence dagprod': "(pauli_X * Q)\<^sup>\<dagger> = Q * (pauli_X\<^sup>\<dagger>)"
+      hence dagprod': "(Pauli_X * Q)\<^sup>\<dagger> = Q * (Pauli_X\<^sup>\<dagger>)"
         using Q_dagger by simp
-      have "(pauli_X * Q) * ((pauli_X * Q)\<^sup>\<dagger>)
-              = (pauli_X * Q) * (Q * (pauli_X\<^sup>\<dagger>))"
+      have "(Pauli_X * Q) * ((Pauli_X * Q)\<^sup>\<dagger>)
+              = (Pauli_X * Q) * (Q * (Pauli_X\<^sup>\<dagger>))"
         using dagprod' by simp
-      also have "\<dots> = pauli_X * Q * Q * (pauli_X\<^sup>\<dagger>)"
+      also have "\<dots> = Pauli_X * Q * Q * (Pauli_X\<^sup>\<dagger>)"
         using x_c Q_c xd_c by (metis assoc_mult_mat mult_carrier_mat)
-      also have "\<dots> = pauli_X * (Q * Q) * (pauli_X\<^sup>\<dagger>)"
+      also have "\<dots> = Pauli_X * (Q * Q) * (Pauli_X\<^sup>\<dagger>)"
         using x_c Q_c by (metis assoc_mult_mat)
-      also have "\<dots> = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+      also have "\<dots> = Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)"
         using Q_sq by simp
       finally show ?thesis by simp
     qed
-    have psd_dd: "psd (((pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((pauli_X * Q)\<^sup>\<dagger>))"
+    have psd_dd: "psd (((Pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((Pauli_X * Q)\<^sup>\<dagger>))"
       using psd_MdagM[OF XQd_c] .
-    have dd_eq: "(pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger> = pauli_X * Q"
+    have dd_eq: "(Pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger> = Pauli_X * Q"
       using XQ_c by (simp add: dagger_of_dagger_is_id)
-    have "psd ((pauli_X * Q) * ((pauli_X * Q)\<^sup>\<dagger>))"
+    have "psd ((Pauli_X * Q) * ((Pauli_X * Q)\<^sup>\<dagger>))"
       using psd_dd dd_eq by simp
     thus ?thesis using eq by simp
   qed
 
   have term1_psd: "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)"
     using one_minus_nn \<rho>_psd \<rho>_c by (rule psd_smult_nonneg)
-  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
     using p_nn conj_psd x\<rho>xd_c by (rule psd_smult_nonneg)
 
   have term1_c: "complex_of_real (1 - p) \<cdot>\<^sub>m \<rho> \<in> carrier_mat 2 2"
     using \<rho>_c by simp
-  have term2_c: "complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))
+  have term2_c: "complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))
                    \<in> carrier_mat 2 2"
     using x\<rho>xd_c by simp
 
   have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
-              + complex_of_real p \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)))"
+              + complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
     using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
   thus ?thesis by (simp add: bit_flip_channel_def)
 qed
@@ -9108,77 +9108,77 @@ proof -
 qed
 
 
-lemma pauli_Z_ket_plus: "pauli_Z *\<^sub>v ket_plus = ket_minus"
+lemma Pauli_Z_ket_plus: "Pauli_Z *\<^sub>v ket_plus = ket_minus"
 proof (rule eq_vecI)
-  show "dim_vec (pauli_Z *\<^sub>v ket_plus) = dim_vec ket_minus"
-    by (simp add: pauli_Z_def)
+  show "dim_vec (Pauli_Z *\<^sub>v ket_plus) = dim_vec ket_minus"
+    by (simp add: Pauli_Z_def)
 next
   fix i assume "i < dim_vec ket_minus"
   hence i_lt: "i < 2" by simp
-  have "(pauli_Z *\<^sub>v ket_plus) $ i =
-        (\<Sum>k = 0..<2. pauli_Z $$ (i, k) * ket_plus $ k)"
-    using i_lt by (simp add: scalar_prod_def pauli_Z_def)
-  also have "\<dots> = pauli_Z $$ (i, 0) * ket_plus $ 0
-                  + pauli_Z $$ (i, 1) * ket_plus $ 1"
+  have "(Pauli_Z *\<^sub>v ket_plus) $ i =
+        (\<Sum>k = 0..<2. Pauli_Z $$ (i, k) * ket_plus $ k)"
+    using i_lt by (simp add: scalar_prod_def Pauli_Z_def)
+  also have "\<dots> = Pauli_Z $$ (i, 0) * ket_plus $ 0
+                  + Pauli_Z $$ (i, 1) * ket_plus $ 1"
     by (simp add: numeral_2_eq_2)
   also have "\<dots> = ket_minus $ i"
     using i_lt
     by (cases "i = 0";
-        simp add: pauli_Z_def ket_plus_def ket_minus_def)
-  finally show "(pauli_Z *\<^sub>v ket_plus) $ i = ket_minus $ i" .
+        simp add: Pauli_Z_def ket_plus_def ket_minus_def)
+  finally show "(Pauli_Z *\<^sub>v ket_plus) $ i = ket_minus $ i" .
 qed
 
-lemma pauli_Z_ket_minus: "pauli_Z *\<^sub>v ket_minus = ket_plus"
+lemma Pauli_Z_ket_minus: "Pauli_Z *\<^sub>v ket_minus = ket_plus"
 proof -
-  have "pauli_Z *\<^sub>v ket_minus = pauli_Z *\<^sub>v (pauli_Z *\<^sub>v ket_plus)"
-    using pauli_Z_ket_plus by simp
-  also have "\<dots> = (pauli_Z * pauli_Z) *\<^sub>v ket_plus"
-    by (metis assoc_mult_mat_vec pauli_Z_carrier ket_plus_carrier)
+  have "Pauli_Z *\<^sub>v ket_minus = Pauli_Z *\<^sub>v (Pauli_Z *\<^sub>v ket_plus)"
+    using Pauli_Z_ket_plus by simp
+  also have "\<dots> = (Pauli_Z * Pauli_Z) *\<^sub>v ket_plus"
+    by (metis assoc_mult_mat_vec Pauli_Z_carrier ket_plus_carrier)
   also have "\<dots> = (1\<^sub>m 2) *\<^sub>v ket_plus"
-    using pauli_Z_squared by simp
+    using Pauli_Z_squared by simp
   also have "\<dots> = ket_plus" by simp
   finally show ?thesis .
 qed
 
 
-lemma pauli_X_ket_plus: "pauli_X *\<^sub>v ket_plus = ket_plus"
+lemma Pauli_X_ket_plus: "Pauli_X *\<^sub>v ket_plus = ket_plus"
 proof (rule eq_vecI)
-  show "dim_vec (pauli_X *\<^sub>v ket_plus) = dim_vec ket_plus"
-    by (simp add: pauli_X_def)
+  show "dim_vec (Pauli_X *\<^sub>v ket_plus) = dim_vec ket_plus"
+    by (simp add: Pauli_X_def)
 next
   fix i assume "i < dim_vec ket_plus"
   hence i_lt: "i < 2" by simp
-  have "(pauli_X *\<^sub>v ket_plus) $ i =
-        (\<Sum>k = 0..<2. pauli_X $$ (i, k) * ket_plus $ k)"
-    using i_lt by (simp add: scalar_prod_def pauli_X_def)
-  also have "\<dots> = pauli_X $$ (i, 0) * ket_plus $ 0
-                  + pauli_X $$ (i, 1) * ket_plus $ 1"
+  have "(Pauli_X *\<^sub>v ket_plus) $ i =
+        (\<Sum>k = 0..<2. Pauli_X $$ (i, k) * ket_plus $ k)"
+    using i_lt by (simp add: scalar_prod_def Pauli_X_def)
+  also have "\<dots> = Pauli_X $$ (i, 0) * ket_plus $ 0
+                  + Pauli_X $$ (i, 1) * ket_plus $ 1"
     by (simp add: numeral_2_eq_2)
   also have "\<dots> = ket_plus $ i"
     using i_lt
     by (cases "i = 0";
-        simp add: pauli_X_def ket_plus_def)
-  finally show "(pauli_X *\<^sub>v ket_plus) $ i = ket_plus $ i" .
+        simp add: Pauli_X_def ket_plus_def)
+  finally show "(Pauli_X *\<^sub>v ket_plus) $ i = ket_plus $ i" .
 qed
 
-lemma pauli_X_ket_minus: "pauli_X *\<^sub>v ket_minus = - ket_minus"
+lemma Pauli_X_ket_minus: "Pauli_X *\<^sub>v ket_minus = - ket_minus"
 proof (rule eq_vecI)
-  show "dim_vec (pauli_X *\<^sub>v ket_minus) = dim_vec (- ket_minus)"
-    by (simp add: pauli_X_def)
+  show "dim_vec (Pauli_X *\<^sub>v ket_minus) = dim_vec (- ket_minus)"
+    by (simp add: Pauli_X_def)
 next
   fix i assume "i < dim_vec (- ket_minus)"
   hence i_lt: "i < 2" by simp
-  have "(pauli_X *\<^sub>v ket_minus) $ i =
-        (\<Sum>k = 0..<2. pauli_X $$ (i, k) * ket_minus $ k)"
-    using i_lt by (simp add: scalar_prod_def pauli_X_def)
-  also have "\<dots> = pauli_X $$ (i, 0) * ket_minus $ 0
-                  + pauli_X $$ (i, 1) * ket_minus $ 1"
+  have "(Pauli_X *\<^sub>v ket_minus) $ i =
+        (\<Sum>k = 0..<2. Pauli_X $$ (i, k) * ket_minus $ k)"
+    using i_lt by (simp add: scalar_prod_def Pauli_X_def)
+  also have "\<dots> = Pauli_X $$ (i, 0) * ket_minus $ 0
+                  + Pauli_X $$ (i, 1) * ket_minus $ 1"
     by (simp add: numeral_2_eq_2)
   also have "\<dots> = (- ket_minus) $ i"
     using i_lt
     by (cases "i = 0";
-        simp add: pauli_X_def ket_minus_def)
-  finally show "(pauli_X *\<^sub>v ket_minus) $ i = (- ket_minus) $ i" .
+        simp add: Pauli_X_def ket_minus_def)
+  finally show "(Pauli_X *\<^sub>v ket_minus) $ i = (- ket_minus) $ i" .
 qed
 
 
@@ -9669,23 +9669,23 @@ lemma bit_flip_channel_zero:
   assumes "\<rho> \<in> carrier_mat 2 2"
   shows "bit_flip_channel 0 \<rho> = \<rho>"
 proof -
-  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
     using x_c assms by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using x\<rho>_c xd_c by (rule mult_carrier_mat)
   have one_smul: "(1 :: complex) \<cdot>\<^sub>m \<rho> = \<rho>"
     by (intro eq_matI) auto
-  have zero_smul: "(0 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))
+  have zero_smul: "(0 :: complex) \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))
                     = 0\<^sub>m 2 2"
     using x\<rho>xd_c by (intro eq_matI) auto
   have rho_zero: "\<rho> + 0\<^sub>m 2 2 = \<rho>"
     using assms by (intro eq_matI) auto
   have "bit_flip_channel 0 \<rho>
           = (1 :: complex) \<cdot>\<^sub>m \<rho>
-            + (0 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+            + (0 :: complex) \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
     by (simp add: bit_flip_channel_def)
   also have "\<dots> = \<rho> + 0\<^sub>m 2 2"
     using one_smul zero_smul by simp
@@ -9695,30 +9695,30 @@ qed
 
 lemma bit_flip_channel_one:
   assumes "\<rho> \<in> carrier_mat 2 2"
-  shows "bit_flip_channel 1 \<rho> = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+  shows "bit_flip_channel 1 \<rho> = Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)"
 proof -
-  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
+  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "pauli_X * \<rho> \<in> carrier_mat 2 2"
+  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
     using x_c assms by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using x\<rho>_c xd_c by (rule mult_carrier_mat)
-  have one_smul: "(1 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))
-                    = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+  have one_smul: "(1 :: complex) \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))
+                    = Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)"
     by (intro eq_matI) auto
   have zero_smul: "(0 :: complex) \<cdot>\<^sub>m \<rho> = 0\<^sub>m 2 2"
     using assms by (intro eq_matI) auto
-  have zero_plus: "0\<^sub>m 2 2 + pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)
-                    = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+  have zero_plus: "0\<^sub>m 2 2 + Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)
+                    = Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)"
     using x\<rho>xd_c by (intro eq_matI) auto
   have "bit_flip_channel 1 \<rho>
           = (0 :: complex) \<cdot>\<^sub>m \<rho>
-            + (1 :: complex) \<cdot>\<^sub>m (pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>))"
+            + (1 :: complex) \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
     by (simp add: bit_flip_channel_def)
-  also have "\<dots> = 0\<^sub>m 2 2 + pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+  also have "\<dots> = 0\<^sub>m 2 2 + Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)"
     using zero_smul one_smul by simp
-  also have "\<dots> = pauli_X * \<rho> * (pauli_X\<^sup>\<dagger>)"
+  also have "\<dots> = Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)"
     using zero_plus .
   finally show ?thesis .
 qed
@@ -9730,18 +9730,18 @@ definition phase_flip_channel ::
   "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "phase_flip_channel p \<rho> \<equiv>
      complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
-     + complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))"
+     + complex_of_real p \<cdot>\<^sub>m (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>))"
 
 lemma phase_flip_channel_carrier:
   assumes "\<rho> \<in> carrier_mat 2 2"
   shows "phase_flip_channel p \<rho> \<in> carrier_mat 2 2"
 proof -
-  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
-  have zd_c: "pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have z_c: "Pauli_Z \<in> carrier_mat 2 2" by simp
+  have zd_c: "Pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using z_c by (rule dagger_carrier)
-  have z\<rho>_c: "pauli_Z * \<rho> \<in> carrier_mat 2 2"
+  have z\<rho>_c: "Pauli_Z * \<rho> \<in> carrier_mat 2 2"
     using z_c assms by (rule mult_carrier_mat)
-  have z\<rho>zd_c: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have z\<rho>zd_c: "Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using z\<rho>_c zd_c by (rule mult_carrier_mat)
   show ?thesis
     using assms z\<rho>zd_c by (auto simp: phase_flip_channel_def)
@@ -9752,26 +9752,26 @@ lemma phase_flip_channel_trace_preserving:
   assumes \<rho>_c: "\<rho> \<in> carrier_mat 2 2"
   shows "Tr (phase_flip_channel p \<rho>) = Tr \<rho>"
 proof -
-  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
-  have zd_c: "pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have z_c: "Pauli_Z \<in> carrier_mat 2 2" by simp
+  have zd_c: "Pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using z_c by (rule dagger_carrier)
-  have z\<rho>_c: "pauli_Z * \<rho> \<in> carrier_mat 2 2"
+  have z\<rho>_c: "Pauli_Z * \<rho> \<in> carrier_mat 2 2"
     using z_c \<rho>_c by (rule mult_carrier_mat)
-  have z\<rho>zd_c: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have z\<rho>zd_c: "Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using z\<rho>_c zd_c by (rule mult_carrier_mat)
-  have zdz_eq: "(pauli_Z\<^sup>\<dagger>) * pauli_Z = 1\<^sub>m 2"
-    using pauli_Z_dagger pauli_Z_squared by simp
+  have zdz_eq: "(Pauli_Z\<^sup>\<dagger>) * Pauli_Z = 1\<^sub>m 2"
+    using Pauli_Z_dagger Pauli_Z_squared by simp
 
-  have tr_conj: "Tr (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)) = Tr \<rho>"
+  have tr_conj: "Tr (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)) = Tr \<rho>"
   proof -
-    have "Tr (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)) = Tr (pauli_Z\<^sup>\<dagger> * (pauli_Z * \<rho>))"
+    have "Tr (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)) = Tr (Pauli_Z\<^sup>\<dagger> * (Pauli_Z * \<rho>))"
     proof (rule Tr_cyclic)
-      show "dim_col (pauli_Z * \<rho>) = dim_row (pauli_Z\<^sup>\<dagger>)"
+      show "dim_col (Pauli_Z * \<rho>) = dim_row (Pauli_Z\<^sup>\<dagger>)"
         using z\<rho>_c zd_c by (metis carrier_matD)
-      show "dim_row (pauli_Z * \<rho>) = dim_col (pauli_Z\<^sup>\<dagger>)"
+      show "dim_row (Pauli_Z * \<rho>) = dim_col (Pauli_Z\<^sup>\<dagger>)"
         using z\<rho>_c zd_c by (metis carrier_matD)
     qed
-    also have "\<dots> = Tr ((pauli_Z\<^sup>\<dagger> * pauli_Z) * \<rho>)"
+    also have "\<dots> = Tr ((Pauli_Z\<^sup>\<dagger> * Pauli_Z) * \<rho>)"
       by (metis zd_c z_c \<rho>_c assoc_mult_mat)
     also have "\<dots> = Tr ((1\<^sub>m 2) * \<rho>)" using zdz_eq by simp
     also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
@@ -9780,19 +9780,19 @@ proof -
 
   have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_row (complex_of_real p
-                              \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+                              \<cdot>\<^sub>m (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)))"
     using \<rho>_c z\<rho>zd_c by (metis carrier_matD(1) index_smult_mat(2))
   have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
                   = dim_col (complex_of_real p
-                              \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+                              \<cdot>\<^sub>m (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)))"
     using \<rho>_c z\<rho>zd_c by (metis carrier_matD(2) index_smult_mat(3))
   have "Tr (phase_flip_channel p \<rho>)
           = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
-            + Tr (complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+            + Tr (complex_of_real p \<cdot>\<^sub>m (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)))"
     unfolding phase_flip_channel_def
     using row_eq col_eq by (rule Tr_add)
   also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
-                  + complex_of_real p * Tr (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))"
+                  + complex_of_real p * Tr (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>))"
     by (simp add: Tr_smult)
   also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
                   + complex_of_real p * Tr \<rho>"
@@ -9812,16 +9812,16 @@ lemma phase_flip_channel_psd:
       and \<rho>_psd:  "psd \<rho>"
   shows "psd (phase_flip_channel p \<rho>)"
 proof -
-  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
-  have zd_c: "pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
+  have z_c: "Pauli_Z \<in> carrier_mat 2 2" by simp
+  have zd_c: "Pauli_Z\<^sup>\<dagger> \<in> carrier_mat 2 2"
     using z_c by (rule dagger_carrier)
-  have z\<rho>_c: "pauli_Z * \<rho> \<in> carrier_mat 2 2"
+  have z\<rho>_c: "Pauli_Z * \<rho> \<in> carrier_mat 2 2"
     using z_c \<rho>_c by (rule mult_carrier_mat)
-  have z\<rho>zd_c: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
+  have z\<rho>zd_c: "Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>) \<in> carrier_mat 2 2"
     using z\<rho>_c zd_c by (rule mult_carrier_mat)
   have one_minus_nn: "0 \<le> 1 - p" using p_le_1 by simp
 
-  have conj_psd: "psd (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))"
+  have conj_psd: "psd (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>))"
   proof -
     obtain Q where Q_c:    "Q \<in> carrier_mat 2 2"
                and Q_psd:  "psd Q"
@@ -9829,51 +9829,51 @@ proof -
       using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
     have Q_dagger: "Q\<^sup>\<dagger> = Q"
       using Q_psd by (simp add: psd_def hermitian_def)
-    have ZQ_c: "pauli_Z * Q \<in> carrier_mat 2 2"
+    have ZQ_c: "Pauli_Z * Q \<in> carrier_mat 2 2"
       using z_c Q_c by (rule mult_carrier_mat)
-    have ZQd_c: "(pauli_Z * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
+    have ZQd_c: "(Pauli_Z * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
       using ZQ_c by (rule dagger_carrier)
-    have eq: "pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>) = (pauli_Z * Q) * ((pauli_Z * Q)\<^sup>\<dagger>)"
+    have eq: "Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>) = (Pauli_Z * Q) * ((Pauli_Z * Q)\<^sup>\<dagger>)"
     proof -
-      have dim_eq: "dim_col pauli_Z = dim_row Q"
+      have dim_eq: "dim_col Pauli_Z = dim_row Q"
         using z_c Q_c by (metis carrier_matD)
-      have dagprod: "(pauli_Z * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (pauli_Z\<^sup>\<dagger>)"
+      have dagprod: "(Pauli_Z * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (Pauli_Z\<^sup>\<dagger>)"
         using dim_eq by (rule dagger_of_prod)
-      hence dagprod': "(pauli_Z * Q)\<^sup>\<dagger> = Q * (pauli_Z\<^sup>\<dagger>)"
+      hence dagprod': "(Pauli_Z * Q)\<^sup>\<dagger> = Q * (Pauli_Z\<^sup>\<dagger>)"
         using Q_dagger by simp
-      have "(pauli_Z * Q) * ((pauli_Z * Q)\<^sup>\<dagger>)
-              = (pauli_Z * Q) * (Q * (pauli_Z\<^sup>\<dagger>))"
+      have "(Pauli_Z * Q) * ((Pauli_Z * Q)\<^sup>\<dagger>)
+              = (Pauli_Z * Q) * (Q * (Pauli_Z\<^sup>\<dagger>))"
         using dagprod' by simp
-      also have "\<dots> = pauli_Z * Q * Q * (pauli_Z\<^sup>\<dagger>)"
+      also have "\<dots> = Pauli_Z * Q * Q * (Pauli_Z\<^sup>\<dagger>)"
         using z_c Q_c zd_c by (metis assoc_mult_mat mult_carrier_mat)
-      also have "\<dots> = pauli_Z * (Q * Q) * (pauli_Z\<^sup>\<dagger>)"
+      also have "\<dots> = Pauli_Z * (Q * Q) * (Pauli_Z\<^sup>\<dagger>)"
         using z_c Q_c by (metis assoc_mult_mat)
-      also have "\<dots> = pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)"
+      also have "\<dots> = Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)"
         using Q_sq by simp
       finally show ?thesis by simp
     qed
-    have psd_dd: "psd (((pauli_Z * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((pauli_Z * Q)\<^sup>\<dagger>))"
+    have psd_dd: "psd (((Pauli_Z * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((Pauli_Z * Q)\<^sup>\<dagger>))"
       using psd_MdagM[OF ZQd_c] .
-    have dd_eq: "(pauli_Z * Q)\<^sup>\<dagger>\<^sup>\<dagger> = pauli_Z * Q"
+    have dd_eq: "(Pauli_Z * Q)\<^sup>\<dagger>\<^sup>\<dagger> = Pauli_Z * Q"
       using ZQ_c by (simp add: dagger_of_dagger_is_id)
-    have "psd ((pauli_Z * Q) * ((pauli_Z * Q)\<^sup>\<dagger>))"
+    have "psd ((Pauli_Z * Q) * ((Pauli_Z * Q)\<^sup>\<dagger>))"
       using psd_dd dd_eq by simp
     thus ?thesis using eq by simp
   qed
 
   have term1_psd: "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)"
     using one_minus_nn \<rho>_psd \<rho>_c by (rule psd_smult_nonneg)
-  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)))"
     using p_nn conj_psd z\<rho>zd_c by (rule psd_smult_nonneg)
 
   have term1_c: "complex_of_real (1 - p) \<cdot>\<^sub>m \<rho> \<in> carrier_mat 2 2"
     using \<rho>_c by simp
-  have term2_c: "complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>))
+  have term2_c: "complex_of_real p \<cdot>\<^sub>m (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>))
                    \<in> carrier_mat 2 2"
     using z\<rho>zd_c by simp
 
   have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
-              + complex_of_real p \<cdot>\<^sub>m (pauli_Z * \<rho> * (pauli_Z\<^sup>\<dagger>)))"
+              + complex_of_real p \<cdot>\<^sub>m (Pauli_Z * \<rho> * (Pauli_Z\<^sup>\<dagger>)))"
     using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
   thus ?thesis by (simp add: phase_flip_channel_def)
 qed
@@ -10029,11 +10029,11 @@ qed
 
 
 lemma bit_flip_eq_unitary_conj:
-  "bit_flip_channel p \<rho> = unitary_conj_channel pauli_X p \<rho>"
+  "bit_flip_channel p \<rho> = unitary_conj_channel Pauli_X p \<rho>"
   by (simp add: bit_flip_channel_def unitary_conj_channel_def)
 
 lemma phase_flip_eq_unitary_conj:
-  "phase_flip_channel p \<rho> = unitary_conj_channel pauli_Z p \<rho>"
+  "phase_flip_channel p \<rho> = unitary_conj_channel Pauli_Z p \<rho>"
   by (simp add: phase_flip_channel_def unitary_conj_channel_def)
 
 
@@ -10041,13 +10041,13 @@ subsection \<open>The bit-phase-flip channel and the identity channel\<close>
 
 definition bit_phase_flip_channel ::
   "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "bit_phase_flip_channel p \<rho> \<equiv> unitary_conj_channel pauli_Y p \<rho>"
+  "bit_phase_flip_channel p \<rho> \<equiv> unitary_conj_channel Pauli_Y p \<rho>"
 
 lemma bit_phase_flip_channel_carrier:
   assumes "\<rho> \<in> carrier_mat 2 2"
   shows "bit_phase_flip_channel p \<rho> \<in> carrier_mat 2 2"
   unfolding bit_phase_flip_channel_def
-  using pauli_Y_carrier assms
+  using Pauli_Y_carrier assms
   by (rule unitary_conj_channel_carrier)
 
 lemma bit_phase_flip_channel_trace_preserving:
@@ -10055,7 +10055,7 @@ lemma bit_phase_flip_channel_trace_preserving:
   assumes \<rho>_c: "\<rho> \<in> carrier_mat 2 2"
   shows "Tr (bit_phase_flip_channel p \<rho>) = Tr \<rho>"
   unfolding bit_phase_flip_channel_def
-  using pauli_Y_carrier pauli_Y_unitary \<rho>_c
+  using Pauli_Y_carrier Pauli_Y_unitary \<rho>_c
   by (rule unitary_conj_channel_trace_preserving)
 
 lemma bit_phase_flip_channel_psd:
@@ -10066,7 +10066,7 @@ lemma bit_phase_flip_channel_psd:
       and \<rho>_psd:  "psd \<rho>"
   shows "psd (bit_phase_flip_channel p \<rho>)"
   unfolding bit_phase_flip_channel_def
-  using p_nn p_le_1 pauli_Y_carrier \<rho>_c \<rho>_psd
+  using p_nn p_le_1 Pauli_Y_carrier \<rho>_c \<rho>_psd
   by (rule unitary_conj_channel_psd)
 
 
@@ -10478,15 +10478,15 @@ qed
 subsection \<open>The Pauli channels are UCP and CPTP\<close>
 
 lemma bit_flip_channel_eq:
-  "bit_flip_channel p = unitary_conj_channel pauli_X p"
+  "bit_flip_channel p = unitary_conj_channel Pauli_X p"
   by (rule ext) (simp add: bit_flip_eq_unitary_conj)
 
 lemma phase_flip_channel_eq:
-  "phase_flip_channel p = unitary_conj_channel pauli_Z p"
+  "phase_flip_channel p = unitary_conj_channel Pauli_Z p"
   by (rule ext) (simp add: phase_flip_eq_unitary_conj)
 
 lemma bit_phase_flip_channel_eq:
-  "bit_phase_flip_channel p = unitary_conj_channel pauli_Y p"
+  "bit_phase_flip_channel p = unitary_conj_channel Pauli_Y p"
   by (rule ext) (simp add: bit_phase_flip_channel_def)
 
 lemma bit_flip_channel_UCP:
@@ -10496,7 +10496,7 @@ lemma bit_flip_channel_UCP:
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using unitary_conj_channel_in_UCP[OF pauli_X_carrier pauli_X_unitary
+    using unitary_conj_channel_in_UCP[OF Pauli_X_carrier Pauli_X_unitary
                                          p_nn p_le npos]
     by (simp add: bit_flip_channel_eq)
 qed
@@ -10508,7 +10508,7 @@ lemma bit_flip_channel_CPTP:
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using unitary_conj_channel_in_CPTP[OF pauli_X_carrier pauli_X_unitary
+    using unitary_conj_channel_in_CPTP[OF Pauli_X_carrier Pauli_X_unitary
                                           p_nn p_le npos]
     by (simp add: bit_flip_channel_eq)
 qed
@@ -10520,7 +10520,7 @@ lemma phase_flip_channel_UCP:
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using unitary_conj_channel_in_UCP[OF pauli_Z_carrier pauli_Z_unitary
+    using unitary_conj_channel_in_UCP[OF Pauli_Z_carrier Pauli_Z_unitary
                                          p_nn p_le npos]
     by (simp add: phase_flip_channel_eq)
 qed
@@ -10532,7 +10532,7 @@ lemma phase_flip_channel_CPTP:
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using unitary_conj_channel_in_CPTP[OF pauli_Z_carrier pauli_Z_unitary
+    using unitary_conj_channel_in_CPTP[OF Pauli_Z_carrier Pauli_Z_unitary
                                           p_nn p_le npos]
     by (simp add: phase_flip_channel_eq)
 qed
@@ -10544,7 +10544,7 @@ lemma bit_phase_flip_channel_UCP:
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using unitary_conj_channel_in_UCP[OF pauli_Y_carrier pauli_Y_unitary
+    using unitary_conj_channel_in_UCP[OF Pauli_Y_carrier Pauli_Y_unitary
                                          p_nn p_le npos]
     by (simp add: bit_phase_flip_channel_eq)
 qed
@@ -10556,7 +10556,7 @@ lemma bit_phase_flip_channel_CPTP:
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using unitary_conj_channel_in_CPTP[OF pauli_Y_carrier pauli_Y_unitary
+    using unitary_conj_channel_in_CPTP[OF Pauli_Y_carrier Pauli_Y_unitary
                                           p_nn p_le npos]
     by (simp add: bit_phase_flip_channel_eq)
 qed
@@ -10564,70 +10564,70 @@ qed
 
 subsection \<open>Pauli matrices as Kraus operators\<close>
 
-lemma pauli_X_kraus_operators:
-  "kraus_operators 2 2 [pauli_X]"
+lemma Pauli_X_kraus_operators:
+  "kraus_operators 2 2 [Pauli_X]"
 proof -
-  have X_c: "pauli_X \<in> carrier_mat 2 2" by simp
-  have X_dag: "pauli_X\<^sup>\<dagger> = pauli_X" by (rule pauli_X_dagger)
-  have X_sq: "pauli_X * pauli_X = 1\<^sub>m 2" by (rule pauli_X_squared)
+  have X_c: "Pauli_X \<in> carrier_mat 2 2" by simp
+  have X_dag: "Pauli_X\<^sup>\<dagger> = Pauli_X" by (rule Pauli_X_dagger)
+  have X_sq: "Pauli_X * Pauli_X = 1\<^sub>m 2" by (rule Pauli_X_squared)
   have I_c: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
-  have all_in: "\<forall>W \<in> set [pauli_X]. W \<in> carrier_mat 2 2"
+  have all_in: "\<forall>W \<in> set [Pauli_X]. W \<in> carrier_mat 2 2"
     using X_c by simp
   have step:
-    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_X] (0\<^sub>m 2 2)
-       = pauli_X * pauli_X + 0\<^sub>m 2 2"
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [Pauli_X] (0\<^sub>m 2 2)
+       = Pauli_X * Pauli_X + 0\<^sub>m 2 2"
     using X_dag by simp
   also have "\<dots> = 1\<^sub>m 2 + 0\<^sub>m 2 2" using X_sq by simp
   also have "\<dots> = 1\<^sub>m 2"
     using I_c by (intro eq_matI) auto
   finally have sum_eq:
-    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_X] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [Pauli_X] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
   show ?thesis
     unfolding kraus_operators_def
     using all_in sum_eq by blast
 qed
 
-lemma pauli_Y_kraus_operators:
-  "kraus_operators 2 2 [pauli_Y]"
+lemma Pauli_Y_kraus_operators:
+  "kraus_operators 2 2 [Pauli_Y]"
 proof -
-  have Y_c: "pauli_Y \<in> carrier_mat 2 2" by simp
-  have Y_dag: "pauli_Y\<^sup>\<dagger> = pauli_Y" by (rule pauli_Y_dagger)
-  have Y_sq: "pauli_Y * pauli_Y = 1\<^sub>m 2" by (rule pauli_Y_squared)
+  have Y_c: "Pauli_Y \<in> carrier_mat 2 2" by simp
+  have Y_dag: "Pauli_Y\<^sup>\<dagger> = Pauli_Y" by (rule Pauli_Y_dagger)
+  have Y_sq: "Pauli_Y * Pauli_Y = 1\<^sub>m 2" by (rule Pauli_Y_squared)
   have I_c: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
-  have all_in: "\<forall>W \<in> set [pauli_Y]. W \<in> carrier_mat 2 2"
+  have all_in: "\<forall>W \<in> set [Pauli_Y]. W \<in> carrier_mat 2 2"
     using Y_c by simp
   have step:
-    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Y] (0\<^sub>m 2 2)
-       = pauli_Y * pauli_Y + 0\<^sub>m 2 2"
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [Pauli_Y] (0\<^sub>m 2 2)
+       = Pauli_Y * Pauli_Y + 0\<^sub>m 2 2"
     using Y_dag by simp
   also have "\<dots> = 1\<^sub>m 2 + 0\<^sub>m 2 2" using Y_sq by simp
   also have "\<dots> = 1\<^sub>m 2"
     using I_c by (intro eq_matI) auto
   finally have sum_eq:
-    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Y] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [Pauli_Y] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
   show ?thesis
     unfolding kraus_operators_def
     using all_in sum_eq by blast
 qed
 
-lemma pauli_Z_kraus_operators:
-  "kraus_operators 2 2 [pauli_Z]"
+lemma Pauli_Z_kraus_operators:
+  "kraus_operators 2 2 [Pauli_Z]"
 proof -
-  have Z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
-  have Z_dag: "pauli_Z\<^sup>\<dagger> = pauli_Z" by (rule pauli_Z_dagger)
-  have Z_sq: "pauli_Z * pauli_Z = 1\<^sub>m 2" by (rule pauli_Z_squared)
+  have Z_c: "Pauli_Z \<in> carrier_mat 2 2" by simp
+  have Z_dag: "Pauli_Z\<^sup>\<dagger> = Pauli_Z" by (rule Pauli_Z_dagger)
+  have Z_sq: "Pauli_Z * Pauli_Z = 1\<^sub>m 2" by (rule Pauli_Z_squared)
   have I_c: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
-  have all_in: "\<forall>W \<in> set [pauli_Z]. W \<in> carrier_mat 2 2"
+  have all_in: "\<forall>W \<in> set [Pauli_Z]. W \<in> carrier_mat 2 2"
     using Z_c by simp
   have step:
-    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Z] (0\<^sub>m 2 2)
-       = pauli_Z * pauli_Z + 0\<^sub>m 2 2"
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [Pauli_Z] (0\<^sub>m 2 2)
+       = Pauli_Z * Pauli_Z + 0\<^sub>m 2 2"
     using Z_dag by simp
   also have "\<dots> = 1\<^sub>m 2 + 0\<^sub>m 2 2" using Z_sq by simp
   also have "\<dots> = 1\<^sub>m 2"
     using I_c by (intro eq_matI) auto
   finally have sum_eq:
-    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [pauli_Z] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
+    "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) [Pauli_Z] (0\<^sub>m 2 2) = 1\<^sub>m 2" .
   show ?thesis
     unfolding kraus_operators_def
     using all_in sum_eq by blast
@@ -10666,28 +10666,28 @@ lemma kraus_is_cptp:
 
 
 
-lemma pauli_X_kraus_map_CPTP:
-  "kraus_map_dim 2 [pauli_X] \<in> CPTP 2 2"
+lemma Pauli_X_kraus_map_CPTP:
+  "kraus_map_dim 2 [Pauli_X] \<in> CPTP 2 2"
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using kraus_is_cptp[OF pauli_X_kraus_operators npos npos] .
+    using kraus_is_cptp[OF Pauli_X_kraus_operators npos npos] .
 qed
 
-lemma pauli_Y_kraus_map_CPTP:
-  "kraus_map_dim 2 [pauli_Y] \<in> CPTP 2 2"
+lemma Pauli_Y_kraus_map_CPTP:
+  "kraus_map_dim 2 [Pauli_Y] \<in> CPTP 2 2"
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using kraus_is_cptp[OF pauli_Y_kraus_operators npos npos] .
+    using kraus_is_cptp[OF Pauli_Y_kraus_operators npos npos] .
 qed
 
-lemma pauli_Z_kraus_map_CPTP:
-  "kraus_map_dim 2 [pauli_Z] \<in> CPTP 2 2"
+lemma Pauli_Z_kraus_map_CPTP:
+  "kraus_map_dim 2 [Pauli_Z] \<in> CPTP 2 2"
 proof -
   have npos: "(0 :: nat) < 2" by simp
   show ?thesis
-    using kraus_is_cptp[OF pauli_Z_kraus_operators npos npos] .
+    using kraus_is_cptp[OF Pauli_Z_kraus_operators npos npos] .
 qed
 
 
@@ -10835,19 +10835,19 @@ qed
 
 subsection \<open>Fixed points of Pauli channels\<close>
 
-lemma pauli_X_conj_commute:
+lemma Pauli_X_conj_commute:
   fixes M :: "complex Matrix.mat"
   assumes M_c: "M \<in> carrier_mat 2 2"
-      and commute: "pauli_X * M = M * pauli_X"
-  shows "pauli_X * M * (pauli_X\<^sup>\<dagger>) = M"
+      and commute: "Pauli_X * M = M * Pauli_X"
+  shows "Pauli_X * M * (Pauli_X\<^sup>\<dagger>) = M"
 proof -
-  have x_c: "pauli_X \<in> carrier_mat 2 2" by simp
-  have x_dag: "pauli_X\<^sup>\<dagger> = pauli_X" by (rule pauli_X_dagger)
-  have x_sq: "pauli_X * pauli_X = 1\<^sub>m 2" by (rule pauli_X_squared)
-  have "pauli_X * M * (pauli_X\<^sup>\<dagger>) = pauli_X * M * pauli_X"
+  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
+  have x_dag: "Pauli_X\<^sup>\<dagger> = Pauli_X" by (rule Pauli_X_dagger)
+  have x_sq: "Pauli_X * Pauli_X = 1\<^sub>m 2" by (rule Pauli_X_squared)
+  have "Pauli_X * M * (Pauli_X\<^sup>\<dagger>) = Pauli_X * M * Pauli_X"
     using x_dag by simp
-  also have "\<dots> = (M * pauli_X) * pauli_X" using commute by simp
-  also have "\<dots> = M * (pauli_X * pauli_X)"
+  also have "\<dots> = (M * Pauli_X) * Pauli_X" using commute by simp
+  also have "\<dots> = M * (Pauli_X * Pauli_X)"
     using x_c M_c by (metis assoc_mult_mat)
   also have "\<dots> = M * (1\<^sub>m 2)" using x_sq by simp
   also have "\<dots> = M" using M_c by simp
@@ -10857,11 +10857,11 @@ qed
 lemma bit_flip_channel_fixed_point_commute:
   fixes p :: real
   assumes M_c: "M \<in> carrier_mat 2 2"
-      and commute: "pauli_X * M = M * pauli_X"
+      and commute: "Pauli_X * M = M * Pauli_X"
   shows "bit_flip_channel p M = M"
 proof -
-  have conj_eq: "pauli_X * M * (pauli_X\<^sup>\<dagger>) = M"
-    using pauli_X_conj_commute[OF M_c commute].
+  have conj_eq: "Pauli_X * M * (Pauli_X\<^sup>\<dagger>) = M"
+    using Pauli_X_conj_commute[OF M_c commute].
   have "bit_flip_channel p M
           = complex_of_real (1 - p) \<cdot>\<^sub>m M
             + complex_of_real p \<cdot>\<^sub>m M"
@@ -10874,19 +10874,19 @@ proof -
 qed
 
 
-lemma pauli_Z_conj_commute:
+lemma Pauli_Z_conj_commute:
   fixes M :: "complex Matrix.mat"
   assumes M_c: "M \<in> carrier_mat 2 2"
-      and commute: "pauli_Z * M = M * pauli_Z"
-  shows "pauli_Z * M * (pauli_Z\<^sup>\<dagger>) = M"
+      and commute: "Pauli_Z * M = M * Pauli_Z"
+  shows "Pauli_Z * M * (Pauli_Z\<^sup>\<dagger>) = M"
 proof -
-  have z_c: "pauli_Z \<in> carrier_mat 2 2" by simp
-  have z_dag: "pauli_Z\<^sup>\<dagger> = pauli_Z" by (rule pauli_Z_dagger)
-  have z_sq: "pauli_Z * pauli_Z = 1\<^sub>m 2" by (rule pauli_Z_squared)
-  have "pauli_Z * M * (pauli_Z\<^sup>\<dagger>) = pauli_Z * M * pauli_Z"
+  have z_c: "Pauli_Z \<in> carrier_mat 2 2" by simp
+  have z_dag: "Pauli_Z\<^sup>\<dagger> = Pauli_Z" by (rule Pauli_Z_dagger)
+  have z_sq: "Pauli_Z * Pauli_Z = 1\<^sub>m 2" by (rule Pauli_Z_squared)
+  have "Pauli_Z * M * (Pauli_Z\<^sup>\<dagger>) = Pauli_Z * M * Pauli_Z"
     using z_dag by simp
-  also have "\<dots> = (M * pauli_Z) * pauli_Z" using commute by simp
-  also have "\<dots> = M * (pauli_Z * pauli_Z)"
+  also have "\<dots> = (M * Pauli_Z) * Pauli_Z" using commute by simp
+  also have "\<dots> = M * (Pauli_Z * Pauli_Z)"
     using z_c M_c by (metis assoc_mult_mat)
   also have "\<dots> = M * (1\<^sub>m 2)" using z_sq by simp
   also have "\<dots> = M" using M_c by simp
@@ -10896,11 +10896,11 @@ qed
 lemma phase_flip_channel_fixed_point_commute:
   fixes p :: real
   assumes M_c: "M \<in> carrier_mat 2 2"
-      and commute: "pauli_Z * M = M * pauli_Z"
+      and commute: "Pauli_Z * M = M * Pauli_Z"
   shows "phase_flip_channel p M = M"
 proof -
-  have conj_eq: "pauli_Z * M * (pauli_Z\<^sup>\<dagger>) = M"
-    using pauli_Z_conj_commute[OF M_c commute].
+  have conj_eq: "Pauli_Z * M * (Pauli_Z\<^sup>\<dagger>) = M"
+    using Pauli_Z_conj_commute[OF M_c commute].
   have "phase_flip_channel p M
           = complex_of_real (1 - p) \<cdot>\<^sub>m M
             + complex_of_real p \<cdot>\<^sub>m M"
@@ -11098,24 +11098,24 @@ lemma bit_flip_channel_fixes_max_mixed:
   fixes p :: real
   shows "bit_flip_channel p (maximally_mixed_state 2)
            = maximally_mixed_state 2"
-  using unitary_conj_channel_fixes_max_mixed[OF pauli_X_carrier
-                                                 pauli_X_unitary]
+  using unitary_conj_channel_fixes_max_mixed[OF Pauli_X_carrier
+                                                 Pauli_X_unitary]
   by (simp add: bit_flip_channel_eq)
 
 lemma phase_flip_channel_fixes_max_mixed:
   fixes p :: real
   shows "phase_flip_channel p (maximally_mixed_state 2)
            = maximally_mixed_state 2"
-  using unitary_conj_channel_fixes_max_mixed[OF pauli_Z_carrier
-                                                 pauli_Z_unitary]
+  using unitary_conj_channel_fixes_max_mixed[OF Pauli_Z_carrier
+                                                 Pauli_Z_unitary]
   by (simp add: phase_flip_channel_eq)
 
 lemma bit_phase_flip_channel_fixes_max_mixed:
   fixes p :: real
   shows "bit_phase_flip_channel p (maximally_mixed_state 2)
            = maximally_mixed_state 2"
-  using unitary_conj_channel_fixes_max_mixed[OF pauli_Y_carrier
-                                                 pauli_Y_unitary]
+  using unitary_conj_channel_fixes_max_mixed[OF Pauli_Y_carrier
+                                                 Pauli_Y_unitary]
   by (simp add: bit_phase_flip_channel_eq)
 
 
@@ -11149,7 +11149,7 @@ lemma bit_flip_channel_preserves_density_matrix:
       and dm: "density_matrix 2 \<rho>"
   shows "density_matrix 2 (bit_flip_channel p \<rho>)"
   using unitary_conj_channel_preserves_density_matrix
-          [OF pauli_X_carrier pauli_X_unitary p_nn p_le dm]
+          [OF Pauli_X_carrier Pauli_X_unitary p_nn p_le dm]
   by (simp add: bit_flip_channel_eq)
 
 lemma phase_flip_channel_preserves_density_matrix:
@@ -11158,7 +11158,7 @@ lemma phase_flip_channel_preserves_density_matrix:
       and dm: "density_matrix 2 \<rho>"
   shows "density_matrix 2 (phase_flip_channel p \<rho>)"
   using unitary_conj_channel_preserves_density_matrix
-          [OF pauli_Z_carrier pauli_Z_unitary p_nn p_le dm]
+          [OF Pauli_Z_carrier Pauli_Z_unitary p_nn p_le dm]
   by (simp add: phase_flip_channel_eq)
 
 lemma bit_phase_flip_channel_preserves_density_matrix:
@@ -11167,7 +11167,7 @@ lemma bit_phase_flip_channel_preserves_density_matrix:
       and dm: "density_matrix 2 \<rho>"
   shows "density_matrix 2 (bit_phase_flip_channel p \<rho>)"
   using unitary_conj_channel_preserves_density_matrix
-          [OF pauli_Y_carrier pauli_Y_unitary p_nn p_le dm]
+          [OF Pauli_Y_carrier Pauli_Y_unitary p_nn p_le dm]
   by (simp add: bit_phase_flip_channel_eq)
 
 
@@ -11175,57 +11175,57 @@ subsection \<open>Pauli product identities\<close>
 
 text \<open>With the Day 32 convention for $Y$: $XY=-iZ$, $YZ=-iX$, $ZX=-iY$.\<close>
 
-lemma pauli_X_times_pauli_Y: "pauli_X * pauli_Y = -\<i> \<cdot>\<^sub>m pauli_Z"
+lemma Pauli_X_times_Pauli_Y: "Pauli_X * Pauli_Y = -\<i> \<cdot>\<^sub>m Pauli_Z"
 proof (rule eq_matI)
-  show "dim_row (pauli_X * pauli_Y) = dim_row (-\<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
-  show "dim_col (pauli_X * pauli_Y) = dim_col (-\<i> \<cdot>\<^sub>m pauli_Z)"
-    by (simp add: pauli_X_def pauli_Y_def pauli_Z_def)
+  show "dim_row (Pauli_X * Pauli_Y) = dim_row (-\<i> \<cdot>\<^sub>m Pauli_Z)"
+    by (simp add: Pauli_X_def Pauli_Y_def Pauli_Z_def)
+  show "dim_col (Pauli_X * Pauli_Y) = dim_col (-\<i> \<cdot>\<^sub>m Pauli_Z)"
+    by (simp add: Pauli_X_def Pauli_Y_def Pauli_Z_def)
 next
   fix i j
-  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_Z)"
-     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_Z)"
+  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m Pauli_Z)"
+     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m Pauli_Z)"
   hence ij: "i < 2" "j < 2"
-    by (simp_all add: pauli_Z_def)
-  show "(pauli_X * pauli_Y) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_Z) $$ (i, j)"
+    by (simp_all add: Pauli_Z_def)
+  show "(Pauli_X * Pauli_Y) $$ (i, j) = (-\<i> \<cdot>\<^sub>m Pauli_Z) $$ (i, j)"
     using ij
-    unfolding pauli_X_def pauli_Y_def pauli_Z_def scalar_prod_def
+    unfolding Pauli_X_def Pauli_Y_def Pauli_Z_def scalar_prod_def
     by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
-lemma pauli_Y_times_pauli_Z: "pauli_Y * pauli_Z = -\<i> \<cdot>\<^sub>m pauli_X"
+lemma Pauli_Y_times_Pauli_Z: "Pauli_Y * Pauli_Z = -\<i> \<cdot>\<^sub>m Pauli_X"
 proof (rule eq_matI)
-  show "dim_row (pauli_Y * pauli_Z) = dim_row (-\<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
-  show "dim_col (pauli_Y * pauli_Z) = dim_col (-\<i> \<cdot>\<^sub>m pauli_X)"
-    by (simp add: pauli_Y_def pauli_Z_def pauli_X_def)
+  show "dim_row (Pauli_Y * Pauli_Z) = dim_row (-\<i> \<cdot>\<^sub>m Pauli_X)"
+    by (simp add: Pauli_Y_def Pauli_Z_def Pauli_X_def)
+  show "dim_col (Pauli_Y * Pauli_Z) = dim_col (-\<i> \<cdot>\<^sub>m Pauli_X)"
+    by (simp add: Pauli_Y_def Pauli_Z_def Pauli_X_def)
 next
   fix i j
-  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_X)"
-     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_X)"
+  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m Pauli_X)"
+     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m Pauli_X)"
   hence ij: "i < 2" "j < 2"
-    by (simp_all add: pauli_X_def)
-  show "(pauli_Y * pauli_Z) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_X) $$ (i, j)"
+    by (simp_all add: Pauli_X_def)
+  show "(Pauli_Y * Pauli_Z) $$ (i, j) = (-\<i> \<cdot>\<^sub>m Pauli_X) $$ (i, j)"
     using ij
-    unfolding pauli_Y_def pauli_Z_def pauli_X_def scalar_prod_def
+    unfolding Pauli_Y_def Pauli_Z_def Pauli_X_def scalar_prod_def
     by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 
-lemma pauli_Z_times_pauli_X: "pauli_Z * pauli_X = -\<i> \<cdot>\<^sub>m pauli_Y"
+lemma Pauli_Z_times_Pauli_X: "Pauli_Z * Pauli_X = -\<i> \<cdot>\<^sub>m Pauli_Y"
 proof (rule eq_matI)
-  show "dim_row (pauli_Z * pauli_X) = dim_row (-\<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
-  show "dim_col (pauli_Z * pauli_X) = dim_col (-\<i> \<cdot>\<^sub>m pauli_Y)"
-    by (simp add: pauli_Z_def pauli_X_def pauli_Y_def)
+  show "dim_row (Pauli_Z * Pauli_X) = dim_row (-\<i> \<cdot>\<^sub>m Pauli_Y)"
+    by (simp add: Pauli_Z_def Pauli_X_def Pauli_Y_def)
+  show "dim_col (Pauli_Z * Pauli_X) = dim_col (-\<i> \<cdot>\<^sub>m Pauli_Y)"
+    by (simp add: Pauli_Z_def Pauli_X_def Pauli_Y_def)
 next
   fix i j
-  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m pauli_Y)"
-     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m pauli_Y)"
+  assume i_lt: "i < dim_row (-\<i> \<cdot>\<^sub>m Pauli_Y)"
+     and j_lt: "j < dim_col (-\<i> \<cdot>\<^sub>m Pauli_Y)"
   hence ij: "i < 2" "j < 2"
-    by (simp_all add: pauli_Y_def)
-  show "(pauli_Z * pauli_X) $$ (i, j) = (-\<i> \<cdot>\<^sub>m pauli_Y) $$ (i, j)"
+    by (simp_all add: Pauli_Y_def)
+  show "(Pauli_Z * Pauli_X) $$ (i, j) = (-\<i> \<cdot>\<^sub>m Pauli_Y) $$ (i, j)"
     using ij
-    unfolding pauli_Z_def pauli_X_def pauli_Y_def scalar_prod_def
+    unfolding Pauli_Z_def Pauli_X_def Pauli_Y_def scalar_prod_def
     by (cases i, cases j, (simp add: sumof2 numeral_2_eq_2)+)
 qed
 

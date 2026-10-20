@@ -42,7 +42,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `block_of_mat_carrier`, `amplification_index`, `amplification_carrier` are stated with a free
   `X`, which is Isabelle_Marries_Dirac's Pauli constant, so they hold only for that one matrix.
   The Arveson theories use their own general versions (`block_of_mat_idx`,
-  `block_of_mat_carrier'`, `amplification_idx`, `amplification_carrier'`).
+  `block_of_mat_carrier'`, `amplification_idx`, `amplification_carrier'`).  Resolved by the
+  renaming below: the QC11 lemmas are now general.
 
 ## Second gap-closure push, 2026-10-19 (examples and small propositions)
 
@@ -65,3 +66,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
 - **Transcription error in `QC_Notes_overleaf.tex`.** The SWAP equation on PDF p.37 showed the
   identity on the left and CNOT′ as the third factor; the PDF has SWAP = CNOT·CNOT′·CNOT
   (`SWAP_three_CNOTs`).  Fixed.
+
+## Gate names, 2026-10-19
+
+- **Single-letter gate constants hidden.** Isabelle_Marries_Dirac's `X`, `Y`, `Z`, `H`, `S`, `T`
+  captured free variables of those names in lemma statements (the QC11 issue above, and
+  `adjoint_inner`/`herm_bound` while proving D25-4).  `Basic_Math` now hides them
+  (`hide_const (open)`); they remain `Quantum.X` etc.  A theory that imports an
+  Isabelle_Marries_Dirac theory directly gets the names back on merge, so only `Basic_Math`
+  imports that library (now including `No_Cloning`, whose simp rules are removed there: one
+  of them, `eq_from_inner_prod` with conclusion `v = w`, made a plain `simp` in
+  `Day02_11_Supplement` run for over 50 minutes).
+- **Project names.** `pauli_X/Y/Z`, `H_gate`, `S_gate` are renamed `Pauli_X/Y/Z`, `Hadamard`,
+  `Phase_S` (lemma names follow, e.g. `Pauli_X_carrier`).  `Pauli_Y` keeps the Day 32 sign, the
+  negative of the library's `Y`.

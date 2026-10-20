@@ -132,7 +132,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D10-1 | superdense coding: the four Bell states from γ by I, Z, X, XZ | QC3 `bell_basis`, `bell_basis_orthonormal`; the action table ((Z⊗I)γ = … etc.) is not proved | ~ |
-| D10-2 | one-qubit gates X, Z, Y, H, S | QC11 `pauli_X/Y/Z` (+ unitary, involution, products), QC3 `H_gate`, `hadamard_e0/e1`, `S_gate`, `S_gate_unitary` | ✓ |
+| D10-2 | one-qubit gates X, Z, Y, H, S | QC11 `Pauli_X/Y/Z` (+ unitary, involution, products), QC3 `Hadamard`, `hadamard_e0/e1`, `Phase_S`, `Phase_S_unitary` | ✓ |
 | D10-3 | "H² = X" | the notes are wrong here (corrected on Day 11 to H² = I); formal `hadamard_squared` proves H² = I | ✓ |
 | D10-4 | classical gates AND/OR/XOR/NAND/NOR, Pierce/Sheffer remarks | – | – |
 | D10-5 | CNOT matrix, unitary | library `CNOT`; QC3 `CNOT_unitary`, `CNOT_00`, `CNOT_01`, `CNOT_10`, `CNOT_11` | ✓ |
@@ -141,7 +141,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 11 (21 Sep): corrections, circuits, no-cloning
 | id | notes | formal | status |
 |---|---|---|---|
-| D11-1 | H² = I, He₀, He₁, Xe₀, Xe₁ | QC3 `hadamard_squared`, `hadamard_e0`, `hadamard_e1`; X on basis vectors via `pauli_X_ket_plus/minus` only | ✓ |
+| D11-1 | H² = I, He₀, He₁, Xe₀, Xe₁ | QC3 `hadamard_squared`, `hadamard_e0`, `hadamard_e1`; X on basis vectors via `Pauli_X_ket_plus/minus` only | ✓ |
 | D11-2 | CNOT, CCNOT truth tables | QC3 `CNOT_00`, `CNOT_10`; QC11 `CCNOT` definition | ~ |
 | D11-3 | circuit diagrams; SWAP = CNOT·CNOT′·CNOT | S211 `SWAP_three_CNOTs` (`SWAP` from the AFP entry Quantum_Fourier_Transform), `SWAP_basis`, `CNOT'_basis`; the diagrams themselves are notation | ✓ |
 | D11-4 | CNOT clones the computational basis | QC3 `CNOT_00`, `CNOT_10` | ✓ |
@@ -150,7 +150,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 12 (23 Sep): quantum parallelism
 | id | notes | formal | status |
 |---|---|---|---|
-| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | D12 `hadamard_uniform_N` (`tensor_pow_mat H_gate N *v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N`), with `uniform_tensor_e0_as_sum` the Σ_J form; QC11 `hadamard_uniform_1` is N = 1 | ✓ |
+| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | D12 `hadamard_uniform_N` (`tensor_pow_mat Hadamard N *v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N`), with `uniform_tensor_e0_as_sum` the Σ_J form; QC11 `hadamard_uniform_1` is N = 1 | ✓ |
 | D12-2 | oracle U_f(e_J ⊗ e_i) = e_J ⊗ e_{i+f(J)} exists and is unitary | QC11 `oracle_unitary`, `oracle_exists` | ✓ |
 | D12-3 | Proposition: p₀(ψ) = \|⟨γ\|ψ⟩\|² for P₀ = \|γ⟩⟨γ\| | QC3 `rank_one_meas_prob`, `meas_prob_quad_form` | ✓ |
 | D12-4 | counting: p₀(U_f(x⊗e₀)) = (M/2^N)² with M = #{J : f(J) = 0} | D12 `counting_probability`: for any unitary U acting as the oracle on the basis vectors e_J⊗e_i, `meas_prob (γ ⊘ γ) (U *v γ) = (count_zeros f N / 2^N)²` with γ = x⊗e₀ | ✓ |
@@ -328,7 +328,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 32 (14 Nov): phase-flip code, Shor code, Pauli magic
 | id | notes | formal | status |
 |---|---|---|---|
-| D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
+| D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `Pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
 | D32-2 | Y-version with β = Y\|+⟩ | YC `y_code_corrects` (one CPTP map corrects every single Y flip on a\|+++⟩ + b\|βββ⟩), from the general `orthogonal_images_recovery` | ✓ |
 | D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | D33 `shor_cw_notes` (the code words), `shor_code_theorem`: one CPTP R with R(Ũ\|ψ⟩⟨ψ\|Ũ*) = \|ψ⟩⟨ψ\| for every 2×2 unitary U, every position i < 9 (Ũ = `qubit_op i U` = I⊗…⊗U⊗…⊗I) and every ψ = a\|0_L⟩ + b\|1_L⟩; via `pauli_decomp`, D32 `pauli_expansion_unitary` and D32R `recovery_linear_combination` | ✓ |
 | D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | D32R `recovery_ops_kraus_operators`, `recovery_map_CPTP'`, `recovery_single_error` (hypotheses bundled as `recovery_setting n P Us`: P projection, PU_i*U_jP = δ_ij P; for unitaries this is the notes' hypothesis, `recovery_setting_unitaries`) | ✓ |
@@ -376,7 +376,7 @@ A1 D3-2 converses: isometry ⟹ unitary is the library's `length_preserving_is_u
 A2 D4-5 `pd_iff_pos_eigenvalues`.
 A3 D4-3 `psd_iff_quad_form_nonneg` (notes' definition).
 A4 D8-4 redefine `psd_sqrt` via `SOME` with `psd_sqrt_props`. DONE.
-A5 D10-5 `CNOT_01`, `CNOT_11`; D10-2 phase gate `S_gate` unitary.
+A5 D10-5 `CNOT_01`, `CNOT_11`; D10-2 phase gate `Phase_S` unitary.
 A6 D13-4 phase invariance of `pure_density`; D13-2 ensemble probability = Re Tr(M*M ρ).
 A7 D12-3 rank-one measurement probability \|⟨γ\|ψ⟩\|².
 A8 D8-5 expected value: Σ λ_m p_m(ψ) = ⟨ψ\|Hψ⟩, H Hermitian.

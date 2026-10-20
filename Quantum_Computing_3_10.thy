@@ -7670,69 +7670,69 @@ S=\begin{pmatrix}1&0\\0&i\end{pmatrix}.
 \]
 $H$ is the Hadamard gate; the notes write ``$H^2=X$'' here and correct it to $H^2=I$ on
 Day 11, which is what is proved below.  $H$ and $S$ together generate all $2\times2$
-unitaries (not formalised).  The library provides \<open>X\<close>, \<open>Y\<close>, \<open>Z\<close>, \<open>H\<close>; the phase gate
-is \<open>S_gate\<close> below.\<close>
+unitaries (not formalised).  Formally $H$ is \<open>Hadamard\<close> (the library's \<open>Quantum.H\<close>) and
+$S$ is \<open>Phase_S\<close>.\<close>
 
-definition H_gate :: "complex Matrix.mat" where
-  "H_gate \<equiv> H"
+definition Hadamard :: "complex Matrix.mat" where
+  "Hadamard \<equiv> Quantum.H"
 
 lemma csqrt_two: "csqrt (2::complex) = (sqrt 2 :: complex)"
   by simp
 
 
 lemma hadamard_squared:
-  "H_gate * H_gate = 1\<^sub>m 2"
-  by (simp add: H_gate_def)
+  "Hadamard * Hadamard = 1\<^sub>m 2"
+  by (simp add: Hadamard_def)
 
 
 lemma hadamard_e0:
-  "H_gate *\<^sub>v unit_vec 2 0 =
+  "Hadamard *\<^sub>v unit_vec 2 0 =
    (1 / csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
   by (rule eq_vecI)
-     (auto simp add: H_gate_def H_def mult_mat_vec_def scalar_prod_def unit_vec_def csqrt_two
+     (auto simp add: Hadamard_def Quantum.H_def mult_mat_vec_def scalar_prod_def unit_vec_def csqrt_two
                       less_2_cases)
 
 lemma hadamard_e1:
-  "H_gate *\<^sub>v unit_vec 2 1 =
+  "Hadamard *\<^sub>v unit_vec 2 1 =
    (1 / csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 - unit_vec 2 1)"
   by (rule eq_vecI)
-     (auto simp add: H_gate_def H_def mult_mat_vec_def scalar_prod_def unit_vec_def csqrt_two
+     (auto simp add: Hadamard_def Quantum.H_def mult_mat_vec_def scalar_prod_def unit_vec_def csqrt_two
                       less_2_cases)
 
 
 
 text \<open>The phase gate $S=\mathrm{diag}(1,i)$ is unitary.\<close>
 
-definition S_gate :: "complex Matrix.mat" where
-  "S_gate \<equiv> Matrix.mat 2 2 (\<lambda>(i,j). if i = 0 \<and> j = 0 then 1 else if i = 1 \<and> j = 1 then \<i> else 0)"
+definition Phase_S :: "complex Matrix.mat" where
+  "Phase_S \<equiv> Matrix.mat 2 2 (\<lambda>(i,j). if i = 0 \<and> j = 0 then 1 else if i = 1 \<and> j = 1 then \<i> else 0)"
 
-lemma S_gate_carrier [simp]: "S_gate \<in> carrier_mat 2 2"
-  by (simp add: S_gate_def)
+lemma Phase_S_carrier [simp]: "Phase_S \<in> carrier_mat 2 2"
+  by (simp add: Phase_S_def)
 
-lemma S_gate_dagger_S: "S_gate\<^sup>\<dagger> * S_gate = 1\<^sub>m 2"
+lemma Phase_S_dagger_S: "Phase_S\<^sup>\<dagger> * Phase_S = 1\<^sub>m 2"
 proof (rule eq_matI)
-  show "dim_row (S_gate\<^sup>\<dagger> * S_gate) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: S_gate_def)
-  show "dim_col (S_gate\<^sup>\<dagger> * S_gate) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: S_gate_def)
+  show "dim_row (Phase_S\<^sup>\<dagger> * Phase_S) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
+  show "dim_col (Phase_S\<^sup>\<dagger> * Phase_S) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
   fix i j assume "i < dim_row (1\<^sub>m 2 :: complex Matrix.mat)" "j < dim_col (1\<^sub>m 2 :: complex Matrix.mat)"
   hence ij: "i < 2" "j < 2" by auto
-  thus "(S_gate\<^sup>\<dagger> * S_gate) $$ (i, j) = (1\<^sub>m 2 :: complex Matrix.mat) $$ (i, j)"
-    unfolding S_gate_def dagger_def scalar_prod_def
+  thus "(Phase_S\<^sup>\<dagger> * Phase_S) $$ (i, j) = (1\<^sub>m 2 :: complex Matrix.mat) $$ (i, j)"
+    unfolding Phase_S_def dagger_def scalar_prod_def
     by (cases i; cases j) (auto simp: less_2_cases numeral_2_eq_2)
 qed
 
-lemma S_gate_S_dagger: "S_gate * (S_gate\<^sup>\<dagger>) = 1\<^sub>m 2"
+lemma Phase_S_S_dagger: "Phase_S * (Phase_S\<^sup>\<dagger>) = 1\<^sub>m 2"
 proof (rule eq_matI)
-  show "dim_row (S_gate * (S_gate\<^sup>\<dagger>)) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: S_gate_def)
-  show "dim_col (S_gate * (S_gate\<^sup>\<dagger>)) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: S_gate_def)
+  show "dim_row (Phase_S * (Phase_S\<^sup>\<dagger>)) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
+  show "dim_col (Phase_S * (Phase_S\<^sup>\<dagger>)) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
   fix i j assume "i < dim_row (1\<^sub>m 2 :: complex Matrix.mat)" "j < dim_col (1\<^sub>m 2 :: complex Matrix.mat)"
   hence ij: "i < 2" "j < 2" by auto
-  thus "(S_gate * (S_gate\<^sup>\<dagger>)) $$ (i, j) = (1\<^sub>m 2 :: complex Matrix.mat) $$ (i, j)"
-    unfolding S_gate_def dagger_def scalar_prod_def
+  thus "(Phase_S * (Phase_S\<^sup>\<dagger>)) $$ (i, j) = (1\<^sub>m 2 :: complex Matrix.mat) $$ (i, j)"
+    unfolding Phase_S_def dagger_def scalar_prod_def
     by (cases i; cases j) (auto simp: less_2_cases numeral_2_eq_2)
 qed
 
-lemma S_gate_unitary: "unitary S_gate"
-  unfolding unitary_def using S_gate_dagger_S S_gate_S_dagger by (simp add: S_gate_def)
+lemma Phase_S_unitary: "unitary Phase_S"
+  unfolding unitary_def using Phase_S_dagger_S Phase_S_S_dagger by (simp add: Phase_S_def)
 
 subsection \<open>Two- and three-qubit gates\<close>
 

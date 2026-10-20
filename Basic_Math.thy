@@ -7,7 +7,20 @@
 theory Basic_Math
   imports
     Quantum_Fourier_Transform.QFT
+    Isabelle_Marries_Dirac.No_Cloning
 begin
+
+text \<open>Isabelle\_Marries\_Dirac names its gates \<open>X\<close>, \<open>Y\<close>, \<open>Z\<close>, \<open>H\<close>, \<open>S\<close>, \<open>T\<close>; hidden here
+so that these letters are variables.  The gates remain \<open>Quantum.X\<close> etc.; the project
+names are \<open>Pauli_X\<close>, \<open>Pauli_Y\<close>, \<open>Pauli_Z\<close>, \<open>Hadamard\<close>, \<open>Phase_S\<close>.  Theories importing
+this one must not import Isabelle\_Marries\_Dirac directly, as that undoes the hiding.\<close>
+
+hide_const (open) Quantum.X Quantum.Y Quantum.Z Quantum.H Quantum.S Quantum.T
+
+text \<open>\<open>No_Cloning\<close> is imported for \<open>cauchy_schwarz_ineq\<close>; its simp rules (e.g.\ \<open>v = w\<close> from
+inner products) slow simp on every vector equation.\<close>
+
+declare cauchy_schwarz_eq [simp del] cauchy_schwarz_col [simp del] eq_from_inner_prod [simp del]
 
 section \<open>Preliminaries: linear-space isomorphisms\<close>
 

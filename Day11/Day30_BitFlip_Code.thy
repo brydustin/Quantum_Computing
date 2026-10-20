@@ -108,38 +108,38 @@ proof -
 qed
 
 lemma flips_as_tensors:
-  "X\<^sub>1 = Tensor.tensor_mat (Tensor.tensor_mat pauli_X (1\<^sub>m 2)) (1\<^sub>m 2)"
-  "X\<^sub>2 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) pauli_X) (1\<^sub>m 2)"
-  "X\<^sub>3 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) pauli_X"
+  "X\<^sub>1 = Tensor.tensor_mat (Tensor.tensor_mat Pauli_X (1\<^sub>m 2)) (1\<^sub>m 2)"
+  "X\<^sub>2 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) Pauli_X) (1\<^sub>m 2)"
+  "X\<^sub>3 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) Pauli_X"
 proof -
-  have c1: "pauli_X \<in> carrier_mat 2 2" and c2: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp_all
+  have c1: "Pauli_X \<in> carrier_mat 2 2" and c2: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp_all
   have Xb: "\<And>b i j. i < 8 \<Longrightarrow> j < 8 \<Longrightarrow>
       flip_bit_mat b $$ (i,j) = (if j = (if i div 2^b mod 2 = 0 then i + 2^b else i - 2^b) then 1 else 0)"
     by (simp add: flip_bit_mat_def)
-  show "X\<^sub>1 = Tensor.tensor_mat (Tensor.tensor_mat pauli_X (1\<^sub>m 2)) (1\<^sub>m 2)"
+  show "X\<^sub>1 = Tensor.tensor_mat (Tensor.tensor_mat Pauli_X (1\<^sub>m 2)) (1\<^sub>m 2)"
   proof (rule eq_matI)
-    fix i j assume "i < dim_row (Tensor.tensor_mat (Tensor.tensor_mat pauli_X (1\<^sub>m 2)) (1\<^sub>m 2))" and "j < dim_col (Tensor.tensor_mat (Tensor.tensor_mat pauli_X (1\<^sub>m 2)) (1\<^sub>m 2))"
-    hence i: "i < 8" and j: "j < 8" by (simp_all add: pauli_X_def)
-    show "X\<^sub>1 $$ (i,j) = Tensor.tensor_mat (Tensor.tensor_mat pauli_X (1\<^sub>m 2)) (1\<^sub>m 2) $$ (i,j)"
+    fix i j assume "i < dim_row (Tensor.tensor_mat (Tensor.tensor_mat Pauli_X (1\<^sub>m 2)) (1\<^sub>m 2))" and "j < dim_col (Tensor.tensor_mat (Tensor.tensor_mat Pauli_X (1\<^sub>m 2)) (1\<^sub>m 2))"
+    hence i: "i < 8" and j: "j < 8" by (simp_all add: Pauli_X_def)
+    show "X\<^sub>1 $$ (i,j) = Tensor.tensor_mat (Tensor.tensor_mat Pauli_X (1\<^sub>m 2)) (1\<^sub>m 2) $$ (i,j)"
       unfolding tensor3_index[OF c1 c2 c2 i j] Xb[OF i j] using idx8[OF i] idx8[OF j]
-      by (elim disjE) (simp_all add: pauli_X_def)
-  qed (simp_all add: pauli_X_def)
-  show "X\<^sub>2 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) pauli_X) (1\<^sub>m 2)"
+      by (elim disjE) (simp_all add: Pauli_X_def)
+  qed (simp_all add: Pauli_X_def)
+  show "X\<^sub>2 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) Pauli_X) (1\<^sub>m 2)"
   proof (rule eq_matI)
-    fix i j assume "i < dim_row (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) pauli_X) (1\<^sub>m 2))" and "j < dim_col (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) pauli_X) (1\<^sub>m 2))"
-    hence i: "i < 8" and j: "j < 8" by (simp_all add: pauli_X_def)
-    show "X\<^sub>2 $$ (i,j) = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) pauli_X) (1\<^sub>m 2) $$ (i,j)"
+    fix i j assume "i < dim_row (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) Pauli_X) (1\<^sub>m 2))" and "j < dim_col (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) Pauli_X) (1\<^sub>m 2))"
+    hence i: "i < 8" and j: "j < 8" by (simp_all add: Pauli_X_def)
+    show "X\<^sub>2 $$ (i,j) = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) Pauli_X) (1\<^sub>m 2) $$ (i,j)"
       unfolding tensor3_index[OF c2 c1 c2 i j] Xb[OF i j] using idx8[OF i] idx8[OF j]
-      by (elim disjE) (simp_all add: pauli_X_def)
-  qed (simp_all add: pauli_X_def)
-  show "X\<^sub>3 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) pauli_X"
+      by (elim disjE) (simp_all add: Pauli_X_def)
+  qed (simp_all add: Pauli_X_def)
+  show "X\<^sub>3 = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) Pauli_X"
   proof (rule eq_matI)
-    fix i j assume "i < dim_row (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) pauli_X)" and "j < dim_col (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) pauli_X)"
-    hence i: "i < 8" and j: "j < 8" by (simp_all add: pauli_X_def)
-    show "X\<^sub>3 $$ (i,j) = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) pauli_X $$ (i,j)"
+    fix i j assume "i < dim_row (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) Pauli_X)" and "j < dim_col (Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) Pauli_X)"
+    hence i: "i < 8" and j: "j < 8" by (simp_all add: Pauli_X_def)
+    show "X\<^sub>3 $$ (i,j) = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) Pauli_X $$ (i,j)"
       unfolding tensor3_index[OF c2 c2 c1 i j] Xb[OF i j] using idx8[OF i] idx8[OF j]
-      by (elim disjE) (simp_all add: pauli_X_def)
-  qed (simp_all add: pauli_X_def)
+      by (elim disjE) (simp_all add: Pauli_X_def)
+  qed (simp_all add: Pauli_X_def)
 qed
 
 lemma flip_bit_mat_mult_vec:

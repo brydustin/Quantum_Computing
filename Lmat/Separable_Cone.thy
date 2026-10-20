@@ -7,7 +7,6 @@ theory Separable_Cone
   imports
     Lmat_Euclidean
     Vern_Paulsen_QC_3_10.Quantum_Computing_3_10
-    Isabelle_Marries_Dirac.Tensor
     "HOL-Analysis.Convex"
     "HOL-Analysis.Convex_Euclidean_Space"
     "HOL-Analysis.Polytope"

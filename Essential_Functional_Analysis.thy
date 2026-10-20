@@ -10,7 +10,6 @@ theory Essential_Functional_Analysis
     Quantum_Computing_3_10
     "Jordan_Normal_Form.Schur_Decomposition"
     "Jordan_Normal_Form.DL_Rank"
-    "Isabelle_Marries_Dirac.Tensor"
 begin
 
 

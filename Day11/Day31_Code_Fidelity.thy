@@ -266,25 +266,25 @@ theorem nothing_min_fidelity:
     and "fidelity (unit_vec 2 0) (bit_flip_channel p (unit_vec 2 0 \<oslash> unit_vec 2 0)) = sqrt (1 - p)"
 proof -
   have val: "\<And>\<psi>. dim_vec \<psi> = 2 \<Longrightarrow> \<langle>\<psi>|\<psi>\<rangle> = 1 \<Longrightarrow>
-      fidelity \<psi> (bit_flip_channel p (\<psi> \<oslash> \<psi>)) = sqrt ((1 - p) + p * (cmod \<langle>\<psi> | pauli_X *\<^sub>v \<psi>\<rangle>)^2)"
+      fidelity \<psi> (bit_flip_channel p (\<psi> \<oslash> \<psi>)) = sqrt ((1 - p) + p * (cmod \<langle>\<psi> | Pauli_X *\<^sub>v \<psi>\<rangle>)^2)"
   proof -
     fix \<psi> :: "complex Matrix.vec" assume \<psi>d: "dim_vec \<psi> = 2" and n: "\<langle>\<psi>|\<psi>\<rangle> = 1"
-    have Xd: "dim_vec (pauli_X *\<^sub>v \<psi>) = 2" by (simp add: pauli_X_def)
+    have Xd: "dim_vec (Pauli_X *\<^sub>v \<psi>) = 2" by (simp add: Pauli_X_def)
     have "bit_flip_channel p (\<psi> \<oslash> \<psi>) = complex_of_real (1 - p) \<cdot>\<^sub>m (\<psi> \<oslash> \<psi>)
-          + complex_of_real p \<cdot>\<^sub>m ((pauli_X *\<^sub>v \<psi>) \<oslash> (pauli_X *\<^sub>v \<psi>))"
-      unfolding bit_flip_channel_def using conj_outer_prod[OF pauli_X_carrier \<psi>d] by simp
-    moreover have "\<langle>\<psi> | (complex_of_real (1 - p) \<cdot>\<^sub>m (\<psi> \<oslash> \<psi>) + complex_of_real p \<cdot>\<^sub>m ((pauli_X *\<^sub>v \<psi>) \<oslash> (pauli_X *\<^sub>v \<psi>))) *\<^sub>v \<psi>\<rangle>
+          + complex_of_real p \<cdot>\<^sub>m ((Pauli_X *\<^sub>v \<psi>) \<oslash> (Pauli_X *\<^sub>v \<psi>))"
+      unfolding bit_flip_channel_def using conj_outer_prod[OF Pauli_X_carrier \<psi>d] by simp
+    moreover have "\<langle>\<psi> | (complex_of_real (1 - p) \<cdot>\<^sub>m (\<psi> \<oslash> \<psi>) + complex_of_real p \<cdot>\<^sub>m ((Pauli_X *\<^sub>v \<psi>) \<oslash> (Pauli_X *\<^sub>v \<psi>))) *\<^sub>v \<psi>\<rangle>
           = complex_of_real (1 - p) * (\<langle>\<psi>|\<psi>\<rangle> * \<langle>\<psi>|\<psi>\<rangle>)
-            + complex_of_real p * (\<langle>pauli_X *\<^sub>v \<psi>|\<psi>\<rangle> * \<langle>\<psi>|pauli_X *\<^sub>v \<psi>\<rangle>)"
+            + complex_of_real p * (\<langle>Pauli_X *\<^sub>v \<psi>|\<psi>\<rangle> * \<langle>\<psi>|Pauli_X *\<^sub>v \<psi>\<rangle>)"
       by (rule quad_two_outer[OF \<psi>d Xd])
-    moreover have "\<langle>pauli_X *\<^sub>v \<psi>|\<psi>\<rangle> = cnj \<langle>\<psi>|pauli_X *\<^sub>v \<psi>\<rangle>" by (rule inner_prod_cnj) (use \<psi>d Xd in simp)
-    ultimately show "fidelity \<psi> (bit_flip_channel p (\<psi> \<oslash> \<psi>)) = sqrt ((1 - p) + p * (cmod \<langle>\<psi> | pauli_X *\<^sub>v \<psi>\<rangle>)^2)"
+    moreover have "\<langle>Pauli_X *\<^sub>v \<psi>|\<psi>\<rangle> = cnj \<langle>\<psi>|Pauli_X *\<^sub>v \<psi>\<rangle>" by (rule inner_prod_cnj) (use \<psi>d Xd in simp)
+    ultimately show "fidelity \<psi> (bit_flip_channel p (\<psi> \<oslash> \<psi>)) = sqrt ((1 - p) + p * (cmod \<langle>\<psi> | Pauli_X *\<^sub>v \<psi>\<rangle>)^2)"
       unfolding fidelity_def_eq n by (simp add: cnj_mult_self_cmod)
   qed
   show "\<forall>\<psi>. dim_vec \<psi> = 2 \<longrightarrow> \<langle>\<psi>|\<psi>\<rangle> = 1 \<longrightarrow> sqrt (1 - p) \<le> fidelity \<psi> (bit_flip_channel p (\<psi> \<oslash> \<psi>))"
     using val p0 by simp
-  have Xe: "pauli_X *\<^sub>v unit_vec 2 0 = unit_vec 2 1"
-    by (rule eq_vecI) (auto simp: pauli_X_def less_2_cases_iff scalar_prod_def)
+  have Xe: "Pauli_X *\<^sub>v unit_vec 2 0 = unit_vec 2 1"
+    by (rule eq_vecI) (auto simp: Pauli_X_def less_2_cases_iff scalar_prod_def)
   have e: "\<langle>unit_vec 2 0 | unit_vec 2 (0::nat)\<rangle> = (1::complex)" by (subst inner_prod_unit_vec_right) simp_all
   have z: "\<langle>unit_vec 2 0 | unit_vec 2 (1::nat)\<rangle> = (0::complex)" by (subst inner_prod_unit_vec_right) simp_all
   show "fidelity (unit_vec 2 0) (bit_flip_channel p (unit_vec 2 0 \<oslash> unit_vec 2 0)) = sqrt (1 - p)"

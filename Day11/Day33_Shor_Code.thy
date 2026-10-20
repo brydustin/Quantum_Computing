@@ -240,44 +240,44 @@ lemma bop_entry_cases:
 
 lemma bop_X_gvec:
   assumes s: "s < 3"
-  shows "bop s pauli_X *\<^sub>v gvec p 0 = gvec p (2^(2-s))"
+  shows "bop s Pauli_X *\<^sub>v gvec p 0 = gvec p (2^(2-s))"
 proof (rule eq_vecI)
-  have M: "bop s pauli_X \<in> carrier_mat 8 8" by (rule bop_carrier[OF pauli_X_carrier s])
-  show "dim_vec (bop s pauli_X *\<^sub>v gvec p 0) = dim_vec (gvec p (2^(2-s)))" using M by simp
+  have M: "bop s Pauli_X \<in> carrier_mat 8 8" by (rule bop_carrier[OF Pauli_X_carrier s])
+  show "dim_vec (bop s Pauli_X *\<^sub>v gvec p 0) = dim_vec (gvec p (2^(2-s)))" using M by simp
   fix r assume "r < dim_vec (gvec p (2^(2-s)))"
   hence r: "r < 8" by simp
   have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus "(bop s pauli_X *\<^sub>v gvec p 0) $ r = gvec p (2^(2-s)) $ r"
+  thus "(bop s Pauli_X *\<^sub>v gvec p 0) $ r = gvec p (2^(2-s)) $ r"
     unfolding mult_gvec0[OF M r] using idx8[OF r]
-    by (elim disjE; simp add: bop_entry_cases[OF pauli_X_carrier] bop_entry_cases(2)[OF pauli_X_carrier, unfolded One_nat_def] gvec_index; simp add: pauli_X_def pm_def)
+    by (elim disjE; simp add: bop_entry_cases[OF Pauli_X_carrier] bop_entry_cases(2)[OF Pauli_X_carrier, unfolded One_nat_def] gvec_index; simp add: Pauli_X_def pm_def)
 qed
 
 lemma bop_Y_gvec:
   assumes s: "s < 3"
-  shows "bop s pauli_Y *\<^sub>v gvec p 0 = (-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s))"
+  shows "bop s Pauli_Y *\<^sub>v gvec p 0 = (-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s))"
 proof (rule eq_vecI)
-  have M: "bop s pauli_Y \<in> carrier_mat 8 8" by (rule bop_carrier[OF pauli_Y_carrier s])
-  show "dim_vec (bop s pauli_Y *\<^sub>v gvec p 0) = dim_vec ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s)))" using M by simp
+  have M: "bop s Pauli_Y \<in> carrier_mat 8 8" by (rule bop_carrier[OF Pauli_Y_carrier s])
+  show "dim_vec (bop s Pauli_Y *\<^sub>v gvec p 0) = dim_vec ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s)))" using M by simp
   fix r assume "r < dim_vec ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s)))"
   hence r: "r < 8" by simp
   have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus "(bop s pauli_Y *\<^sub>v gvec p 0) $ r = ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s))) $ r"
+  thus "(bop s Pauli_Y *\<^sub>v gvec p 0) $ r = ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s))) $ r"
     unfolding mult_gvec0[OF M r] using idx8[OF r] r
-    by (elim disjE; simp add: bop_entry_cases[OF pauli_Y_carrier] bop_entry_cases(2)[OF pauli_Y_carrier, unfolded One_nat_def] gvec_index; simp add: pauli_Y_def pm_def)
+    by (elim disjE; simp add: bop_entry_cases[OF Pauli_Y_carrier] bop_entry_cases(2)[OF Pauli_Y_carrier, unfolded One_nat_def] gvec_index; simp add: Pauli_Y_def pm_def)
 qed
 
 lemma bop_Z_gvec:
   assumes s: "s < 3"
-  shows "bop s pauli_Z *\<^sub>v gvec p 0 = gvec (\<not> p) 0"
+  shows "bop s Pauli_Z *\<^sub>v gvec p 0 = gvec (\<not> p) 0"
 proof (rule eq_vecI)
-  have M: "bop s pauli_Z \<in> carrier_mat 8 8" by (rule bop_carrier[OF pauli_Z_carrier s])
-  show "dim_vec (bop s pauli_Z *\<^sub>v gvec p 0) = dim_vec (gvec (\<not> p) 0)" using M by simp
+  have M: "bop s Pauli_Z \<in> carrier_mat 8 8" by (rule bop_carrier[OF Pauli_Z_carrier s])
+  show "dim_vec (bop s Pauli_Z *\<^sub>v gvec p 0) = dim_vec (gvec (\<not> p) 0)" using M by simp
   fix r assume "r < dim_vec (gvec (\<not> p) 0)"
   hence r: "r < 8" by simp
   have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus "(bop s pauli_Z *\<^sub>v gvec p 0) $ r = gvec (\<not> p) 0 $ r"
+  thus "(bop s Pauli_Z *\<^sub>v gvec p 0) $ r = gvec (\<not> p) 0 $ r"
     unfolding mult_gvec0[OF M r] using idx8[OF r]
-    by (elim disjE; simp add: bop_entry_cases[OF pauli_Z_carrier] bop_entry_cases(2)[OF pauli_Z_carrier, unfolded One_nat_def] gvec_index; simp add: pauli_Z_def pm_def)
+    by (elim disjE; simp add: bop_entry_cases[OF Pauli_Z_carrier] bop_entry_cases(2)[OF Pauli_Z_carrier, unfolded One_nat_def] gvec_index; simp add: Pauli_Z_def pm_def)
 qed
 
 lemma inner_two_units:
@@ -384,19 +384,19 @@ proof -
 qed
 
 lemma qubit_op_X_tl:
-  "i < 9 \<Longrightarrow> qubit_op i pauli_X *\<^sub>v lab_vec (replicate 3 (p, 0))
+  "i < 9 \<Longrightarrow> qubit_op i Pauli_X *\<^sub>v lab_vec (replicate 3 (p, 0))
      = lab_vec ((replicate 3 (p, 0))[i div 3 := (p, 2^(2 - i mod 3))])"
-  using qubit_op_tl[OF _ pauli_X_carrier, of i p 1 p "2^(2 - i mod 3)"] bop_X_gvec[of "i mod 3" p] by simp
+  using qubit_op_tl[OF _ Pauli_X_carrier, of i p 1 p "2^(2 - i mod 3)"] bop_X_gvec[of "i mod 3" p] by simp
 
 lemma qubit_op_Y_tl:
-  "i < 9 \<Longrightarrow> qubit_op i pauli_Y *\<^sub>v lab_vec (replicate 3 (p, 0))
+  "i < 9 \<Longrightarrow> qubit_op i Pauli_Y *\<^sub>v lab_vec (replicate 3 (p, 0))
      = (-\<i>) \<cdot>\<^sub>v lab_vec ((replicate 3 (p, 0))[i div 3 := (\<not> p, 2^(2 - i mod 3))])"
-  using qubit_op_tl[OF _ pauli_Y_carrier, of i p "-\<i>" "\<not> p" "2^(2 - i mod 3)"] bop_Y_gvec[of "i mod 3" p] by simp
+  using qubit_op_tl[OF _ Pauli_Y_carrier, of i p "-\<i>" "\<not> p" "2^(2 - i mod 3)"] bop_Y_gvec[of "i mod 3" p] by simp
 
 lemma qubit_op_Z_tl:
-  "i < 9 \<Longrightarrow> qubit_op i pauli_Z *\<^sub>v lab_vec (replicate 3 (p, 0))
+  "i < 9 \<Longrightarrow> qubit_op i Pauli_Z *\<^sub>v lab_vec (replicate 3 (p, 0))
      = lab_vec ((replicate 3 (p, 0))[i div 3 := (\<not> p, 0)])"
-  using qubit_op_tl[OF _ pauli_Z_carrier, of i p 1 "\<not> p" 0] bop_Z_gvec[of "i mod 3" p] by simp
+  using qubit_op_tl[OF _ Pauli_Z_carrier, of i p 1 "\<not> p" 0] bop_Z_gvec[of "i mod 3" p] by simp
 
 lemma lab_vec_inner:
   assumes l: "valid_label l" and l': "valid_label l'"
@@ -435,8 +435,8 @@ subsection \<open>The 22 correctable errors\<close>
 text \<open>$I$, $X_1,\dots,X_9$, $Y_1,\dots,Y_9$, $Z_1,Z_4,Z_7$ (positions counted from $0$ here).\<close>
 
 definition shor_errors :: "complex Matrix.mat list" where
-  "shor_errors = 1\<^sub>m 512 # map (\<lambda>i. qubit_op i pauli_X) [0..<9] @ map (\<lambda>i. qubit_op i pauli_Y) [0..<9]
-     @ map (\<lambda>b. qubit_op (3 * b) pauli_Z) [0..<3]"
+  "shor_errors = 1\<^sub>m 512 # map (\<lambda>i. qubit_op i Pauli_X) [0..<9] @ map (\<lambda>i. qubit_op i Pauli_Y) [0..<9]
+     @ map (\<lambda>b. qubit_op (3 * b) Pauli_Z) [0..<3]"
 
 definition shor_labels :: "bool \<Rightarrow> (bool \<times> nat) list list" where
   "shor_labels p = replicate 3 (p, 0)
@@ -453,11 +453,11 @@ lemma shor_lengths [simp]: "length shor_errors = 22" "length (shor_labels p) = 2
 lemma shor_errors_cases:
   assumes j: "j < 22"
   obtains "j = 0" "shor_errors ! j = 1\<^sub>m 512" "shor_labels p ! j = replicate 3 (p, 0)" "shor_kappa ! j = 1"
-  | i where "i < 9" "j = Suc i" "shor_errors ! j = qubit_op i pauli_X"
+  | i where "i < 9" "j = Suc i" "shor_errors ! j = qubit_op i Pauli_X"
       "shor_labels p ! j = (replicate 3 (p, 0))[i div 3 := (p, 2^(2 - i mod 3))]" "shor_kappa ! j = 1"
-  | i where "i < 9" "j = 10 + i" "shor_errors ! j = qubit_op i pauli_Y"
+  | i where "i < 9" "j = 10 + i" "shor_errors ! j = qubit_op i Pauli_Y"
       "shor_labels p ! j = (replicate 3 (p, 0))[i div 3 := (\<not> p, 2^(2 - i mod 3))]" "shor_kappa ! j = -\<i>"
-  | b where "b < 3" "j = 19 + b" "shor_errors ! j = qubit_op (3 * b) pauli_Z"
+  | b where "b < 3" "j = 19 + b" "shor_errors ! j = qubit_op (3 * b) Pauli_Z"
       "shor_labels p ! j = (replicate 3 (p, 0))[b := (\<not> p, 0)]" "shor_kappa ! j = 1"
 proof -
   consider "j = 0" | "0 < j \<and> j < 10" | "10 \<le> j \<and> j < 19" | "19 \<le> j" using j by linarith
@@ -497,15 +497,15 @@ proof -
     assume a: "shor_errors ! j = 1\<^sub>m 512" "shor_labels p ! j = replicate 3 (p, 0)" "shor_kappa ! j = 1"
     show ?thesis unfolding a one_mult_mat_vec[OF carrier_vecI[OF lab_vec_dim]] by (simp only: mult_1_left)
   next
-    fix i assume "i < 9" "shor_errors ! j = qubit_op i pauli_X"
+    fix i assume "i < 9" "shor_errors ! j = qubit_op i Pauli_X"
       "shor_labels p ! j = (replicate 3 (p, 0))[i div 3 := (p, 2^(2 - i mod 3))]" "shor_kappa ! j = 1"
     thus ?thesis using qubit_op_X_tl by simp
   next
-    fix i assume "i < 9" "shor_errors ! j = qubit_op i pauli_Y"
+    fix i assume "i < 9" "shor_errors ! j = qubit_op i Pauli_Y"
       "shor_labels p ! j = (replicate 3 (p, 0))[i div 3 := (\<not> p, 2^(2 - i mod 3))]" "shor_kappa ! j = -\<i>"
     thus ?thesis using qubit_op_Y_tl by (simp add: smult_smult_assoc mult.commute)
   next
-    fix b assume b: "b < 3" "shor_errors ! j = qubit_op (3 * b) pauli_Z"
+    fix b assume b: "b < 3" "shor_errors ! j = qubit_op (3 * b) Pauli_Z"
       "shor_labels p ! j = (replicate 3 (p, 0))[b := (\<not> p, 0)]" "shor_kappa ! j = 1"
     thus ?thesis using qubit_op_Z_tl[of "3 * b" p] by simp
   qed
@@ -728,7 +728,7 @@ proof -
   then obtain j where j: "j < 22" and U: "U = shor_errors ! j" by (metis in_set_conv_nth shor_lengths(1))
   show ?thesis unfolding U
     by (rule shor_errors_cases[OF j, of True])
-       (simp_all add: qubit_op_carrier qubit_op_unitary pauli_X_unitary pauli_Y_unitary pauli_Z_unitary)
+       (simp_all add: qubit_op_carrier qubit_op_unitary Pauli_X_unitary Pauli_Y_unitary Pauli_Z_unitary)
 qed
 
 theorem shor_orthogonal_images:
@@ -779,28 +779,28 @@ lemma shor_recovery_setting: "recovery_setting 512 shor_P shor_errors"
 
 lemma qubit_op_Z_cw:
   assumes i: "i < 9"
-  shows "qubit_op i pauli_Z *\<^sub>v shor_cw p = qubit_op (3 * (i div 3)) pauli_Z *\<^sub>v shor_cw p"
+  shows "qubit_op i Pauli_Z *\<^sub>v shor_cw p = qubit_op (3 * (i div 3)) Pauli_Z *\<^sub>v shor_cw p"
 proof -
   have i': "3 * (i div 3) < 9" using i by simp
   have c: "lab_vec (replicate 3 (p, 0)) \<in> carrier_vec 512" by (rule carrier_vecI) simp
   show ?thesis unfolding shor_cw_def
     using qubit_op_Z_tl[OF i] qubit_op_Z_tl[OF i']
-      mult_mat_vec[OF qubit_op_carrier[OF pauli_Z_carrier i] c]
-      mult_mat_vec[OF qubit_op_carrier[OF pauli_Z_carrier i'] c] by simp
+      mult_mat_vec[OF qubit_op_carrier[OF Pauli_Z_carrier i] c]
+      mult_mat_vec[OF qubit_op_carrier[OF Pauli_Z_carrier i'] c] by simp
 qed
 
 theorem shor_Z_coincide:
   assumes i: "i < 9" and j: "j < 9" and ij: "i div 3 = j div 3"
-  shows "qubit_op i pauli_Z *\<^sub>v shor_state \<alpha> \<beta> = qubit_op j pauli_Z *\<^sub>v shor_state \<alpha> \<beta>"
+  shows "qubit_op i Pauli_Z *\<^sub>v shor_state \<alpha> \<beta> = qubit_op j Pauli_Z *\<^sub>v shor_state \<alpha> \<beta>"
 proof -
   have c: "\<And>p. shor_cw p \<in> carrier_vec 512" by (rule carrier_vecI) simp
-  have e: "\<And>k. k < 9 \<Longrightarrow> qubit_op k pauli_Z *\<^sub>v shor_state \<alpha> \<beta>
-      = \<alpha> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) pauli_Z *\<^sub>v shor_cw True) + \<beta> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) pauli_Z *\<^sub>v shor_cw False)"
+  have e: "\<And>k. k < 9 \<Longrightarrow> qubit_op k Pauli_Z *\<^sub>v shor_state \<alpha> \<beta>
+      = \<alpha> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) Pauli_Z *\<^sub>v shor_cw True) + \<beta> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) Pauli_Z *\<^sub>v shor_cw False)"
   proof -
     fix k :: nat assume k: "k < 9"
-    have Zc: "qubit_op k pauli_Z \<in> carrier_mat 512 512" by (rule qubit_op_carrier[OF pauli_Z_carrier k])
-    show "qubit_op k pauli_Z *\<^sub>v shor_state \<alpha> \<beta>
-      = \<alpha> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) pauli_Z *\<^sub>v shor_cw True) + \<beta> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) pauli_Z *\<^sub>v shor_cw False)"
+    have Zc: "qubit_op k Pauli_Z \<in> carrier_mat 512 512" by (rule qubit_op_carrier[OF Pauli_Z_carrier k])
+    show "qubit_op k Pauli_Z *\<^sub>v shor_state \<alpha> \<beta>
+      = \<alpha> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) Pauli_Z *\<^sub>v shor_cw True) + \<beta> \<cdot>\<^sub>v (qubit_op (3 * (k div 3)) Pauli_Z *\<^sub>v shor_cw False)"
       unfolding shor_state_def using Zc c qubit_op_Z_cw[OF k]
       by (simp add: mult_add_distrib_mat_vec[OF Zc] mult_mat_vec[OF Zc])
   qed
@@ -811,33 +811,33 @@ text \<open>The Day 32 proposition as first stated (distinct 1-Paulis map $V$ to
 is false: $Z_1\ne Z_2$, yet $Z_1\ket{0_L}=Z_2\ket{0_L}\ne0$.  The notes correct it on Day 33.\<close>
 
 lemma shor_notes_Z1_Z2:
-  "qubit_op 0 pauli_Z \<noteq> qubit_op 1 pauli_Z"
-  "\<langle>qubit_op 0 pauli_Z *\<^sub>v shor_cw True | qubit_op 1 pauli_Z *\<^sub>v shor_cw True\<rangle> = 1"
+  "qubit_op 0 Pauli_Z \<noteq> qubit_op 1 Pauli_Z"
+  "\<langle>qubit_op 0 Pauli_Z *\<^sub>v shor_cw True | qubit_op 1 Pauli_Z *\<^sub>v shor_cw True\<rangle> = 1"
 proof -
-  have e0: "qubit_op 0 pauli_Z $$ (256, 256) = -1"
+  have e0: "qubit_op 0 Pauli_Z $$ (256, 256) = -1"
   proof -
-    have q: "qubit_op 0 pauli_Z = Tensor.tensor_mat pauli_Z (1\<^sub>m 256)"
-      using tensor_one_left[OF pauli_Z_carrier] by (simp add: qubit_op_def)
-    have "qubit_op 0 pauli_Z $$ (256, 256)
-          = pauli_Z $$ (256 div 256, 256 div 256) * 1\<^sub>m 256 $$ (256 mod 256, 256 mod 256)"
-      unfolding q by (rule tensor_index_c) (auto simp: pauli_Z_def)
-    thus ?thesis by (simp add: pauli_Z_def)
+    have q: "qubit_op 0 Pauli_Z = Tensor.tensor_mat Pauli_Z (1\<^sub>m 256)"
+      using tensor_one_left[OF Pauli_Z_carrier] by (simp add: qubit_op_def)
+    have "qubit_op 0 Pauli_Z $$ (256, 256)
+          = Pauli_Z $$ (256 div 256, 256 div 256) * 1\<^sub>m 256 $$ (256 mod 256, 256 mod 256)"
+      unfolding q by (rule tensor_index_c) (auto simp: Pauli_Z_def)
+    thus ?thesis by (simp add: Pauli_Z_def)
   qed
-  have e1: "qubit_op 1 pauli_Z $$ (256, 256) = 1"
+  have e1: "qubit_op 1 Pauli_Z $$ (256, 256) = 1"
   proof -
-    have q: "qubit_op 1 pauli_Z = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) pauli_Z) (1\<^sub>m 128)"
+    have q: "qubit_op 1 Pauli_Z = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) Pauli_Z) (1\<^sub>m 128)"
       by (simp add: qubit_op_def)
-    have a: "qubit_op 1 pauli_Z $$ (256, 256)
-          = Tensor.tensor_mat (1\<^sub>m 2) pauli_Z $$ (256 div 128, 256 div 128) * 1\<^sub>m 128 $$ (256 mod 128, 256 mod 128)"
-      unfolding q by (rule tensor_index_c) (auto simp: pauli_Z_def)
-    have b: "Tensor.tensor_mat (1\<^sub>m 2) pauli_Z $$ (2, 2) = 1\<^sub>m 2 $$ (2 div 2, 2 div 2) * pauli_Z $$ (2 mod 2, 2 mod 2)"
+    have a: "qubit_op 1 Pauli_Z $$ (256, 256)
+          = Tensor.tensor_mat (1\<^sub>m 2) Pauli_Z $$ (256 div 128, 256 div 128) * 1\<^sub>m 128 $$ (256 mod 128, 256 mod 128)"
+      unfolding q by (rule tensor_index_c) (auto simp: Pauli_Z_def)
+    have b: "Tensor.tensor_mat (1\<^sub>m 2) Pauli_Z $$ (2, 2) = 1\<^sub>m 2 $$ (2 div 2, 2 div 2) * Pauli_Z $$ (2 mod 2, 2 mod 2)"
       by (rule tensor_index_c) auto
-    show ?thesis using a b by (simp add: pauli_Z_def)
+    show ?thesis using a b by (simp add: Pauli_Z_def)
   qed
-  show "qubit_op 0 pauli_Z \<noteq> qubit_op 1 pauli_Z" using e0 e1 by auto
-  have "qubit_op 1 pauli_Z *\<^sub>v shor_cw True = qubit_op 0 pauli_Z *\<^sub>v shor_cw True"
+  show "qubit_op 0 Pauli_Z \<noteq> qubit_op 1 Pauli_Z" using e0 e1 by auto
+  have "qubit_op 1 Pauli_Z *\<^sub>v shor_cw True = qubit_op 0 Pauli_Z *\<^sub>v shor_cw True"
     using qubit_op_Z_cw[of 1 True] by simp
-  moreover have "qubit_op 0 pauli_Z *\<^sub>v shor_cw True = shor_errors ! 19 *\<^sub>v shor_cw True"
+  moreover have "qubit_op 0 Pauli_Z *\<^sub>v shor_cw True = shor_errors ! 19 *\<^sub>v shor_cw True"
     by (simp add: shor_errors_def nth_append)
   moreover have "\<langle>shor_errors ! 19 *\<^sub>v shor_cw True | shor_errors ! 19 *\<^sub>v shor_cw True\<rangle> = 1"
   proof -
@@ -849,7 +849,7 @@ proof -
       by (simp only: inner_prod_left_smult'[OF d] inner_prod_right_smult' lab_vec_inner[OF v v] simp_thms(6) if_True
           mult_1_left) (simp only: ac sk_sq, simp)
   qed
-  ultimately show "\<langle>qubit_op 0 pauli_Z *\<^sub>v shor_cw True | qubit_op 1 pauli_Z *\<^sub>v shor_cw True\<rangle> = 1" by simp
+  ultimately show "\<langle>qubit_op 0 Pauli_Z *\<^sub>v shor_cw True | qubit_op 1 Pauli_Z *\<^sub>v shor_cw True\<rangle> = 1" by simp
 qed
 
 subsection \<open>Shor's theorem\<close>
@@ -857,16 +857,16 @@ subsection \<open>Shor's theorem\<close>
 lemma pauli_decomp:
   fixes U :: "complex Matrix.mat"
   assumes U: "U \<in> carrier_mat 2 2"
-  shows "U = ((U $$ (0,0) + U $$ (1,1)) / 2) \<cdot>\<^sub>m 1\<^sub>m 2 + ((U $$ (0,1) + U $$ (1,0)) / 2) \<cdot>\<^sub>m pauli_X
-           + (-\<i> * (U $$ (0,1) - U $$ (1,0)) / 2) \<cdot>\<^sub>m pauli_Y + ((U $$ (0,0) - U $$ (1,1)) / 2) \<cdot>\<^sub>m pauli_Z"
+  shows "U = ((U $$ (0,0) + U $$ (1,1)) / 2) \<cdot>\<^sub>m 1\<^sub>m 2 + ((U $$ (0,1) + U $$ (1,0)) / 2) \<cdot>\<^sub>m Pauli_X
+           + (-\<i> * (U $$ (0,1) - U $$ (1,0)) / 2) \<cdot>\<^sub>m Pauli_Y + ((U $$ (0,0) - U $$ (1,1)) / 2) \<cdot>\<^sub>m Pauli_Z"
     (is "U = ?R")
 proof (rule eq_matI)
   fix i j assume "i < dim_row ?R" "j < dim_col ?R"
-  hence "i < 2" "j < 2" by (simp_all add: pauli_Z_def)
+  hence "i < 2" "j < 2" by (simp_all add: Pauli_Z_def)
   hence "i = 0 \<or> i = 1" "j = 0 \<or> j = 1" by auto
   thus "U $$ (i,j) = ?R $$ (i,j)"
-    by (elim disjE) (simp_all add: pauli_X_def pauli_Y_def pauli_Z_def field_simps)
-qed (use U in \<open>simp_all add: pauli_Z_def\<close>)
+    by (elim disjE) (simp_all add: Pauli_X_def Pauli_Y_def Pauli_Z_def field_simps)
+qed (use U in \<open>simp_all add: Pauli_Z_def\<close>)
 
 lemma qubit_op_add:
   assumes A: "A \<in> carrier_mat 2 2" and B: "B \<in> carrier_mat 2 2"
@@ -909,8 +909,8 @@ lemma smult_mat_mult_vec_c:
 
 lemma shor_errors_nth:
   assumes i: "i < 9" and b: "b < 3"
-  shows "shor_errors ! 0 = 1\<^sub>m 512" "shor_errors ! Suc i = qubit_op i pauli_X"
-    "shor_errors ! (10 + i) = qubit_op i pauli_Y" "shor_errors ! (19 + b) = qubit_op (3 * b) pauli_Z"
+  shows "shor_errors ! 0 = 1\<^sub>m 512" "shor_errors ! Suc i = qubit_op i Pauli_X"
+    "shor_errors ! (10 + i) = qubit_op i Pauli_Y" "shor_errors ! (19 + b) = qubit_op (3 * b) Pauli_Z"
   using i b by (simp_all add: shor_errors_def nth_append)
 
 text \<open>Shor: one CPTP recovery map $R$ corrects every single-qubit unitary error on every qubit,
@@ -934,7 +934,7 @@ proof (intro exI conjI allI impI)
   define c1 where "c1 = (U $$ (0,1) + U $$ (1,0)) / 2"
   define c2 where "c2 = -\<i> * (U $$ (0,1) - U $$ (1,0)) / 2"
   define c3 where "c3 = (U $$ (0,0) - U $$ (1,1)) / 2"
-  have Ueq: "U = c0 \<cdot>\<^sub>m 1\<^sub>m 2 + c1 \<cdot>\<^sub>m pauli_X + c2 \<cdot>\<^sub>m pauli_Y + c3 \<cdot>\<^sub>m pauli_Z"
+  have Ueq: "U = c0 \<cdot>\<^sub>m 1\<^sub>m 2 + c1 \<cdot>\<^sub>m Pauli_X + c2 \<cdot>\<^sub>m Pauli_Y + c3 \<cdot>\<^sub>m Pauli_Z"
     unfolding c0_def c1_def c2_def c3_def by (rule pauli_decomp[OF Uc])
   have norm: "(cmod c0)\<^sup>2 + (cmod c1)\<^sup>2 + (cmod c2)\<^sup>2 + (cmod c3)\<^sup>2 = 1"
     by (rule pauli_expansion_unitary[OF Uu Ueq])
@@ -942,23 +942,23 @@ proof (intro exI conjI allI impI)
   have b: "b < 3" unfolding b_def using i by simp
   have b3: "3 * b < 9" using b by simp
   \<comment> \<open>The error, expanded in the Pauli basis, acting on the code space.\<close>
-  have Xc: "qubit_op i pauli_X \<in> carrier_mat 512 512" and Yc: "qubit_op i pauli_Y \<in> carrier_mat 512 512"
-    and Zc: "qubit_op i pauli_Z \<in> carrier_mat 512 512"
+  have Xc: "qubit_op i Pauli_X \<in> carrier_mat 512 512" and Yc: "qubit_op i Pauli_Y \<in> carrier_mat 512 512"
+    and Zc: "qubit_op i Pauli_Z \<in> carrier_mat 512 512"
     by (simp_all add: qubit_op_carrier i)
-  have Qeq: "qubit_op i U = c0 \<cdot>\<^sub>m 1\<^sub>m 512 + c1 \<cdot>\<^sub>m qubit_op i pauli_X + c2 \<cdot>\<^sub>m qubit_op i pauli_Y
-      + c3 \<cdot>\<^sub>m qubit_op i pauli_Z"
+  have Qeq: "qubit_op i U = c0 \<cdot>\<^sub>m 1\<^sub>m 512 + c1 \<cdot>\<^sub>m qubit_op i Pauli_X + c2 \<cdot>\<^sub>m qubit_op i Pauli_Y
+      + c3 \<cdot>\<^sub>m qubit_op i Pauli_Z"
   proof -
-    have c: "c0 \<cdot>\<^sub>m 1\<^sub>m 2 \<in> carrier_mat 2 2" "c1 \<cdot>\<^sub>m pauli_X \<in> carrier_mat 2 2"
-      "c2 \<cdot>\<^sub>m pauli_Y \<in> carrier_mat 2 2" "c3 \<cdot>\<^sub>m pauli_Z \<in> carrier_mat 2 2" by simp_all
+    have c: "c0 \<cdot>\<^sub>m 1\<^sub>m 2 \<in> carrier_mat 2 2" "c1 \<cdot>\<^sub>m Pauli_X \<in> carrier_mat 2 2"
+      "c2 \<cdot>\<^sub>m Pauli_Y \<in> carrier_mat 2 2" "c3 \<cdot>\<^sub>m Pauli_Z \<in> carrier_mat 2 2" by simp_all
     show ?thesis unfolding Ueq
       by (simp only: qubit_op_add[OF add_carrier_mat[OF c(3)] c(4)] qubit_op_add[OF add_carrier_mat[OF c(2)] c(3)]
-          qubit_op_add[OF c(1) c(2)] qubit_op_smult one_carrier_mat pauli_X_carrier pauli_Y_carrier
-          pauli_Z_carrier qubit_op_one[OF i])
+          qubit_op_add[OF c(1) c(2)] qubit_op_smult one_carrier_mat Pauli_X_carrier Pauli_Y_carrier
+          Pauli_Z_carrier qubit_op_one[OF i])
   qed
-  have act: "qubit_op i U *\<^sub>v \<psi> = c0 \<cdot>\<^sub>v \<psi> + c1 \<cdot>\<^sub>v (qubit_op i pauli_X *\<^sub>v \<psi>)
-      + c2 \<cdot>\<^sub>v (qubit_op i pauli_Y *\<^sub>v \<psi>) + c3 \<cdot>\<^sub>v (qubit_op (3 * b) pauli_Z *\<^sub>v \<psi>)"
+  have act: "qubit_op i U *\<^sub>v \<psi> = c0 \<cdot>\<^sub>v \<psi> + c1 \<cdot>\<^sub>v (qubit_op i Pauli_X *\<^sub>v \<psi>)
+      + c2 \<cdot>\<^sub>v (qubit_op i Pauli_Y *\<^sub>v \<psi>) + c3 \<cdot>\<^sub>v (qubit_op (3 * b) Pauli_Z *\<^sub>v \<psi>)"
   proof -
-    have Z: "qubit_op i pauli_Z *\<^sub>v \<psi> = qubit_op (3 * b) pauli_Z *\<^sub>v \<psi>"
+    have Z: "qubit_op i Pauli_Z *\<^sub>v \<psi> = qubit_op (3 * b) Pauli_Z *\<^sub>v \<psi>"
       unfolding \<psi>_def by (rule shor_Z_coincide[OF i b3]) (simp add: b_def)
     show ?thesis unfolding Qeq Z[symmetric] using Xc Yc Zc \<psi>c
       by (simp add: add_mult_distrib_mat_vec[of _ 512 512] smult_mat_mult_vec_c)
@@ -985,7 +985,7 @@ proof (intro exI conjI allI impI)
     also have "\<dots> = c0 * ?w 0 + c1 * ?w (Suc i) + c2 * ?w (10 + i) + c3 * ?w (19 + b)"
       using i b by (simp add: sum.distrib)
     also have "\<dots> = (qubit_op i U *\<^sub>v \<psi>) $ k"
-      unfolding act shor_errors_nth[OF i b] using k Xc Yc \<psi>c qubit_op_carrier[OF pauli_Z_carrier b3]
+      unfolding act shor_errors_nth[OF i b] using k Xc Yc \<psi>c qubit_op_carrier[OF Pauli_Z_carrier b3]
       by simp
     finally show "\<phi> $ k = (qubit_op i U *\<^sub>v \<psi>) $ k" .
   qed
