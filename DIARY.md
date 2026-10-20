@@ -218,5 +218,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   evaluates the entries).  Matrices have no executable equality here (no `equal` instance for
   `mat`), so `code_simp` cannot decide them.  `simp` expands `⊘` into ket·bra and `vec_of_list`
   into `vCons`: state rank-one terms through `outer_prod_of_list` (|l⟩⟨l| = (l_i conj l_j)).
-- **Audit after this pass:** ✓138 ~22 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
+- **Variant rows D10-1, D11-2, D15-6** (`Day10_15_Supplement`).  Superdense coding with the notes'
+  explicit matrices (`sd_op`); the fourth, [[0,1],[−1,0]], is ZX, not XZ as the audit had it.
+  Proving the four cases in one lemma with k and i both split took > 2 min; four separate lemmas
+  take 1.6 s each.  CCNOT: |a⟩⊗|b⟩⊗|c⟩ = e_{4a+2b+c} (`tensor_unit_vec`) and CCNOT e_k = e_{k'}
+  with 6, 7 exchanged; `auto simp: CCNOT_def unit_vec_def` with symbolic r, k ran > 40 s, the
+  explicit entry formula plus `cases "k = 6"; cases "k = 7"; cases "r = k"` takes 0.1 s.  The CNOT
+  table was already complete (`CNOT_00`…`CNOT_11`).  The A-side partial trace is the B-side one
+  after exchanging the factors: `partial_trace_A_as_B` with σ(i m + k) = k p + i (`swap_index`,
+  inverse `swap_index p m`); `perm_conj` keeps trace, Hermiticity and positivity, so all three
+  A-side lemmas follow from the B side.
+- **Audit after this pass:** ✓141 ~19 ✗0 –10 of 170.  D21-2 (the notes' conjecture on averages of
   UCP maps) is kept in mind for a possible proof attempt.

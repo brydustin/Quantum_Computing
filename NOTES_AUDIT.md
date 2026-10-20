@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`.
+D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`.
 
 ---
 
@@ -131,7 +131,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 ### Day 10 (19 Sep): superdense coding, gates
 | id | notes | formal | status |
 |---|---|---|---|
-| D10-1 | superdense coding: the four Bell states from γ by I, Z, X, XZ | QC3 `bell_basis`, `bell_basis_orthonormal`; the action table ((Z⊗I)γ = … etc.) is not proved | ~ |
+| D10-1 | superdense coding: the four Bell states from γ by I, Z, X, XZ | S1015 `superdense_coding` ((M_k ⊗ I)γ = k-th Bell state for the notes' four matrices `sd_op k`: I, diag(1,−1), [[0,1],[1,0]], [[0,1],[−1,0]]; these are I, Z, X and ZX by `sd_op_paulis`, so the audit's "XZ" is ZX), `superdense_coding_orthonormal` (the four results are orthonormal) | ✓ |
 | D10-2 | one-qubit gates X, Z, Y, H, S | QC11 `Pauli_X/Y/Z` (+ unitary, involution, products), QC3 `Hadamard`, `hadamard_e0/e1`, `Phase_S`, `Phase_S_unitary` | ✓ |
 | D10-3 | "H² = X" | the notes are wrong here (corrected on Day 11 to H² = I); formal `hadamard_squared` proves H² = I | ✓ |
 | D10-4 | classical gates AND/OR/XOR/NAND/NOR, Pierce/Sheffer remarks | – | – |
@@ -142,7 +142,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | id | notes | formal | status |
 |---|---|---|---|
 | D11-1 | H² = I, He₀, He₁, Xe₀, Xe₁ | QC3 `hadamard_squared`, `hadamard_e0`, `hadamard_e1`; X on basis vectors via `Pauli_X_ket_plus/minus` only | ✓ |
-| D11-2 | CNOT, CCNOT truth tables | QC3 `CNOT_00`, `CNOT_10`; QC11 `CCNOT` definition | ~ |
+| D11-2 | CNOT, CCNOT truth tables | QC3 `CNOT_00`, `CNOT_01`, `CNOT_10`, `CNOT_11` (the full CNOT table); S1015 `CCNOT_basis` (CCNOT\|a,b,c⟩ = \|a,b,c ⊕ ab⟩) and `CCNOT_truth_table` (the notes' eight rows) | ✓ |
 | D11-3 | circuit diagrams; SWAP = CNOT·CNOT′·CNOT | S211 `SWAP_three_CNOTs` (`SWAP` from the AFP entry Quantum_Fourier_Transform), `SWAP_basis`, `CNOT'_basis`; the diagrams themselves are notation | ✓ |
 | D11-4 | CNOT clones the computational basis | QC3 `CNOT_00`, `CNOT_10` | ✓ |
 | D11-5 | No-cloning theorem | QC11 `is_cloner`, `no_cloning` (proof via two non-orthogonal states, `two_states_nontrivial_inner_prod`; the notes use −ψ) | ✓ |
@@ -183,7 +183,7 @@ D22M = `Day22_Minimal_Kraus`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Ra
 | D15-3 | Γ : L(H_A) ⊗ L(H_B) → L(H_A ⊗ H_B) is an isomorphism | QC11 `operator_tensor_space_isomorphism`, `operator_tensor_space_isomorphic` (coordinate form M_{m²,p²} ≅ M_{mp}) | ~ |
 | D15-4 | partial traces tr_B(R⊗T) = Tr(T) R, tr_A(R⊗T) = Tr(R) T | QC11 `partial_trace_B`, `partial_trace_A` (block formulas of Day 16), `partial_trace_B_tensor`, `partial_trace_A_tensor` | ✓ |
 | D15-5 | p_α(ρ) = Tr((M*M ⊗ I)ρ) = Tr(M*M ρ^A) | QC11 `partial_trace_measurement` | ✓ |
-| D15-6 | Tr ρ^A = Tr ρ; ρ ≥ 0 ⟹ ρ^A ≥ 0 | QC11 `partial_trace_B_trace`, `partial_trace_B_hermitian`, `partial_trace_B_is_density` (B-side only; A-side analogues missing) | ~ |
+| D15-6 | Tr ρ^A = Tr ρ; ρ ≥ 0 ⟹ ρ^A ≥ 0 | QC11 `partial_trace_B_trace`, `partial_trace_B_hermitian`, `partial_trace_B_is_density`; S1015 `partial_trace_A_trace`, `partial_trace_A_hermitian`, `partial_trace_A_is_density`, from the B side through `partial_trace_A_as_B` (exchange of the factors by the index permutation `swap_index`; `perm_conj` preserves trace, Hermiticity and positivity) | ✓ |
 
 ### Day 16 (3 Oct): partial traces in block form; postulates 1′–4′
 | id | notes | formal | status |
@@ -405,9 +405,9 @@ B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving. DONE (`Day1
 B3 D19-1 n-positive ⟹ Choi matrix psd; D19-3 Choi-matrix form of TP/unital. DONE (`Day19_Choi_TP_Unital`).
 B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error. DONE (`Day30_BitFlip_Code`).
 B5 D32-7 Pauli expansion identity for unitaries. DONE (`Day32_Pauli_Expansion`).
-B6 D11-3 SWAP from three CNOTs (DONE, `Day02_11_Supplement`); D10-1 superdense coding table.
+B6 D11-3 SWAP from three CNOTs (DONE, `Day02_11_Supplement`); D10-1 superdense coding table (DONE, `Day10_15_Supplement`).
 B7 D12-1/D12-4 N-fold Hadamard and the counting probability. DONE (`Day12_Counting_Probability`, proved directly with `tensor_pow_mat` rather than via AFP Deutsch_Jozsa).
-B8 D15-6 A-side partial-trace lemmas.
+B8 D15-6 A-side partial-trace lemmas (DONE, `Day10_15_Supplement`).
 B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independence`, via JNF `vec_space.li_le_dim`).
 
 Priority C (substantial developments, recorded as open):
