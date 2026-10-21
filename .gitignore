@@ -5,8 +5,9 @@
 .Rhistory
 .codex
 
-# Local archived theory copies
+# Local archived theory copies (superseded by Quantum_Computing_3_10.thy and Day11/)
 Quantum_Computing_OLD.thy
+Quantum_Computing.thy
 
 # External agentic CLI tooling (managed separately)
 isa_agentic_cli_tools-main/

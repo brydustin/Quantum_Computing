@@ -228,11 +228,12 @@ Theory & Lectures & lines & results\\
 \isa{QPE\_Register} & VI: $H^{\otimes n}\ket{0\cdots0}$ is the uniform register & 104 & 7\\
 \isa{HHL\_Trajectory} & VI: the HHL circuit gate by gate & 591 & 28\\
 \isa{HHL\_Program} & VI: HHL as a verified quantum program (QHL) & 1402 & 89\\
-\isa{HHL\_Gates} & VI: the program in elementary gates & 855 & 65\\
+\isa{HHL\_Gates} & VI: the program in elementary gates & 895 & 75\\
 \isa{HHL\_Preconditioned} & VI: the program on a preconditioned system & 177 & 19\\
+\isa{HHL\_Termination} & VI: termination of the repeat-until-success loop & 502 & 19\\
 \bottomrule
 \end{tabular}
-\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 14\,898 lines, 808 results, not included in the counts above).}
+\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 15\,440 lines, 837 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -659,7 +660,14 @@ $\{I\}\ \mathit{hhl\_program}\ \{P_0+\ket t\bra t\}$ with $t=\ket0\otimes A^{-1}
 (on success the state is exactly the solution); since loop-free programs preserve the trace,
 both hold for total correctness (\isa{hhl\_success\_total}, \isa{hhl\_correct\_total}).  The
 repeat-until-success program, a \textbf{while} loop around the circuit, satisfies
-$\{I\}\ \mathit{hhl\_rus}\ \{\ket t\bra t\}$ (\isa{hhl\_rus\_correct}).  The register is prepared by
+$\{I\}\ \mathit{hhl\_rus}\ \{\ket t\bra t\}$ (\isa{hhl\_rus\_correct}), and, since its body re-initialises the
+registers, every round is an independent trial with success probability $p=C^2\norm{A^{-1}b}^2$: the loop
+terminates with probability one, so the triple holds for total correctness when $C\neq0$
+(\isa{hhl\_rus\_total}; QHLProver has no total-correctness rule for loops, so this is derived from
+the semantics of a loop whose body resets the state, \isa{while\_reset\_total}), it exits after
+exactly $m$ failed rounds with probability $(1-p)^mp$ in the target state
+(\isa{hhl\_rus\_prog\_rounds}), and the expected number of rounds is $1/p$
+(\isa{hhl\_rus\_expected\_rounds}).  The register is prepared by
 $H^{\otimes n}$, which takes $\ket{0\cdots0}$ to the uniform state (\isa{hadamard\_layer\_zero}, from
 \emph{Isabelle Marries Dirac}).  The evolution $e^{iAt_0}$ enters as a gate, as in the rest of
 Part~VI.  The theorems hold for every gate list with the circuit matrix of the eight gates, and
@@ -667,7 +675,9 @@ Part~VI.  The theorems hold for every gate list with the circuit matrix of the e
 controlled evolution $\sum_c\ket c\bra c\otimes U^c$ as one controlled $U^{2^j}$ per clock qubit
 (\isa{ctrl\_pow\_qubits}; $2^k-1$ controlled-$U$ calls, \isa{ctrl\_pow\_queries}), and $F$ as the
 AFP's gate-level Fourier circuit, flattened into Hadamards, controlled phase rotations and swaps
-(\isa{qft\_circuit}).  Apart from the controlled powers, the preparation of $\ket b$ and the
+(\isa{qft\_circuit}); the whole circuit has $(2k^3+16k+6)/3$ gates (\isa{length\_hhl\_elem\_gates}), the
+cubic term being the Fourier circuit, whose controlled rotations are routed through nearest-neighbour
+swaps.  Apart from the controlled powers, the preparation of $\ket b$ and the
 controlled rotation, every gate is a one- or two-qubit unitary on adjacent wires
 (\isa{hhl\_elem\_gate\_kinds}), and success probability, correctness and the loop carry over
 (\isa{hhl\_elem\_correct\_total}).  \isa{HHL\_Preconditioned} runs the program on a preconditioned

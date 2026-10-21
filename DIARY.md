@@ -437,6 +437,26 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   context-local lemmas (even `[simp]` ones like `length_hhl_gates`) are exported with the context
   assumptions — put unconditional facts outside the context; `No_Cloning.inner_prod_expand` needs
   its qualifier; `1 ·m 1m n = 1m n` is not a simp rule.
+- **HHL_Termination; gate counts; legacy file** (2026-10-21; user: close the six remaining gaps).
+  Item 3: the repeat-until-success loop had only partial correctness.  QHLProver has no
+  total-correctness rule for While, so the result comes from the semantics: the body
+  `init_com ;; utrans_seq Us` resets every state to tr ρ · |ψ⟩⟨ψ| (`denote_init`: the
+  measure-and-swap initialisation gives tr ρ · |0⟩⟨0|; `denote_utrans_seq_pure`), and for such a
+  loop `denote_while_split` iterates to the exact exit states (1−p)^m p |w₁⟩⟨w₁|
+  (`while_reset_iter/exit`), a lower bound c·v·Σ_{i<m}(1−p)^i on tr(Q·output) (`while_reset_bound`),
+  and c·v/p in the limit (`while_reset_total`, geometric series + `LIMSEQ_le_const2`).  For HHL
+  v = p = C²‖A⁻¹b‖², so {I} rus {|t⟩⟨t|} holds totally when C ≠ 0 (`hhl_rus_total`,
+  `hhl_elem_rus_total`); expected rounds 1/p (`geometric_deriv_sums`).  Item 5 (gate count):
+  3·|hhl_elem_gates| = 2k³ + 16k + 6; the AFP Fourier circuit has (k³+2k)/3 gates — cubic, not
+  quadratic, because each controlled rotation is routed through nearest-neighbour swap chains
+  (`length_control_gates` = 2n − 3).  Item 6: `Quantum_Computing.thy` (24 861 lines, the
+  superseded monolith, not in any session, one `sorry`) untracked and ignored.
+  Traps: `mult.assoc` in this import chain is `Matrix_Tensor.mult.assoc` (a locale fact), so
+  `simp add: mult.assoc` silently does nothing — write `Groups.mult.assoc`; a local fact named
+  `t0` shadows the context assumption `t0` and breaks every later `[OF A n0 k t0 …]`; inside the
+  context that proved them, lemmas take no `[OF A n0 …]`; `metis` on a matrix equation hung the
+  eval (never use metis for `·m` goals); `unfolding` with an exported context lemma sometimes
+  fails to rewrite where `rule`/calculation succeeds — prefer `also have "subterm = …" by (rule …)`.
 - **HHL_Gates, HHL_Preconditioned** (2026-10-21; user: run the program on a preconditioned
   system, and break it down to elementary gates — one controlled U^{2^j} per clock qubit, the
   AFP's gate-level QFT for F).  Refactor first: `HHL_Program`'s three triples are now proved for

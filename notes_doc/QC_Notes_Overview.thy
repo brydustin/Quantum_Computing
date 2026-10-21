@@ -56,6 +56,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Program
     Vern_Paulsen_QC_Algorithms.HHL_Gates
     Vern_Paulsen_QC_Algorithms.HHL_Preconditioned
+    Vern_Paulsen_QC_Algorithms.HHL_Termination
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -131,8 +132,9 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the clock register: $H^{\otimes n}\ket{0\cdots0}$ and $F\ket0$ are uniform (AFP \texttt{Isabelle\_Marries\_Dirac}), and $H^{\otimes n}$ resets it & \texttt{QPE\_Register}\\
 --     & the HHL circuit gate by gate: the state after each of the eight gates, for every $\ket b$ & \texttt{HHL\_Trajectory}\\
 --     & HHL as a program of quantum Hoare logic (AFP \texttt{QHLProver}): initialisation, state preparation, circuit, measurement, repeat-until-success; success probability, correctness, termination & \texttt{HHL\_Program}\\
---     & the program in elementary gates: $H^{\otimes k}$ as $k$ Hadamards, one controlled $U^{2^j}$ per clock qubit, $F$ as the AFP gate-level Fourier circuit; same theorems & \texttt{HHL\_Gates}\\
+--     & the program in elementary gates: $H^{\otimes k}$ as $k$ Hadamards, one controlled $U^{2^j}$ per clock qubit, $F$ as the AFP gate-level Fourier circuit; same theorems; $(2k^3+16k+6)/3$ gates & \texttt{HHL\_Gates}\\
 --     & the program on a preconditioned system $BAx=Bb$ via the Hermitian dilation of $BA$: output $\hat x$ for $Ax=b$, success probability $\ge(C/\norm{BA})^2$ & \texttt{HHL\_Preconditioned}\\
+--     & the repeat-until-success loop terminates with probability one (total correctness); it exits after $m$ failed rounds with probability $(1-p)^mp$ in the target state; expected rounds $1/p$, $p=C^2\norm{A^{-1}b}^2$ & \texttt{HHL\_Termination}\\
 \end{tabular}
 \end{center}
 

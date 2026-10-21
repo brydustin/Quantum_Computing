@@ -631,6 +631,46 @@ lemma length_hhl_blocks [simp]: "length (hhl_blocks A Ub t0 k C) = 8" by (simp a
 
 lemma length_evo_gates [simp]: "length (evo_gates A t0 k) = k" by (simp add: evo_gates_def)
 
+text \<open>Gate counts.\<close>
+
+lemma length_swap_down_gates [simp]: "length (swap_down_gates n) = n - 1"
+  by (induction n rule: swap_down_gates.induct) simp_all
+
+lemma length_swap_up_gates [simp]: "length (swap_up_gates n) = n - 1"
+  by (induction n rule: swap_up_gates.induct) simp_all
+
+lemma length_control_gates [simp]: "length (control_gates n U) = 2 * n - 3"
+  by (induction n U rule: control_gates.induct) simp_all
+
+lemma length_crot_gates [simp]: "length (crot_gates n) = (n - 1)\<^sup>2"
+  by (induction n rule: crot_gates.induct) (simp_all add: power2_eq_square)
+
+lemma length_had_gates [simp]: "length (had_gates n) = n"
+  by (induction n rule: had_gates.induct) simp_all
+
+lemma length_rev_gates: "2 * length (rev_gates n) = n * (n - 1)"
+  by (induction n rule: rev_gates.induct) (simp_all add: algebra_simps)
+
+lemma length_qft_gates: "6 * length (qft_gates n) = 6 * n + (n - 1) * n * (2 * n - 1)"
+  by (induction n rule: qft_gates.induct) (simp_all add: power2_eq_square algebra_simps)
+
+text \<open>The AFP Fourier circuit on $n$ qubits has $(n^3+2n)/3$ gates: the controlled rotations
+are routed through nearest-neighbour swaps.\<close>
+
+theorem length_qft_circuit: "3 * length (qft_circuit n) = n ^ 3 + 2 * n"
+proof -
+  have "6 * length (qft_circuit n) = 2 * n ^ 3 + 4 * n"
+    unfolding qft_circuit_def length_append using length_qft_gates[of n] length_rev_gates[of n]
+    by (cases n) (simp_all add: algebra_simps power2_eq_square power3_eq_cube)
+  thus ?thesis by simp
+qed
+
+lemma length_clk_gates [simp]: "length (clk_gates n Us) = length Us" by (simp add: clk_gates_def)
+
+theorem length_hhl_elem_gates: "3 * length (hhl_elem_gates A Ub t0 k C) = 2 * k ^ 3 + 16 * k + 6"
+  unfolding hhl_elem_gates_def hhl_blocks_def using length_qft_circuit[of k] by simp
+
+
 lemma clk_gates_circuit:
   assumes "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k) (2 ^ k)" and n: "0 < n"
   shows "circuit_mat (2 ^ k * (n * 2)) (clk_gates n Us) = clock_gate (circuit_mat (2 ^ k) Us) n"
