@@ -153,7 +153,7 @@ the names in brackets are the Isabelle theorems.
 
 {\small
 \begin{longtable}{p{0.31\textwidth}p{0.45\textwidth}rr}
-\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 18\,879 lines, 1\,002 results, not included in the counts above).}\label{tab:theories}\\
+\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 21\,103 lines, 1\,118 results, not included in the counts above).}\label{tab:theories}\\
 \toprule
 Theory & Lectures & lines & results\\
 \midrule
@@ -244,6 +244,9 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Gate\_Refinements} & VI: rotation, window preparation, Fourier gates & 635 & 29\\
 \isa{HHL\_Uniform\_Rotation} & VI: the rotation stage in elementary gates & 1142 & 73\\
 \isa{HHL\_State\_Preparation} & VI: state preparation, window in elementary gates & 785 & 32\\
+\isa{HHL\_Trotter} & VI: Lie--Trotter formula with explicit error & 572 & 26\\
+\isa{HHL\_Sparse\_Split} & VI: sparse $A$ as $2s$ Hermitian 1-sparse parts & 460 & 20\\
+\isa{HHL\_Sparse\_Circuit} & VI: the sparse simulation oracle as a circuit & 1192 & 70\\
 \end{longtable}
 }
 
@@ -720,6 +723,24 @@ levels of uniformly controlled rotations, all elementary (\isa{state\_prep}); fo
 replaces the reflection, and in the paper-regime programs every gate is then elementary, a controlled
 ancilla rotation, the preparation of $\ket b$ or an oracle call (\isa{hhl\_apx\_fine3}).
 
+\paragraph{Sparse Hamiltonian simulation.}  \isa{HHL\_Trotter} proves the Lie--Trotter product
+formula with an explicit constant: for Hermitian $H_1,\dots,H_m$ with $\norm{H_j}\le L$,
+$\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le 2(mLt)^2/r$ (\isa{trotter}).  The proof
+stays in the functional calculus: $|e^{ix}-1-ix|\le x^2$ bounds each factor to first order, and the
+errors add along products and powers of unitaries.  \isa{HHL\_Sparse\_Split} colours the graph of an
+$s$-sparse Hermitian $A$ greedily with $2s-1$ matchings, each an involution of the index set, so $A$
+is its diagonal plus $2s-1$ Hermitian 1-sparse matrices whose entries are entries of $A$
+(\isa{sparse\_split}).  \isa{HHL\_Sparse\_Circuit} implements each 1-sparse evolution exactly on
+$\ket x\ket y\ket b$: a colour query writes the partner $q(x)$ into the second register, a comparator
+sorts the pair and records the order in $b$, an entry gate rotates $b$ by
+$e^{id\left(\begin{smallmatrix}0&a\\\bar a&0\end{smallmatrix}\right)}$ with $a=A_{xy}$, and the
+comparator and the inverse query uncompute (\isa{colour\_circ\_basis}).  The colour oracle is any
+unitary with $\ket x\ket0\ket b\mapsto\ket x\ket{q(x)}\ket b$, and one exists for every colouring.
+Written as a list of $5(2s-1)+1$ unitary gates per round, $r$ rounds act on $\ket x\ket0\ket0$ as a unitary
+$V$ with $\norm{V-e^{itA}}\le8(sLt)^2/r$, using $r(6s-2)$ queries (\isa{sparse\_simulation\_circuit}).  In
+the HHL bound this gives the error $(\varepsilon+16(N-1)(sLt_0)^2/r)\norm b$
+(\isa{hhl\_sparse\_window\_error}).
+
 \paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
 $H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero
 eigenspaces.  The pseudo-inverse maps $b\oplus0$ to $0\oplus x$ with $A^*Ax=A^*b$ and $x$ in the
@@ -736,9 +757,9 @@ its preconditioned system $(AB)c=Bb$ is neither left nor right preconditioning; 
 example its unique solution gives no solution of $Ax=b$ (\isa{paper\_precondition\_wrong}).
 
 \paragraph{What remains.}  The window state and $\ket b$ are prepared by given unitaries.
-Hamiltonian simulation enters as an $\eta$-accurate oracle: building one from sparse access
-(Trotter-type formulas) and counting its gates is outside the matrix framework, so the
-complexity statement is in oracle calls.
+The evolution oracle is built from sparse access to first order only.  The higher-order
+formulas behind the paper's cited cost and the reversible arithmetic inside the colour and entry
+oracles are not formalised, so the complexity statements count oracle queries.
 
 \section{Conclusion}
 

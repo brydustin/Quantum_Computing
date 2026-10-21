@@ -448,6 +448,29 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `full_prog_gates`).  Traps: `O` is relation composition and `W` a global constant (renamed);
   `1\<^sub>m 1` vs `1\<^sub>m (Suc 0)` normal forms — keep `right_tensor_id` facts literal; `intro exI exI …`
   instantiates in unpredictable order — chain `rule exI[of _ x]` and prove conjuncts separately.
+- **HHL_Trotter, HHL_Sparse_Split, HHL_Sparse_Circuit** (2026-10-21; user: formalise the sparse
+  Hamiltonian simulation oracle as a verified circuit).  Trotter without calculus: |e^{ix}−1−ix| ≤ x²
+  (cos via 2sin²(x/2), sin via `Maclaurin_sin_bound` n=3 for |x| ≤ 3, crude bound otherwise);
+  ‖g(A)v‖ ≤ c‖v‖ from U diag U†; e^{idA} − I − idA = g(A) by `mat_fun_eqI`; induction over the
+  factors with the split EP − I − S − T = (E−I−T)P + (P−I−S) + T(P−I); powers by telescoping.
+  Constant 2(mLt)²/r, so 8(sLt)²/r for m = 2s parts.  Colouring: greedy with the invariant
+  "involutions p c whose moved pairs lie in F, each edge of F in exactly one colour" (no THE needed);
+  the free colour exists because colours moving a are injected into the other neighbours of a.
+  Circuit: the colour oracle is a hypothesis (any unitary with |x,0,b⟩ ↦ |x,q x,b⟩), so the result
+  covers XOR/addition implementations; one instance is the involution exchanging |x,0⟩,|x,q x⟩.
+  The comparator is an involutive permutation; the entry gate is `ctrl_blocks` of 2×2 rotations,
+  identity when x = y.  Correctness per colour by tracing basis states in three cases (k < q k,
+  q k < k, q k = k), with a helper `lin2'` whose conclusion fixes the instantiation; matrices by
+  `emb_intertwine` (columns).  e^{idH} for 1-sparse H in closed form via eigenvectors: l² = |h|²
+  from the two eigen-equations.  Traps: unannotated `M`/`x`/`n` in helper lemmas get weak sorts and
+  rules like `scalar_prod_right_unit` silently fail — annotate `complex Matrix.mat`/`nat`;
+  `using v by (simp add: carrier_vec_def)` and simp with `carrier_vecI` hang — use
+  `carrier_vecI[OF v]`, `smult_carrier_vec[THEN iffD2]`; `divide_inverse` loops; `set_eqI` and
+  `mat_col_eqI` need qualifiers (`Set.`, `Matrix.`); `x * y\<^sup>\<dagger>` is ambiguous —
+  parenthesise; `of` after `OF` on lemmas with ⋀-premises instantiates the wrong variables — use
+  `where`; a fact list with `[where t = …]` fails if one member lacks t — select members first;
+  QHLProver's `hermitian` clashes with the project's — import only `HHL_Simulation` when QHL is
+  not needed.
 - **HHL_Uniform_Rotation** (2026-10-21; user: further gate splitting, fully verified).  The rotation
   stage is a uniformly controlled rotation (Möttönen et al.): Walsh–Hadamard angles ψ_S over masks
   S ∈ {0,1}^k (`masks` = `List.n_lists k [False, True]`, head = bit 0), orthogonality by induction on

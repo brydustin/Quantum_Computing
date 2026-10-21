@@ -9,8 +9,8 @@ a small language of fixed gates and controlled calls of an oracle, count the cal
 for HHL) and show that replacing the oracle by any unitary $V$ with
 $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most (calls)$\cdot\eta$.  With the
 window register this gives the end-to-end bound $(\varepsilon+2(N-1)\eta)\norm b$
-(theorem \<open>hhl_sim_window_error\<close>).  How $V$ is built (Trotter formulas, sparse access) is
-outside the matrix framework; any construction with this accuracy can be plugged in.\<close>
+(theorem \<open>hhl_sim_window_error\<close>).  Any $V$ with this accuracy can be plugged in;
+\<open>HHL_Sparse_Circuit\<close> builds one from sparse access by a Trotter circuit.\<close>
 
 subsection \<open>Vector norms\<close>
 

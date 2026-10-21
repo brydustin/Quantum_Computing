@@ -62,6 +62,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
     Vern_Paulsen_QC_Algorithms.HHL_Uniform_Rotation
     Vern_Paulsen_QC_Algorithms.HHL_State_Preparation
+    Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
