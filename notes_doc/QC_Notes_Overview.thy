@@ -61,6 +61,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Paper_Program
     Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
     Vern_Paulsen_QC_Algorithms.HHL_Uniform_Rotation
+    Vern_Paulsen_QC_Algorithms.HHL_State_Preparation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -143,6 +144,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the paper's regime as programs: window register, inexact eigenvalues, approximate oracle, filtered version; fidelity triples, termination, amplitude amplification as a program & \texttt{HHL\_Paper\_Program}\\
 --     & the rotation as one ancilla rotation per clock value; window state by one reflection; elementary Fourier gates in the amplified circuit & \texttt{HHL\_Gate\_Refinements}\\
 --     & the rotation stage as a uniformly controlled rotation: Walsh--Hadamard angles, parity chains of nearest-neighbour CNOT/SWAP gates; the program and the paper-regime circuits with only elementary gates, oracle calls, $U_b$ and rotations controlled by the last clock qubit & \texttt{HHL\_Uniform\_Rotation}\\
+--     & state preparation by $k$ levels of uniformly controlled rotations, all gates elementary; the sine window; the paper-regime programs with only elementary gates, controlled ancilla rotations, $U_b$ and oracle calls & \texttt{HHL\_State\_Preparation}\\
 \end{tabular}
 \end{center}
 

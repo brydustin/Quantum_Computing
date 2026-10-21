@@ -437,6 +437,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   context-local lemmas (even `[simp]` ones like `length_hhl_gates`) are exported with the context
   assumptions — put unconditional facts outside the context; `No_Cloning.inner_prod_expand` needs
   its qualifier; `1 ·m 1m n = 1m n` is not a simp rule.
+- **HHL_State_Preparation** (2026-10-21).  Möttönen-style state preparation: level j rotates qubit j
+  by θ = arcsin(R/P) from the block norms P (prefix c), L, R (children); cos θ·P = L follows from
+  P² = L² + R² and cos_arcsin.  States `pvec k a j` (nonzero only at multiples of 2^{k−j}); one level
+  is proved entrywise (single surviving summand s = (r div m)·m).  Levels as gate lists: ucr_gates
+  with n = 1, tensored with 1 on the right (`ctrl_blocks_tensor_right`); with no system register the
+  controlled rotation is 1 ⊗ (4×4 controlled gate), hence elementary (`ctrl_blocks_mod2`).  The
+  paper-regime circuits then refine (preparation, rotation stage, Fourier gates) to elementary gates,
+  controlled ancilla rotations, U_b and oracle calls (`hhl_apx_fine3`, gate enumeration
+  `full_prog_gates`).  Traps: `O` is relation composition and `W` a global constant (renamed);
+  `1\<^sub>m 1` vs `1\<^sub>m (Suc 0)` normal forms — keep `right_tensor_id` facts literal; `intro exI exI …`
+  instantiates in unpredictable order — chain `rule exI[of _ x]` and prove conjuncts separately.
 - **HHL_Uniform_Rotation** (2026-10-21; user: further gate splitting, fully verified).  The rotation
   stage is a uniformly controlled rotation (Möttönen et al.): Walsh–Hadamard angles ψ_S over masks
   S ∈ {0,1}^k (`masks` = `List.n_lists k [False, True]`, head = bit 0), orthogonality by induction on
