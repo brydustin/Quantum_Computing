@@ -783,4 +783,125 @@ proof -
   qed (simp add: d pc_c_def)
 qed
 
+subsection \<open>Unknown success probability (App.~A1)\<close>
+
+text \<open>Stage $j$ runs $k$ rounds of amplification, $k$ uniform below $2^j$, and measures; the
+procedure stops at the first success.  Its stages $0,\dots,m$ all fail with probability
+$\prod_j(1-q_j)$, $q_j$ the mean success of stage $j$, and use fewer than $2^{m+1}$ rounds.\<close>
+
+definition aa_mean :: "real \<Rightarrow> nat \<Rightarrow> real" where
+  "aa_mean \<theta> M = (\<Sum>k<M. (sin ((2 * real k + 1) * \<theta>))\<^sup>2) / real M"
+
+definition sched_fail :: "real \<Rightarrow> nat \<Rightarrow> real" where
+  "sched_fail \<theta> m = (\<Prod>j\<le>m. 1 - aa_mean \<theta> (2 ^ j))"
+
+definition sched_rounds :: "nat \<Rightarrow> nat" where
+  "sched_rounds m = (\<Sum>j\<le>m. 2 ^ j - 1)"
+
+lemma aa_mean_bounds: "0 < M \<Longrightarrow> 0 \<le> aa_mean \<theta> M \<and> aa_mean \<theta> M \<le> 1"
+proof -
+  assume M: "0 < M"
+  have "(\<Sum>k<M. (sin ((2 * real k + 1) * \<theta>))\<^sup>2) \<le> (\<Sum>k<M. 1)" by (rule sum_mono) (simp add: abs_sin_le_one abs_square_le_1)
+  thus ?thesis using M by (simp add: aa_mean_def sum_nonneg divide_le_eq_1)
+qed
+
+lemma prod_le_factor:
+  assumes "finite A" "j \<in> A" "\<And>i. i \<in> A \<Longrightarrow> 0 \<le> f i \<and> f i \<le> (1::real)"
+  shows "(\<Prod>i\<in>A. f i) \<le> f j"
+proof -
+  have "(\<Prod>i\<in>A. f i) = f j * (\<Prod>i\<in>A - {j}. f i)" by (rule prod.remove[OF assms(1,2)])
+  also have "\<dots> \<le> f j * 1"
+    by (rule mult_left_mono[OF prod_le_1]) (use assms in auto)
+  finally show ?thesis by simp
+qed
+
+lemma sched_rounds_lt: "sched_rounds m < 2 ^ Suc m"
+proof -
+  have "sched_rounds m \<le> (\<Sum>j\<le>m. 2 ^ j)" unfolding sched_rounds_def by (rule sum_mono) simp
+  also have "(\<Sum>j\<le>m. (2::nat) ^ j) = 2 ^ Suc m - 1" by (induction m) simp_all
+  finally have le: "sched_rounds m \<le> 2 ^ Suc m - 1" .
+  have "0 < (2::nat) ^ Suc m" by simp
+  thus ?thesis using le by arith
+qed
+
+theorem doubling_schedule:
+  assumes th: "0 < \<theta>" "\<theta> \<le> pi / 2" and s: "0 < s" "s \<le> sin \<theta>" and m: "1 / (sqrt 2 * s) \<le> 2 ^ m"
+  shows "sched_fail \<theta> m \<le> 3 / 4" and "sched_rounds m < 2 ^ Suc m"
+proof -
+  have fac: "\<And>j. j \<in> {..m} \<Longrightarrow> 0 \<le> 1 - aa_mean \<theta> (2 ^ j) \<and> 1 - aa_mean \<theta> (2 ^ j) \<le> 1"
+    using aa_mean_bounds by simp
+  show "sched_fail \<theta> m \<le> 3 / 4"
+  proof (cases "\<theta> \<le> pi / 4")
+    case True
+    have c: "sqrt 2 / 2 \<le> cos \<theta>"
+    proof -
+      have "cos (pi / 4) \<le> cos \<theta>" by (rule cos_monotone_0_pi_le) (use th True in simp_all)
+      thus ?thesis by (simp add: cos_45)
+    qed
+    have "sqrt 2 * s \<le> sin (2 * \<theta>)"
+    proof -
+      have "sqrt 2 * s = 2 * s * (sqrt 2 / 2)" by simp
+      also have "\<dots> \<le> 2 * sin \<theta> * cos \<theta>" using s c by (intro mult_mono) simp_all
+      finally show ?thesis by (simp add: sin_double)
+    qed
+    moreover have ps: "0 < sqrt 2 * s" using s by simp
+    ultimately have s2: "0 < sin (2 * \<theta>)" "1 / sin (2 * \<theta>) \<le> 1 / (sqrt 2 * s)"
+      by (simp_all add: frac_le)
+    have "1 / 4 \<le> aa_mean \<theta> (2 ^ m)" unfolding aa_mean_def
+      by (rule bhmt_quarter) (use s2 m in simp_all)
+    hence "1 - aa_mean \<theta> (2 ^ m) \<le> 3 / 4" by simp
+    moreover have "sched_fail \<theta> m \<le> 1 - aa_mean \<theta> (2 ^ m)" unfolding sched_fail_def
+      by (rule prod_le_factor[OF _ _ fac]) simp_all
+    ultimately show ?thesis by simp
+  next
+    case False
+    have "sin (pi / 4) \<le> sin \<theta>" by (rule sin_monotone_2pi_le) (use th False in simp_all)
+    hence "sqrt 2 / 2 \<le> sin \<theta>" by (simp add: sin_45)
+    hence "(sqrt 2 / 2)\<^sup>2 \<le> (sin \<theta>)\<^sup>2" by (rule power_mono) simp
+    hence q0: "1 / 2 \<le> aa_mean \<theta> 1" by (simp add: aa_mean_def power_divide)
+    have "sched_fail \<theta> m \<le> 1 - aa_mean \<theta> (2 ^ 0)" unfolding sched_fail_def
+      by (rule prod_le_factor[OF _ _ fac]) simp_all
+    thus ?thesis using q0 by simp
+  qed
+  show "sched_rounds m < 2 ^ Suc m" by (rule sched_rounds_lt)
+qed
+
+text \<open>With the success amplitude $\sin\theta\ge1/(4\kappa)$ of \<open>hhl_paper_runtime\<close>: doubling up
+to the first power of two $\ge2\sqrt2\,\kappa$ succeeds with probability $\ge1/4$ and uses fewer than
+$8\sqrt2\,\kappa$ rounds.\<close>
+
+corollary doubling_schedule_kappa:
+  assumes k: "1 \<le> \<kappa>" and th: "0 < \<theta>" "\<theta> \<le> pi / 2" and s: "1 / (4 * \<kappa>) \<le> sin \<theta>"
+      and m: "2 * sqrt 2 * \<kappa> \<le> 2 ^ m" and least: "2 ^ (m - 1) < 2 * sqrt 2 * \<kappa>"
+  shows "sched_fail \<theta> m \<le> 3 / 4" and "real (sched_rounds m) < 8 * sqrt 2 * \<kappa>"
+proof -
+  have s0: "0 < 1 / (4 * \<kappa>)" using k by simp
+  have "1 / (sqrt 2 * (1 / (4 * \<kappa>))) = 2 * sqrt 2 * \<kappa>"
+    using k by (simp add: field_simps real_div_sqrt)
+  hence m': "1 / (sqrt 2 * (1 / (4 * \<kappa>))) \<le> 2 ^ m" using m by simp
+  show "sched_fail \<theta> m \<le> 3 / 4" by (rule doubling_schedule(1)[OF th s0 s m'])
+  have m1: "1 \<le> m"
+  proof (rule ccontr)
+    assume "\<not> 1 \<le> m"
+    hence "m = 0" by simp
+    hence "2 * sqrt 2 * \<kappa> \<le> 1" using m by simp
+    moreover have "1 < 2 * sqrt 2 * \<kappa>"
+    proof -
+      have r: "1 \<le> sqrt 2" by simp
+      have "2 * 1 * 1 \<le> 2 * sqrt 2 * \<kappa>" by (intro mult_mono) (use r k in simp_all)
+      thus ?thesis by simp
+    qed
+    ultimately show False by simp
+  qed
+  have "real (sched_rounds m) < real ((2::nat) ^ Suc m)" using sched_rounds_lt[of m] by (simp only: of_nat_less_iff)
+  also have "real ((2::nat) ^ Suc m) = (2::real) ^ Suc m" by simp
+  also have "(2::real) ^ Suc m = 4 * 2 ^ (m - 1)"
+  proof -
+    obtain m' where m': "m = Suc m'" using m1 by (cases m) auto
+    show ?thesis unfolding m' by simp
+  qed
+  also have "\<dots> < 4 * (2 * sqrt 2 * \<kappa>)" using least by (subst mult_less_cancel_left_pos) simp_all
+  finally show "real (sched_rounds m) < 8 * sqrt 2 * \<kappa>" by simp
+qed
+
 end

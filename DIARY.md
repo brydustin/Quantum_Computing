@@ -386,3 +386,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `blast` with a higher-order IH diverges; local `have … for z w` without a type makes z
   polymorphic so `OF` with complex lemmas fails; killed eval runs left three orphaned `veriT`
   processes (5 GB each) from an `smt` attempt — check `pgrep veriT` after timeouts.
+- **HHL_Discussion, App. A1 schedule.**  The paper's "repeat with 1, 2, 4, … rounds until ≥ κ"
+  is formalised with BHMT's randomisation: stage j draws k uniformly below 2^j; failure of
+  stages 0..m is ∏(1 − q_j) ≤ 3/4 (the last factor by `bhmt_quarter` when θ ≤ π/4, the first
+  factor sin²θ ≥ 1/2 otherwise); rounds < 2^{m+1} < 8√2κ for sin θ ≥ 1/(4κ).  Trap: `simp flip:
+  of_nat_numeral of_nat_power` loops — compare casts with `of_nat_less_iff` instead.
