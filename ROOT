@@ -93,6 +93,8 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     QPE_Register
     HHL_Trajectory
     HHL_Program
+    HHL_Gates
+    HHL_Preconditioned
 
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
@@ -196,5 +198,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.QPE_Register
     Vern_Paulsen_QC_Algorithms.HHL_Trajectory
     Vern_Paulsen_QC_Algorithms.HHL_Program
+    Vern_Paulsen_QC_Algorithms.HHL_Gates
+    Vern_Paulsen_QC_Algorithms.HHL_Preconditioned
   document_files
     "root.tex"

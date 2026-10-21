@@ -675,16 +675,20 @@ proof (rule eq_vecI)
   finally show "tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec 2 0)) $ r = unit_vec (N * (n * 2)) 0 $ r" .
 qed (simp add: tensor_vec_dim)
 
+text \<open>The programs for any gate list \<open>Us\<close>: initialise, run \<open>Us\<close>, measure the ancilla; or repeat
+while the ancilla reads $0$.\<close>
+
+definition hhl_prog :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
+  "hhl_prog K Us = init_com K ;; utrans_seq Us ;; Measure 2 (anc_proj K) [SKIP, SKIP]"
+
+definition hhl_rus_prog :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
+  "hhl_rus_prog K Us = init_com K ;; utrans_seq Us ;; While (\<lambda>j. anc_proj K (1 - j)) (init_com K ;; utrans_seq Us)"
+
 definition hhl_program :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> com" where
-  "hhl_program A Ub t0 k C =
-     init_com (2 ^ k * (dim_row A * 2)) ;; utrans_seq (hhl_gates A Ub t0 k C) ;;
-     Measure 2 (anc_proj (2 ^ k * (dim_row A * 2))) [SKIP, SKIP]"
+  "hhl_program A Ub t0 k C = hhl_prog (2 ^ k * (dim_row A * 2)) (hhl_gates A Ub t0 k C)"
 
 definition hhl_rus :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> com" where
-  "hhl_rus A Ub t0 k C =
-     init_com (2 ^ k * (dim_row A * 2)) ;; utrans_seq (hhl_gates A Ub t0 k C) ;;
-     While (\<lambda>j. anc_proj (2 ^ k * (dim_row A * 2)) (1 - j))
-       (init_com (2 ^ k * (dim_row A * 2)) ;; utrans_seq (hhl_gates A Ub t0 k C))"
+  "hhl_rus A Ub t0 k C = hhl_rus_prog (2 ^ k * (dim_row A * 2)) (hhl_gates A Ub t0 k C)"
 
 text \<open>The solution state $\ket0\otimes\hat x\otimes\ket1$, $\hat x=A^{-1}b/\norm{A^{-1}b}$.\<close>
 
@@ -759,11 +763,14 @@ proof -
     unfolding P using anc_proj_tensor[of ?a "2 ^ k" g0 n 0 1] anc_proj_tensor[of ?a "2 ^ k" g1 n 1 1] d0 d1 c1 by simp
 qed
 
-text \<open>Success probability: the ancilla reads $1$ with probability at least $C^2\norm{A^{-1}b}^2$.\<close>
+text \<open>Success probability: the ancilla reads $1$ with probability at least $C^2\norm{A^{-1}b}^2$.
+The theorems hold for every gate list with the circuit of \<open>hhl_gates\<close>.\<close>
 
-theorem hhl_success:
-  "state_sig.hoare_partial [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
-     (hhl_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
+theorem hhl_prog_success:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+      and circ: "circuit_mat (2 ^ k * (n * 2)) Us = circuit_mat (2 ^ k * (n * 2)) (hhl_gates A Ub t0 k C)"
+  shows "state_sig.hoare_partial [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
+     (hhl_prog (2 ^ k * (n * 2)) Us) (anc_proj (2 ^ k * (n * 2)) 1)"
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   let ?D = "2 ^ k * (n * 2)" and ?a = "unit_vec (2 ^ k) 0"
@@ -771,10 +778,10 @@ proof -
   let ?\<psi> = "tensor_vec ?a (hhl_out A C b)"
   have dd: "d = ?D" by (simp add: d_def)
   have nA: "dim_row A = n" using A(1) by simp
-  have h: "hoare_partial ((\<Sum>j<2. inner_prod (anc_proj d j *\<^sub>v (circuit_mat d (hhl_gates A Ub t0 k C) *\<^sub>v unit_vec d 0))
-                 (anc_proj d 1 *\<^sub>v (anc_proj d j *\<^sub>v (circuit_mat d (hhl_gates A Ub t0 k C) *\<^sub>v unit_vec d 0)))) \<cdot>\<^sub>m 1\<^sub>m d)
-             (init_com d ;; utrans_seq (hhl_gates A Ub t0 k C) ;; Measure 2 (anc_proj d) [SKIP, SKIP]) (anc_proj d 1)"
-    by (rule hoare_init_circuit_measure[OF qp_anc_proj _ _ anc_proj_measurement]) (use prog_gates dd n0 in auto)
+  have h: "hoare_partial ((\<Sum>j<2. inner_prod (anc_proj d j *\<^sub>v (circuit_mat d Us *\<^sub>v unit_vec d 0))
+                 (anc_proj d 1 *\<^sub>v (anc_proj d j *\<^sub>v (circuit_mat d Us *\<^sub>v unit_vec d 0)))) \<cdot>\<^sub>m 1\<^sub>m d)
+             (init_com d ;; utrans_seq Us ;; Measure 2 (anc_proj d) [SKIP, SKIP]) (anc_proj d 1)"
+    by (rule hoare_init_circuit_measure[OF qp_anc_proj _ _ anc_proj_measurement]) (use Us dd n0 in auto)
   have w1: "anc_proj ?D 1 *\<^sub>v tensor_vec ?a (tensor_vec ?g1 (unit_vec 2 1)) = tensor_vec ?a (tensor_vec ?g1 (unit_vec 2 1))"
     using anc_proj_tensor[of ?a "2 ^ k" ?g1 n 1 1] prog_branch(4) by simp
   have w0: "anc_proj ?D 1 *\<^sub>v tensor_vec ?a (tensor_vec ?g0 (unit_vec 2 0)) = 0\<^sub>v ?D"
@@ -802,8 +809,14 @@ proof -
     have s2: "(\<Sum>j<2. F j) = F 0 + F 1" for F :: "nat \<Rightarrow> complex" by (simp add: numeral_2_eq_2)
     show ?thesis unfolding s2 prog_branch(1) prog_branch(2) w0 w1 i0 i1 by simp
   qed
-  show ?thesis using h unfolding dd prog_out val hhl_program_def nA .
+  show ?thesis using h unfolding dd circ prog_out val hhl_prog_def .
 qed
+
+theorem hhl_success:
+  "state_sig.hoare_partial [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
+     (hhl_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)]
+  by (rule hhl_prog_success[where Us = "hhl_gates A Ub t0 k C", OF prog_gates refl])
 
 lemma sol_nonzero: "0 < \<parallel>herm_inv A *\<^sub>v b\<parallel>"
 proof -
@@ -1011,8 +1024,10 @@ qed
 
 text \<open>Correctness: whenever the ancilla reads $1$, the state is exactly $\ket0\otimes\hat x\otimes\ket1$.\<close>
 
-theorem hhl_correct:
-  "state_sig.hoare_partial [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_program A Ub t0 k C)
+theorem hhl_prog_correct:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+      and circ: "circuit_mat (2 ^ k * (n * 2)) Us = circuit_mat (2 ^ k * (n * 2)) (hhl_gates A Ub t0 k C)"
+  shows "state_sig.hoare_partial [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_prog (2 ^ k * (n * 2)) Us)
      (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b) (hhl_target A k b))"
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
@@ -1024,10 +1039,10 @@ proof -
   have nA: "dim_row A = n" using A(1) by simp
   have qQ: "is_quantum_predicate ?Q" using post_facts(4) by simp
   have qQ': "is_quantum_predicate (anc_proj d 0 + outer_prod ?t ?t)" using qQ dd by simp
-  have h: "hoare_partial ((\<Sum>j<2. inner_prod (anc_proj d j *\<^sub>v (circuit_mat d (hhl_gates A Ub t0 k C) *\<^sub>v unit_vec d 0))
-                 ((anc_proj d 0 + outer_prod ?t ?t) *\<^sub>v (anc_proj d j *\<^sub>v (circuit_mat d (hhl_gates A Ub t0 k C) *\<^sub>v unit_vec d 0)))) \<cdot>\<^sub>m 1\<^sub>m d)
-             (init_com d ;; utrans_seq (hhl_gates A Ub t0 k C) ;; Measure 2 (anc_proj d) [SKIP, SKIP]) (anc_proj d 0 + outer_prod ?t ?t)"
-    by (rule hoare_init_circuit_measure[OF qQ' _ _ anc_proj_measurement]) (use prog_gates dd n0 in auto)
+  have h: "hoare_partial ((\<Sum>j<2. inner_prod (anc_proj d j *\<^sub>v (circuit_mat d Us *\<^sub>v unit_vec d 0))
+                 ((anc_proj d 0 + outer_prod ?t ?t) *\<^sub>v (anc_proj d j *\<^sub>v (circuit_mat d Us *\<^sub>v unit_vec d 0)))) \<cdot>\<^sub>m 1\<^sub>m d)
+             (init_com d ;; utrans_seq Us ;; Measure 2 (anc_proj d) [SKIP, SKIP]) (anc_proj d 0 + outer_prod ?t ?t)"
+    by (rule hoare_init_circuit_measure[OF qQ' _ _ anc_proj_measurement]) (use Us dd n0 in auto)
   have val: "(\<Sum>j<2. inner_prod (anc_proj ?D j *\<^sub>v tensor_vec ?a (hhl_out A C b)) (?Q *\<^sub>v (anc_proj ?D j *\<^sub>v tensor_vec ?a (hhl_out A C b)))) = 1"
   proof -
     have s2: "(\<Sum>j<2. F j) = F 0 + F 1" for F :: "nat \<Rightarrow> complex" by (simp add: numeral_2_eq_2)
@@ -1045,21 +1060,29 @@ proof -
     thus ?thesis unfolding s2 prog_branch(1) prog_branch(2) post_branches i1 branch_overlaps(5) by simp
   qed
   have e1: "(1::complex) \<cdot>\<^sub>m 1\<^sub>m ?D = 1\<^sub>m ?D" by (rule eq_matI) auto
-  show ?thesis using h unfolding dd prog_out val hhl_program_def nA e1 .
+  show ?thesis using h unfolding dd circ prog_out val hhl_prog_def e1 .
 qed
+
+theorem hhl_correct:
+  "state_sig.hoare_partial [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_program A Ub t0 k C)
+     (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b) (hhl_target A k b))"
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)]
+  by (rule hhl_prog_correct[where Us = "hhl_gates A Ub t0 k C", OF prog_gates refl])
 
 text \<open>Repeat until success: the loop re-runs the circuit while the ancilla reads $0$.  On
 termination the state is exactly $\ket0\otimes\hat x\otimes\ket1$ (partial correctness).\<close>
 
-theorem hhl_rus_correct:
-  "state_sig.hoare_partial [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_rus A Ub t0 k C)
+theorem hhl_rus_prog_correct:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+      and circ: "circuit_mat (2 ^ k * (n * 2)) Us = circuit_mat (2 ^ k * (n * 2)) (hhl_gates A Ub t0 k C)"
+  shows "state_sig.hoare_partial [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_rus_prog (2 ^ k * (n * 2)) Us)
      (outer_prod (hhl_target A k b) (hhl_target A k b))"
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   let ?D = "2 ^ k * (n * 2)" and ?a = "unit_vec (2 ^ k) 0" and ?t = "hhl_target A k b"
   let ?T = "outer_prod ?t ?t" and ?x = "herm_inv A *\<^sub>v b"
   let ?M = "\<lambda>j. anc_proj ?D (1 - j)"
-  let ?S = "init_com ?D ;; utrans_seq (hhl_gates A Ub t0 k C)"
+  let ?S = "init_com ?D ;; utrans_seq Us"
   let ?R = "adjoint (?M 0) * ?T * ?M 0 + adjoint (?M 1) * 1\<^sub>m ?D * ?M 1"
   let ?g0 = "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A *\<^sub>v b" and ?g1 = "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b"
   let ?w0 = "tensor_vec ?a (tensor_vec ?g0 (unit_vec 2 0))" and ?w1 = "tensor_vec ?a (tensor_vec ?g1 (unit_vec 2 1))"
@@ -1096,19 +1119,25 @@ proof -
   qed
   have body: "hoare_partial (1\<^sub>m ?D) ?S ?R"
   proof -
-    have "hoare_partial (inner_prod (circuit_mat d (hhl_gates A Ub t0 k C) *\<^sub>v unit_vec d 0)
-                 ((anc_proj ?D 0 + ?T) *\<^sub>v (circuit_mat d (hhl_gates A Ub t0 k C) *\<^sub>v unit_vec d 0)) \<cdot>\<^sub>m 1\<^sub>m d)
-            (init_com d ;; utrans_seq (hhl_gates A Ub t0 k C)) (anc_proj ?D 0 + ?T)"
-      by (rule hoare_init_circuit) (use post_facts(4) prog_gates dd n0 in auto)
+    have "hoare_partial (inner_prod (circuit_mat d Us *\<^sub>v unit_vec d 0)
+                 ((anc_proj ?D 0 + ?T) *\<^sub>v (circuit_mat d Us *\<^sub>v unit_vec d 0)) \<cdot>\<^sub>m 1\<^sub>m d)
+            (init_com d ;; utrans_seq Us) (anc_proj ?D 0 + ?T)"
+      by (rule hoare_init_circuit) (use post_facts(4) Us dd n0 in auto)
     moreover have "(1::complex) \<cdot>\<^sub>m 1\<^sub>m ?D = 1\<^sub>m ?D" by (rule eq_matI) auto
-    ultimately show ?thesis unfolding dd prog_out val R by simp
+    ultimately show ?thesis unfolding dd circ prog_out val R by simp
   qed
   have loop: "hoare_partial ?R (While ?M ?S) ?T"
     by (rule hoare_partial.intros(5)[OF qT q1[folded dd, unfolded dd]]) (use body in simp)
   have "hoare_partial (1\<^sub>m ?D) (?S ;; While ?M ?S) ?T"
     by (rule hoare_partial.intros(3)[OF q1 qR qT body loop])
-  thus ?thesis unfolding hhl_rus_def nA .
+  thus ?thesis unfolding hhl_rus_prog_def .
 qed
+
+theorem hhl_rus_correct:
+  "state_sig.hoare_partial [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_rus A Ub t0 k C)
+     (outer_prod (hhl_target A k b) (hhl_target A k b))"
+  unfolding hhl_rus_def carrier_matD(1)[OF A(1)]
+  by (rule hhl_rus_prog_correct[where Us = "hhl_gates A Ub t0 k C", OF prog_gates refl])
 
 end
 
@@ -1206,62 +1235,92 @@ begin
 lemma gates_ok: "U \<in> set (hhl_gates A Ub t0 k C) \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
   by (rule prog_gates[OF A n0 k t0 spec Ub Cb])
 
-lemma hhl_program_well_com: "state_sig.well_com [2 ^ k, n, 2] (hhl_program A Ub t0 k C)"
+lemma hhl_prog_well_com:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+  shows "state_sig.well_com [2 ^ k, n, 2] (hhl_prog (2 ^ k * (n * 2)) Us)"
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   have dd: "d = 2 ^ k * (n * 2)" by (simp add: d_def)
-  have nA: "dim_row A = n" using A(1) by simp
-  show ?thesis unfolding hhl_program_def nA dd[symmetric]
-    using well_com_init[of] well_com_utrans_seq[of "hhl_gates A Ub t0 k C"] gates_ok anc_proj_measurement[of d] n0
-    by (auto simp: dd)
+  show ?thesis unfolding hhl_prog_def dd[symmetric]
+    using well_com_init well_com_utrans_seq[of Us] Us anc_proj_measurement[of d] n0 by (auto simp: dd)
 qed
 
-lemma hhl_rus_well_com: "state_sig.well_com [2 ^ k, n, 2] (hhl_rus A Ub t0 k C)"
+lemma hhl_rus_prog_well_com:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+  shows "state_sig.well_com [2 ^ k, n, 2] (hhl_rus_prog (2 ^ k * (n * 2)) Us)"
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   have dd: "d = 2 ^ k * (n * 2)" by (simp add: d_def)
-  have nA: "dim_row A = n" using A(1) by simp
-  show ?thesis unfolding hhl_rus_def nA dd[symmetric]
-    using well_com_init well_com_utrans_seq[of "hhl_gates A Ub t0 k C"] gates_ok anc_proj_swap_measurement[of d] n0
-    by (auto simp: dd)
+  show ?thesis unfolding hhl_rus_prog_def dd[symmetric]
+    using well_com_init well_com_utrans_seq[of Us] Us anc_proj_swap_measurement[of d] n0 by (auto simp: dd)
+qed
+
+lemma hhl_program_well_com: "state_sig.well_com [2 ^ k, n, 2] (hhl_program A Ub t0 k C)"
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_well_com[OF gates_ok])
+
+lemma hhl_rus_well_com: "state_sig.well_com [2 ^ k, n, 2] (hhl_rus A Ub t0 k C)"
+  unfolding hhl_rus_def carrier_matD(1)[OF A(1)] by (rule hhl_rus_prog_well_com[OF gates_ok])
+
+lemma hhl_prog_while_free: "while_free (hhl_prog K Us)"
+proof -
+  have "while_free (utrans_seq Us)" for Us by (induction Us) auto
+  thus ?thesis by (simp add: hhl_prog_def init_com_def list_all_iff)
 qed
 
 lemma hhl_program_while_free: "while_free (hhl_program A Ub t0 k C)"
-proof -
-  have "while_free (utrans_seq Us)" for Us by (induction Us) auto
-  thus ?thesis by (simp add: hhl_program_def init_com_def list_all_iff)
-qed
+  unfolding hhl_program_def by (rule hhl_prog_while_free)
 
 text \<open>The semantic statements, by soundness of the logic.  The program without the loop
 terminates, so its triples hold for total correctness.\<close>
 
-theorem hhl_success_total:
-  "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
-     (hhl_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
+theorem hhl_prog_success_total:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+      and circ: "circuit_mat (2 ^ k * (n * 2)) Us = circuit_mat (2 ^ k * (n * 2)) (hhl_gates A Ub t0 k C)"
+  shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
+     (hhl_prog (2 ^ k * (n * 2)) Us) (anc_proj (2 ^ k * (n * 2)) 1)"
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   show ?thesis
-    by (rule partial_to_total[OF hoare_partial_sound[OF hhl_success[OF A n0 k t0 spec Ub Cb] hhl_program_well_com]
-          hhl_program_while_free hhl_program_well_com])
+    by (rule partial_to_total[OF hoare_partial_sound[OF hhl_prog_success[OF A n0 k t0 spec Ub Cb Us circ] hhl_prog_well_com[OF Us]]
+          hhl_prog_while_free hhl_prog_well_com[OF Us]])
 qed
 
-theorem hhl_correct_total:
-  "state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_program A Ub t0 k C)
+theorem hhl_prog_correct_total:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+      and circ: "circuit_mat (2 ^ k * (n * 2)) Us = circuit_mat (2 ^ k * (n * 2)) (hhl_gates A Ub t0 k C)"
+  shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_prog (2 ^ k * (n * 2)) Us)
      (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b) (hhl_target A k b))"
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   show ?thesis
-    by (rule partial_to_total[OF hoare_partial_sound[OF hhl_correct[OF A n0 k t0 spec Ub Cb] hhl_program_well_com]
-          hhl_program_while_free hhl_program_well_com])
+    by (rule partial_to_total[OF hoare_partial_sound[OF hhl_prog_correct[OF A n0 k t0 spec Ub Cb Us circ] hhl_prog_well_com[OF Us]]
+          hhl_prog_while_free hhl_prog_well_com[OF Us]])
 qed
+
+theorem hhl_rus_prog_partial:
+  assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
+      and circ: "circuit_mat (2 ^ k * (n * 2)) Us = circuit_mat (2 ^ k * (n * 2)) (hhl_gates A Ub t0 k C)"
+  shows "state_sig.hoare_partial_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_rus_prog (2 ^ k * (n * 2)) Us)
+     (outer_prod (hhl_target A k b) (hhl_target A k b))"
+proof -
+  interpret state_sig "[2 ^ k, n, 2]" .
+  show ?thesis by (rule hoare_partial_sound[OF hhl_rus_prog_correct[OF A n0 k t0 spec Ub Cb Us circ] hhl_rus_prog_well_com[OF Us]])
+qed
+
+theorem hhl_success_total:
+  "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
+     (hhl_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_success_total[OF gates_ok refl])
+
+theorem hhl_correct_total:
+  "state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_program A Ub t0 k C)
+     (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b) (hhl_target A k b))"
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_correct_total[OF gates_ok refl])
 
 theorem hhl_rus_partial:
   "state_sig.hoare_partial_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_rus A Ub t0 k C)
      (outer_prod (hhl_target A k b) (hhl_target A k b))"
-proof -
-  interpret state_sig "[2 ^ k, n, 2]" .
-  show ?thesis by (rule hoare_partial_sound[OF hhl_rus_correct[OF A n0 k t0 spec Ub Cb] hhl_rus_well_com])
-qed
+  unfolding hhl_rus_def carrier_matD(1)[OF A(1)] by (rule hhl_rus_prog_partial[OF gates_ok refl])
 
 lemma states_ok:
   "i \<le> 8 \<Longrightarrow> dim_vec (hhl_states A b t0 k C ! i) = 2 ^ k * (n * 2)

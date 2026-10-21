@@ -437,3 +437,22 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   context-local lemmas (even `[simp]` ones like `length_hhl_gates`) are exported with the context
   assumptions — put unconditional facts outside the context; `No_Cloning.inner_prod_expand` needs
   its qualifier; `1 ·m 1m n = 1m n` is not a simp rule.
+- **HHL_Gates, HHL_Preconditioned** (2026-10-21; user: run the program on a preconditioned
+  system, and break it down to elementary gates — one controlled U^{2^j} per clock qubit, the
+  AFP's gate-level QFT for F).  Refactor first: `HHL_Program`'s three triples are now proved for
+  any gate list `Us` with `circuit_mat D Us = circuit_mat D (hhl_gates …)` (`hhl_prog_success`,
+  `hhl_prog_correct`, `hhl_rus_prog_correct`, totals; programs `hhl_prog`/`hhl_rus_prog`); the old
+  theorems are instances, unchanged in statement.  Gates: the AFP QFT entry builds `QFT`,
+  `controlled_rotations`, `control`, `SWAP_down/up`, `reverse_qubits` as matrix products; each is
+  mirrored by a gate list with the same `fun` patterns (the AFP simps are stated for
+  `Suc (Suc (Suc v))`), proved equal by `circuit_mat_append`/`circuit_mat_tensor_left/right`, and
+  `ordered_QFT_fourier` turns the product into F.  "Elementary" = 1_a ⊗ (G ⊗ 1_b), G a 2×2 or 4×4
+  unitary.  The controlled evolution: C_jG = Σ_c |c⟩⟨c| ⊗ (G if bit j of c else I);
+  Π_j C_jU^{2^j} = Σ_c |c⟩⟨c| ⊗ U^{c mod 2^k} by `mod_mult2_eq`; C_jU^e = (C_jU)^e, so 2^k − 1
+  controlled-U calls.  Preconditioning: BA is not Hermitian, so the program runs on the dilation
+  [[0,BA],[(BA)*,0]] with rhs Bb/‖Bb‖ ⊕ 0 (`herm_embed_inverse`); ‖Bb‖ > 0 follows from the
+  unitary preparing the rhs; the (C/s)² bound needed a semantic weakening of scalar preconditions
+  (`total_scalar_weaken`, trace ρ ≥ 0 by `positive_trace`).  Traps: more global constants —
+  `X`, `Y` (Paulis), `S` — silently turn variables into constants (a lemma about `Y` is about the
+  constant, and `OF` then fails with "no unifiers"); after importing QHLProver, `unitary` means
+  `Complex_Matrix.unitary` — write `Quantum.unitary`; `simp add: carrier_vecI` hung again.
