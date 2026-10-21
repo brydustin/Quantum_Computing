@@ -99,6 +99,7 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL_Termination
     HHL_Paper_Program
     HHL_Gate_Refinements
+    HHL_Uniform_Rotation
 
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
@@ -208,5 +209,6 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL_Termination
     Vern_Paulsen_QC_Algorithms.HHL_Paper_Program
     Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
+    Vern_Paulsen_QC_Algorithms.HHL_Uniform_Rotation
   document_files
     "root.tex"

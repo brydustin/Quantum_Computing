@@ -60,6 +60,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Termination
     Vern_Paulsen_QC_Algorithms.HHL_Paper_Program
     Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
+    Vern_Paulsen_QC_Algorithms.HHL_Uniform_Rotation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -141,6 +142,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the repeat-until-success loop terminates with probability one (total correctness); it exits after $m$ failed rounds with probability $(1-p)^mp$ in the target state; expected rounds $1/p$, $p=C^2\norm{A^{-1}b}^2$ & \texttt{HHL\_Termination}\\
 --     & the paper's regime as programs: window register, inexact eigenvalues, approximate oracle, filtered version; fidelity triples, termination, amplitude amplification as a program & \texttt{HHL\_Paper\_Program}\\
 --     & the rotation as one ancilla rotation per clock value; window state by one reflection; elementary Fourier gates in the amplified circuit & \texttt{HHL\_Gate\_Refinements}\\
+--     & the rotation stage as a uniformly controlled rotation: Walsh--Hadamard angles, parity chains of nearest-neighbour CNOT/SWAP gates; the program and the paper-regime circuits with only elementary gates, oracle calls, $U_b$ and rotations controlled by the last clock qubit & \texttt{HHL\_Uniform\_Rotation}\\
 \end{tabular}
 \end{center}
 

@@ -437,6 +437,18 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   context-local lemmas (even `[simp]` ones like `length_hhl_gates`) are exported with the context
   assumptions — put unconditional facts outside the context; `No_Cloning.inner_prod_expand` needs
   its qualifier; `1 ·m 1m n = 1m n` is not a simp rule.
+- **HHL_Uniform_Rotation** (2026-10-21; user: further gate splitting, fully verified).  The rotation
+  stage is a uniformly controlled rotation (Möttönen et al.): Walsh–Hadamard angles ψ_S over masks
+  S ∈ {0,1}^k (`masks` = `List.n_lists k [False, True]`, head = bit 0), orthogonality by induction on
+  k; θ_c = Σψ_S − 2Σ_{S≠∅}ψ_S[parity odd] since (−1)^p = 1 − 2[p].  Parity accumulated in clock bit 0
+  by a recursive chain of adjacent CNOT (bit j ⊕= bit j+1) and SWAP ops, starting at the top set bit
+  of the mask (`parity_chain`); ops are permutations `lift2 g j` of clock values, and
+  `pmat (2^k) (lift2 g j) = 1 ⊗ (pmat 4 g ⊗ 1)` (digit uniqueness `digits3`) makes them elementary.
+  Block algebra: `ctrl_conj` ((P_h⊗1)·ctrl B·(P_f⊗1) = ctrl (B∘f) when h∘f = id), proved on the unit
+  vectors e_c ⊗ e_y.  Rotations as `Rot a` (angle addition); rot c = Rot (arcsin c).  Traps: `W`,
+  `o` are reserved/global (renamed); `comp` and `chain` clash with HOL constants (renamed
+  `apply_ops`, `parity_chain`); n_lists has no simp-friendly sum lemma — prove the Suc recursion of
+  `sum_list` over it once; `auto` with parity facts took 10 s — use `mod2_eq_if`.
 - **HHL_Paper_Program, HHL_Gate_Refinements, Day06_15_Universal** (2026-10-21; user: close the
   six remaining gaps).  Item 1 (exact phases): the circuits of `HHL_Simulation` (datatype `qcirc`,
   semantics `sem`) become gate lists `qgates` with `circuit_mat = sem` (`qgates_sem`), so they run as

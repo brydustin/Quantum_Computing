@@ -153,7 +153,7 @@ the names in brackets are the Isabelle theorems.
 
 {\small
 \begin{longtable}{p{0.31\textwidth}p{0.45\textwidth}rr}
-\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 16\,952 lines, 897 results, not included in the counts above).}\label{tab:theories}\\
+\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 18\,094 lines, 970 results, not included in the counts above).}\label{tab:theories}\\
 \toprule
 Theory & Lectures & lines & results\\
 \midrule
@@ -242,6 +242,7 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Termination} & VI: termination of the repeat-until-success loop & 502 & 19\\
 \isa{HHL\_Paper\_Program} & VI: the paper's regime as programs & 877 & 31\\
 \isa{HHL\_Gate\_Refinements} & VI: rotation, window preparation, Fourier gates & 635 & 29\\
+\isa{HHL\_Uniform\_Rotation} & VI: the rotation stage in elementary gates & 1142 & 73\\
 \end{longtable}
 }
 
@@ -707,7 +708,13 @@ and amplitude amplification is a program with at most $\pi\kappa$ rounds (\isa{h
 \isa{HHL\_Gate\_Refinements} splits the controlled rotation into one ancilla rotation per clock
 value (\isa{hhl\_split\_gate\_kinds}), prepares the window state with one Householder reflection
 (\isa{hhl\_apx\_program\_prepared}) and replaces the Fourier gates of the amplified circuit by
-the gate-level circuit (\isa{hhl\_apx\_fine}).
+the gate-level circuit (\isa{hhl\_apx\_fine}).  \isa{HHL\_Uniform\_Rotation} finally writes the rotation stage
+$\sum_c\ket c\bra c\otimes I\otimes R(\theta_c)$ itself in elementary gates: with Walsh--Hadamard
+coefficients it is one ancilla rotation and $2^k-1$ parity-controlled rotations, each parity being
+computed into the last clock qubit by nearest-neighbour CNOT and SWAP gates (\isa{ucr\_circuit}).  In
+the resulting program every gate is elementary, an oracle call, the preparation of $\ket b$, or a
+rotation of the ancilla controlled by the last clock qubit (\isa{hhl\_fine\_gate\_kinds},
+\isa{hhl\_apx\_fine2}).
 
 \paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
 $H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero
