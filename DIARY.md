@@ -391,3 +391,28 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   stages 0..m is ∏(1 − q_j) ≤ 3/4 (the last factor by `bhmt_quarter` when θ ≤ π/4, the first
   factor sin²θ ≥ 1/2 otherwise); rounds < 2^{m+1} < 8√2κ for sin θ ≥ 1/(4κ).  Trap: `simp flip:
   of_nat_numeral of_nat_power` loops — compare casts with `of_nat_less_iff` instead.
+- **HHL_Optimality** (Theorems 4–6, App. A5) and **HHL_Search_Bound** (session
+  `Vern_Paulsen_QC_Search`).  BQP/PSPACE/BPP/PP are absent from the AFP (`Cook_Levin`: P, NP over
+  TMs only), and proving the class equalities would need TQBF's PSPACE-completeness and
+  BQP ⊆ PSPACE, so each theorem is formalised up to the external fact it cites.  Formal content:
+  M₀ = clock window × circuit acceptance (`red_M0_prob`); the A34 dilation keeps the bounds
+  1 ± e^{−1/T} (`unitary_of_isometry` from the base library makes the clock shift unitary, so
+  A* = I − eU* obeys the same bounds); a permutation fixing 0 turns M₀ into a first-qubit
+  measurement (`first_half_perm` via `finite_same_card_bij` + `bij_betw_combine`); the speedup
+  iteration and qubit growth; exponent arguments via a single growth lemma (`exp_beats_poly`:
+  exp(x) ≥ (1 + x/(K+1))^{K+1}); the search bound imported from AFP `Compressed_Oracles`
+  (`zero_finding_is_hard`, stated in its locale `compressed_oracle`; restated as sN ≤ (5q+11)²)
+  plus `exhaustive_success` (≥ 1/2 when |X| = |Y|).  The AFP chain CBO → HSTP → Registers →
+  Compressed_Oracles builds in 11 min.  **Paper errata**: (i) the proof of Thm 4 takes
+  m = (2/δ)log(2n)/log log n and claims T_m ≤ n₀ — false (n₀ = 2⁶⁴, δ = ½: m = 130/3, bound
+  2^{2·2⁶⁴·(3/4)⁴⁴} > 2⁶⁴); m ≥ (2/δ)ln(2n₀) gives T_m ≤ 2; (ii) the problem demands κ⁻¹I ≤ A ≤ I
+  but (A34) has zero diagonal; (iii) (A37): C y = (b, 0) forces the top half of y to vanish, so
+  measuring the first qubit is trivial — permute the whole dilation instead (no identity padding
+  needed); (iv) Thm 6(2)'s ε = 2^{−n−2} cannot separate C from C+1 after the clock factor
+  q ≤ 1/4 (needs ε < q/2^{n+1}).  The paper's N = 2ⁿ in 6(2) ignores the clock register; it does
+  not affect the exponents.  Traps: `OF Ug` with the ⋀-premise instantiates `Ug` higher-order
+  (λj. Ug (?j1 j)) — wrap exported lemmas as context lemmas proved by `rule X[OF T0 Ug]`;
+  `simp` on `2 powr (2 * 2^64)` hangs (evaluates the numeral power); `linarith` in this session
+  fails on `x ≤ (1 + x + y) / 4` — multiply out first; `simp only: … mult_2 powr_add` instead of
+  `simp add:` (k + k ↔ 2k loops); global abbreviations `H` (herm_embed) and `D` clash with
+  variable names; `metis` on a nat→real cast took 19 s — use `arg_cong` + `of_nat_add`.

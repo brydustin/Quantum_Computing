@@ -87,6 +87,7 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL_Reduction
     HHL_Rectangular
     HHL_Discussion
+    HHL_Optimality
 
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
@@ -99,6 +100,18 @@ session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
     Vern_Paulsen_QC_3_10
   theories
     Day05_Sylvester_Criterion
+  document_files
+    "root.tex"
+
+session Vern_Paulsen_QC_Search in "Search" = Compressed_Oracles +
+  description "
+    H-20: the quantum search lower bound behind HHL's Theorem 4(2), imported from the AFP entry
+    Compressed_Oracles (separate session: that entry builds on Complex_Bounded_Operators)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  theories
+    HHL_Search_Bound
   document_files
     "root.tex"
 
@@ -174,5 +187,6 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL_Reduction
     Vern_Paulsen_QC_Algorithms.HHL_Rectangular
     Vern_Paulsen_QC_Algorithms.HHL_Discussion
+    Vern_Paulsen_QC_Algorithms.HHL_Optimality
   document_files
     "root.tex"

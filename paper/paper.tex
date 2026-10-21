@@ -223,9 +223,11 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Reduction} & VI: circuits to matrix inversion (Section III) & 647 & 55\\
 \isa{HHL\_Rectangular} & VI: rectangular $A$, pseudo-inverse solutions & 385 & 20\\
 \isa{HHL\_Discussion} & VI: $f(A)\ket b$, sampling, SWAP test, estimation & 908 & 44\\
+\isa{HHL\_Optimality} & VI: Theorems 4--6 up to the cited results & 1055 & 60\\
+\isa{HHL\_Search\_Bound} & VI: AFP quantum search bound (separate session) & 80 & 4\\
 \bottomrule
 \end{tabular}
-\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 10\,634 lines, 536 results, not included in the counts above).}
+\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 11\,769 lines, 600 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -612,8 +614,30 @@ least $1/4$ in fewer than $8\sqrt2\,\kappa$ rounds (\isa{doubling\_schedule\_kap
 reduction from circuits to matrix inversion behind the optimality results is formalised as a
 construction (\isa{red\_inverse}, \isa{red\_A\_bounds}, \isa{red\_clock\_prob}, \isa{red\_post\_state}),
 with two corrections: the undo gates are $U^*_{T+1-t}$, not $U^*_{3T+1-t}$, and the condition number is
-$\coth\frac1{2T}\le2T+1$ rather than at most $2T$.  The complexity-class consequences need a theory of
-BQP, PSPACE and oracle lower bounds and are not formalised.
+$\coth\frac1{2T}\le2T+1$ rather than at most $2T$.
+
+\paragraph{Theorems 4--6.}  BQP, PSPACE, BPP and PP are not in the AFP (\isa{Cook\_Levin} has P and
+NP), so each optimality theorem is formalised up to the external fact it cites.  Clock in $[T,2T)$
+and outcome $P$ has probability $e^{-2}/(1+e^{-2}+e^{-4})\norm{PU_T\cdots U_1\psi}^2$
+(\isa{red\_M0\_prob}); the Hermitian dilation (A34) keeps the bounds $1\pm e^{-1/T}$
+(\isa{red\_dilation}); and a permutation fixing $\ket0$ turns $M_0$ into a first-qubit measurement
+(\isa{red\_first\_qubit}).  For Theorem~4 the speedup iteration gives
+$T_\ell\le\max(g^{2/\delta},T_0^{(1-\delta/2)^m})$ with $n_i\le n_0+i\log18+\frac2\delta\log T_0$
+(\isa{speedup\_iteration}, \isa{qubit\_growth}), hence a $\mathrm{poly}(n)$-gate simulation of every
+computation with $T\le2^{2n}$ (\isa{speedup\_collapse}).  The relativised part ends with polynomially
+many queries for search on $2^n$ inputs, refuted with the AFP bound $sN\le(5q+11)^2$ of
+\emph{Compressed Oracles}, imported in a separate session (\isa{search\_speedup\_impossible},
+\isa{search\_query\_bound}).  Theorems~5 and~6(2) reduce to growth-rate arguments with the cited
+lower bounds as hypotheses ($3\alpha+4\beta\ge\frac12$, $\alpha+\beta\ge1$; \isa{simon\_exponents},
+\isa{parity\_exponents}), and Theorem~6(1) to the counting state, whose last qubit reads $1$ with
+probability $\#\{z:\varphi(z)\}/2^n$ (\isa{count\_state\_prob}).  Not formalised: TQBF's
+PSPACE-completeness, $\mathrm{BQP}\subseteq\mathrm{PSPACE}$, and the classical Simon and parity bounds.
+Four errata: the proof's $m=\frac2\delta\log(2n)/\log\log n$ rounds do not give $T_m\le n_0$ (for $n_0=2^{64}$,
+$\delta=\frac12$ the bound is still above $2^{64}$; $m\ge\frac2\delta\ln(2n_0)$ works); (A34) cannot satisfy the
+demanded $\kappa^{-1}I\le A$, its diagonal being zero; in (A37) the top half of $\vec y$ is always $0$,
+so its first qubit carries no information; and Theorem~6(2)'s $\epsilon=2^{-n-2}$ cannot separate counts
+$C$ and $C+1$ once the clock factor $\le\frac14$ is included (\isa{paper\_rounds\_insufficient},
+\isa{herm\_embed\_diag}, \isa{paper\_precision\_insufficient}).
 
 \paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
 $H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero

@@ -50,6 +50,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Reduction
     Vern_Paulsen_QC_Algorithms.HHL_Rectangular
     Vern_Paulsen_QC_Algorithms.HHL_Discussion
+    Vern_Paulsen_QC_Algorithms.HHL_Optimality
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -121,6 +122,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the reduction from circuits to matrix inversion (Section III): $A^{-1}$, $\kappa\le2T+1$, post-selection probability $\ge1/10$ & \texttt{HHL\_Reduction}\\
 --     & rectangular $A$ (App.~A4): $\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$, its pseudo-inverse gives the minimum-norm and the least-squares solution & \texttt{HHL\_Rectangular}\\
 --     & Section IV: $f(A)\ket b$, stability of $\langle x|M|x\rangle$, sampling, $k$ copies, the SWAP test, estimation with $3/\varepsilon^2$ samples, preconditioning & \texttt{HHL\_Discussion}\\
+--     & Theorems 4--6 (App.~A5): the $M_0$ measurement, the Hermitian dilation, the first-qubit embedding, the speedup iteration and the exponent bounds; the search lower bound is imported from the AFP (separate session) & \texttt{HHL\_Optimality}\\
 \end{tabular}
 \end{center}
 
