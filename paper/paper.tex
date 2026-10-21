@@ -209,10 +209,10 @@ Theory & Lectures & lines & results\\
 \isa{Day16\_Block\_Form} & 16: block form on $H_A\otimes H_B$ & 206 & 13\\
 \isa{Day22\_UCP\_Compact} & 22: UCP is compact & 222 & 9\\
 \midrule
-\isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 422 & 36\\
-\isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 501 & 26\\
-\isa{QFT\_Fourier} & VI: the Archive's QFT circuit is $F_{2^n}$ & 103 & 4\\
-\isa{HHL} & VI: the HHL algorithm & 815 & 46\\
+\isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
+\isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 502 & 26\\
+\isa{QFT\_Fourier} & VI: the Archive's QFT circuit is $F_{2^n}$ & 104 & 4\\
+\isa{HHL} & VI: the HHL algorithm & 816 & 46\\
 \isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
 \isa{HHL\_Window} & VI: sine-window register, $N\sim1/\varepsilon$ & 1210 & 46\\
 \isa{HHL\_Simulation} & VI: oracle circuits, simulation error & 745 & 49\\
@@ -221,9 +221,11 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Filter\_Bounds} & VI: Theorem 1 of the HHL paper for every $b$ & 816 & 29\\
 \isa{HHL\_Runtime} & VI: (A32), BHMT averaging, run time & 611 & 21\\
 \isa{HHL\_Reduction} & VI: circuits to matrix inversion (Section III) & 647 & 55\\
+\isa{HHL\_Rectangular} & VI: rectangular $A$, pseudo-inverse solutions & 385 & 20\\
+\isa{HHL\_Discussion} & VI: $f(A)\ket b$, sampling, SWAP test, estimation & 787 & 39\\
 \bottomrule
 \end{tabular}
-\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session\, 9\,341 lines, 472 results, not included in the counts above).}
+\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session, 10\,513 lines, 531 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -610,6 +612,21 @@ construction (\isa{red\_inverse}, \isa{red\_A\_bounds}, \isa{red\_clock\_prob}, 
 with two corrections: the undo gates are $U^*_{T+1-t}$, not $U^*_{3T+1-t}$, and the condition number is
 $\coth\frac1{2T}\le2T+1$ rather than at most $2T$.  The complexity-class consequences need a theory of
 BQP, PSPACE and oracle lower bounds and are not formalised.
+
+\paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
+$H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero
+eigenspaces.  The pseudo-inverse maps $b\oplus0$ to $0\oplus x$ with $A^*Ax=A^*b$ and $x$ in the
+range of $A^*$, so $x$ is the minimum-norm solution when $Ax=b$ is solvable and a least-squares
+solution otherwise (\isa{pinv\_solution}, \isa{normal\_eq\_least\_squares}); the proof uses
+$Jg(H)J=g(-H)$ for the parity $J$.  For Section~IV we prove that rotation angle $h(\lambda)$ yields
+$h(A)\ket b$, that expectations, sampled distributions and $k$-fold copies move by $O(\norm{\tilde x-x})$,
+and that the SWAP test, built from $H\otimes I$ and a controlled SWAP, reads $\ket0$ with probability
+$(1+|\langle\psi|\varphi\rangle|^2)/2$.  The estimation procedure of Appendix~A5 is formalised with an
+expectation operator over $n$ independent bits: mean, variance and Chebyshev give $3/\varepsilon^2$
+samples (\isa{estimate\_expectation}).  Two more errata: the paper's $1/(3\varepsilon^2)$ samples are too few
+(for $\varepsilon=\frac14$, $p=\frac12$ and six samples the estimate fails with probability $\frac{11}{16}$), and
+its preconditioned system $(AB)c=Bb$ is neither left nor right preconditioning; in a $2\times2$
+example its unique solution gives no solution of $Ax=b$ (\isa{paper\_precondition\_wrong}).
 
 \paragraph{What remains.}  The window state and $\ket b$ are prepared by given unitaries.
 Hamiltonian simulation enters as an $\eta$-accurate oracle: building one from sparse access

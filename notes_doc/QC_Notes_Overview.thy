@@ -48,6 +48,8 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Filter_Bounds
     Vern_Paulsen_QC_Algorithms.HHL_Runtime
     Vern_Paulsen_QC_Algorithms.HHL_Reduction
+    Vern_Paulsen_QC_Algorithms.HHL_Rectangular
+    Vern_Paulsen_QC_Algorithms.HHL_Discussion
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -117,6 +119,8 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & Theorem 1 of the HHL paper for every $b$: errors $O(\kappa/t)$, $t$ the total evolution time & \texttt{HHL\_Filter\_Bounds}\\
 --     & (A32), BHMT averaging, run time in the paper's normalisation: $t=O(\kappa/\varepsilon)$, $O(\kappa)$ rounds & \texttt{HHL\_Runtime}\\
 --     & the reduction from circuits to matrix inversion (Section III): $A^{-1}$, $\kappa\le2T+1$, post-selection probability $\ge1/10$ & \texttt{HHL\_Reduction}\\
+--     & rectangular $A$ (App.~A4): $\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$, its pseudo-inverse gives the minimum-norm and the least-squares solution & \texttt{HHL\_Rectangular}\\
+--     & Section IV: $f(A)\ket b$, stability of $\langle x|M|x\rangle$, sampling, $k$ copies, the SWAP test, estimation with $3/\varepsilon^2$ samples, preconditioning & \texttt{HHL\_Discussion}\\
 \end{tabular}
 \end{center}
 

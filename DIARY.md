@@ -369,3 +369,20 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   names; definitions made in a context with assumptions export with those assumptions —
   wrap them in lemmas inside the context (`dim_ket0`, `prev_zero`, `W_zero`) and use
   `rule X[OF T0 Ug]`, never `unfolding X[OF …]` with a ⋀-premise.
+- **HHL_Rectangular** (App. A4).  No singular value decomposition needed: with the parity
+  J = diag(I_M, −I_N), HJ = −JH, so g(H) = J g(−H) J and even functions of H preserve b ⊕ 0.
+  The pseudo-inverse H⁺ = H·q(H) with q(λ) = 1/λ² (even) gives H⁺(b⊕0) = 0⊕A*c; the
+  projector 1_{λ≠0}(H) yields A*Ax = A*b; minimum norm and least squares by Pythagoras.
+  Trap: `rule X` with a chained equation needs the equation as the first premise.
+- **HHL_Discussion** (Section IV, App. A5).  f(A)|b⟩: the HHL proof goes through verbatim with
+  rotation angle h(λ) (generated from `hhl`/`hhl_eigen` by substitution).  Sampling is modelled
+  by a recursive expectation operator `bern p n f` over bool lists (no HOL-Probability needed):
+  linearity, monotonicity, mean np, variance np(1−p) by induction, then Chebyshev.  SWAP test
+  in block form, tied to `Hadamard ⊗ 1` by `had_blk_Hadamard`.  **Paper errata**: App. A5's
+  1/(3ε²) samples are too few (Chebyshev needs 3/ε²; concrete failure 11/16 at ε = 1/4, n = 6);
+  Section IV's (AB)c = Bb is not a preconditioned system (2×2 counterexample); the displayed
+  flagged state swaps λ_j < 1/κ and λ_j ≥ 1/κ.  Traps: `simp_all add: algebra_simps` in an
+  induction over `bern` with `arbitrary: f g` loops — use `simp only: bern.simps Suc.IH`;
+  `blast` with a higher-order IH diverges; local `have … for z w` without a type makes z
+  polymorphic so `OF` with complex lemmas fails; killed eval runs left three orphaned `veriT`
+  processes (5 GB each) from an `smt` attempt — check `pgrep veriT` after timeouts.
