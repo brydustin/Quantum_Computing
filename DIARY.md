@@ -437,6 +437,29 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   context-local lemmas (even `[simp]` ones like `length_hhl_gates`) are exported with the context
   assumptions — put unconditional facts outside the context; `No_Cloning.inner_prod_expand` needs
   its qualifier; `1 ·m 1m n = 1m n` is not a simp rule.
+- **HHL_Paper_Program, HHL_Gate_Refinements, Day06_15_Universal** (2026-10-21; user: close the
+  six remaining gaps).  Item 1 (exact phases): the circuits of `HHL_Simulation` (datatype `qcirc`,
+  semantics `sem`) become gate lists `qgates` with `circuit_mat = sem` (`qgates_sem`), so they run as
+  QHLProver programs.  Postcondition |t⟩⟨t| = fidelity with the target.  Generic: one run plus a
+  two-outcome measurement gives {|⟨t|ψ⟩|² I} (`hoare_prog_overlap`; needs M₁†t = t, M₀†t = 0);
+  repeat-until-success gives {|⟨t|ψ⟩|²/p I}, total (`hoare_rus_overlap`, via `while_reset_total`).
+  A post-selected state within e of |t⟩ has |⟨t|ŷ⟩|² ≥ (1 − e²/2)² ≥ 1 − e² (`fidelity_from_close`,
+  from `unit_dist`; no side condition needed).  Instances: `hhl_complete`'s circuit (window,
+  eigenvalues anywhere, η-oracle) and `hhl_paper_runtime`'s flag circuit; the flag measurement is
+  `pflag_mat` (anc_proj is its two-level case).  Item 2: amplitude amplification is a program
+  (`hhl_apx_amplified`, `hhl_flag_amplified` with k ≤ πκ from `circuit_amplificationP`).  Item 4:
+  rot_gate = Π_c vctrl c (1 ⊗ rot θ_c) (`circuit_vctrl`, induction over [0..<j] with
+  `ctrl_blocks_mult`); window prep = Householder reflection (win_state $ 0 = √(2/N) sin(π/2N) < 1);
+  equal circuits ⟹ equal denotations, incl. While (`denote_while_body_cong` on the iterates), so the
+  Fourier gates refine to the AFP circuit inside the amplified program (`hhl_apx_fine`).  Item 5
+  (held notes rows): D6-1 universal property by coordinates (truncated vectors `trunc_vec` give
+  linear/bilinear expansions without vector sums; `sum_div_mod` reindexes k ↦ (k div m, k mod m));
+  target ℂᵖ because `complex_vector` is not in the session's imports; D15-3: Γ(R⊗T) = R⊗T and
+  uniqueness via flattening M_{K1×K2} ≅ ℂ^{K1K2} entrywise.  Traps: `V`, `R`, `T` are global
+  constants (renamed); OF with a ⋀-premise needs `where`; `metis` hung three times (div/mod and
+  power facts) — use explicit calculations; abbreviations in a context are exported as global
+  constants and fold in printing everywhere — use `abbreviation (input)`; `*v` is left-associative
+  (`M *v C *v e` parses wrongly — parenthesise).
 - **HHL_Termination; gate counts; legacy file** (2026-10-21; user: close the six remaining gaps).
   Item 3: the repeat-until-success loop had only partial correctness.  QHLProver has no
   total-correctness rule for While, so the result comes from the semantics: the body

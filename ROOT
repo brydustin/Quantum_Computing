@@ -66,6 +66,7 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day23_Choi3_UCP
     Day16_Block_Form
     Day22_UCP_Compact
+    Day06_15_Universal
 
 session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
   description "
@@ -96,6 +97,8 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL_Gates
     HHL_Preconditioned
     HHL_Termination
+    HHL_Paper_Program
+    HHL_Gate_Refinements
 
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
@@ -181,6 +184,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day23_Choi3_UCP
     Vern_Paulsen_QC.Day16_Block_Form
     Vern_Paulsen_QC.Day22_UCP_Compact
+    Vern_Paulsen_QC.Day06_15_Universal
     Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
@@ -202,5 +206,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL_Gates
     Vern_Paulsen_QC_Algorithms.HHL_Preconditioned
     Vern_Paulsen_QC_Algorithms.HHL_Termination
+    Vern_Paulsen_QC_Algorithms.HHL_Paper_Program
+    Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
   document_files
     "root.tex"

@@ -5,6 +5,7 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage[margin=1.05in]{geometry}
 \usepackage{booktabs}
+\usepackage{longtable}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xspace}
@@ -39,7 +40,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises forty-seven theories and about a
+entanglement witnesses.  The development comprises forty-eight theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -150,12 +151,19 @@ meaningful on builds with the strict option.
 Table~\ref{tab:theories} lists the theories.  We describe the content by lecture group;
 the names in brackets are the Isabelle theorems.
 
-\begin{table}[t]
-\centering\small
-\begin{tabular}{llrr}
+{\small
+\begin{longtable}{p{0.31\textwidth}p{0.45\textwidth}rr}
+\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 16\,952 lines, 897 results, not included in the counts above).}\label{tab:theories}\\
 \toprule
 Theory & Lectures & lines & results\\
 \midrule
+\endfirsthead
+\toprule
+Theory & Lectures & lines & results\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
 \isa{Basic\_Math} & 1--2: inner products, matrix units, trace, projections, Parseval & 1\,672 & 74\\
 \isa{Quantum\_Computing\_3\_10} & 3--10: unitaries, Schur, spectral theorem, positivity, tensors, postulates & 7\,946 & 162\\
 \isa{Quantum\_Computing11} & 11--22, 29--32: channels, density matrices, Choi, convexity, codes & 11\,232 & 315\\
@@ -208,6 +216,7 @@ Theory & Lectures & lines & results\\
 \isa{Day23\_Choi3\_UCP} & 23: Choi's Theorem~3 for unital maps & 250 & 9\\
 \isa{Day16\_Block\_Form} & 16: block form on $H_A\otimes H_B$ & 206 & 13\\
 \isa{Day22\_UCP\_Compact} & 22: UCP is compact & 222 & 9\\
+\isa{Day06\_15\_Universal} & 6, 15: the universal properties & 436 & 23\\
 \midrule
 \isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 502 & 26\\
@@ -231,11 +240,10 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Gates} & VI: the program in elementary gates & 895 & 75\\
 \isa{HHL\_Preconditioned} & VI: the program on a preconditioned system & 177 & 19\\
 \isa{HHL\_Termination} & VI: termination of the repeat-until-success loop & 502 & 19\\
-\bottomrule
-\end{tabular}
-\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 15\,440 lines, 837 results, not included in the counts above).}
-\label{tab:theories}
-\end{table}
+\isa{HHL\_Paper\_Program} & VI: the paper's regime as programs & 877 & 31\\
+\isa{HHL\_Gate\_Refinements} & VI: rotation, window preparation, Fourier gates & 635 & 29\\
+\end{longtable}
+}
 
 \paragraph{Lectures 1--10: linear algebra and the postulates.}  Besides the inner-product
 algebra, matrix units and the trace (\isa{Tr\_cyclic}, \isa{hs\_inner\_prod\_as\_trace}),
@@ -337,7 +345,7 @@ its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ 
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
 or cyclic codes).  Of the 170 items, 10 are deliberate omissions; of the remaining 160
-mathematical items, 153 are faithful, 7 are variants and none is a gap.\footnote{Counts as
+mathematical items, 155 are faithful, 5 are variants and none is a gap.\footnote{Counts as
 of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
@@ -454,11 +462,13 @@ completely positive maps (Day~22, \isa{adjoint\_ucp\_imp\_cptp}, \isa{map\_adjoi
 Choi's Theorem~3 is transported from the trace-preserving to the unital form stated in the notes
 (\isa{choi\_theorem\_3\_ucp}).  The block picture of Day~16, $X=\sum_{i,j}X_{ij}\otimes E_{ij}$ with
 $H_A\otimes H_B\cong H_A^{(p)}$ isometric, is proved as well (\isa{tensor\_block\_decomposition}), and so is the compactness of the unital
-completely positive maps, in Choi coordinates (\isa{compact\_ucp}).  The seven remaining variants
-are deliberate: a different proof route (Choi's Theorem~3 through CP Radon--Nikodym, the extension
-theorem by cone separation), a concrete model in place of an abstract one (the Kronecker tensor
-product, the coordinate isomorphism of Day~15), or a statement of the notes that needs a hypothesis
-or is false as stated (Cholesky with $p_{11}>0$, the Day~23 examples, the Day~32 Pauli claim).
+completely positive maps, in Choi coordinates (\isa{compact\_ucp}).  The Kronecker model of Day~6 and the
+coordinate isomorphism of Day~15 now carry the notes' universal properties: every bilinear map
+factors uniquely through $v\otimes w$ (\isa{tensor\_universal\_property\_vec}), and $\Gamma$ is the
+unique linear map with $\Gamma(R\otimes T)=R\otimes T$ (\isa{gamma\_unique}).  The five remaining
+variants are deliberate: a different proof route (Choi's Theorem~3 through CP Radon--Nikodym, the
+extension theorem by cone separation), or a statement of the notes that needs a hypothesis or is
+false as stated (Cholesky with $p_{11}>0$, the Day~23 examples, the Day~32 Pauli claim).
 
 \section{The generated document}
 
@@ -685,7 +695,19 @@ system $BAx=Bb$: $BA$ need not be Hermitian, so the program takes its Hermitian 
 right-hand side $Bb/\norm{Bb}\oplus0$; on success the system register holds $0\oplus x/\norm x$
 for the solution of the original $Ax=b$ (\isa{hhl\_elem\_precond\_correct}), with success
 probability $C^2\norm x^2/\norm{Bb}^2\ge(C/s)^2$ when $\norm{BAv}\le s\norm v$
-(\isa{hhl\_elem\_precond\_bound}).
+(\isa{hhl\_elem\_precond\_bound}).  The programs so far assume that every eigenvalue is a register
+value; \isa{HHL\_Paper\_Program} removes this.  The circuits of the paper's regime (window register,
+eigenvalues anywhere in the spectral window, an $\eta$-accurate evolution oracle, the filtered
+three-level version) become gate lists of the same semantics (\isa{qgates\_sem}) and run as
+programs whose postcondition $\ket t\bra t$ measures fidelity with the target: one run gives
+$\{(Ct_0/\pi)^2(1-e^2)\,I\}$, where $e$ is the error bound of \isa{hhl\_complete}, and the
+repeat-until-success loop gives $\{(1-e^2)\,I\}$ with termination (\isa{hhl\_apx\_rus}); the
+filtered version gives $\{(1-\varepsilon^2)\,I\}$ in the run-time normalisation (\isa{hhl\_flag\_rus}),
+and amplitude amplification is a program with at most $\pi\kappa$ rounds (\isa{hhl\_flag\_amplified}).
+\isa{HHL\_Gate\_Refinements} splits the controlled rotation into one ancilla rotation per clock
+value (\isa{hhl\_split\_gate\_kinds}), prepares the window state with one Householder reflection
+(\isa{hhl\_apx\_program\_prepared}) and replaces the Fourier gates of the amplified circuit by
+the gate-level circuit (\isa{hhl\_apx\_fine}).
 
 \paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
 $H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero

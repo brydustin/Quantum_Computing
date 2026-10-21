@@ -40,6 +40,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day23_Choi3_UCP
     Vern_Paulsen_QC.Day16_Block_Form
     Vern_Paulsen_QC.Day22_UCP_Compact
+    Vern_Paulsen_QC.Day06_15_Universal
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.HHL_Window
     Vern_Paulsen_QC_Algorithms.HHL_Simulation
@@ -57,6 +58,8 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Gates
     Vern_Paulsen_QC_Algorithms.HHL_Preconditioned
     Vern_Paulsen_QC_Algorithms.HHL_Termination
+    Vern_Paulsen_QC_Algorithms.HHL_Paper_Program
+    Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -106,6 +109,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 5      & Cholesky's algorithm on the notes' two $3\times3$ examples; the rank-one decomposition & \texttt{Day05\_Cholesky\_Examples}\\
 22     & the adjoint $\Phi^*$ of a linear map; $\Gamma(\Phi)=\Phi^*$ is an affine bijection UCP $\to$ CPTP & \texttt{Day22\_Adjoint\_Maps}\\
 22     & UCP$(M_n,M_d)$ is compact (in Choi coordinates) & \texttt{Day22\_UCP\_Compact}\\
+6, 15  & universal properties: bilinear maps factor uniquely through $v\otimes w$; $\Gamma(R\otimes T)=R\otimes T$ determines $\Gamma$ & \texttt{Day06\_15\_Universal}\\
 23     & Choi's Theorem~3 for unital maps, via the adjoint & \texttt{Day23\_Choi3\_UCP}\\
 16     & $H_A\otimes H_B\cong H_A^{(p)}$ isometrically; $X=\sum X_{ij}\otimes E_{ij}$; block action, partial traces & \texttt{Day16\_Block\_Form}\\
 6, 10  & the Schmidt rank: rank $1$ iff a product state, entangled iff rank $>1$ & \texttt{Day06\_Schmidt\_Rank}\\
@@ -135,6 +139,8 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the program in elementary gates: $H^{\otimes k}$ as $k$ Hadamards, one controlled $U^{2^j}$ per clock qubit, $F$ as the AFP gate-level Fourier circuit; same theorems; $(2k^3+16k+6)/3$ gates & \texttt{HHL\_Gates}\\
 --     & the program on a preconditioned system $BAx=Bb$ via the Hermitian dilation of $BA$: output $\hat x$ for $Ax=b$, success probability $\ge(C/\norm{BA})^2$ & \texttt{HHL\_Preconditioned}\\
 --     & the repeat-until-success loop terminates with probability one (total correctness); it exits after $m$ failed rounds with probability $(1-p)^mp$ in the target state; expected rounds $1/p$, $p=C^2\norm{A^{-1}b}^2$ & \texttt{HHL\_Termination}\\
+--     & the paper's regime as programs: window register, inexact eigenvalues, approximate oracle, filtered version; fidelity triples, termination, amplitude amplification as a program & \texttt{HHL\_Paper\_Program}\\
+--     & the rotation as one ancilla rotation per clock value; window state by one reflection; elementary Fourier gates in the amplified circuit & \texttt{HHL\_Gate\_Refinements}\\
 \end{tabular}
 \end{center}
 
