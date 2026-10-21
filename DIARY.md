@@ -357,3 +357,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   proved by the telescoping 2 sin 2θ cos((4k+2)θ) = sin(4(k+1)θ) − sin(4kθ).  The run-time
   theorem `hhl_paper_runtime` composes Theorem 1(3), the success bound ‖A⁻¹b‖ ≥ ‖b‖ for ‖A‖ ≤ 1,
   and flag amplification.  Trap: a `metis order_trans` step took 61 s — state the chain.
+- **HHL_Reduction** (Section III / App. A5).  Clock unitary U on C^{3T} ⊗ C^m defined entrywise;
+  its block action U(Σ|c⟩f_c) = Σ|c⟩V_{c−1}f_{c−1}.  Instead of U^{3T} = I and matrix power
+  series, the solution x of (I − e^{−1/T}U)x = |0⟩ψ is written down blockwise
+  (x_c = e^{−c/T}W_cψ/(1 − e^{−3})) and checked; the only cycle fact needed is W_{3T} = I.
+  Norm bounds from U norm-preserving give uniqueness and κ ≤ coth(1/2T) ≤ 2T + 1.  1/10 bound
+  via e^{−2} ≥ (15/16)^{32} ≥ 1/8 and e^{−2}(9 − e^{−2}) ≥ 8e^{−2} ≥ 1.  **Paper errata**: the
+  undo gates are U*_{T+1−t} (paper: U*_{3T+1−t}, out of range); App. A5's κ ≤ 2T is false for even
+  T (κ = coth(1/2T) > 2T, eigenvalue −1 of the clock shift).  Traps: in a theory with several
+  contexts, constants and abbreviations from earlier contexts (e.g. `D`) clash with variable
+  names; definitions made in a context with assumptions export with those assumptions —
+  wrap them in lemmas inside the context (`dim_ket0`, `prev_zero`, `W_zero`) and use
+  `rule X[OF T0 Ug]`, never `unfolding X[OF …]` with a ⋀-premise.

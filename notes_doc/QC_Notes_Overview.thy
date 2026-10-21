@@ -47,6 +47,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Filter
     Vern_Paulsen_QC_Algorithms.HHL_Filter_Bounds
     Vern_Paulsen_QC_Algorithms.HHL_Runtime
+    Vern_Paulsen_QC_Algorithms.HHL_Reduction
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
 begin
 
@@ -115,6 +116,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the paper's filter functions and flag register; Lemma 2; Lemma 3 with the corrected constant $\pi^2$ & \texttt{HHL\_Filter}\\
 --     & Theorem 1 of the HHL paper for every $b$: errors $O(\kappa/t)$, $t$ the total evolution time & \texttt{HHL\_Filter\_Bounds}\\
 --     & (A32), BHMT averaging, run time in the paper's normalisation: $t=O(\kappa/\varepsilon)$, $O(\kappa)$ rounds & \texttt{HHL\_Runtime}\\
+--     & the reduction from circuits to matrix inversion (Section III): $A^{-1}$, $\kappa\le2T+1$, post-selection probability $\ge1/10$ & \texttt{HHL\_Reduction}\\
 \end{tabular}
 \end{center}
 

@@ -220,9 +220,10 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Filter} & VI: filter functions, Lemmas 2--3, flag register & 1428 & 65\\
 \isa{HHL\_Filter\_Bounds} & VI: Theorem 1 of the HHL paper for every $b$ & 816 & 29\\
 \isa{HHL\_Runtime} & VI: (A32), BHMT averaging, run time & 611 & 21\\
+\isa{HHL\_Reduction} & VI: circuits to matrix inversion (Section III) & 647 & 55\\
 \bottomrule
 \end{tabular}
-\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session\, 8\,694 lines, 417 results, not included in the counts above).}
+\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate session\, 9\,341 lines, 472 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -603,7 +604,12 @@ paper's run-time claim we work in its normalisation (spectrum in $[1/\kappa,1]$)
 $t\ge c\kappa/\varepsilon$ gives accuracy $\varepsilon$ for the post-selected state, the success amplitude is at
 least $1/(4\kappa)$, and amplification takes at most $\pi\kappa$ rounds, so the oracle is run for total time
 $O(\kappa^2/\varepsilon)$ and the state preparation $O(\kappa)$ times (\isa{hhl\_paper\_runtime}).  Running
-amplification without knowing $p$ rests on BHMT's averaging lemma (\isa{bhmt\_quarter}).
+amplification without knowing $p$ rests on BHMT's averaging lemma (\isa{bhmt\_quarter}).  The
+reduction from circuits to matrix inversion behind the optimality results is formalised as a
+construction (\isa{red\_inverse}, \isa{red\_A\_bounds}, \isa{red\_clock\_prob}, \isa{red\_post\_state}),
+with two corrections: the undo gates are $U^*_{T+1-t}$, not $U^*_{3T+1-t}$, and the condition number is
+$\coth\frac1{2T}\le2T+1$ rather than at most $2T$.  The complexity-class consequences need a theory of
+BQP, PSPACE and oracle lower bounds and are not formalised.
 
 \paragraph{What remains.}  The window state and $\ket b$ are prepared by given unitaries.
 Hamiltonian simulation enters as an $\eta$-accurate oracle: building one from sparse access
