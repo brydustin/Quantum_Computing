@@ -225,9 +225,12 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Discussion} & VI: $f(A)\ket b$, sampling, SWAP test, estimation & 908 & 44\\
 \isa{HHL\_Optimality} & VI: Theorems 4--6 up to the cited results & 1055 & 60\\
 \isa{HHL\_Search\_Bound} & VI: AFP quantum search bound (separate session) & 80 & 4\\
+\isa{QPE\_Register} & VI: $H^{\otimes n}\ket{0\cdots0}$ is the uniform register & 104 & 7\\
+\isa{HHL\_Trajectory} & VI: the HHL circuit gate by gate & 591 & 28\\
+\isa{HHL\_Program} & VI: HHL as a verified quantum program (QHL) & 1343 & 80\\
 \bottomrule
 \end{tabular}
-\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 11\,769 lines, 600 results, not included in the counts above).}
+\caption{The forty-seven theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,553 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples and fifteen variant rows (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 13\,807 lines, 715 results, not included in the counts above).}
 \label{tab:theories}
 \end{table}
 
@@ -638,6 +641,26 @@ demanded $\kappa^{-1}I\le A$, its diagonal being zero; in (A37) the top half of 
 so its first qubit carries no information; and Theorem~6(2)'s $\epsilon=2^{-n-2}$ cannot separate counts
 $C$ and $C+1$ once the clock factor $\le\frac14$ is included (\isa{paper\_rounds\_insufficient},
 \isa{herm\_embed\_diag}, \isa{paper\_precision\_insufficient}).
+
+\paragraph{A verified program.}  The results above are statements about matrices.  To show that
+a program computes them we use the quantum while-language and Hoare logic of the AFP entry
+\emph{QHLProver}, which is sound and complete for partial correctness and works on the same
+matrices.  The program \isa{hhl\_program} initialises all registers (QHLProver has no
+initialisation statement; we build one from a computational-basis measurement and swaps,
+\isa{hoare\_init}), applies eight gates (prepare $\ket b=U_b\ket0$, the Hadamard layer, the
+controlled evolution, $F^\dagger$, the controlled rotation, $F$, the inverse controlled evolution,
+the Hadamard layer) and measures the ancilla.  The state after each gate is computed for every
+$b$; phase estimation leaves $\sum_j\ket j\otimes\Pi_jb$ with $\Pi_j$ the spectral projector at the
+grid eigenvalue (\isa{hhl\_steps}, \isa{hhl\_step\_triples}).  With the proof rules we derive
+$\{C^2\norm{A^{-1}b}^2\,I\}\ \mathit{hhl\_program}\ \{P_1\}$ (success probability) and
+$\{I\}\ \mathit{hhl\_program}\ \{P_0+\ket t\bra t\}$ with $t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$
+(on success the state is exactly the solution); since loop-free programs preserve the trace,
+both hold for total correctness (\isa{hhl\_success\_total}, \isa{hhl\_correct\_total}).  The
+repeat-until-success program, a \textbf{while} loop around the circuit, satisfies
+$\{I\}\ \mathit{hhl\_rus}\ \{\ket t\bra t\}$ (\isa{hhl\_rus\_correct}).  The register is prepared by
+$H^{\otimes n}$, which takes $\ket{0\cdots0}$ to the uniform state (\isa{hadamard\_layer\_zero}, from
+\emph{Isabelle Marries Dirac}).  The evolution $e^{iAt_0}$ enters as a gate, as in the rest of
+Part~VI.
 
 \paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
 $H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero

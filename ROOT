@@ -72,6 +72,8 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     Part VI: Quantum Algorithms, beyond the notes: functional calculus,
     phase estimation and the HHL algorithm."
   options [quick_and_dirty = false, timeout = 3600]
+  sessions
+    QHLProver
   theories
     Hermitian_Functional_Calculus
     Phase_Estimation
@@ -88,6 +90,9 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL_Rectangular
     HHL_Discussion
     HHL_Optimality
+    QPE_Register
+    HHL_Trajectory
+    HHL_Program
 
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
@@ -188,5 +193,8 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL_Rectangular
     Vern_Paulsen_QC_Algorithms.HHL_Discussion
     Vern_Paulsen_QC_Algorithms.HHL_Optimality
+    Vern_Paulsen_QC_Algorithms.QPE_Register
+    Vern_Paulsen_QC_Algorithms.HHL_Trajectory
+    Vern_Paulsen_QC_Algorithms.HHL_Program
   document_files
     "root.tex"

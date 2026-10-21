@@ -416,3 +416,24 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   fails on `x ≤ (1 + x + y) / 4` — multiply out first; `simp only: … mult_2 powr_add` instead of
   `simp add:` (k + k ↔ 2k loops); global abbreviations `H` (herm_embed) and `D` clash with
   variable names; `metis` on a nat→real cast took 19 s — use `arg_cong` + `of_nat_add`.
+- **QPE_Register, HHL_Trajectory, HHL_Program** (2026-10-21; user: close the H^{⊗n}|0⟩ gap, then
+  verify a *program* for HHL end to end with quantum Hoare logic and/or UTP + vcg).  QHL chosen:
+  AFP `QHLProver` works on the same JNF matrices (sound and complete for partial correctness);
+  Isabelle/UTP's vcg targets classical state.  The Algorithms session now has `sessions QHLProver`
+  (+35 s).  Gap: `hadamard_layer_zero` reuses IMD's `iter_tensor_of_H_on_zero_tensor`
+  (column-matrix form) via `iter_tensor_zero`.  Trajectory: eight register-level gates; the only
+  eigen-argument is phase estimation for general b (`traj_qpe`, via `eigvec_mat_eqI` with a
+  block-lift matrix and injectivity of `reg_eig` on [0,N)); the uncompute steps come from the
+  existing `hhl` theorem plus unitarity (ψ6 = ctrl (u ⊗ out)).  QHL: no init statement — built as
+  `Measure` over basis projectors with branch `Utrans (swap0 k)`; its wlp is ⟨0|Q|0⟩·I.  Success
+  probability needs init (a pure-state precondition p|0⟩⟨0| ≤ U†P₁U is false); correctness uses
+  the postcondition P₀ + |t⟩⟨t|, a QHL predicate because it is Σ M_j†P_jM_j (`qps_after_measure_is_qp`).
+  Repeat-until-success: the While rule with P = |t⟩⟨t|, Q = I needs exactly the correctness triple
+  of the body.  Total correctness for loop-free programs via `denote_trace_eq` (QHLProver only has
+  trace ≤).  Traps: global constants from earlier Part VI theories shadow variables (`D`, `DD`,
+  `T`, `V`, `W`, `H`, `R` from QFT, `S` the phase gate, `qcirc.Seq` vs `com.Seq`); locale mixfix
+  (⊢p) is not available after `interpret` inside a proof — write `hoare_partial P S Q`; `{(`
+  lexes badly — write `{ (`; simp does not normalise the LHS of a supplied rule (`s3[simplified]`);
+  context-local lemmas (even `[simp]` ones like `length_hhl_gates`) are exported with the context
+  assumptions — put unconditional facts outside the context; `No_Cloning.inner_prod_expand` needs
+  its qualifier; `1 ·m 1m n = 1m n` is not a simp rule.
