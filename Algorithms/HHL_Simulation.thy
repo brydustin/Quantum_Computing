@@ -71,6 +71,22 @@ lemma vnorm_reverse:
 lemma vnorm_zero_vec: "\<parallel>0\<^sub>v m\<parallel> = 0"
   by (simp add: cpx_vec_length_def)
 
+text \<open>For a unit vector $b$ and invertible $A$ the solution $A^{-1}b$ is not zero.\<close>
+
+lemma herm_inv_sol_pos:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and z: "0 \<notin> herm_spectrum A" and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1"
+  shows "0 < \<parallel>herm_inv A *\<^sub>v b\<parallel>"
+proof (rule vnorm_pos)
+  have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
+  thus "dim_vec (herm_inv A *\<^sub>v b) = n" by simp
+  show "herm_inv A *\<^sub>v b \<noteq> 0\<^sub>v n"
+  proof
+    assume "herm_inv A *\<^sub>v b = 0\<^sub>v n"
+    hence "b = 0\<^sub>v n" using herm_inv_solves[OF A z b(1)] mult_zero_vec_right[OF A(1)] by simp
+    thus False using b(2) vnorm_zero_vec by simp
+  qed
+qed
+
 lemma unitary_vnorm:
   assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
   shows "\<parallel>W *\<^sub>v y\<parallel> = \<parallel>y\<parallel>"
@@ -715,7 +731,7 @@ proof -
     thus ?thesis by (intro carrier_matI) simp_all
   qed
   have EU: "unitary (evolution A t0 \<Otimes> 1\<^sub>m 2)" by (rule tensor_mat_unitary_one_right[OF evolution_unitary[OF A]])
-  show ?thesis unfolding hhl_sim_def hhl_circuit_clamped_def hhl_gen_def hhl_W_def
+  show ?thesis unfolding hhl_sim_def flag_circuit_def hhl_Wd_def
     using sem_hhl_prog[OF E EU N conjunct1[OF hhl_rot_stage_ok]] by (simp add: hhl_rot_stage_def)
 qed
 
@@ -842,7 +858,7 @@ proof -
     unfolding vnorm_tensor[OF dim_win_state bx] vnorm_tensor[OF b, of "unit_vec 2 0" 2, simplified] win_state_norm[OF N]
     by simp
   have Hc: "?H \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
-    unfolding hhl_circuit_clamped_def hhl_gen_def hhl_W_def nA
+    unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
   have Sc: "?S \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
   proof -

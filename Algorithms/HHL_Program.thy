@@ -710,23 +710,18 @@ theorem hhl_success:
 
 lemma sol_nonzero: "0 < \<parallel>herm_inv A *\<^sub>v b\<parallel>"
 proof -
-  have bd: "dim_vec b = n" using Ub by auto
   have nb: "\<parallel>b\<parallel> = 1"
   proof -
     have "\<parallel>b\<parallel> = \<parallel>unit_vec n 0\<parallel>" using unitary_vnorm[OF Ub(1,2), of "unit_vec n 0"] Ub(3) by simp
     thus ?thesis using n0 by (simp add: cpx_vec_length_def lessThan_atLeast0 sum.atLeast_Suc_lessThan unit_vec_def)
   qed
-  have Ax: "A *\<^sub>v (herm_inv A *\<^sub>v b) = b" by (rule hhl_solution(1)[OF A t0 _ spec bd]) simp
-  have "herm_inv A *\<^sub>v b \<noteq> 0\<^sub>v n"
+  have z: "0 \<notin> herm_spectrum A"
   proof
-    assume "herm_inv A *\<^sub>v b = 0\<^sub>v n"
-    hence "b = 0\<^sub>v n" using Ax A(1) by (metis mult_zero_vec_right)
-    moreover have "\<parallel>0\<^sub>v n\<parallel> = 0" by (simp add: cpx_vec_length_def)
-    ultimately show False using nb by simp
+    assume "0 \<in> herm_spectrum A"
+    then obtain j where "0 < j" "j < 2 ^ k" "0 = reg_eig t0 (2 ^ k) j" using spec by blast
+    thus False using reg_eig_nonzero[OF t0] by metis
   qed
-  moreover have "dim_vec (herm_inv A *\<^sub>v b) = n" by simp
-  ultimately have "\<parallel>herm_inv A *\<^sub>v b\<parallel> \<noteq> 0" using cpx_vec_length_zero_iff[of "herm_inv A *\<^sub>v b"] by simp
-  thus ?thesis using vnorm_ge0[of "herm_inv A *\<^sub>v b"] by linarith
+  show ?thesis by (rule herm_inv_sol_pos[OF A z _ nb]) (use Ub in auto)
 qed
 
 lemma target_dim: "dim_vec (hhl_target A k b) = 2 ^ k * (n * 2)"

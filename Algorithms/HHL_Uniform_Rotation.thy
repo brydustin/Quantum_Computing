@@ -791,7 +791,7 @@ begin
 lemma rot_gate_ucr: "rot_gate A t0 (2 ^ k) C = circuit_mat (2 ^ k * (n * 2)) (ucr_gates k n (hhl_theta A t0 k C))"
 proof -
   have "rot_gate A t0 (2 ^ k) C = ctrl_blocks (2 ^ k) (n * 2) (\<lambda>c. 1\<^sub>m n \<Otimes> Rot (hhl_theta A t0 k C c))"
-    unfolding rot_gate_def hhl_rot_def carrier_matD(1)[OF A(1)] hhl_theta_def by (rule ctrl_blocks_cong) (simp add: rot_Rot[OF Cb])
+    unfolding rot_gate_def carrier_matD(1)[OF A(1)] hhl_theta_def by (rule ctrl_blocks_cong) (simp add: rot_Rot[OF Cb])
   thus ?thesis unfolding ucr_circuit[OF n0] .
 qed
 

@@ -391,20 +391,7 @@ proof -
     ultimately show False using lmin by linarith
   qed
   have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
-  show xp: "0 < \<parallel>apx_x\<parallel>"
-  proof -
-    have "A *\<^sub>v apx_x = (A * herm_inv A) *\<^sub>v b" by (rule assoc_mult_mat_vec[symmetric, OF A(1) Hc]) (use b in auto)
-    also have "A * herm_inv A = 1\<^sub>m n" by (rule herm_inv(2)[OF A z])
-    finally have Ax: "A *\<^sub>v apx_x = b" using b(1) by (simp add: one_mult_mat_vec[OF carrier_vecI[OF b(1)]])
-    show ?thesis
-    proof (rule ccontr)
-      assume "\<not> 0 < \<parallel>apx_x\<parallel>"
-      hence "\<parallel>apx_x\<parallel> = 0" using vnorm_ge0[of apx_x] by linarith
-      hence "apx_x = 0\<^sub>v n" using cpx_vec_length_zero_iff[of apx_x] Hc b(1) by simp
-      hence "b = 0\<^sub>v n" using Ax mult_zero_vec_right[OF A(1)] by simp
-      thus False using b(2) vnorm_zero_vec by simp
-    qed
-  qed
+  show xp: "0 < \<parallel>apx_x\<parallel>" by (rule herm_inv_sol_pos[OF A z b])
   have Hr: "dim_row (herm_inv A) = n" using Hc by simp
   have dx: "dim_vec (complex_of_real (1 / \<parallel>apx_x\<parallel>) \<cdot>\<^sub>v apx_x) = n" using Hc by simp
   show tc: "apx_t \<in> carrier_vec apx_K" by (rule carrier_vecI) (simp add: tensor_vec_dim dx Hr)
@@ -656,20 +643,7 @@ proof -
   qed
   have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
   have Hr: "dim_row (herm_inv A) = n" using Hc by simp
-  show xp: "0 < \<parallel>flg_x\<parallel>"
-  proof -
-    have "A *\<^sub>v flg_x = (A * herm_inv A) *\<^sub>v b" by (rule assoc_mult_mat_vec[symmetric, OF A(1) Hc]) (use b in auto)
-    also have "A * herm_inv A = 1\<^sub>m n" by (rule herm_inv(2)[OF A z])
-    finally have Ax: "A *\<^sub>v flg_x = b" using b(1) by (simp add: one_mult_mat_vec[OF carrier_vecI[OF b(1)]])
-    show ?thesis
-    proof (rule ccontr)
-      assume "\<not> 0 < \<parallel>flg_x\<parallel>"
-      hence "\<parallel>flg_x\<parallel> = 0" using vnorm_ge0[of flg_x] by linarith
-      hence "flg_x = 0\<^sub>v n" using cpx_vec_length_zero_iff[of flg_x] Hc b(1) by simp
-      hence "b = 0\<^sub>v n" using Ax mult_zero_vec_right[OF A(1)] by simp
-      thus False using b(2) vnorm_zero_vec by simp
-    qed
-  qed
+  show xp: "0 < \<parallel>flg_x\<parallel>" by (rule herm_inv_sol_pos[OF A z b])
   have dx: "dim_vec (complex_of_real (1 / \<parallel>flg_x\<parallel>) \<cdot>\<^sub>v flg_x) = n" using Hc by simp
   show tc: "flg_t \<in> carrier_vec flg_K" by (rule carrier_vecI) (simp add: tensor_vec_dim dx Hr)
   show "\<parallel>flg_t\<parallel> = 1" using win_state_norm[OF N] xp dx Hr by (simp add: vnorm_tensor tensor_vec_dim cpx_vec_length_smult norm_divide)

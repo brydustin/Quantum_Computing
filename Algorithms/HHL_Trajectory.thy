@@ -366,7 +366,7 @@ proof -
     fix j assume "j < (2::nat) ^ k"
     have "hhl_rot C t0 (2 ^ k) n j *\<^sub>v tensor_vec (spec_proj A t0 (2 ^ k) j *\<^sub>v b) (unit_vec 2 0)
           = tensor_vec (1\<^sub>m n *\<^sub>v (spec_proj A t0 (2 ^ k) j *\<^sub>v b)) (rot (C / reg_eig t0 (2 ^ k) j) *\<^sub>v unit_vec 2 0)"
-      unfolding hhl_rot_def by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier]) (simp_all add: dP)
+      by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier]) (simp_all add: dP)
     thus "hhl_rot C t0 (2 ^ k) n j *\<^sub>v tensor_vec (spec_proj A t0 (2 ^ k) j *\<^sub>v b) (unit_vec 2 0)
           = tensor_vec (spec_proj A t0 (2 ^ k) j *\<^sub>v b) (rot (C / reg_eig t0 (2 ^ k) j) *\<^sub>v unit_vec 2 0)"
       using carrier_vecI[OF dP[of j]] by simp
@@ -410,7 +410,7 @@ proof -
   have Cc: "?C \<in> carrier_mat (?N * (n * 2)) (?N * (n * 2))" by (rule evo_gate_carrier)
   have Rc: "?R \<in> carrier_mat (?N * (n * 2)) (?N * (n * 2))" using A(1) by (simp add: rot_gate_def)
   have x2: "?x2 \<in> carrier_vec (?N * (n * 2))" by (rule carrier_vecI) (simp add: tensor_vec_dim uniform_state_def b_dim)
-  have W: "hhl_W A t0 ?N = ?Fd * ?C" unfolding hhl_W_def pe_unitary_def clock_gate_def evo_gate_def nA ..
+  have W: "hhl_W A t0 ?N = ?Fd * ?C" unfolding hhl_Wd_def pe_unitary_def clock_gate_def evo_gate_def nA ..
   have Wd: "(hhl_W A t0 ?N)\<^sup>\<dagger> = (?C\<^sup>\<dagger>) * ?F"
   proof -
     have "(?Fd * ?C)\<^sup>\<dagger> = (?C\<^sup>\<dagger>) * (?Fd\<^sup>\<dagger>)" by (rule dagger_of_prod) (use Fdc Cc in simp)
@@ -433,7 +433,7 @@ proof -
     proof -
       have Wc: "hhl_W A t0 ?N \<in> carrier_mat (?N * (n * 2)) (?N * (n * 2))" unfolding W using Fdc Cc by simp
       have "hhl_circuit A t0 ?N C *\<^sub>v ?x2 = ((hhl_W A t0 ?N)\<^sup>\<dagger>) *\<^sub>v ((?R * hhl_W A t0 ?N) *\<^sub>v ?x2)"
-        unfolding hhl_circuit_def rot_gate_def[symmetric] nA[symmetric]
+        unfolding flag_circuit_def rot_gate_def[symmetric] nA[symmetric]
         by (rule assoc_mult_mat_vec[OF dagger_carrier[OF Wc]]) (use Rc Wc x2 nA in auto)
       also have "(?R * hhl_W A t0 ?N) *\<^sub>v ?x2 = ?R *\<^sub>v (hhl_W A t0 ?N *\<^sub>v ?x2)" by (rule assoc_mult_mat_vec[OF Rc Wc x2])
       finally show ?thesis unfolding W by simp
@@ -511,7 +511,7 @@ proof -
     by (rule tensor_mat_unitary_one_right[OF unitary_dagger[OF fourier_unitary[OF N]]])
   have R: "rot_gate A t0 (2 ^ k) C \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2))" using A(1) by (simp add: rot_gate_def)
   have Ru: "unitary (rot_gate A t0 (2 ^ k) C)"
-    unfolding rot_gate_def nA hhl_rot_def
+    unfolding rot_gate_def nA
     by (rule ctrl_blocks_unitary) (auto intro: tensor_carrier tensor_mat_unitary id_is_unitary rot_unitary Cb)
   have E: "evo_gate A t0 (2 ^ k) \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2))" by (rule evo_gate_carrier)
   show ?thesis using U H Hu P Pu F Fu Fd Fdu R Ru E evo_gate_unitary dagger_carrier[OF E] unitary_dagger[OF evo_gate_unitary]

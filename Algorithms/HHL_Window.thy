@@ -199,257 +199,6 @@ proof -
   finally show ?thesis .
 qed
 
-subsection \<open>Phase estimation with an arbitrary register state\<close>
-
-definition pe_amp_reg :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> complex" where
-  "pe_amp_reg N psi \<phi> j = ((fourier N)\<^sup>\<dagger> *\<^sub>v Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * psi $ k)) $ j"
-
-theorem phase_estimation_reg:
-  assumes U: "U \<in> carrier_mat m m" and u: "dim_vec u = m"
-      and ev: "U *\<^sub>v u = cis (2 * pi * \<phi>) \<cdot>\<^sub>v u" and psi: "dim_vec psi = N"
-  shows "(((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v (ctrl_pow N m U *\<^sub>v tensor_vec psi u) =
-         tensor_vec (Matrix.vec N (pe_amp_reg N psi \<phi>)) u"
-proof -
-  let ?b = "Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * psi $ k)"
-  have kick: "ctrl_pow N m U *\<^sub>v tensor_vec psi u = tensor_vec ?b u"
-    by (rule ctrl_pow_kickback[OF U u ev psi])
-  have uc: "u \<in> carrier_vec m" using u by (rule carrier_vecI)
-  have "(((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v tensor_vec ?b u = tensor_vec ((fourier N)\<^sup>\<dagger> *\<^sub>v ?b) (1\<^sub>m m *\<^sub>v u)"
-    by (rule tensor_mat_vec_mult[OF dagger_carrier[OF fourier_carrier] one_carrier_mat]) (simp_all add: u)
-  also have "(fourier N)\<^sup>\<dagger> *\<^sub>v ?b = Matrix.vec N (pe_amp_reg N psi \<phi>)"
-    by (rule eq_vecI) (simp_all add: pe_amp_reg_def)
-  also have "1\<^sub>m m *\<^sub>v u = u" using uc by simp
-  finally show ?thesis unfolding kick .
-qed
-
-lemma pe_amp_reg_formula:
-  assumes j: "j < N"
-  shows "pe_amp_reg N psi \<phi> j = (\<Sum>k<N. psi $ k * cis (2 * pi * real k * (\<phi> - real j / real N))) / complex_of_real (sqrt (real N))"
-proof -
-  have e: "cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * psi $ k) =
-           psi $ k * cis (2 * pi * real k * (\<phi> - real j / real N)) / complex_of_real (sqrt (real N))" if k: "k < N" for k
-  proof -
-    have "cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * psi $ k) =
-          cis (- (2 * pi * real k * real j / real N)) * cis (real k * (2 * pi * \<phi>)) * psi $ k / complex_of_real (sqrt (real N))"
-      using j k by (simp add: fourier_index cis_cnj DeMoivre)
-    also have "cis (- (2 * pi * real k * real j / real N)) * cis (real k * (2 * pi * \<phi>)) =
-               cis (2 * pi * real k * (\<phi> - real j / real N))"
-      by (simp add: cis_mult algebra_simps)
-    finally show ?thesis by (simp add: mult_ac)
-  qed
-  have "pe_amp_reg N psi \<phi> j = (\<Sum>k<N. cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * psi $ k))"
-    using j by (simp add: pe_amp_reg_def scalar_prod_def dagger_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>k<N. psi $ k * cis (2 * pi * real k * (\<phi> - real j / real N)) / complex_of_real (sqrt (real N)))"
-    by (rule sum.cong) (simp_all add: e)
-  finally show ?thesis by (simp add: sum_divide_distrib)
-qed
-
-context
-  fixes A :: "complex Matrix.mat" and n N :: nat and t0 l :: real and u :: "complex Matrix.vec"
-    and f :: "nat \<Rightarrow> real" and c :: real and psi :: "complex Matrix.vec"
-  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
-      and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
-      and psi: "dim_vec psi = N"
-begin
-
-text \<open>The phase of $u$, the register amplitudes, the ideal and the branch rotations.\<close>
-
-abbreviation "rphi \<equiv> hhl_phi t0 l"
-definition "ralpha = Matrix.vec N (pe_amp_reg N psi rphi)"
-abbreviation "rr_ideal \<equiv> rot c *\<^sub>v unit_vec 2 0"
-abbreviation "rr_br k \<equiv> rot (f k) *\<^sub>v unit_vec 2 0"
-
-lemma phi_phase_reg: "cis (t0 * l) = cis (2 * pi * rphi)"
-  unfolding hhl_phi_def by simp
-
-lemma dim_alpha_reg [simp]: "dim_vec ralpha = N" by (simp add: ralpha_def)
-lemma dim_r_ideal_reg: "dim_vec rr_ideal = 2" by simp
-
-lemma W_branch_reg:
-  assumes w: "dim_vec w = 2"
-  shows "hhl_W A t0 N *\<^sub>v tensor_vec psi (tensor_vec u w) = tensor_vec ralpha (tensor_vec u w)"
-proof -
-  let ?E = "evolution A t0" and ?V = "evolution A t0 \<Otimes> 1\<^sub>m 2"
-  have nA: "dim_row A = n" using A(1) by simp
-  have Ec: "?E \<in> carrier_mat n n" using A by (rule evolution_carrier)
-  have Vc: "?V \<in> carrier_mat (n * 2) (n * 2)" using Ec by (intro carrier_matI) auto
-  have uw: "dim_vec (tensor_vec u w) = n * 2" by (rule tensor_vec_dim[OF u w])
-  have Vev: "?V *\<^sub>v tensor_vec u w = cis (2 * pi * rphi) \<cdot>\<^sub>v tensor_vec u w"
-  proof -
-    have "?V *\<^sub>v tensor_vec u w = tensor_vec (?E *\<^sub>v u) (1\<^sub>m 2 *\<^sub>v w)"
-      by (rule tensor_mat_vec_mult[OF Ec one_carrier_mat u w])
-    also have "?E *\<^sub>v u = cis (t0 * l) \<cdot>\<^sub>v u" by (rule evolution_eigen[OF A u ev])
-    also have "1\<^sub>m 2 *\<^sub>v w = w" using carrier_vecI[OF w] by simp
-    finally show ?thesis unfolding phi_phase_reg using tensor_vec_smult_left[OF u w] by simp
-  qed
-  have Fc: "((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m (n * 2) \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" by (rule carrier_matI) simp_all
-  have xc: "tensor_vec psi (tensor_vec u w) \<in> carrier_vec (N * (n * 2))"
-    by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: psi uw)
-  have "hhl_W A t0 N *\<^sub>v tensor_vec psi (tensor_vec u w) =
-        (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m (n * 2)) *\<^sub>v (ctrl_pow N (n * 2) ?V *\<^sub>v tensor_vec psi (tensor_vec u w))"
-    unfolding hhl_W_def pe_unitary_def nA by (rule assoc_mult_mat_vec[OF Fc ctrl_blocks_carrier xc])
-  also have "\<dots> = tensor_vec ralpha (tensor_vec u w)"
-    unfolding ralpha_def by (rule phase_estimation_reg[OF Vc uw Vev psi])
-  finally show ?thesis .
-qed
-
-lemma hhl_W_carrier_reg: "hhl_W A t0 N \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
-proof -
-  have nA: "dim_row A = n" using A(1) by simp
-  show ?thesis unfolding hhl_W_def nA by simp
-qed
-
-lemma hhl_W_unitary_reg: "unitary (hhl_W A t0 N)"
-proof -
-  have nA: "dim_row A = n" using A(1) by simp
-  have Ec: "evolution A t0 \<in> carrier_mat n n" using A by (rule evolution_carrier)
-  have Vc: "evolution A t0 \<Otimes> 1\<^sub>m 2 \<in> carrier_mat (n * 2) (n * 2)" using Ec by (intro carrier_matI) auto
-  have Vu: "unitary (evolution A t0 \<Otimes> 1\<^sub>m 2)" by (rule tensor_mat_unitary_one_right) (rule evolution_unitary[OF A])
-  show ?thesis unfolding hhl_W_def nA by (rule pe_unitary_unitary[OF N Vc Vu])
-qed
-
-text \<open>The output of the circuit and the ideal output as register sums.\<close>
-
-lemma hhl_output_branches_reg:
-  "hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) =
-   (hhl_W A t0 N)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k))"
-proof -
-  let ?W = "hhl_W A t0 N" and ?CR = "ctrl_blocks N (n * 2) (\<lambda>k. 1\<^sub>m n \<Otimes> rot (f k))"
-  have nA: "dim_row A = n" using A(1) by simp
-  have Wc: "?W \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" unfolding hhl_W_def nA by simp
-  have CRc: "?CR \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" by simp
-  have u0: "dim_vec (tensor_vec u (unit_vec 2 0)) = n * 2" by (rule tensor_vec_dim[OF u]) simp
-  have x0: "tensor_vec psi (tensor_vec u (unit_vec 2 0)) \<in> carrier_vec (N * (n * 2))"
-    by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: psi u0)
-  have br: "(1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v (ralpha $ k \<cdot>\<^sub>v tensor_vec u (unit_vec 2 0)) = ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k)" for k
-  proof -
-    have "(1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v (ralpha $ k \<cdot>\<^sub>v tensor_vec u (unit_vec 2 0)) =
-          ralpha $ k \<cdot>\<^sub>v ((1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v tensor_vec u (unit_vec 2 0))"
-      by (rule mult_mat_vec[OF rot_blk_carrier carrier_vecI[OF u0]])
-    also have "(1\<^sub>m n \<Otimes> rot (f k)) *\<^sub>v tensor_vec u (unit_vec 2 0) = tensor_vec (1\<^sub>m n *\<^sub>v u) (rr_br k)"
-      by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier u]) simp
-    also have "1\<^sub>m n *\<^sub>v u = u" using carrier_vecI[OF u] by simp
-    finally show ?thesis .
-  qed
-  have "hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) =
-        ?W\<^sup>\<dagger> *\<^sub>v (?CR *\<^sub>v (?W *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0))))"
-    unfolding hhl_gen_def nA
-    using assoc_mult_mat_vec[OF dagger_carrier[OF Wc] mult_carrier_mat[OF CRc Wc] x0] assoc_mult_mat_vec[OF CRc Wc x0]
-    by simp
-  also have "?W *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) = tensor_vec ralpha (tensor_vec u (unit_vec 2 0))"
-    by (rule W_branch_reg) simp
-  also have "\<dots> = reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (unit_vec 2 0))"
-    by (rule tensor_reg_sum[OF dim_alpha_reg u0])
-  also have "?CR *\<^sub>v \<dots> = reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k))"
-    by (subst ctrl_blocks_reg_sum) (simp_all add: u0 br)
-  finally show ?thesis .
-qed
-
-lemma hhl_ideal_branches_reg:
-  "tensor_vec psi (tensor_vec u rr_ideal) =
-   (hhl_W A t0 N)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u rr_ideal)"
-proof -
-  have nA: "dim_row A = n" using A(1) by simp
-  have Wc: "hhl_W A t0 N \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" unfolding hhl_W_def nA by simp
-  have Wu: "unitary (hhl_W A t0 N)"
-  proof -
-    have Ec: "evolution A t0 \<in> carrier_mat n n" using A by (rule evolution_carrier)
-    have Vc: "evolution A t0 \<Otimes> 1\<^sub>m 2 \<in> carrier_mat (n * 2) (n * 2)" using Ec by (intro carrier_matI) auto
-    have Vu: "unitary (evolution A t0 \<Otimes> 1\<^sub>m 2)" by (rule tensor_mat_unitary_one_right) (rule evolution_unitary[OF A])
-    show ?thesis unfolding hhl_W_def nA by (rule pe_unitary_unitary[OF N Vc Vu])
-  qed
-  have ur: "dim_vec (tensor_vec u rr_ideal) = n * 2" by (rule tensor_vec_dim[OF u]) simp
-  have "tensor_vec ralpha (tensor_vec u rr_ideal) = reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u rr_ideal)"
-    by (rule tensor_reg_sum[OF dim_alpha_reg ur])
-  moreover have "(hhl_W A t0 N)\<^sup>\<dagger> *\<^sub>v tensor_vec ralpha (tensor_vec u rr_ideal) = tensor_vec psi (tensor_vec u rr_ideal)"
-    by (rule unitary_undo[OF Wc Wu _ W_branch_reg[OF dim_r_ideal_reg]]) (rule tensor_vec_dim; simp add: psi ur)
-  ultimately show ?thesis by simp
-qed
-
-text \<open>The error vector: $W^*\sum_k\alpha_k\ket k\otimes u\otimes(R(f_k)\ket0-R(c)\ket0)$.\<close>
-
-lemma hhl_err_vec_reg:
-  "hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) - tensor_vec psi (tensor_vec u rr_ideal) =
-   (hhl_W A t0 N)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k - rr_ideal))"
-proof -
-  let ?W = "hhl_W A t0 N"
-  let ?f = "\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k - rr_ideal)"
-  have Wd: "?W\<^sup>\<dagger> \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" by (rule dagger_carrier[OF hhl_W_carrier_reg])
-  have did: "dim_vec (tensor_vec u rr_ideal) = n * 2" by (rule tensor_vec_dim[OF u]) simp
-  have ddf: "dim_vec (tensor_vec u (rr_br k - rr_ideal)) = n * 2" for k by (rule tensor_vec_dim[OF u]) simp
-  have diff_br: "ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k) - ralpha $ k \<cdot>\<^sub>v tensor_vec u rr_ideal = ?f k" for k
-  proof -
-    have e: "rr_ideal + (rr_br k - rr_ideal) = rr_br k" by (rule eq_vecI) simp_all
-    have "tensor_vec u (rr_ideal + (rr_br k - rr_ideal)) = tensor_vec u rr_ideal + tensor_vec u (rr_br k - rr_ideal)"
-      by (rule tensor_vec_bilinear_right[OF u]) simp_all
-    hence split: "tensor_vec u (rr_br k) = tensor_vec u rr_ideal + tensor_vec u (rr_br k - rr_ideal)" unfolding e .
-    show ?thesis unfolding split
-      using did ddf[of k] by (intro eq_vecI) (simp_all add: algebra_simps)
-  qed
-  have "hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) - tensor_vec psi (tensor_vec u rr_ideal) =
-        ?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k)) - ?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u rr_ideal)"
-    unfolding hhl_output_branches_reg hhl_ideal_branches_reg ..
-  also have "\<dots> = ?W\<^sup>\<dagger> *\<^sub>v (reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k)) - reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u rr_ideal))"
-    by (rule mult_minus_distrib_mat_vec[OF Wd, symmetric]) (simp_all add: carrier_vecI)
-  also have "reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k)) - reg_sum N (n * 2) (\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u rr_ideal) =
-             reg_sum N (n * 2) ?f"
-    by (subst reg_sum_diff) (simp_all add: did diff_br)
-  finally show ?thesis .
-qed
-
-text \<open>The squared distance between output and ideal output.\<close>
-
-theorem hhl_approx_error_reg:
-  "\<langle>hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) - tensor_vec psi (tensor_vec u rr_ideal) |
-    hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) - tensor_vec psi (tensor_vec u rr_ideal)\<rangle> =
-   \<langle>u|u\<rangle> * (\<Sum>k<N. complex_of_real ((cmod (pe_amp_reg N psi rphi k))\<^sup>2) * \<langle>rr_br k - rr_ideal|rr_br k - rr_ideal\<rangle>)"
-proof -
-  let ?W = "hhl_W A t0 N"
-  let ?f = "\<lambda>k. ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k - rr_ideal)"
-  have ddf: "dim_vec (tensor_vec u (rr_br k - rr_ideal)) = n * 2" for k by (rule tensor_vec_dim[OF u]) simp
-  have "\<langle>?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) ?f|?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) ?f\<rangle> = \<langle>reg_sum N (n * 2) ?f|reg_sum N (n * 2) ?f\<rangle>"
-    by (rule unitary_inner_self[OF hhl_W_carrier_reg hhl_W_unitary_reg]) simp
-  also have "\<dots> = (\<Sum>k<N. \<langle>?f k|?f k\<rangle>)" by (rule reg_sum_inner) (simp_all add: ddf)
-  also have "\<dots> = (\<Sum>k<N. complex_of_real ((cmod (pe_amp_reg N psi rphi k))\<^sup>2) * (\<langle>u|u\<rangle> * \<langle>rr_br k - rr_ideal|rr_br k - rr_ideal\<rangle>))"
-  proof (rule sum.cong[OF refl])
-    fix k assume "k \<in> {..<N}"
-    hence k: "k < N" by simp
-    have "\<langle>?f k|?f k\<rangle> = (cnj (ralpha $ k) * ralpha $ k) * \<langle>tensor_vec u (rr_br k - rr_ideal)|tensor_vec u (rr_br k - rr_ideal)\<rangle>"
-      using inner_prod_distrib_left[of "tensor_vec u (rr_br k - rr_ideal)" "ralpha $ k \<cdot>\<^sub>v tensor_vec u (rr_br k - rr_ideal)" "ralpha $ k"]
-            inner_prod_distrib_right[of "tensor_vec u (rr_br k - rr_ideal)" "tensor_vec u (rr_br k - rr_ideal)" "ralpha $ k"]
-      by (simp add: mult.assoc)
-    also have "\<langle>tensor_vec u (rr_br k - rr_ideal)|tensor_vec u (rr_br k - rr_ideal)\<rangle> = \<langle>u|u\<rangle> * \<langle>rr_br k - rr_ideal|rr_br k - rr_ideal\<rangle>"
-      by (rule tensor_inner_prod[OF u u]) simp_all
-    also have "cnj (ralpha $ k) * ralpha $ k = complex_of_real ((cmod (pe_amp_reg N psi rphi k))\<^sup>2)"
-    proof -
-      have ak: "ralpha $ k = pe_amp_reg N psi rphi k" using k by (simp add: ralpha_def)
-      show ?thesis unfolding ak by (metis complex_norm_square mult.commute)
-    qed
-    finally show "\<langle>?f k|?f k\<rangle> = complex_of_real ((cmod (pe_amp_reg N psi rphi k))\<^sup>2) * (\<langle>u|u\<rangle> * \<langle>rr_br k - rr_ideal|rr_br k - rr_ideal\<rangle>)"
-      by (simp add: mult_ac)
-  qed
-  also have "\<dots> = \<langle>u|u\<rangle> * (\<Sum>k<N. complex_of_real ((cmod (pe_amp_reg N psi rphi k))\<^sup>2) * \<langle>rr_br k - rr_ideal|rr_br k - rr_ideal\<rangle>)"
-    by (simp add: sum_distrib_left mult_ac)
-  finally show ?thesis unfolding hhl_err_vec_reg .
-qed
-
-text \<open>The branch distance in real terms.\<close>
-
-corollary hhl_approx_error_real_reg:
-  "\<langle>hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) - tensor_vec psi (tensor_vec u rr_ideal) |
-    hhl_gen A t0 N f *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 2 0)) - tensor_vec psi (tensor_vec u rr_ideal)\<rangle> =
-   \<langle>u|u\<rangle> * complex_of_real (\<Sum>k<N. (cmod (pe_amp_reg N psi rphi k))\<^sup>2 *
-      ((sqrt (1 - (f k)\<^sup>2) - sqrt (1 - c\<^sup>2))\<^sup>2 + (f k - c)\<^sup>2))"
-proof -
-  have "(\<Sum>k<N. complex_of_real ((cmod (pe_amp_reg N psi rphi k))\<^sup>2) * \<langle>rr_br k - rr_ideal|rr_br k - rr_ideal\<rangle>) =
-        complex_of_real (\<Sum>k<N. (cmod (pe_amp_reg N psi rphi k))\<^sup>2 *
-          ((sqrt (1 - (f k)\<^sup>2) - sqrt (1 - c\<^sup>2))\<^sup>2 + (f k - c)\<^sup>2))"
-    unfolding rot_diff_inner by (simp add: of_real_sum)
-  thus ?thesis unfolding hhl_approx_error_reg by (rule arg_cong[where f = "\<lambda>x. \<langle>u|u\<rangle> * x"])
-qed
-
-end
-
 subsection \<open>The sine window\<close>
 
 definition win_coef :: "nat \<Rightarrow> nat \<Rightarrow> real" where
@@ -942,8 +691,7 @@ proof -
               tensor_vec (win_state N) (tensor_vec u (rot ?c *\<^sub>v unit_vec 2 0)) |
             hhl_circuit_clamped A t0 N C *\<^sub>v tensor_vec (win_state N) (tensor_vec u (unit_vec 2 0)) -
               tensor_vec (win_state N) (tensor_vec u (rot ?c *\<^sub>v unit_vec 2 0))\<rangle> = complex_of_real (ru * ?S)"
-    unfolding hhl_circuit_clamped_def
-    using hhl_approx_error_real_reg[OF A t0 N0 u ev dim_win_state, of ?f ?c] unfolding uu by simp
+    using hhl_approx_error_real[OF A t0 N0 u ev dim_win_state, of ?f ?c] unfolding uu by simp
   have S: "?S \<le> K / (real N)\<^sup>2 * (4 + 2 * pi\<^sup>2) + real N * B"
   proof -
     have "?S \<le> (\<Sum>k<N. K / (real N)\<^sup>2 * win_w (real N * ?ph - real k) + B)"
@@ -973,87 +721,6 @@ proof -
 qed
 
 subsection \<open>Every right-hand side\<close>
-
-lemma hhl_err_orth_reg:
-  fixes A :: "complex Matrix.mat" and u u' :: "complex Matrix.vec"
-  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
-      and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
-      and u': "dim_vec u' = n" and ev': "A *\<^sub>v u' = complex_of_real l' \<cdot>\<^sub>v u'"
-      and orth: "\<langle>u|u'\<rangle> = 0" and psi: "dim_vec psi = N"
-  shows "\<langle>hhl_gen A t0 N f *\<^sub>v tensor_vec (psi) (tensor_vec u (unit_vec 2 0)) - tensor_vec (psi) (tensor_vec u (rot c *\<^sub>v unit_vec 2 0)) |
-          hhl_gen A t0 N f' *\<^sub>v tensor_vec (psi) (tensor_vec u' (unit_vec 2 0)) - tensor_vec (psi) (tensor_vec u' (rot c' *\<^sub>v unit_vec 2 0))\<rangle> = 0"
-proof -
-  let ?F = "\<lambda>k. ralpha N t0 l psi $ k \<cdot>\<^sub>v tensor_vec u (rot (f k) *\<^sub>v unit_vec 2 0 - rot c *\<^sub>v unit_vec 2 0)"
-  let ?G = "\<lambda>k. ralpha N t0 l' psi $ k \<cdot>\<^sub>v tensor_vec u' (rot (f' k) *\<^sub>v unit_vec 2 0 - rot c' *\<^sub>v unit_vec 2 0)"
-  have dX: "dim_vec (tensor_vec u (rot (f k) *\<^sub>v unit_vec 2 0 - rot c *\<^sub>v unit_vec 2 0)) = n * 2" for k
-    by (rule tensor_vec_dim[OF u]) simp
-  have dY: "dim_vec (tensor_vec u' (rot (f' k) *\<^sub>v unit_vec 2 0 - rot c' *\<^sub>v unit_vec 2 0)) = n * 2" for k
-    by (rule tensor_vec_dim[OF u']) simp
-  have "\<langle>(hhl_W A t0 N)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) ?F|(hhl_W A t0 N)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 2) ?G\<rangle> = \<langle>reg_sum N (n * 2) ?F|reg_sum N (n * 2) ?G\<rangle>"
-    by (rule unitary_inner_pres[OF hhl_W_carrier[OF A t0 N u ev] hhl_W_unitary[OF A t0 N u ev]]) simp_all
-  also have "\<dots> = (\<Sum>k<N. \<langle>?F k|?G k\<rangle>)" by (rule reg_sum_inner) (simp_all add: dX dY)
-  also have "\<dots> = 0"
-  proof (rule sum.neutral[OF ballI])
-    fix k assume "k \<in> {..<N}"
-    have "\<langle>?F k|?G k\<rangle> = cnj (ralpha N t0 l psi $ k) * (ralpha N t0 l' psi $ k *
-            \<langle>tensor_vec u (rot (f k) *\<^sub>v unit_vec 2 0 - rot c *\<^sub>v unit_vec 2 0)|tensor_vec u' (rot (f' k) *\<^sub>v unit_vec 2 0 - rot c' *\<^sub>v unit_vec 2 0)\<rangle>)"
-      using inner_prod_distrib_left[of "tensor_vec u (rot (f k) *\<^sub>v unit_vec 2 0 - rot c *\<^sub>v unit_vec 2 0)" "?G k" "ralpha N t0 l psi $ k"]
-            inner_prod_distrib_right[of "tensor_vec u (rot (f k) *\<^sub>v unit_vec 2 0 - rot c *\<^sub>v unit_vec 2 0)"
-              "tensor_vec u' (rot (f' k) *\<^sub>v unit_vec 2 0 - rot c' *\<^sub>v unit_vec 2 0)" "ralpha N t0 l' psi $ k"] dX dY
-      by simp
-    also have "\<langle>tensor_vec u (rot (f k) *\<^sub>v unit_vec 2 0 - rot c *\<^sub>v unit_vec 2 0)|tensor_vec u' (rot (f' k) *\<^sub>v unit_vec 2 0 - rot c' *\<^sub>v unit_vec 2 0)\<rangle> =
-               \<langle>u|u'\<rangle> * \<langle>rot (f k) *\<^sub>v unit_vec 2 0 - rot c *\<^sub>v unit_vec 2 0|rot (f' k) *\<^sub>v unit_vec 2 0 - rot c' *\<^sub>v unit_vec 2 0\<rangle>"
-      by (rule tensor_inner_prod[OF u u']) simp_all
-    finally show "\<langle>?F k|?G k\<rangle> = 0" unfolding orth by simp
-  qed
-  finally show ?thesis
-    unfolding hhl_err_vec_reg[OF A t0 N u ev psi, of f c] hhl_err_vec_reg[OF A t0 N u' ev' psi, of f' c'] .
-qed
-
-lemma lift_mat_emb_reg:
-  assumes v: "dim_vec v = n"
-  shows "lift_mat n (psi) (1\<^sub>m n) (0\<^sub>m n n) *\<^sub>v v = tensor_vec (psi) (tensor_vec v (unit_vec 2 0))"
-proof -
-  have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
-  have z: "tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1) = 0\<^sub>v (n * 2)"
-    using vc by (intro eq_vecI) (simp_all add: tensor_vec_index tensor_vec_dim scalar_prod_left_zero)
-  have "lift_mat n (psi) (1\<^sub>m n) (0\<^sub>m n n) *\<^sub>v v =
-        tensor_vec (psi) (tensor_vec (1\<^sub>m n *\<^sub>v v) (unit_vec 2 0) + tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1))"
-    by (rule lift_mat_mult_vec[OF one_carrier_mat zero_carrier_mat v])
-  also have "1\<^sub>m n *\<^sub>v v = v" using vc by simp
-  also note z
-  also have "tensor_vec v (unit_vec 2 0) + 0\<^sub>v (n * 2) = tensor_vec v (unit_vec 2 0)"
-    by (rule right_zero_vec[OF carrier_vecI[OF tensor_vec_dim[OF v]]]) simp
-  finally show ?thesis .
-qed
-
-lemma ideal_mat_eigen_reg:
-  assumes A: "A \<in> carrier_mat n n" "hermitian A" and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
-  shows "lift_mat n (psi) (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A) (complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v u =
-         tensor_vec (psi) (tensor_vec u (rot (C / l) *\<^sub>v unit_vec 2 0))"
-proof -
-  let ?G0 = "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A"
-  let ?G1 = "complex_of_real C \<cdot>\<^sub>m herm_inv A"
-  let ?s = "sqrt (1 - (C / l)\<^sup>2)" and ?c = "C / l"
-  have G0: "?G0 \<in> carrier_mat n n" using A by simp
-  have Hi: "herm_inv A \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
-  have G1: "?G1 \<in> carrier_mat n n" using Hi by simp
-  have g0: "?G0 *\<^sub>v u = complex_of_real ?s \<cdot>\<^sub>v u" by (rule mat_fun_eigen[OF A u ev])
-  have g1: "?G1 *\<^sub>v u = complex_of_real ?c \<cdot>\<^sub>v u"
-    using smult_mat_mult_vec[OF Hi carrier_vecI[OF u], of "complex_of_real C"] herm_inv_eigen[OF A u ev]
-    by (simp add: smult_smult_assoc divide_inverse)
-  have "lift_mat n (psi) ?G0 ?G1 *\<^sub>v u =
-        tensor_vec (psi) (tensor_vec (?G0 *\<^sub>v u) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v u) (unit_vec 2 1))"
-    by (rule lift_mat_mult_vec[OF G0 G1 u])
-  also have "tensor_vec (?G0 *\<^sub>v u) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v u) (unit_vec 2 1) =
-             tensor_vec u (rot ?c *\<^sub>v unit_vec 2 0)"
-    unfolding g0 g1 rot_e0
-    using tensor_vec_bilinear_right[OF u, of "complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0" 2 "complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1"]
-          tensor_vec_smult_right[OF u, of "unit_vec 2 0" 2] tensor_vec_smult_right[OF u, of "unit_vec 2 1" 2]
-          tensor_vec_smult_left[OF u, of "unit_vec 2 0" 2] tensor_vec_smult_left[OF u, of "unit_vec 2 1" 2]
-    by simp
-  finally show ?thesis .
-qed
 
 theorem hhl_window_bound:
   fixes A :: "complex Matrix.mat" and b :: "complex Matrix.vec"
@@ -1086,7 +753,7 @@ proof -
   have G0: "?G0 \<in> carrier_mat n n" using A by simp
   have G1: "?G1 \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
   have Hc: "?H \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
-    unfolding hhl_circuit_clamped_def hhl_gen_def hhl_W_def nA
+    unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
   have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
   have Ic: "?Idl \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
@@ -1096,7 +763,7 @@ proof -
     have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF v])
     have "?Err *\<^sub>v v = (?H * ?Emb) *\<^sub>v v - ?Idl *\<^sub>v v" by (rule minus_mult_distrib_mat_vec[OF mult_carrier_mat[OF Hc Ec] Ic vc])
     also have "(?H * ?Emb) *\<^sub>v v = ?H *\<^sub>v (?Emb *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Hc Ec vc])
-    finally show ?thesis unfolding lift_mat_emb_reg[OF v] .
+    finally show ?thesis unfolding lift_mat_emb[OF v] .
   qed
   have lmin0: "0 < lmin"
   proof -
@@ -1116,7 +783,7 @@ proof -
   have ErrU: "?Err *\<^sub>v Matrix.col U j =
               hhl_gen A t0 N ?f *\<^sub>v tensor_vec ?u (tensor_vec (Matrix.col U j) (unit_vec 2 0)) -
               tensor_vec ?u (tensor_vec (Matrix.col U j) (rot (C / D ! j) *\<^sub>v unit_vec 2 0))" if j: "j < n" for j
-    unfolding Errv[OF col(1)[OF j]] ideal_mat_eigen_reg[OF A col(1,2)[OF j]] unfolding hhl_circuit_clamped_def ..
+    unfolding Errv[OF col(1)[OF j]] ideal_mat_eigen[OF A col(1,2)[OF j]] ..
   have diag: "\<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U j\<rangle> =
               (if i = j then complex_of_real (Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle>) else 0)"
     if i: "i < n" and j: "j < n" for i j
@@ -1129,14 +796,14 @@ proof -
     have orth: "\<langle>Matrix.col U i|Matrix.col U j\<rangle> = 0"
       using unitary_cols_orthonormal[OF d(2), of i j] d(1) i j False by simp
     show ?thesis unfolding ErrU[OF i] ErrU[OF j]
-      using hhl_err_orth_reg[OF A t0 N0 col(1,2)[OF i] col(1,2)[OF j] orth dim_win_state, of ?f "C / D ! i" ?f "C / D ! j"] False by simp
+      using hhl_err_orth[OF A t0 N0 col(1,2)[OF i] col(1,2)[OF j] orth dim_win_state, of ?f "C / D ! i" ?f "C / D ! j"] False by simp
   qed
   have me: "Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle> \<le> ?e" if i: "i < n" for i
   proof -
     have one: "\<langle>Matrix.col U i|Matrix.col U i\<rangle> = 1" using unitary_cols_orthonormal[OF d(2), of i i] d(1) i by simp
     have "Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle> \<le>
           Re \<langle>Matrix.col U i|Matrix.col U i\<rangle> * (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * (D ! i) ^ 4))"
-      unfolding ErrU[OF i] hhl_circuit_clamped_def[symmetric]
+      unfolding ErrU[OF i]
       by (rule hhl_window_error_bound[OF A t0 N col(1,2)[OF i] C th col(5,4)[OF i]])
     also have "\<dots> \<le> 1 * ?e"
     proof -

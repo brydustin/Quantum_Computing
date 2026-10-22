@@ -172,39 +172,19 @@ lemma flag_perr_orth:
           pflag 3 P (flag_circuit A t0 N 3 G *\<^sub>v tensor_vec psi (tensor_vec u' (unit_vec 3 0)) - tensor_vec psi (tensor_vec u' h'))\<rangle> = 0"
 proof -
   have d3: "0 < (3::nat)" by simp
-  let ?W = "hhl_Wd A t0 N 3"
-  let ?F = "\<lambda>k. pe_amp_reg N psi (hhl_phi t0 l) k \<cdot>\<^sub>v tensor_vec u (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h))"
-  let ?H = "\<lambda>k. pe_amp_reg N psi (hhl_phi t0 l') k \<cdot>\<^sub>v tensor_vec u' (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h'))"
-  have Wc: "?W \<in> carrier_mat (N * (n * 3)) (N * (n * 3))"
+  have Wc: "hhl_Wd A t0 N 3 \<in> carrier_mat (N * (n * 3)) (N * (n * 3))"
     by (rule hhl_Wd_carrier[where A = A and n = n and N = N and ?t0.0 = t0 and l = l and u = u and psi = psi and d = 3 and G = G and hid = h, OF A t0 N0 u ev psi d3 G h])
-  have Wu: "unitary ?W"
+  have Wu: "unitary (hhl_Wd A t0 N 3)"
     by (rule hhl_Wd_unitary[where A = A and n = n and N = N and ?t0.0 = t0 and l = l and u = u and psi = psi and d = 3 and G = G and hid = h, OF A t0 N0 u ev psi d3 G h])
-  have p3: "dim_vec (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h)) = 3" "dim_vec (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h')) = 3" for k
-    using h h' by simp_all
-  have dF: "dim_vec (tensor_vec u (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h))) = n * 3" for k by (rule tensor_vec_dim[OF u p3(1)])
-  have dH: "dim_vec (tensor_vec u' (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h'))) = n * 3" for k by (rule tensor_vec_dim[OF u' p3(2)])
-  have "\<langle>?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 3) ?F|?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 3) ?H\<rangle> = \<langle>reg_sum N (n * 3) ?F|reg_sum N (n * 3) ?H\<rangle>"
-    by (rule unitary_inner_pres[OF Wc Wu]) simp_all
-  also have "\<dots> = (\<Sum>k<N. \<langle>?F k|?H k\<rangle>)" by (rule reg_sum_inner) (simp_all add: dF dH)
-  also have "\<dots> = 0"
-  proof (rule sum.neutral[OF ballI])
-    fix k assume "k \<in> {..<N}"
-    have "\<langle>?F k|?H k\<rangle> = cnj (pe_amp_reg N psi (hhl_phi t0 l) k) * (pe_amp_reg N psi (hhl_phi t0 l') k *
-            \<langle>tensor_vec u (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h))|tensor_vec u' (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h'))\<rangle>)"
-      using inner_prod_distrib_left[of "tensor_vec u (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h))" "?H k" "pe_amp_reg N psi (hhl_phi t0 l) k"]
-            inner_prod_distrib_right[of "tensor_vec u (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h))"
-              "tensor_vec u' (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h'))" "pe_amp_reg N psi (hhl_phi t0 l') k"] dF dH
-      by simp
-    also have "\<langle>tensor_vec u (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h))|tensor_vec u' (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h'))\<rangle> =
-               \<langle>u|u'\<rangle> * \<langle>pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h)|pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h')\<rangle>"
-      by (rule tensor_inner_prod[OF u u' p3(1) p3(2)])
-    finally show "\<langle>?F k|?H k\<rangle> = 0" unfolding orth by simp
-  qed
-  moreover have "pflag 3 P (flag_circuit A t0 N 3 G *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 3 0)) - tensor_vec psi (tensor_vec u h)) = ?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 3) ?F"
-    by (rule flag_perr[OF A n0 t0 N0 u ev psi G h])
-  moreover have "pflag 3 P (flag_circuit A t0 N 3 G *\<^sub>v tensor_vec psi (tensor_vec u' (unit_vec 3 0)) - tensor_vec psi (tensor_vec u' h')) = ?W\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 3) ?H"
-    by (rule flag_perr[OF A n0 t0 N0 u' ev' psi G h'])
-  ultimately show ?thesis by simp
+  have e: "pflag 3 P (flag_circuit A t0 N 3 G *\<^sub>v tensor_vec psi (tensor_vec u (unit_vec 3 0)) - tensor_vec psi (tensor_vec u h))
+           = (hhl_Wd A t0 N 3)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 3)
+               (\<lambda>k. pe_amp_reg N psi (hhl_phi t0 l) k \<cdot>\<^sub>v tensor_vec u (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h)))"
+    by (rule flag_perr[OF A n0 t0 N0 u ev psi _ h]) (rule G)
+  have e': "pflag 3 P (flag_circuit A t0 N 3 G *\<^sub>v tensor_vec psi (tensor_vec u' (unit_vec 3 0)) - tensor_vec psi (tensor_vec u' h'))
+           = (hhl_Wd A t0 N 3)\<^sup>\<dagger> *\<^sub>v reg_sum N (n * 3)
+               (\<lambda>k. pe_amp_reg N psi (hhl_phi t0 l') k \<cdot>\<^sub>v tensor_vec u' (pflag 3 P (G k *\<^sub>v unit_vec 3 0 - h')))"
+    by (rule flag_perr[OF A n0 t0 N0 u' ev' psi _ h']) (rule G)
+  show ?thesis unfolding e e' by (rule unitary_reg_sum_orth[OF Wc Wu u u' orth]) (use h h' in simp_all)
 qed
 
 lemma inner_as_sum: "dim_vec y = n \<Longrightarrow> \<langle>x|y\<rangle> = (\<Sum>i<n. cnj (x $ i) * y $ i)"

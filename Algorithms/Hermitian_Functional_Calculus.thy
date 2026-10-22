@@ -411,6 +411,16 @@ proof -
     unfolding herm_inv_def using mat_fun_mult[OF A] mat_fun_id[OF A] mat_fun_one[OF A] by metis+
 qed
 
+lemma herm_inv_solves:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and z: "0 \<notin> herm_spectrum A" and b: "dim_vec b = n"
+  shows "A *\<^sub>v (herm_inv A *\<^sub>v b) = b"
+proof -
+  have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
+  have "A *\<^sub>v (herm_inv A *\<^sub>v b) = (A * herm_inv A) *\<^sub>v b" by (rule assoc_mult_mat_vec[symmetric, OF A(1) Hc]) (use b in auto)
+  also have "A * herm_inv A = 1\<^sub>m n" by (rule herm_inv(2)[OF A z])
+  finally show ?thesis using b by (simp add: one_mult_mat_vec[OF carrier_vecI[OF b]])
+qed
+
 lemma herm_inv_eigen:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
       and v: "dim_vec v = n" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"

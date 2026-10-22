@@ -118,8 +118,8 @@ proof -
   then obtain c where c: "c < 2 ^ k" and U: "U = vctrl (2 ^ k) (n * 2) c (hhl_rot C t0 (2 ^ k) n c)"
     unfolding rot_gates_def carrier_matD(1)[OF A(1)] by auto
   have r: "Quantum.unitary (rot (C / reg_eig t0 (2 ^ k) c))" by (rule rot_unitary[OF Cb[OF c]])
-  have u: "Quantum.unitary (hhl_rot C t0 (2 ^ k) n c)" unfolding hhl_rot_def using r by simp
-  have uc: "Quantum.unitary U" unfolding U by (rule vctrl_unitary[OF hhl_rot_carrier u])
+  have u: "Quantum.unitary (hhl_rot C t0 (2 ^ k) n c)" using r by simp
+  have uc: "Quantum.unitary U" unfolding U by (rule vctrl_unitary[OF rot_blk_carrier u])
   have Uc: "U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2))" unfolding U by simp
   show ?thesis using unitary_bridge[OF Uc uc] Uc by simp
 qed
@@ -196,7 +196,7 @@ proof -
   have e: "U \<in> set (evo_gates A t0 k) \<Longrightarrow> \<exists>j<k. U = ctrl_bit (2 ^ k) (n * 2) j (?E ^\<^sub>m 2 ^ j)" for U
     unfolding evo_gates_def carrier_matD(1)[OF A(1)] by auto
   have r: "U \<in> set (rot_gates A t0 k C) \<Longrightarrow> \<exists>c<2 ^ k. U = vctrl (2 ^ k) (n * 2) c (1\<^sub>m n \<Otimes> rot (C / reg_eig t0 (2 ^ k) c))" for U
-    unfolding rot_gates_def hhl_rot_def carrier_matD(1)[OF A(1)] by auto
+    unfolding rot_gates_def carrier_matD(1)[OF A(1)] by auto
   have "U = prep_gate (2 ^ k) Ub \<or> U \<in> set (clk_gates n (had_gates k)) \<or> U \<in> set (evo_gates A t0 k)
         \<or> U \<in> set (clk_gates n (rev (map dagger (qft_circuit k)))) \<or> U \<in> set (rot_gates A t0 k C)
         \<or> U \<in> set (clk_gates n (qft_circuit k)) \<or> U \<in> set (rev (map dagger (evo_gates A t0 k)))"

@@ -230,31 +230,63 @@ definition uniform_state :: "nat \<Rightarrow> complex Matrix.vec" where
 definition pe_amp :: "nat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> complex" where
   "pe_amp N \<phi> j = (\<Sum>k<N. cis (2 * pi * real k * (\<phi> - real j / real N))) / of_nat N"
 
-lemma fourier_dagger_kick:
+text \<open>The amplitudes for any register state $\psi$: $\alpha=F_N^*(\sum_k e^{2\pi ik\varphi}\psi_k\ket k)$.\<close>
+
+definition pe_amp_reg :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> complex" where
+  "pe_amp_reg N psi \<phi> j = ((fourier N)\<^sup>\<dagger> *\<^sub>v Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * psi $ k)) $ j"
+
+lemma pe_amp_reg_formula:
   assumes j: "j < N"
-  shows "((fourier N)\<^sup>\<dagger> *\<^sub>v Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * uniform_state N $ k)) $ j = pe_amp N \<phi> j"
+  shows "pe_amp_reg N psi \<phi> j = (\<Sum>k<N. psi $ k * cis (2 * pi * real k * (\<phi> - real j / real N))) / complex_of_real (sqrt (real N))"
 proof -
-  have e: "cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * uniform_state N $ k) =
-           cis (2 * pi * real k * (\<phi> - real j / real N)) / of_nat N" if k: "k < N" for k
+  have e: "cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * psi $ k) =
+           psi $ k * cis (2 * pi * real k * (\<phi> - real j / real N)) / complex_of_real (sqrt (real N))" if k: "k < N" for k
   proof -
-    have "cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * uniform_state N $ k) =
-          (cis (- (2 * pi * real k * real j / real N)) * cis (real k * (2 * pi * \<phi>))) /
-          (complex_of_real (sqrt (real N)) * complex_of_real (sqrt (real N)))"
-      using j k by (simp add: fourier_index uniform_state_def cis_cnj DeMoivre)
+    have "cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * psi $ k) =
+          cis (- (2 * pi * real k * real j / real N)) * cis (real k * (2 * pi * \<phi>)) * psi $ k / complex_of_real (sqrt (real N))"
+      using j k by (simp add: fourier_index cis_cnj DeMoivre)
     also have "cis (- (2 * pi * real k * real j / real N)) * cis (real k * (2 * pi * \<phi>)) =
                cis (2 * pi * real k * (\<phi> - real j / real N))"
       by (simp add: cis_mult algebra_simps)
-    finally show ?thesis by (simp add: sqrt_N_sq)
+    finally show ?thesis by (simp add: mult_ac)
   qed
-  have "((fourier N)\<^sup>\<dagger> *\<^sub>v Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * uniform_state N $ k)) $ j =
-        (\<Sum>k<N. cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * uniform_state N $ k))"
-    using j by (simp add: scalar_prod_def dagger_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>k<N. cis (2 * pi * real k * (\<phi> - real j / real N)) / of_nat N)"
+  have "pe_amp_reg N psi \<phi> j = (\<Sum>k<N. cnj (fourier N $$ (k, j)) * (cis (2 * pi * \<phi>) ^ k * psi $ k))"
+    using j by (simp add: pe_amp_reg_def scalar_prod_def dagger_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>k<N. psi $ k * cis (2 * pi * real k * (\<phi> - real j / real N)) / complex_of_real (sqrt (real N)))"
     by (rule sum.cong) (simp_all add: e)
-  finally show ?thesis unfolding pe_amp_def by (simp add: sum_divide_distrib)
+  finally show ?thesis by (simp add: sum_divide_distrib)
+qed
+
+lemma pe_amp_reg_uniform:
+  assumes j: "j < N"
+  shows "pe_amp_reg N (uniform_state N) \<phi> j = pe_amp N \<phi> j"
+proof -
+  have "pe_amp_reg N (uniform_state N) \<phi> j =
+        (\<Sum>k<N. cis (2 * pi * real k * (\<phi> - real j / real N)) / (complex_of_real (sqrt (real N)) * complex_of_real (sqrt (real N))))"
+    unfolding pe_amp_reg_formula[OF j] sum_divide_distrib
+    by (rule sum.cong) (use j in \<open>simp_all add: uniform_state_def\<close>)
+  thus ?thesis unfolding sqrt_N_sq pe_amp_def by (simp add: sum_divide_distrib)
 qed
 
 text \<open>The output of phase estimation for an eigenvector $u$, $Uu=e^{2\pi i\varphi}u$.\<close>
+
+theorem phase_estimation_reg:
+  assumes U: "U \<in> carrier_mat m m" and u: "dim_vec u = m"
+      and ev: "U *\<^sub>v u = cis (2 * pi * \<phi>) \<cdot>\<^sub>v u" and psi: "dim_vec psi = N"
+  shows "(((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v (ctrl_pow N m U *\<^sub>v tensor_vec psi u) =
+         tensor_vec (Matrix.vec N (pe_amp_reg N psi \<phi>)) u"
+proof -
+  let ?b = "Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * psi $ k)"
+  have kick: "ctrl_pow N m U *\<^sub>v tensor_vec psi u = tensor_vec ?b u"
+    by (rule ctrl_pow_kickback[OF U u ev psi])
+  have uc: "u \<in> carrier_vec m" using u by (rule carrier_vecI)
+  have "(((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v tensor_vec ?b u = tensor_vec ((fourier N)\<^sup>\<dagger> *\<^sub>v ?b) (1\<^sub>m m *\<^sub>v u)"
+    by (rule tensor_mat_vec_mult[OF dagger_carrier[OF fourier_carrier] one_carrier_mat]) (simp_all add: u)
+  also have "(fourier N)\<^sup>\<dagger> *\<^sub>v ?b = Matrix.vec N (pe_amp_reg N psi \<phi>)"
+    by (rule eq_vecI) (simp_all add: pe_amp_reg_def)
+  also have "1\<^sub>m m *\<^sub>v u = u" using uc by simp
+  finally show ?thesis unfolding kick .
+qed
 
 theorem phase_estimation:
   assumes U: "U \<in> carrier_mat m m" and u: "dim_vec u = m"
@@ -262,21 +294,9 @@ theorem phase_estimation:
   shows "(((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v (ctrl_pow N m U *\<^sub>v tensor_vec (uniform_state N) u) =
          tensor_vec (Matrix.vec N (pe_amp N \<phi>)) u"
 proof -
-  let ?b = "Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * uniform_state N $ k)"
-  have kick: "ctrl_pow N m U *\<^sub>v tensor_vec (uniform_state N) u = tensor_vec ?b u"
-    by (rule ctrl_pow_kickback[OF U u ev]) (simp add: uniform_state_def)
-  have uc: "u \<in> carrier_vec m" using u by (rule carrier_vecI)
-  have "(((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v tensor_vec ?b u = tensor_vec ((fourier N)\<^sup>\<dagger> *\<^sub>v ?b) (1\<^sub>m m *\<^sub>v u)"
-    by (rule tensor_mat_vec_mult[OF dagger_carrier[OF fourier_carrier] one_carrier_mat]) (simp_all add: u)
-  also have "(fourier N)\<^sup>\<dagger> *\<^sub>v ?b = Matrix.vec N (pe_amp N \<phi>)"
-  proof (rule eq_vecI)
-    fix i assume "i < dim_vec (Matrix.vec N (pe_amp N \<phi>))"
-    hence i: "i < N" by simp
-    show "((fourier N)\<^sup>\<dagger> *\<^sub>v ?b) $ i = Matrix.vec N (pe_amp N \<phi>) $ i"
-      unfolding fourier_dagger_kick[OF i] using i by simp
-  qed simp
-  also have "1\<^sub>m m *\<^sub>v u = u" using uc by simp
-  finally show ?thesis unfolding kick .
+  have "Matrix.vec N (pe_amp_reg N (uniform_state N) \<phi>) = Matrix.vec N (pe_amp N \<phi>)"
+    by (rule eq_vecI) (simp_all add: pe_amp_reg_uniform)
+  thus ?thesis using phase_estimation_reg[OF U u ev, of "uniform_state N"] by (simp add: uniform_state_def)
 qed
 
 text \<open>If $\varphi=j_0/N$ exactly, the register ends in $\ket{j_0}$.\<close>

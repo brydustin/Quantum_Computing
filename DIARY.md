@@ -691,3 +691,23 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `hhl_prog_def` also hits the qualified `HHL_Simulation.hhl_prog_def`; `f(a := b) x` needs
   parentheses; an abbreviation `herm_spectrum A ≡ {l. eigenvalue A (of_real l)}` breaks automation
   (simp turns `of_real 0` into `0` and `spec` no longer matches), a definition does not.
+- **No redundancies, batch 4a** (2026-10-22): the inexact analysis existed three times.
+  `HHL_Approximate` (uniform register, qubit flag), `HHL_Window` (`_reg`: any register state) and
+  `HHL_Filter` (`_d`/`flag_*`: any register state, any flag dimension) each proved the branch
+  decomposition, the error identity and the orthogonality of error vectors; `HHL.thy` and
+  `HHL_Discussion` proved the exact eigenvector/every-b theorems twice (`hhl_eigen`/`hhl` for
+  C/x and `fun_circuit_eigen`/`fun_circuit_output` for any h), and `fourier_dagger_kick`/
+  `phase_estimation` duplicated `pe_amp_reg_formula`/`phase_estimation_reg`.  Now: one phase
+  estimation for any register state in `Phase_Estimation` (uniform as `pe_amp_reg_uniform`); one
+  circuit family in `HHL.thy` (`flag_circuit` with abbreviations `hhl_gen`, `fun_circuit`,
+  `hhl_circuit`, `hhl_circuit_clamped`, `hhl_W = hhl_Wd _ _ _ 2`, `hhl_rot`); the exact results
+  once (`fun_circuit_eigen`, `fun_circuit_output`, with `hhl_eigen`, `hhl` as h = C/x, via
+  `lift_mat_emb`, `lift_mat_eigen`, `herm_inv_scale`); the branch analysis once, in
+  `HHL_Approximate`, for any register state and flag (`flag_error`, `flag_err_orth`), with the
+  qubit-flag forms `hhl_approx_error_real`, `hhl_err_orth` used by the uniform and the window
+  bounds; the generic sums `unitary_reg_sum_norm`, `unitary_reg_sum_orth` (also behind the
+  post-selected `flag_perr_orth`); `herm_inv_solves` and `herm_inv_sol_pos` replace three
+  inline proofs that A⁻¹b solves Ax = b and is nonzero.  33 theories, 2 208 theorems, no oracles.
+  Trap: `X[OF … G …]` with a rule-shaped G (`⋀k. k < N ⟹ …`) lifts the premise and leaves
+  `⋀k. k < N ⟹ k < N` behind, so the instance is conditional and `unfolding` silently does
+  nothing; state the instance with `by (rule X[OF … _ …]) (rule G)` and unfold that.

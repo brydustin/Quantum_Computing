@@ -248,20 +248,36 @@ qed
 lemma reg_eig_nonzero: "0 < t0 \<Longrightarrow> 0 < k \<Longrightarrow> k < N \<Longrightarrow> reg_eig t0 N k \<noteq> 0"
   by (auto simp: reg_eig_def)
 
-definition hhl_rot :: "real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "hhl_rot C t0 N n k = 1\<^sub>m n \<Otimes> rot (C / reg_eig t0 N k)"
+text \<open>Phase estimation $W$ of $e^{it_0A}$ with a $d$-level flag register, the flag gates $G_k$
+controlled by the register value $k$, and $W^*$.  HHL rotates a qubit flag by $R(f(k))$; exact HHL
+takes $f(k)=C/\lambda_k$.\<close>
 
 definition pe_unitary :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "pe_unitary N m V = (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) * ctrl_pow N m V"
 
-definition hhl_W :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "hhl_W A t0 N = pe_unitary N (dim_row A * 2) (evolution A t0 \<Otimes> 1\<^sub>m 2)"
+definition hhl_Wd :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "hhl_Wd A t0 N d = pe_unitary N (dim_row A * d) (evolution A t0 \<Otimes> 1\<^sub>m d)"
 
-definition hhl_circuit :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat" where
-  "hhl_circuit A t0 N C = (hhl_W A t0 N)\<^sup>\<dagger> * (ctrl_blocks N (dim_row A * 2) (hhl_rot C t0 N (dim_row A)) * hhl_W A t0 N)"
+abbreviation hhl_W :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "hhl_W A t0 N \<equiv> hhl_Wd A t0 N 2"
 
-lemma hhl_rot_carrier [simp]: "hhl_rot C t0 N n k \<in> carrier_mat (n * 2) (n * 2)"
-  by (rule carrier_matI) (simp_all add: hhl_rot_def)
+definition flag_circuit :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
+  "flag_circuit A t0 N d G = (hhl_Wd A t0 N d)\<^sup>\<dagger> * (ctrl_blocks N (dim_row A * d) (\<lambda>k. 1\<^sub>m (dim_row A) \<Otimes> G k) * hhl_Wd A t0 N d)"
+
+abbreviation hhl_gen :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> complex Matrix.mat" where
+  "hhl_gen A t0 N f \<equiv> flag_circuit A t0 N 2 (\<lambda>k. rot (f k))"
+
+abbreviation fun_circuit :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> (real \<Rightarrow> real) \<Rightarrow> complex Matrix.mat" where
+  "fun_circuit A t0 N h \<equiv> hhl_gen A t0 N (\<lambda>k. h (reg_eig t0 N k))"
+
+abbreviation hhl_circuit :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat" where
+  "hhl_circuit A t0 N C \<equiv> hhl_gen A t0 N (\<lambda>k. C / reg_eig t0 N k)"
+
+abbreviation hhl_rot :: "real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "hhl_rot C t0 N n k \<equiv> 1\<^sub>m n \<Otimes> rot (C / reg_eig t0 N k)"
+
+lemma rot_blk_carrier [simp]: "1\<^sub>m n \<Otimes> rot x \<in> carrier_mat (n * 2) (n * 2)"
+  by (rule carrier_matI) simp_all
 
 lemma pe_unitary_carrier [simp]: "pe_unitary N m V \<in> carrier_mat (N * m) (N * m)"
   by (rule carrier_matI) (simp_all add: pe_unitary_def)
@@ -311,19 +327,19 @@ qed
 
 subsection \<open>The circuit on an eigenvector\<close>
 
-theorem hhl_eigen:
+theorem fun_circuit_eigen:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
       and k: "k < N" and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real (reg_eig t0 N k) \<cdot>\<^sub>v u"
-  shows "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
-         tensor_vec (uniform_state N) (tensor_vec u (rot (C / reg_eig t0 N k) *\<^sub>v unit_vec 2 0))"
+  shows "fun_circuit A t0 N h *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+         tensor_vec (uniform_state N) (tensor_vec u (rot (h (reg_eig t0 N k)) *\<^sub>v unit_vec 2 0))"
 proof -
   let ?E = "evolution A t0" and ?V = "evolution A t0 \<Otimes> 1\<^sub>m 2" and ?W = "hhl_W A t0 N"
-  let ?CR = "ctrl_blocks N (n * 2) (hhl_rot C t0 N n)" and ?r = "rot (C / reg_eig t0 N k) *\<^sub>v unit_vec 2 0"
+  let ?CR = "ctrl_blocks N (n * 2) (\<lambda>k. 1\<^sub>m n \<Otimes> rot (h (reg_eig t0 N k)))" and ?r = "rot (h (reg_eig t0 N k)) *\<^sub>v unit_vec 2 0"
   have nA: "dim_row A = n" using A(1) by simp
   have Ec: "?E \<in> carrier_mat n n" using A by (rule evolution_carrier)
   have Vc: "?V \<in> carrier_mat (n * 2) (n * 2)" using Ec by (intro carrier_matI) auto
   have Vu: "unitary ?V" by (rule tensor_mat_unitary_one_right) (rule evolution_unitary[OF A])
-  have W: "?W = pe_unitary N (n * 2) ?V" unfolding hhl_W_def nA ..
+  have W: "?W = pe_unitary N (n * 2) ?V" unfolding hhl_Wd_def nA ..
   have Wc: "?W \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" unfolding W by simp
   have Wu: "unitary ?W" unfolding W by (rule pe_unitary_unitary[OF N Vc Vu])
   have phase: "cis (t0 * reg_eig t0 N k) = cis (2 * pi * (real k / real N))"
@@ -346,10 +362,10 @@ proof -
                  tensor_vec (unit_vec N k) (tensor_vec u ?r)"
   proof -
     have "?CR *\<^sub>v tensor_vec (unit_vec N k) (tensor_vec u (unit_vec 2 0)) =
-          tensor_vec (unit_vec N k) (hhl_rot C t0 N n k *\<^sub>v tensor_vec u (unit_vec 2 0))"
+          tensor_vec (unit_vec N k) ((1\<^sub>m n \<Otimes> rot (h (reg_eig t0 N k))) *\<^sub>v tensor_vec u (unit_vec 2 0))"
       by (rule ctrl_blocks_basis[OF k uv]) simp_all
-    also have "hhl_rot C t0 N n k *\<^sub>v tensor_vec u (unit_vec 2 0) = tensor_vec (1\<^sub>m n *\<^sub>v u) ?r"
-      unfolding hhl_rot_def by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier u]) simp
+    also have "(1\<^sub>m n \<Otimes> rot (h (reg_eig t0 N k))) *\<^sub>v tensor_vec u (unit_vec 2 0) = tensor_vec (1\<^sub>m n *\<^sub>v u) ?r"
+      by (rule tensor_mat_vec_mult[OF one_carrier_mat rot_carrier u]) simp
     also have "1\<^sub>m n *\<^sub>v u = u" using carrier_vecI[OF u] by simp
     finally show ?thesis .
   qed
@@ -363,14 +379,21 @@ proof -
   have x0: "tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) \<in> carrier_vec (N * (n * 2))"
     by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: uniform_state_def uv)
   have CRc: "?CR \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" by simp
-  have "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+  have "fun_circuit A t0 N h *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
         ?W\<^sup>\<dagger> *\<^sub>v ((?CR * ?W) *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)))"
-    unfolding hhl_circuit_def nA by (rule assoc_mult_mat_vec[OF dagger_carrier[OF Wc] mult_carrier_mat[OF CRc Wc] x0])
+    unfolding flag_circuit_def nA by (rule assoc_mult_mat_vec[OF dagger_carrier[OF Wc] mult_carrier_mat[OF CRc Wc] x0])
   also have "(?CR * ?W) *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
              ?CR *\<^sub>v (?W *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)))"
     by (rule assoc_mult_mat_vec[OF CRc Wc x0])
   finally show ?thesis unfolding s1 s2 s3 .
 qed
+
+corollary hhl_eigen:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
+      and k: "k < N" and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real (reg_eig t0 N k) \<cdot>\<^sub>v u"
+  shows "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u (unit_vec 2 0)) =
+         tensor_vec (uniform_state N) (tensor_vec u (rot (C / reg_eig t0 N k) *\<^sub>v unit_vec 2 0))"
+  by (rule fun_circuit_eigen[OF A t0 N k u ev, where h = "\<lambda>x. C / x"])
 
 subsection \<open>All right-hand sides\<close>
 
@@ -430,41 +453,96 @@ proof -
   qed (use dt in \<open>simp add: lift_mat_def\<close>)
 qed
 
-theorem hhl:
-  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
-      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>k. 0 < k \<and> k < N \<and> l = reg_eig t0 N k"
-      and b: "dim_vec b = n"
-  shows "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec b (unit_vec 2 0)) =
-         tensor_vec (uniform_state N)
-           (tensor_vec (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A *\<^sub>v b) (unit_vec 2 0) +
-            tensor_vec ((complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b) (unit_vec 2 1))"
+text \<open>The embedding $b\mapsto a\otimes b\otimes\ket0$, and on an eigenvector the ideal output
+$a\otimes u\otimes R(h(\lambda))\ket0$.\<close>
+
+lemma lift_mat_emb:
+  assumes v: "dim_vec v = n"
+  shows "lift_mat n a (1\<^sub>m n) (0\<^sub>m n n) *\<^sub>v v = tensor_vec a (tensor_vec v (unit_vec 2 0))"
 proof -
-  let ?G0 = "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A"
-  let ?G1 = "complex_of_real C \<cdot>\<^sub>m herm_inv A"
-  let ?H = "hhl_circuit A t0 N C" and ?u = "uniform_state N"
+  have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
+  have z: "tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1) = 0\<^sub>v (n * 2)"
+    using vc by (intro eq_vecI) (simp_all add: tensor_vec_index tensor_vec_dim scalar_prod_left_zero)
+  have "lift_mat n a (1\<^sub>m n) (0\<^sub>m n n) *\<^sub>v v =
+        tensor_vec a (tensor_vec (1\<^sub>m n *\<^sub>v v) (unit_vec 2 0) + tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1))"
+    by (rule lift_mat_mult_vec[OF one_carrier_mat zero_carrier_mat v])
+  also have "1\<^sub>m n *\<^sub>v v = v" using vc by simp
+  also note z
+  also have "tensor_vec v (unit_vec 2 0) + 0\<^sub>v (n * 2) = tensor_vec v (unit_vec 2 0)"
+    by (rule right_zero_vec[OF carrier_vecI[OF tensor_vec_dim[OF v]]]) simp
+  finally show ?thesis .
+qed
+
+lemma lift_mat_eigen:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
+  shows "lift_mat n a (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (h x)\<^sup>2))) A) (mat_fun (\<lambda>x. complex_of_real (h x)) A) *\<^sub>v u =
+         tensor_vec a (tensor_vec u (rot (h l) *\<^sub>v unit_vec 2 0))"
+proof -
+  let ?G0 = "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (h x)\<^sup>2))) A" and ?G1 = "mat_fun (\<lambda>x. complex_of_real (h x)) A"
+  let ?c = "h l" and ?s = "sqrt (1 - (h l)\<^sup>2)"
+  have g0: "?G0 *\<^sub>v u = complex_of_real ?s \<cdot>\<^sub>v u" by (rule mat_fun_eigen[OF A u ev])
+  have g1: "?G1 *\<^sub>v u = complex_of_real ?c \<cdot>\<^sub>v u" by (rule mat_fun_eigen[OF A u ev])
+  have "lift_mat n a ?G0 ?G1 *\<^sub>v u = tensor_vec a (tensor_vec (?G0 *\<^sub>v u) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v u) (unit_vec 2 1))"
+    by (rule lift_mat_mult_vec[OF mat_fun_carrier[OF A] mat_fun_carrier[OF A] u])
+  also have "tensor_vec (?G0 *\<^sub>v u) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v u) (unit_vec 2 1) = tensor_vec u (rot ?c *\<^sub>v unit_vec 2 0)"
+    unfolding g0 g1 rot_e0
+    using tensor_vec_bilinear_right[OF u, of "complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0" 2 "complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1"]
+          tensor_vec_smult_right[OF u, of "unit_vec 2 0" 2] tensor_vec_smult_right[OF u, of "unit_vec 2 1" 2]
+          tensor_vec_smult_left[OF u, of "unit_vec 2 0" 2] tensor_vec_smult_left[OF u, of "unit_vec 2 1" 2]
+    by simp
+  finally show ?thesis .
+qed
+
+text \<open>$C/x$ as a matrix function is $C\,A^{-1}$.\<close>
+
+lemma herm_inv_scale:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "mat_fun (\<lambda>x. complex_of_real (C / x)) A = complex_of_real C \<cdot>\<^sub>m herm_inv A"
+proof (rule mat_fun_eqI[OF A])
+  have Hi: "herm_inv A \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
+  show "complex_of_real C \<cdot>\<^sub>m herm_inv A \<in> carrier_mat n n" using Hi by simp
+  show "fun_on_eigen A (\<lambda>x. complex_of_real (C / x)) (complex_of_real C \<cdot>\<^sub>m herm_inv A)"
+    unfolding fun_on_eigen_def
+  proof (intro allI impI)
+    fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
+    have vn: "dim_vec v = n" using v A(1) by simp
+    show "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v v = complex_of_real (C / l) \<cdot>\<^sub>v v"
+      using smult_mat_mult_vec[OF Hi carrier_vecI[OF vn], of "complex_of_real C"] herm_inv_eigen[OF A vn ev]
+      by (simp add: smult_smult_assoc divide_inverse)
+  qed
+qed
+
+corollary ideal_mat_eigen:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
+  shows "lift_mat n a (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A) (complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v u =
+         tensor_vec a (tensor_vec u (rot (C / l) *\<^sub>v unit_vec 2 0))"
+  using lift_mat_eigen[OF A u ev, where h = "\<lambda>x. C / x" and a = a] unfolding herm_inv_scale[OF A] .
+
+text \<open>Replacing the rotation angle $C/\lambda$ by $h(\lambda)$ gives $h(A)\ket b$ on the ancilla $\ket1$.\<close>
+
+theorem fun_circuit_output:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
+      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>k. k < N \<and> l = reg_eig t0 N k"
+      and b: "dim_vec b = n"
+  shows "fun_circuit A t0 N h *\<^sub>v tensor_vec (uniform_state N) (tensor_vec b (unit_vec 2 0)) =
+         tensor_vec (uniform_state N)
+           (tensor_vec (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (h x)\<^sup>2))) A *\<^sub>v b) (unit_vec 2 0) +
+            tensor_vec (mat_fun (\<lambda>x. complex_of_real (h x)) A *\<^sub>v b) (unit_vec 2 1))"
+proof -
+  let ?G0 = "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (h x)\<^sup>2))) A"
+  let ?G1 = "mat_fun (\<lambda>x. complex_of_real (h x)) A"
+  let ?H = "fun_circuit A t0 N h" and ?u = "uniform_state N"
   let ?Emb = "lift_mat n ?u (1\<^sub>m n) (0\<^sub>m n n)" and ?Out = "lift_mat n ?u ?G0 ?G1"
   have du: "dim_vec ?u = N" by (simp add: uniform_state_def)
   have nA: "dim_row A = n" using A(1) by simp
   have G0: "?G0 \<in> carrier_mat n n" using A by simp
-  have G1: "?G1 \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
+  have G1: "?G1 \<in> carrier_mat n n" using A by simp
   have Hc: "?H \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
-    unfolding hhl_circuit_def hhl_W_def nA
+    unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
   have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
   have Oc: "?Out \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
-  have emb: "?Emb *\<^sub>v v = tensor_vec ?u (tensor_vec v (unit_vec 2 0))" if v: "dim_vec v = n" for v
-  proof -
-    have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
-    have z: "tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1) = 0\<^sub>v (n * 2)"
-      using vc by (intro eq_vecI) (simp_all add: tensor_vec_index tensor_vec_dim scalar_prod_left_zero)
-    have "?Emb *\<^sub>v v = tensor_vec ?u (tensor_vec (1\<^sub>m n *\<^sub>v v) (unit_vec 2 0) + tensor_vec (0\<^sub>m n n *\<^sub>v v) (unit_vec 2 1))"
-      by (rule lift_mat_mult_vec[OF one_carrier_mat zero_carrier_mat v])
-    also have "1\<^sub>m n *\<^sub>v v = v" using vc by simp
-    also note z
-    also have "tensor_vec v (unit_vec 2 0) + 0\<^sub>v (n * 2) = tensor_vec v (unit_vec 2 0)"
-      by (rule right_zero_vec[OF carrier_vecI[OF tensor_vec_dim[OF v]]]) simp
-    finally show ?thesis .
-  qed
+  note emb = lift_mat_emb[where a = ?u]
   have HE: "?H * ?Emb = ?Out"
   proof (rule eigvec_mat_eqI[OF A mult_carrier_mat[OF Hc Ec] Oc])
     fix v l assume v: "dim_vec v = n" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
@@ -476,30 +554,11 @@ proof -
     next
       case False
       hence "l \<in> herm_spectrum A" unfolding herm_spectrum_iff nA using v ev by (intro exI[of _ v]) simp
-      then obtain k where k: "0 < k" "k < N" and l: "l = reg_eig t0 N k" using spec by blast
-      have l0: "l \<noteq> 0" using reg_eig_nonzero[OF t0 k] l by simp
-      let ?c = "C / l" and ?s = "sqrt (1 - (C / l)\<^sup>2)"
+      then obtain k where k: "k < N" and l: "l = reg_eig t0 N k" using spec by blast
       have "(?H * ?Emb) *\<^sub>v v = ?H *\<^sub>v (?Emb *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Hc Ec vc])
-      also have "\<dots> = tensor_vec ?u (tensor_vec v (rot ?c *\<^sub>v unit_vec 2 0))"
-        unfolding emb[OF v] l by (rule hhl_eigen[OF A t0 N k(2) v ev[unfolded l]])
-      also have "rot ?c *\<^sub>v unit_vec 2 0 = complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0 + complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1"
-        by (rule rot_e0)
-      also have "tensor_vec v (complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0 + complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1) =
-                 tensor_vec (?G0 *\<^sub>v v) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v v) (unit_vec 2 1)"
-      proof -
-        have g0: "?G0 *\<^sub>v v = complex_of_real ?s \<cdot>\<^sub>v v" by (rule mat_fun_eigen[OF A v ev])
-        have g1: "?G1 *\<^sub>v v = complex_of_real ?c \<cdot>\<^sub>v v"
-          using smult_mat_mult_vec[of "herm_inv A" n n v "complex_of_real C"] carrier_vecI[OF v] herm_inv_eigen[OF A v ev]
-                herm_inv_def A v l0
-          by (simp add: smult_smult_assoc divide_inverse)
-        show ?thesis unfolding g0 g1
-          using tensor_vec_bilinear_right[OF v, of "complex_of_real ?s \<cdot>\<^sub>v unit_vec 2 0" 2 "complex_of_real ?c \<cdot>\<^sub>v unit_vec 2 1"]
-                tensor_vec_smult_right[OF v, of "unit_vec 2 0" 2] tensor_vec_smult_right[OF v, of "unit_vec 2 1" 2]
-                tensor_vec_smult_left[OF v, of "unit_vec 2 0" 2] tensor_vec_smult_left[OF v, of "unit_vec 2 1" 2]
-          by simp
-      qed
-      also have "tensor_vec ?u (tensor_vec (?G0 *\<^sub>v v) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v v) (unit_vec 2 1)) = ?Out *\<^sub>v v"
-        by (rule lift_mat_mult_vec[OF G0 G1 v, symmetric])
+      also have "\<dots> = tensor_vec ?u (tensor_vec v (rot (h l) *\<^sub>v unit_vec 2 0))"
+        unfolding emb[OF v] l by (rule fun_circuit_eigen[OF A t0 N k v ev[unfolded l]])
+      also have "\<dots> = ?Out *\<^sub>v v" by (rule lift_mat_eigen[OF A v ev, symmetric])
       finally show ?thesis .
     qed
   qed
@@ -510,6 +569,25 @@ proof -
   also have "\<dots> = tensor_vec ?u (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v b) (unit_vec 2 1))"
     by (rule lift_mat_mult_vec[OF G0 G1 b])
   finally show ?thesis .
+qed
+
+
+theorem hhl:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
+      and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>k. 0 < k \<and> k < N \<and> l = reg_eig t0 N k"
+      and b: "dim_vec b = n"
+  shows "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec b (unit_vec 2 0)) =
+         tensor_vec (uniform_state N)
+           (tensor_vec (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A *\<^sub>v b) (unit_vec 2 0) +
+            tensor_vec ((complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b) (unit_vec 2 1))"
+proof -
+  have "mat_fun (\<lambda>x. complex_of_real (C / x)) A = complex_of_real C \<cdot>\<^sub>m herm_inv A" by (rule herm_inv_scale[OF A])
+  moreover have "hhl_circuit A t0 N C *\<^sub>v tensor_vec (uniform_state N) (tensor_vec b (unit_vec 2 0)) =
+         tensor_vec (uniform_state N)
+           (tensor_vec (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A *\<^sub>v b) (unit_vec 2 0) +
+            tensor_vec (mat_fun (\<lambda>x. complex_of_real (C / x)) A *\<^sub>v b) (unit_vec 2 1))"
+    by (rule fun_circuit_output[OF A t0 N _ b, where h = "\<lambda>x. C / x"]) (use spec in blast)
+  ultimately show ?thesis by simp
 qed
 
 text \<open>Reading off the solution: $x=A^{-1}b$ solves $Ax=b$, the ancilla-$\ket1$ part of the output is
