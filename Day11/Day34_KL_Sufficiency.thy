@@ -26,15 +26,6 @@ proof -
   thus ?thesis using Pij by simp
 qed
 
-lemma one_smult_mat': "(1::complex) \<cdot>\<^sub>m M = M"
-  by (rule eq_matI) simp_all
-
-lemma smult_mat_mult_vec':
-  fixes A :: "complex Matrix.mat"
-  assumes "dim_col A = dim_vec v"
-  shows "(k \<cdot>\<^sub>m A) *\<^sub>v v = k \<cdot>\<^sub>v (A *\<^sub>v v)"
-  by (rule eq_vecI) (use assms in \<open>auto simp: scalar_prod_def sum_distrib_left mult_ac(1)\<close>)
-
 lemma outer_prod_smult_vec:
   fixes v :: "complex Matrix.vec"
   shows "(s \<cdot>\<^sub>v v) \<oslash> (s \<cdot>\<^sub>v v) = (s * cnj s) \<cdot>\<^sub>m (v \<oslash> v)"
@@ -65,7 +56,7 @@ proof (induction xs)
 next
   case (Cons x xs)
   have fx: "f x \<in> carrier_mat n n" and rest: "\<forall>k \<in> set xs. f k \<in> carrier_mat n n" using Cons.prems by auto
-  have rc: "foldr (\<lambda>k acc. f k + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n" by (rule foldr_add_mat_carrier'[OF rest])
+  have rc: "foldr (\<lambda>k acc. f k + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n" by (rule foldr_add_carrier_dn[OF rest])
   show ?case using kraus_map_dim_add[OF fx rc Ws_c] Cons.IH[OF rest] by simp
 qed
 
@@ -143,8 +134,8 @@ proof -
   define Fb where "Fb = foldr (\<lambda>j acc. b j \<cdot>\<^sub>m (Es ! j) + acc) [0..<r] (0\<^sub>m n n)"
   have Ec: "\<forall>j < r. Es ! j \<in> carrier_mat n n" using Es_c r by auto
   have Edc: "\<forall>j < r. (Es ! j)\<^sup>\<dagger> \<in> carrier_mat n n" using Ec by (auto intro: dagger_carrier)
-  have Fac: "Fa \<in> carrier_mat n n" unfolding Fa_def by (rule foldr_add_mat_carrier') (use Ec in auto)
-  have Fbc: "Fb \<in> carrier_mat n n" unfolding Fb_def by (rule foldr_add_mat_carrier') (use Ec in auto)
+  have Fac: "Fa \<in> carrier_mat n n" unfolding Fa_def by (rule foldr_add_carrier_dn) (use Ec in auto)
+  have Fbc: "Fb \<in> carrier_mat n n" unfolding Fb_def by (rule foldr_add_carrier_dn) (use Ec in auto)
   have Fadc: "Fa\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF Fac])
   have PFc: "P * (Fa\<^sup>\<dagger>) \<in> carrier_mat n n" by (rule mult_carrier_mat[OF Pc Fadc])
   have step1: "\<forall>j < r. (P * (Fa\<^sup>\<dagger>)) * Es ! j * P = (\<Sum>i<r. cnj (a i) * \<alpha> i j) \<cdot>\<^sub>m P"
@@ -282,7 +273,7 @@ proof -
       finally show ?thesis by simp
     qed
     also have "((u\<^sup>\<dagger>) * A * u) $$ (k,l) = (if k = l then complex_of_real (D ! k) else 0)"
-      unfolding spec diag_mat_of_real_def using k l Dl by simp
+      unfolding spec diag_mat_of_real_def mat_diag_def using k l Dl by simp
     finally show "P * (((Fs ! k)\<^sup>\<dagger>) * Fs ! l) * P = (if k = l then complex_of_real (D ! k) else 0) \<cdot>\<^sub>m P" .
   qed
   define d where "d = (\<lambda>k. D ! k)"
@@ -295,7 +286,7 @@ proof -
     have "sum_wdag_w n Es = foldr (\<lambda>j acc. ?V j + acc) [0..<?r] (0\<^sub>m n n)"
       unfolding sum_wdag_w_def by (rule foldr_list_as_index)
     also have "\<dots> = foldr (\<lambda>j acc. 1 \<cdot>\<^sub>m ?V j + acc) [0..<?r] (0\<^sub>m n n)"
-      by (rule foldr_add_mat_cong) (simp only: one_smult_mat')
+      by (rule foldr_add_mat_cong) (simp only: one_smult_mat)
     finally have sw: "sum_wdag_w n Es = foldr (\<lambda>j acc. 1 \<cdot>\<^sub>m ?V j + acc) [0..<?r] (0\<^sub>m n n)" .
     have "P * sum_wdag_w n Es * P = (\<Sum>j<?r. 1 * \<alpha> j j) \<cdot>\<^sub>m P"
       unfolding sw by (rule foldr_smult_sandwich[OF Pc Pc Pc Vc h])
@@ -307,7 +298,7 @@ proof -
   proof -
     have "Tr ((u\<^sup>\<dagger>) * A * u) = Tr A" by (rule Tr_unitary_conjugation[OF uu]) (use Ac uc in simp_all)
     moreover have "Tr ((u\<^sup>\<dagger>) * A * u) = (\<Sum>k<?r. complex_of_real (d k))"
-      unfolding spec Tr_def diag_mat_of_real_def d_def using Dl by simp
+      unfolding spec Tr_def diag_mat_of_real_def mat_diag_def d_def using Dl by simp
     moreover have "Tr A = (\<Sum>j<?r. \<alpha> j j)" unfolding Tr_def A_def by simp
     ultimately show ?thesis using sum_alpha by simp
   qed
@@ -391,7 +382,7 @@ proof -
       have r1: "(1 / sqrt (d ?k)) * (1 / sqrt (d ?k)) * d ?k = d ?k / (sqrt (d ?k) * sqrt (d ?k))" by simp
       have r2: "(1 / sqrt (d ?k)) * (1 / sqrt (d ?k)) * d ?k = 1" using r1 unfolding ss using dk by simp
       have "cnj (c ?k) * c ?k * complex_of_real (D ! ?k) = 1" using e1 r2 by simp
-      thus ?thesis using True by (simp add: one_smult_mat')
+      thus ?thesis using True by (simp add: one_smult_mat)
     next
       case False
       hence "?k \<noteq> ?l" using nth_eq_iff_index_eq[OF ks_dist a' b'] by simp
@@ -419,9 +410,9 @@ proof -
       have Ua: "Us ! a = c k \<cdot>\<^sub>m Fs ! k" using Us_nth[OF a] ka by simp
       have Fk: "Fs ! k = complex_of_real (sqrt (d k)) \<cdot>\<^sub>m (Us ! a)"
         unfolding Ua smult_smult_mat c_def using True
-        by (simp add: of_real_mult[symmetric] one_smult_mat' del: of_real_mult)
+        by (simp add: of_real_mult[symmetric] one_smult_mat del: of_real_mult)
       have "Fs ! k *\<^sub>v \<psi> = complex_of_real (sqrt (d k)) \<cdot>\<^sub>v (Us ! a *\<^sub>v \<psi>)"
-        unfolding Fk by (rule smult_mat_mult_vec') (use rec_Uc[OF S aU] \<psi>d in simp)
+        unfolding Fk by (rule smult_mat_mult_vec[OF carrier_matI[OF refl refl] carrier_vecI]) (use rec_Uc[OF S aU] \<psi>d in simp)
       hence "(Fs ! k *\<^sub>v \<psi>) \<oslash> (Fs ! k *\<^sub>v \<psi>)
              = (complex_of_real (sqrt (d k)) * cnj (complex_of_real (sqrt (d k))))
                \<cdot>\<^sub>m ((Us ! a *\<^sub>v \<psi>) \<oslash> (Us ! a *\<^sub>v \<psi>))"
@@ -470,7 +461,7 @@ proof -
       by (rule foldr_add_mat_smult_pull[OF _ oc]) (use rec_term[OF \<psi>d \<psi>V] in simp)
     also have "sum_list (map (\<lambda>k. complex_of_real (d k)) [0..<?r]) = 1"
       using sum_d by (simp add: interv_sum_list_conv_sum_set_nat atLeast0LessThan)
-    finally show "RE n Rs Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>" by (simp only: one_smult_mat')
+    finally show "RE n Rs Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>" by (simp only: one_smult_mat)
   qed
   have "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> RE n Rs Es (P * X * P) = P * X * P"
     using recovery_states_iff_PXP[OF Rs_c Es_c P] pure by blast

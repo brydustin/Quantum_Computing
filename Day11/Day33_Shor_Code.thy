@@ -287,7 +287,7 @@ lemma inner_two_units:
            + cnj \<alpha> * (if b = c then 1 else 0) + cnj \<alpha> * \<beta> * (if b = d then 1 else 0)"
 proof -
   let ?u = "unit_vec n a + \<alpha> \<cdot>\<^sub>v unit_vec n b" and ?v = "unit_vec n c + \<beta> \<cdot>\<^sub>v unit_vec n d"
-  have "\<langle>?u | ?v\<rangle> = (\<Sum>k \<in> {0..<n}. cnj (?u $ k) * (?v $ k))" by (rule inner_prod_expand) simp_all
+  have "\<langle>?u | ?v\<rangle> = (\<Sum>k \<in> {0..<n}. cnj (?u $ k) * (?v $ k))" by (rule inner_prod_sum) simp_all
   also have "\<dots> = (\<Sum>k \<in> {0..<n}. (if k = a then (if a = c then 1 else 0) else 0)
                   + (if k = a then \<beta> * (if a = d then 1 else 0) else 0)
                   + (if k = b then cnj \<alpha> * (if b = c then 1 else 0) else 0)
@@ -581,7 +581,7 @@ proof -
   moreover have "dim_vec (lab_vec (shor_labels p ! i)) = dim_vec (lab_vec (shor_labels p' ! j))"
     by simp
   ultimately show ?thesis unfolding shor_errors_action[OF i] shor_errors_action[OF j]
-    by (simp only: inner_prod_left_smult' inner_prod_right_smult' mult_zero_right)
+    by (simp only: No_Cloning.inner_prod_distrib_left inner_prod_right_smult' mult_zero_right)
 qed
 
 lemma sk_sq: "cnj sk * sk = 1 / 8"
@@ -597,7 +597,7 @@ proof -
   have "\<langle>shor_cw p | shor_cw p'\<rangle> = cnj sk * sk * \<langle>lab_vec (replicate 3 (p, 0)) | lab_vec (replicate 3 (p', 0))\<rangle>"
   proof -
     have "dim_vec (lab_vec (replicate 3 (p, 0))) = dim_vec (lab_vec (replicate 3 (p', 0)))" by simp
-    thus ?thesis unfolding shor_cw_def by (simp only: inner_prod_left_smult' inner_prod_right_smult' mult_ac)
+    thus ?thesis unfolding shor_cw_def by (simp only: No_Cloning.inner_prod_distrib_left inner_prod_right_smult' mult_ac)
   qed
   also have "\<dots> = (if p = p' then 1 else 0)" unfolding lab_vec_inner[OF v v] sk_sq by simp
   finally show ?thesis .
@@ -695,7 +695,7 @@ proof -
   also have "\<dots> = \<langle>Matrix.col A a | Matrix.col B b\<rangle>"
   proof -
     have dA: "dim_vec (Matrix.col A a) = n" and dB: "dim_vec (Matrix.col B b) = n" using A B by simp_all
-    show ?thesis unfolding inner_prod_expand[OF dA dB] atLeast0LessThan
+    show ?thesis unfolding inner_prod_sum[OF dA dB] atLeast0LessThan
       by (rule sum.cong) (use A B a b in auto)
   qed
   finally show ?thesis .
@@ -846,7 +846,7 @@ proof -
     have k: "shor_kappa ! 19 = 1" by (simp add: shor_kappa_def nth_append)
     have ac: "sk * (cnj sk * 8) = (cnj sk * sk) * 8" by (simp only: mult_ac)
     show ?thesis unfolding shor_errors_action[of 19 True, simplified] k
-      by (simp only: inner_prod_left_smult'[OF d] inner_prod_right_smult' lab_vec_inner[OF v v] simp_thms(6) if_True
+      by (simp only: No_Cloning.inner_prod_distrib_left[OF d] inner_prod_right_smult' lab_vec_inner[OF v v] simp_thms(6) if_True
           mult_1_left) (simp only: ac sk_sq, simp)
   qed
   ultimately show "\<langle>qubit_op 0 Pauli_Z *\<^sub>v shor_cw True | qubit_op 1 Pauli_Z *\<^sub>v shor_cw True\<rangle> = 1" by simp
@@ -900,12 +900,6 @@ proof -
   hence e: "(2::nat) ^ i * 2 * 2 ^ (8 - i) = 512" by (simp add: mult_ac)
   show ?thesis unfolding qubit_op_def tensor_mat_id e ..
 qed
-
-lemma smult_mat_mult_vec_c:
-  fixes A :: "complex Matrix.mat"
-  assumes "dim_col A = dim_vec v"
-  shows "(k \<cdot>\<^sub>m A) *\<^sub>v v = k \<cdot>\<^sub>v (A *\<^sub>v v)"
-  by (rule eq_vecI) (use assms in \<open>auto simp: scalar_prod_def sum_distrib_left mult_ac\<close>)
 
 lemma shor_errors_nth:
   assumes i: "i < 9" and b: "b < 3"
@@ -961,7 +955,7 @@ proof (intro exI conjI allI impI)
     have Z: "qubit_op i Pauli_Z *\<^sub>v \<psi> = qubit_op (3 * b) Pauli_Z *\<^sub>v \<psi>"
       unfolding \<psi>_def by (rule shor_Z_coincide[OF i b3]) (simp add: b_def)
     show ?thesis unfolding Qeq Z[symmetric] using Xc Yc Zc \<psi>c
-      by (simp add: add_mult_distrib_mat_vec[of _ 512 512] smult_mat_mult_vec_c)
+      by (simp add: add_mult_distrib_mat_vec[of _ 512 512] smult_mat_mult_vec[OF carrier_matI[OF refl refl] carrier_vecI])
   qed
   \<comment> \<open>The same vector as a combination of the 22 correctable errors.\<close>
   define a where "a = (\<lambda>j. (if j = 0 then c0 else 0) + (if j = Suc i then c1 else 0)

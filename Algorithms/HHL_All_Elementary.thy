@@ -216,8 +216,8 @@ proof (rule eq_matI)
   have e: "Qm $$ (i, j) = Phase_S $$ (i, 0) * Hadamard $$ (0, j) + Phase_S $$ (i, 1) * Hadamard $$ (1, j)"
     using i j HD carrier_matD[OF Phase_S_carrier] by (simp add: scalar_prod_def sumof2 atLeast0LessThan)
   show "Qm $$ (i, j) = Matrix.mat 2 2 (\<lambda>(i, j). complex_of_real (1 / sqrt 2) * (if i = 0 then 1 else if j = 0 then \<i> else - \<i>)) $$ (i, j)"
-    unfolding e using i j by (auto simp: Phase_S_def Hadamard_def H_def less_2_cases_iff of_real_divide)
-qed (simp_all add: Phase_S_def Hadamard_def H_def)
+    unfolding e using i j by (auto simp: Phase_S_def Quantum.S_def Hadamard_def H_def less_2_cases_iff of_real_divide)
+qed (simp_all add: Phase_S_def Quantum.S_def Hadamard_def H_def)
 
 lemma Qm_carrier [simp]: "Qm \<in> carrier_mat 2 2" by (simp add: Qm_eq)
 

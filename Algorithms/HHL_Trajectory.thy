@@ -390,7 +390,7 @@ proof -
 qed
 
 lemma clock_gate_dagger: "(clock_gate G n)\<^sup>\<dagger> = clock_gate (G\<^sup>\<dagger>) n"
-  unfolding clock_gate_def tensor_mat_adjoint by simp
+  unfolding clock_gate_def hermite_cnj_of_tensor by simp
 
 text \<open>Uncomputation.  With $\mathrm{out}=G_0b\otimes\ket0+G_1b\otimes\ket1$ the HHL output
 (\<open>hhl\<close>), the Fourier transform leaves $\sum_j\frac1{\sqrt N}\ket j\otimes(e^{iAt_0j}\otimes I)\,\mathrm{out}$,

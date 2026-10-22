@@ -319,7 +319,7 @@ proof -
     thus False using r1 cp by (simp add: mult_le_cancel_right1)
   qed
   have "\<parallel>complex_of_real (1 / \<parallel>a\<parallel>) \<cdot>\<^sub>v a - complex_of_real (1 / \<parallel>c\<parallel>) \<cdot>\<^sub>v c\<parallel> \<le> 2 * \<parallel>a - c\<parallel> / \<parallel>c\<parallel>"
-    by (rule normalize_stable[OF d a0 c0])
+    by (rule normalize_dist[OF d a0 c0])
   also have "\<dots> \<le> 2 * (\<rho> * \<parallel>c\<parallel>) / \<parallel>c\<parallel>" using cl cp by (intro divide_right_mono) simp_all
   also have "\<dots> = 2 * \<rho>" using cp by simp
   finally show ?thesis .
@@ -543,7 +543,7 @@ proof -
   also have "(2 * \<langle>w|unit_vec d 0\<rangle>) \<cdot>\<^sub>v w = ?v"
   proof -
     have "\<langle>w|unit_vec d 0\<rangle> = cnj (complex_of_real (1 / \<parallel>?v\<parallel>)) * \<langle>?v|unit_vec d 0\<rangle>"
-      unfolding w by (rule inner_prod_left_smult') (simp add: h)
+      unfolding w by (rule No_Cloning.inner_prod_distrib_left) (simp add: h)
     hence "\<langle>w|unit_vec d 0\<rangle> = complex_of_real (1 / \<parallel>?v\<parallel>) * complex_of_real (1 - r)"
       unfolding v_e0 by simp
     hence "2 * \<langle>w|unit_vec d 0\<rangle> * complex_of_real (1 / \<parallel>?v\<parallel>) = complex_of_real (2 * (1 - r) / \<parallel>?v\<parallel>\<^sup>2)"

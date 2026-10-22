@@ -15,7 +15,7 @@ subsection \<open>Reading out the answer\<close>
 
 subsection \<open>Normalisation is stable\<close>
 
-lemma normalize_stable:
+lemma normalize_dist:
   assumes d: "dim_vec a = dim_vec b" and a: "\<parallel>a\<parallel> \<noteq> 0" and b: "\<parallel>b\<parallel> \<noteq> 0"
   shows "\<parallel>complex_of_real (1 / \<parallel>a\<parallel>) \<cdot>\<^sub>v a - complex_of_real (1 / \<parallel>b\<parallel>) \<cdot>\<^sub>v b\<parallel> \<le> 2 * \<parallel>a - b\<parallel> / \<parallel>b\<parallel>"
 proof -
@@ -192,7 +192,7 @@ proof -
   qed
   have "\<parallel>complex_of_real (1 / \<parallel>post1 y'\<parallel>) \<cdot>\<^sub>v post1 y' - complex_of_real (1 / \<parallel>post1 ?y\<parallel>) \<cdot>\<^sub>v post1 ?y\<parallel>
         \<le> 2 * \<parallel>post1 y' - post1 ?y\<parallel> / \<parallel>post1 ?y\<parallel>"
-    by (rule normalize_stable[OF _ y'n yn]) (simp only: dim_pflag y' dy)
+    by (rule normalize_dist[OF _ y'n yn]) (simp only: dim_pflag y' dy)
   also have "\<dots> \<le> 2 * \<delta> / (C * \<parallel>?x\<parallel>)"
     unfolding npy using pd C xp by (intro divide_right_mono) simp_all
   finally show "\<parallel>complex_of_real (1 / \<parallel>post1 y'\<parallel>) \<cdot>\<^sub>v post1 y' -
@@ -582,11 +582,11 @@ lemma refl_pflag: "1\<^sub>m K - 2 \<cdot>\<^sub>m pflag_mat K d P = sign_diag K
   unfolding refl_proj_set by simp
 
 definition grover_prog :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> qcirc \<Rightarrow> qcirc" where
-  "grover_prog K d P u = Seq (Gate (sign_diag K (\<lambda>r. P (r mod d)))) (Seq (adj u) (Seq (Gate (sign_diag K (\<lambda>i. i \<noteq> 0))) u))"
+  "grover_prog K d P u = QSeq (Gate (sign_diag K (\<lambda>r. P (r mod d)))) (QSeq (adj u) (QSeq (Gate (sign_diag K (\<lambda>i. i \<noteq> 0))) u))"
 
 primrec aa_prog :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> qcirc \<Rightarrow> nat \<Rightarrow> qcirc" where
   "aa_prog K d P u 0 = u"
-| "aa_prog K d P u (Suc k) = Seq (aa_prog K d P u k) (grover_prog K d P u)"
+| "aa_prog K d P u (Suc k) = QSeq (aa_prog K d P u k) (grover_prog K d P u)"
 
 lemma calls_aa_prog: "calls (aa_prog K d P u k) = (2 * k + 1) * calls u"
   by (induction k) (simp_all add: grover_prog_def)
@@ -746,7 +746,7 @@ text \<open>State preparation $\mathit{Prep}\ket0=\psi\otimes b\otimes\ket0$ (a 
 circuit with oracle $V$, amplitude amplification and post-selection on the ancilla.\<close>
 
 definition hhl_full_prog :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> qcirc" where
-  "hhl_full_prog A t0 N C Prep = Seq (Gate Prep) (hhl_prog N (dim_row A * 2) (hhl_rot_stage A t0 N C))"
+  "hhl_full_prog A t0 N C Prep = QSeq (Gate Prep) (hhl_prog N (dim_row A * 2) (hhl_rot_stage A t0 N C))"
 
 lemma calls_hhl_full_prog: "calls (hhl_full_prog A t0 N C Prep) = 2 * (N - 1)"
   by (simp add: hhl_full_prog_def calls_hhl_prog)

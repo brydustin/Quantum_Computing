@@ -124,29 +124,6 @@ qed
 
 subsection \<open>The CCNOT truth table (D11-2)\<close>
 
-lemma tensor_unit_vec:
-  assumes i: "i < n" and j: "j < m"
-  shows "tensor_vec (unit_vec n i) (unit_vec m j) = (unit_vec (n * m) (i * m + j) :: complex Matrix.vec)"
-proof (rule eq_vecI)
-  have d: "dim_vec (tensor_vec (unit_vec n i) (unit_vec m j) :: complex Matrix.vec) = n * m"
-    by (rule tensor_vec_dim) simp_all
-  fix r assume "r < dim_vec (unit_vec (n * m) (i * m + j) :: complex Matrix.vec)"
-  hence r: "r < n * m" by simp
-  have m: "0 < m" using j by simp
-  have rd: "r div m < n" using r by (simp add: less_mult_imp_div_less)
-  have e: "(r div m = i \<and> r mod m = j) \<longleftrightarrow> r = i * m + j"
-  proof
-    assume "r div m = i \<and> r mod m = j" thus "r = i * m + j" using div_mult_mod_eq[of r m] by simp
-  next
-    assume "r = i * m + j" thus "r div m = i \<and> r mod m = j" using j m by simp
-  qed
-  have "tensor_vec (unit_vec n i) (unit_vec m j) $ r = unit_vec n i $ (r div m) * unit_vec m j $ (r mod m)"
-    by (rule tensor_vec_index) (use r in simp_all)
-  also have "\<dots> = (if r div m = i \<and> r mod m = j then 1 else 0)" using rd m by (simp add: unit_vec_def)
-  also have "\<dots> = unit_vec (n * m) (i * m + j) $ r" using e r by (simp add: unit_vec_def)
-  finally show "tensor_vec (unit_vec n i) (unit_vec m j) $ r = unit_vec (n * m) (i * m + j) $ r" .
-qed (simp add: tensor_vec_dim)
-
 lemma CCNOT_unit_vec:
   assumes k: "k < 8"
   shows "CCNOT *\<^sub>v unit_vec 8 k = unit_vec 8 (if k = 6 then 7 else if k = 7 then 6 else k)"

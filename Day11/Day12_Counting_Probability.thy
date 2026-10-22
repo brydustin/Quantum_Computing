@@ -117,7 +117,7 @@ lemma uniform_vec_self: "\<langle>uniform_vec N | uniform_vec N\<rangle> = 1"
 proof -
   let ?c = "complex_of_real (1 / sqrt 2) ^ N"
   have "\<langle>uniform_vec N | uniform_vec N\<rangle> = (\<Sum>i = 0..<2^N. cnj (uniform_vec N $ i) * uniform_vec N $ i)"
-    using inner_prod_expand[of "uniform_vec N" "2^N" "uniform_vec N"] by simp
+    using inner_prod_sum[of "uniform_vec N" "2^N" "uniform_vec N"] by simp
   also have "\<dots> = (\<Sum>i = 0..<(2::nat)^N. ?c * ?c)"
     by (intro sum.cong refl) (simp add: uniform_vec_def)
   also have "\<dots> = (\<Sum>i = 0..<(2::nat)^N. complex_of_real ((1/2) ^ N))" unfolding uniform_coeff_sq ..

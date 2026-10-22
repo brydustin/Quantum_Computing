@@ -141,9 +141,6 @@ lemma mat_lin_indep_complex_length_le:
 text \<open>Corollary to Choi's Theorem 3 (D22-6): an extreme CPTP map $M_n\to M_d$ with a minimal
 Kraus representation $(V_i)_{i<r}$ has $r^2\le n^2$, i.e.\ $\mathrm{cr}(\Phi)\le n$.\<close>
 
-lemma length_kraus_products: "length (kraus_products Vs) = length Vs * length Vs"
-  by (simp add: kraus_products_def length_concat comp_def sum_list_triv)
-
 corollary extreme_CPTP_kraus_length_le:
   assumes npos: "0 < n" and dpos: "0 < d"
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"

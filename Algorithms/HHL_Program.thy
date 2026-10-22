@@ -783,7 +783,7 @@ proof -
     have "\<langle>?xh|?g1\<rangle> = cnj (complex_of_real (1 / \<parallel>x\<parallel>)) * (complex_of_real C * \<langle>x|x\<rangle>)"
     proof -
       have l: "\<langle>complex_of_real (1 / \<parallel>x\<parallel>) \<cdot>\<^sub>v x|x\<rangle> = cnj (complex_of_real (1 / \<parallel>x\<parallel>)) * \<langle>x|x\<rangle>"
-        by (rule inner_prod_left_smult') simp
+        by (rule No_Cloning.inner_prod_distrib_left) simp
       show ?thesis unfolding g1 inner_prod_right_smult' l by simp
     qed
     also have "\<dots> = complex_of_real (C * \<parallel>x\<parallel>)" unfolding xx using sol_nonzero

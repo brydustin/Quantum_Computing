@@ -28,7 +28,7 @@ proof -
   also have "\<langle>v | ?x\<rangle> = 0" by (rule orth[OF xd Px])
   also have "\<langle>P *\<^sub>v v | ?x\<rangle> = \<langle>v | P *\<^sub>v ?x\<rangle>"
     using inner_prod_adjoint_swap[OF Pc vd xd] Ph by simp
-  also have "\<dots> = 0" unfolding Px using inner_prod_expand[of v n "0\<^sub>v n"] vd by simp
+  also have "\<dots> = 0" unfolding Px using inner_prod_sum[of v n "0\<^sub>v n"] vd by simp
   finally have "\<langle>?x | ?x\<rangle> = 0" by simp
   hence x0: "?x = 0\<^sub>v n" using inner_prod_self_eq_zero_iff[of ?x] xd by simp
   have "\<And>i. i < n \<Longrightarrow> v $ i = (P *\<^sub>v v) $ i"
@@ -103,7 +103,7 @@ proof -
       let ?M = "mat_of_cols n vs"
       have "\<langle>(?M\<^sup>\<dagger>) *\<^sub>v x | (?M\<^sup>\<dagger>) *\<^sub>v x\<rangle> = \<langle>x | outer_sum n vs *\<^sub>v x\<rangle>"
         by (rule inner_prod_outer_sum_general[OF xd vsd, symmetric])
-      also have "\<dots> = 0" unfolding Yx using inner_prod_expand[of x n "0\<^sub>v n"] xd by simp
+      also have "\<dots> = 0" unfolding Yx using inner_prod_sum[of x n "0\<^sub>v n"] xd by simp
       finally have "(?M\<^sup>\<dagger>) *\<^sub>v x = 0\<^sub>v (length vs)"
         using inner_prod_self_eq_zero_iff[of "(?M\<^sup>\<dagger>) *\<^sub>v x"] by (simp add: dagger_def)
       hence "((?M\<^sup>\<dagger>) *\<^sub>v x) $ l = 0" using l by simp

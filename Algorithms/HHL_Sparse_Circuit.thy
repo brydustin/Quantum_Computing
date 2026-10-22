@@ -44,12 +44,6 @@ lemma enc_div: "b < 2 \<Longrightarrow> enc n x y b div 2 = x * n + y"
 lemma enc_mod: "b < 2 \<Longrightarrow> enc n x y b mod 2 = b"
   unfolding enc_def using mod_mult_self3[of "x * n + y" 2 b] by simp
 
-lemma reg_div: "(y::nat) < n \<Longrightarrow> (x * n + y) div n = x"
-  by simp
-
-lemma reg_mod: "(y::nat) < n \<Longrightarrow> (x * n + y) mod n = y"
-  by simp
-
 lemma enc_decode:
   assumes j: "j < n * n * 2"
   shows "j div 2 div n < n" "j div 2 mod n < n" "j mod 2 < 2"
@@ -66,7 +60,7 @@ qed
 lemma enc_eq_iff:
   "y < n \<Longrightarrow> y' < n \<Longrightarrow> b < 2 \<Longrightarrow> b' < 2 \<Longrightarrow>
    enc n x y b = enc n x' y' b' \<longleftrightarrow> x = x' \<and> y = y' \<and> b = b'"
-  by (metis enc_div enc_mod reg_div reg_mod)
+  by (metis enc_div enc_mod mult_index_div_mod)
 
 subsection \<open>The comparator\<close>
 
@@ -80,7 +74,7 @@ definition cmp_perm :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
 lemma cmp_perm_enc:
   assumes "x < n" "y < n" "b < 2"
   shows "cmp_perm n (enc n x y b) = (if (y < x \<and> b = 0) \<or> (x < y \<and> b = 1) then enc n y x (1 - b) else enc n x y b)"
-  using assms enc_lt[OF assms] by (simp add: cmp_perm_def Let_def enc_div enc_mod reg_div reg_mod)
+  using assms enc_lt[OF assms] by (simp add: cmp_perm_def Let_def enc_div enc_mod mult_index_div_mod)
 
 lemma cmp_perm_invol: "invol (n * n * 2) (cmp_perm n)"
   unfolding invol_def
@@ -144,7 +138,7 @@ definition col_perm :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> 
 lemma col_perm_enc:
   assumes "x < n" "y < n" "b < 2"
   shows "col_perm n q (enc n x y b) = enc n x (if y = 0 then q x else if y = q x then 0 else y) b"
-  using assms enc_lt[OF assms] by (simp add: col_perm_def Let_def enc_div enc_mod reg_div reg_mod)
+  using assms enc_lt[OF assms] by (simp add: col_perm_def Let_def enc_div enc_mod mult_index_div_mod)
 
 lemma col_perm_invol:
   assumes q: "invol n q"
@@ -210,7 +204,7 @@ proof (rule eq_vecI)
   have l: "(ent_gate n d A *\<^sub>v bstate n x y b) $ r =
       (if r div 2 = x * n + y then ent_block d A x y $$ (r mod 2, b) else 0)"
     unfolding mult_unit_vec[OF ent_gate_carrier j] using r j
-    by (simp add: ent_gate_def ctrl_blocks_index enc_div[OF b] enc_mod[OF b] reg_div[OF y] reg_mod[OF y] y)
+    by (simp add: ent_gate_def ctrl_blocks_index enc_div[OF b] enc_mod[OF b] mult_index_div_mod[OF y] y)
   have e0: "enc n x y 0 = (x * n + y) * 2" and e1: "enc n x y 1 = (x * n + y) * 2 + 1" by (simp_all add: enc_def)
   show "(ent_gate n d A *\<^sub>v bstate n x y b) $ r =
       (ent_block d A x y $$ (0, b) \<cdot>\<^sub>v bstate n x y 0 + ent_block d A x y $$ (1, b) \<cdot>\<^sub>v bstate n x y 1) $ r"
@@ -642,7 +636,7 @@ proof (rule emb_intertwine[OF dia_gate_carrier])
   fix k assume k: "k < n"
   have n: "0 < n" using k by simp
   have j: "enc n k 0 0 < n * n * 2" by (rule enc_lt[OF k n]) simp
-  have dk: "enc n k 0 0 div 2 div n = k" using enc_div[of 0 n k 0] reg_div[OF n, of k] by simp
+  have dk: "enc n k 0 0 div 2 div n = k" using enc_div[of 0 n k 0] mult_index_div_mod(1)[OF n, of k] by simp
   have "dia_gate n d A *\<^sub>v bstate n k 0 0 = cis (d * Re (A $$ (k, k))) \<cdot>\<^sub>v bstate n k 0 0"
     unfolding dia_gate_def one_sparse_unit[OF invol_id j] dk ..
   also have "\<dots> = emb n *\<^sub>v (cis (d * Re (A $$ (k, k))) \<cdot>\<^sub>v unit_vec n k)"

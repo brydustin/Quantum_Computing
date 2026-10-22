@@ -35,18 +35,6 @@ proof -
   finally show ?thesis .
 qed
 
-lemma idx_mp:
-  fixes c k :: nat
-  assumes c: "c < m" and k: "k < p"
-  shows "c * p + k < m * p" "(c * p + k) div p = c" "(c * p + k) mod p = k"
-proof -
-  have "c * p + k < c * p + p" using k by simp
-  also have "\<dots> = Suc c * p" by simp
-  also have "\<dots> \<le> m * p" using c by (intro mult_le_mono1) simp
-  finally show "c * p + k < m * p" .
-  show "(c * p + k) div p = c" "(c * p + k) mod p = k" using k by simp_all
-qed
-
 lemma tensor_outer_index:
   fixes \<rho> :: "complex Matrix.mat" and \<phi> :: "complex Matrix.vec"
   assumes \<rho>: "\<rho> \<in> carrier_mat m m" and \<phi>: "dim_vec \<phi> = p"
@@ -57,9 +45,9 @@ proof -
   have mp: "0 < m" "0 < p" using c k by simp_all
   have "Tensor.tensor_mat \<rho> (\<phi> \<oslash> \<phi>) $$ (c * p + k, d * p + l)
         = \<rho> $$ ((c * p + k) div p, (d * p + l) div p) * (\<phi> \<oslash> \<phi>) $$ ((c * p + k) mod p, (d * p + l) mod p)"
-    by (rule index_tensor_mat) (use carrier_matD[OF \<rho>] carrier_matD[OF oc] idx_mp[OF c k] idx_mp[OF d l] mp in simp_all)
+    by (rule index_tensor_mat) (use carrier_matD[OF \<rho>] carrier_matD[OF oc] mult_index_lt[OF c k] mult_index_div_mod[OF k] mult_index_lt[OF d l] mult_index_div_mod[OF l] mp in simp_all)
   also have "\<dots> = \<rho> $$ (c,d) * (\<phi> $ k * cnj (\<phi> $ l))"
-    unfolding idx_mp(2,3)[OF c k] idx_mp(2,3)[OF d l] using outer_prod_index[of k \<phi> l \<phi>] \<phi> k l by simp
+    unfolding mult_index_div_mod[OF k] mult_index_div_mod[OF l] using outer_prod_index[of k \<phi> l \<phi>] \<phi> k l by simp
   finally show ?thesis .
 qed
 
@@ -151,7 +139,7 @@ proof -
       qed
       finally show "(U * Tensor.tensor_mat \<rho> (\<phi> \<oslash> \<phi>) * (U\<^sup>\<dagger>)) $$ (a * p + i, b * p + i)
                     = (?W i * \<rho> * ((?W i)\<^sup>\<dagger>)) $$ (a,b)"
-        using env_entry[OF U \<rho> \<phi> idx_mp(1)[OF a i] idx_mp(1)[OF b i]] by simp
+        using env_entry[OF U \<rho> \<phi> mult_index_lt[OF a i] mult_index_lt[OF b i]] by simp
     qed
     also have "\<dots> = kraus_map_dim m Ws \<rho> $$ (a,b)"
       unfolding kraus_map_dim_entry_sum_list[OF Ws_c \<rho> a b] unfolding Ws_def
@@ -184,13 +172,13 @@ proof -
       fix k l assume "k \<in> {..<p}" "l \<in> {..<p}"
       hence k: "k < p" and l: "l < p" by simp_all
       have "(\<Sum>x < m * p. cnj (U $$ (x, c * p + k)) * U $$ (x, d * p + l)) = ((U\<^sup>\<dagger>) * U) $$ (c * p + k, d * p + l)"
-        unfolding mat_mult_entry[OF dagger_carrier[OF U] U idx_mp(1)[OF c k] idx_mp(1)[OF d l]]
-        by (rule sum.cong[OF refl]) (use U idx_mp(1)[OF c k] in \<open>simp add: dagger_def\<close>)
+        unfolding mat_mult_entry[OF dagger_carrier[OF U] U mult_index_lt[OF c k] mult_index_lt[OF d l]]
+        by (rule sum.cong[OF refl]) (use U mult_index_lt[OF c k] in \<open>simp add: dagger_def\<close>)
       also have "\<dots> = (if c = d \<and> k = l then 1 else 0)"
       proof -
         have "c * p + k = d * p + l \<longleftrightarrow> c = d \<and> k = l"
-          using idx_mp(2,3)[OF c k] idx_mp(2,3)[OF d l] by metis
-        thus ?thesis unfolding UU using idx_mp(1)[OF c k] idx_mp(1)[OF d l] by simp
+          using mult_index_div_mod[OF k] mult_index_div_mod[OF l] by metis
+        thus ?thesis unfolding UU using mult_index_lt[OF c k] mult_index_lt[OF d l] by simp
       qed
       finally show "cnj (\<phi> $ k) * \<phi> $ l * (\<Sum>x < m * p. cnj (U $$ (x, c * p + k)) * U $$ (x, d * p + l))
                     = cnj (\<phi> $ k) * \<phi> $ l * (if c = d \<and> k = l then 1 else 0)" by simp
@@ -200,7 +188,7 @@ proof -
       case True
       have "(\<Sum>k<p. \<Sum>l<p. cnj (\<phi> $ k) * \<phi> $ l * (if c = d \<and> k = l then 1 else 0)) = (\<Sum>k<p. cnj (\<phi> $ k) * \<phi> $ k)"
         using True by (simp add: if_distrib cong: if_cong)
-      also have "\<dots> = \<langle>\<phi>|\<phi>\<rangle>" unfolding inner_prod_expand[OF \<phi> \<phi>] atLeast0LessThan ..
+      also have "\<dots> = \<langle>\<phi>|\<phi>\<rangle>" unfolding inner_prod_sum[OF \<phi> \<phi>] atLeast0LessThan ..
       finally show ?thesis using True by simp
     qed simp
     also have "\<dots> = 1\<^sub>m m $$ (c,d)" using c d \<phi>1 by simp

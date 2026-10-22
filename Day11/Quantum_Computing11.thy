@@ -357,12 +357,6 @@ Bernoulli trial).  The existence of the oracle is formalised below; the proposit
 \<open>rank_one_meas_prob\<close> (Day 8); the counting identity is \<open>counting_probability\<close> in
 \<open>Day12_Counting_Probability\<close>.\<close>
 
-lemma hadamard_uniform_1:
-  "Hadamard *\<^sub>v unit_vec 2 0 =
-   (1/csqrt 2) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
-  using hadamard_e0.
-
-
 definition oracle_unitary :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> bool" where
   "oracle_unitary f N \<equiv>
      \<exists>U :: complex Matrix.mat.
@@ -825,87 +819,6 @@ proof -
   show ?thesis
     unfolding psd_def hermitian_def
     using herm quad by simp
-qed
-
-lemma psd_smult_nonneg:
-  assumes c: "0 \<le> c"
-      and A: "psd A" and Ac: "A \<in> carrier_mat n n"
-  shows "psd (complex_of_real c \<cdot>\<^sub>m A)"
-proof -
-  have A_dagger: "(A\<^sup>\<dagger>) = A" using A by (simp add: psd_def hermitian_def)
-  have A_quad: "\<And>x. dim_vec x = n \<Longrightarrow> Re (\<langle>x | A *\<^sub>v x\<rangle>) \<ge> 0"
-    using A Ac by (simp add: psd_def)
-
-  have herm_cA: "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = complex_of_real c \<cdot>\<^sub>m A"
-  proof -
-    have "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = (cnj (complex_of_real c)) \<cdot>\<^sub>m (A\<^sup>\<dagger>)"
-      by (rule dagger_of_smult)
-    also have "\<dots> = complex_of_real c \<cdot>\<^sub>m A"
-      using A_dagger by simp
-    finally show ?thesis .
-  qed
-
-  \<comment> \<open>Action of the scaled matrix on a vector.\<close>
-  have smult_mv:
-    "\<And>x. x \<in> carrier_vec n \<Longrightarrow>
-         (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
-  proof -
-    fix x :: "complex Matrix.vec" assume x_car: "x \<in> carrier_vec n"
-    show "(complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
-    proof (rule eq_vecI)
-      show "dim_vec ((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x)
-            = dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
-        using Ac by simp
-    next
-      fix i assume "i < dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
-      hence i: "i < n" using Ac by simp
-      have r1: "Matrix.row A i \<in> carrier_vec n"
-        using Ac i by auto
-      have i_dr: "i < dim_row A" using i Ac by simp
-      have "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
-              = Matrix.row (complex_of_real c \<cdot>\<^sub>m A) i \<bullet> x"
-        using i Ac by auto
-      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v Matrix.row A i) \<bullet> x"
-        using row_smult[OF i_dr] by simp
-      also have "\<dots> = complex_of_real c * (Matrix.row A i \<bullet> x)"
-        using r1 x_car by simp
-      also have "\<dots> = complex_of_real c * (A *\<^sub>v x) $ i"
-        using i Ac by auto
-      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i"
-        using i Ac by auto
-      finally show "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
-                  = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i" .
-    qed
-  qed
-
-  have quad: "\<And>x. dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A) \<Longrightarrow>
-                Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>) \<ge> 0"
-  proof -
-    fix x :: "complex Matrix.vec"
-    assume dx: "dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A)"
-    hence dx': "dim_vec x = n" using Ac by simp
-    have x_car: "x \<in> carrier_vec n" using dx' by auto
-
-    have "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
-        = \<langle>x | complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
-      using smult_mv[OF x_car] by simp
-    also have "\<dots> = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>"
-      by (rule inner_prod_right_smult')
-    finally have eq: "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
-                    = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>" .
-
-    have Re_split: "Re (complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>)
-                  = c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
-      by simp
-    have "0 \<le> c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
-      using c A_quad[OF dx'] by (rule mult_nonneg_nonneg)
-    thus "0 \<le> Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>)"
-      using eq Re_split by simp
-  qed
-
-  show ?thesis
-    unfolding psd_def hermitian_def
-    using herm_cA quad by blast
 qed
 
 lemma psd_add_psd:
@@ -2559,7 +2472,7 @@ proof -
     also have "\<langle>\<beta> \<cdot>\<^sub>v \<psi>|w\<rangle> = cnj \<beta> * \<langle>\<psi>|w\<rangle>"
     proof -
       have "dim_vec \<psi> = dim_vec w" using \<psi>_dim w_dim by simp
-      thus ?thesis by (rule inner_prod_left_smult')
+      thus ?thesis by (rule No_Cloning.inner_prod_distrib_left)
     qed
     also have "cnj \<beta> * \<langle>\<psi>|w\<rangle> = 0" using \<psi>_perp_w by simp
     finally show ?thesis using \<psi>\<^sub>i_perp_w by simp
@@ -2901,7 +2814,7 @@ proof -
   have "A \<Otimes> B = (?V * (?V\<^sup>\<dagger>)) \<Otimes> (?W * (?W\<^sup>\<dagger>))" using A_eq B_eq by simp
   also have "\<dots> = (?V \<Otimes> ?W) * ((?V\<^sup>\<dagger>) \<Otimes> (?W\<^sup>\<dagger>))"
     using tensor_mat_mult[of ?V "?V\<^sup>\<dagger>" ?W "?W\<^sup>\<dagger>"] Vc Wc by simp
-  also have "(?V\<^sup>\<dagger>) \<Otimes> (?W\<^sup>\<dagger>) = (?V \<Otimes> ?W)\<^sup>\<dagger>" by (simp add: tensor_mat_adjoint)
+  also have "(?V\<^sup>\<dagger>) \<Otimes> (?W\<^sup>\<dagger>) = (?V \<Otimes> ?W)\<^sup>\<dagger>" by (simp add: hermite_cnj_of_tensor)
   finally have VW: "A \<Otimes> B = (?V \<Otimes> ?W) * ((?V \<Otimes> ?W)\<^sup>\<dagger>)" .
   have VWc: "?V \<Otimes> ?W \<in> carrier_mat (m * p) (m * p)"
     using Vc Wc unfolding carrier_mat_def by (simp add: dim_row_tensor_mat dim_col_tensor_mat)
@@ -5129,7 +5042,7 @@ next
         kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) x"
     using kraus_amplification_single[OF Wc x dpos npos] Cons.IH[OF Wsc] by simp
   also have "\<dots> = kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) (W # Ws)) x"
-    using Wc by (simp add: tensor_mat_adjoint)
+    using Wc by (simp add: hermite_cnj_of_tensor)
   finally show ?case .
 qed
 
@@ -5731,18 +5644,6 @@ proof -
     using choi_matrix_as_amplification[OF npos dpos, of \<Phi>] by simp
 qed
 
-subsection \<open>From a positive Choi matrix to a Kraus representation\<close>
-
-text \<open>The notes' proof of (3)$\Rightarrow$(4): write $P_\Phi=\sum_kv_kv_k^*$ with
-$v_k\in\C^{nd}$, cut each $v_k$ into $n$ blocks $w^k_1,\dots,w^k_n\in\C^d$, and let
-$B_k=[w^k_1|\cdots|w^k_n]$; then $B_kE_{ij}B_k^*=w^k_i(w^k_j)^*$ and
-$\Phi(X)=\sum_{ij}x_{ij}\Phi(E_{ij})=\sum_kB_kXB_k^*$ by linearity.\<close>
-
-text \<open>
-  Complete positivity from a Kraus list without the trace-preservation
-  constraint: the argument is the same as @{thm kraus_is_cp}, which only uses
-  the carrier hypothesis.
-\<close>
 lemma kraus_cp_no_tp:
   assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
       and npos: "0 < n"
@@ -5763,6 +5664,18 @@ proof (unfold completely_positive_def p_positive_def, intro allI impI)
     using kraus_map_dim_psd[OF lifted_c X_c X_psd] amp_eq by simp
 qed
 
+subsection \<open>From a positive Choi matrix to a Kraus representation\<close>
+
+text \<open>The notes' proof of (3)$\Rightarrow$(4): write $P_\Phi=\sum_kv_kv_k^*$ with
+$v_k\in\C^{nd}$, cut each $v_k$ into $n$ blocks $w^k_1,\dots,w^k_n\in\C^d$, and let
+$B_k=[w^k_1|\cdots|w^k_n]$; then $B_kE_{ij}B_k^*=w^k_i(w^k_j)^*$ and
+$\Phi(X)=\sum_{ij}x_{ij}\Phi(E_{ij})=\sum_kB_kXB_k^*$ by linearity.\<close>
+
+text \<open>
+  Complete positivity from a Kraus list without the trace-preservation
+  constraint: the argument is the same as @{thm kraus_is_cp}, which only uses
+  the carrier hypothesis.
+\<close>
 text \<open>Linearity of the Kraus-sum map in its matrix argument.\<close>
 
 lemma kraus_map_dim_add:
@@ -7146,31 +7059,6 @@ qed
 
 text \<open>The adjoint identity $\langle Y|\Phi(X)\rangle=\langle\Phi^*(Y)|X\rangle$, by induction on
 the Kraus list and cyclicity of the trace.\<close>
-
-lemma hs_inner_prod_left_add:
-  assumes d1r: "dim_row Y1 = dim_row X" and d1c: "dim_col Y1 = dim_col X"
-      and d2r: "dim_row Y2 = dim_row X" and d2c: "dim_col Y2 = dim_col X"
-  shows "\<langle>\<langle> Y1 + Y2 | X \<rangle>\<rangle> = \<langle>\<langle> Y1 | X \<rangle>\<rangle> + \<langle>\<langle> Y2 | X \<rangle>\<rangle>"
-proof -
-  have sum_eq: "(Y1 + Y2) $$ (i, j) = Y1 $$ (i, j) + Y2 $$ (i, j)"
-    if ij: "i < dim_row X" "j < dim_col X" for i j
-    using that d1r d1c d2r d2c by simp
-  have "\<langle>\<langle> Y1 + Y2 | X \<rangle>\<rangle>
-          = (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
-               cnj ((Y1 + Y2) $$ (i, j)) * X $$ (i, j))"
-    by (simp add: hs_inner_prod_def)
-  also have "\<dots> = (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
-               (cnj (Y1 $$ (i, j)) + cnj (Y2 $$ (i, j))) * X $$ (i, j))"
-    by (intro sum.cong refl) (simp add: sum_eq)
-  also have "\<dots> = (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
-                       cnj (Y1 $$ (i, j)) * X $$ (i, j))
-                + (\<Sum>i\<in>{0..<dim_row X}. \<Sum>j\<in>{0..<dim_col X}.
-                       cnj (Y2 $$ (i, j)) * X $$ (i, j))"
-    by (simp add: distrib_right sum.distrib)
-  also have "\<dots> = \<langle>\<langle> Y1 | X \<rangle>\<rangle> + \<langle>\<langle> Y2 | X \<rangle>\<rangle>"
-    by (simp add: hs_inner_prod_def)
-  finally show ?thesis .
-qed
 
 lemma hs_inner_prod_right_zero:
   "\<langle>\<langle> y | 0\<^sub>m m n \<rangle>\<rangle> = 0"
@@ -9627,25 +9515,6 @@ proof -
   finally show ?thesis .
 qed
 
-lemma rank1_projection_trace_inner:
-  fixes \<psi> :: "complex Matrix.vec"
-  assumes \<psi>_dim: "dim_vec \<psi> = n"
-  shows "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
-proof -
-  let ?M = "outer_sum n [\<psi>]"
-  have M_c: "?M \<in> carrier_mat n n" by auto
-  have "Tr ?M = (\<Sum>r < n. ?M $$ (r, r))"
-    using M_c by (auto simp: Tr_def)
-  also have "\<dots> = (\<Sum>r < n. \<psi> $ r * cnj (\<psi> $ r))"
-    by (intro sum.cong refl) (simp add: outer_sum_singleton_index)
-  also have "\<dots> = (\<Sum>r = 0..<n. cnj (\<psi> $ r) * \<psi> $ r)"
-    by (intro sum.cong refl)
-       (auto simp: atLeast0LessThan mult.commute)
-  also have "\<dots> = \<langle>\<psi> | \<psi>\<rangle>"
-    using \<psi>_dim by (simp add: inner_prod_def)
-  finally show ?thesis .
-qed
-
 lemma rank1_projection_trace_one:
   fixes \<psi> :: "complex Matrix.vec"
   assumes \<psi>_qs: "quantum_state n \<psi>"
@@ -9654,7 +9523,7 @@ proof -
   have \<psi>_dim: "dim_vec \<psi> = n" using \<psi>_qs by (simp add: quantum_state_def)
   have norm1: "\<parallel>\<psi>\<parallel> = 1" using \<psi>_qs by (simp add: quantum_state_def)
   have "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
-    using rank1_projection_trace_inner[OF \<psi>_dim] .
+    using Tr_outer_sum_single[OF \<psi>_dim] .
   also have "\<dots> = complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2)"
     by (metis cpx_vec_length_inner_prod)
   also have "\<dots> = complex_of_real (1\<^sup>2)" using norm1 by simp
@@ -10219,33 +10088,6 @@ qed
 
 subsection \<open>Conjugation channels are completely positive\<close>
 
-lemma kraus_map_dim_is_cp:
-  fixes Ws :: "complex Matrix.mat list"
-  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-      and npos: "0 < n"
-      and dpos: "0 < d"
-  shows "completely_positive n d (kraus_map_dim d Ws)"
-proof (unfold completely_positive_def p_positive_def, intro allI impI)
-  fix p :: nat and X :: "complex Matrix.mat"
-  assume ppos: "0 < p"
-     and X_c: "X \<in> carrier_mat (p*n) (p*n)"
-     and X_psd: "psd X"
-  have lifted_c:
-    "\<forall>L \<in> set (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws). L \<in> carrier_mat (p*d) (p*n)"
-    using tensor_id_kraus_list_carrier[OF Ws_c] .
-  have amp_eq:
-    "amplification n d p (kraus_map_dim d Ws) X
-       = kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) X"
-    using amplification_kraus_map_dim[OF Ws_c X_c dpos npos] .
-  have psd_kr:
-    "psd (kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) X)"
-    using kraus_map_dim_psd[OF lifted_c X_c X_psd] .
-  show "psd (amplification n d p (kraus_map_dim d Ws) X)"
-    using amp_eq psd_kr by simp
-qed
-
-
-
 definition conjugation_channel ::
   "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "conjugation_channel U \<rho> \<equiv> U * \<rho> * (U\<^sup>\<dagger>)"
@@ -10275,7 +10117,7 @@ lemma conjugation_channel_cp:
   shows "completely_positive n d (kraus_map_dim d [U])"
 proof -
   have Ws_c: "\<forall>W \<in> set [U]. W \<in> carrier_mat d n" using U_c by simp
-  show ?thesis using kraus_map_dim_is_cp[OF Ws_c npos dpos] .
+  show ?thesis using kraus_cp_no_tp[OF Ws_c npos dpos] .
 qed
 
 
@@ -10315,7 +10157,7 @@ proof -
     using conjugation_channel_eq_kraus[OF U_c]
     by (simp add: conjugation_channel_def)
   have G_cp: "completely_positive n d ?G"
-    using kraus_map_dim_is_cp[OF Ws_c npos dpos] .
+    using kraus_cp_no_tp[OF Ws_c npos dpos] .
   show ?thesis
   proof (unfold completely_positive_def p_positive_def, intro allI impI)
     fix p :: nat and X :: "complex Matrix.mat"

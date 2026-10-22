@@ -54,6 +54,6 @@ begin
 ML_file "../project_checks.ML"
 
 ML \<open>Project_Checks.run {name = "Notes", audit = ["Vern_Paulsen_QC_3_10", "Vern_Paulsen_QC_3_10_Lmat", "Vern_Paulsen_QC"], allow = [],
-  targets = ["Vern_Paulsen_QC_3_10", "Vern_Paulsen_QC_3_10_Lmat", "Vern_Paulsen_QC"], ignore = [], strict = false} \<^theory>\<close>
+  targets = ["Vern_Paulsen_QC_3_10", "Vern_Paulsen_QC_3_10_Lmat", "Vern_Paulsen_QC"], ignore = [], strict = true} \<^theory>\<close>
 
 end

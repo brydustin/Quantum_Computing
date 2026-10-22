@@ -1192,79 +1192,6 @@ proof -
   thus "M = 0" by (simp only: unwrap_lm_inject)
 qed
 
-lemma psd_smult_nonneg_local:
-  fixes A :: "complex Matrix.mat" and c :: real
-  assumes c: "0 \<le> c"
-      and A: "psd A" and Ac: "A \<in> carrier_mat n n"
-  shows "psd (complex_of_real c \<cdot>\<^sub>m A)"
-proof -
-  have A_dagger: "A\<^sup>\<dagger> = A" using A by (simp add: psd_def hermitian_def)
-  have A_quad: "\<And>x. dim_vec x = n \<Longrightarrow> Re \<langle>x | A *\<^sub>v x\<rangle> \<ge> 0"
-    using A Ac by (simp add: psd_def)
-  have herm_cA: "(complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger> = complex_of_real c \<cdot>\<^sub>m A"
-  proof -
-    have "(complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>
-        = (cnj (complex_of_real c)) \<cdot>\<^sub>m (A\<^sup>\<dagger>)"
-      by (rule dagger_of_smult)
-    also have "\<dots> = complex_of_real c \<cdot>\<^sub>m A" using A_dagger by simp
-    finally show ?thesis .
-  qed
-  have smult_mv:
-    "\<And>x. x \<in> carrier_vec n \<Longrightarrow>
-         (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
-  proof -
-    fix x :: "complex Matrix.vec" assume x_car: "x \<in> carrier_vec n"
-    show "(complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
-    proof (rule eq_vecI)
-      show "dim_vec ((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x)
-          = dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
-        using Ac by simp
-    next
-      fix i assume "i < dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
-      hence i: "i < n" using Ac by simp
-      have r1: "Matrix.row A i \<in> carrier_vec n" using Ac i by auto
-      have i_dr: "i < dim_row A" using i Ac by simp
-      have "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
-            = Matrix.row (complex_of_real c \<cdot>\<^sub>m A) i \<bullet> x"
-        using i Ac by auto
-      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v Matrix.row A i) \<bullet> x"
-        using row_smult[OF i_dr] by simp
-      also have "\<dots> = complex_of_real c * (Matrix.row A i \<bullet> x)"
-        using r1 x_car by simp
-      also have "\<dots> = complex_of_real c * (A *\<^sub>v x) $ i"
-        using i Ac by auto
-      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i"
-        using i Ac by auto
-      finally show "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
-                  = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i" .
-    qed
-  qed
-  have quad: "\<And>x. dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A)
-                  \<Longrightarrow> Re \<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> \<ge> 0"
-  proof -
-    fix x :: "complex Matrix.vec"
-    assume dx: "dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A)"
-    hence dx': "dim_vec x = n" using Ac by simp
-    have x_car: "x \<in> carrier_vec n" using dx' by auto
-    have "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
-        = \<langle>x | complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
-      using smult_mv[OF x_car] by simp
-    also have "\<dots> = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>"
-      by (rule inner_prod_right_smult')
-    finally have eq: "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
-                    = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>" .
-    have Re_split: "Re (complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>)
-                  = c * Re \<langle>x | A *\<^sub>v x\<rangle>"
-      by simp
-    have "0 \<le> c * Re \<langle>x | A *\<^sub>v x\<rangle>"
-      using c A_quad[OF dx'] by (rule mult_nonneg_nonneg)
-    thus "0 \<le> Re \<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>"
-      using eq Re_split by simp
-  qed
-  show ?thesis
-    unfolding psd_def hermitian_def using herm_cA quad by blast
-qed
-
 lemma unwrap_lm_scaleR_eq:
   fixes M :: "(complex, 'm :: finite, 'n :: finite) lmat" and a :: real
   shows "unwrap_lm (a *\<^sub>R M) = complex_of_real a \<cdot>\<^sub>m unwrap_lm M"
@@ -1296,7 +1223,7 @@ proof -
   have M_jnf_psd: "psd (unwrap_lm M)" using M_psd by simp
   have M_jnf_carr: "unwrap_lm M \<in> carrier_mat (CARD('k)) (CARD('k))" by simp
   have psd_jnf: "psd (complex_of_real a \<cdot>\<^sub>m unwrap_lm M)"
-    by (rule psd_smult_nonneg_local [OF a_nn M_jnf_psd M_jnf_carr])
+    by (rule psd_smult_nonneg [OF a_nn M_jnf_psd M_jnf_carr])
   have unwrap_eq: "unwrap_lm (a *\<^sub>R M) = complex_of_real a \<cdot>\<^sub>m unwrap_lm M"
     by (rule unwrap_lm_scaleR_eq)
   have "psd (unwrap_lm (a *\<^sub>R M))"

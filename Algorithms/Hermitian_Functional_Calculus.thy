@@ -19,7 +19,7 @@ lemma dim_diag_cmat [simp]: "dim_row (diag_cmat xs) = length xs" "dim_col (diag_
   by (simp_all add: diag_cmat_def mat_diag_def)
 
 lemma diag_mat_of_real_cmat: "diag_mat_of_real D = diag_cmat (map complex_of_real D)"
-  by (rule eq_matI) (auto simp: diag_mat_of_real_def diag_cmat_def mat_diag_def)
+  by (rule eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def diag_cmat_def mat_diag_def)
 
 lemma diag_cmat_mult_vec:
   assumes "dim_vec w = length xs"

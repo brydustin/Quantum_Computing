@@ -146,17 +146,6 @@ proof -
   thus ?thesis unfolding sum.nat_group[symmetric] by simp
 qed
 
-lemma block_index:
-  fixes k i N m :: nat
-  assumes "k < N" "i < m"
-  shows "k * m + i < N * m" "(k * m + i) div m = k" "(k * m + i) mod m = i"
-proof -
-  have "k * m + i < Suc k * m" using assms(2) by simp
-  also have "\<dots> \<le> N * m" using assms(1) by (intro mult_le_mono1) simp
-  finally show "k * m + i < N * m" .
-  show "(k * m + i) div m = k" "(k * m + i) mod m = i" using assms(2) by simp_all
-qed
-
 lemma pow_eigen:
   fixes U :: "complex Matrix.mat"
   assumes U: "U \<in> carrier_mat m m" and u: "dim_vec u = m" and ev: "U *\<^sub>v u = z \<cdot>\<^sub>v u"
@@ -205,7 +194,7 @@ proof -
       hence k': "k' < N" by simp
       show "(\<Sum>i'<m. ctrl_pow N m U $$ (r, k' * m + i') * tensor_vec a u $ (k' * m + i')) =
             (if k' = k then (\<Sum>i'<m. (U ^\<^sub>m k) $$ (i, i') * (a $ k * u $ i')) else 0)"
-        using block_index[OF k'] r a u
+        using mult_index_lt[OF k'] mult_index_div_mod r a u
         by (auto simp: ctrl_blocks_index tensor_vec_index k_def i_def intro!: sum.cong)
     qed
     also have "\<dots> = (\<Sum>i'<m. (U ^\<^sub>m k) $$ (i, i') * (a $ k * u $ i'))" using k by simp
@@ -328,7 +317,7 @@ lemma reg_prob_tensor:
 proof -
   have "reg_prob m (tensor_vec b u) j = (\<Sum>i<m. (cmod (b $ j))\<^sup>2 * (cmod (u $ i))\<^sup>2)"
     unfolding reg_prob_def
-    by (rule sum.cong) (use block_index[OF j] b u in \<open>auto simp: tensor_vec_index norm_mult power_mult_distrib\<close>)
+    by (rule sum.cong) (use mult_index_lt[OF j] mult_index_div_mod b u in \<open>auto simp: tensor_vec_index norm_mult power_mult_distrib\<close>)
   also have "\<dots> = (cmod (b $ j))\<^sup>2" using unit by (simp flip: sum_distrib_left)
   finally show ?thesis .
 qed

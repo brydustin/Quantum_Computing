@@ -98,7 +98,7 @@ a complex vector space with a sesquilinear positive definite form, complete for 
 The library's inner product \<^term>\<open>\<langle>y|x\<rangle>\<close> is exactly this form, with indices
 running from $0$ to $n-1$.\<close>
 
-lemma inner_prod_expand:
+lemma inner_prod_sum:
   assumes "dim_vec u = n" and "dim_vec v = n"
   shows "\<langle>u|v\<rangle> = (\<Sum> i \<in> {0..< n}. cnj(u $ i) * (v $ i))"
   using assms by (simp add: inner_prod_def)
@@ -288,6 +288,9 @@ definition mat_unit :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> na
   "mat_unit i j m n = Matrix.mat m n (\<lambda>(r,c). if r = i \<and> c = j then 1 else 0)"
 
 notation mat_unit ("E\<lbrakk>_,_ ; _,_\<rbrakk>" [1000, 1000, 1000, 1000] 999)
+
+lemma mat_unit_carrier [simp]: "E\<lbrakk>i,j ; m,n\<rbrakk> \<in> carrier_mat m n"
+  by (simp add: mat_unit_def)
 
 lemma mat_unit_dim_row [simp]:
   fixes i j m n :: nat
@@ -1393,72 +1396,6 @@ qed
 
 subsection \<open> Tensor Adjoint \<close>
 
-lemma tensor_mat_adjoint:
-  "(Tensor.tensor_mat A B)\<^sup>\<dagger> = Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>)"
-proof (rule eq_matI)
-  let ?ra = "dim_row A"  let ?ca = "dim_col A"
-  let ?rb = "dim_row B"  let ?cb = "dim_col B"
-
-  show "dim_row ((Tensor.tensor_mat A B)\<^sup>\<dagger>) =
-        dim_row (Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>))"
-    by (simp add: dagger_def)
-  show "dim_col ((Tensor.tensor_mat A B)\<^sup>\<dagger>) =
-        dim_col (Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>))"
-    by (simp add: dagger_def)
-
-  fix i j
-  assume "i < dim_row (Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>))"
-         "j < dim_col (Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>))"
-  then have dims:
-    "i < ?ca * ?cb" "j < ?ra * ?rb"
-    by (simp_all add: dagger_def)
-
-  show "(Tensor.tensor_mat A B)\<^sup>\<dagger> $$ (i, j) =
-        Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>) $$ (i, j)"
-  proof (cases "?rb = 0 \<or> ?cb = 0")
-    case True
-    then show ?thesis using dims by auto
-  next
-    case False
-    then have rb_pos: "0 < ?rb" and cb_pos: "0 < ?cb" by auto
-
-    have div_i_cb: "i div ?cb < ?ca" using dims cb_pos
-      by (simp add: less_mult_imp_div_less)
-    have mod_i_cb: "i mod ?cb < ?cb" using cb_pos by simp
-    have div_j_rb: "j div ?rb < ?ra" using dims rb_pos
-      by (simp add: less_mult_imp_div_less)
-    have mod_j_rb: "j mod ?rb < ?rb" using rb_pos by simp
-
-    have lhs: "(Tensor.tensor_mat A B)\<^sup>\<dagger> $$ (i, j) =
-               cnj (Tensor.tensor_mat A B $$ (j, i))"
-      using dims by (simp add: dagger_def)
-
-    have expand_ji: "Tensor.tensor_mat A B $$ (j, i) =
-          A $$ (j div ?rb, i div ?cb) * B $$ (j mod ?rb, i mod ?cb)"
-      using dims
-      by (metis cb_pos div_i_cb index_tensor_mat less_zeroE not_gr0) 
-
-    have lhs_eq: "(Tensor.tensor_mat A B)\<^sup>\<dagger> $$ (i, j) =
-          cnj (A $$ (j div ?rb, i div ?cb)) * cnj (B $$ (j mod ?rb, i mod ?cb))"
-      using lhs expand_ji by simp
-
-    have rhs_eq: "Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>) $$ (i, j) =
-          (A\<^sup>\<dagger>) $$ (i div ?cb, j div ?rb) * (B\<^sup>\<dagger>) $$ (i mod ?cb, j mod ?rb)"
-      using dims by (auto simp: dagger_def, metis bot_nat_0.not_eq_extremum dim_col_mat(1) 
-                     dim_row_mat(1) index_tensor_mat mult_eq_0_iff not_less_zero)
-
-    have dagger_A: "(A\<^sup>\<dagger>) $$ (i div ?cb, j div ?rb) =
-                    cnj (A $$ (j div ?rb, i div ?cb))"
-      using div_i_cb div_j_rb by (simp add: dagger_def)
-    have dagger_B: "(B\<^sup>\<dagger>) $$ (i mod ?cb, j mod ?rb) =
-                    cnj (B $$ (j mod ?rb, i mod ?cb))"
-      using mod_i_cb mod_j_rb by (simp add: dagger_def)
-    from lhs_eq rhs_eq dagger_A dagger_B
-    show ?thesis by simp
-  qed
-qed
-
-
 subsection \<open> Mixed-Product Property \<close>
 
 
@@ -1627,7 +1564,7 @@ proof -
     have "((Tensor.tensor_mat A B)\<^sup>\<dagger>) * (Tensor.tensor_mat A B)
         = (Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>))
           * (Tensor.tensor_mat A B)"
-      by (simp add: tensor_mat_adjoint)
+      by (simp add: hermite_cnj_of_tensor)
     also have "\<dots> =
          Tensor.tensor_mat ((A\<^sup>\<dagger>) * A) ((B\<^sup>\<dagger>) * B)"
       by (rule tensor_adjoint_mult)
@@ -1648,7 +1585,7 @@ proof -
           * ((Tensor.tensor_mat A B)\<^sup>\<dagger>)
         = (Tensor.tensor_mat A B)
           * (Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>))"
-      by (simp add: tensor_mat_adjoint)
+      by (simp add: hermite_cnj_of_tensor)
     also have "\<dots> =
          Tensor.tensor_mat (A * (A\<^sup>\<dagger>))
                            (B * (B\<^sup>\<dagger>))"
@@ -1681,5 +1618,46 @@ lemma tensor_mat_unitary_one_right [simp]:
   assumes uA: "unitary A"
   shows "unitary (Tensor.tensor_mat A (1\<^sub>m n))"
   using id_is_unitary tensor_mat_unitary uA by blast
+
+
+lemma one_smult_mat: "(1::complex) \<cdot>\<^sub>m M = M"
+  by (rule eq_matI) simp_all
+
+
+lemma mult_index_lt:
+  fixes i j n m :: nat
+  assumes "i < n" and "j < m"
+  shows "i * m + j < n * m"
+proof -
+  have "i * m + j < (i + 1) * m" using assms(2) by simp
+  also have "\<dots> \<le> n * m" using assms(1) by (intro mult_le_mono1) simp
+  finally show ?thesis .
+qed
+
+lemma mult_index_div_mod:
+  fixes i l m :: nat
+  assumes "l < m"
+  shows "(i * m + l) div m = i" "(i * m + l) mod m = l"
+  using assms by simp_all
+
+
+lemma hs_inner_prod_left_add:
+  assumes "dim_row A1 = dim_row B" and "dim_col A1 = dim_col B"
+      and "dim_row A2 = dim_row B" and "dim_col A2 = dim_col B"
+  shows "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
+proof -
+  have dims:
+    "dim_row (A1 + A2) = dim_row B" "dim_col (A1 + A2) = dim_col B"
+    using assms by auto
+  have "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = cnj (\<langle>\<langle> B | A1 + A2 \<rangle>\<rangle>)"
+    using dims by (intro hs_inner_prod_cnj) auto
+  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle> + \<langle>\<langle> B | A2 \<rangle>\<rangle>)"
+    using assms by (simp add: hs_inner_prod_right_add)
+  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle>) + cnj (\<langle>\<langle> B | A2 \<rangle>\<rangle>)"
+    by simp
+  also have "\<dots> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
+    by (metis assms(1,2,3,4) hs_inner_prod_cnj)    
+  finally show ?thesis.
+qed
 
 end

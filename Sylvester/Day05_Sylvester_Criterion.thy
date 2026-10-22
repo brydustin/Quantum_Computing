@@ -27,11 +27,8 @@ those terms.  Names that both libraries define (\<open>hermitian\<close>, \<open
 their theory prefix.  Formally $P_k$ is \<^term>\<open>lps P k\<close>, and $k$ ranges over $0,\dots,n$:
 the case $k=0$ adds nothing, since a $0\times0$ determinant is $1$.\<close>
 
-lemma dagger_eq_mat_adjoint: "Quantum.dagger A = mat_adjoint A"
-  by (simp add: Quantum.dagger_def Complex_Matrix.adjoint_def conjugate_complex_def)
-
 lemma hermitian_iff_Complex_Matrix_hermitian: "Quantum_Computing_3_10.hermitian A \<longleftrightarrow> Complex_Matrix.hermitian A"
-  by (simp add: Quantum_Computing_3_10.hermitian_def Complex_Matrix.hermitian_def dagger_eq_mat_adjoint)
+  by (simp add: Quantum_Computing_3_10.hermitian_def Complex_Matrix.hermitian_def Linear_Algebra_Complements.dagger_adjoint)
 
 lemma quadratic_form_eq_inner_prod:
   fixes P :: "complex Matrix.mat" and x :: "complex Matrix.vec"

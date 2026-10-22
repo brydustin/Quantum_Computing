@@ -25,11 +25,6 @@ $M_{mp}$ can be rewritten using at most $2(mp)^2+1$ of them.\<close>
 
 section \<open>HS inner-product algebra\<close>
 
-lemma hs_inner_prod_self_eq_of_real:
-  "\<langle>\<langle> A | A \<rangle>\<rangle> = complex_of_real (Re (\<langle>\<langle> A | A \<rangle>\<rangle>))"
-  using hs_inner_prod_self_real complex_eq_iff
-  by (metis Reals_cases of_real_Re)
-
 lemma hs_inner_prod_self_zero_iff:
   fixes A :: "complex Matrix.mat"
   shows "\<langle>\<langle> A | A \<rangle>\<rangle> = 0 \<longleftrightarrow> A = 0\<^sub>m (dim_row A) (dim_col A)"
@@ -80,24 +75,6 @@ qed
 
 
 section \<open>Trace lemmas\<close>
-
-lemma Tr_dagger:
-  fixes M :: "complex Matrix.mat"
-  assumes M_c: "M \<in> carrier_mat n n"
-  shows "Tr (M\<^sup>\<dagger>) = cnj (Tr M)"
-proof -
-  have dr: "dim_row M = n" and dc: "dim_col M = n" using M_c by auto
-  have d_dr: "dim_row (M\<^sup>\<dagger>) = n" using dc by simp
-  have d_dc: "dim_col (M\<^sup>\<dagger>) = n" using dr by simp
-  have "Tr (M\<^sup>\<dagger>) = (\<Sum>r<n. (M\<^sup>\<dagger>) $$ (r,r))"
-    unfolding Tr_def using d_dr d_dc by simp
-  also have "\<dots> = (\<Sum>r<n. cnj (M $$ (r,r)))"
-    using dr dc unfolding dagger_def by simp
-  also have "\<dots> = cnj (\<Sum>r<n. M $$ (r,r))" by simp
-  also have "\<dots> = cnj (Tr M)"
-    unfolding Tr_def using dr dc by simp
-  finally show ?thesis .
-qed
 
 lemma Tr_smult_mat:
   fixes M :: "complex Matrix.mat" and c :: complex
@@ -440,7 +417,7 @@ proof
   hence "(hs_norm A)\<^sup>2 = 0" by simp
   hence "Re (\<langle>\<langle> A | A \<rangle>\<rangle>) = 0" by (simp add: hs_norm_sq)
   hence "\<langle>\<langle> A | A \<rangle>\<rangle> = 0"
-    using hs_inner_prod_self_eq_of_real by (metis of_real_0)
+    using hs_inner_prod_real_self by (metis of_real_0)
   thus "A = 0\<^sub>m (dim_row A) (dim_col A)"
     by (simp add: hs_inner_prod_self_zero_iff)
 next

@@ -39,7 +39,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | id | notes | formal | status |
 |---|---|---|---|
 | D1-1 | computing overview, course overview, references | – | – |
-| D1-2 | inner product on ℂⁿ, sesquilinearity, positivity | library `inner_prod` (IMD); BM `inner_prod_expand`; QC3 `inner_prod_right_add'`, `_right_smult'`, `_left_smult'`, `_left_minus'`, `cpx_vec_length_zero_iff`, `cpx_vec_length_smult` | ✓ |
+| D1-2 | inner product on ℂⁿ, sesquilinearity, positivity | library `inner_prod` (IMD); BM `inner_prod_sum`; QC3 `inner_prod_right_add'`, `_right_smult'`, `_left_smult'`, `_left_minus'`, `cpx_vec_length_zero_iff`, `cpx_vec_length_smult` | ✓ |
 | D1-3 | Hilbert space (abstract definition) | not needed: all spaces are ℂⁿ or M_{n,k} | – |
 | D1-4 | M_{n,k} with ⟨Y\|X⟩ = Σ ȳ_{ij} x_{ij} ≅ ℂ^{nk} | BM `hs_inner_prod` (+ `hs_inner_prod_cnj`, `_right_add`, `_right_smult`, `_left_smult`, `_self_real`, `_self_nonneg`, `_eq_zero_imp`); isomorphism with ℂ^{nk} not stated | ✓ |
 
@@ -61,8 +61,8 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 ### Day 3 (31 Aug): unitaries, Householder, Schur
 | id | notes | formal | status |
 |---|---|---|---|
-| D3-1 | U unitary iff U*U = I | library `unitary` (bundles U*U = I and UU* = I); QC3 `unitary_left_right` | ✓ |
-| D3-2 | TFAE (a) unitary (b) invertible with U⁻¹ = U* (c) UU* = I (d) U* unitary (e) columns ONB (f) rows ONB (g) isometry (h) inner-product preserving | (a)⟹(b) `unitary_invertible`; (a)⟺(c) by definition; (a)⟹(d) `unitary_dagger_is_unitary` (converse by applying it to U*); (a)⟹(e) `unitary_cols_orthonormal`, (e)⟹(a) BM `orthonormal_mat_unitary`; (a)⟹(f) `unitary_rows_orthonormal`; (a)⟹(g) `unitary_isometry`; (a)⟹(h) `unitary_preserves_inner_prod`; (g)⟹(a) `unitary_of_isometry`, (h)⟹(a) `unitary_of_inner_prod_preserving` | ✓ |
+| D3-1 | U unitary iff U*U = I | library `unitary` (bundles U*U = I and UU* = I); Basic_Math `unitary_inv_l_dimcol`, `unitary_inv_r_dimrow` | ✓ |
+| D3-2 | TFAE (a) unitary (b) invertible with U⁻¹ = U* (c) UU* = I (d) U* unitary (e) columns ONB (f) rows ONB (g) isometry (h) inner-product preserving | (a)⟹(b) `unitary_invertible`; (a)⟺(c) by definition; (a)⟹(d) `unitary_dagger` (converse by applying it to U*); (a)⟹(e) `unitary_cols_orthonormal`, (e)⟹(a) BM `orthonormal_mat_unitary`; (a)⟹(f) `unitary_rows_orthonormal`; (a)⟹(g) `unitary_isometry`; (a)⟹(h) `unitary_preserves_inner_prod`; (g)⟹(a) `unitary_of_isometry`, (h)⟹(a) `unitary_of_inner_prod_preserving` | ✓ |
 | D3-3 | Householder U_w = I − 2P_w is unitary (‖w‖ = 1) | QC3 `householder`, `householder_outer_prod`, `householder_hermitian`, `householder_unitary` | ✓ |
 | D3-4 | Schur's lemma: ‖x‖ = ‖y‖ ⟹ ∃w, θ. U_w x = e^{iθ} y | QC3 `schur_lemma` | ✓ |
 | D3-5 | Schur's theorem: U*AU upper triangular | QC3 `schur_theorem` | ✓ |
@@ -86,8 +86,8 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | D5-1 | leading principal minors test (stated, no proof) | SYL `pd_iff_leading_minors_pos`: for Hermitian P ∈ M_n, pd P ⟺ det P_k > 0 for all k ≤ n (P_k = `lps P k`); `pd_iff_leading_minors_real_pos` (each minor real and positive).  Not reproved: imported from AFP `Two_Hermitian_Results` (`Sylvester_Criterion.sylvester_criterion`) via the bridges `hermitian_iff_Complex_Matrix_hermitian` and `pd_iff_positive_definite`.  Separate session `Vern_Paulsen_QC_Sylvester` with its own PDF (`notes_doc/Sylvester_Criterion.pdf`), since the entry loads HOL-Analysis, HOL-Probability and QHLProver; the criterion is stated in the Day 5 text of the main document | ✓ |
 | D5-2 | Cholesky reduction: P ≥ 0 iff P − p_{i1}p_{1j}/p_{11} ≥ 0 | QC3 `cholesky_reduction` (adds the hypothesis p₁₁ > 0 that the notes leave implicit) | ~ |
 | D5-3 | two 3×3 numerical examples | CE `notes_example_1` ([[1,2,3],[2,4,5],[3,5,7]] is Hermitian and not ≥ 0) and `notes_example_2` ([[4,2,3],[2,5,6],[3,6,8]] ≥ 0), every intermediate matrix of the notes checked (`notes_P1_R`, `notes_P1_diff`, `notes_P1_next`, `notes_P2_R`, `notes_P2_diff`, `notes_Q2_R`, `notes_Q2_diff`, `notes_Q2_next`) through one Cholesky step `chol_R`/`chol_next` and the test `chol_test` (from `cholesky_reduction`); the remark on rank-one sums: `notes_P2_rank_one_sum` | ✓ |
-| D5-4 | direct sum V ⊕ W, inner product | QC3 `direct_sum_vec` (⊕ᵥ), `direct_sum_inner_prod`, `direct_sum_dim` | ✓ |
-| D5-5 | basis of V ⊕ W, dim(V ⊕ W) = dim V + dim W | `direct_sum_dim`; S211 `direct_sum_basis_is_basis` (bases of ℂⁿ and ℂᵏ, i.e. lists with invertible column matrix as in D6-3, give the basis (v_i,0), (0,w_j) of ℂⁿ ⊕ ℂᵏ with n + k elements; the column matrix is block diagonal, `direct_sum_basis_block`) | ✓ |
+| D5-4 | direct sum V ⊕ W, inner product | QC3 `direct_sum_vec` (⊕ᵥ, JNF's `@v`), `direct_sum_inner_prod`; dimension: JNF `index_append_vec` | ✓ |
+| D5-5 | basis of V ⊕ W, dim(V ⊕ W) = dim V + dim W | JNF `index_append_vec`; S211 `direct_sum_basis_is_basis` (bases of ℂⁿ and ℂᵏ, i.e. lists with invertible column matrix as in D6-3, give the basis (v_i,0), (0,w_j) of ℂⁿ ⊕ ℂᵏ with n + k elements; the column matrix is block diagonal, `direct_sum_basis_block`) | ✓ |
 | D5-6 | block matrices act on (v, w) | QC3 `block_mat_apply` | ✓ |
 
 ### Day 6 (9 Sep): tensor products
@@ -124,7 +124,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | D9-1 | POVM {P_m}, P_m ≥ 0, Σ P_m = I; M_m = P_m^{1/2} is a measurement system | QC3 `povm`, `measurement_induces_povm`, `povm_from_sqrt`, `povm_prob` | ✓ |
 | D9-2 | Postulate 4: composite state ψ₁ ⊗ ψ₂ | QC3 `tensor_of_states_is_state` | ✓ |
 | D9-3 | two-photon example; entangled iff Schmidt rank > 1 | QC3 `entangled` (defined as "not a product"), `bell_state_entangled`; SR `entangled_iff_schmidt_rank` (for u ≠ 0) | ✓ |
-| D9-4 | R ⊗ T exists uniquely; (R₁⊗T₁)(R₂⊗T₂) = R₁R₂ ⊗ T₁T₂; (R⊗T)* = R*⊗T* | library `tensor_mat`; BM `tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary` | ✓ |
+| D9-4 | R ⊗ T exists uniquely; (R₁⊗T₁)(R₂⊗T₂) = R₁R₂ ⊗ T₁T₂; (R⊗T)* = R*⊗T* | library `tensor_mat`; BM `tensor_mat_mult`, `tensor_mat_unitary`; (R⊗T)* = R*⊗T* is IMD's `hermite_cnj_of_tensor` | ✓ |
 | D9-5 | p^{AB}_m(ψ⊗φ) = p^A_m(ψ) | QC3 `composite_measurement_prob`, `tensor_mat_vec_mult` | ✓ |
 | D9-6 | eavesdropping example p₀(γ) = ½ with Bell state | S211 `bell_measurement` (p₀ = p₁ = ½, post-measurement states e₀⊗e₀, e₁⊗e₁, then B's outcome has probability 1), `proj_measurement_system` | ✓ |
 
@@ -150,7 +150,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 ### Day 12 (23 Sep): quantum parallelism
 | id | notes | formal | status |
 |---|---|---|---|
-| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | D12 `hadamard_uniform_N` (`tensor_pow_mat Hadamard N *v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N`), with `uniform_tensor_e0_as_sum` the Σ_J form; QC11 `hadamard_uniform_1` is N = 1 | ✓ |
+| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | D12 `hadamard_uniform_N` (`tensor_pow_mat Hadamard N *v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N`), with `uniform_tensor_e0_as_sum` the Σ_J form; QC11 `hadamard_e0` is N = 1 | ✓ |
 | D12-2 | oracle U_f(e_J ⊗ e_i) = e_J ⊗ e_{i+f(J)} exists and is unitary | QC11 `oracle_unitary`, `oracle_exists` | ✓ |
 | D12-3 | Proposition: p₀(ψ) = \|⟨γ\|ψ⟩\|² for P₀ = \|γ⟩⟨γ\| | QC3 `rank_one_meas_prob`, `meas_prob_quad_form` | ✓ |
 | D12-4 | counting: p₀(U_f(x⊗e₀)) = (M/2^N)² with M = #{J : f(J) = 0} | D12 `counting_probability`: for any unitary U acting as the oracle on the basis vectors e_J⊗e_i, `meas_prob (γ ⊘ γ) (U *v γ) = (count_zeros f N / 2^N)²` with γ = x⊗e₀ | ✓ |
@@ -163,7 +163,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | D13-2 | p_α(ensemble) = Σ p_i ‖M_α ψ_i‖² = Tr(M_α*M_α ρ) | QC11 `pure_state_prob_trace`, `ensemble_prob_trace_eq` | ✓ |
 | D13-3 | a vector in H_A ⊗ H_E behaves like an ensemble (environment motivation) | ✗ (narrative; the partial-trace theorem D15-6 is the rigorous form) | – |
 | D13-4 | measurements see \|ψ⟩⟨ψ\| only: \|e^{iθ}ψ⟩⟨e^{iθ}ψ\| = \|ψ⟩⟨ψ\| | QC11 `pure_density_smult_unit` | ✓ |
-| D13-5 | ‖γ‖² = Tr\|γ⟩⟨γ\| | QC11 `Tr_outer_sum_single`, `rank1_projection_trace_inner` | ✓ |
+| D13-5 | ‖γ‖² = Tr\|γ⟩⟨γ\| | QC11 `Tr_outer_sum_single`, `Tr_outer_sum_single` | ✓ |
 | D13-6 | density matrix of an ensemble | QC11 `ensemble_density`, `density_matrix`, `ensemble_density_is_dm` | ✓ |
 
 ### Day 14 (28 Sep): which matrices are density matrices; pure states; composite ensembles
@@ -279,7 +279,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 |---|---|---|---|
 | D26-1 | CP Φ with Φ(I) = P is V*ψ(X)V with ψ UCP; CP Φ = ψ(VXV*) with ψ CPTP | CPF `cp_unital_factor` (Φ CP on an operator system S ⊆ M_n: Φ(X) = V*ψ(X)V on S with ψ UCP on all of M_n and V*V = Φ(I)), `cp_tp_factor` (Φ CP on M_n: Φ(X) = ψ(VXV*) with ψ CPTP).  Proved from the Kraus form on S (AE `arveson_kraus`) with the block embeddings B_i (Σ B_iB_i* = I, `blk_emb_gram`) instead of compressing to the range of P and dualising | ✓ |
 | D26-2 | Arveson extension theorem (proof) | ~ : AE `arveson_extension` by a different route: S_Φ is extended to a positive functional on M_d(M_n) directly (`positive_functional_extension`: separate the positive definite cone from ker S_Φ with HOL-Analysis `separating_hyperplane_set_0` in the typed matrix space, giving X ↦ Tr(DX) with D ≥ 0), so neither the norm proposition D25-4 nor the reduction D26-1 to the unital case is needed | ~ |
-| D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D24 `D26_separable_density_iff_convex_combination` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
+| D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D24 `separable_density_iff_in_convex_hull_Sprime` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
 
 ### Day 27 (31 Oct): positive maps detect entanglement; convex cones
 | id | notes | formal | status |
@@ -425,7 +425,7 @@ in a variant (stated), ✗ not yet, – out of scope (reason given).
 | H-23 | §IV: estimating ⟨x\|M\|x⟩, k-copy polynomials, sampling, f(A)\|b⟩, SWAP test, preconditioning, ill-conditioned flagging | `HHL`: `fun_circuit_output` (f(A)\|b⟩); `HHL_Discussion`: `expect_stable`, `tpow_index` and `tpow_close` (k copies), `sample_dist_close` (sampling), `swap_test_output`/`swap_test_prob` (SWAP test), `precond_left`/`precond_right`; flagging is `flag_post_bound`. Paper errata: (AB)c = Bb is not a preconditioned system (`paper_precondition_wrong`: its unique solution c has Ac ≠ b and A(Bc) ≠ b; correct are BAx = Bb or ABc = b, x = Bc); the displayed flagged state swaps λ_j < 1/κ and λ_j ≥ 1/κ | ~ (paper wrong in details) |
 
 ## Infrastructure not in the notes (formalised to make the above possible)
-* BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_adjoint`, `tensor_mat_unitary`), unitary algebra.
+* BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_unitary`), unitary algebra.
 * EFA: Hilbert–Schmidt norm, completeness of M_n in HS norm, closedness of the Hermitian and PSD sets, Carathéodory for conic combinations of product matrices.
 * MT, LE: typed-dimension matrices `lmat` with the HOL-Analysis `euclidean_space`/`heine_borel` tower, so that the HOL-Analysis separation and compactness theorems apply.
 * SC: compactness of the product-density slice, closedness of the separable cone.

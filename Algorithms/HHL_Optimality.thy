@@ -128,7 +128,7 @@ lemma red_U_unitary: "unitary (red_U T m Ug)"
   by (rule unitary_of_isometry[OF red_U_carrier]) (rule red_U_norm[OF T0 Ug], simp)
 
 lemma red_U_dagger_norm: "dim_vec v = 3 * T * m \<Longrightarrow> \<parallel>(red_U T m Ug)\<^sup>\<dagger> *\<^sub>v v\<parallel> = \<parallel>v\<parallel>"
-  by (rule unitary_isometry[OF unitary_dagger_is_unitary[OF red_U_unitary]]) (use carrier_matD[OF red_U_carrier[of T m Ug]] in simp)
+  by (rule unitary_isometry[OF unitary_dagger[OF red_U_unitary]]) (use carrier_matD[OF red_U_carrier[of T m Ug]] in simp)
 
 text \<open>(A34): the Hermitian dilation of $A=I-e^{-1/T}\mathcal U$ has the same condition-number bound.\<close>
 

@@ -7,9 +7,6 @@ $\Phi^{(r)}(R)\ge0$ for every positive $\Phi$ when $R$ is separable (D27-1); a f
 $M_r(M_n)$ is nonnegative on the separable matrices iff $\Phi_f$ is positive (D27-3); and with
 the entanglement witnesses of \<open>Separable_Cone\<close> this gives the positive-map criterion (D28-3).\<close>
 
-lemma block_of_mat_carrier' [simp]: "block_of_mat n A a b \<in> carrier_mat n n"
-  by (simp add: block_of_mat_def)
-
 subsection \<open>Tensor products with a matrix in the first factor\<close>
 
 lemma tensor_add_first:
@@ -99,7 +96,7 @@ proof -
   have gc: "\<forall>x \<in> set (List.product [0..<r] [0..<r]). ?g x \<in> carrier_mat (r * n) (r * n)" by auto
   have Pw: "dim_vec (?Phi *\<^sub>v w) = r" by simp
   have "\<langle>w | ?Phi *\<^sub>v w\<rangle> = (\<Sum>i<r. cnj (w $ i) * (?Phi *\<^sub>v w) $ i)"
-    unfolding inner_prod_expand[OF w Pw] atLeast0LessThan ..
+    unfolding inner_prod_sum[OF w Pw] atLeast0LessThan ..
   also have "\<dots> = (\<Sum>i<r. \<Sum>j<r. of_nat r * f (?c i j \<cdot>\<^sub>m unit_block r n i j P))"
   proof (rule sum.cong[OF refl])
     fix i assume "i \<in> {..<r}"
@@ -207,10 +204,10 @@ proof (rule eq_matI)
         = Q $$ ((a * n + k) div n, (b * n + l) div n) * P $$ ((a * n + k) mod n, (b * n + l) mod n)"
   proof -
     have r0: "0 < r" using a by simp
-    show ?thesis by (rule index_tensor_mat[where rA=r and cA=r and rB=n and cB=n]) (use Q P idx_mp[OF a k] idx_mp[OF b l] a k r0 in simp_all)
+    show ?thesis by (rule index_tensor_mat[where rA=r and cA=r and rB=n and cB=n]) (use Q P mult_index_lt[OF a k] mult_index_div_mod[OF k] mult_index_lt[OF b l] mult_index_div_mod[OF l] a k r0 in simp_all)
   qed
   thus "block_of_mat n (Tensor.tensor_mat Q P) a b $$ (k,l) = (Q $$ (a,b) \<cdot>\<^sub>m P) $$ (k,l)"
-    using idx_mp[OF a k] idx_mp[OF b l] k l P by (simp add: block_of_mat_idx)
+    using mult_index_lt[OF a k] mult_index_div_mod[OF k] mult_index_lt[OF b l] mult_index_div_mod[OF l] k l P by (simp add: block_of_mat_index)
 qed (use P in simp_all)
 
 lemma amplification_tensor:
@@ -222,7 +219,7 @@ proof (rule eq_matI)
   have PhiP: "\<Phi> P \<in> carrier_mat d d" using L P unfolding lin_on_def by blast
   show "dim_row (amplification n d r \<Phi> (Tensor.tensor_mat Q P)) = dim_row (Tensor.tensor_mat Q (\<Phi> P))"
     "dim_col (amplification n d r \<Phi> (Tensor.tensor_mat Q P)) = dim_col (Tensor.tensor_mat Q (\<Phi> P))"
-    using Q PhiP carrier_matD[OF amplification_carrier'[of n d r \<Phi> "Tensor.tensor_mat Q P"]] by simp_all
+    using Q PhiP carrier_matD[OF amplification_carrier[of n d r \<Phi> "Tensor.tensor_mat Q P"]] by simp_all
   fix x y assume "x < dim_row (Tensor.tensor_mat Q (\<Phi> P))" "y < dim_col (Tensor.tensor_mat Q (\<Phi> P))"
   hence x: "x < r * d" and y: "y < r * d" using Q PhiP by simp_all
   have xd: "x div d < r" "y div d < r" using x y d by (simp_all add: less_mult_imp_div_less mult.commute)
@@ -291,7 +288,7 @@ proof -
     have "unwrap_lm R \<in> carrier_mat CARD('m \<times> 'p) CARD('m \<times> 'p)" by (rule unwrap_lm_carrier)
     thus "unwrap_lm R \<in> carrier_mat (?r * ?n) (?r * ?n)" by (simp only: card_prod)
   qed
-  have ac: "\<And>A. amplification ?n d ?r \<Phi> A \<in> carrier_mat (?r * d) (?r * d)" by (rule amplification_carrier')
+  have ac: "\<And>A. amplification ?n d ?r \<Phi> A \<in> carrier_mat (?r * d) (?r * d)" by (rule amplification_carrier)
   have gen: "separable_lmat_gen \<subseteq> C"
   proof
     fix x :: "(complex, 'm \<times> 'p, 'm \<times> 'p) lmat" assume "x \<in> separable_lmat_gen"
@@ -318,7 +315,7 @@ proof -
         fix k l assume "k < dim_row (0\<^sub>m ?n ?n :: complex Matrix.mat)" "l < dim_col (0\<^sub>m ?n ?n :: complex Matrix.mat)"
         hence k: "k < ?n" and l: "l < ?n" by simp_all
         show "block_of_mat ?n (0\<^sub>m (?r * ?n) (?r * ?n)) a b $$ (k,l) = (0\<^sub>m ?n ?n :: complex Matrix.mat) $$ (k,l)"
-          using idx_mp(1)[OF a k] idx_mp(1)[OF b l] k l by (simp add: block_of_mat_idx)
+          using mult_index_lt[OF a k] mult_index_lt[OF b l] k l by (simp add: block_of_mat_index)
       qed simp_all
     qed
     have Phi0: "\<Phi> (0\<^sub>m ?n ?n) = 0\<^sub>m d d" by (rule lin_on_zero[OF operator_system_full L])
@@ -431,7 +428,7 @@ next
       unfolding \<Phi>_def by (rule arveson_functional_of_map[OF operator_system_full]) (use f Rc in \<open>simp_all add: Mp_full\<close>)
     finally have q: "\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle> = of_nat ?r * Tr (W * unwrap_lm R)" unfolding f_def .
     have "0 \<le> Re (\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle>)"
-      using psdR psd_iff_quad_form_nonneg[OF amplification_carrier'] vd by blast
+      using psdR psd_iff_quad_form_nonneg[OF amplification_carrier] vd by blast
     hence "0 \<le> Re (Tr (W * unwrap_lm R))" unfolding q by (simp add: zero_le_mult_iff)
     thus False using WR by simp
   qed

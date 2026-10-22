@@ -771,3 +771,25 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   UTP-style sampling execution (needs a non-AFP ITree stack; little mathematical content).
   Incident: a build through a symlinked AFP view rebuilt and first deleted the shared
   Jordan_Normal_Form heap; the stack was rebuilt from the real AFP path.
+- **The notes without redundancies** (2026-10-22): with the new checker (`tools/check/`) the notes
+  had 6 lemmas the AFP already has, 51 duplicated statements among themselves, a gate defined
+  twice, two XOR functions and two name clashes; all are gone and `VP_Check_Notes` is strict.
+  AFP lemmas replace `tensor_mat_adjoint` (IMD `hermite_cnj_of_tensor`), `cmod_sq_cnj`
+  (`complex_norm_square`), `inner_self_norm`, `idx4`, `s8`, `inner_prod_left_smult'`.
+  `Day24_Separability` restated fifteen theorems of `Separable_Cone`, which it imports (the D26–D28
+  labels); it now cites them.  Copies along an import chain were deleted (37); copies in
+  unrelated theories moved to a common ancestor: `one_smult_mat`, `mat_unit_carrier` (general m×n,
+  replacing two square versions), `mult_index_lt` (six copies) and `mult_index_div_mod` (three,
+  including Part VI's `block_index` and `reg_div`/`reg_mod`) in `Basic_Math`; `psd_smult_nonneg`,
+  `tensor_unit_vec`, `Tr_dagger` in `Quantum_Computing_3_10`; `hs_inner_prod_left_add` in
+  `Basic_Math`; three dimension-premise copies of `smult_mat_mult_vec` give way to the carrier
+  version.  Definitions: `direct_sum_vec` is an abbreviation of JNF's `@v`; `diag_mat_of_real` is
+  stated through JNF's `mat_diag`; `Phase_S ≡ Quantum.S` (as `Hadamard ≡ Quantum.H`);
+  `Day04_29_Supplement` imports `Day29_Classical_Codes` and uses `xor_word`.  Clashes renamed:
+  `inner_prod_expand` → `inner_prod_sum` (IMD has another), `flat` → `flat_mat`; Part VI:
+  `normalize_stable` → `normalize_dist`, constructor `Seq` → `QSeq` (QHLProver's `Seq`), the
+  dilation abbreviation `H` → `Hd` (IMD's Hadamard `H`); Sylvester uses `Two_Hermitian_Results`'
+  `dagger_adjoint`.  Notes now 50 theories, 51 101 lines, 1 551 results (were 51 729/1 614); Part VI
+  21 397 lines, 1 084 results.  Traps: a multi-conclusion fact whose first part duplicates a lemma
+  (e.g. `idx_mp`) must keep its other parts; when two copies sit in one theory keep the earlier
+  one; my grep for primed names (`\bname'\b`) silently matched nothing.

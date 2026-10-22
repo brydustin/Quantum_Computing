@@ -43,18 +43,18 @@ lemma sum_if_const: "(\<Sum>i\<in>A. if P then f i else 0) = (if P then (\<Sum>i
 lemma tensor_unit_index:
   assumes "k' < N" "i' < m" "dim_vec w = m"
   shows "tensor_vec (unit_vec N k) w $ (k' * m + i') = (if k' = k then w $ i' else 0)"
-  using tensor_vec_index[of "unit_vec N k" N w m "k' * m + i'"] block_index[OF assms(1,2)] assms
+  using tensor_vec_index[of "unit_vec N k" N w m "k' * m + i'"] mult_index_lt[OF assms(1,2)] mult_index_div_mod[OF assms(2)] assms
   by (simp add: unit_vec_def)
 
 lemma ctrl_blocks_col_index:
   assumes "r < N * m" "k' < N" "i' < m"
   shows "ctrl_blocks N m B $$ (r, k' * m + i') = (if r div m = k' then B k' $$ (r mod m, i') else 0)"
-  using block_index[OF assms(2,3)] assms(1) by (auto simp: ctrl_blocks_index)
+  using mult_index_lt[OF assms(2,3)] mult_index_div_mod[OF assms(3)] assms(1) by (auto simp: ctrl_blocks_index)
 
 lemma ctrl_blocks_row_index:
   assumes "c < N * m" "k' < N" "i' < m"
   shows "ctrl_blocks N m B $$ (k' * m + i', c) = (if k' = c div m then B k' $$ (i', c mod m) else 0)"
-  using block_index[OF assms(2,3)] assms(1) by (auto simp: ctrl_blocks_index)
+  using mult_index_lt[OF assms(2,3)] mult_index_div_mod[OF assms(3)] assms(1) by (auto simp: ctrl_blocks_index)
 
 text \<open>On a basis state of the register, $\sum_k\ket k\bra k\otimes B_k$ applies $B_k$.\<close>
 

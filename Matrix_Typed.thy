@@ -353,25 +353,6 @@ lemma hs_inner_prod_real_self:
   using hs_inner_prod_self_real
   by (metis Reals_cases of_real_Re)
 
-lemma hs_inner_prod_left_add:
-  assumes "dim_row A1 = dim_row B" and "dim_col A1 = dim_col B"
-      and "dim_row A2 = dim_row B" and "dim_col A2 = dim_col B"
-  shows "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
-proof -
-  have dims:
-    "dim_row (A1 + A2) = dim_row B" "dim_col (A1 + A2) = dim_col B"
-    using assms by auto
-  have "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = cnj (\<langle>\<langle> B | A1 + A2 \<rangle>\<rangle>)"
-    using dims by (intro hs_inner_prod_cnj) auto
-  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle> + \<langle>\<langle> B | A2 \<rangle>\<rangle>)"
-    using assms by (simp add: hs_inner_prod_right_add)
-  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle>) + cnj (\<langle>\<langle> B | A2 \<rangle>\<rangle>)"
-    by simp
-  also have "\<dots> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
-    by (metis assms(1,2,3,4) hs_inner_prod_cnj)    
-  finally show ?thesis.
-qed
-
 lemma hs_cauchy_schwarz_re:
   fixes A B :: "complex Matrix.mat"
   assumes dr: "dim_row A = dim_row B" and dc: "dim_col A = dim_col B"

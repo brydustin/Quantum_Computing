@@ -1,5 +1,5 @@
 theory Day04_29_Supplement
-  imports Day27_Entangled_Examples
+  imports Day27_Entangled_Examples Day29_Classical_Codes
 begin
 
 section \<open>Days 4--29: the converse Hermitian tests, composite ensembles, Choi's four conditions, codes\<close>
@@ -53,7 +53,7 @@ proof -
       have "(?U * diag_mat_of_real lam) $$ (r, c) = (\<Sum>k<n. ?U $$ (r, k) * diag_mat_of_real lam $$ (k, c))"
         using carrier_matD[OF U] r c lam by (auto simp: scalar_prod_def atLeast0LessThan intro!: sum.cong)
       also have "\<dots> = (\<Sum>k<n. if k = c then vs ! c $ r * complex_of_real (lam ! c) else 0)"
-        by (rule sum.cong) (use r c lam len in \<open>auto simp: diag_mat_of_real_def mat_of_cols_def\<close>)
+        by (rule sum.cong) (use r c lam len in \<open>auto simp: diag_mat_of_real_def mat_diag_def mat_of_cols_def\<close>)
       also have "\<dots> = vs ! c $ r * complex_of_real (lam ! c)" using c by simp
       finally show ?thesis by (simp add: mult.commute)
     qed
@@ -217,14 +217,8 @@ theorem composite_density_is_dm:
 
 subsection \<open>Hamming distance and subspace codes (D29-4)\<close>
 
-definition bit_xor :: "nat list \<Rightarrow> nat list \<Rightarrow> nat list" where
-  "bit_xor v w = map2 (\<lambda>a b. (a + b) mod 2) v w"
-
-lemma hamming_dist_xor: "hamming_dist v w = hamming_weight (bit_xor v w)"
-  by (simp add: hamming_dist_def bit_xor_def)
-
-lemma hamming_weight_Cons': "hamming_weight (a # v) = (if a \<noteq> 0 then Suc (hamming_weight v) else hamming_weight v)"
-  by (simp add: hamming_weight_def)
+lemma hamming_dist_xor: "hamming_dist v w = hamming_weight (xor_word v w)"
+  by (simp add: hamming_dist_def xor_word_def)
 
 text \<open>The triangle inequality for words of bits of equal length.\<close>
 
@@ -252,24 +246,24 @@ nonzero code word.\<close>
 definition zero_word :: "nat \<Rightarrow> nat list" where
   "zero_word m = replicate m 0"
 
-lemma bit_xor_self: "bit_xor v v = zero_word (length v)"
-  by (induction v) (simp_all add: bit_xor_def zero_word_def)
+lemma xor_word_self: "xor_word v v = zero_word (length v)"
+  by (induction v) (simp_all add: xor_word_def zero_word_def)
 
-lemma bit_xor_zero: "\<forall>x \<in> set v. x < 2 \<Longrightarrow> bit_xor v (zero_word (length v)) = v"
-  by (induction v) (auto simp: bit_xor_def zero_word_def)
+lemma xor_word_zero: "\<forall>x \<in> set v. x < 2 \<Longrightarrow> xor_word v (zero_word (length v)) = v"
+  by (induction v) (auto simp: xor_word_def zero_word_def)
 
-lemma bit_xor_eq_zero_iff:
+lemma xor_word_eq_zero_iff:
   assumes "length v = length w" "\<forall>x \<in> set v. x < 2" "\<forall>x \<in> set w. x < 2"
-  shows "bit_xor v w = zero_word (length v) \<longleftrightarrow> v = w"
+  shows "xor_word v w = zero_word (length v) \<longleftrightarrow> v = w"
   using assms
 proof (induction v arbitrary: w)
-  case Nil thus ?case by (simp add: bit_xor_def zero_word_def)
+  case Nil thus ?case by (simp add: xor_word_def zero_word_def)
 next
   case (Cons a v)
   then obtain b w' where w: "w = b # w'" by (cases w) auto
   have ab: "a < 2" "b < 2" using Cons.prems w by auto
-  have IH: "bit_xor v w' = zero_word (length v) \<longleftrightarrow> v = w'" using Cons.IH[of w'] Cons.prems w by simp
-  show ?case using IH ab unfolding w by (auto simp: bit_xor_def zero_word_def less_2_cases_iff)
+  have IH: "xor_word v w' = zero_word (length v) \<longleftrightarrow> v = w'" using Cons.IH[of w'] Cons.prems w by simp
+  show ?case using IH ab unfolding w by (auto simp: xor_word_def zero_word_def less_2_cases_iff)
 qed
 
 lemma hamming_weight_zero_word [simp]: "hamming_weight (zero_word m) = 0"
@@ -280,35 +274,32 @@ lemma hamming_weight_eq_zero_iff: "\<forall>x \<in> set v. x < 2 \<Longrightarro
 
 definition subspace_code :: "nat \<Rightarrow> nat list set \<Rightarrow> bool" where
   "subspace_code m S \<longleftrightarrow> (\<forall>v \<in> S. length v = m \<and> (\<forall>x \<in> set v. x < 2))
-                         \<and> (\<forall>v \<in> S. \<forall>w \<in> S. bit_xor v w \<in> S)"
+                         \<and> (\<forall>v \<in> S. \<forall>w \<in> S. xor_word v w \<in> S)"
 
-lemma bit_xor_bits: "\<forall>x \<in> set (bit_xor v w). x < 2"
-  by (auto simp: bit_xor_def set_zip)
-
-lemma length_bit_xor [simp]: "length (bit_xor v w) = min (length v) (length w)"
-  by (simp add: bit_xor_def)
+lemma xor_word_bits: "\<forall>x \<in> set (xor_word v w). x < 2"
+  by (auto simp: xor_word_def set_zip)
 
 theorem subspace_code_distance:
   assumes S: "subspace_code m S" and fin: "finite S" and two: "\<exists>v \<in> S. \<exists>w \<in> S. v \<noteq> w"
   shows "code_distance S = Min {hamming_weight v | v. v \<in> S \<and> v \<noteq> zero_word m}"
 proof -
   have len: "\<And>v. v \<in> S \<Longrightarrow> length v = m" and bits: "\<And>v. v \<in> S \<Longrightarrow> \<forall>x \<in> set v. x < 2"
-    and cl: "\<And>v w. v \<in> S \<Longrightarrow> w \<in> S \<Longrightarrow> bit_xor v w \<in> S" using S unfolding subspace_code_def by blast+
+    and cl: "\<And>v w. v \<in> S \<Longrightarrow> w \<in> S \<Longrightarrow> xor_word v w \<in> S" using S unfolding subspace_code_def by blast+
   obtain v0 where v0: "v0 \<in> S" using two by blast
-  have z: "zero_word m \<in> S" using cl[OF v0 v0] bit_xor_self[of v0] len[OF v0] by simp
+  have z: "zero_word m \<in> S" using cl[OF v0 v0] xor_word_self[of v0] len[OF v0] by simp
   have "{hamming_dist v w | v w. v \<in> S \<and> w \<in> S \<and> v \<noteq> w} = {hamming_weight v | v. v \<in> S \<and> v \<noteq> zero_word m}"
   proof (intro equalityI subsetI)
     fix d assume "d \<in> {hamming_dist v w | v w. v \<in> S \<and> w \<in> S \<and> v \<noteq> w}"
     then obtain v w where vw: "v \<in> S" "w \<in> S" "v \<noteq> w" and d: "d = hamming_dist v w" by blast
-    have "bit_xor v w \<noteq> zero_word m"
-      using bit_xor_eq_zero_iff[of v w] len[OF vw(1)] len[OF vw(2)] bits[OF vw(1)] bits[OF vw(2)] vw(3) by simp
+    have "xor_word v w \<noteq> zero_word m"
+      using xor_word_eq_zero_iff[of v w] len[OF vw(1)] len[OF vw(2)] bits[OF vw(1)] bits[OF vw(2)] vw(3) by simp
     thus "d \<in> {hamming_weight v | v. v \<in> S \<and> v \<noteq> zero_word m}"
       using cl[OF vw(1,2)] unfolding d hamming_dist_xor by blast
   next
     fix d assume "d \<in> {hamming_weight v | v. v \<in> S \<and> v \<noteq> zero_word m}"
     then obtain v where v: "v \<in> S" "v \<noteq> zero_word m" and d: "d = hamming_weight v" by blast
     have "hamming_dist v (zero_word m) = hamming_weight v"
-      unfolding hamming_dist_xor using bit_xor_zero[OF bits[OF v(1)]] len[OF v(1)] by simp
+      unfolding hamming_dist_xor using xor_word_zero[OF bits[OF v(1)]] len[OF v(1)] by simp
     thus "d \<in> {hamming_dist v w | v w. v \<in> S \<and> w \<in> S \<and> v \<noteq> w}" using v z d by force
   qed
   thus ?thesis using two unfolding code_distance_def by simp

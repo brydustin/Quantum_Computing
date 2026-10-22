@@ -25,7 +25,7 @@ proof
   fix W assume "W \<in> set (kraus_mix d n U Vs)"
   then obtain l where "W = foldr (\<lambda>j acc. U $$ (l,j) \<cdot>\<^sub>m (Vs ! j) + acc) [0..<length Vs] (0\<^sub>m d n)"
     by (auto simp: kraus_mix_def)
-  thus "W \<in> carrier_mat d n" using assms by (auto intro!: foldr_add_mat_carrier')
+  thus "W \<in> carrier_mat d n" using assms by (auto intro!: foldr_add_carrier_dn)
 qed
 
 lemma kraus_mix_entry:
@@ -222,7 +222,7 @@ next
             case (Cons j js)
             have jc: "c j \<cdot>\<^sub>m (Vs ! j) \<in> carrier_mat d n" using Cons.prems Vs_c by auto
             have rc: "foldr (\<lambda>j acc. c j \<cdot>\<^sub>m (Vs ! j) + acc) js (0\<^sub>m d n) \<in> carrier_mat d n"
-              using Cons.prems Vs_c by (intro foldr_add_mat_carrier') auto
+              using Cons.prems Vs_c by (intro foldr_add_carrier_dn) auto
             show ?case using Cons jc rc by (simp add: add_smult_distrib_left_mat)
           qed
         qed

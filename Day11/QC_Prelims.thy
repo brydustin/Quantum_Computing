@@ -15,19 +15,6 @@ lemma cnj_mult_self_cmod: "cnj z * z = complex_of_real ((cmod z)\<^sup>2)"
 lemma Re_cnj_mult_self: "Re (cnj z * z) = (cmod z)\<^sup>2"
   by (simp add: cnj_mult_self_cmod)
 
-lemma idx4: "k < (4::nat) \<Longrightarrow> k = 0 \<or> k = 1 \<or> k = 2 \<or> k = 3"
-  by auto
-
-lemma mult_index_lt:
-  fixes i j n m :: nat
-  assumes "i < n" and "j < m"
-  shows "i * m + j < n * m"
-proof -
-  have "i * m + j < (i + 1) * m" using assms(2) by simp
-  also have "\<dots> \<le> n * m" using assms(1) by (intro mult_le_mono1) simp
-  finally show ?thesis .
-qed
-
 lemma Tr_hermitian_Im_zero:
   assumes Pc: "P \<in> carrier_mat n n" and herm: "hermitian P"
   shows "Im (Tr P) = 0"
@@ -49,15 +36,6 @@ lemma Tr_hermitian_real:
   assumes Pc: "P \<in> carrier_mat n n" and herm: "hermitian P"
   shows "Tr P = complex_of_real (Re (Tr P))"
   using Tr_hermitian_Im_zero[OF assms] by (simp add: complex_eq_iff)
-
-lemma Tr_minus:
-  fixes x y :: "complex Matrix.mat"
-  assumes "dim_row x = dim_row y" and "dim_col x = dim_col y"
-  shows "Tr (x - y) = Tr x - Tr y"
-proof -
-  have "x - y = x + (-1) \<cdot>\<^sub>m y" using assms by (intro eq_matI) auto
-  thus ?thesis using Tr_add[of x "(-1) \<cdot>\<^sub>m y"] assms by (simp add: Tr_smult)
-qed
 
 text \<open>A positive semidefinite matrix of trace zero is zero (the notes: ``given a non-zero
 $P\ge0$, $\Tr(P)\ne0$'').\<close>
@@ -153,7 +131,7 @@ lemma inner_prod_vec_sum_right:
   shows "\<langle>u | vec_sum n Js w\<rangle> = sum (\<lambda>J. \<langle>u | w J\<rangle>) Js"
 proof -
   have "\<langle>u | vec_sum n Js w\<rangle> = (\<Sum>i = 0..<n. cnj (u $ i) * vec_sum n Js w $ i)"
-    using inner_prod_expand[OF ud, of "vec_sum n Js w"] by simp
+    using inner_prod_sum[OF ud, of "vec_sum n Js w"] by simp
   also have "\<dots> = (\<Sum>i = 0..<n. sum (\<lambda>J. cnj (u $ i) * w J $ i) Js)"
     by (intro sum.cong refl) (simp add: sum_distrib_left)
   also have "\<dots> = sum (\<lambda>J. \<Sum>i = 0..<n. cnj (u $ i) * w J $ i) Js"
@@ -162,7 +140,7 @@ proof -
   proof (rule sum.cong[OF refl])
     fix J assume J: "J \<in> Js"
     show "(\<Sum>i = 0..<n. cnj (u $ i) * w J $ i) = \<langle>u | w J\<rangle>"
-      using inner_prod_expand[OF ud wd[OF J]] by simp
+      using inner_prod_sum[OF ud wd[OF J]] by simp
   qed
   finally show ?thesis .
 qed
@@ -188,7 +166,7 @@ lemma inner_prod_unit_vec_right:
   shows "\<langle>u | unit_vec n j\<rangle> = cnj (u $ j)"
 proof -
   have "\<langle>u | unit_vec n j\<rangle> = (\<Sum>i = 0..<n. cnj (u $ i) * unit_vec n j $ i)"
-    using inner_prod_expand[OF ud, of "unit_vec n j"] by simp
+    using inner_prod_sum[OF ud, of "unit_vec n j"] by simp
   also have "\<dots> = (\<Sum>i = 0..<n. if i = j then cnj (u $ i) else 0)"
     using j by (intro sum.cong refl) simp
   also have "\<dots> = cnj (u $ j)" using j by simp
@@ -272,8 +250,6 @@ qed (use carrier_matD[OF outer_prod_carrier[of "0\<^sub>v n :: complex Matrix.ve
 
 lemma idx8: "k < (8::nat) \<Longrightarrow> k = 0 \<or> k = 1 \<or> k = 2 \<or> k = 3 \<or> k = 4 \<or> k = 5 \<or> k = 6 \<or> k = 7"
   by auto
-
-lemma s8: "{0..<(8::nat)} = {0,1,2,3,4,5,6,7}" by auto
 
 lemma dagger_mult_diag_inner:
   fixes Y :: "complex Matrix.mat"

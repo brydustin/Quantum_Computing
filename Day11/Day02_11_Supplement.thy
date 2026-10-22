@@ -120,17 +120,6 @@ next
   finally show ?case unfolding IH ys length_Cons sum.lessThan_Suc_shift by simp
 qed
 
-lemma idx_bound: "i < k \<Longrightarrow> l < (m::nat) \<Longrightarrow> i * m + l < k * m"
-proof -
-  assume i: "i < k" and l: "l < m"
-  have "i * m + l < Suc i * m" using l by simp
-  also have "Suc i * m \<le> k * m" using i by (intro mult_le_mono1) simp
-  finally show ?thesis .
-qed
-
-lemma idx_div_mod: "l < (m::nat) \<Longrightarrow> (i * m + l) div m = i \<and> (i * m + l) mod m = l"
-  by simp
-
 text \<open>A basis $f_1,\dots,f_m$ of $\C^m$ is a list whose column matrix $F$ is invertible; the
 coordinates use $G=F^{-1}$.\<close>
 
@@ -191,7 +180,7 @@ proof (rule eq_vecI)
   have "right_coord k m G (tensor_combination (k * m) xs fs) j $ i
       = (\<Sum>l<m. (\<Sum>j'<m. xs ! j' $ i * fs ! j' $ l) * G $$ (j,l))"
     unfolding right_coord_def using i
-    by (simp add: tensor_combination_index[OF xs(2) fd(1)] xs(1) fd(2) idx_bound idx_div_mod)
+    by (simp add: tensor_combination_index[OF xs(2) fd(1)] xs(1) fd(2) mult_index_lt mult_index_div_mod)
   also have "\<dots> = (\<Sum>j'<m. xs ! j' $ i * (\<Sum>l<m. fs ! j' $ l * G $$ (j,l)))"
     unfolding sum_distrib_left sum_distrib_right by (subst sum.swap) (simp add: mult_ac)
   also have "\<dots> = (\<Sum>j'<m. if j' = j then xs ! j' $ i else 0)"
@@ -260,7 +249,7 @@ proof (rule eq_vecI)
   have "left_coord k m Hm (tensor_combination (k * m) es ys) i $ l
       = (\<Sum>r<k. Hm $$ (i,r) * (\<Sum>i'<k. es ! i' $ r * ys ! i' $ l))"
     unfolding left_coord_def using l
-    by (simp add: tensor_combination_index[OF ed(1) ys(2)] ys(1) ed(2) idx_bound idx_div_mod)
+    by (simp add: tensor_combination_index[OF ed(1) ys(2)] ys(1) ed(2) mult_index_lt mult_index_div_mod)
   also have "\<dots> = (\<Sum>i'<k. ys ! i' $ l * (\<Sum>r<k. es ! i' $ r * Hm $$ (i,r)))"
     unfolding sum_distrib_left sum_distrib_right by (subst sum.swap) (simp add: mult_ac)
   also have "\<dots> = (\<Sum>i'<k. if i' = i then ys ! i' $ l else 0)"
@@ -695,12 +684,12 @@ proof (rule eq_matI)
     case True
     have vj: "dim_vec (vs ! j) = n" using vs True by simp
     show ?thesis using i j True vs ws vj
-      by (auto simp: mat_of_cols_def direct_sum_basis_def nth_append direct_sum_vec_def)
+      by (auto simp: mat_of_cols_def direct_sum_basis_def nth_append append_vec_def Let_def)
   next
     case False
     have wj: "dim_vec (ws ! (j - n)) = k" using ws j False by simp
     show ?thesis using i j False vs ws wj
-      by (auto simp: mat_of_cols_def direct_sum_basis_def nth_append direct_sum_vec_def)
+      by (auto simp: mat_of_cols_def direct_sum_basis_def nth_append append_vec_def Let_def)
   qed
 qed (use vs ws in \<open>simp_all add: direct_sum_basis_def\<close>)
 

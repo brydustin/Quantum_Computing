@@ -245,7 +245,7 @@ definition flag_stage :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow>
   "flag_stage N n G = ctrl_blocks N (n * 3) (\<lambda>k. 1\<^sub>m n \<Otimes> G k)"
 
 definition flag_full_prog :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat \<Rightarrow> qcirc" where
-  "flag_full_prog N n G Prep = Seq (Gate Prep) (hhl_prog N (n * 3) (flag_stage N n G))"
+  "flag_full_prog N n G Prep = QSeq (Gate Prep) (hhl_prog N (n * 3) (flag_stage N n G))"
 
 lemma calls_flag_full_prog: "calls (flag_full_prog N n G Prep) = 2 * (N - 1)"
   by (simp add: flag_full_prog_def calls_hhl_prog)

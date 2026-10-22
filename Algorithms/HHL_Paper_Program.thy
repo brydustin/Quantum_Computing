@@ -23,7 +23,7 @@ subsection \<open>Circuits of \<open>HHL_Simulation\<close> as gate lists\<close
 primrec qgates :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> qcirc \<Rightarrow> complex Matrix.mat list" where
   "qgates N m Oc (Gate G) = [G]"
 | "qgates N m Oc (Call Pr dg) = [call_mat N m Oc Pr dg]"
-| "qgates N m Oc (qcirc.Seq a b) = qgates N m Oc a @ qgates N m Oc b"
+| "qgates N m Oc (QSeq a b) = qgates N m Oc a @ qgates N m Oc b"
 
 lemma qgates_ok:
   assumes Oc: "Oc \<in> carrier_mat m m" "Quantum.unitary Oc" and g: "gates_ok (N * m) c"
@@ -51,14 +51,14 @@ proof (induction c)
 next
   case (Call Pr dg) thus ?case by (simp add: call_mat_def left_mult_one_mat[OF ctrl_blocks_carrier])
 next
-  case (Seq a b)
-  have ga: "gates_ok (N * m) a" and gb: "gates_ok (N * m) b" using Seq.prems by simp_all
+  case (QSeq a b)
+  have ga: "gates_ok (N * m) a" and gb: "gates_ok (N * m) b" using QSeq.prems by simp_all
   have ca: "\<And>U. U \<in> set (qgates N m Oc a) \<Longrightarrow> U \<in> carrier_mat (N * m) (N * m)" using qgates_ok[OF Oc ga] by blast
   have cb: "\<And>U. U \<in> set (qgates N m Oc b) \<Longrightarrow> U \<in> carrier_mat (N * m) (N * m)" using qgates_ok[OF Oc gb] by blast
   have app: "circuit_mat (N * m) (qgates N m Oc a @ qgates N m Oc b)
              = circuit_mat (N * m) (qgates N m Oc b) * circuit_mat (N * m) (qgates N m Oc a)"
     by (rule circuit_mat_append[where K = "N * m"]) (use ca cb in auto)
-  show ?case unfolding qgates.simps sem.simps app Seq.IH(1)[OF ga] Seq.IH(2)[OF gb] ..
+  show ?case unfolding qgates.simps sem.simps app QSeq.IH(1)[OF ga] QSeq.IH(2)[OF gb] ..
 qed
 
 subsection \<open>Programs with a two-outcome measurement, and the overlap with a target state\<close>

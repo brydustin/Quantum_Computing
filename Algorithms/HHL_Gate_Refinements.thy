@@ -444,7 +444,7 @@ proof -
     using qft_inv_circuit(2) elementary_unitary(1) by blast
   have F: "fourier (2 ^ k) \<in> carrier_mat (2 ^ k) (2 ^ k)" by (rule fourier_carrier)
   have dd: "((fourier (2 ^ k))\<^sup>\<dagger> \<Otimes> 1\<^sub>m m)\<^sup>\<dagger> = fourier (2 ^ k) \<Otimes> 1\<^sub>m m"
-    unfolding tensor_mat_adjoint dagger_of_dagger_is_id by simp
+    unfolding hermite_cnj_of_tensor dagger_of_dagger_is_id by simp
   show "circuit_mat (2 ^ k * m) (fref k m U) = U"
   proof (cases "U = (fourier (2 ^ k))\<^sup>\<dagger> \<Otimes> 1\<^sub>m m")
     case True

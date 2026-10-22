@@ -109,7 +109,7 @@ proof (rule eq_matI)
   fix r c assume "r < dim_row (if a = i \<and> b = j then M else 0\<^sub>m n n)" "c < dim_col (if a = i \<and> b = j then M else 0\<^sub>m n n)"
   hence r: "r < n" and c: "c < n" using M by (simp_all split: if_splits)
   show "block_of_mat n (unit_block d n i j M) a b $$ (r,c) = (if a = i \<and> b = j then M else 0\<^sub>m n n) $$ (r,c)"
-    using idx_mp[OF a r] idx_mp[OF b c] r c M by (simp add: block_of_mat_idx unit_block_def)
+    using mult_index_lt[OF a r] mult_index_div_mod[OF r] mult_index_lt[OF b c] mult_index_div_mod[OF c] r c M by (simp add: block_of_mat_index unit_block_def)
 qed (use M in simp_all)
 
 lemma unit_block_Mp:
@@ -138,7 +138,7 @@ proof -
     fix i j
     have "(r div n) * n + r mod n = r" "(c div n) * n + c mod n = c" by simp_all
     thus "unit_block d n i j (block_of_mat n A i j) $$ (r,c) = (if i = r div n \<and> j = c div n then A $$ (r,c) else 0)"
-      using r c n by (auto simp: unit_block_def block_of_mat_idx)
+      using r c n by (auto simp: unit_block_def block_of_mat_index)
   qed
   also have "\<dots> = A $$ (r,c)" by (rule sum_delta2[OF rd cd])
   finally show "A $$ (r,c) = msum (d * n) (d * n) (\<lambda>(i,j). unit_block d n i j (block_of_mat n A i j)) (List.product [0..<d] [0..<d]) $$ (r,c)" ..
@@ -159,13 +159,10 @@ definition lin_fun_on :: "complex Matrix.mat set \<Rightarrow> (complex Matrix.m
 definition positive_fun_on :: "complex Matrix.mat set \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex) \<Rightarrow> bool" where
   "positive_fun_on TS f \<longleftrightarrow> (\<forall>A \<in> TS. psd A \<longrightarrow> 0 \<le> f A)"
 
-lemma amplification_carrier': "amplification n d p \<Phi> A \<in> carrier_mat (p * d) (p * d)"
-  by (simp add: amplification_def)
-
 lemma amplification_idx:
   assumes r: "r < q" and s: "s < q" and i: "i < d" and j: "j < d"
   shows "amplification n d q \<Phi> A $$ (r * d + i, s * d + j) = \<Phi> (block_of_mat n A r s) $$ (i,j)"
-  using idx_mp[OF r i] idx_mp[OF s j] by (simp add: amplification_def)
+  using mult_index_lt[OF r i] mult_index_div_mod[OF i] mult_index_lt[OF s j] mult_index_div_mod[OF j] by (simp add: amplification_def)
 
 lemma arveson_map_index: "i < d \<Longrightarrow> j < d \<Longrightarrow> arveson_map n d f M $$ (i,j) = of_nat d * f (unit_block d n i j M)"
   by (simp add: arveson_map_def)
@@ -350,7 +347,7 @@ lemma quad_split:
 proof -
   have Mw: "dim_vec (M *\<^sub>v w) = q * d" using M by simp
   have "\<langle>w | M *\<^sub>v w\<rangle> = (\<Sum>x<q * d. cnj (w $ x) * (M *\<^sub>v w) $ x)"
-    unfolding inner_prod_expand[OF w Mw] atLeast0LessThan ..
+    unfolding inner_prod_sum[OF w Mw] atLeast0LessThan ..
   also have "\<dots> = (\<Sum>x<q * d. \<Sum>y<q * d. cnj (w $ x) * M $$ (x,y) * w $ y)"
   proof (rule sum.cong[OF refl])
     fix x assume "x \<in> {..<q * d}"
@@ -392,10 +389,10 @@ lemma diag_quad_amplification:
   shows "\<langle>v | amplification n d d \<Phi> A *\<^sub>v v\<rangle> = (\<Sum>i<d. \<Sum>j<d. \<Phi> (block_of_mat n A i j) $$ (i,j))"
 proof -
   let ?M = "amplification n d d \<Phi> A"
-  have Mc: "?M \<in> carrier_mat (d * d) (d * d)" by (rule amplification_carrier')
+  have Mc: "?M \<in> carrier_mat (d * d) (d * d)" by (rule amplification_carrier)
   have vd: "dim_vec v = d * d" unfolding v_def by simp
   have vidx: "\<And>r i. r < d \<Longrightarrow> i < d \<Longrightarrow> v $ (r * d + i) = (if i = r then 1 else 0)"
-    unfolding v_def using idx_mp by auto
+    unfolding v_def using mult_index_lt mult_index_div_mod by auto
   have inner: "\<And>r. r < d \<Longrightarrow> (\<Sum>i<d. \<Sum>s<d. \<Sum>j<d. cnj (v $ (r * d + i)) * ?M $$ (r * d + i, s * d + j) * v $ (s * d + j))
                  = (\<Sum>s<d. ?M $$ (r * d + r, s * d + s))"
   proof -
@@ -423,12 +420,12 @@ lemma dpos_imp_functional_pos:
 proof (intro ballI impI)
   fix A assume A: "A \<in> Mp d n OS" and Apsd: "psd A"
   let ?M = "amplification n d d \<Phi> A"
-  have Mc: "?M \<in> carrier_mat (d * d) (d * d)" by (rule amplification_carrier')
+  have Mc: "?M \<in> carrier_mat (d * d) (d * d)" by (rule amplification_carrier)
   have Mpsd: "psd ?M" using P A Apsd unfolding p_positive_on_def by blast
   define v where "v = Matrix.vec (d * d) (\<lambda>x. if x div d = x mod d then 1 else (0::complex))"
   have vd: "dim_vec v = d * d" unfolding v_def by simp
   have vidx: "\<And>r i. r < d \<Longrightarrow> i < d \<Longrightarrow> v $ (r * d + i) = (if i = r then 1 else 0)"
-    unfolding v_def using idx_mp by auto
+    unfolding v_def using mult_index_lt mult_index_div_mod by auto
   have inner: "\<And>r. r < d \<Longrightarrow> (\<Sum>i<d. \<Sum>s<d. \<Sum>j<d. cnj (v $ (r * d + i)) * ?M $$ (r * d + i, s * d + j) * v $ (s * d + j))
                  = (\<Sum>s<d. ?M $$ (r * d + r, s * d + s))"
   proof -
@@ -463,9 +460,9 @@ proof -
           * 1\<^sub>m n $$ ((s * n + b') mod n, (k * n + b) mod n)"
   proof -
     have d0: "0 < d" using k by simp
-    show ?thesis unfolding V_def by (rule index_tensor_mat) (use idx_mp[OF s b'] idx_mp[OF k b] b d0 in simp_all)
+    show ?thesis unfolding V_def by (rule index_tensor_mat) (use mult_index_lt[OF s b'] mult_index_div_mod[OF b'] mult_index_lt[OF k b] mult_index_div_mod[OF b] b d0 in simp_all)
   qed
-  thus ?thesis using idx_mp[OF s b'] idx_mp[OF k b] s k b b' by simp
+  thus ?thesis using mult_index_lt[OF s b'] mult_index_div_mod[OF b'] mult_index_lt[OF k b] mult_index_div_mod[OF b] s k b b' by simp
 qed
 
 lemma conj_block:
@@ -478,7 +475,7 @@ proof -
   have Vc: "V \<in> carrier_mat (q * n) (d * n)" unfolding V_def by simp
   have Vd: "V\<^sup>\<dagger> \<in> carrier_mat (d * n) (q * n)" by (rule dagger_carrier[OF Vc])
   have VdA: "(V\<^sup>\<dagger>) * A \<in> carrier_mat (d * n) (q * n)" using Vd A by simp
-  have ia: "i * n + a < d * n" and jb: "j * n + b < d * n" using idx_mp(1)[OF i a] idx_mp(1)[OF j b] by simp_all
+  have ia: "i * n + a < d * n" and jb: "j * n + b < d * n" using mult_index_lt[OF i a] mult_index_lt[OF j b] by simp_all
   have Vix: "\<And>s b'. s < q \<Longrightarrow> b' < n \<Longrightarrow> V $$ (s * n + b', j * n + b) = (if b' = b then w $ (s * d + j) else 0)"
     unfolding V_def by (rule conj_tensor_index[OF _ j _ b])
   have Vdix: "\<And>r a'. r < q \<Longrightarrow> a' < n \<Longrightarrow> cnj (V $$ (r * n + a', i * n + a)) = (if a' = a then cnj (w $ (r * d + i)) else 0)"
@@ -527,7 +524,7 @@ proof (intro allI impI ballI)
   have Ac: "A \<in> carrier_mat (q * n) (q * n)" and Ab: "\<And>r s. r < q \<Longrightarrow> s < q \<Longrightarrow> block_of_mat n A r s \<in> OS"
     using A unfolding Mp_def by blast+
   let ?M = "amplification n d q \<Phi> A"
-  have Mc: "?M \<in> carrier_mat (q * d) (q * d)" by (rule amplification_carrier')
+  have Mc: "?M \<in> carrier_mat (q * d) (q * d)" by (rule amplification_carrier)
   have PhiAc: "\<And>r s. r < q \<Longrightarrow> s < q \<Longrightarrow> \<Phi> (block_of_mat n A r s) \<in> carrier_mat d d"
     using L Ab unfolding lin_on_def by blast
   show "psd ?M"
@@ -554,10 +551,10 @@ proof (intro allI impI ballI)
           "b < dim_col (msum n n (?g i j) (List.product [0..<q] [0..<q]))"
         hence a: "a < n" and b: "b < n" using msum_carrier[OF gc[of i j]] by simp_all
         have "block_of_mat n Ym i j $$ (a,b) = (\<Sum>r<q. \<Sum>s<q. ?c i j r s * A $$ (r * n + a, s * n + b))"
-          unfolding block_of_mat_idx[OF a b] Ym_def V_def by (rule conj_block[OF Ac i j a b])
+          unfolding block_of_mat_index[OF a b] Ym_def V_def by (rule conj_block[OF Ac i j a b])
         also have "\<dots> = msum n n (?g i j) (List.product [0..<q] [0..<q]) $$ (a,b)"
           unfolding msum_index[OF gc a b] sum_list_product_upt
-          by (intro sum.cong refl) (simp add: block_of_mat_idx[OF a b] a b)
+          by (intro sum.cong refl) (simp add: block_of_mat_index[OF a b] a b)
         finally show "block_of_mat n Ym i j $$ (a,b) = msum n n (?g i j) (List.product [0..<q] [0..<q]) $$ (a,b)" .
       qed (use msum_carrier[OF gc[of i j]] in simp_all)
     qed

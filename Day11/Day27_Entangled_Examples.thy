@@ -12,16 +12,6 @@ definition unit_blocks :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow
   "unit_blocks r n f = Matrix.mat (r * n) (r * n)
      (\<lambda>(x, y). if x mod n = f (x div n) \<and> y mod n = f (y div n) then 1 else 0)"
 
-lemma block_index_less:
-  fixes a k r n :: nat
-  assumes "a < r" "k < n"
-  shows "a * n + k < r * n"
-proof -
-  have "a * n + k < Suc a * n" using assms(2) by simp
-  also have "\<dots> \<le> r * n" using assms(1) by (intro mult_le_mono1) simp
-  finally show ?thesis .
-qed
-
 lemma unit_blocks_carrier [simp]: "unit_blocks r n f \<in> carrier_mat (r * n) (r * n)"
   by (simp add: unit_blocks_def)
 
@@ -32,7 +22,7 @@ proof (rule eq_matI)
   fix k l assume "k < dim_row (mat_unit (f a) (f b) n n)" "l < dim_col (mat_unit (f a) (f b) n n)"
   hence k: "k < n" and l: "l < n" by (simp_all add: mat_unit_def)
   have x: "a * n + k < r * n" and y: "b * n + l < r * n"
-    using block_index_less assms k l by simp_all
+    using mult_index_lt assms k l by simp_all
   show "block_of_mat n (unit_blocks r n f) a b $$ (k, l) = mat_unit (f a) (f b) n n $$ (k, l)"
     using k l x y by (auto simp: block_of_mat_def unit_blocks_def mat_unit_def)
 qed (simp_all add: block_of_mat_def mat_unit_def)
@@ -87,7 +77,7 @@ proof
   proof -
     have xd: "x div n < r" "y div n < r" using x y by (simp_all add: less_mult_imp_div_less)
     have "(x div n) * n + y mod n < r * n" "(y div n) * n + x mod n < r * n"
-      using block_index_less xd n by simp_all
+      using mult_index_lt xd n by simp_all
     thus ?thesis using x y n by (simp add: amplification_def block_of_mat_def unit_blocks_def)
   qed
   define h :: "complex Matrix.vec" where "h = Matrix.vec (r * n) (\<lambda>x. if x = p then 1 else if x = q then -1 else 0)"
@@ -103,7 +93,7 @@ proof
     finally show ?thesis using pq by (simp add: h_def)
   qed
   have "\<langle>h | ?Y *\<^sub>v h\<rangle> = (\<Sum>x = 0..<r * n. cnj (h $ x) * (?Y *\<^sub>v h) $ x)"
-    using inner_prod_expand[of h "r * n" "?Y *\<^sub>v h"] hd carrier_matD[OF Yc] by simp
+    using inner_prod_sum[of h "r * n" "?Y *\<^sub>v h"] hd carrier_matD[OF Yc] by simp
   also have "\<dots> = cnj (h $ p) * (?Y *\<^sub>v h) $ p + cnj (h $ q) * (?Y *\<^sub>v h) $ q"
     by (rule sum_two_support[OF pq]) (simp add: h_def)
   also have "\<dots> = (?Y $$ (p, p) - ?Y $$ (p, q)) - (?Y $$ (q, p) - ?Y $$ (q, q))"

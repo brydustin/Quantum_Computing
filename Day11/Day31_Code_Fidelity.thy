@@ -167,12 +167,6 @@ qed
 
 subsection \<open>Minimum fidelities (D31-4)\<close>
 
-lemma smult_mat_mult_vec8:
-  fixes A :: "complex Matrix.mat"
-  assumes "dim_col A = dim_vec v"
-  shows "(k \<cdot>\<^sub>m A) *\<^sub>v v = k \<cdot>\<^sub>v (A *\<^sub>v v)"
-  by (rule eq_vecI) (use assms in \<open>auto simp: scalar_prod_def sum_distrib_left mult_ac\<close>)
-
 lemma quad_two_outer:
   fixes \<psi> \<phi> :: "complex Matrix.vec"
   assumes \<psi>d: "dim_vec \<psi> = n" and \<phi>d: "dim_vec \<phi> = n"
@@ -191,7 +185,7 @@ proof -
       have d1: "dim_col (\<psi> \<oslash> \<psi>) = dim_vec \<psi>" and d2: "dim_col (\<phi> \<oslash> \<phi>) = dim_vec \<psi>"
         using carrier_matD(2)[OF Pc] carrier_matD(2)[OF Qc] \<psi>d by simp_all
       have e2: "dim_vec \<psi> = dim_vec \<phi>" using \<psi>d \<phi>d by simp
-      show ?thesis by (simp only: smult_mat_mult_vec8[OF d1] smult_mat_mult_vec8[OF d2]
+      show ?thesis by (simp only: smult_mat_mult_vec[OF carrier_matI[OF refl refl] carrier_vecI[OF d1[symmetric]]] smult_mat_mult_vec[OF carrier_matI[OF refl refl] carrier_vecI[OF d2[symmetric]]]
           outer_prod_mult_vec[of \<psi> \<psi> \<psi>, OF refl] outer_prod_mult_vec[of \<psi> \<phi> \<phi>, OF e2])
     qed
     finally show ?thesis by (simp only: smult_smult_assoc)
@@ -210,9 +204,9 @@ lemma encode_inner:
   shows "\<langle>encode_mat *\<^sub>v u | encode_mat *\<^sub>v v\<rangle> = \<langle>u|v\<rangle>"
 proof -
   have "\<langle>encode_mat *\<^sub>v u | encode_mat *\<^sub>v v\<rangle> = (\<Sum>i \<in> {0..<8}. cnj ((encode_mat *\<^sub>v u) $ i) * (encode_mat *\<^sub>v v) $ i)"
-    by (rule inner_prod_expand) simp_all
-  also have "\<dots> = cnj (u $ 0) * v $ 0 + cnj (u $ 1) * v $ 1" unfolding s8 using u v by (simp add: encode_mat_mult_vec del: index_mult_mat_vec)
-  also have "\<dots> = \<langle>u|v\<rangle>" unfolding inner_prod_expand[OF u v] using u v by (simp add: numeral_2_eq_2)
+    by (rule inner_prod_sum) simp_all
+  also have "\<dots> = cnj (u $ 0) * v $ 0 + cnj (u $ 1) * v $ 1" unfolding set_8_atLeast0 using u v by (simp add: encode_mat_mult_vec del: index_mult_mat_vec)
+  also have "\<dots> = \<langle>u|v\<rangle>" unfolding inner_prod_sum[OF u v] using u v by (simp add: numeral_2_eq_2)
   finally show ?thesis .
 qed
 

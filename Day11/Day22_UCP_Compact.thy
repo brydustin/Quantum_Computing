@@ -32,7 +32,7 @@ proof -
     fix i assume "i \<in> {..<CARD('n)}"
     hence i: "i < CARD('n)" by simp
     have "i * CARD('d) + a < CARD('n \<times> 'd)" "i * CARD('d) + b < CARD('n \<times> 'd)"
-      using idx_bound[OF i a] idx_bound[OF i b] by (simp_all add: card_prod)
+      using mult_index_lt[OF i a] mult_index_lt[OF i b] by (simp_all add: card_prod)
     thus "continuous_on UNIV (\<lambda>M :: (complex, 'n \<times> 'd, 'n \<times> 'd) lmat. unwrap_lm M $$ (i * CARD('d) + a, i * CARD('d) + b))"
       by (rule continuous_on_unwrap_lm_index)
   qed

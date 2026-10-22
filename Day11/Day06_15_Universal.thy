@@ -104,23 +104,6 @@ next
   finally show ?case using Suc by simp
 qed
 
-lemma unit_vec_tensor:
-  assumes i: "i < n" and j: "j < m"
-  shows "tensor_vec (unit_vec n i) (unit_vec m j) = (unit_vec (n * m) (i * m + j) :: complex Matrix.vec)"
-proof (rule eq_vecI)
-  show d: "dim_vec (tensor_vec (unit_vec n i) (unit_vec m j)) = dim_vec (unit_vec (n * m) (i * m + j) :: complex Matrix.vec)"
-    by (simp add: tensor_vec_dim)
-  fix k assume "k < dim_vec (unit_vec (n * m) (i * m + j) :: complex Matrix.vec)"
-  hence k: "k < n * m" by simp
-  have m0: "0 < m" using j by simp
-  have "(k div m = i \<and> k mod m = j) \<longleftrightarrow> k = i * m + j"
-  proof
-    assume "k div m = i \<and> k mod m = j" thus "k = i * m + j" using div_mult_mod_eq[of k m] by (simp add: Groups.mult.commute)
-  qed (use j in simp)
-  thus "tensor_vec (unit_vec n i) (unit_vec m j) $ k = unit_vec (n * m) (i * m + j) $ k"
-    using tensor_vec_index[of "unit_vec n i" n "unit_vec m j" m k] k by (auto simp: unit_vec_def less_mult_imp_div_less m0)
-qed
-
 theorem tensor_universal_property:
   assumes b: "bilinear_on n m \<beta>"
   shows "\<exists>L. linear_on (n * m) L \<and> (\<forall>v w. dim_vec v = n \<longrightarrow> dim_vec w = m \<longrightarrow> L (tensor_vec v w) = \<beta> v w)
@@ -150,7 +133,7 @@ proof -
       have i: "k div m < n" using k by (simp add: less_mult_imp_div_less)
       have j: "k mod m < m" using m0 by simp
       have "unit_vec (n * m) k = tensor_vec (unit_vec n (k div m)) (unit_vec m (k mod m))"
-        using unit_vec_tensor[OF i j] by (simp add: Groups.mult.commute)
+        using tensor_unit_vec[OF i j] by (simp add: Groups.mult.commute)
       thus "x $ k * L' (unit_vec (n * m) k) = x $ k * \<beta> (unit_vec n (k div m)) (unit_vec m (k mod m))"
         using e' by simp
     qed
@@ -217,7 +200,7 @@ proof -
       have i: "k div m < n" using k by (simp add: less_mult_imp_div_less)
       have j: "k mod m < m" using m0 by simp
       have "unit_vec (n * m) k = tensor_vec (unit_vec n (k div m)) (unit_vec m (k mod m))"
-        using unit_vec_tensor[OF i j] by (simp add: Groups.mult.commute)
+        using tensor_unit_vec[OF i j] by (simp add: Groups.mult.commute)
       thus "x $ k * L' (unit_vec (n * m) k) $ r = x $ k * \<beta> (unit_vec n (k div m)) (unit_vec m (k mod m)) $ r"
         using e' by simp
     qed
@@ -299,21 +282,13 @@ definition linear_mat_on :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix
      (\<forall>x y. x \<in> carrier_mat K1 K2 \<longrightarrow> y \<in> carrier_mat K1 K2 \<longrightarrow> \<Phi> (x + y) = \<Phi> x + \<Phi> y)
    \<and> (\<forall>c x. x \<in> carrier_mat K1 K2 \<longrightarrow> \<Phi> (c \<cdot>\<^sub>m x) = c \<cdot>\<^sub>m \<Phi> x)"
 
-lemma idx_bound: "i < K1 \<Longrightarrow> j < K2 \<Longrightarrow> i * K2 + j < K1 * (K2::nat)"
-proof -
-  assume i: "i < K1" and j: "j < K2"
-  have "i * K2 + j < Suc i * K2" using j by simp
-  also have "\<dots> \<le> K1 * K2" using i by (intro mult_le_mono1) simp
-  finally show ?thesis .
-qed
-
 definition unflat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
   "unflat K1 K2 x = Matrix.mat K1 K2 (\<lambda>(a, b). x $ (a * K2 + b))"
 
-definition flat :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
-  "flat K2 c = Matrix.vec (dim_row c * K2) (\<lambda>k. c $$ (k div K2, k mod K2))"
+definition flat_mat :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
+  "flat_mat K2 c = Matrix.vec (dim_row c * K2) (\<lambda>k. c $$ (k div K2, k mod K2))"
 
-lemma unflat_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> unflat K1 K2 (flat K2 c) = c"
+lemma unflat_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> unflat K1 K2 (flat_mat K2 c) = c"
 proof (rule eq_matI)
   fix i j assume c: "c \<in> carrier_mat K1 K2" and ij: "i < dim_row c" "j < dim_col c"
   have j: "j < K2" using c ij by simp
@@ -324,10 +299,10 @@ proof (rule eq_matI)
     also have "\<dots> \<le> K1 * K2" using c ij by (intro mult_le_mono1) simp
     finally show ?thesis .
   qed
-  thus "unflat K1 K2 (flat K2 c) $$ (i, j) = c $$ (i, j)" using c ij j by (simp add: unflat_def flat_def)
+  thus "unflat K1 K2 (flat_mat K2 c) $$ (i, j) = c $$ (i, j)" using c ij j by (simp add: unflat_def flat_mat_def)
 qed (auto simp: unflat_def)
 
-lemma dim_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> dim_vec (flat K2 c) = K1 * K2" by (simp add: flat_def)
+lemma dim_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> dim_vec (flat_mat K2 c) = K1 * K2" by (simp add: flat_mat_def)
 
 lemma unflat_unit:
   assumes k: "k < K1 * K2"
@@ -376,7 +351,7 @@ proof (rule eq_matI)
       thus "unflat K1 K2 (x + y) $$ (i, j) = (unflat K1 K2 x + unflat K1 K2 y) $$ (i, j)" using i j that by (simp add: unflat_def)
     qed (simp_all add: unflat_def)
     have sm: "unflat K1 K2 (a \<cdot>\<^sub>v x) = a \<cdot>\<^sub>m unflat K1 K2 x" if "dim_vec x = K1 * K2" for a x
-      by (rule eq_matI) (use that idx_bound in \<open>simp_all add: unflat_def\<close>)
+      by (rule eq_matI) (use that mult_index_lt in \<open>simp_all add: unflat_def\<close>)
     show ?thesis unfolding linear_on_def
     proof (intro conjI allI impI)
       fix x y :: "complex Matrix.vec" assume x: "dim_vec x = K1 * K2" and y: "dim_vec y = K1 * K2"
@@ -396,7 +371,7 @@ proof (rule eq_matI)
   hence rs: "r < Q1" "s < Q2" using dims[OF c] by simp_all
   have r1: "\<And>x. x \<in> carrier_mat K1 K2 \<Longrightarrow> r < dim_row (\<Phi> x) \<and> s < dim_col (\<Phi> x)" using dims rs by auto
   have r2: "\<And>x. x \<in> carrier_mat K1 K2 \<Longrightarrow> r < dim_row (\<Psi> x) \<and> s < dim_col (\<Psi> x)" using dims rs by auto
-  let ?x = "flat K2 c"
+  let ?x = "flat_mat K2 c"
   have x: "dim_vec ?x = K1 * K2" by (rule dim_flat[OF c])
   have "\<Phi> c $$ (r, s) = \<Phi> (unflat K1 K2 ?x) $$ (r, s)" unfolding unflat_flat[OF c] ..
   also have "\<dots> = (\<Sum>k<K1 * K2. ?x $ k * \<Phi> (unflat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s))"

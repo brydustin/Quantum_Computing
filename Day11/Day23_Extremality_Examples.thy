@@ -117,15 +117,6 @@ proof -
   thus thesis using that by blast
 qed
 
-lemma mat_unit_carrier_sq [simp]: "E\<lbrakk>i,j ; n,n\<rbrakk> \<in> carrier_mat n n"
-  by (simp add: mat_unit_def)
-
-lemma one_smult_mat': "(1::complex) \<cdot>\<^sub>m A = A"
-  by (rule eq_matI) simp_all
-
-lemma dagger_smult_mat: "(c \<cdot>\<^sub>m A)\<^sup>\<dagger> = cnj c \<cdot>\<^sub>m (A\<^sup>\<dagger>)"
-  by (rule eq_matI) (simp_all add: dagger_def)
-
 subsection \<open>Example 1: unitary conjugation is extreme\<close>
 
 theorem unitary_conjugation_extreme:
@@ -188,7 +179,7 @@ proof -
     have UdU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n" using Uu Uc unfolding unitary_def by simp
     have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF Uc])
     have "((1 / csqrt 2) \<cdot>\<^sub>m U)\<^sup>\<dagger> * ((1 / csqrt 2) \<cdot>\<^sub>m U) = (cnj (1 / csqrt 2) * (1 / csqrt 2)) \<cdot>\<^sub>m ((U\<^sup>\<dagger>) * U)"
-      unfolding dagger_smult_mat by (rule smult_prod[OF Ud Uc])
+      unfolding dagger_of_smult by (rule smult_prod[OF Ud Uc])
     thus "((1 / csqrt 2) \<cdot>\<^sub>m U)\<^sup>\<dagger> * ((1 / csqrt 2) \<cdot>\<^sub>m U) = (1/2) \<cdot>\<^sub>m 1\<^sub>m n" unfolding UdU half_sq .
   qed
   show "(avg2 U1 U2 ! 0)\<^sup>\<dagger> * avg2 U1 U2 ! 0 = (1/2) \<cdot>\<^sub>m 1\<^sub>m n" using e[OF U1] by (simp add: avg2_def)
@@ -216,7 +207,7 @@ proof -
     have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF Uc])
     have "((1 / csqrt 2) \<cdot>\<^sub>m U) * M * (((1 / csqrt 2) \<cdot>\<^sub>m U)\<^sup>\<dagger>)
         = ((1 / csqrt 2) * cnj (1 / csqrt 2)) \<cdot>\<^sub>m (U * M * (U\<^sup>\<dagger>))"
-      unfolding dagger_smult_mat by (rule smult_triple[OF Uc M Ud])
+      unfolding dagger_of_smult by (rule smult_triple[OF Uc M Ud])
     also have "(1 / csqrt 2) * cnj (1 / csqrt 2) = 1/2" using half_sq by (simp add: mult.commute)
     finally show "((1 / csqrt 2) \<cdot>\<^sub>m U) * M * (((1 / csqrt 2) \<cdot>\<^sub>m U)\<^sup>\<dagger>) = (1/2) \<cdot>\<^sub>m (U * M * (U\<^sup>\<dagger>))" .
   qed
@@ -261,7 +252,7 @@ proof -
   proof -
     have "(cnj z \<cdot>\<^sub>m (U1\<^sup>\<dagger>)) * (z \<cdot>\<^sub>m U1) = (cnj z * z) \<cdot>\<^sub>m ((U1\<^sup>\<dagger>) * U1)" by (rule smult_prod[OF U1d U1(1)])
     moreover have "(z \<cdot>\<^sub>m U1) * (cnj z \<cdot>\<^sub>m (U1\<^sup>\<dagger>)) = (z * cnj z) \<cdot>\<^sub>m (U1 * (U1\<^sup>\<dagger>))" by (rule smult_prod[OF U1(1) U1d])
-    ultimately show ?thesis using U1 ll unfolding unitary_def dagger_smult_mat by (simp add: mult.commute one_smult_mat')
+    ultimately show ?thesis using U1 ll unfolding unitary_def dagger_of_smult by (simp add: mult.commute one_smult_mat)
   qed
   have K: "kraus_operators n n (avg2 U1 (z \<cdot>\<^sub>m U1))" by (rule avg2_kraus[OF U1 U2 U2u])
   have eq: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> kraus_map_dim n (avg2 U1 (z \<cdot>\<^sub>m U1)) X = kraus_map_dim n [U1] X"
@@ -269,8 +260,8 @@ proof -
     fix X :: "complex Matrix.mat" assume X: "X \<in> carrier_mat n n"
     have c: "U1 * X * (U1\<^sup>\<dagger>) \<in> carrier_mat n n" using U1 X by auto
     have "(z \<cdot>\<^sub>m U1) * X * ((z \<cdot>\<^sub>m U1)\<^sup>\<dagger>) = (z * cnj z) \<cdot>\<^sub>m (U1 * X * (U1\<^sup>\<dagger>))"
-      unfolding dagger_smult_mat by (rule smult_triple[OF U1(1) X U1d])
-    hence "(z \<cdot>\<^sub>m U1) * X * ((z \<cdot>\<^sub>m U1)\<^sup>\<dagger>) = U1 * X * (U1\<^sup>\<dagger>)" using ll c by (simp add: mult.commute one_smult_mat')
+      unfolding dagger_of_smult by (rule smult_triple[OF U1(1) X U1d])
+    hence "(z \<cdot>\<^sub>m U1) * X * ((z \<cdot>\<^sub>m U1)\<^sup>\<dagger>) = U1 * X * (U1\<^sup>\<dagger>)" using ll c by (simp add: mult.commute one_smult_mat)
     hence "kraus_map_dim n (avg2 U1 (z \<cdot>\<^sub>m U1)) X = (1/2) \<cdot>\<^sub>m (U1 * X * (U1\<^sup>\<dagger>) + U1 * X * (U1\<^sup>\<dagger>))"
       using avg2_map[OF U1(1) U2 X] by simp
     also have "\<dots> = U1 * X * (U1\<^sup>\<dagger>)" by (rule eq_matI) (use c in auto)
@@ -342,7 +333,7 @@ proof (rule eq_matI)
   have e: "\<And>i. i < n \<Longrightarrow> (E\<lbrakk>i,i ; n,n\<rbrakk> * M * (E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>)) $$ (r,s) = (if r = i \<and> s = i then M $$ (i,i) else 0)"
   proof -
     fix i assume i: "i < n"
-    have c: "E\<lbrakk>i,i ; n,n\<rbrakk> * M \<in> carrier_mat n n" by (rule mult_carrier_mat[OF mat_unit_carrier_sq M])
+    have c: "E\<lbrakk>i,i ; n,n\<rbrakk> * M \<in> carrier_mat n n" by (rule mult_carrier_mat[OF mat_unit_carrier M])
     show "(E\<lbrakk>i,i ; n,n\<rbrakk> * M * (E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>)) $$ (r,s) = (if r = i \<and> s = i then M $$ (i,i) else 0)"
       unfolding mat_unit_dagger unit_mult_right_entry[OF c r s i] using unit_mult_left_entry[OF M r i i] by auto
   qed
@@ -391,7 +382,7 @@ proof (intro conjI)
     proof -
       fix i assume i: "i < n"
       show "((E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>) * E\<lbrakk>i,i ; n,n\<rbrakk>) $$ (r,s) = (if r = i \<and> s = i then 1 else 0)"
-        unfolding mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier_sq r s i] using r s by auto
+        unfolding mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier r s i] using r s by auto
     qed
     have "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) (diag_kraus n) (0\<^sub>m n n) $$ (r,s) = (\<Sum>W\<leftarrow>diag_kraus n. ((W\<^sup>\<dagger>) * W) $$ (r,s))"
       by (rule foldr_add_mat_index_rect[OF c r s])
@@ -442,7 +433,7 @@ proof -
     fix r s assume "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)" "s < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
     hence r: "r < n" and s: "s < n" by simp_all
     show "((diag_kraus n ! 1)\<^sup>\<dagger> * diag_kraus n ! 0) $$ (r,s) = 0\<^sub>m n n $$ (r,s)"
-      unfolding d mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier_sq r s] using r s n by simp
+      unfolding d mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier r s] using r s n by simp
   qed (simp_all add: d d[unfolded One_nat_def] mat_unit_def)
   hence z: "kraus_products (diag_kraus n) ! 1 = 0\<^sub>m n n" using k1 by simp
   have "1 < length (kraus_products (diag_kraus n))" using n l length_kraus_products[of "diag_kraus n"]
@@ -504,7 +495,7 @@ proof (intro conjI)
       fix a b assume a: "a < d" and b: "b < n"
       have u: "E\<lbrakk>a,b ; d,n\<rbrakk> \<in> carrier_mat d n" "E\<lbrakk>b,a ; n,d\<rbrakk> \<in> carrier_mat n d" by (simp_all add: mat_unit_def)
       have "((?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>)\<^sup>\<dagger>) * (?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>) = (1 / of_nat d) \<cdot>\<^sub>m (E\<lbrakk>b,a ; n,d\<rbrakk> * E\<lbrakk>a,b ; d,n\<rbrakk>)"
-        unfolding dagger_smult_mat mat_unit_dagger smult_prod[OF u(2) u(1)] tr_scalar[OF d] ..
+        unfolding dagger_of_smult mat_unit_dagger smult_prod[OF u(2) u(1)] tr_scalar[OF d] ..
       thus "(((?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>)\<^sup>\<dagger>) * (?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>)) $$ (r,s) = (if r = b \<and> s = b then 1 / of_nat d else 0)"
         using unit_mult_left_entry[OF u(1) r s a] r s b a by simp
     qed
@@ -540,9 +531,9 @@ proof (rule eq_matI)
   proof -
     fix a b assume a: "a < d" and b: "b < n"
     have u: "E\<lbrakk>a,b ; d,n\<rbrakk> \<in> carrier_mat d n" "E\<lbrakk>b,a ; n,d\<rbrakk> \<in> carrier_mat n d" by (simp_all add: mat_unit_def)
-    have um: "E\<lbrakk>a,b ; d,n\<rbrakk> * M \<in> carrier_mat d n" using u M by simp
+    have um: "E\<lbrakk>a,b ; d,n\<rbrakk> * M \<in> carrier_mat d n" by (rule mult_carrier_mat[OF u(1) M])
     have "(?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>) * M * ((?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>)\<^sup>\<dagger>) = (1 / of_nat d) \<cdot>\<^sub>m (E\<lbrakk>a,b ; d,n\<rbrakk> * M * E\<lbrakk>b,a ; n,d\<rbrakk>)"
-      unfolding dagger_smult_mat mat_unit_dagger smult_triple[OF u(1) M u(2)] tr_scalar[OF d] ..
+      unfolding dagger_of_smult mat_unit_dagger smult_triple[OF u(1) M u(2)] tr_scalar[OF d] ..
     moreover have "(E\<lbrakk>a,b ; d,n\<rbrakk> * M * E\<lbrakk>b,a ; n,d\<rbrakk>) $$ (r,s) = (if s = a then (if r = a then M $$ (b,b) else 0) else 0)"
       unfolding unit_mult_right_entry[OF um r s b] using unit_mult_left_entry[OF M r b b] by simp
     ultimately show "((?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>) * M * ((?c \<cdot>\<^sub>m E\<lbrakk>a,b ; d,n\<rbrakk>)\<^sup>\<dagger>)) $$ (r,s)

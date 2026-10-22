@@ -21,7 +21,7 @@ proof (rule eq_vecI)
   fix i assume "i < dim_vec (Matrix.vec k (\<lambda>i. complex_of_real (D ! i) * v $ i))"
   hence i: "i < k" by simp
   have "(diag_mat_of_real D *\<^sub>v v) $ i = (\<Sum>j<k. (if i = j then complex_of_real (D ! i) else 0) * v $ j)"
-    using assms i by (simp add: diag_mat_of_real_def scalar_prod_def atLeast0LessThan)
+    using assms i by (simp add: diag_mat_of_real_def mat_diag_def scalar_prod_def atLeast0LessThan cong: if_cong)
   also have "\<dots> = (\<Sum>j<k. if j = i then complex_of_real (D ! i) * v $ j else 0)" by (rule sum.cong) auto
   also have "\<dots> = complex_of_real (D ! i) * v $ i" using i by simp
   finally show "(diag_mat_of_real D *\<^sub>v v) $ i = Matrix.vec k (\<lambda>i. complex_of_real (D ! i) * v $ i) $ i" using i by simp

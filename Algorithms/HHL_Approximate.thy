@@ -124,7 +124,7 @@ lemma dim_reg_sum [simp]: "dim_vec (reg_sum N m f) = N * m"
 
 lemma reg_sum_index:
   "k < N \<Longrightarrow> i < m \<Longrightarrow> reg_sum N m f $ (k * m + i) = f k $ i"
-  using block_index[of k N i m] by (simp add: reg_sum_def)
+  using mult_index_lt[of k N i m] mult_index_div_mod[of i m k] by (simp add: reg_sum_def)
 
 lemma reg_sum_cong: "(\<And>k. k < N \<Longrightarrow> f k = g k) \<Longrightarrow> reg_sum N m f = reg_sum N m g"
   by (rule eq_vecI) (auto simp: reg_sum_def less_mult_imp_div_less)

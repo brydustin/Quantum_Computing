@@ -426,11 +426,8 @@ qed
 
 subsection \<open>Bessel's inequality for rows that are orthonormal or zero\<close>
 
-lemma cmod_sq_cnj: "complex_of_real ((cmod z)\<^sup>2) = z * cnj z"
-  by (simp add: complex_mult_cnj cmod_power2 del: of_real_power)
-
 lemma cmod_sq_sum: "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. f k * cnj (f k))"
-  by (simp only: of_real_sum cmod_sq_cnj)
+  by (simp only: of_real_sum complex_norm_square)
 
 lemma bessel_rows:
   fixes s :: "nat \<Rightarrow> nat \<Rightarrow> complex" and y :: "nat \<Rightarrow> complex" and d K :: nat
@@ -725,7 +722,7 @@ proof -
           using j' by simp
       qed
       also have "\<dots> = complex_of_real (\<Sum>j'<d. if j' \<in> J2 then (cmod (x $ j'))\<^sup>2 else 0)"
-        unfolding of_real_sum by (rule sum.cong[OF refl]) (simp only: if_distrib[of complex_of_real] of_real_0 cmod_sq_cnj)
+        unfolding of_real_sum by (rule sum.cong[OF refl]) (simp only: if_distrib[of complex_of_real] of_real_0 complex_norm_square)
       finally have "(\<Sum>k<?K. (cmod (z k))\<^sup>2) = (\<Sum>j'<d. if j' \<in> J2 then (cmod (x $ j'))\<^sup>2 else 0)"
         by (simp only: of_real_eq_iff)
       also have "\<dots> \<le> (\<Sum>j<d. (cmod (x $ j))\<^sup>2)" by (rule sum_mono) simp

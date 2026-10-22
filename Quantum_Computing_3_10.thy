@@ -28,11 +28,6 @@ the polarisation lemma); (d) is self-dual and (f) follows from (e) for $U^*$.\<c
 
 
 
-lemma unitary_left_right:
-  assumes "unitary U"
-  shows "U\<^sup>\<dagger> * U = 1\<^sub>m (dim_col U)" and "U * (U\<^sup>\<dagger>) = 1\<^sub>m (dim_row U)"
-  using assms by (simp_all add: unitary_def)
-
 text \<open>(b) $U$ is invertible with inverse $U^*$:\<close>
 
 lemma unitary_invertible:
@@ -48,11 +43,6 @@ proof -
 qed
 
 text \<open>(d) $U^*$ is unitary:\<close>
-
-lemma unitary_dagger_is_unitary:
-  assumes "unitary U"
-  shows "unitary (U\<^sup>\<dagger>)"
-  using assms by (simp add: unitary_def dagger_of_dagger_is_id mult.commute)
 
 text \<open>(e), (f) the columns and the rows of $U$ are orthonormal:\<close>
 
@@ -229,9 +219,6 @@ next
   finally show "((a \<cdot>\<^sub>m A) *\<^sub>v x) $ i = (a \<cdot>\<^sub>v (A *\<^sub>v x)) $ i" .
 qed
 
-
-
-
 lemma cpx_vec_length_zero_iff:
   fixes v :: "complex Matrix.vec"
   shows "\<parallel>v\<parallel> = 0 \<longleftrightarrow> v = 0\<^sub>v (dim_vec v)"
@@ -299,22 +286,6 @@ lemma inner_prod_right_smult':
   fixes u v :: "complex Matrix.vec"
   shows "\<langle>u | a \<cdot>\<^sub>v v\<rangle> = a * \<langle>u | v\<rangle>"
   by (simp add: inner_prod_def sum_distrib_left algebra_simps)
-
-lemma inner_prod_left_smult':
-  fixes u v :: "complex Matrix.vec"
-  assumes uv: "dim_vec u = dim_vec v"
-  shows "\<langle>a \<cdot>\<^sub>v u | v\<rangle> = cnj a * \<langle>u | v\<rangle>"
-proof -
-  have "\<langle>a \<cdot>\<^sub>v u | v\<rangle> =
-        (\<Sum>i<dim_vec v. cnj (a * (u $ i)) * (v $ i))"
-    using uv by (simp add: inner_prod_def lessThan_atLeast0)
-  also have "\<dots> =
-        cnj a * (\<Sum>i<dim_vec v. cnj (u $ i) * (v $ i))"
-    by (simp add: sum_distrib_left algebra_simps)
-  also have "\<dots> = cnj a * \<langle>u | v\<rangle>"
-    by (simp add: inner_prod_def lessThan_atLeast0)
-  finally show ?thesis .
-qed
 
 lemma inner_prod_right_add':
   fixes u v w :: "complex Matrix.vec"
@@ -943,7 +914,7 @@ next
     have "dim_vec y = dim_vec x" using xdim ydim by simp
     then show ?thesis
       unfolding z_def
-      using inner_prod_left_smult' by blast
+      using No_Cloning.inner_prod_distrib_left by blast
   qed
 
   have zx_real: "\<langle>z | x\<rangle> \<in> \<real>"
@@ -1038,7 +1009,7 @@ next
     proof -
       have "\<langle>w | x\<rangle> = cnj (1 / of_real (\<parallel>x\<parallel>)) * \<langle>x | x\<rangle>"
         unfolding w_def
-        by (rule inner_prod_left_smult') simp
+        by (rule No_Cloning.inner_prod_distrib_left) simp
       also have "cnj (1 / of_real (\<parallel>x\<parallel>)) = 1 / of_real (\<parallel>x\<parallel>)"
         by simp
       also have "(1 / of_real (\<parallel>x\<parallel>)) * \<langle>x | x\<rangle> = of_real (\<parallel>x\<parallel>)"
@@ -1173,7 +1144,7 @@ next
       have "dim_vec (x - z) = dim_vec x" using xdim zdim by simp
       have "\<langle>w | x\<rangle> = cnj c * \<langle>x - z | x\<rangle>"
         unfolding w_def
-        by (rule inner_prod_left_smult') (use xdim zdim in simp)
+        by (rule No_Cloning.inner_prod_distrib_left) (use xdim zdim in simp)
       also have "cnj c = c"
         by (simp add: c_def)
       finally show ?thesis .
@@ -3095,15 +3066,13 @@ and $T^*=(U^*HU)^*=T$ forces $T$ to be diagonal with real entries.
 \<open>diag_mat_of_real D\<close> is the complex diagonal matrix with the real list $D$ on its
 diagonal.\<close>
 definition diag_mat_of_real :: "real list \<Rightarrow> complex Matrix.mat" where
-  "diag_mat_of_real D =
-     Matrix.mat (length D) (length D)
-       (\<lambda>(i,j). if i = j then complex_of_real (D ! i) else 0)"
+  "diag_mat_of_real D = mat_diag (length D) (\<lambda>i. complex_of_real (D ! i))"
 
 lemma dim_row_diag_mat_of_real[simp]: "dim_row (diag_mat_of_real D) = length D"
-  unfolding diag_mat_of_real_def by simp
+  unfolding diag_mat_of_real_def mat_diag_def by simp
 
 lemma dim_col_diag_mat_of_real[simp]: "dim_col (diag_mat_of_real D) = length D"
-  unfolding diag_mat_of_real_def by simp
+  unfolding diag_mat_of_real_def mat_diag_def by simp
 
 lemma diag_mat_of_real_carrier[simp]:
   "diag_mat_of_real D \<in> carrier_mat (length D) (length D)"
@@ -3113,7 +3082,7 @@ lemma diag_mat_of_real_index[simp]:
   assumes "i < length D" and "j < length D"
   shows "diag_mat_of_real D $$ (i, j) =
          (if i = j then complex_of_real (D ! i) else 0)"
-  using assms unfolding diag_mat_of_real_def by simp
+  using assms unfolding diag_mat_of_real_def mat_diag_def by simp
 
 lemma diag_mat_of_real_mult_vec_index:
   fixes y :: "complex Matrix.vec"
@@ -3164,7 +3133,7 @@ proof -
     also have "... = (\<Sum>j = 0..<length D.
              (if i = j then complex_of_real (D ! i) else 0) * y $ j)"
       using ilt
-      by (intro sum.cong refl, simp add: diag_mat_of_real_def)
+      by (intro sum.cong refl, simp add: diag_mat_of_real_def mat_diag_def)
     also have "... = complex_of_real (D ! i) * y $ i"
       using ilt
       by (metis calculation diag_mat_of_real_mult_vec_index ydim)
@@ -5133,20 +5102,18 @@ $T\binom{v}{w}=\binom{T_{11}v+T_{12}w}{T_{21}v+T_{22}w}$.
 Formally the direct sum of vectors is the concatenation \<open>v \<oplus>\<^sub>v w\<close>, and block
 matrices are the library's \<open>four_block_mat\<close>.\<close>
 
-definition direct_sum_vec :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" (infixr "\<oplus>\<^sub>v" 65) where
-  "v \<oplus>\<^sub>v w \<equiv> Matrix.vec (dim_vec v + dim_vec w) (\<lambda>i. if i < dim_vec v then v $ i else w $ (i - dim_vec v))"
+text \<open>The direct sum of vectors is JNF's concatenation \<open>@\<^sub>v\<close>.\<close>
 
-lemma direct_sum_vec_dim [simp]:
-  "dim_vec (v \<oplus>\<^sub>v w) = dim_vec v + dim_vec w"
-  by (simp add: direct_sum_vec_def)
+abbreviation direct_sum_vec :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" (infixr "\<oplus>\<^sub>v" 65) where
+  "v \<oplus>\<^sub>v w \<equiv> v @\<^sub>v w"
 
 lemma direct_sum_vec_left [simp]:
   "i < dim_vec v \<Longrightarrow> (v \<oplus>\<^sub>v w) $ i = v $ i"
-  by (simp add: direct_sum_vec_def)
+  by (simp add: append_vec_def Let_def)
 
 lemma direct_sum_vec_right [simp]:
   "i < dim_vec w \<Longrightarrow> (v \<oplus>\<^sub>v w) $ (dim_vec v + i) = w $ i"
-  by (simp add: direct_sum_vec_def)
+  by (simp add: append_vec_def Let_def)
 
 
 lemma direct_sum_inner_prod:
@@ -5195,11 +5162,6 @@ proof -
 qed
 
 
-corollary direct_sum_dim:
-  "dim_vec (v \<oplus>\<^sub>v w) = dim_vec v + dim_vec w"
-  by simp
-
-
 lemma block_mat_apply:
   assumes "dim_vec v = k1" and "dim_vec w = k2"
       and "T11 \<in> carrier_mat n1 k1" and "T12 \<in> carrier_mat n1 k2"
@@ -5212,7 +5174,7 @@ proof -
   have w_carrier: "w \<in> carrier_vec k2"
     using assms(2) by (rule carrier_vecI)
   have vw_append: "v \<oplus>\<^sub>v w = v @\<^sub>v w"
-    by (simp add: direct_sum_vec_def append_vec_def Let_def)
+    by (rule refl)
 
   have left_dim:
     "dim_vec (four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) = n1 + n2"
@@ -5271,7 +5233,7 @@ proof -
         "((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) $ i =
          Matrix.row T21 ?j \<bullet> v + Matrix.row T22 ?j \<bullet> w"
         using assms False j_bound
-        by (simp add: direct_sum_vec_def)
+        by (simp add: append_vec_def Let_def)
       show ?thesis
         using lhs_i rhs_i by simp
     qed
@@ -6804,7 +6766,7 @@ proof -
     show "diag_mat_of_real D' $$ (i, j) = (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) $$ (i, j)"
       using ij Dlen D'len by (cases "i = j") (auto simp: D'_def)
   qed
-  have UUd: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using unitary_left_right(2)[OF UU] Uc by auto
+  have UUd: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using unitary_inv_r_dimrow[OF UU] Uc by auto
   have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by (simp add: dagger_def)
   have ImcT: "1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T = U * diag_mat_of_real D' * (U\<^sup>\<dagger>)"
   proof -
@@ -7719,35 +7681,35 @@ lemma hadamard_e1:
 text \<open>The phase gate $S=\mathrm{diag}(1,i)$ is unitary.\<close>
 
 definition Phase_S :: "complex Matrix.mat" where
-  "Phase_S \<equiv> Matrix.mat 2 2 (\<lambda>(i,j). if i = 0 \<and> j = 0 then 1 else if i = 1 \<and> j = 1 then \<i> else 0)"
+  "Phase_S \<equiv> Quantum.S"
 
 lemma Phase_S_carrier [simp]: "Phase_S \<in> carrier_mat 2 2"
-  by (simp add: Phase_S_def)
+  by (simp add: Phase_S_def Quantum.S_def)
 
 lemma Phase_S_dagger_S: "Phase_S\<^sup>\<dagger> * Phase_S = 1\<^sub>m 2"
 proof (rule eq_matI)
-  show "dim_row (Phase_S\<^sup>\<dagger> * Phase_S) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
-  show "dim_col (Phase_S\<^sup>\<dagger> * Phase_S) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
+  show "dim_row (Phase_S\<^sup>\<dagger> * Phase_S) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def Quantum.S_def)
+  show "dim_col (Phase_S\<^sup>\<dagger> * Phase_S) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def Quantum.S_def)
   fix i j assume "i < dim_row (1\<^sub>m 2 :: complex Matrix.mat)" "j < dim_col (1\<^sub>m 2 :: complex Matrix.mat)"
   hence ij: "i < 2" "j < 2" by auto
   thus "(Phase_S\<^sup>\<dagger> * Phase_S) $$ (i, j) = (1\<^sub>m 2 :: complex Matrix.mat) $$ (i, j)"
-    unfolding Phase_S_def dagger_def scalar_prod_def
+    unfolding Phase_S_def Quantum.S_def dagger_def scalar_prod_def
     by (cases i; cases j) (auto simp: less_2_cases numeral_2_eq_2)
 qed
 
 lemma Phase_S_S_dagger: "Phase_S * (Phase_S\<^sup>\<dagger>) = 1\<^sub>m 2"
 proof (rule eq_matI)
-  show "dim_row (Phase_S * (Phase_S\<^sup>\<dagger>)) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
-  show "dim_col (Phase_S * (Phase_S\<^sup>\<dagger>)) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def)
+  show "dim_row (Phase_S * (Phase_S\<^sup>\<dagger>)) = dim_row (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def Quantum.S_def)
+  show "dim_col (Phase_S * (Phase_S\<^sup>\<dagger>)) = dim_col (1\<^sub>m 2 :: complex Matrix.mat)" by (simp add: Phase_S_def Quantum.S_def)
   fix i j assume "i < dim_row (1\<^sub>m 2 :: complex Matrix.mat)" "j < dim_col (1\<^sub>m 2 :: complex Matrix.mat)"
   hence ij: "i < 2" "j < 2" by auto
   thus "(Phase_S * (Phase_S\<^sup>\<dagger>)) $$ (i, j) = (1\<^sub>m 2 :: complex Matrix.mat) $$ (i, j)"
-    unfolding Phase_S_def dagger_def scalar_prod_def
+    unfolding Phase_S_def Quantum.S_def dagger_def scalar_prod_def
     by (cases i; cases j) (auto simp: less_2_cases numeral_2_eq_2)
 qed
 
 lemma Phase_S_unitary: "unitary Phase_S"
-  unfolding unitary_def using Phase_S_dagger_S Phase_S_S_dagger by (simp add: Phase_S_def)
+  unfolding unitary_def using Phase_S_dagger_S Phase_S_S_dagger by (simp add: Phase_S_def Quantum.S_def)
 
 subsection \<open>Two- and three-qubit gates\<close>
 
@@ -7956,6 +7918,131 @@ proof -
   show ?thesis
     unfolding orthonormal_list_def
     using dims ips by blast
+qed
+
+
+lemma psd_smult_nonneg:
+  assumes c: "0 \<le> c"
+      and A: "psd A" and Ac: "A \<in> carrier_mat n n"
+  shows "psd (complex_of_real c \<cdot>\<^sub>m A)"
+proof -
+  have A_dagger: "(A\<^sup>\<dagger>) = A" using A by (simp add: psd_def hermitian_def)
+  have A_quad: "\<And>x. dim_vec x = n \<Longrightarrow> Re (\<langle>x | A *\<^sub>v x\<rangle>) \<ge> 0"
+    using A Ac by (simp add: psd_def)
+
+  have herm_cA: "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = complex_of_real c \<cdot>\<^sub>m A"
+  proof -
+    have "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = (cnj (complex_of_real c)) \<cdot>\<^sub>m (A\<^sup>\<dagger>)"
+      by (rule dagger_of_smult)
+    also have "\<dots> = complex_of_real c \<cdot>\<^sub>m A"
+      using A_dagger by simp
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>Action of the scaled matrix on a vector.\<close>
+  have smult_mv:
+    "\<And>x. x \<in> carrier_vec n \<Longrightarrow>
+         (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
+  proof -
+    fix x :: "complex Matrix.vec" assume x_car: "x \<in> carrier_vec n"
+    show "(complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
+    proof (rule eq_vecI)
+      show "dim_vec ((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x)
+            = dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
+        using Ac by simp
+    next
+      fix i assume "i < dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
+      hence i: "i < n" using Ac by simp
+      have r1: "Matrix.row A i \<in> carrier_vec n"
+        using Ac i by auto
+      have i_dr: "i < dim_row A" using i Ac by simp
+      have "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
+              = Matrix.row (complex_of_real c \<cdot>\<^sub>m A) i \<bullet> x"
+        using i Ac by auto
+      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v Matrix.row A i) \<bullet> x"
+        using row_smult[OF i_dr] by simp
+      also have "\<dots> = complex_of_real c * (Matrix.row A i \<bullet> x)"
+        using r1 x_car by simp
+      also have "\<dots> = complex_of_real c * (A *\<^sub>v x) $ i"
+        using i Ac by auto
+      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i"
+        using i Ac by auto
+      finally show "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
+                  = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i" .
+    qed
+  qed
+
+  have quad: "\<And>x. dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A) \<Longrightarrow>
+                Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>) \<ge> 0"
+  proof -
+    fix x :: "complex Matrix.vec"
+    assume dx: "dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A)"
+    hence dx': "dim_vec x = n" using Ac by simp
+    have x_car: "x \<in> carrier_vec n" using dx' by auto
+
+    have "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
+        = \<langle>x | complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
+      using smult_mv[OF x_car] by simp
+    also have "\<dots> = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>"
+      by (rule inner_prod_right_smult')
+    finally have eq: "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
+                    = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>" .
+
+    have Re_split: "Re (complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>)
+                  = c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
+      by simp
+    have "0 \<le> c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
+      using c A_quad[OF dx'] by (rule mult_nonneg_nonneg)
+    thus "0 \<le> Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>)"
+      using eq Re_split by simp
+  qed
+
+  show ?thesis
+    unfolding psd_def hermitian_def
+    using herm_cA quad by blast
+qed
+
+
+lemma tensor_unit_vec:
+  assumes i: "i < n" and j: "j < m"
+  shows "tensor_vec (unit_vec n i) (unit_vec m j) = (unit_vec (n * m) (i * m + j) :: complex Matrix.vec)"
+proof (rule eq_vecI)
+  have d: "dim_vec (tensor_vec (unit_vec n i) (unit_vec m j) :: complex Matrix.vec) = n * m"
+    by (rule tensor_vec_dim) simp_all
+  fix r assume "r < dim_vec (unit_vec (n * m) (i * m + j) :: complex Matrix.vec)"
+  hence r: "r < n * m" by simp
+  have m: "0 < m" using j by simp
+  have rd: "r div m < n" using r by (simp add: less_mult_imp_div_less)
+  have e: "(r div m = i \<and> r mod m = j) \<longleftrightarrow> r = i * m + j"
+  proof
+    assume "r div m = i \<and> r mod m = j" thus "r = i * m + j" using div_mult_mod_eq[of r m] by simp
+  next
+    assume "r = i * m + j" thus "r div m = i \<and> r mod m = j" using j m by simp
+  qed
+  have "tensor_vec (unit_vec n i) (unit_vec m j) $ r = unit_vec n i $ (r div m) * unit_vec m j $ (r mod m)"
+    by (rule tensor_vec_index) (use r in simp_all)
+  also have "\<dots> = (if r div m = i \<and> r mod m = j then 1 else 0)" using rd m by (simp add: unit_vec_def)
+  also have "\<dots> = unit_vec (n * m) (i * m + j) $ r" using e r by (simp add: unit_vec_def)
+  finally show "tensor_vec (unit_vec n i) (unit_vec m j) $ r = unit_vec (n * m) (i * m + j) $ r" .
+qed (simp add: tensor_vec_dim)
+
+
+lemma Tr_dagger:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat n n"
+  shows "Tr (M\<^sup>\<dagger>) = cnj (Tr M)"
+proof -
+  have dr: "dim_row M = n" and dc: "dim_col M = n" using M_c by auto
+  have d_dr: "dim_row (M\<^sup>\<dagger>) = n" using dc by simp
+  have d_dc: "dim_col (M\<^sup>\<dagger>) = n" using dr by simp
+  have "Tr (M\<^sup>\<dagger>) = (\<Sum>r<n. (M\<^sup>\<dagger>) $$ (r,r))"
+    unfolding Tr_def using d_dr d_dc by simp
+  also have "\<dots> = (\<Sum>r<n. cnj (M $$ (r,r)))"
+    using dr dc unfolding dagger_def by simp
+  also have "\<dots> = cnj (\<Sum>r<n. M $$ (r,r))" by simp
+  also have "\<dots> = cnj (Tr M)"
+    unfolding Tr_def using dr dc by simp
+  finally show ?thesis .
 qed
 
 end

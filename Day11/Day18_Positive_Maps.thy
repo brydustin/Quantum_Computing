@@ -113,11 +113,11 @@ next
       and dP3: "\<Phi> P3 \<in> carrier_mat d d" and dP4: "\<Phi> P4 \<in> carrier_mat d d"
       using range P1 P2 P3 P4 by blast+
     have TP12: "Tr (\<Phi> P1 - \<Phi> P2) = Tr (\<Phi> P1) - Tr (\<Phi> P2)"
-      using dP1 dP2 by (intro Tr_minus) (auto simp: carrier_matD)
+      using dP1 dP2 by (intro Tr_diff) (auto simp: carrier_matD)
     have TP34: "Tr (\<Phi> P3 - \<Phi> P4) = Tr (\<Phi> P3) - Tr (\<Phi> P4)"
-      using dP3 dP4 by (intro Tr_minus) (auto simp: carrier_matD)
-    have T12: "Tr (P1 - P2) = Tr P1 - Tr P2" using P1 P2 by (intro Tr_minus) (auto simp: carrier_matD)
-    have T34: "Tr (P3 - P4) = Tr P3 - Tr P4" using P3 P4 by (intro Tr_minus) (auto simp: carrier_matD)
+      using dP3 dP4 by (intro Tr_diff) (auto simp: carrier_matD)
+    have T12: "Tr (P1 - P2) = Tr P1 - Tr P2" using P1 P2 by (intro Tr_diff) (auto simp: carrier_matD)
+    have T34: "Tr (P3 - P4) = Tr P3 - Tr P4" using P3 P4 by (intro Tr_diff) (auto simp: carrier_matD)
     have "Tr (\<Phi> X) = Tr (\<Phi> P1 - \<Phi> P2) + Tr (\<i> \<cdot>\<^sub>m (\<Phi> P3 - \<Phi> P4))"
       unfolding PhiX using dP1 dP2 dP3 dP4 by (intro Tr_add) (auto simp: carrier_matD)
     also have "\<dots> = (Tr P1 - Tr P2) + \<i> * (Tr P3 - Tr P4)"
@@ -188,7 +188,7 @@ proof (rule eq_matI)
   have "outer_sum 4 [?w] $$ (i,j) = ?w $ i * cnj (?w $ j)"
     using outer_sum_singleton_index[OF i4 j4] .
   also have "\<dots> = choi_seed 2 $$ (i,j)"
-    using i4 j4 by (auto simp: choi_seed_def mat_unit_def dest!: idx4)
+    using i4 j4 by (auto simp: choi_seed_def mat_unit_def dest!: set_4_disj)
   finally show "choi_seed 2 $$ (i,j) = outer_sum 4 [?w] $$ (i,j)" ..
 qed (simp_all add: choi_seed_def)
 
@@ -234,7 +234,7 @@ proof
     finally show "(?Y *\<^sub>v v) $ i = ?Y $$ (i,1) - ?Y $$ (i,2)" .
   qed
   have "\<langle>v | ?Y *\<^sub>v v\<rangle> = (\<Sum>i = 0..<4. cnj (v $ i) * (?Y *\<^sub>v v) $ i)"
-    using inner_prod_expand[of v 4 "?Y *\<^sub>v v"] vd Yc carrier_matD[OF Yc] by simp
+    using inner_prod_sum[of v 4 "?Y *\<^sub>v v"] vd Yc carrier_matD[OF Yc] by simp
   also have "\<dots> = (?Y *\<^sub>v v) $ 1 - (?Y *\<^sub>v v) $ 2"
     unfolding s4 by (simp add: v_def)
   also have "\<dots> = (?Y $$ (1,1) - ?Y $$ (1,2)) - (?Y $$ (2,1) - ?Y $$ (2,2))"

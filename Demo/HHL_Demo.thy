@@ -97,7 +97,7 @@ proof -
   have "Hadamard\<^sup>\<dagger> * demo_A * Hadamard = diag_mat_of_real [3, 1]"
     unfolding Hadamard_dagger
     by (rule eq_matI) (auto simp: mult2_index[OF HA Hadamard_carrier] mult2_index[OF Hadamard_carrier demo_A_carrier]
-        Hadamard_index demo_A_index diag_mat_of_real_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
+        Hadamard_index demo_A_index diag_mat_of_real_def mat_diag_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
   moreover have "Quantum.unitary Hadamard" using H_is_gate unfolding Hadamard_def gate_def by simp
   ultimately show ?thesis unfolding spectral_decomp_def by simp
 qed

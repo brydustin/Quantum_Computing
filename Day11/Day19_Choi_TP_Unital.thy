@@ -7,9 +7,6 @@ $R_{ij}=\Phi(E_{ij})\in M_d$.  Then $\Phi$ is trace preserving iff $\Tr R_{ij}=\
 unital iff $\sum_iR_{ii}=I_d$; with \<open>choi_theorem\<close> this characterises CPTP and UCP maps by
 their Choi matrix.  Linearity on $M_n$ is \<^term>\<open>lin_on n d (carrier_mat n n) \<Phi>\<close>.\<close>
 
-lemma mat_unit_carrier' [simp]: "E\<lbrakk>i,j ; n,n\<rbrakk> \<in> carrier_mat n n"
-  by (simp add: mat_unit_def)
-
 lemma choi_block:
   assumes range: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d" and i: "i < n" and j: "j < n"
   shows "block_of_mat d (choi_matrix n d \<Phi>) i j = \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>)"

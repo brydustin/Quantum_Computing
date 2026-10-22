@@ -326,18 +326,11 @@ where
 text \<open>Generic carrier-preservation lemma for accumulating folds over
 \<open>[0..<N]\<close>: if each per-index term lies in \<open>M\<^sub>d\<close>, so does the fold.\<close>
 
-lemma foldr_add_carrier:
-  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
-  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat d d"
-  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m d d) \<in> carrier_mat d d"
-  using assms
-  by (induction xs) (auto intro!: add_carrier_mat)
-
 lemma foldr_upt_add_carrier:
   fixes f :: "nat \<Rightarrow> complex Matrix.mat"
   assumes "\<forall>k < N. f k \<in> carrier_mat d d"
   shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) \<in> carrier_mat d d"
-  using assms by (intro foldr_add_carrier) auto
+  using assms by (intro foldr_add_mat_carrier) auto
 
 lemma kraus_quad_row_carrier:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -1296,7 +1289,7 @@ lemma inner_prod_add_right:
 proof -
   have vwd: "dim_vec (v + w) = k" using vd wd by auto
   have "\<langle>u | v + w\<rangle> = (\<Sum>i = 0..<k. cnj (u $ i) * (v + w) $ i)"
-    using inner_prod_expand[OF ud vwd] .
+    using inner_prod_sum[OF ud vwd] .
   also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * (v $ i + w $ i))"
     by (intro sum.cong refl) (simp add: vd wd)
   also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * v $ i + cnj (u $ i) * w $ i)"
@@ -1305,7 +1298,7 @@ proof -
                 + (\<Sum>i = 0..<k. cnj (u $ i) * w $ i)"
     by (rule sum.distrib)
   also have "\<dots> = \<langle>u | v\<rangle> + \<langle>u | w\<rangle>"
-    using inner_prod_expand[OF ud vd] inner_prod_expand[OF ud wd] by simp
+    using inner_prod_sum[OF ud vd] inner_prod_sum[OF ud wd] by simp
   finally show ?thesis .
 qed
 
@@ -1316,7 +1309,7 @@ lemma inner_prod_smult_right:
 proof -
   have cvd: "dim_vec (c \<cdot>\<^sub>v v) = k" using vd by auto
   have "\<langle>u | c \<cdot>\<^sub>v v\<rangle> = (\<Sum>i = 0..<k. cnj (u $ i) * (c \<cdot>\<^sub>v v) $ i)"
-    using inner_prod_expand[OF ud cvd] .
+    using inner_prod_sum[OF ud cvd] .
   also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * (c * v $ i))"
     by (intro sum.cong refl) (simp add: vd)
   also have "\<dots> = (\<Sum>i = 0..<k. c * (cnj (u $ i) * v $ i))"
@@ -1324,66 +1317,11 @@ proof -
   also have "\<dots> = c * (\<Sum>i = 0..<k. cnj (u $ i) * v $ i)"
     by (simp add: sum_distrib_left)
   also have "\<dots> = c * \<langle>u | v\<rangle>"
-    using inner_prod_expand[OF ud vd] by simp
+    using inner_prod_sum[OF ud vd] by simp
   finally show ?thesis .
 qed
 
 text \<open>The hermitian sum.\<close>
-
-lemma hermitian_add:
-  assumes Aherm: "hermitian A" and Bherm: "hermitian B"
-      and Ac: "A \<in> carrier_mat k k" and Bc: "B \<in> carrier_mat k k"
-  shows "hermitian (A + B)"
-  unfolding hermitian_def
-proof (rule eq_matI)
-  show "dim_row ((A + B)\<^sup>\<dagger>) = dim_row (A + B)" using Ac Bc by simp
-  show "dim_col ((A + B)\<^sup>\<dagger>) = dim_col (A + B)" using Ac Bc by simp
-  fix i j assume "i < dim_row (A + B)" "j < dim_col (A + B)"
-  hence i_lt: "i < k" and j_lt: "j < k" using Ac Bc by auto
-  have Ad: "A\<^sup>\<dagger> = A" using Aherm by (simp add: hermitian_def)
-  have Bd: "B\<^sup>\<dagger> = B" using Bherm by (simp add: hermitian_def)
-  have "((A + B)\<^sup>\<dagger>) $$ (i, j) = cnj ((A + B) $$ (j, i))"
-    using i_lt j_lt Ac Bc by (simp add: dagger_def)
-  also have "\<dots> = cnj (A $$ (j, i)) + cnj (B $$ (j, i))"
-    using i_lt j_lt Ac Bc by simp
-  also have "\<dots> = (A\<^sup>\<dagger>) $$ (i, j) + (B\<^sup>\<dagger>) $$ (i, j)"
-    using i_lt j_lt Ac Bc by (simp add: dagger_def)
-  also have "\<dots> = A $$ (i, j) + B $$ (i, j)"
-    using Ad Bd by simp
-  also have "\<dots> = (A + B) $$ (i, j)"
-    using i_lt j_lt Ac Bc by simp
-  finally show "((A + B)\<^sup>\<dagger>) $$ (i, j) = (A + B) $$ (i, j)" .
-qed
-
-lemma hermitian_one_mat:
-  "hermitian (1\<^sub>m k :: complex Matrix.mat)"
-  unfolding hermitian_def by (rule eq_matI) (auto simp: dagger_def)
-
-lemma hermitian_smult_real:
-  fixes A :: "complex Matrix.mat"
-  assumes "hermitian A" "A \<in> carrier_mat k k"
-  shows "hermitian (complex_of_real d \<cdot>\<^sub>m A)"
-  unfolding hermitian_def
-proof (rule eq_matI)
-  let ?dA = "complex_of_real d \<cdot>\<^sub>m A"
-  show "dim_row (?dA\<^sup>\<dagger>) = dim_row ?dA" using assms by simp
-  show "dim_col (?dA\<^sup>\<dagger>) = dim_col ?dA" using assms by simp
-  fix i j assume "i < dim_row ?dA" "j < dim_col ?dA"
-  hence i_lt: "i < k" and j_lt: "j < k" using assms by auto
-  have "?dA\<^sup>\<dagger> $$ (i,j) = cnj (?dA $$ (j,i))"
-    using i_lt j_lt assms by (simp add: dagger_def)
-  also have "\<dots> = cnj (complex_of_real d * A $$ (j,i))"
-    using i_lt j_lt assms by simp
-  also have "\<dots> = complex_of_real d * cnj (A $$ (j,i))"
-    by (simp add: complex_cnj_mult)
-  also have "\<dots> = complex_of_real d * (A\<^sup>\<dagger>) $$ (i,j)"
-    using i_lt j_lt assms by (simp add: dagger_def)
-  also have "\<dots> = complex_of_real d * A $$ (i,j)"
-    using assms by (simp add: hermitian_def)
-  also have "\<dots> = ?dA $$ (i,j)"
-    using i_lt j_lt assms by simp
-  finally show "?dA\<^sup>\<dagger> $$ (i,j) = ?dA $$ (i,j)" .
-qed
 
 text \<open>Entry-wise bound on the quadratic form of a hermitian matrix.\<close>
 
@@ -1414,7 +1352,7 @@ proof -
              = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cnj (x $ i) * A $$ (i,j) * x $ j)"
   proof -
     have "\<langle>x | A *\<^sub>v x\<rangle> = (\<Sum>i = 0..<k. cnj (x $ i) * (A *\<^sub>v x) $ i)"
-      using x_d Ax_dim inner_prod_expand by blast
+      using x_d Ax_dim inner_prod_sum by blast
     also have "\<dots> = (\<Sum>i = 0..<k.
                        cnj (x $ i) * (\<Sum>j = 0..<k. A $$ (i,j) * x $ j))"
       by (intro sum.cong refl) (auto simp: Ax_idx)
@@ -1569,9 +1507,9 @@ proof -
     have herm_M: "hermitian ?M"
     proof -
       have herm_dA: "hermitian (complex_of_real d \<cdot>\<^sub>m A)"
-        by (rule hermitian_smult_real[OF herm A_c])
+        by (rule hermitian_real_scale[OF herm A_c])
       show ?thesis
-        by (rule hermitian_add[OF hermitian_one_mat herm_dA I_c dA_c])
+        by (rule hermitian_plus[OF hermitian_identity herm_dA I_c dA_c])
     qed
     have quad_nn: "\<forall>x :: complex Matrix.vec.
                      dim_vec x = dim_row ?M \<longrightarrow> 0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>"
@@ -4517,7 +4455,7 @@ proof -
   have UdU: "?Ud * U = 1\<^sub>m k"
   proof -
     have "?Ud * U = 1\<^sub>m (dim_col U)"
-      using unitary_left_right(1)[OF UU] .
+      using unitary_inv_l_dimcol[OF UU] .
     thus ?thesis using Uc by simp
   qed
 

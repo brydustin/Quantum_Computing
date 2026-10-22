@@ -45,12 +45,12 @@ proof -
   proof (rule sum.cong[OF refl], rule sum.cong[OF refl])
     fix k i assume "k \<in> {..<N}" "i \<in> {..<m}"
     hence k: "k < N" and i: "i < m" by simp_all
-    have e: "?\<psi> $ (k * m + i) = a $ k * u $ i" using tensor_vec_index[OF a u block_index(1)[OF k i]] block_index(2,3)[OF k i] by simp
+    have e: "?\<psi> $ (k * m + i) = a $ k * u $ i" using tensor_vec_index[OF a u mult_index_lt[OF k i]] mult_index_div_mod[OF i] by simp
     have "a $ k * u $ i * cnj (a $ k * u $ i) = complex_of_real ((cmod (a $ k))\<^sup>2) * complex_of_real ((cmod (u $ i))\<^sup>2)"
       by (simp only: complex_norm_square complex_cnj_mult mult_ac)
     thus "(if (k * m + i) div m \<in> Js then ?\<psi> $ (k * m + i) else 0) * cnj (?\<psi> $ (k * m + i))
           = (if k \<in> Js then complex_of_real ((cmod (a $ k))\<^sup>2) else 0) * complex_of_real ((cmod (u $ i))\<^sup>2)"
-      unfolding e block_index(2)[OF k i] by simp
+      unfolding e mult_index_div_mod(1)[OF i] by simp
   qed
   also have "\<dots> = (\<Sum>k<N. if k \<in> Js then complex_of_real ((cmod (a $ k))\<^sup>2) else 0)"
   proof (rule sum.cong[OF refl])

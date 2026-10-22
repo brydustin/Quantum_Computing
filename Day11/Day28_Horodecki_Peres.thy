@@ -108,7 +108,7 @@ proof -
     have "?Y $$ (i,j) = (v \<oslash> v) $$ ((i div 2) * 2 + j mod 2, (j div 2) * 2 + i mod 2)"
       by (rule partial_transpose_2_index[OF i j])
     also have "\<dots> = v $ ((i div 2) * 2 + j mod 2) * cnj (v $ ((j div 2) * 2 + i mod 2))"
-      using i j vd by (intro outer_prod_index) (auto dest!: idx4)
+      using i j vd by (intro outer_prod_index) (auto dest!: set_4_disj)
     finally show "?Y $$ (i,j) = v $ ((i div 2) * 2 + j mod 2) * cnj (v $ ((j div 2) * 2 + i mod 2))" .
   qed
   \<comment> \<open>Name the four entries: simp diverges on goals with many distinct \<open>v $ k\<close> subterms.\<close>
@@ -159,12 +159,12 @@ proof -
     have "(?Y *\<^sub>v w) $ i = (\<Sum>j\<in>{0,1,2,3}. ?Y $$ (i,j) * w $ j)"
       using i Yc wd carrier_matD[OF Yc] by (simp add: scalar_prod_def s4)
     also have "\<dots> = cnj \<delta> * u $ i"
-      using idx4[OF i] r0 r1 r2 r3 by (elim disjE) simp_all
+      using set_4_disj[OF i] r0 r1 r2 r3 by (elim disjE) simp_all
     finally show "(?Y *\<^sub>v w) $ i = (cnj \<delta> \<cdot>\<^sub>v u) $ i" using i by (simp add: u_def)
   qed (simp add: u_def Yc[THEN carrier_matD(1)])
   have "\<langle>w | ?Y *\<^sub>v w\<rangle> = cnj \<delta> * \<langle>w | u\<rangle>" unfolding Yw by (rule inner_prod_right_smult')
   also have "\<langle>w | u\<rangle> = (\<Sum>i\<in>{0,1,2,3}. cnj (w $ i) * u $ i)"
-    using inner_prod_expand[of w 4 u] wd by (simp add: u_def s4)
+    using inner_prod_sum[of w 4 u] wd by (simp add: u_def s4)
   also have "\<dots> = - (\<delta> + \<delta>)"
     unfolding sum4 w0 w1 w2 w3 u0 u1 u2 u3 \<delta>_def by (simp add: algebra_simps)
   finally have "\<langle>w | ?Y *\<^sub>v w\<rangle> = cnj \<delta> * (- (\<delta> + \<delta>))" .
@@ -219,8 +219,8 @@ next
   proof (rule eq_matI)
     fix i j assume "i < dim_row (?u \<oslash> ?u)" "j < dim_col (?u \<oslash> ?u)"
     hence i: "i < 4" and j: "j < 4" using carrier_matD[OF outer_prod_carrier[OF ud ud]] by auto
-    have p: "(i div 2) * 2 + j mod 2 < 4" using idx4[OF i] idx4[OF j] by (elim disjE) simp_all
-    have q: "(j div 2) * 2 + i mod 2 < 4" using idx4[OF i] idx4[OF j] by (elim disjE) simp_all
+    have p: "(i div 2) * 2 + j mod 2 < 4" using set_4_disj[OF i] set_4_disj[OF j] by (elim disjE) simp_all
+    have q: "(j div 2) * 2 + i mod 2 < 4" using set_4_disj[OF i] set_4_disj[OF j] by (elim disjE) simp_all
     have "?Y $$ (i,j) = (v \<oslash> v) $$ ((i div 2) * 2 + j mod 2, (j div 2) * 2 + i mod 2)"
       by (rule partial_transpose_2_index[OF i j])
     also have "\<dots> = v $ ((i div 2) * 2 + j mod 2) * cnj (v $ ((j div 2) * 2 + i mod 2))"

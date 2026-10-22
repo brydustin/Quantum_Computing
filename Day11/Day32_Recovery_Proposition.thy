@@ -36,12 +36,6 @@ next
   show ?case using Bc fx rc Cons.IH[OF rest] by (simp add: add_mult_distrib_mat)
 qed
 
-lemma foldr_add_mat_carrier':
-  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
-  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat m n"
-  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n"
-  using assms by (induction xs) auto
-
 lemma foldr_add_mat_dagger:
   fixes f :: "'a \<Rightarrow> complex Matrix.mat"
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat m n"
@@ -52,7 +46,7 @@ proof (induction xs)
 next
   case (Cons x xs)
   have fx: "f x \<in> carrier_mat m n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat m n" using Cons.prems by auto
-  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n" by (rule foldr_add_mat_carrier'[OF rest])
+  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n" by (rule foldr_add_carrier_dn[OF rest])
   have "(f x + foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger>
         = (f x)\<^sup>\<dagger> + ((foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger>)"
     using fx rc by (intro eq_matI) (auto simp: dagger_def)
@@ -301,7 +295,7 @@ proof (induction xs)
 next
   case (Cons x xs)
   have fx: "f x \<in> carrier_mat n n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat n n" using Cons.prems(1) by auto
-  have Fc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n" by (rule foldr_add_mat_carrier'[OF rest])
+  have Fc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n" by (rule foldr_add_carrier_dn[OF rest])
   have "foldr (\<lambda>x acc. f x + acc) (x # xs) (0\<^sub>m n n) *\<^sub>v w = f x *\<^sub>v w + foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) *\<^sub>v w"
     by (simp only: foldr.simps o_apply add_mult_distrib_mat_vec[OF fx Fc carrier_vecI[OF wd]])
   also have "\<dots> = 0\<^sub>v n + 0\<^sub>v n" using Cons.prems(2) Cons.IH[OF rest] by simp
@@ -321,7 +315,7 @@ proof (induction xs)
 next
   case (Cons x xs)
   have fx: "f x \<in> carrier_mat n n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat n n" using Cons.prems(1) by auto
-  have Fc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n" by (rule foldr_add_mat_carrier'[OF rest])
+  have Fc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n" by (rule foldr_add_carrier_dn[OF rest])
   have unf: "foldr (\<lambda>x acc. f x + acc) (x # xs) (0\<^sub>m n n) *\<^sub>v w = f x *\<^sub>v w + foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) *\<^sub>v w"
     by (simp only: foldr.simps o_apply add_mult_distrib_mat_vec[OF fx Fc carrier_vecI[OF wd]])
   show ?case
@@ -473,7 +467,7 @@ qed
 lemma image_proj_sum_carrier:
   assumes S: "recovery_setting n P Us"
   shows "image_proj_sum n P Us \<in> carrier_mat n n"
-  unfolding image_proj_sum_def by (rule foldr_add_mat_carrier') (simp add: rec_Pi_c[OF S])
+  unfolding image_proj_sum_def by (rule foldr_add_carrier_dn) (simp add: rec_Pi_c[OF S])
 
 lemma image_proj_sum_hermitian:
   assumes S: "recovery_setting n P Us"

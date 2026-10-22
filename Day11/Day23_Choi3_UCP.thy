@@ -195,7 +195,7 @@ proof (intro conjI allI impI)
   next
     show "dim_row (foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n)) = dim_row (0\<^sub>m d n :: complex Matrix.mat)"
          "dim_col (foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n)) = dim_col (0\<^sub>m d n :: complex Matrix.mat)"
-      using carrier_matD[OF foldr_add_carrier_rect[of "[0..<?L]" "\<lambda>k. cnj (c k) \<cdot>\<^sub>m (Ws ! k)" d n]] kc by auto
+      using carrier_matD[OF foldr_add_mat_carrier_rect[of "[0..<?L]" "\<lambda>k. cnj (c k) \<cdot>\<^sub>m (Ws ! k)" d n]] kc by auto
   qed
   have all: "\<And>c'. foldr (\<lambda>k acc. c' k \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) = 0\<^sub>m d n \<Longrightarrow> \<forall>k < ?L. c' k = 0"
     using li unfolding lin_indep_complex_mat_def by blast

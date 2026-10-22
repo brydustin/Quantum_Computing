@@ -28,11 +28,6 @@ proof -
   ultimately show ?thesis by blast
 qed
 
-lemma Tr_dagger:
-  assumes A: "A \<in> carrier_mat n n"
-  shows "Tr (A\<^sup>\<dagger>) = cnj (Tr A)"
-  using A by (simp add: Tr_def dagger_def)
-
 lemma Tr_herm_mult_real:
   assumes Wc: "W \<in> carrier_mat n n" and Mc: "M \<in> carrier_mat n n" and Wh: "hermitian W" and Mh: "hermitian M"
   shows "Tr (W * M) \<in> \<real>"
@@ -63,7 +58,7 @@ proof -
   qed
   also have "\<dots> = (\<Sum>r<n. cnj (v $ r) * (A *\<^sub>v v) $ r)"
     by (rule sum.cong[OF refl]) (use A v in \<open>auto simp: scalar_prod_def sum_distrib_left mult_ac atLeast0LessThan\<close>)
-  also have "\<dots> = \<langle>v | A *\<^sub>v v\<rangle>" unfolding inner_prod_expand[OF v Av] atLeast0LessThan ..
+  also have "\<dots> = \<langle>v | A *\<^sub>v v\<rangle>" unfolding inner_prod_sum[OF v Av] atLeast0LessThan ..
   finally show ?thesis unfolding Ov_def .
 qed
 
@@ -107,20 +102,6 @@ proof (rule eq_matI)
         = (complex_of_real u \<cdot>\<^sub>m A + complex_of_real v \<cdot>\<^sub>m B) $$ (i,j)"
     using herm_entry[OF Ac Ah i j] herm_entry[OF Bc Bh i j] i j Ac Bc by (simp add: dagger_def)
 qed (use Ac Bc in simp_all)
-
-lemma herm_real_smult:
-  assumes Ac: "A \<in> carrier_mat n n" and Ah: "hermitian A"
-  shows "hermitian (complex_of_real t \<cdot>\<^sub>m A)"
-  unfolding hermitian_def
-proof (rule eq_matI)
-  fix i j assume "i < dim_row (complex_of_real t \<cdot>\<^sub>m A)" "j < dim_col (complex_of_real t \<cdot>\<^sub>m A)"
-  hence i: "i < n" and j: "j < n" using Ac by auto
-  show "((complex_of_real t \<cdot>\<^sub>m A)\<^sup>\<dagger>) $$ (i,j) = (complex_of_real t \<cdot>\<^sub>m A) $$ (i,j)"
-    using herm_entry[OF Ac Ah i j] i j Ac by (simp add: dagger_def)
-qed (use Ac in simp_all)
-
-lemma hermitian_one: "hermitian (1\<^sub>m n)"
-  unfolding hermitian_def by (rule eq_matI) (auto simp: dagger_def)
 
 lemma lin_t_zero:
   fixes b c :: real
@@ -404,10 +385,10 @@ proof -
       fix K t assume K: "K \<in> Kv"
       have k: "K \<in> TS" "hermitian K" "f K = 0" using K unfolding Kv_def by blast+
       show "complex_of_real t \<cdot>\<^sub>m K \<in> Kv" unfolding Kv_def
-        using operator_systemD(5)[OF TS k(1)] herm_real_smult[OF Kvc[OF K] k(2)] fsm[OF k(1)] k(3) by simp
+        using operator_systemD(5)[OF TS k(1)] hermitian_smult_real_mat[OF Kvc[OF K] k(2)] fsm[OF k(1)] k(3) by simp
     qed
     have Hss: "\<And>Hm t. Hm \<in> Hs \<Longrightarrow> complex_of_real t \<cdot>\<^sub>m Hm \<in> Hs"
-      unfolding Hs_def using herm_real_smult by auto
+      unfolding Hs_def using hermitian_smult_real_mat by auto
     have gaK: "\<And>K. K \<in> Kv \<Longrightarrow> ga K = 0"
     proof -
       fix K assume K: "K \<in> Kv"
@@ -508,7 +489,7 @@ proof -
       have Kh: "hermitian K"
       proof -
         have "K = complex_of_real 1 \<cdot>\<^sub>m Xm + complex_of_real (- r) \<cdot>\<^sub>m 1\<^sub>m ?N" unfolding K_def using Xc by (intro eq_matI) auto
-        thus ?thesis using herm_real_comb[OF Xc Ic Xh, of 1 "- r"] hermitian_one by simp
+        thus ?thesis using herm_real_comb[OF Xc Ic Xh, of 1 "- r"] hermitian_identity by simp
       qed
       have "f K = f Xm + complex_of_real (- r) * f (1\<^sub>m ?N)" unfolding K_def fadd[OF Xm rI] fsm[OF I] ..
       also have "\<dots> = 0"
@@ -516,7 +497,7 @@ proof -
         define xa where "xa = Re (f Xm)"
         define xb where "xb = Re (f (1\<^sub>m ?N))"
         have fa: "f Xm = complex_of_real xa" unfolding xa_def by (rule freal[OF Xm Xh])
-        have fb: "f (1\<^sub>m ?N) = complex_of_real xb" unfolding xb_def by (rule freal[OF I hermitian_one])
+        have fb: "f (1\<^sub>m ?N) = complex_of_real xb" unfolding xb_def by (rule freal[OF I hermitian_identity])
         have b0: "xb \<noteq> 0" using fI unfolding xb_def by simp
         have "complex_of_real xa + complex_of_real (- (xa / xb)) * complex_of_real xb = complex_of_real (xa - xa / xb * xb)"
           by simp

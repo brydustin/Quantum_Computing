@@ -127,7 +127,7 @@ proof -
   obtain a b q G where G: "q \<in> {1, 2}" "G \<in> carrier_mat (2 ^ q) (2 ^ q)" "Quantum.unitary G" "0 < a" "0 < b"
       and K: "K = a * (2 ^ q * b)" and U: "U = 1\<^sub>m a \<Otimes> (G \<Otimes> 1\<^sub>m b)"
     using E unfolding elementary_def by blast
-  have "U\<^sup>\<dagger> = 1\<^sub>m a \<Otimes> ((G\<^sup>\<dagger>) \<Otimes> 1\<^sub>m b)" unfolding U by (simp add: tensor_mat_adjoint)
+  have "U\<^sup>\<dagger> = 1\<^sub>m a \<Otimes> ((G\<^sup>\<dagger>) \<Otimes> 1\<^sub>m b)" unfolding U by (simp add: hermite_cnj_of_tensor)
   thus ?thesis unfolding elementary_def using G K dagger_carrier[OF G(2)] unitary_dagger[OF G(3)]
     by (intro exI[of _ a] exI[of _ b] exI[of _ q] exI[of _ "G\<^sup>\<dagger>"]) simp
 qed

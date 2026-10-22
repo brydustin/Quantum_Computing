@@ -211,7 +211,7 @@ proof -
         hence k: "k < ?r * ?r" by simp
         have b: "k mod ?r < ?r" using k by (cases ?r) auto
         have "(\<Sum>j = 0..<n. cnj (vs ! (k mod ?r) $ j) * \<phi>s ! m $ j) = \<langle>vs ! (k mod ?r) | \<phi>s ! m\<rangle>"
-          by (rule inner_prod_expand[OF vd[OF b] \<phi>dm[OF m], symmetric])
+          by (rule inner_prod_sum[OF vd[OF b] \<phi>dm[OF m], symmetric])
         also have "\<dots> = (if k mod ?r = m then 1 else 0)"
         proof -
           have "\<langle>\<phi>s ! m | vs ! (k mod ?r)\<rangle> = (if m = k mod ?r then 1 else 0)" using dual m b by blast

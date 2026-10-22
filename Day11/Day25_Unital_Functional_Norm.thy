@@ -22,9 +22,6 @@ subsection \<open>Vectors\<close>
 lemma vnorm_nonneg: "\<parallel>v\<parallel> \<ge> 0"
   unfolding cpx_vec_length_def by (simp add: sum_nonneg)
 
-lemma inner_self_norm: "\<langle>v|v\<rangle> = complex_of_real (\<parallel>v\<parallel>\<^sup>2)"
-  by (rule cpx_vec_length_inner_prod[symmetric])
-
 lemma cauchy_schwarz_norm:
   assumes "dim_vec v = dim_vec w"
   shows "cmod \<langle>v|w\<rangle> \<le> \<parallel>v\<parallel> * \<parallel>w\<parallel>"
@@ -33,7 +30,7 @@ proof -
   also have "Re (\<langle>v|v\<rangle> * \<langle>w|w\<rangle>) = (\<parallel>v\<parallel> * \<parallel>w\<parallel>)\<^sup>2"
   proof -
     have "\<langle>v|v\<rangle> * \<langle>w|w\<rangle> = complex_of_real (\<parallel>v\<parallel>\<^sup>2 * \<parallel>w\<parallel>\<^sup>2)"
-      unfolding inner_self_norm by (simp del: cpx_vec_length_inner_prod)
+      unfolding cpx_vec_length_inner_prod[symmetric] by (simp del: cpx_vec_length_inner_prod)
     thus ?thesis by (simp del: cpx_vec_length_inner_prod add: power_mult_distrib)
   qed
   finally show ?thesis using vnorm_nonneg[of v] vnorm_nonneg[of w]
@@ -230,7 +227,7 @@ proof -
     hence "\<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> = complex_of_real c * \<langle>x|x\<rangle> + e * \<langle>x|A *\<^sub>v x\<rangle>"
       by (metis Ac carrier_matD(1) dim_mult_mat_vec index_smult_vec(2) inner_prod_right_add' inner_prod_right_smult' x)
     hence "Re \<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> = c * \<parallel>x\<parallel>\<^sup>2 + Re e * Re \<langle>x|A *\<^sub>v x\<rangle> - Im e * Im \<langle>x|A *\<^sub>v x\<rangle>"
-      unfolding inner_self_norm by (simp del: cpx_vec_length_inner_prod)
+      unfolding cpx_vec_length_inner_prod[symmetric] by (simp del: cpx_vec_length_inner_prod)
     also have "\<dots> = c * \<parallel>x\<parallel>\<^sup>2 + Re e * Re \<langle>x|A *\<^sub>v x\<rangle>" using e by auto
     finally show "0 \<le> Re \<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>" using b[OF x] e by auto
   qed
@@ -402,7 +399,7 @@ proof (intro ballI impI)
         unfolding e by (rule inner_add_smult_expand) (use Pc x in simp)
       also have "\<dots> = complex_of_real (\<parallel>P *\<^sub>v x\<parallel>\<^sup>2) + (?z + cnj ?z) * complex_of_real q
                        + (cnj ?z * ?z) * complex_of_real (\<parallel>x\<parallel>\<^sup>2)"
-        unfolding px qc inner_self_norm by (simp only: distrib_right add.assoc)
+        unfolding px qc cpx_vec_length_inner_prod[symmetric] by (simp only: distrib_right add.assoc)
       also have "?z + cnj ?z = complex_of_real (- 2 * s)" by (simp add: complex_eq_iff)
       also have "cnj ?z * ?z = complex_of_real (s\<^sup>2 + t\<^sup>2)" by (simp add: complex_eq_iff power2_eq_square)
       also have "complex_of_real (\<parallel>P *\<^sub>v x\<parallel>\<^sup>2) + complex_of_real (- 2 * s) * complex_of_real q

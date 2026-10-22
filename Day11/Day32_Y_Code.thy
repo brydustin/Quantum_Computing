@@ -11,14 +11,10 @@ definition ket_beta :: "complex Matrix.vec" where "ket_beta = \<i> \<cdot>\<^sub
 definition ub :: "bool \<Rightarrow> complex Matrix.vec" where "ub s = (if s then ket_plus else ket_beta)"
 
 lemma ket_beta_dim [simp]: "dim_vec ket_beta = 2" by (simp add: ket_beta_def ket_minus_def)
-lemma ket_plus_dim [simp]: "dim_vec ket_plus = 2" by (simp add: ket_plus_def)
 lemma ub_dim [simp]: "dim_vec (ub s) = 2" by (simp add: ub_def)
 
 lemma ket_beta_index: "ket_beta $ 0 = \<i> / sqrt 2" "ket_beta $ 1 = - \<i> / sqrt 2"
   by (simp_all add: ket_beta_def ket_minus_def)
-
-lemma ket_plus_index: "ket_plus $ 0 = 1 / sqrt 2" "ket_plus $ 1 = 1 / sqrt 2"
-  by (simp_all add: ket_plus_def)
 
 lemma Y_plus: "Pauli_Y *\<^sub>v ket_plus = ket_beta"
   by (rule eq_vecI) (auto simp: Pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
@@ -30,7 +26,7 @@ lemma Y_ub: "Pauli_Y *\<^sub>v ub s = ub (\<not> s)"
   by (cases s) (simp_all add: ub_def Y_plus Y_beta)
 
 lemma inner2: "dim_vec u = 2 \<Longrightarrow> dim_vec v = 2 \<Longrightarrow> \<langle>u|v\<rangle> = cnj (u $ 0) * v $ 0 + cnj (u $ 1) * v $ 1"
-  by (subst inner_prod_expand[of _ 2]) (simp_all add: numeral_2_eq_2)
+  by (subst inner_prod_sum[of _ 2]) (simp_all add: numeral_2_eq_2)
 
 lemma ub_inner: "\<langle>ub s | ub t\<rangle> = (if s = t then 1 else 0)"
 proof -
@@ -38,11 +34,11 @@ proof -
   have s2: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2"
     by (simp only: of_real_mult[symmetric]) simp
   show ?thesis unfolding inner2[OF ub_dim ub_dim]
-    by (cases s; cases t) (simp_all add: ub_def ket_plus_index ket_beta_index ket_plus_index(2)[unfolded One_nat_def] ket_beta_index(2)[unfolded One_nat_def] field_simps s2)
+    by (cases s; cases t) (simp_all add: ub_def ket_plus_index_0 ket_plus_index_1 ket_beta_index ket_plus_index_1[unfolded One_nat_def] ket_beta_index(2)[unfolded One_nat_def] field_simps s2)
 qed
 
-theorem ket_beta_props: "\<langle>ket_plus | ket_beta\<rangle> = 0" "Pauli_Y *\<^sub>v ket_plus = ket_beta" "Pauli_Y *\<^sub>v ket_beta = ket_plus"
-  using ub_inner[of True False] Y_plus Y_beta by (simp_all add: ub_def)
+theorem ket_plus_beta_orth: "\<langle>ket_plus | ket_beta\<rangle> = 0"
+  using ub_inner[of True False] by (simp add: ub_def)
 
 subsection \<open>Codes with orthogonal error images\<close>
 

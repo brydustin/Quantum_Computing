@@ -45,34 +45,11 @@ subsection \<open>The separable cone (Day 27)\<close>
 
 text \<open>The cone is convex, conic, contains $0$, and consists of Hermitian matrices.\<close>
 
-theorem D27_separable_cone_convex_cone:
-  "convex_cone (separable_cone_lmat
-                  :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)"
-  by (rule separable_cone_lmat_convex_cone)
-
-theorem D27_zero_separable:
-  "(0 :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat)
-     \<in> separable_cone_lmat"
-  by (rule zero_in_separable_cone_lmat)
-
-theorem D27_separable_state_hermitian:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes "\<rho> \<in> separable_cone_lmat"
-  shows "hermitian (unwrap_lm \<rho>)"
-  using assms by (rule separable_cone_lmat_hermitian)
-
 subsection \<open>Separable density matrices (Day 26)\<close>
 
 text \<open>For a density matrix $\rho$ (positive with $\Tr\rho=1$), membership in the cone is the
 notes' definition: $\rho$ is a convex combination of product density matrices
 $\sigma_i\otimes\tau_i$.\<close>
-
-theorem D26_separable_density_iff_convex_combination:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes \<rho>_psd: "psd_lmat \<rho>"
-      and \<rho>_tr: "Tr_lmat \<rho> = 1"
-  shows "\<rho> \<in> separable_cone_lmat \<longleftrightarrow> \<rho> \<in> convex hull Sprime"
-  using separable_density_iff_in_convex_hull_Sprime [OF \<rho>_psd \<rho>_tr] .
 
 subsection \<open>The separable cone is closed (Day 28)\<close>
 
@@ -80,50 +57,11 @@ text \<open>The notes record that $C$ is a closed cone (needed for the separatio
 cone is closed in the Hilbert--Schmidt topology and the separable density matrices form a
 compact convex set.\<close>
 
-theorem D28_separable_cone_closed:
-  "closed (separable_cone_lmat
-             :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)"
-  by (rule separable_cone_lmat_closed)
-
-theorem D28_separable_density_compact:
-  "compact (convex hull
-              (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
-  by (rule compact_convex_hull_Sprime)
-
-theorem D28_separable_density_closed:
-  "closed (convex hull
-              (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
-  by (rule closed_convex_hull_Sprime)
-
-theorem D28_separable_density_bounded:
-  "bounded (convex hull
-              (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
-  by (rule bounded_convex_hull_Sprime)
-
 subsection \<open>Separation (Days 27--28)\<close>
 
 text \<open>The separation theorem applied to the cone: a non-separable $\rho$ is separated from $C$
 by a real-linear functional (an inner product against some $a$), strictly for density
 matrices because the separable density matrices are compact.\<close>
-
-theorem D27_separating_hyperplane_cone:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes "\<rho> \<notin> separable_cone_lmat"
-  shows "\<exists>a :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
-           inner a \<rho> < 0
-         \<and> (\<forall>\<sigma> \<in> separable_cone_lmat. 0 \<le> inner a \<sigma>)"
-  using assms by (rule separable_cone_lmat_separating_hyperplane)
-
-theorem D27_strict_hyperplane_density:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes \<rho>_psd: "psd_lmat \<rho>"
-      and \<rho>_tr: "Tr_lmat \<rho> = 1"
-      and \<rho>_not_sep: "\<rho> \<notin> separable_cone_lmat"
-  shows "\<exists>a b.
-           inner a \<rho> < b
-         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
-              \<sigma> \<in> convex hull Sprime \<longrightarrow> b < inner a \<sigma>)"
-  using separable_density_separating_hyperplane [OF \<rho>_psd \<rho>_tr \<rho>_not_sep] .
 
 subsection \<open>Entanglement witnesses (Day 28)\<close>
 
@@ -132,76 +70,6 @@ separable $\sigma$ and $\Tr(W\rho)<0$.  (i) Every non-separable Hermitian $\rho$
 (ii) density matrices have a witness with a strict margin; (iii) (Horodecki) $\rho$ is
 separable iff every Hermitian $W$ that is non-negative on the cone is non-negative on
 $\rho$.\<close>
-
-theorem D28_witness_exists_hermitian:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes notin: "\<rho> \<notin> separable_cone_lmat"
-      and \<rho>_herm: "hermitian (unwrap_lm \<rho>)"
-  shows "\<exists>W :: complex Matrix.mat.
-           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
-         \<and> hermitian W
-         \<and> Re (Tr (W * unwrap_lm \<rho>)) < 0
-         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
-              \<sigma> \<in> separable_cone_lmat
-                \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))"
-  using entanglement_witness_hermitian' [OF notin \<rho>_herm] .
-
-theorem D28_witness_for_density:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes \<rho>_psd: "psd_lmat \<rho>"
-      and \<rho>_tr: "Tr_lmat \<rho> = 1"
-      and \<rho>_not_sep: "\<rho> \<notin> separable_cone_lmat"
-  shows "\<exists>W :: complex Matrix.mat.
-           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
-         \<and> hermitian W
-         \<and> Re (Tr (W * unwrap_lm \<rho>)) < 0
-         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
-              \<sigma> \<in> separable_cone_lmat
-                \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))"
-  using entanglement_witness_for_density [OF \<rho>_psd \<rho>_tr \<rho>_not_sep] .
-
-theorem D28_witness_strict_density:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes \<rho>_psd: "psd_lmat \<rho>"
-      and \<rho>_tr: "Tr_lmat \<rho> = 1"
-      and \<rho>_not_sep: "\<rho> \<notin> separable_cone_lmat"
-  shows "\<exists>(W :: complex Matrix.mat) c.
-           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
-         \<and> hermitian W
-         \<and> Re (Tr (W * unwrap_lm \<rho>)) < c
-         \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
-              \<sigma> \<in> convex hull Sprime
-                \<longrightarrow> c < Re (Tr (W * unwrap_lm \<sigma>)))"
-  using entanglement_witness_strict [OF \<rho>_psd \<rho>_tr \<rho>_not_sep] .
-
-theorem D28_separable_iff_witness:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes \<rho>_herm: "hermitian (unwrap_lm \<rho>)"
-  shows "\<rho> \<in> separable_cone_lmat
-       \<longleftrightarrow>
-        (\<forall>W :: complex Matrix.mat.
-           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
-           \<and> hermitian W
-           \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
-                \<sigma> \<in> separable_cone_lmat
-                  \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))
-             \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<rho>)))"
-  using separable_iff_witness [OF \<rho>_herm] .
-
-theorem D28_separable_density_iff_witness:
-  fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes \<rho>_psd: "psd_lmat \<rho>"
-      and \<rho>_tr: "Tr_lmat \<rho> = 1"
-  shows "\<rho> \<in> separable_cone_lmat
-       \<longleftrightarrow>
-        (\<forall>W :: complex Matrix.mat.
-           W \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))
-           \<and> hermitian W
-           \<and> (\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat.
-                \<sigma> \<in> separable_cone_lmat
-                  \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>)))
-             \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<rho>)))"
-  using separable_density_iff_witness [OF \<rho>_psd \<rho>_tr] .
 
 text \<open>This closes the entanglement chapter of the notes.  The Horodecki--Peres criterion for
 two qubits is \<open>Day28_Horodecki_Peres\<close>, the positive-map formulation

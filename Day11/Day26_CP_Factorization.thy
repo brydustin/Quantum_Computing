@@ -30,33 +30,6 @@ next
   show "x div n = i \<and> x mod n = y" unfolding x using y n by simp
 qed
 
-lemma blk_less:
-  fixes i y k n :: nat
-  assumes "i < k" "y < n"
-  shows "i * n + y < k * n"
-proof -
-  have "i * n + y < Suc i * n" using assms(2) by simp
-  also have "\<dots> \<le> k * n" using assms(1) by (intro mult_le_mono1) simp
-  finally show ?thesis .
-qed
-
-lemma foldr_add_carrier_rect:
-  "\<forall>x \<in> set xs. f x \<in> carrier_mat a b \<Longrightarrow> foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m a b) \<in> carrier_mat a b"
-  by (induction xs) auto
-
-lemma foldr_add_index:
-  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat a b" "i < a" "j < b"
-  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m a b) $$ (i, j) = (\<Sum>x\<leftarrow>xs. f x $$ (i, j))"
-  using assms(1)
-proof (induction xs)
-  case Nil thus ?case using assms(2,3) by simp
-next
-  case (Cons x xs)
-  have "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m a b) \<in> carrier_mat a b"
-    by (rule foldr_add_carrier_rect) (use Cons.prems in simp)
-  thus ?case using Cons assms(2,3) by simp
-qed
-
 lemma blk_emb_gram_entry:
   assumes x: "x < k * n" and y: "y < k * n"
   shows "(blk_emb k n i * ((blk_emb k n i)\<^sup>\<dagger>)) $$ (x, y) =
@@ -82,14 +55,14 @@ proof -
     by (auto intro!: mult_carrier_mat dagger_carrier)
   have e: "foldr (\<lambda>B acc. B * (B\<^sup>\<dagger>) + acc) (map (blk_emb k n) [0..<k]) (0\<^sub>m (k * n) (k * n)) = ?F"
     by (simp add: foldr_map o_def)
-  have Fc: "?F \<in> carrier_mat (k * n) (k * n)" by (rule foldr_add_carrier_rect[OF fc])
+  have Fc: "?F \<in> carrier_mat (k * n) (k * n)" by (rule foldr_add_mat_carrier_rect[OF fc])
   have "?F = 1\<^sub>m (k * n)"
   proof (rule eq_matI)
     fix x y assume "x < dim_row (1\<^sub>m (k * n))" "y < dim_col (1\<^sub>m (k * n))"
     hence x: "x < k * n" and y: "y < k * n" by simp_all
     have xk: "x div n < k" "y div n < k" using x y by (simp_all add: less_mult_imp_div_less)
     have "?F $$ (x, y) = (\<Sum>i\<leftarrow>[0..<k]. ?f i $$ (x, y))"
-      by (rule foldr_add_index[OF fc x y])
+      by (rule foldr_add_mat_index_rect[OF fc x y])
     also have "\<dots> = (\<Sum>i<k. ?f i $$ (x, y))" by (simp add: sum_list_distinct_conv_sum_set atLeast0LessThan)
     also have "\<dots> = (\<Sum>i<k. if i = x div n then (if y div n = x div n \<and> x mod n = y mod n then 1 else 0) else 0)"
       by (rule sum.cong) (unfold blk_emb_gram_entry[OF x y], auto)
@@ -130,7 +103,7 @@ proof (rule eq_matI)
   have Wi: "Ws ! i \<in> carrier_mat d n" using Wc i by simp
   fix c y assume "c < dim_row (Ws ! i)" "y < dim_col (Ws ! i)"
   hence c: "c < d" and y: "y < n" using Wi by auto
-  have iy: "i * n + y < ?k * n" by (rule blk_less[OF i y])
+  have iy: "i * n + y < ?k * n" by (rule mult_index_lt[OF i y])
   have "((kraus_stack_dag n d Ws)\<^sup>\<dagger> * blk_emb ?k n i) $$ (c, y) =
         (\<Sum>x<?k * n. Ws ! (x div n) $$ (c, x mod n) * blk_emb ?k n i $$ (x, y))"
     using c y by (simp add: scalar_prod_def dagger_def kraus_stack_dag_def atLeast0LessThan)
@@ -225,7 +198,7 @@ proof (rule eq_matI)
   have Wi: "Ws ! i \<in> carrier_mat d n" using Wc i by simp
   fix a c assume "a < dim_row (Ws ! i)" "c < dim_col (Ws ! i)"
   hence a: "a < d" and c: "c < n" using Wi by auto
-  have ia: "i * d + a < ?k * d" by (rule blk_less[OF i a])
+  have ia: "i * d + a < ?k * d" by (rule mult_index_lt[OF i a])
   have "((blk_emb ?k d i)\<^sup>\<dagger> * kraus_stack n d Ws) $$ (a, c) =
         (\<Sum>x<?k * d. cnj (blk_emb ?k d i $$ (x, a)) * Ws ! (x div d) $$ (x mod d, c))"
     using a c by (simp add: scalar_prod_def dagger_def kraus_stack_def atLeast0LessThan)

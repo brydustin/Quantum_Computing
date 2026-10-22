@@ -27,11 +27,6 @@ definition cp_on :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat set 
 lemma block_of_mat_dims [simp]: "dim_row (block_of_mat n A a b) = n" "dim_col (block_of_mat n A a b) = n"
   by (simp_all add: block_of_mat_def)
 
-lemma block_of_mat_idx:
-  assumes "r < n" and "c < n"
-  shows "block_of_mat n A a b $$ (r,c) = A $$ (a*n + r, b*n + c)"
-  using assms by (simp add: block_of_mat_def)
-
 lemma operator_systemD:
   assumes "operator_system n OS"
   shows "OS \<subseteq> carrier_mat n n" "1\<^sub>m n \<in> OS" "\<And>A. A \<in> OS \<Longrightarrow> A\<^sup>\<dagger> \<in> OS"
@@ -80,9 +75,9 @@ proof (rule eq_matI)
   fix r c assume "r < dim_row (block_of_mat n A a b + block_of_mat n B a b)"
     "c < dim_col (block_of_mat n A a b + block_of_mat n B a b)"
   hence r: "r < n" and c: "c < n" by simp_all
-  have "a * n + r < p * n" "b * n + c < p * n" using idx_mp(1)[OF assms(3) r] idx_mp(1)[OF assms(4) c] by simp_all
+  have "a * n + r < p * n" "b * n + c < p * n" using mult_index_lt[OF assms(3) r] mult_index_lt[OF assms(4) c] by simp_all
   thus "block_of_mat n (A + B) a b $$ (r,c) = (block_of_mat n A a b + block_of_mat n B a b) $$ (r,c)"
-    using assms r c by (simp add: block_of_mat_idx)
+    using assms r c by (simp add: block_of_mat_index)
 qed simp_all
 
 lemma block_of_mat_smult:
@@ -91,9 +86,9 @@ lemma block_of_mat_smult:
 proof (rule eq_matI)
   fix r c assume "r < dim_row (k \<cdot>\<^sub>m block_of_mat n A a b)" "c < dim_col (k \<cdot>\<^sub>m block_of_mat n A a b)"
   hence r: "r < n" and c: "c < n" by simp_all
-  have "a * n + r < p * n" "b * n + c < p * n" using idx_mp(1)[OF assms(2) r] idx_mp(1)[OF assms(3) c] by simp_all
+  have "a * n + r < p * n" "b * n + c < p * n" using mult_index_lt[OF assms(2) r] mult_index_lt[OF assms(3) c] by simp_all
   thus "block_of_mat n (k \<cdot>\<^sub>m A) a b $$ (r,c) = (k \<cdot>\<^sub>m block_of_mat n A a b) $$ (r,c)"
-    using assms r c by (simp add: block_of_mat_idx)
+    using assms r c by (simp add: block_of_mat_index)
 qed simp_all
 
 lemma block_of_mat_dagger:
@@ -102,9 +97,9 @@ lemma block_of_mat_dagger:
 proof (rule eq_matI)
   fix r c assume "r < dim_row ((block_of_mat n A b a)\<^sup>\<dagger>)" "c < dim_col ((block_of_mat n A b a)\<^sup>\<dagger>)"
   hence r: "r < n" and c: "c < n" by simp_all
-  have "a * n + r < p * n" "b * n + c < p * n" using idx_mp(1)[OF assms(2) r] idx_mp(1)[OF assms(3) c] by simp_all
+  have "a * n + r < p * n" "b * n + c < p * n" using mult_index_lt[OF assms(2) r] mult_index_lt[OF assms(3) c] by simp_all
   thus "block_of_mat n (A\<^sup>\<dagger>) a b $$ (r,c) = ((block_of_mat n A b a)\<^sup>\<dagger>) $$ (r,c)"
-    using assms r c by (simp add: block_of_mat_idx dagger_def)
+    using assms r c by (simp add: block_of_mat_index dagger_def)
 qed simp_all
 
 lemma block_of_mat_one:
@@ -114,11 +109,11 @@ proof (rule eq_matI)
   fix r c assume "r < dim_row (if a = b then 1\<^sub>m n else 0\<^sub>m n n :: complex Matrix.mat)"
     "c < dim_col (if a = b then 1\<^sub>m n else 0\<^sub>m n n :: complex Matrix.mat)"
   hence r: "r < n" and c: "c < n" by (simp_all split: if_splits)
-  have i: "a * n + r < p * n" "b * n + c < p * n" using idx_mp(1)[OF assms(1) r] idx_mp(1)[OF assms(2) c] by simp_all
+  have i: "a * n + r < p * n" "b * n + c < p * n" using mult_index_lt[OF assms(1) r] mult_index_lt[OF assms(2) c] by simp_all
   have "a * n + r = b * n + c \<longleftrightarrow> a = b \<and> r = c"
-    using idx_mp(2,3)[OF assms(1) r] idx_mp(2,3)[OF assms(2) c] by metis
+    using mult_index_div_mod[OF r] mult_index_div_mod[OF c] by metis
   thus "block_of_mat n (1\<^sub>m (p * n)) a b $$ (r,c) = (if a = b then 1\<^sub>m n else 0\<^sub>m n n :: complex Matrix.mat) $$ (r,c)"
-    using i r c by (simp add: block_of_mat_idx)
+    using i r c by (simp add: block_of_mat_index)
 qed (simp_all split: if_splits)
 
 text \<open>The note of Day 24: $M_p(S)$ is again an operator system.\<close>
@@ -166,13 +161,13 @@ proof -
   have Hme: "Hm = U * diag_mat_of_real D * (U\<^sup>\<dagger>)" by (rule hermitian_spectral_decomp_eq[OF Uc Hmc Uu spec])
   have UUd: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using Uu Uc unfolding unitary_def by simp
   have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF Uc])
-  have dc: "diag_mat_of_real D \<in> carrier_mat n n" using Dl by (simp add: diag_mat_of_real_def)
+  have dc: "diag_mat_of_real D \<in> carrier_mat n n" using Dl by (simp add: diag_mat_of_real_def mat_diag_def)
   have shift: "\<And>s::real. U * diag_mat_of_real (map (\<lambda>x. c + s * x) D) * (U\<^sup>\<dagger>)
                 = complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + complex_of_real s \<cdot>\<^sub>m Hm"
   proof -
     fix s :: real
     have "diag_mat_of_real (map (\<lambda>x. c + s * x) D) = complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + complex_of_real s \<cdot>\<^sub>m diag_mat_of_real D"
-      using Dl by (intro eq_matI) (auto simp: diag_mat_of_real_def)
+      using Dl by (intro eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def)
     hence "U * diag_mat_of_real (map (\<lambda>x. c + s * x) D) * (U\<^sup>\<dagger>)
            = U * (complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + complex_of_real s \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)" by simp
     also have "\<dots> = complex_of_real c \<cdot>\<^sub>m (U * (U\<^sup>\<dagger>)) + complex_of_real s \<cdot>\<^sub>m (U * diag_mat_of_real D * (U\<^sup>\<dagger>))"

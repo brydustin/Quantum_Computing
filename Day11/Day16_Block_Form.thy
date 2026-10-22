@@ -35,7 +35,7 @@ lemma sum_mp_reindex:
 proof -
   have bij: "bij_betw (\<lambda>(b, j). b * p + j) ({..<m} \<times> {..<p}) {..<m * p}"
   proof (rule bij_betwI[where g = "\<lambda>r. (r div p, r mod p)"])
-    show "(\<lambda>(b, j). b * p + j) \<in> {..<m} \<times> {..<p} \<rightarrow> {..<m * p}" using idx_bound by auto
+    show "(\<lambda>(b, j). b * p + j) \<in> {..<m} \<times> {..<p} \<rightarrow> {..<m * p}" using mult_index_lt by auto
     show "(\<lambda>r. (r div p, r mod p)) \<in> {..<m * p} \<rightarrow> {..<m} \<times> {..<p}"
     proof
       fix r assume "r \<in> {..<m * p}"
@@ -44,7 +44,7 @@ proof -
       show "(r div p, r mod p) \<in> {..<m} \<times> {..<p}" using r p by (simp add: less_mult_imp_div_less)
     qed
     show "\<And>x. x \<in> {..<m} \<times> {..<p} \<Longrightarrow> (\<lambda>r. (r div p, r mod p)) ((\<lambda>(b, j). b * p + j) x) = x"
-      by (auto simp: idx_div_mod)
+      by (auto simp: mult_index_div_mod)
     show "\<And>y. y \<in> {..<m * p} \<Longrightarrow> (\<lambda>(b, j). b * p + j) ((\<lambda>r. (r div p, r mod p)) y) = y" by simp
   qed
   have "(\<Sum>r<m * p. f r) = (\<Sum>x \<in> {..<m} \<times> {..<p}. f ((\<lambda>(b, j). b * p + j) x))"
@@ -96,7 +96,7 @@ theorem bblock_action:
 proof (rule eq_vecI)
   fix a assume "a < dim_vec (Matrix.vec m (\<lambda>a. \<Sum>j<p. (bblock m p X i j *\<^sub>v vcomp m p v j) $ a))"
   hence a: "a < m" by simp
-  have r: "a * p + i < m * p" by (rule idx_bound[OF a i])
+  have r: "a * p + i < m * p" by (rule mult_index_lt[OF a i])
   have "vcomp m p (X *\<^sub>v v) i $ a = (\<Sum>s<m * p. X $$ (a * p + i, s) * v $ s)"
     using X v r a by (simp add: vcomp_def scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>b<m. \<Sum>j<p. X $$ (a * p + i, b * p + j) * v $ (b * p + j))" by (rule sum_mp_reindex)
@@ -172,7 +172,7 @@ proof (rule eq_matI)
     using Y by (auto intro!: carrier_matI simp: carrier_matD[OF Y])
   fix a b assume "a < dim_row (bblock m p X i j)" "b < dim_col (bblock m p X i j)"
   hence a: "a < m" and b: "b < m" by simp_all
-  have r: "a * p + i < m * p" and s: "b * p + j < m * p" using idx_bound a b i j by auto
+  have r: "a * p + i < m * p" and s: "b * p + j < m * p" using mult_index_lt a b i j by auto
   have "bblock m p X i j $$ (a, b) = X $$ (a * p + i, b * p + j)" using a b by (simp add: bblock_def)
   also have "\<dots> = (\<Sum>k<p. \<Sum>l<p. (Y k l \<Otimes> E\<lbrakk>k,l ; p,p\<rbrakk>) $$ (a * p + i, b * p + j))"
     unfolding X by (simp add: msum_index[OF tc r s] sum_list_product_upt)
@@ -181,7 +181,7 @@ proof (rule eq_matI)
     fix k l assume "k \<in> {..<p}" "l \<in> {..<p}"
     hence k: "k < p" and l: "l < p" by simp_all
     show "(Y k l \<Otimes> E\<lbrakk>k,l ; p,p\<rbrakk>) $$ (a * p + i, b * p + j) = (if k = i \<and> l = j then Y i j $$ (a, b) else 0)"
-      unfolding mat_unit_tensor_index[OF Y r s k l] using i j by (auto simp: idx_div_mod)
+      unfolding mat_unit_tensor_index[OF Y r s k l] using i j by (auto simp: mult_index_div_mod)
   qed
   also have "\<dots> = Y i j $$ (a, b)" by (rule double_delta[OF i j])
   finally show "Y i j $$ (a, b) = bblock m p X i j $$ (a, b)" ..

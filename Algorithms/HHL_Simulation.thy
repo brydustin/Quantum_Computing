@@ -392,32 +392,32 @@ text \<open>Circuits on $\C^N\otimes\C^m$ built from fixed gates and calls of an
 controlled on a predicate of the register value.  \<^term>\<open>Call P d\<close> applies $V$ (or $V^*$ if
 \<open>d\<close>) to the blocks $k$ with $P\,k$.\<close>
 
-datatype qcirc = Gate "complex Matrix.mat" | Call "nat \<Rightarrow> bool" bool | Seq qcirc qcirc
+datatype qcirc = Gate "complex Matrix.mat" | Call "nat \<Rightarrow> bool" bool | QSeq qcirc qcirc
 
 definition call_mat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> bool \<Rightarrow> complex Matrix.mat" where
   "call_mat N m V P d = ctrl_blocks N m (\<lambda>k. if P k then (if d then V\<^sup>\<dagger> else V) else 1\<^sub>m m)"
 
-text \<open>\<^term>\<open>Seq a b\<close> runs \<open>a\<close> first.\<close>
+text \<open>\<^term>\<open>QSeq a b\<close> runs \<open>a\<close> first.\<close>
 
 primrec sem :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> qcirc \<Rightarrow> complex Matrix.mat" where
   "sem N m V (Gate M) = M"
 | "sem N m V (Call P d) = call_mat N m V P d"
-| "sem N m V (Seq a b) = sem N m V b * sem N m V a"
+| "sem N m V (QSeq a b) = sem N m V b * sem N m V a"
 
 primrec calls :: "qcirc \<Rightarrow> nat" where
   "calls (Gate M) = 0"
 | "calls (Call P d) = 1"
-| "calls (Seq a b) = calls a + calls b"
+| "calls (QSeq a b) = calls a + calls b"
 
 primrec gates_ok :: "nat \<Rightarrow> qcirc \<Rightarrow> bool" where
   "gates_ok K (Gate M) \<longleftrightarrow> M \<in> carrier_mat K K \<and> unitary M"
 | "gates_ok K (Call P d) \<longleftrightarrow> True"
-| "gates_ok K (Seq a b) \<longleftrightarrow> gates_ok K a \<and> gates_ok K b"
+| "gates_ok K (QSeq a b) \<longleftrightarrow> gates_ok K a \<and> gates_ok K b"
 
 primrec adj :: "qcirc \<Rightarrow> qcirc" where
   "adj (Gate M) = Gate (M\<^sup>\<dagger>)"
 | "adj (Call P d) = Call P (\<not> d)"
-| "adj (Seq a b) = Seq (adj b) (adj a)"
+| "adj (QSeq a b) = QSeq (adj b) (adj a)"
 
 lemma calls_adj [simp]: "calls (adj c) = calls c"
   by (induction c) simp_all
@@ -443,9 +443,9 @@ proof (induction c)
   case (Call P d)
   show ?case unfolding sem.simps call_mat_def by (rule ctrl_blocks_unitary) (rule call_blocks)+
 next
-  case (Seq a b)
+  case (QSeq a b)
   hence a: "gates_ok (N * m) a" and b: "gates_ok (N * m) b" by simp_all
-  show ?case unfolding sem.simps by (rule unitary_mult[OF Seq.IH(2)[OF b] Seq.IH(1)[OF a] sem_carrier[OF b] sem_carrier[OF a]])
+  show ?case unfolding sem.simps by (rule unitary_mult[OF QSeq.IH(2)[OF b] QSeq.IH(1)[OF a] sem_carrier[OF b] sem_carrier[OF a]])
 qed simp
 
 lemma sem_adj: "gates_ok (N * m) c \<Longrightarrow> sem N m V (adj c) = ((sem N m V c)\<^sup>\<dagger>)"
@@ -457,11 +457,11 @@ proof (induction c)
     unfolding call_mat_def by (rule ctrl_blocks_cong) (simp add: dagger_of_dagger_is_id dagger_of_id_is_id)
   finally show ?case by simp
 next
-  case (Seq a b)
+  case (QSeq a b)
   hence a: "gates_ok (N * m) a" and b: "gates_ok (N * m) b" by simp_all
   have "((sem N m V b * sem N m V a)\<^sup>\<dagger>) = ((sem N m V a)\<^sup>\<dagger>) * ((sem N m V b)\<^sup>\<dagger>)"
     using dagger_of_prod[of "sem N m V b" "sem N m V a"] sem_carrier[OF a] sem_carrier[OF b] by simp
-  thus ?case using Seq a b by simp
+  thus ?case using QSeq a b by simp
 qed simp
 
 end
@@ -496,10 +496,10 @@ next
     qed
   qed
 next
-  case (Seq a b)
+  case (QSeq a b)
   hence a: "gates_ok (N * m) a" and b: "gates_ok (N * m) b" by simp_all
-  have ca: "op_close (N * m) (real (calls a) * \<eta>) (sem N m V a) (sem N m V' a)" using Seq a by simp
-  have cb: "op_close (N * m) (real (calls b) * \<eta>) (sem N m V b) (sem N m V' b)" using Seq b by simp
+  have ca: "op_close (N * m) (real (calls a) * \<eta>) (sem N m V a) (sem N m V' a)" using QSeq a by simp
+  have cb: "op_close (N * m) (real (calls b) * \<eta>) (sem N m V b) (sem N m V' b)" using QSeq b by simp
   have Aa: "sem N m V a \<in> carrier_mat (N * m) (N * m)" and Ab: "sem N m V b \<in> carrier_mat (N * m) (N * m)"
     using sem_carrier[OF V a] sem_carrier[OF V b] by simp_all
   have Ba: "sem N m V' a \<in> carrier_mat (N * m) (N * m)" and Bb: "sem N m V' b \<in> carrier_mat (N * m) (N * m)"
@@ -512,8 +512,8 @@ next
     have xc: "x \<in> carrier_vec (N * m)" using x by (rule carrier_vecI)
     let ?y = "sem N m V a *\<^sub>v x" and ?y' = "sem N m V' a *\<^sub>v x"
     have y: "dim_vec ?y = N * m" and y': "dim_vec ?y' = N * m" using Aa Ba by simp_all
-    have e1: "sem N m V (Seq a b) *\<^sub>v x = sem N m V b *\<^sub>v ?y" using assoc_mult_mat_vec[OF Ab Aa xc] by simp
-    have e2: "sem N m V' (Seq a b) *\<^sub>v x = sem N m V' b *\<^sub>v ?y'" using assoc_mult_mat_vec[OF Bb Ba xc] by simp
+    have e1: "sem N m V (QSeq a b) *\<^sub>v x = sem N m V b *\<^sub>v ?y" using assoc_mult_mat_vec[OF Ab Aa xc] by simp
+    have e2: "sem N m V' (QSeq a b) *\<^sub>v x = sem N m V' b *\<^sub>v ?y'" using assoc_mult_mat_vec[OF Bb Ba xc] by simp
     have "\<parallel>sem N m V b *\<^sub>v ?y - sem N m V' b *\<^sub>v ?y'\<parallel>
           \<le> \<parallel>sem N m V b *\<^sub>v ?y - sem N m V b *\<^sub>v ?y'\<parallel> + \<parallel>sem N m V b *\<^sub>v ?y' - sem N m V' b *\<^sub>v ?y'\<parallel>"
       by (rule vnorm_diff_le[where n = "N * m"]) (use Ab Bb in simp_all)
@@ -523,7 +523,7 @@ next
     also have "\<parallel>?y - ?y'\<parallel> \<le> real (calls a) * \<eta> * \<parallel>x\<parallel>" by (rule op_closeD[OF ca x])
     also have "\<parallel>sem N m V b *\<^sub>v ?y' - sem N m V' b *\<^sub>v ?y'\<parallel> \<le> real (calls b) * \<eta> * \<parallel>?y'\<parallel>" by (rule op_closeD[OF cb y'])
     also have "\<parallel>?y'\<parallel> = \<parallel>x\<parallel>" by (rule unitary_vnorm[OF Ba Ua' x])
-    finally show "\<parallel>sem N m V (Seq a b) *\<^sub>v x - sem N m V' (Seq a b) *\<^sub>v x\<parallel> \<le> real (calls (Seq a b)) * \<eta> * \<parallel>x\<parallel>"
+    finally show "\<parallel>sem N m V (QSeq a b) *\<^sub>v x - sem N m V' (QSeq a b) *\<^sub>v x\<parallel> \<le> real (calls (QSeq a b)) * \<eta> * \<parallel>x\<parallel>"
       unfolding e1 e2 by (simp add: algebra_simps)
   qed
 qed
@@ -535,7 +535,7 @@ block $k$ receives $O^{\min(k,j)}$.\<close>
 
 primrec pchain :: "nat \<Rightarrow> nat \<Rightarrow> qcirc" where
   "pchain K 0 = Gate (1\<^sub>m K)"
-| "pchain K (Suc j) = Seq (Call (\<lambda>k. Suc j \<le> k) False) (pchain K j)"
+| "pchain K (Suc j) = QSeq (Call (\<lambda>k. Suc j \<le> k) False) (pchain K j)"
 
 lemma calls_pchain [simp]: "calls (pchain K j) = j"
   by (induction j) simp_all
@@ -583,10 +583,10 @@ lemma sem_pchain_ctrl_pow:
 subsection \<open>HHL as a circuit with $2(N-1)$ calls\<close>
 
 definition pe_prog :: "nat \<Rightarrow> nat \<Rightarrow> qcirc" where
-  "pe_prog N m = Seq (pchain (N * m) (N - 1)) (Gate ((fourier N)\<^sup>\<dagger> \<Otimes> 1\<^sub>m m))"
+  "pe_prog N m = QSeq (pchain (N * m) (N - 1)) (Gate ((fourier N)\<^sup>\<dagger> \<Otimes> 1\<^sub>m m))"
 
 definition hhl_prog :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> qcirc" where
-  "hhl_prog N m Rg = Seq (pe_prog N m) (Seq (Gate Rg) (adj (pe_prog N m)))"
+  "hhl_prog N m Rg = QSeq (pe_prog N m) (QSeq (Gate Rg) (adj (pe_prog N m)))"
 
 lemma calls_hhl_prog: "calls (hhl_prog N m Rg) = 2 * (N - 1)"
   by (simp add: hhl_prog_def pe_prog_def)
