@@ -57,7 +57,7 @@
 % Links to the formal sources at a fixed commit.  The repository is private at the time of
 % writing; replace \isalink by \isalogo to drop the links.
 \newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
-\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/8211431931bc5ee1757e868fb7c403c803134c6b}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/317f62a938a3caeedfa63d1bec47c13a7b9b84c5}
 \newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
 
 \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
@@ -183,7 +183,9 @@ succeeds with probability $C^2\norm{A^{-1}b}^2$ and then holds exactly
 $\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$. The repeat-until-success loop terminates with
 probability one in that state; it exits after exactly $m$ failures with probability $(1-p)^mp$ and
 needs $1/p$ rounds on average. The logic has no total-correctness rule for loops, so we derive one
-for loops whose body re-initialises the state.
+for loops whose body re-initialises the state. On a $2\times2$ system the circuit also runs:
+Isabelle evaluates it in exact arithmetic, and each computed state is, by a theorem, the state of
+the trajectory.
 \item \emph{Inexact HHL} (Section~\ref{sec:approx}). For eigenvalues anywhere in the spectral
 window, an inexact simulation oracle and the paper's filter functions, we prove the bounds of the
 paper's Theorem~1 and its run-time claim with explicit constants. We also prove fidelity triples
@@ -826,6 +828,48 @@ theorem hhl_rus_expected_rounds:
 Part~(2) is \isa{hhl\_rus\_prog\_rounds}, which computes the $m$-th iterate of the loop semantics
 in closed form. With $C=\lambda_{\min}$ and unit $b$, the expected number of rounds is at most
 $\kappa^2$; amplitude amplification reduces this to $O(\kappa)$ (Section~\ref{sec:approx}).
+
+\subsection{Running the Circuit}\label{sec:run}
+
+The semantics of programs is denotational and $g(A)$ is defined by choice, so \isa{hhl\_program}
+cannot be evaluated as it stands. Its circuit can, once $A$ is concrete. Take
+\[
+A=\begin{pmatrix}2&1\\1&2\end{pmatrix},\qquad b=\ket0,\qquad k=3,\qquad t_0=\pi/4,\qquad C=1.
+\]
+Then $H^\dagger AH=\mathrm{diag}(3,1)$, so the eigenvalues sit on the clock values $3$ and $1$, and
+$e^{iAt_0}=H\,\mathrm{diag}(\omega^3,\omega)\,H^\dagger$ with $\omega=e^{i\pi/4}$
+(\isa{demo\_evolution}, by \isa{mat\_fun\_decomp}). Every amplitude lies in $\mathbb Q(i,\sqrt2)$.
+With exact arithmetic in $\mathbb Q(\sqrt b)$ from the AFP~\cite{thiemann2014realimpl}, matrices as
+arrays, and index formulas for the tensor products, Isabelle's \isa{value} command runs the eight
+gates in a few seconds and prints the nine states. Three of them, as
+$\ket{\text{clock}}\ket{\text{system}}\ket{\text{ancilla}}$:
+\begin{align*}
+\psi_4&=\tfrac12\ket1(\ket0-\ket1)\ket0+\tfrac12\ket3(\ket0+\ket1)\ket0,\\
+\psi_5&=\tfrac12\ket1(\ket0-\ket1)\ket1+\ket3(\ket0+\ket1)\big(\tfrac{\sqrt2}3\ket0+\tfrac16\ket1\big),\\
+\psi_8&=\ket0\Big(\tfrac{\sqrt2}3(\ket0+\ket1)\ket0+\big(\tfrac23\ket0-\tfrac13\ket1\big)\ket1\Big).
+\end{align*}
+After phase estimation the clock holds the eigenvalue of each component of $b$; the rotation sends
+the $\lambda=1$ part to ancilla~$1$ entirely and the $\lambda=3$ part with amplitude $1/3$; after
+uncomputation the ancilla-$1$ branch is $A^{-1}b=(\tfrac23,-\tfrac13)$, read with probability
+$\tfrac59$.
+
+The printed states are theorems. The gate list is the instance of \isa{hhl\_gates}, and its $i$-th
+prefix produces \isa{hhl\_states}$\,!\,i$ (Listing~\ref{lst:demo}), so the run is an instance of
+\isa{hhl\_steps}; \isa{demo\_output} states $\psi_8$. Theorem~\ref{thm:prog} specialises to this
+program with $p=\tfrac59$ and $\ket t=\ket0\otimes(2,-1)/\sqrt5\otimes\ket1$ (\isa{demo\_correct},
+\isa{demo\_success}). The code equations are proved, so \isa{value} evaluates the verified
+definitions; only the evaluation itself is trusted to the code generator, and no theorem depends on
+it. The example is a separate session, as \cite{thiemann2014realimpl} replaces the code setup of the
+reals.\isalink{Demo/HHL_Demo.thy}{169}
+
+\begin{lstlisting}[float=tp,caption={The example run: the gate list is the instance, each prefix gives the trajectory's state, and \isa{value} prints the states},label={lst:demo}]
+theorem demo_gates_eq:
+  "hhl_gates demo_A (1~$_{m}$~ 2) (pi / 4) 3 1 = demo_gates"
+theorem demo_trajectory:
+  "i ~$\le$~ 8 ~$\Longrightarrow$~ run_gates (unit_vec 32 0) (take i demo_gates)
+                 = hhl_states demo_A (unit_vec 2 0) (pi / 4) 3 1 ! i"
+value [code] "demo_trace"
+\end{lstlisting}
 
 \subsection{Other Systems}\label{sec:exact-other}
 
@@ -1552,12 +1596,13 @@ complexity-theoretic facts they cite.
 Part & Theories & Lines & Results\\
 \midrule
 Mathematics (functional calculus, phase estimation) & 5 & 1\,515 & 94\\
-Algorithm (circuits, error analysis, rest of the paper) & 13 & 10\,317 & 495\\
+Algorithm (circuits, error analysis, rest of the paper) & 13 & 10\,320 & 496\\
 Program (QHLProver programs and triples) & 6 & 3\,768 & 185\\
-Circuit (elementary gates, sparse simulation) & 7 & 5\,814 & 313\\
+Circuit (elementary gates, sparse simulation) & 7 & 5\,811 & 312\\
 \midrule
 Part VI, HHL & 31 & 21\,414 & 1\,087\\
 Bridge to the AFP search bound (separate session) & 1 & 80 & 4\\
+The example run of Section~\ref{sec:run} (separate session) & 1 & 313 & 34\\
 Paulsen's lectures (the foundation) & 50 & 51\,729 & 1\,614\\
 \bottomrule
 \end{tabular}
@@ -1611,7 +1656,8 @@ checked by Isabelle.
 \begin{table}[h]
 \caption{The theories of Part VI (session \isa{Vern\_Paulsen\_QC\_Algorithms}), by level, with their lines and
 results. The bridge \isa{HHL\_Search\_Bound} (80 lines, 4 results) is a separate session because it imports
-the AFP entry \emph{Compressed Oracles}.}\label{tab:theories}
+the AFP entry \emph{Compressed Oracles}; so is the example \isa{HHL\_Demo} (313 lines, 34 results), which
+imports \emph{Real\_Impl}.}\label{tab:theories}
 \centering\scriptsize
 \renewcommand{\arraystretch}{1.05}
 \begin{tabular}{@{}llrr@{}}
@@ -1627,7 +1673,7 @@ Theory & Content & Lines & Results\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Algorithm}}\\
 \isa{HHL} & exact circuit, $h(A)\ket b$, solution, $1/\kappa^2$, dilation & 867 & 49\\
-\isa{HHL\_Trajectory} & the eight gates and their states & 591 & 28\\
+\isa{HHL\_Trajectory} & the eight gates and their states & 594 & 29\\
 \isa{HHL\_Approximate} & branches for any register and flag, clamping & 1\,242 & 67\\
 \isa{HHL\_Window} & sine window, $N\sim1/\varepsilon$ & 849 & 28\\
 \isa{HHL\_Simulation} & oracle circuits, robustness & 812 & 52\\
@@ -1651,7 +1697,7 @@ Theory & Content & Lines & Results\\
 \multicolumn{4}{@{}l}{\emph{Circuit}}\\
 \isa{HHL\_Gates} & elementary gates, QFT circuit, count & 854 & 70\\
 \isa{HHL\_Uniform\_Rotation} & uniformly controlled rotation & 1\,067 & 63\\
-\isa{HHL\_State\_Preparation} & state preparation, window & 781 & 30\\
+\isa{HHL\_State\_Preparation} & state preparation, window & 778 & 29\\
 \isa{HHL\_All\_Elementary} & $\ket b$, routing, exact universality & 1\,037 & 44\\
 \isa{HHL\_Trotter} & Lie--Trotter with explicit error & 533 & 24\\
 \isa{HHL\_Sparse\_Split} & sparse $A$ as $2s$ 1-sparse parts & 446 & 18\\
