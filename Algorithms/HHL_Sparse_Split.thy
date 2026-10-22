@@ -30,8 +30,6 @@ definition nbrs :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<Rig
 definition sparse :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "sparse n s A \<longleftrightarrow> (\<forall>x<n. card (nbrs n A x) \<le> s)"
 
-definition swapf :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> nat" where
-  "swapf a b f x = (if x = a then b else if x = b then a else f x)"
 
 lemma finite_edges: "finite (edges n A)"
 proof -
@@ -135,15 +133,15 @@ proof -
     qed
     have nab: "p c x \<noteq> a" "p c x \<noteq> b" if "x \<noteq> a" "x \<noteq> b" for x
       using that c invol_eq[OF pinv[OF c(1)]] by metis+
-    define p' where "p' = p(c := swapf a b (p c))"
-    have p'c: "p' c = swapf a b (p c)" and p'o: "\<And>d. d \<noteq> c \<Longrightarrow> p' d = p d" unfolding p'_def by simp_all
+    define p' where "p' = p(c := (p c)(a := b, b := a))"
+    have p'c: "p' c = ((p c)(a := b, b := a))" and p'o: "\<And>d. d \<noteq> c \<Longrightarrow> p' d = p d" unfolding p'_def by simp_all
     have inv': "invol n (p' d)" if d: "d < K" for d
     proof (cases "d = c")
       case True
-      have "\<forall>x. swapf a b (p c) (swapf a b (p c) x) = x"
-        using c nab invol_eq[OF pinv[OF c(1)]] ab by (auto simp: swapf_def)
-      moreover have "\<forall>x. n \<le> x \<longrightarrow> swapf a b (p c) x = x"
-        using ab pinv[OF c(1)] by (auto simp: swapf_def invol_def)
+      have "\<forall>x. ((p c)(a := b, b := a)) (((p c)(a := b, b := a)) x) = x"
+        using c nab invol_eq[OF pinv[OF c(1)]] ab by auto
+      moreover have "\<forall>x. n \<le> x \<longrightarrow> ((p c)(a := b, b := a)) x = x"
+        using ab pinv[OF c(1)] by (auto simp: invol_def)
       ultimately show ?thesis using True p'c unfolding invol_def by simp
     next
       case False
@@ -155,10 +153,10 @@ proof -
       show ?thesis
       proof (cases "x = a \<or> x = b")
         case True
-        thus ?thesis using \<open>d = c\<close> p'c e ab(1) by (auto simp: swapf_def)
+        thus ?thesis using \<open>d = c\<close> p'c e ab(1) by auto
       next
         case False
-        hence "p' d x = p c x" using \<open>d = c\<close> p'c by (auto simp: swapf_def)
+        hence "p' d x = p c x" using \<open>d = c\<close> p'c by auto
         thus ?thesis using pcov[OF c(1)] x by simp
       qed
     next
@@ -183,7 +181,7 @@ proof -
             thus False using eF \<open>p d a = b\<close> ab(1) by simp
           qed
         qed
-        show "{c} \<subseteq> {d. d < K \<and> p' d x = y}" using True c p'c by (auto simp: swapf_def)
+        show "{c} \<subseteq> {d. d < K \<and> p' d x = y}" using True c p'c by auto
       qed
       thus ?thesis by simp
     next
@@ -199,11 +197,11 @@ proof -
           proof (cases "x = a \<or> x = b")
             case True
             have "x < y" using Flt(1)[OF xyF] .
-            hence "\<not> p' c x = y" "\<not> p c x = y" using True c p'c ab(1) xyF eF by (auto simp: swapf_def)
+            hence "\<not> p' c x = y" "\<not> p c x = y" using True c p'c ab(1) xyF eF by auto
             thus ?thesis by simp
           next
             case False
-            thus ?thesis using p'c by (auto simp: swapf_def)
+            thus ?thesis using p'c by auto
           qed
           thus ?thesis using True by simp
         next
@@ -328,17 +326,13 @@ proof -
   qed
 qed
 
-lemma hsum_carrier_mat:
-  "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n) \<Longrightarrow> hsum n Hs \<in> carrier_mat n n"
-  by (induction Hs) auto
-
 lemma hsum_index:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n) \<Longrightarrow> i < n \<Longrightarrow> j < n \<Longrightarrow>
    hsum n Hs $$ (i, j) = (\<Sum>H\<leftarrow>Hs. H $$ (i, j))"
 proof (induction Hs)
   case (Cons H Hs)
   have "H \<in> carrier_mat n n" "hsum n Hs \<in> carrier_mat n n"
-    using Cons.prems(1) hsum_carrier_mat[of Hs n] by auto
+    using Cons.prems(1) hsum_carrier[of Hs n] by auto
   thus ?case using Cons by simp
 qed simp
 
@@ -356,7 +350,7 @@ proof (rule eq_matI)
     using cov unfolding edge_cover_def by blast+
   have carr: "\<And>H. H \<in> set (sparse_parts n A K p) \<Longrightarrow> H \<in> carrier_mat n n"
     by (auto simp: sparse_parts_def colour_part_def diag_part_def)
-  have S: "hsum n (sparse_parts n A K p) \<in> carrier_mat n n" by (rule hsum_carrier_mat[OF carr])
+  have S: "hsum n (sparse_parts n A K p) \<in> carrier_mat n n" by (rule hsum_carrier[OF carr])
   show "dim_row (hsum n (sparse_parts n A K p)) = dim_row A" "dim_col (hsum n (sparse_parts n A K p)) = dim_col A"
     using S A by simp_all
   fix i j assume i: "i < dim_row A" and j: "j < dim_col A"

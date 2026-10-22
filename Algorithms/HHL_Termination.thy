@@ -23,20 +23,8 @@ qed (simp_all add: proj_set_index carrier_matD[OF outer_prod_dim[OF unit_vec_car
 lemma swap0_proj:
   assumes k: "k < K"
   shows "swap0 K k * proj_basis K k * adjoint (swap0 K k) = proj_basis K 0"
-proof -
-  have P: "swap0 K k * proj_basis K k \<in> carrier_mat K K" by (rule mult_carrier_mat[OF swap0_carrier proj_set_carrier])
-  show ?thesis unfolding swap0_adjoint[OF k]
-  proof (rule eq_matI)
-    fix i j assume "i < dim_row (proj_basis K 0)" "j < dim_col (proj_basis K 0)"
-    hence ij: "i < K" "j < K" by (auto simp: proj_set_index)
-    have "(swap0 K k * proj_basis K k * swap0 K k) $$ (i, j) = (swap0 K k * proj_basis K k) $$ (i, swap_idx k j)"
-      by (rule swap0_right[OF P k ij])
-    also have "\<dots> = proj_basis K k $$ (swap_idx k i, swap_idx k j)"
-      by (rule swap0_left[OF proj_set_carrier k ij(1) swap_idx_lt[OF k ij(2)]])
-    also have "\<dots> = proj_basis K 0 $$ (i, j)" using ij swap_idx_lt[OF k] by (auto simp: proj_set_index swap_idx_def)
-    finally show "(swap0 K k * proj_basis K k * swap0 K k) $$ (i, j) = proj_basis K 0 $$ (i, j)" .
-  qed (auto simp: proj_set_index swap0_def)
-qed
+  unfolding swap0_adjoint swap0_conj[OF proj_set_carrier k]
+  by (rule eq_matI) (use k in \<open>auto simp: proj_set_index\<close>)
 
 lemma matrix_sum_scalar:
   assumes B: "B \<in> carrier_mat d d"
@@ -68,8 +56,8 @@ proof -
           = swap0 d k * (\<rho> $$ (k, k) \<cdot>\<^sub>m proj_basis d k) * adjoint (swap0 d k)"
       using k by (simp add: proj_set_adjoint proj_basis_sandwich[OF r k])
     also have "\<dots> = \<rho> $$ (k, k) \<cdot>\<^sub>m (swap0 d k * proj_basis d k * adjoint (swap0 d k))"
-      by (simp only: mult_smult_distrib[OF swap0_carrier proj_set_carrier]
-            mult_smult_assoc_mat[OF mult_carrier_mat[OF swap0_carrier proj_set_carrier] adjoint_dim[OF swap0_carrier]])
+      by (simp only: mult_smult_distrib[OF swaprows_mat_carrier proj_set_carrier]
+            mult_smult_assoc_mat[OF mult_carrier_mat[OF swaprows_mat_carrier proj_set_carrier] adjoint_dim[OF swaprows_mat_carrier]])
     finally show "denote (map (\<lambda>k. Utrans (swap0 d k)) [0..<d] ! k) (proj_basis d k * \<rho> * adjoint (proj_basis d k))
                   = \<rho> $$ (k, k) \<cdot>\<^sub>m proj_basis d 0" by (simp add: swap0_proj[OF k])
   qed
@@ -383,7 +371,7 @@ proof -
   let ?M = "\<lambda>j. anc_proj ?D (1 - j)" and ?Sc = "init_com ?D ;; utrans_seq Us"
   have dd: "d = ?D" by (simp add: d_def)
   have wc: "well_com (hhl_rus_prog ?D Us)" by (rule hhl_rus_prog_well_com[OF A n0 k t0 spec Ub Cb Us])
-  hence M: "measurement d 2 ?M" and Sc: "well_com ?Sc" unfolding hhl_rus_prog_def by simp_all
+  hence M: "measurement d 2 ?M" and Sc: "well_com ?Sc" unfolding rus_meas_def by simp_all
   note st = rus_state
   have p0: "0 < ?p" by (rule rus_p_pos[OF C0])
   have reset: "\<rho> \<in> carrier_mat d d \<Longrightarrow> partial_density_operator \<rho> \<Longrightarrow> denote ?Sc \<rho> = trace \<rho> \<cdot>\<^sub>m ?\<sigma>" for \<rho>
@@ -397,7 +385,7 @@ proof -
     define c where "c = Re (trace \<rho>)"
     have tr: "trace \<rho> = complex_of_real c" using tr0 unfolding c_def less_eq_complex_def by (simp add: complex_eq_iff)
     have c: "0 \<le> c" "c \<le> 1" using tr0 tr1 unfolding c_def less_eq_complex_def by simp_all
-    have "denote (hhl_rus_prog ?D Us) \<rho> = denote (While ?M ?Sc) (denote ?Sc \<rho>)" unfolding hhl_rus_prog_def by (rule denote.simps(3))
+    have "denote (hhl_rus_prog ?D Us) \<rho> = denote (While ?M ?Sc) (denote ?Sc \<rho>)" unfolding rus_meas_def by (rule denote.simps(3))
     also have "\<dots> = denote (While ?M ?Sc) (complex_of_real c \<cdot>\<^sub>m ?\<sigma>)" unfolding reset[OF rc pd] tr ..
     finally have e: "denote (hhl_rus_prog ?D Us) \<rho> = denote (While ?M ?Sc) (complex_of_real c \<cdot>\<^sub>m ?\<sigma>)" .
     have p1: "trace (?M 1 * ?\<sigma> * adjoint (?M 1)) = complex_of_real (1 - ?p)" by (simp only: diff_self_eq_0 st(5))
@@ -434,7 +422,7 @@ proof -
   have dd: "d = Dm" by (simp add: d_def Dm_def)
   have dd': "d = 2 ^ k * (n * 2)" by (simp add: d_def)
   have wc: "well_com (hhl_rus_prog Dm Us)" unfolding Dm_def by (rule hhl_rus_prog_well_com[OF A n0 k t0 spec Ub Cb Us])
-  hence M: "measurement d 2 ?M" and Sc: "well_com Sc" unfolding hhl_rus_prog_def Sc_def Dm_def by simp_all
+  hence M: "measurement d 2 ?M" and Sc: "well_com Sc" unfolding rus_meas_def Sc_def Dm_def by simp_all
   note st = rus_state
   have reset: "\<rho> \<in> carrier_mat d d \<Longrightarrow> partial_density_operator \<rho> \<Longrightarrow> denote Sc \<rho> = trace \<rho> \<cdot>\<^sub>m ?\<sigma>" for \<rho>
     unfolding dd Sc_def Dm_def by (rule rus_reset[OF Us circ])

@@ -130,7 +130,7 @@ lemma ctrl_pow_tensor:
 proof -
   have Vj: "Vm ^\<^sub>m j \<in> carrier_mat m m" for j using Vm by simp
   have "ctrl_pow N m Vm *\<^sub>v tensor_vec a w = ctrl_blocks N m (\<lambda>j. Vm ^\<^sub>m j) *\<^sub>v reg_sum N m (\<lambda>j. a $ j \<cdot>\<^sub>v w)"
-    unfolding ctrl_pow_blocks tensor_reg_sum[OF a w] ..
+    unfolding tensor_reg_sum[OF a w] ..
   also have "\<dots> = reg_sum N m (\<lambda>j. Vm ^\<^sub>m j *\<^sub>v (a $ j \<cdot>\<^sub>v w))" by (rule ctrl_blocks_reg_sum) (simp_all add: Vj w)
   also have "\<dots> = reg_sum N m (\<lambda>j. a $ j \<cdot>\<^sub>v (Vm ^\<^sub>m j *\<^sub>v w))"
     by (rule reg_sum_cong) (simp add: mult_mat_vec[OF Vj carrier_vecI[OF w]])
@@ -275,7 +275,7 @@ proof -
       thus ?thesis using mult_zero_vec_right[OF mult_carrier_mat[OF Wc Ec']] mult_zero_vec_right[OF blk_lift_carrier] by simp
     next
       case False
-      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_def nA using v ev by (intro CollectI exI[of _ v]) simp
+      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_iff nA using v ev by (intro exI[of _ v]) simp
       then obtain j0 where j0: "0 < j0" "j0 < ?N" and l: "l = reg_eig t0 ?N j0" using spec by blast
       have phase: "cis (t0 * reg_eig t0 ?N j0) = cis (2 * pi * (real j0 / real ?N))" by (rule reg_eig_phase[OF t0 N])
       have Vev: "?V *\<^sub>v tensor_vec v (unit_vec 2 0) = cis (2 * pi * (real j0 / real ?N)) \<cdot>\<^sub>v tensor_vec v (unit_vec 2 0)"
@@ -382,7 +382,7 @@ proof -
   have Ec: "evolution A t0 \<in> carrier_mat n n" using A by simp
   have V: "evolution A t0 \<Otimes> 1\<^sub>m 2 \<in> carrier_mat (n * 2) (n * 2)" by (rule tensor_carrier[OF Ec one_carrier_mat])
   have Vu: "unitary (evolution A t0 \<Otimes> 1\<^sub>m 2)" by (rule tensor_mat_unitary_one_right) (rule evolution_unitary[OF A])
-  show ?thesis unfolding evo_gate_def ctrl_pow_blocks using A(1)
+  show ?thesis unfolding evo_gate_def using A(1)
     by simp (rule ctrl_blocks_unitary, simp_all add: V unitary_pow[OF V Vu])
 qed
 

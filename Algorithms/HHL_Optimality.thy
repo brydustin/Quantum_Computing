@@ -141,11 +141,11 @@ theorem red_dilation:
 proof -
   let ?D = "3 * T * m" and ?e = "exp (- 1 / real T)" and ?A = "red_A T m Ug"
   let ?a = "vec_first w ?D" and ?c = "vec_last w ?D"
-  show "hermitian (herm_embed ?A)" by (rule H_hermitian[OF red_A_carrier])
+  show "hermitian (herm_embed ?A)" by (rule herm_embed_hermitian[OF red_A_carrier])
   have wc: "w = ?a @\<^sub>v ?c" by (rule sym, rule vec_first_last_append, rule carrier_vecI[OF w])
   have da: "dim_vec ?a = ?D" and dc: "dim_vec ?c = ?D" by simp_all
   have Hw: "herm_embed ?A *\<^sub>v w = (?A *\<^sub>v ?c) @\<^sub>v (?A\<^sup>\<dagger> *\<^sub>v ?a)"
-    by (subst wc, rule H_mult[OF red_A_carrier da dc])
+    by (subst wc, rule herm_embed_mult[OF red_A_carrier da dc])
   have e0: "0 \<le> ?e" and e1: "?e < 1" using T0 by simp_all
   have Ac: "(1 - ?e) * \<parallel>?c\<parallel> \<le> \<parallel>?A *\<^sub>v ?c\<parallel>" "\<parallel>?A *\<^sub>v ?c\<parallel> \<le> (1 + ?e) * \<parallel>?c\<parallel>"
     using red_A_bounds(1)[OF T0 Ug dc] red_A_bounds(2)[OF T0 Ug dc] by simp_all
@@ -178,7 +178,7 @@ proof -
   have dx: "dim_vec (red_x T m Ug \<psi>) = 3 * T * m" by (rule dim_red_x[OF T0 Ug])
   have "herm_embed (red_A T m Ug) *\<^sub>v (0\<^sub>v (3 * T * m) @\<^sub>v red_x T m Ug \<psi>)
         = (red_A T m Ug *\<^sub>v red_x T m Ug \<psi>) @\<^sub>v ((red_A T m Ug)\<^sup>\<dagger> *\<^sub>v 0\<^sub>v (3 * T * m))"
-    by (rule H_mult[OF red_A_carrier]) (simp_all add: dx)
+    by (rule herm_embed_mult[OF red_A_carrier]) (simp_all add: dx)
   also have "red_A T m Ug *\<^sub>v red_x T m Ug \<psi> = ket0 T m \<psi>" by (rule red_inverse[OF T0 Ug \<psi>])
   also have "(red_A T m Ug)\<^sup>\<dagger> *\<^sub>v 0\<^sub>v (3 * T * m) = 0\<^sub>v (3 * T * m)"
   proof (rule eq_vecI)
@@ -426,7 +426,7 @@ proof -
   have DmDm: "2 * Dm = Dm + Dm" by simp
   have bij: "bij_betw \<sigma> {..<Dm + Dm} {..<Dm + Dm}" using \<sigma>(1) unfolding DmDm .
   let ?C = "perm_conj (Dm + Dm) \<sigma> ?H"
-  have Hc: "?H \<in> carrier_mat (Dm + Dm) (Dm + Dm)" unfolding Dm_def by (rule H_carrier[OF red_A_carrier])
+  have Hc: "?H \<in> carrier_mat (Dm + Dm) (Dm + Dm)" unfolding Dm_def by (rule herm_embed_carrier[OF red_A_carrier])
   have dx: "dim_vec ?x = Dm" unfolding Dm_def by (rule dim_red_x[OF T0 Ug])
   have dz: "dim_vec ?z = Dm + Dm" using dx by simp
   have \<psi>: "dim_vec ?\<psi> = m" "\<parallel>?\<psi>\<parallel> = 1" using m by (simp_all add: cpx_vec_length_def unit_vec_def lessThan_atLeast0 sum.atLeast_Suc_lessThan[OF m])
@@ -434,7 +434,7 @@ proof -
   proof
     show "bij_betw \<sigma> {..<Dm + Dm} {..<Dm + Dm}" by (rule bij)
     show "\<sigma> 0 = 0" by (rule \<sigma>(2))
-    show "hermitian ?C" by (rule perm_conj_hermitian[OF bij Hc H_hermitian[OF red_A_carrier]])
+    show "hermitian ?C" by (rule perm_conj_hermitian[OF bij Hc herm_embed_hermitian[OF red_A_carrier]])
     fix w :: "complex Matrix.vec" assume w: "dim_vec w = Dm + Dm"
     obtain y where y: "dim_vec y = Dm + Dm" "w = perm_vec (Dm + Dm) \<sigma> y" by (rule perm_vec_surj[OF bij w])
     have Cw: "?C *\<^sub>v w = perm_vec (Dm + Dm) \<sigma> (?H *\<^sub>v y)" unfolding y(2) by (rule perm_conj_mult[OF bij Hc y(1)])

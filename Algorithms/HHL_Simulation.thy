@@ -20,6 +20,9 @@ lemma vnorm_L2: "\<parallel>v\<parallel> = L2_set (\<lambda>i. cmod (v $ i)) {..
 lemma vnorm_ge0: "0 \<le> \<parallel>v\<parallel>"
   by (simp add: cpx_vec_length_def sum_nonneg)
 
+lemma vnorm_pos: "dim_vec v = n \<Longrightarrow> v \<noteq> 0\<^sub>v n \<Longrightarrow> 0 < \<parallel>v\<parallel>"
+  using cpx_vec_length_zero_iff[of v] vnorm_ge0[of v] by (auto simp: order_less_le)
+
 lemma vnorm_sq: "\<parallel>v\<parallel>\<^sup>2 = (\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2)"
   by (simp add: cpx_vec_length_def sum_nonneg)
 
@@ -311,6 +314,148 @@ proof (intro allI impI)
   thus "\<parallel>?d\<parallel> \<le> \<eta> * \<parallel>x\<parallel>" by (rule power2_le_imp_le) (simp add: e vnorm_ge0)
 qed
 
+subsection \<open>Gate lists and permutation matrices\<close>
+
+text \<open>The matrix of a gate list; the first gate acts first.\<close>
+
+primrec circuit_mat :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
+  "circuit_mat K [] = 1\<^sub>m K"
+| "circuit_mat K (U # Us) = circuit_mat K Us * U"
+
+lemma circuit_mat_carrier:
+  "(\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K) \<Longrightarrow> circuit_mat K Us \<in> carrier_mat K K"
+  by (induction Us) auto
+
+lemma circuit_mat_append:
+  assumes "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K" and "\<And>U. U \<in> set Vs \<Longrightarrow> U \<in> carrier_mat K K"
+  shows "circuit_mat K (Us @ Vs) = circuit_mat K Vs * circuit_mat K Us"
+proof -
+  have Vc: "circuit_mat K Vs \<in> carrier_mat K K" by (rule circuit_mat_carrier) (use assms(2) in auto)
+  show ?thesis using assms(1)
+  proof (induction Us)
+    case Nil
+    show ?case using Vc by simp
+  next
+    case (Cons U Us)
+    have U: "U \<in> carrier_mat K K" and IH: "circuit_mat K (Us @ Vs) = circuit_mat K Vs * circuit_mat K Us" using Cons by auto
+    have Uc: "circuit_mat K Us \<in> carrier_mat K K" by (rule circuit_mat_carrier) (use Cons.prems in auto)
+    have "circuit_mat K ((U # Us) @ Vs) = circuit_mat K Vs * circuit_mat K Us * U" using IH by simp
+    also have "\<dots> = circuit_mat K Vs * (circuit_mat K Us * U)" by (rule assoc_mult_mat[OF Vc Uc U])
+    finally show ?case by simp
+  qed
+qed
+
+lemma circuit_mat_single: "U \<in> carrier_mat K K \<Longrightarrow> circuit_mat K [U] = U"
+  by simp
+
+lemma circuit_mat_concat:
+  assumes "\<And>Us U. Us \<in> set Bs \<Longrightarrow> U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K"
+  shows "circuit_mat K (concat Bs) = circuit_mat K (map (circuit_mat K) Bs)"
+  using assms
+proof (induction Bs)
+  case (Cons Us Bs)
+  have "circuit_mat K (concat (Us # Bs)) = circuit_mat K (concat Bs) * circuit_mat K Us"
+    unfolding concat.simps by (rule circuit_mat_append) (use Cons.prems in auto)
+  moreover have "circuit_mat K (concat Bs) = circuit_mat K (map (circuit_mat K) Bs)"
+    by (rule Cons.IH) (use Cons.prems in auto)
+  ultimately show ?case by simp
+qed simp
+
+lemma circuit_mat_replicate: "G \<in> carrier_mat K K \<Longrightarrow> circuit_mat K (replicate e G) = G ^\<^sub>m e"
+  by (induction e) simp_all
+
+lemma circuit_mat_concat_replicate:
+  assumes "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K"
+  shows "circuit_mat K (concat (replicate r Us)) = circuit_mat K Us ^\<^sub>m r"
+proof (induction r)
+  case 0
+  have "circuit_mat K Us \<in> carrier_mat K K" by (rule circuit_mat_carrier) (rule assms)
+  thus ?case by simp
+next
+  case (Suc r)
+  have "circuit_mat K (concat (replicate (Suc r) Us)) = circuit_mat K (concat (replicate r Us)) * circuit_mat K Us"
+    by (simp only: replicate_Suc concat.simps, rule circuit_mat_append) (use assms in auto)
+  thus ?case using Suc by simp
+qed
+
+lemma mult_unit_vec:
+  fixes M :: "complex Matrix.mat"
+  assumes M: "M \<in> carrier_mat nr nc" and k: "k < nc"
+  shows "M *\<^sub>v unit_vec nc k = Matrix.col M k"
+proof (rule eq_vecI)
+  fix i assume "i < dim_vec (Matrix.col M k)"
+  hence i: "i < nr" using M by simp
+  have "(M *\<^sub>v unit_vec nc k) $ i = Matrix.row M i \<bullet> unit_vec nc k" using i M by simp
+  also have "\<dots> = Matrix.row M i $ k" by (rule scalar_prod_right_unit[OF k])
+  finally show "(M *\<^sub>v unit_vec nc k) $ i = Matrix.col M k $ i" using i k M by simp
+qed (use M in simp)
+
+lemma mat_eq_unit:
+  fixes A B :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat K K" and B: "B \<in> carrier_mat K K"
+    and e: "\<And>i. i < K \<Longrightarrow> A *\<^sub>v unit_vec K i = B *\<^sub>v unit_vec K i"
+  shows "A = B"
+proof (rule Matrix.mat_col_eqI)
+  fix i assume "i < dim_col B"
+  hence i: "i < K" using B by simp
+  show "Matrix.col A i = Matrix.col B i" using e[OF i] mult_unit_vec[OF A i] mult_unit_vec[OF B i] by simp
+qed (use A B in auto)
+
+text \<open>The permutation matrix $\ket t\mapsto\ket{f(t)}$.\<close>
+
+
+definition pmat :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat" where
+  "pmat N f = Matrix.mat N N (\<lambda>(r, t). if r = f t then 1 else 0)"
+
+lemma pmat_carrier [simp]: "pmat N f \<in> carrier_mat N N" by (simp add: pmat_def)
+
+lemma dim_pmat [simp]: "dim_row (pmat N f) = N" "dim_col (pmat N f) = N" by (simp_all add: pmat_def)
+
+lemma pmat_unit:
+  assumes t: "t < N" and f: "f t < N"
+  shows "pmat N f *\<^sub>v unit_vec N t = unit_vec N (f t)"
+  unfolding mult_unit_vec[OF pmat_carrier t] using t f by (intro eq_vecI) (auto simp: pmat_def unit_vec_def)
+
+lemma pmat_mult:
+  assumes g: "\<And>t. t < N \<Longrightarrow> g t < N"
+  shows "pmat N f * pmat N g = pmat N (f \<circ> g)"
+proof (rule eq_matI)
+  fix r t assume "r < dim_row (pmat N (f \<circ> g))" "t < dim_col (pmat N (f \<circ> g))"
+  hence rt: "r < N" "t < N" by (simp_all add: pmat_def)
+  have "(pmat N f * pmat N g) $$ (r, t) = (\<Sum>u<N. (if r = f u then 1 else 0) * (if u = g t then 1 else 0))"
+    using rt by (simp add: pmat_def scalar_prod_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>u<N. if u = g t then (if r = f (g t) then 1 else 0) else 0)"
+    by (rule sum.cong) auto
+  also have "\<dots> = (if r = f (g t) then 1 else 0)" using g[OF rt(2)] by (simp add: sum.delta)
+  finally show "(pmat N f * pmat N g) $$ (r, t) = pmat N (f \<circ> g) $$ (r, t)" using rt by (simp add: pmat_def)
+qed (simp_all add: pmat_def)
+
+lemma pmat_id: "pmat N id = 1\<^sub>m N" by (rule eq_matI) (auto simp: pmat_def)
+
+lemma pmat_dagger_invol:
+  assumes f: "\<And>t. t < N \<Longrightarrow> f t < N" "\<And>t. t < N \<Longrightarrow> f (f t) = t"
+  shows "(pmat N f)\<^sup>\<dagger> = pmat N f"
+proof (rule eq_matI)
+  fix r t assume "r < dim_row (pmat N f)" "t < dim_col (pmat N f)"
+  hence rt: "r < N" "t < N" by simp_all
+  have "(t = f r) \<longleftrightarrow> (r = f t)" using f rt by metis
+  thus "(pmat N f)\<^sup>\<dagger> $$ (r, t) = pmat N f $$ (r, t)" using rt by (simp add: dagger_def pmat_def)
+qed (simp_all add: dagger_def pmat_def)
+
+lemma pmat_unitary_invol:
+  assumes f: "\<And>t. t < N \<Longrightarrow> f t < N" "\<And>t. t < N \<Longrightarrow> f (f t) = t"
+  shows "unitary (pmat N f)"
+proof -
+  have "pmat N f * pmat N f = 1\<^sub>m N"
+  proof -
+    have "pmat N f * pmat N f = pmat N (f \<circ> f)" by (rule pmat_mult[OF f(1)])
+    also have "\<dots> = pmat N id" unfolding pmat_def using f(2) by (intro eq_matI) auto
+    finally show ?thesis by (simp add: pmat_id)
+  qed
+  moreover have d: "(pmat N f)\<^sup>\<dagger> = pmat N f" by (rule pmat_dagger_invol) (use f in auto)
+  ultimately show ?thesis unfolding unitary_def d by simp
+qed
+
 subsection \<open>Circuits with oracle calls\<close>
 
 text \<open>Circuits on $\C^N\otimes\C^m$ built from fixed gates and calls of an oracle $V$ on $\C^m$,
@@ -503,7 +648,7 @@ qed
 lemma sem_pchain_ctrl_pow:
   assumes V: "V \<in> carrier_mat m m"
   shows "sem N m V (pchain (N * m) (N - 1)) = ctrl_pow N m V"
-  unfolding sem_pchain[OF V] ctrl_pow_blocks by (rule ctrl_blocks_cong) simp
+  unfolding sem_pchain[OF V] by (rule ctrl_blocks_cong) simp
 
 subsection \<open>HHL as a circuit with $2(N-1)$ calls\<close>
 
@@ -644,7 +789,7 @@ proof -
   qed
   have "\<parallel>win_state N\<parallel>\<^sup>2 = 2 / real N * (\<Sum>\<tau><N. (sin (?y \<tau>))\<^sup>2)"
     unfolding vnorm_sq sum_distrib_left using N0
-    by (intro sum.cong) (simp_all add: win_state_def norm_mult power_mult_distrib)
+    by (intro sum.cong) (simp_all add: win_state_def win_coef_def norm_mult power_mult_distrib)
   also have "\<dots> = 1" unfolding s using N0 by simp
   finally have "\<parallel>win_state N\<parallel>\<^sup>2 = 1" .
   hence "\<parallel>win_state N\<parallel>\<^sup>2 = 1\<^sup>2" by simp

@@ -665,3 +665,29 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   so the sums `simp` produces mention `f j` where the old definitions had `f i` (add `cong: if_cong`);
   a generic lemma such as `sign_diag_carrier` does not fire through an abbreviation with a λ
   argument (instantiate it); unfolding `pflag_mat_mult` needs `where P = … and d = …`.
+- **No redundancies, batch 3** (2026-10-22): one construction per concept.  A definition-body detector
+  (closed λ-terms of all 2 709 library and 206 Part VI definitions) found `invol_mat` = `pmat`; a
+  same-conclusion check and a review of every definition found the rest.  Now: `ctrl_pow` is an
+  abbreviation of `ctrl_blocks` (moved to `Phase_Estimation`); one `circuit_mat`, `pmat`,
+  `mult_unit_vec` and `mat_eq_unit` (in `HHL_Simulation`), so the sparse circuit's `sg_run` is
+  `circuit_mat ∘ map sgate_mat` and its `invol_mat`, `mat_vec_unit`, `col_mult_unit` are gone;
+  `swap0` is JNF's `swaprows_mat K 0 k` and the conjugation is JNF's `swap_cols_rows` (`swap_idx`,
+  `swap0_left/right/square` gone); `swapf a b f` is `f(a := b, b := a)`; `gc`, `gs` are
+  `Transposition.transpose`; `herm_spectrum` is defined by JNF's `eigenvalue`; `Qm` is `S·H`
+  (`Phase_S * Hadamard`); `had_blk` is gone (`Hadamard ⊗ I`, block form `had_tensor_block`);
+  `sum2` is the AFP's `sumof2`; one window coefficient `win_coef` for `win_state` and its
+  preparation (`wamp` gone); one signed `wrap` (round-based, in `Phase_Estimation`) and
+  `circ_dist x y = |wrap (x − y)|`; `hhl_prog`/`hhl_rus_prog` are abbreviations of the general
+  `prog_meas`/`rus_meas`; the amplification circuit exists once, for any flag predicate
+  (`grover_prog`, `aa_prog`, `circuit_amplification` in `HHL_Complete`; the `P` copies in
+  `HHL_Runtime` are gone).  Special cases with independent proofs became general lemmas:
+  `herm_embed_*` for rectangular `A` (the `H_*` copies in `HHL_Rectangular` are gone),
+  `eigvec_mat_eqI` (replaces `fun_on_eigen_unique`), `tprod_carrier`/`hsum_carrier` under
+  carrier/Hermitian hypotheses, `pflag_tensor_left`, `vnorm_pos` via the notes'
+  `cpx_vec_length_zero_iff`, `win_amp_crude` instead of its restatement.  33 theories, 2 238
+  theorems, no oracles.  Traps: `auto simp: … carrier_vec_def` and `simp add: mult_2` loop (both
+  hung the build; `isabelle build -v` prints the running command every 2 s, so a watchdog on that
+  output finds hangs); OF with `?f ?t` needs `where f = …` ("multiple unifiers"); a regex on
+  `hhl_prog_def` also hits the qualified `HHL_Simulation.hhl_prog_def`; `f(a := b) x` needs
+  parentheses; an abbreviation `herm_spectrum A ≡ {l. eigenvalue A (of_real l)}` breaks automation
+  (simp turns `of_real 0` into `0` and `spec` no longer matches), a definition does not.

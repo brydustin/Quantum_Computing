@@ -128,7 +128,7 @@ proof -
       thus ?thesis using mult_zero_vec_right[OF mult_carrier_mat[OF Hc Ec]] mult_zero_vec_right[OF Oc] by simp
     next
       case False
-      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_def nA using v ev by (intro CollectI exI[of _ v]) simp
+      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_iff nA using v ev by (intro exI[of _ v]) simp
       then obtain k where k: "k < N" and l: "l = reg_eig t0 N k" using spec by blast
       let ?c = "h l" and ?s = "sqrt (1 - (h l)\<^sup>2)"
       have "(?H * ?Emb) *\<^sub>v v = ?H *\<^sub>v (?Emb *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Hc Ec vc])
@@ -334,21 +334,17 @@ SWAP, Hadamard: the control reads $\ket0$ with probability $(1+|\langle\psi|\var
 definition swap_mat :: "nat \<Rightarrow> complex Matrix.mat" where
   "swap_mat n = Matrix.mat (n * n) (n * n) (\<lambda>(i, j). if j = i mod n * n + i div n then 1 else 0)"
 
-definition had_blk :: "nat \<Rightarrow> complex Matrix.mat" where
-  "had_blk K = four_block_mat (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K)
-                              (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K)"
-
 definition cswap :: "nat \<Rightarrow> complex Matrix.mat" where
   "cswap n = four_block_mat (1\<^sub>m (n * n)) (0\<^sub>m (n * n) (n * n)) (0\<^sub>m (n * n) (n * n)) (swap_mat n)"
 
 definition swap_test :: "nat \<Rightarrow> complex Matrix.mat" where
-  "swap_test n = had_blk (n * n) * (cswap n * had_blk (n * n))"
+  "swap_test n = (Hadamard \<Otimes> 1\<^sub>m (n * n)) * (cswap n * (Hadamard \<Otimes> 1\<^sub>m (n * n)))"
 
 lemma swap_mat_carrier [simp]: "swap_mat n \<in> carrier_mat (n * n) (n * n)"
   by (simp add: swap_mat_def)
 
-lemma had_blk_carrier [simp]: "had_blk K \<in> carrier_mat (K + K) (K + K)"
-  by (simp add: had_blk_def)
+lemma had_tensor_carrier [simp]: "Hadamard \<Otimes> 1\<^sub>m K \<in> carrier_mat (K + K) (K + K)"
+  by (rule carrier_matI) (simp_all add: Hadamard_def H_def)
 
 lemma cswap_carrier [simp]: "cswap n \<in> carrier_mat (n * n + n * n) (n * n + n * n)"
   by (simp add: cswap_def)
@@ -389,17 +385,56 @@ proof (rule eq_vecI)
   finally show "(swap_mat n *\<^sub>v tensor_vec u v) $ i = tensor_vec v u $ i" .
 qed (use u v in \<open>simp add: tensor_vec_dim swap_mat_def\<close>)
 
-lemma had_blk_mult:
-  assumes a: "dim_vec a = K" and c: "dim_vec c = K"
-  shows "had_blk K *\<^sub>v (a @\<^sub>v c) =
+lemma div_mod_upper: "(K::nat) \<le> i \<Longrightarrow> i < K + K \<Longrightarrow> i div K = 1 \<and> i mod K = i - K"
+  by (simp add: le_div_geq le_mod_geq)
+
+text \<open>$H\otimes I_K$ in block form.\<close>
+
+lemma had_tensor_block:
+  assumes K: "0 < K"
+  shows "Hadamard \<Otimes> 1\<^sub>m K = four_block_mat (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K)
+    (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K)"
+proof (rule eq_matI)
+  have HD: "dim_row Hadamard = 2" "dim_col Hadamard = 2" by (simp_all add: Hadamard_def H_def)
+  fix i j assume "i < dim_row (four_block_mat (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K))" "j < dim_col (four_block_mat (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K))"
+  hence i: "i < K + K" and j: "j < K + K" by simp_all
+  have [simp]: "\<not> i < K \<Longrightarrow> i - K < K" "\<not> j < K \<Longrightarrow> j - K < K" using i j by simp_all
+  have t: "(Hadamard \<Otimes> 1\<^sub>m K) $$ (i, j) = Hadamard $$ (i div K, j div K) * 1\<^sub>m K $$ (i mod K, j mod K)"
+    by (rule index_tensor_mat[OF HD]) (use i j K in simp_all)
+  have b: "(four_block_mat (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K)) $$ (i, j) =
+     (if i < K then if j < K then (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i, j) else (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i, j - K)
+      else if j < K then (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i - K, j) else (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i - K, j - K))"
+    using i j by (subst index_mat_four_block) simp_all
+  show "(Hadamard \<Otimes> 1\<^sub>m K) $$ (i, j) = (four_block_mat (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K)) $$ (i, j)"
+  proof (cases "i < K"; cases "j < K")
+    assume "i < K" "j < K" thus ?thesis unfolding t b by (simp add: Hadamard_def H_def)
+  next
+    assume ik: "i < K" and jk: "\<not> j < K"
+    have jd: "j div K = 1" "j mod K = j - K" using div_mod_upper[of K j] jk j by simp_all
+    show ?thesis unfolding t b jd using ik jk j by (simp add: Hadamard_def H_def)
+  next
+    assume ik: "\<not> i < K" and jk: "j < K"
+    have id: "i div K = 1" "i mod K = i - K" using div_mod_upper[of K i] ik i by simp_all
+    show ?thesis unfolding t b id using ik jk i by (simp add: Hadamard_def H_def)
+  next
+    assume ik: "\<not> i < K" and jk: "\<not> j < K"
+    have id: "i div K = 1" "i mod K = i - K" using div_mod_upper[of K i] ik i by simp_all
+    have jd: "j div K = 1" "j mod K = j - K" using div_mod_upper[of K j] jk j by simp_all
+    show ?thesis unfolding t b id jd using ik jk i j by (simp add: Hadamard_def H_def)
+  qed
+qed (simp_all add: Hadamard_def H_def)
+
+lemma had_tensor_mult:
+  assumes K: "0 < K" and a: "dim_vec a = K" and c: "dim_vec c = K"
+  shows "(Hadamard \<Otimes> 1\<^sub>m K) *\<^sub>v (a @\<^sub>v c) =
          (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v (a + c)) @\<^sub>v (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v (a - c))"
 proof -
   have I: "(z \<cdot>\<^sub>m 1\<^sub>m K) *\<^sub>v w = z \<cdot>\<^sub>v w" if w: "dim_vec w = K" for z :: complex and w
     using smult_mat_mult_vec[OF one_carrier_mat carrier_vecI[OF w]] one_mult_mat_vec[OF carrier_vecI[OF w]] by simp
-  have "had_blk K *\<^sub>v (a @\<^sub>v c) =
+  have "(Hadamard \<Otimes> 1\<^sub>m K) *\<^sub>v (a @\<^sub>v c) =
         (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v a + complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v c) @\<^sub>v
         (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v a + complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>v c)"
-    unfolding had_blk_def
+    unfolding had_tensor_block[OF K]
     by (subst four_block_mat_mult_vec[OF smult_carrier_mat[OF one_carrier_mat] smult_carrier_mat[OF one_carrier_mat]
           smult_carrier_mat[OF one_carrier_mat] smult_carrier_mat[OF one_carrier_mat] carrier_vecI[OF a] carrier_vecI[OF c]])
        (simp only: I[OF a] I[OF c])
@@ -424,43 +459,7 @@ proof -
   finally show ?thesis .
 qed
 
-text \<open>The block form is the tensor form: \<open>had_blk\<close> is $H\otimes I$ and $\ket0\otimes w$ is $w\oplus0$.\<close>
-
-lemma div_mod_upper: "(K::nat) \<le> i \<Longrightarrow> i < K + K \<Longrightarrow> i div K = 1 \<and> i mod K = i - K"
-  by (simp add: le_div_geq le_mod_geq)
-
-lemma had_blk_Hadamard:
-  assumes K: "0 < K"
-  shows "Hadamard \<Otimes> 1\<^sub>m K = had_blk K"
-proof (rule eq_matI)
-  have HD: "dim_row Hadamard = 2" "dim_col Hadamard = 2" by (simp_all add: Hadamard_def H_def)
-  fix i j assume "i < dim_row (had_blk K)" "j < dim_col (had_blk K)"
-  hence i: "i < K + K" and j: "j < K + K" by (simp_all add: had_blk_def)
-  have [simp]: "\<not> i < K \<Longrightarrow> i - K < K" "\<not> j < K \<Longrightarrow> j - K < K" using i j by simp_all
-  have t: "(Hadamard \<Otimes> 1\<^sub>m K) $$ (i, j) = Hadamard $$ (i div K, j div K) * 1\<^sub>m K $$ (i mod K, j mod K)"
-    by (rule index_tensor_mat[OF HD]) (use i j K in simp_all)
-  have b: "had_blk K $$ (i, j) =
-     (if i < K then if j < K then (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i, j) else (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i, j - K)
-      else if j < K then (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i - K, j) else (complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>m 1\<^sub>m K) $$ (i - K, j - K))"
-    unfolding had_blk_def using i j by (subst index_mat_four_block) simp_all
-  show "(Hadamard \<Otimes> 1\<^sub>m K) $$ (i, j) = had_blk K $$ (i, j)"
-  proof (cases "i < K"; cases "j < K")
-    assume "i < K" "j < K" thus ?thesis unfolding t b by (simp add: Hadamard_def H_def)
-  next
-    assume ik: "i < K" and jk: "\<not> j < K"
-    have jd: "j div K = 1" "j mod K = j - K" using div_mod_upper[of K j] jk j by simp_all
-    show ?thesis unfolding t b jd using ik jk j by (simp add: Hadamard_def H_def)
-  next
-    assume ik: "\<not> i < K" and jk: "j < K"
-    have id: "i div K = 1" "i mod K = i - K" using div_mod_upper[of K i] ik i by simp_all
-    show ?thesis unfolding t b id using ik jk i by (simp add: Hadamard_def H_def)
-  next
-    assume ik: "\<not> i < K" and jk: "\<not> j < K"
-    have id: "i div K = 1" "i mod K = i - K" using div_mod_upper[of K i] ik i by simp_all
-    have jd: "j div K = 1" "j mod K = j - K" using div_mod_upper[of K j] jk j by simp_all
-    show ?thesis unfolding t b id jd using ik jk i j by (simp add: Hadamard_def H_def)
-  qed
-qed (simp_all add: had_blk_def Hadamard_def H_def)
+text \<open>$\ket0\otimes w$ is $w\oplus0$.\<close>
 
 lemma ket0_block:
   assumes w: "dim_vec w = K"
@@ -478,15 +477,22 @@ theorem swap_test_output:
   assumes p: "dim_vec \<psi> = n" and f: "dim_vec \<phi> = n"
   shows "swap_test n *\<^sub>v (tensor_vec \<psi> \<phi> @\<^sub>v 0\<^sub>v (n * n)) =
          ((1 / 2) \<cdot>\<^sub>v (tensor_vec \<psi> \<phi> + tensor_vec \<phi> \<psi>)) @\<^sub>v ((1 / 2) \<cdot>\<^sub>v (tensor_vec \<psi> \<phi> - tensor_vec \<phi> \<psi>))"
-proof -
+proof (cases "n = 0")
+  case True
+  have "dim_vec (tensor_vec \<psi> \<phi>) = 0" "dim_vec (tensor_vec \<phi> \<psi>) = 0" using p f True tensor_vec_dim by auto
+  moreover have "dim_row (swap_test n) = 0" using True by (simp add: swap_test_def Hadamard_def H_def)
+  ultimately show ?thesis by (intro eq_vecI) simp_all
+next
+  case False
   let ?w = "tensor_vec \<psi> \<phi>" and ?w' = "tensor_vec \<phi> \<psi>" and ?s = "complex_of_real (1 / sqrt 2)" and ?K = "n * n"
+  have K0: "0 < ?K" using False by simp
   have dw: "dim_vec ?w = ?K" and dw': "dim_vec ?w' = ?K" using tensor_vec_dim p f by blast+
   have x0: "?w @\<^sub>v 0\<^sub>v ?K \<in> carrier_vec (?K + ?K)" using dw by (intro carrier_vecI) simp
   have ss: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2" by (simp flip: of_real_mult)
-  have s1: "had_blk ?K *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K) = (?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w)"
+  have s1: "(Hadamard \<Otimes> 1\<^sub>m ?K) *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K) = (?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w)"
   proof -
-    have "had_blk ?K *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K) = (?s \<cdot>\<^sub>v (?w + 0\<^sub>v ?K)) @\<^sub>v (?s \<cdot>\<^sub>v (?w - 0\<^sub>v ?K))"
-      by (rule had_blk_mult[OF dw]) simp
+    have "(Hadamard \<Otimes> 1\<^sub>m ?K) *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K) = (?s \<cdot>\<^sub>v (?w + 0\<^sub>v ?K)) @\<^sub>v (?s \<cdot>\<^sub>v (?w - 0\<^sub>v ?K))"
+      by (rule had_tensor_mult[OF K0 dw]) simp
     also have "?w + 0\<^sub>v ?K = ?w" using dw by (intro eq_vecI) simp_all
     also have "?w - 0\<^sub>v ?K = ?w" using dw by (intro eq_vecI) simp_all
     finally show ?thesis .
@@ -495,22 +501,22 @@ proof -
     using mult_mat_vec[OF swap_mat_carrier carrier_vecI[OF dw], of ?s] swap_mat_tensor[OF p f] by simp
   have s2: "cswap n *\<^sub>v ((?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w)) = (?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w')"
     unfolding Sw[symmetric] by (rule cswap_mult) (simp_all add: dw)
-  have s3: "had_blk ?K *\<^sub>v ((?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w')) =
+  have s3: "(Hadamard \<Otimes> 1\<^sub>m ?K) *\<^sub>v ((?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w')) =
             ((1 / 2) \<cdot>\<^sub>v (?w + ?w')) @\<^sub>v ((1 / 2) \<cdot>\<^sub>v (?w - ?w'))"
   proof -
-    have "had_blk ?K *\<^sub>v ((?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w')) =
+    have "(Hadamard \<Otimes> 1\<^sub>m ?K) *\<^sub>v ((?s \<cdot>\<^sub>v ?w) @\<^sub>v (?s \<cdot>\<^sub>v ?w')) =
           (?s \<cdot>\<^sub>v (?s \<cdot>\<^sub>v ?w + ?s \<cdot>\<^sub>v ?w')) @\<^sub>v (?s \<cdot>\<^sub>v (?s \<cdot>\<^sub>v ?w - ?s \<cdot>\<^sub>v ?w'))"
-      by (rule had_blk_mult) (simp_all add: dw dw')
+      by (rule had_tensor_mult[OF K0]) (simp_all add: dw dw')
     also have "?s \<cdot>\<^sub>v (?s \<cdot>\<^sub>v ?w + ?s \<cdot>\<^sub>v ?w') = (1 / 2) \<cdot>\<^sub>v (?w + ?w')"
       using dw dw' by (intro eq_vecI) (simp_all add: ss add_divide_distrib)
     also have "?s \<cdot>\<^sub>v (?s \<cdot>\<^sub>v ?w - ?s \<cdot>\<^sub>v ?w') = (1 / 2) \<cdot>\<^sub>v (?w - ?w')"
       using dw dw' by (intro eq_vecI) (simp_all add: ss diff_divide_distrib)
     finally show ?thesis .
   qed
-  have "swap_test n *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K) = had_blk ?K *\<^sub>v (cswap n *\<^sub>v (had_blk ?K *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K)))"
+  have "swap_test n *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K) = (Hadamard \<Otimes> 1\<^sub>m ?K) *\<^sub>v (cswap n *\<^sub>v ((Hadamard \<Otimes> 1\<^sub>m ?K) *\<^sub>v (?w @\<^sub>v 0\<^sub>v ?K)))"
     unfolding swap_test_def
-    using assoc_mult_mat_vec[OF had_blk_carrier mult_carrier_mat[OF cswap_carrier had_blk_carrier] x0]
-          assoc_mult_mat_vec[OF cswap_carrier had_blk_carrier x0] by simp
+    using assoc_mult_mat_vec[OF had_tensor_carrier mult_carrier_mat[OF cswap_carrier had_tensor_carrier] x0]
+          assoc_mult_mat_vec[OF cswap_carrier had_tensor_carrier x0] by simp
   thus ?thesis unfolding s1 s2 s3 .
 qed
 

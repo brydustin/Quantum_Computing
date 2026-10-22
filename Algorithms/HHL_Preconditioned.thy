@@ -81,12 +81,13 @@ proof (rule ccontr)
 qed
 
 lemma pc_x: "0 < \<parallel>x\<parallel>"
-proof (rule ccontr)
-  assume "\<not> 0 < \<parallel>x\<parallel>"
-  hence "\<parallel>x\<parallel> = 0" using vnorm_ge0[of x] by linarith
-  hence "x = 0\<^sub>v n" using cpx_vec_length_zero_iff[of x] x(1) by simp
-  hence "B *\<^sub>v b = 0\<^sub>v n" unfolding pc_Bx using mult_zero_vec_right[OF pc_M] by simp
-  thus False using pc_Bb vnorm_zero_vec by simp
+proof (rule vnorm_pos[OF x(1)])
+  show "x \<noteq> 0\<^sub>v n"
+  proof
+    assume "x = 0\<^sub>v n"
+    hence "B *\<^sub>v b = 0\<^sub>v n" unfolding pc_Bx using mult_zero_vec_right[OF pc_M] by simp
+    thus False using pc_Bb vnorm_zero_vec by simp
+  qed
 qed
 
 lemma pc_solve:

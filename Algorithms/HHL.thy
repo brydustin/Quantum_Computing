@@ -12,26 +12,6 @@ $A^{-1}b/\norm{A^{-1}b}$.  The space is register $\otimes$ (system $\otimes$ anc
 
 subsection \<open>Block-diagonal controlled operations\<close>
 
-text \<open>$\sum_k\ket k\bra k\otimes B_k$ on $\C^N\otimes\C^m$.\<close>
-
-definition ctrl_blocks :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
-  "ctrl_blocks N m B = Matrix.mat (N * m) (N * m)
-     (\<lambda>(r, c). if r div m = c div m then B (r div m) $$ (r mod m, c mod m) else 0)"
-
-lemma ctrl_blocks_carrier [simp]: "ctrl_blocks N m B \<in> carrier_mat (N * m) (N * m)"
-  by (simp add: ctrl_blocks_def)
-
-lemma dim_ctrl_blocks [simp]: "dim_row (ctrl_blocks N m B) = N * m" "dim_col (ctrl_blocks N m B) = N * m"
-  by (simp_all add: ctrl_blocks_def)
-
-lemma ctrl_blocks_index:
-  "r < N * m \<Longrightarrow> c < N * m \<Longrightarrow>
-   ctrl_blocks N m B $$ (r, c) = (if r div m = c div m then B (r div m) $$ (r mod m, c mod m) else 0)"
-  by (simp add: ctrl_blocks_def)
-
-lemma ctrl_pow_blocks: "ctrl_pow N m U = ctrl_blocks N m (\<lambda>k. U ^\<^sub>m k)"
-  by (simp add: ctrl_pow_def ctrl_blocks_def)
-
 lemma div_mod_eq_iff:
   fixes r c m :: nat
   shows "r = c \<longleftrightarrow> r div m = c div m \<and> r mod m = c mod m"
@@ -294,8 +274,8 @@ proof -
     by (rule tensor_mat_unitary_one_right) (rule unitary_dagger[OF fourier_unitary[OF N]])
   have Fc: "((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m \<in> carrier_mat (N * m) (N * m)" by (rule carrier_matI) simp_all
   have C: "unitary (ctrl_pow N m V)"
-    unfolding ctrl_pow_blocks by (rule ctrl_blocks_unitary) (simp_all add: V unitary_pow[OF V])
-  show ?thesis unfolding pe_unitary_def by (rule unitary_mult[OF F C Fc ctrl_pow_carrier])
+    by (rule ctrl_blocks_unitary) (simp_all add: V unitary_pow[OF V])
+  show ?thesis unfolding pe_unitary_def by (rule unitary_mult[OF F C Fc ctrl_blocks_carrier])
 qed
 
 text \<open>On $\frac1{\sqrt N}\sum_k\ket k\otimes w$ with $Vw=e^{2\pi ik/N}w$, phase estimation gives $\ket k\otimes w$.\<close>
@@ -310,7 +290,7 @@ proof -
     by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: uniform_state_def w)
   have "pe_unitary N m V *\<^sub>v tensor_vec (uniform_state N) w =
         (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m m) *\<^sub>v (ctrl_pow N m V *\<^sub>v tensor_vec (uniform_state N) w)"
-    unfolding pe_unitary_def by (rule assoc_mult_mat_vec[OF Fc ctrl_pow_carrier xc])
+    unfolding pe_unitary_def by (rule assoc_mult_mat_vec[OF Fc ctrl_blocks_carrier xc])
   also have "\<dots> = tensor_vec (Matrix.vec N (pe_amp N (real k / real N))) w"
     by (rule phase_estimation[OF V w ev])
   also have "Matrix.vec N (pe_amp N (real k / real N)) = unit_vec N k"
@@ -396,34 +376,6 @@ subsection \<open>All right-hand sides\<close>
 
 lemma mult_zero_vec_right: "B \<in> carrier_mat K n \<Longrightarrow> B *\<^sub>v 0\<^sub>v n = 0\<^sub>v K"
   by (rule eq_vecI) (auto simp: scalar_prod_def)
-
-text \<open>Two matrices that agree on every eigenvector of a Hermitian $A$ are equal.\<close>
-
-lemma eigvec_mat_eqI:
-  assumes A: "A \<in> carrier_mat n n" "hermitian A"
-      and B1: "B1 \<in> carrier_mat K n" and B2: "B2 \<in> carrier_mat K n"
-      and eq: "\<And>v l. dim_vec v = n \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow> B1 *\<^sub>v v = B2 *\<^sub>v v"
-  shows "B1 = B2"
-proof -
-  obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
-  note d = spectral_decompD[OF A(1) sd]
-  have BU: "B1 * U = B2 * U"
-  proof (rule Matrix.mat_col_eqI)
-    fix j assume "j < dim_col (B2 * U)"
-    hence j: "j < n" using d(1) by simp
-    have cU: "dim_vec (Matrix.col U j) = n" using d(1) by simp
-    have "Matrix.col (B1 * U) j = B1 *\<^sub>v Matrix.col U j" by (rule col_mult2[OF B1 d(1) j])
-    also have "\<dots> = B2 *\<^sub>v Matrix.col U j" by (rule eq[OF cU spectral_decomp_col[OF A(1) sd j]])
-    also have "\<dots> = Matrix.col (B2 * U) j" by (rule col_mult2[OF B2 d(1) j, symmetric])
-    finally show "Matrix.col (B1 * U) j = Matrix.col (B2 * U) j" .
-  qed (use B1 B2 d(1) in simp_all)
-  have "B1 = (B1 * U) * (U\<^sup>\<dagger>)"
-    using assoc_mult_mat[OF B1 d(1) dagger_carrier[OF d(1)]] d(5) B1 by simp
-  also have "\<dots> = (B2 * U) * (U\<^sup>\<dagger>)" by (simp only: BU)
-  also have "\<dots> = B2"
-    using assoc_mult_mat[OF B2 d(1) dagger_carrier[OF d(1)]] d(5) B2 by simp
-  finally show ?thesis .
-qed
 
 text \<open>The matrix of $b\mapsto a\otimes(M_0b\otimes\ket0+M_1b\otimes\ket1)$.\<close>
 
@@ -523,7 +475,7 @@ proof -
       thus ?thesis using mult_zero_vec_right[OF mult_carrier_mat[OF Hc Ec]] mult_zero_vec_right[OF Oc] by simp
     next
       case False
-      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_def nA using v ev by (intro CollectI exI[of _ v]) simp
+      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_iff nA using v ev by (intro exI[of _ v]) simp
       then obtain k where k: "0 < k" "k < N" and l: "l = reg_eig t0 N k" using spec by blast
       have l0: "l \<noteq> 0" using reg_eig_nonzero[OF t0 k] l by simp
       let ?c = "C / l" and ?s = "sqrt (1 - (C / l)\<^sup>2)"
@@ -658,8 +610,8 @@ proof -
     also have "\<dots> = 0" unfolding z by (rule scalar_prod_right_zero) (use d(1) j in \<open>simp add: dagger_def\<close>)
     finally show False using d(4) j by simp
   qed
-  show ?thesis unfolding herm_spectrum_def
-    using spectral_decomp_col[OF A sd j] cd nz A by (intro CollectI exI[of _ "Matrix.col U j"]) simp
+  show ?thesis unfolding herm_spectrum_iff
+    using spectral_decomp_col[OF A sd j] cd nz A by (intro exI[of _ "Matrix.col U j"]) simp
 qed
 
 text \<open>A real function non-negative on the spectrum gives a positive matrix.\<close>
@@ -758,14 +710,14 @@ $0\oplus x$.\<close>
 definition herm_embed :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "herm_embed A = four_block_mat (0\<^sub>m (dim_row A) (dim_row A)) A (A\<^sup>\<dagger>) (0\<^sub>m (dim_col A) (dim_col A))"
 
-lemma herm_embed_carrier: "A \<in> carrier_mat n n \<Longrightarrow> herm_embed A \<in> carrier_mat (n + n) (n + n)"
+lemma herm_embed_carrier: "A \<in> carrier_mat m n \<Longrightarrow> herm_embed A \<in> carrier_mat (m + n) (m + n)"
   by (auto simp: herm_embed_def)
 
 lemma herm_embed_hermitian:
-  assumes A: "A \<in> carrier_mat n n"
+  assumes A: "A \<in> carrier_mat m n"
   shows "hermitian (herm_embed A)"
 proof -
-  have "(herm_embed A)\<^sup>\<dagger> = four_block_mat ((0\<^sub>m n n)\<^sup>\<dagger>) ((A\<^sup>\<dagger>)\<^sup>\<dagger>) (A\<^sup>\<dagger>) ((0\<^sub>m n n)\<^sup>\<dagger>)"
+  have "(herm_embed A)\<^sup>\<dagger> = four_block_mat ((0\<^sub>m m m)\<^sup>\<dagger>) ((A\<^sup>\<dagger>)\<^sup>\<dagger>) (A\<^sup>\<dagger>) ((0\<^sub>m n n)\<^sup>\<dagger>)"
     unfolding herm_embed_def using A
     by (simp add: dagger_four_block_mat_complex[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat])
   also have "\<dots> = herm_embed A" using A by (simp add: herm_embed_def dagger_zero_mat dagger_of_dagger_is_id)
@@ -775,22 +727,28 @@ qed
 lemma zero_mat_mult_vec: "dim_vec v = n \<Longrightarrow> 0\<^sub>m K n *\<^sub>v v = 0\<^sub>v K"
   by (rule eq_vecI) (auto simp: scalar_prod_def)
 
+lemma herm_embed_mult:
+  assumes A: "A \<in> carrier_mat m n" and a: "dim_vec a = m" and c: "dim_vec c = n"
+  shows "herm_embed A *\<^sub>v (a @\<^sub>v c) = (A *\<^sub>v c) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v a)"
+proof -
+  have ac: "a \<in> carrier_vec m" "c \<in> carrier_vec n" by (rule carrier_vecI[OF a], rule carrier_vecI[OF c])
+  have "herm_embed A *\<^sub>v (a @\<^sub>v c) = (0\<^sub>m m m *\<^sub>v a + A *\<^sub>v c) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v a + 0\<^sub>m n n *\<^sub>v c)"
+    unfolding herm_embed_def using A
+    by (simp add: four_block_mat_mult_vec[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat ac])
+  also have "0\<^sub>m m m *\<^sub>v a = 0\<^sub>v m" by (rule zero_mat_mult_vec[OF a])
+  also have "0\<^sub>m n n *\<^sub>v c = 0\<^sub>v n" by (rule zero_mat_mult_vec[OF c])
+  also have "A\<^sup>\<dagger> *\<^sub>v a + 0\<^sub>v n = A\<^sup>\<dagger> *\<^sub>v a"
+    by (rule right_zero_vec, rule carrier_vecI) (use A a in simp)
+  also have "0\<^sub>v m + A *\<^sub>v c = A *\<^sub>v c"
+    by (rule left_zero_vec, rule carrier_vecI) (use A c in simp)
+  finally show ?thesis .
+qed
+
 lemma herm_embed_solve:
   assumes A: "A \<in> carrier_mat n n" and x: "dim_vec x = n" and ax: "A *\<^sub>v x = b"
   shows "herm_embed A *\<^sub>v (0\<^sub>v n @\<^sub>v x) = b @\<^sub>v 0\<^sub>v n"
-proof -
-  have xc: "x \<in> carrier_vec n" by (rule carrier_vecI[OF x])
-  have bc: "b \<in> carrier_vec n" unfolding ax[symmetric] using A xc by simp
-  have "herm_embed A *\<^sub>v (0\<^sub>v n @\<^sub>v x) =
-        (0\<^sub>m n n *\<^sub>v 0\<^sub>v n + A *\<^sub>v x) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v n + 0\<^sub>m n n *\<^sub>v x)"
-    unfolding herm_embed_def using A
-    by (simp add: four_block_mat_mult_vec[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat zero_carrier_vec xc])
-  also have "\<dots> = b @\<^sub>v 0\<^sub>v n"
-    unfolding zero_mat_mult_vec[of "0\<^sub>v n" n n, OF index_zero_vec(2)] zero_mat_mult_vec[OF x, of n]
-              mult_zero_vec_right[OF dagger_carrier[OF A]] ax
-    using bc by simp
-  finally show ?thesis .
-qed
+  unfolding herm_embed_mult[OF A _ x, of "0\<^sub>v n", simplified] ax
+  using mult_zero_vec_right[OF dagger_carrier[OF A]] by simp
 
 lemma herm_embed_inverse:
   assumes A: "A \<in> carrier_mat n n" and x: "dim_vec x = n" and ax: "A *\<^sub>v x = b"

@@ -57,35 +57,6 @@ begin
 
 abbreviation "H \<equiv> herm_embed A"
 
-lemma H_carrier: "H \<in> carrier_mat (M + N) (M + N)"
-  using A by (simp add: herm_embed_def)
-
-lemma H_hermitian: "hermitian H"
-proof -
-  have "H\<^sup>\<dagger> = four_block_mat ((0\<^sub>m M M)\<^sup>\<dagger>) ((A\<^sup>\<dagger>)\<^sup>\<dagger>) (A\<^sup>\<dagger>) ((0\<^sub>m N N)\<^sup>\<dagger>)"
-    unfolding herm_embed_def using A
-    by (simp add: dagger_four_block_mat_complex[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat])
-  also have "\<dots> = H" using A by (simp add: herm_embed_def dagger_zero_mat dagger_of_dagger_is_id)
-  finally show ?thesis unfolding hermitian_def .
-qed
-
-lemma H_mult:
-  assumes a: "dim_vec a = M" and c: "dim_vec c = N"
-  shows "H *\<^sub>v (a @\<^sub>v c) = (A *\<^sub>v c) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v a)"
-proof -
-  have ac: "a \<in> carrier_vec M" "c \<in> carrier_vec N" by (rule carrier_vecI[OF a], rule carrier_vecI[OF c])
-  have "H *\<^sub>v (a @\<^sub>v c) = (0\<^sub>m M M *\<^sub>v a + A *\<^sub>v c) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v a + 0\<^sub>m N N *\<^sub>v c)"
-    unfolding herm_embed_def using A
-    by (simp add: four_block_mat_mult_vec[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat ac])
-  also have "0\<^sub>m M M *\<^sub>v a = 0\<^sub>v M" by (rule zero_mat_mult_vec[OF a])
-  also have "0\<^sub>m N N *\<^sub>v c = 0\<^sub>v N" by (rule zero_mat_mult_vec[OF c])
-  also have "A\<^sup>\<dagger> *\<^sub>v a + 0\<^sub>v N = A\<^sup>\<dagger> *\<^sub>v a"
-    by (rule right_zero_vec, rule carrier_vecI) (use A a in simp)
-  also have "0\<^sub>v M + A *\<^sub>v c = A *\<^sub>v c"
-    by (rule left_zero_vec, rule carrier_vecI) (use A c in simp)
-  finally show ?thesis .
-qed
-
 text \<open>Eigenvectors of $H$ from singular pairs, and the kernel.\<close>
 
 lemma H_singular_pair:
@@ -95,19 +66,19 @@ lemma H_singular_pair:
     and "H *\<^sub>v (u @\<^sub>v (- v)) = complex_of_real (- s) \<cdot>\<^sub>v (u @\<^sub>v (- v))"
 proof -
   show "H *\<^sub>v (u @\<^sub>v v) = complex_of_real s \<cdot>\<^sub>v (u @\<^sub>v v)"
-    unfolding H_mult[OF u v] Av Au by (intro eq_vecI) (auto simp: u v)
+    unfolding herm_embed_mult[OF A u v] Av Au by (intro eq_vecI) (auto simp: u v)
   have nv: "dim_vec (- v) = N" using v by simp
   have "A *\<^sub>v (- v) = - (A *\<^sub>v v)" using A v by (intro eq_vecI) (simp_all add: scalar_prod_def sum_negf)
   hence "A *\<^sub>v (- v) = - (complex_of_real s \<cdot>\<^sub>v u)" unfolding Av .
   thus "H *\<^sub>v (u @\<^sub>v (- v)) = complex_of_real (- s) \<cdot>\<^sub>v (u @\<^sub>v (- v))"
-    unfolding H_mult[OF u nv] Au by (intro eq_vecI) (auto simp: u v)
+    unfolding herm_embed_mult[OF A u nv] Au by (intro eq_vecI) (auto simp: u v)
 qed
 
 lemma H_kernel: "dim_vec w = N \<Longrightarrow> A *\<^sub>v w = 0\<^sub>v M \<Longrightarrow> H *\<^sub>v (0\<^sub>v M @\<^sub>v w) = 0\<^sub>v (M + N)"
 proof -
   assume w: "dim_vec w = N" and Aw: "A *\<^sub>v w = 0\<^sub>v M"
   have "A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v M = 0\<^sub>v N" using A by (intro eq_vecI) (simp_all add: scalar_prod_def)
-  thus ?thesis unfolding H_mult[OF _ w, of "0\<^sub>v M", simplified] Aw by (intro eq_vecI) simp_all
+  thus ?thesis unfolding herm_embed_mult[OF A _ w, of "0\<^sub>v M", simplified] Aw by (intro eq_vecI) simp_all
 qed
 
 
@@ -134,9 +105,9 @@ proof (rule eq_vecI)
   assume v: "dim_vec v = M + N"
   fix r assume "r < dim_vec (- (J *\<^sub>v (H *\<^sub>v v)))"
   hence r: "r < M + N" using sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
-  have dHv: "dim_vec (H *\<^sub>v v) = M + N" using H_carrier by simp
+  have dHv: "dim_vec (H *\<^sub>v v) = M + N" using herm_embed_carrier[OF A] by simp
   have "(H *\<^sub>v (J *\<^sub>v v)) $ r = (\<Sum>s<M + N. H $$ (r, s) * ((if s < M then 1 else - 1) * v $ s))"
-    using r H_carrier v by (simp add: parity_mult scalar_prod_def atLeast0LessThan)
+    using r herm_embed_carrier[OF A] v by (simp add: parity_mult scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>s<M + N. - ((if r < M then 1 else - 1) * (H $$ (r, s) * v $ s)))"
   proof (rule sum.cong[OF refl])
     fix s assume "s \<in> {..<M + N}"
@@ -149,22 +120,22 @@ proof (rule eq_vecI)
     qed
   qed
   also have "\<dots> = (- (J *\<^sub>v (H *\<^sub>v v))) $ r"
-    using r H_carrier v dHv by (simp add: parity_mult scalar_prod_def atLeast0LessThan sum_negf sum_distrib_left)
+    using r herm_embed_carrier[OF A] v dHv by (simp add: parity_mult scalar_prod_def atLeast0LessThan sum_negf sum_distrib_left)
   finally show "(H *\<^sub>v (J *\<^sub>v v)) $ r = (- (J *\<^sub>v (H *\<^sub>v v))) $ r" .
-qed (use H_carrier sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] in simp)
+qed (use herm_embed_carrier[OF A] sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] in simp)
 
 text \<open>$Jg(H)J=g(-H)$; for even $g$, $g(H)$ commutes with $J$.\<close>
 
 lemma mat_fun_parity:
   shows "mat_fun g H = J * mat_fun (\<lambda>l. g (- l)) H * J"
-proof (rule mat_fun_eqI[OF H_carrier H_hermitian])
+proof (rule mat_fun_eqI[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
   let ?G = "mat_fun (\<lambda>l. g (- l)) H"
-  have G: "?G \<in> carrier_mat (M + N) (M + N)" by (rule mat_fun_carrier[OF H_carrier H_hermitian])
+  have G: "?G \<in> carrier_mat (M + N) (M + N)" by (rule mat_fun_carrier[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
   show "J * ?G * J \<in> carrier_mat (M + N) (M + N)" using G sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
   show "fun_on_eigen H g (J * ?G * J)" unfolding fun_on_eigen_def
   proof (intro allI impI)
     fix u l assume u: "dim_vec u = dim_row H" and ev: "H *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
-    have u': "dim_vec u = M + N" using u H_carrier by simp
+    have u': "dim_vec u = M + N" using u herm_embed_carrier[OF A] by simp
     have uc: "u \<in> carrier_vec (M + N)" by (rule carrier_vecI[OF u'])
     have Ju: "dim_vec (J *\<^sub>v u) = M + N" using sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
     have evJ: "H *\<^sub>v (J *\<^sub>v u) = complex_of_real (- l) \<cdot>\<^sub>v (J *\<^sub>v u)"
@@ -173,7 +144,7 @@ proof (rule mat_fun_eqI[OF H_carrier H_hermitian])
       also have "J *\<^sub>v (complex_of_real l \<cdot>\<^sub>v u) = complex_of_real l \<cdot>\<^sub>v (J *\<^sub>v u)" by (rule mult_mat_vec[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] uc])
       finally show ?thesis by (intro eq_vecI) (use sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] in simp_all)
     qed
-    have "?G *\<^sub>v (J *\<^sub>v u) = g (- (- l)) \<cdot>\<^sub>v (J *\<^sub>v u)" by (rule mat_fun_eigen[OF H_carrier H_hermitian Ju evJ])
+    have "?G *\<^sub>v (J *\<^sub>v u) = g (- (- l)) \<cdot>\<^sub>v (J *\<^sub>v u)" by (rule mat_fun_eigen[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A] Ju evJ])
     hence gJ: "?G *\<^sub>v (J *\<^sub>v u) = g l \<cdot>\<^sub>v (J *\<^sub>v u)" by simp
     have "(J * ?G * J) *\<^sub>v u = J *\<^sub>v (?G *\<^sub>v (J *\<^sub>v u))"
       using assoc_mult_mat_vec[OF mult_carrier_mat[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] G] sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] uc] assoc_mult_mat_vec[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] G carrier_vecI[OF Ju]] by simp
@@ -188,7 +159,7 @@ lemma even_fun_upper:
   shows "mat_fun g H *\<^sub>v (b @\<^sub>v 0\<^sub>v N) = Matrix.vec M (\<lambda>i. (mat_fun g H *\<^sub>v (b @\<^sub>v 0\<^sub>v N)) $ i) @\<^sub>v 0\<^sub>v N"
 proof -
   let ?G = "mat_fun g H" and ?v = "b @\<^sub>v 0\<^sub>v N"
-  have G: "?G \<in> carrier_mat (M + N) (M + N)" by (rule mat_fun_carrier[OF H_carrier H_hermitian])
+  have G: "?G \<in> carrier_mat (M + N) (M + N)" by (rule mat_fun_carrier[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
   have dv: "dim_vec ?v = M + N" using b by simp
   have Jv: "J *\<^sub>v ?v = ?v" using b by (intro eq_vecI) (simp_all add: parity_mult dv)
   have GJ: "?G = J * ?G * J" using mat_fun_parity[of g] unfolding even .
@@ -220,32 +191,32 @@ qed
 
 lemma pinv_factor: "herm_inv H = H * mat_fun inv_sq H"
 proof -
-  have "H * mat_fun inv_sq H = mat_fun complex_of_real H * mat_fun inv_sq H" using mat_fun_id[OF H_carrier H_hermitian] by simp
-  also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * inv_sq x) H" by (rule mat_fun_mult[OF H_carrier H_hermitian])
+  have "H * mat_fun inv_sq H = mat_fun complex_of_real H * mat_fun inv_sq H" using mat_fun_id[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]] by simp
+  also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * inv_sq x) H" by (rule mat_fun_mult[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
   also have "\<dots> = herm_inv H" unfolding herm_inv_def
-    by (rule mat_fun_cong[OF H_carrier H_hermitian]) (auto simp: inv_sq_def power2_eq_square field_simps inverse_eq_divide)
+    by (rule mat_fun_cong[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]]) (auto simp: inv_sq_def power2_eq_square field_simps inverse_eq_divide)
   finally show ?thesis ..
 qed
 
 lemma H_pinv: "H * herm_inv H = mat_fun nz_ind H"
 proof -
-  have "H * herm_inv H = mat_fun complex_of_real H * herm_inv H" using mat_fun_id[OF H_carrier H_hermitian] by simp
+  have "H * herm_inv H = mat_fun complex_of_real H * herm_inv H" using mat_fun_id[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]] by simp
   also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * complex_of_real (inverse x)) H"
-    unfolding herm_inv_def by (rule mat_fun_mult[OF H_carrier H_hermitian])
-  also have "\<dots> = mat_fun nz_ind H" by (rule mat_fun_cong[OF H_carrier H_hermitian]) (simp add: nz_ind_def flip: of_real_mult)
+    unfolding herm_inv_def by (rule mat_fun_mult[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
+  also have "\<dots> = mat_fun nz_ind H" by (rule mat_fun_cong[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]]) (simp add: nz_ind_def flip: of_real_mult)
   finally show ?thesis .
 qed
 
 lemma H_nz_ind: "H * mat_fun nz_ind H = H" "mat_fun nz_ind H * H = H"
 proof -
-  have "H * mat_fun nz_ind H = mat_fun complex_of_real H * mat_fun nz_ind H" using mat_fun_id[OF H_carrier H_hermitian] by simp
-  also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * nz_ind x) H" by (rule mat_fun_mult[OF H_carrier H_hermitian])
-  also have "\<dots> = mat_fun complex_of_real H" by (rule mat_fun_cong[OF H_carrier H_hermitian]) (simp add: nz_ind_def)
-  finally show "H * mat_fun nz_ind H = H" using mat_fun_id[OF H_carrier H_hermitian] by simp
-  have "mat_fun nz_ind H * H = mat_fun nz_ind H * mat_fun complex_of_real H" using mat_fun_id[OF H_carrier H_hermitian] by simp
-  also have "\<dots> = mat_fun (\<lambda>x. nz_ind x * complex_of_real x) H" by (rule mat_fun_mult[OF H_carrier H_hermitian])
-  also have "\<dots> = mat_fun complex_of_real H" by (rule mat_fun_cong[OF H_carrier H_hermitian]) (simp add: nz_ind_def)
-  finally show "mat_fun nz_ind H * H = H" using mat_fun_id[OF H_carrier H_hermitian] by simp
+  have "H * mat_fun nz_ind H = mat_fun complex_of_real H * mat_fun nz_ind H" using mat_fun_id[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]] by simp
+  also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * nz_ind x) H" by (rule mat_fun_mult[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
+  also have "\<dots> = mat_fun complex_of_real H" by (rule mat_fun_cong[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]]) (simp add: nz_ind_def)
+  finally show "H * mat_fun nz_ind H = H" using mat_fun_id[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]] by simp
+  have "mat_fun nz_ind H * H = mat_fun nz_ind H * mat_fun complex_of_real H" using mat_fun_id[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]] by simp
+  also have "\<dots> = mat_fun (\<lambda>x. nz_ind x * complex_of_real x) H" by (rule mat_fun_mult[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
+  also have "\<dots> = mat_fun complex_of_real H" by (rule mat_fun_cong[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]]) (simp add: nz_ind_def)
+  finally show "mat_fun nz_ind H * H = H" using mat_fun_id[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]] by simp
 qed
 
 text \<open>The pseudo-inverse solution (App.~A4).\<close>
@@ -259,7 +230,7 @@ proof -
   let ?v = "b @\<^sub>v 0\<^sub>v N" and ?Q = "mat_fun inv_sq H" and ?P = "mat_fun nz_ind H"
   have dv: "dim_vec ?v = M + N" using b by simp
   have vc: "?v \<in> carrier_vec (M + N)" by (rule carrier_vecI[OF dv])
-  have Qc: "?Q \<in> carrier_mat (M + N) (M + N)" and Pc: "?P \<in> carrier_mat (M + N) (M + N)" using mat_fun_carrier[OF H_carrier H_hermitian] by blast+
+  have Qc: "?Q \<in> carrier_mat (M + N) (M + N)" and Pc: "?P \<in> carrier_mat (M + N) (M + N)" using mat_fun_carrier[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]] by blast+
   have Ad: "A\<^sup>\<dagger> \<in> carrier_mat N M" by (rule dagger_carrier[OF A])
   define c where "c = Matrix.vec M (\<lambda>i. (?Q *\<^sub>v ?v) $ i)"
   define p where "p = Matrix.vec M (\<lambda>i. (?P *\<^sub>v ?v) $ i)"
@@ -272,28 +243,28 @@ proof -
   have Ad0: "A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v M = 0\<^sub>v N" using A Ad by (intro eq_vecI) (simp_all add: scalar_prod_def)
   have y: "herm_inv H *\<^sub>v ?v = 0\<^sub>v M @\<^sub>v x"
   proof -
-    have "herm_inv H *\<^sub>v ?v = H *\<^sub>v (?Q *\<^sub>v ?v)" unfolding pinv_factor by (rule assoc_mult_mat_vec[OF H_carrier Qc vc])
-    also have "\<dots> = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v c)" unfolding Qv by (rule H_mult[OF dc]) simp
+    have "herm_inv H *\<^sub>v ?v = H *\<^sub>v (?Q *\<^sub>v ?v)" unfolding pinv_factor by (rule assoc_mult_mat_vec[OF herm_embed_carrier[OF A] Qc vc])
+    also have "\<dots> = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v c)" unfolding Qv by (rule herm_embed_mult[OF A dc]) simp
     finally show ?thesis unfolding A0 x_def .
   qed
   have Hy: "H *\<^sub>v (0\<^sub>v M @\<^sub>v x) = p @\<^sub>v 0\<^sub>v N"
   proof -
     have "H *\<^sub>v (0\<^sub>v M @\<^sub>v x) = H *\<^sub>v (herm_inv H *\<^sub>v ?v)" unfolding y ..
     also have "\<dots> = (H * herm_inv H) *\<^sub>v ?v"
-      by (rule assoc_mult_mat_vec[OF H_carrier _ vc, symmetric]) (simp add: herm_inv_def mat_fun_carrier[OF H_carrier H_hermitian])
+      by (rule assoc_mult_mat_vec[OF herm_embed_carrier[OF A] _ vc, symmetric]) (simp add: herm_inv_def mat_fun_carrier[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
     finally show ?thesis unfolding H_pinv Pv .
   qed
   have Ax: "A *\<^sub>v x = p"
   proof -
-    have "(A *\<^sub>v x) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v M) = p @\<^sub>v 0\<^sub>v N" using Hy H_mult[of "0\<^sub>v M" x] dx by simp
+    have "(A *\<^sub>v x) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v M) = p @\<^sub>v 0\<^sub>v N" using Hy herm_embed_mult[OF A, of "0\<^sub>v M" x] dx by simp
     thus ?thesis by (rule append_vec_eq_upper[where M = M and N = N]) (use A dx dp Ad in simp_all)
   qed
   have Adp: "A\<^sup>\<dagger> *\<^sub>v p = A\<^sup>\<dagger> *\<^sub>v b"
   proof -
-    have "H *\<^sub>v (?P *\<^sub>v ?v) = (H * ?P) *\<^sub>v ?v" by (rule assoc_mult_mat_vec[OF H_carrier Pc vc, symmetric])
+    have "H *\<^sub>v (?P *\<^sub>v ?v) = (H * ?P) *\<^sub>v ?v" by (rule assoc_mult_mat_vec[OF herm_embed_carrier[OF A] Pc vc, symmetric])
     hence "H *\<^sub>v (p @\<^sub>v 0\<^sub>v N) = H *\<^sub>v ?v" unfolding Pv H_nz_ind(1) .
-    moreover have "H *\<^sub>v (p @\<^sub>v 0\<^sub>v N) = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v p)" by (rule H_mult[OF dp]) simp
-    moreover have "H *\<^sub>v ?v = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v b)" by (rule H_mult[OF b]) simp
+    moreover have "H *\<^sub>v (p @\<^sub>v 0\<^sub>v N) = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v p)" by (rule herm_embed_mult[OF A dp]) simp
+    moreover have "H *\<^sub>v ?v = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v b)" by (rule herm_embed_mult[OF A b]) simp
     ultimately have "(A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v p) = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v b)" by simp
     thus ?thesis by (rule append_vec_eq_lower[where M = M and N = N]) (use A Ad dp b in simp_all)
   qed
@@ -304,8 +275,8 @@ proof -
     have pb: "p = b"
     proof -
       have as: "?P *\<^sub>v (H *\<^sub>v (0\<^sub>v M @\<^sub>v z)) = (?P * H) *\<^sub>v (0\<^sub>v M @\<^sub>v z)"
-        by (rule assoc_mult_mat_vec[OF Pc H_carrier carrier_vecI, symmetric]) (use dz in simp)
-      have Hz: "H *\<^sub>v (0\<^sub>v M @\<^sub>v z) = (A *\<^sub>v z) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v M)" by (rule H_mult[OF _ dz]) simp
+        by (rule assoc_mult_mat_vec[OF Pc herm_embed_carrier[OF A] carrier_vecI, symmetric]) (use dz in simp)
+      have Hz: "H *\<^sub>v (0\<^sub>v M @\<^sub>v z) = (A *\<^sub>v z) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v M)" by (rule herm_embed_mult[OF A _ dz]) simp
       hence Hz': "H *\<^sub>v (0\<^sub>v M @\<^sub>v z) = ?v" unfolding Az Ad0 .
       from as have "?P *\<^sub>v ?v = H *\<^sub>v (0\<^sub>v M @\<^sub>v z)" unfolding H_nz_ind(2) Hz' .
       also have "\<dots> = ?v" by (rule Hz')

@@ -287,7 +287,7 @@ proof -
     by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: psi uw)
   have "hhl_W A t0 N *\<^sub>v tensor_vec psi (tensor_vec u w) =
         (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m (n * 2)) *\<^sub>v (ctrl_pow N (n * 2) ?V *\<^sub>v tensor_vec psi (tensor_vec u w))"
-    unfolding hhl_W_def pe_unitary_def nA by (rule assoc_mult_mat_vec[OF Fc ctrl_pow_carrier xc])
+    unfolding hhl_W_def pe_unitary_def nA by (rule assoc_mult_mat_vec[OF Fc ctrl_blocks_carrier xc])
   also have "\<dots> = tensor_vec ralpha (tensor_vec u w)"
     unfolding ralpha_def by (rule phase_estimation_reg[OF Vc uw Vev psi])
   finally show ?thesis .
@@ -452,8 +452,11 @@ end
 
 subsection \<open>The sine window\<close>
 
+definition win_coef :: "nat \<Rightarrow> nat \<Rightarrow> real" where
+  "win_coef N \<tau> = sqrt (2 / real N) * sin (pi * (real \<tau> + 1 / 2) / real N)"
+
 definition win_state :: "nat \<Rightarrow> complex Matrix.vec" where
-  "win_state N = Matrix.vec N (\<lambda>\<tau>. complex_of_real (sqrt (2 / real N) * sin (pi * (real \<tau> + 1 / 2) / real N)))"
+  "win_state N = Matrix.vec N (\<lambda>\<tau>. complex_of_real (win_coef N \<tau>))"
 
 lemma dim_win_state [simp]: "dim_vec (win_state N) = N"
   by (simp add: win_state_def)
@@ -468,7 +471,7 @@ proof -
     using N0 by (simp add: real_sqrt_divide field_simps)
   have "pe_amp_reg N (win_state N) \<phi> j
         = (\<Sum>\<tau><N. complex_of_real (sqrt (2 / real N)) * complex_of_real (sin (pi * (real \<tau> + 1 / 2) / real N)) * cis (2 * pi * real \<tau> * (\<phi> - real j / real N))) / complex_of_real (sqrt (real N))"
-    unfolding pe_amp_reg_formula[OF j] by (rule arg_cong[where f = "\<lambda>x. x / _"], rule sum.cong) (simp_all add: win_state_def)
+    unfolding pe_amp_reg_formula[OF j] by (rule arg_cong[where f = "\<lambda>x. x / _"], rule sum.cong) (simp_all add: win_state_def win_coef_def)
   also have "\<dots> = complex_of_real (sqrt (2 / real N) / sqrt (real N)) * (\<Sum>\<tau><N. complex_of_real (sin (pi * (real \<tau> + 1 / 2) / real N)) * cis (real \<tau> * (2 * pi * (\<phi> - real j / real N))))"
     by (simp add: sum_distrib_left sum_divide_distrib mult_ac)
   finally show ?thesis unfolding c .

@@ -19,14 +19,6 @@ primrec utrans_seq :: "complex Matrix.mat list \<Rightarrow> com" where
   "utrans_seq [] = SKIP"
 | "utrans_seq (U # Us) = Utrans U ;; utrans_seq Us"
 
-primrec circuit_mat :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
-  "circuit_mat K [] = 1\<^sub>m K"
-| "circuit_mat K (U # Us) = circuit_mat K Us * U"
-
-lemma circuit_mat_carrier:
-  "(\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K) \<Longrightarrow> circuit_mat K Us \<in> carrier_mat K K"
-  by (induction Us) auto
-
 context state_sig
 begin
 
@@ -133,15 +125,10 @@ proof (induction n)
   thus ?case using Suc by (simp add: add_ac)
 qed (use ij in simp)
 
-definition swap_idx :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
-  "swap_idx k i = (if i = 0 then k else if i = k then 0 else i)"
+text \<open>The transposition $\ket0\leftrightarrow\ket k$ is JNF's row swap.\<close>
 
-lemma swap_idx_inv [simp]: "swap_idx k (swap_idx k i) = i" by (simp add: swap_idx_def)
-lemma swap_idx_lt: "k < K \<Longrightarrow> i < K \<Longrightarrow> swap_idx k i < K" by (simp add: swap_idx_def)
-lemma swap_idx_eq: "swap_idx k i = j \<longleftrightarrow> i = swap_idx k j" by (auto simp: swap_idx_def)
-
-definition swap0 :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "swap0 K k = Matrix.mat K K (\<lambda>(i, j). if j = swap_idx k i then 1 else 0)"
+abbreviation swap0 :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "swap0 K k \<equiv> swaprows_mat K 0 k"
 
 abbreviation proj_basis :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "proj_basis K k \<equiv> proj_set K {k}"
@@ -155,25 +142,22 @@ swap the outcome $\ket k$ to $\ket0$.\<close>
 definition init_com :: "nat \<Rightarrow> com" where
   "init_com K = Measure K (proj_basis K) (map (\<lambda>k. Utrans (swap0 K k)) [0..<K])"
 
-lemma swap0_carrier [simp]: "swap0 K k \<in> carrier_mat K K" by (simp add: swap0_def)
-
-lemma swap0_adjoint: "k < K \<Longrightarrow> adjoint (swap0 K k) = swap0 K k"
-  by (rule eq_matI) (auto simp: swap0_def adjoint_eval swap_idx_eq)
-
-lemma swap0_square: "k < K \<Longrightarrow> swap0 K k * swap0 K k = 1\<^sub>m K"
-proof (rule eq_matI)
-  fix i j assume "k < K" "i < dim_row (1\<^sub>m K)" "j < dim_col (1\<^sub>m K)"
-  hence kij: "k < K" "i < K" "j < K" by simp_all
-  have "(swap0 K k * swap0 K k) $$ (i, j) = (\<Sum>l<K. (if l = swap_idx k i then 1 else 0) * (if j = swap_idx k l then 1 else 0))"
-    using kij by (simp add: swap0_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{swap_idx k i}. (if j = swap_idx k l then 1 else 0))"
-    using kij swap_idx_lt[of k K i] by (intro sum.mono_neutral_cong_right) auto
-  also have "\<dots> = 1\<^sub>m K $$ (i, j)" using kij by auto
-  finally show "(swap0 K k * swap0 K k) $$ (i, j) = 1\<^sub>m K $$ (i, j)" .
-qed (simp_all add: swap0_def)
+lemma swap0_adjoint: "adjoint (swap0 K k) = swap0 K k"
+  by (rule eq_matI) (auto simp: adjoint_eval)
 
 lemma swap0_unitary: "k < K \<Longrightarrow> Complex_Matrix.unitary (swap0 K k)"
-  unfolding Complex_Matrix.unitary_def inverts_mat_def using swap0_adjoint swap0_square by (simp add: swap0_def)
+  unfolding Complex_Matrix.unitary_def inverts_mat_def swap0_adjoint using swaprows_mat_inv[of 0 K k] by simp
+
+lemma swap0_conj:
+  assumes Q: "Q \<in> carrier_mat K K" and k: "k < K"
+  shows "swap0 K k * Q * swap0 K k = swap_cols_rows 0 k Q"
+proof -
+  have 0: "0 < K" using k by simp
+  have "swap_cols_rows 0 k Q = swap0 K k * (Q * swap0 K k)"
+    unfolding swap_cols_rows_def swapcols_mat[OF Q 0 k]
+    by (rule swaprows_mat[OF mult_carrier_mat[OF Q swaprows_mat_carrier] 0 k])
+  thus ?thesis using assoc_mult_mat[OF swaprows_mat_carrier Q swaprows_mat_carrier] by simp
+qed
 
 lemma proj_basis_sum: "matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K = 1\<^sub>m K"
 proof (rule eq_matI)
@@ -189,26 +173,6 @@ next
     by (rule matrix_sum_dim) (simp add: proj_set_adjoint proj_set_idem)
   thus "dim_row (matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K) = dim_row (1\<^sub>m K)"
     "dim_col (matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K) = dim_col (1\<^sub>m K)" by auto
-qed
-
-lemma swap0_left: "Q \<in> carrier_mat K K \<Longrightarrow> k < K \<Longrightarrow> i < K \<Longrightarrow> j < K \<Longrightarrow> (swap0 K k * Q) $$ (i, j) = Q $$ (swap_idx k i, j)"
-proof -
-  assume Q: "Q \<in> carrier_mat K K" and kij: "k < K" "i < K" "j < K"
-  have "(swap0 K k * Q) $$ (i, j) = (\<Sum>l<K. (if l = swap_idx k i then 1 else 0) * Q $$ (l, j))"
-    using Q kij by (simp add: swap0_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{swap_idx k i}. (if l = swap_idx k i then 1 else 0) * Q $$ (l, j))"
-    using kij swap_idx_lt[of k K i] by (intro sum.mono_neutral_cong_right) auto
-  finally show ?thesis by simp
-qed
-
-lemma swap0_right: "Q \<in> carrier_mat K K \<Longrightarrow> k < K \<Longrightarrow> i < K \<Longrightarrow> j < K \<Longrightarrow> (Q * swap0 K k) $$ (i, j) = Q $$ (i, swap_idx k j)"
-proof -
-  assume Q: "Q \<in> carrier_mat K K" and kij: "k < K" "i < K" "j < K"
-  have "(Q * swap0 K k) $$ (i, j) = (\<Sum>l<K. Q $$ (i, l) * (if j = swap_idx k l then 1 else 0))"
-    using Q kij by (simp add: swap0_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{swap_idx k j}. Q $$ (i, l) * (if j = swap_idx k l then 1 else 0))"
-    using kij swap_idx_lt[of k K j] by (intro sum.mono_neutral_cong_right) (auto simp: swap_idx_eq)
-  finally show ?thesis by (simp add: swap_idx_eq)
 qed
 
 lemma proj_basis_sandwich:
@@ -232,15 +196,6 @@ proof (rule eq_matI)
   also have "\<dots> = (P $$ (k, k) \<cdot>\<^sub>m proj_basis K k) $$ (i, j)" using l ij by (auto simp: proj_set_index)
   finally show "(proj_basis K k * P * proj_basis K k) $$ (i, j) = (P $$ (k, k) \<cdot>\<^sub>m proj_basis K k) $$ (i, j)" .
 qed (use P in simp_all)
-
-lemma mult_unit_vec_index: "(A :: complex Matrix.mat) \<in> carrier_mat K K \<Longrightarrow> i < K \<Longrightarrow> l < K \<Longrightarrow> (A *\<^sub>v unit_vec K i) $ l = A $$ (l, i)"
-proof -
-  assume A: "A \<in> carrier_mat K K" and il: "i < K" "l < K"
-  have "(A *\<^sub>v unit_vec K i) $ l = (\<Sum>a<K. A $$ (l, a) * unit_vec K i $ a)"
-    using A il by (simp add: scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>a\<in>{i}. A $$ (l, a) * unit_vec K i $ a)" using il by (intro sum.mono_neutral_cong_right) auto
-  finally show ?thesis using il by simp
-qed
 
 context state_sig
 begin
@@ -287,25 +242,19 @@ proof -
   have Qd: "Q \<in> carrier_mat d d" using Q unfolding is_quantum_predicate_def by simp
   let ?P = "\<lambda>k. adjoint (swap0 d k) * Q * swap0 d k"
   have qP: "is_quantum_predicate (?P k)" if "k < d" for k
-    by (rule qp_close_under_unitary_operator[OF swap0_carrier swap0_unitary[OF that] Q])
+    by (rule qp_close_under_unitary_operator[OF swaprows_mat_carrier swap0_unitary[OF that] Q])
   have br: "\<turnstile>\<^sub>p {?P k} map (\<lambda>k. Utrans (swap0 d k)) [0..<d] ! k {Q}" if "k < d" for k
     using hoare_partial.intros(2)[OF Q, of "swap0 d k"] that by simp
   have h: "\<turnstile>\<^sub>p {matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d} init_com d {Q}"
     unfolding init_com_def by (rule hoare_partial.intros(4)[OF qP Q br])
   have Pkk: "?P k $$ (k, k) = Q $$ (0, 0)" if k: "k < d" for k
-  proof -
-    have XQ: "swap0 d k * Q \<in> carrier_mat d d" by (rule mult_carrier_mat[OF swap0_carrier Qd])
-    have "?P k $$ (k, k) = (swap0 d k * Q * swap0 d k) $$ (k, k)" using swap0_adjoint[OF k] by simp
-    also have "\<dots> = (swap0 d k * Q) $$ (k, swap_idx k k)" by (rule swap0_right[OF XQ k k k])
-    also have "\<dots> = Q $$ (swap_idx k k, swap_idx k k)" using swap_idx_lt[OF k k] by (intro swap0_left[OF Qd k k])
-    finally show ?thesis using d0 by (simp add: swap_idx_def)
-  qed
+    using k d0 carrier_matD[OF Qd] by (simp add: swap0_adjoint swap0_conj[OF Qd k])
   have "matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d = Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d"
   proof (rule eq_matI)
     fix i j assume "i < dim_row (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d)" "j < dim_col (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d)"
     hence ij: "i < d" "j < d" by simp_all
     have Pc: "?P k \<in> carrier_mat d d" for k
-      by (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF swap0_carrier] Qd] swap0_carrier])
+      by (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF swaprows_mat_carrier] Qd] swaprows_mat_carrier])
     have PKc: "adjoint (proj_basis d k) * ?P k * proj_basis d k \<in> carrier_mat d d" for k
       by (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF proj_set_carrier] Pc] proj_set_carrier])
     have "matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d $$ (i, j)
@@ -315,7 +264,7 @@ proof -
             = (\<Sum>k<d. (adjoint (proj_basis d k) * ?P k * proj_basis d k) $$ (i, j))"
         by (rule matrix_sum_index[OF PKc ij])
       also have "\<dots> = (\<Sum>k<d. (Q $$ (0, 0) \<cdot>\<^sub>m proj_basis d k) $$ (i, j))"
-        by (rule sum.cong[OF refl]) (simp add: proj_set_adjoint proj_basis_sandwich[OF Pc] Pkk)
+        by (rule sum.cong[OF refl]) (simp only: proj_set_adjoint proj_basis_sandwich[OF Pc] Pkk lessThan_iff)
       finally show ?thesis .
     qed
     also have "\<dots> = (\<Sum>k\<in>{i}. (Q $$ (0, 0) \<cdot>\<^sub>m proj_basis d k) $$ (i, j))"
@@ -325,7 +274,7 @@ proof -
   next
     have "matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d \<in> carrier_mat d d"
       by (rule matrix_sum_dim) (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF proj_set_carrier]
-          mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF swap0_carrier] Qd] swap0_carrier]] proj_set_carrier])
+          mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF swaprows_mat_carrier] Qd] swaprows_mat_carrier]] proj_set_carrier])
     thus "dim_row (matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d) = dim_row (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d)"
       "dim_col (matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d) = dim_col (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d)" by auto
   qed
@@ -610,14 +559,20 @@ proof (rule eq_vecI)
   finally show "tensor_vec (unit_vec N 0) (unit_vec m 0) $ r = unit_vec (N * m) 0 $ r" .
 qed (simp add: tensor_vec_dim)
 
-text \<open>The programs for any gate list \<open>Us\<close>: initialise, run \<open>Us\<close>, measure the ancilla; or repeat
-while the ancilla reads $0$.\<close>
+text \<open>The programs for any gate list \<open>Us\<close> and two-outcome measurement \<open>M\<close>: initialise, run \<open>Us\<close>,
+measure; or repeat while the outcome is $0$.  HHL measures the ancilla.\<close>
 
-definition hhl_prog :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
-  "hhl_prog K Us = init_com K ;; utrans_seq Us ;; Measure 2 (anc_proj K) [SKIP, SKIP]"
+definition prog_meas :: "nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
+  "prog_meas K M Us = init_com K ;; utrans_seq Us ;; Measure 2 M [SKIP, SKIP]"
 
-definition hhl_rus_prog :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
-  "hhl_rus_prog K Us = init_com K ;; utrans_seq Us ;; While (\<lambda>j. anc_proj K (1 - j)) (init_com K ;; utrans_seq Us)"
+definition rus_meas :: "nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
+  "rus_meas K M Us = init_com K ;; utrans_seq Us ;; While (\<lambda>j. M (1 - j)) (init_com K ;; utrans_seq Us)"
+
+abbreviation hhl_prog :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
+  "hhl_prog K Us \<equiv> prog_meas K (anc_proj K) Us"
+
+abbreviation hhl_rus_prog :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
+  "hhl_rus_prog K Us \<equiv> rus_meas K (anc_proj K) Us"
 
 definition hhl_program :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> com" where
   "hhl_program A Ub t0 k C = hhl_prog (2 ^ k * (dim_row A * 2)) (hhl_gates A Ub t0 k C)"
@@ -744,7 +699,7 @@ proof -
     have s2: "(\<Sum>j<2. F j) = F 0 + F 1" for F :: "nat \<Rightarrow> complex" by (simp add: numeral_2_eq_2)
     show ?thesis unfolding s2 prog_branch(1) prog_branch(2) w0 w1 i0 i1 by simp
   qed
-  show ?thesis using h unfolding dd circ prog_out val hhl_prog_def .
+  show ?thesis using h unfolding dd circ prog_out val prog_meas_def .
 qed
 
 theorem hhl_success:
@@ -995,7 +950,7 @@ proof -
     thus ?thesis unfolding s2 prog_branch(1) prog_branch(2) post_branches i1 branch_overlaps(5) by simp
   qed
   have e1: "(1::complex) \<cdot>\<^sub>m 1\<^sub>m ?D = 1\<^sub>m ?D" by (rule eq_matI) auto
-  show ?thesis using h unfolding dd circ prog_out val hhl_prog_def e1 .
+  show ?thesis using h unfolding dd circ prog_out val prog_meas_def e1 .
 qed
 
 theorem hhl_correct:
@@ -1065,7 +1020,7 @@ proof -
     by (rule hoare_partial.intros(5)[OF qT q1[folded dd, unfolded dd]]) (use body in simp)
   have "hoare_partial (1\<^sub>m ?D) (?S ;; While ?M ?S) ?T"
     by (rule hoare_partial.intros(3)[OF q1 qR qT body loop])
-  thus ?thesis unfolding hhl_rus_prog_def .
+  thus ?thesis unfolding rus_meas_def .
 qed
 
 theorem hhl_rus_correct:
@@ -1173,7 +1128,7 @@ lemma hhl_prog_well_com:
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   have dd: "d = 2 ^ k * (n * 2)" by (simp add: d_def)
-  show ?thesis unfolding hhl_prog_def dd[symmetric]
+  show ?thesis unfolding prog_meas_def dd[symmetric]
     using well_com_init well_com_utrans_seq[of Us] Us anc_proj_measurement[of d] n0 by (auto simp: dd)
 qed
 
@@ -1183,7 +1138,7 @@ lemma hhl_rus_prog_well_com:
 proof -
   interpret state_sig "[2 ^ k, n, 2]" .
   have dd: "d = 2 ^ k * (n * 2)" by (simp add: d_def)
-  show ?thesis unfolding hhl_rus_prog_def dd[symmetric]
+  show ?thesis unfolding rus_meas_def dd[symmetric]
     using well_com_init well_com_utrans_seq[of Us] Us anc_proj_swap_measurement[of d] n0 by (auto simp: dd)
 qed
 
@@ -1196,7 +1151,7 @@ lemma hhl_rus_well_com: "state_sig.well_com [2 ^ k, n, 2] (hhl_rus A Ub t0 k C)"
 lemma hhl_prog_while_free: "while_free (hhl_prog K Us)"
 proof -
   have "while_free (utrans_seq Us)" for Us by (induction Us) auto
-  thus ?thesis by (simp add: hhl_prog_def init_com_def list_all_iff)
+  thus ?thesis by (simp add: prog_meas_def init_com_def list_all_iff)
 qed
 
 lemma hhl_program_while_free: "while_free (hhl_program A Ub t0 k C)"

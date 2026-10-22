@@ -68,7 +68,7 @@ lemma gs_div2: "x < 4 \<Longrightarrow> gs x div 2 = x mod 2"
 proof -
   assume "x < 4"
   hence "x = 0 \<or> x = 1 \<or> x = 2 \<or> x = 3" by auto
-  thus ?thesis by (auto simp: gs_def)
+  thus ?thesis by (auto simp: Transposition.transpose_def)
 qed
 
 lemma div2_mod2: "z div 2 mod 2 = z mod 4 div 2" for z :: nat
@@ -202,13 +202,24 @@ subsection \<open>Diagonal unitaries\<close>
 definition dmat :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> complex Matrix.mat" where
   "dmat N \<phi> = mat_diag N (\<lambda>r. cis (\<phi> r))"
 
-definition Qm :: "complex Matrix.mat" where
-  "Qm = Matrix.mat 2 2 (\<lambda>(i, j). complex_of_real (1 / sqrt 2) * (if i = 0 then 1 else if j = 0 then \<i> else - \<i>))"
+text \<open>$Q=SH$ turns $Z$-rotations into $Y$-rotations.\<close>
 
-lemma Qm_carrier [simp]: "Qm \<in> carrier_mat 2 2" by (simp add: Qm_def)
+abbreviation Qm :: "complex Matrix.mat" where
+  "Qm \<equiv> Phase_S * Hadamard"
 
-lemma sum2: "(\<Sum>u\<in>{0..<2}. f u) = f 0 + f (1::nat)" for f :: "nat \<Rightarrow> complex"
-  by (simp add: numeral_2_eq_2)
+lemma Qm_eq: "Qm = Matrix.mat 2 2 (\<lambda>(i, j). complex_of_real (1 / sqrt 2) * (if i = 0 then 1 else if j = 0 then \<i> else - \<i>))"
+proof (rule eq_matI)
+  have HD: "dim_row Hadamard = 2" "dim_col Hadamard = 2" by (simp_all add: Hadamard_def H_def)
+  fix i j assume "i < dim_row (Matrix.mat 2 2 (\<lambda>(i, j). complex_of_real (1 / sqrt 2) * (if i = 0 then 1 else if j = 0 then \<i> else - \<i>) :: complex))"
+    and "j < dim_col (Matrix.mat 2 2 (\<lambda>(i, j). complex_of_real (1 / sqrt 2) * (if i = 0 then 1 else if j = 0 then \<i> else - \<i>) :: complex))"
+  hence i: "i < 2" and j: "j < 2" by simp_all
+  have e: "Qm $$ (i, j) = Phase_S $$ (i, 0) * Hadamard $$ (0, j) + Phase_S $$ (i, 1) * Hadamard $$ (1, j)"
+    using i j HD carrier_matD[OF Phase_S_carrier] by (simp add: scalar_prod_def sumof2 atLeast0LessThan)
+  show "Qm $$ (i, j) = Matrix.mat 2 2 (\<lambda>(i, j). complex_of_real (1 / sqrt 2) * (if i = 0 then 1 else if j = 0 then \<i> else - \<i>)) $$ (i, j)"
+    unfolding e using i j by (auto simp: Phase_S_def Hadamard_def H_def less_2_cases_iff of_real_divide)
+qed (simp_all add: Phase_S_def Hadamard_def H_def)
+
+lemma Qm_carrier [simp]: "Qm \<in> carrier_mat 2 2" by (simp add: Qm_eq)
 
 lemma Qm_unitary: "Quantum.unitary Qm"
 proof -
@@ -216,8 +227,8 @@ proof -
     by (simp flip: of_real_mult)
   have s2: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2" by (simp flip: of_real_mult)
   have "(Qm\<^sup>\<dagger>) * Qm = 1\<^sub>m 2" "Qm * (Qm\<^sup>\<dagger>) = 1\<^sub>m 2"
-    by (rule eq_matI, auto simp: Qm_def dagger_def scalar_prod_def sum2 less_Suc_eq numeral_2_eq_2 s s2)+
-  thus ?thesis by (simp add: Quantum.unitary_def Qm_def)
+    by (rule eq_matI, auto simp: Qm_eq dagger_def scalar_prod_def atLeast0LessThan sumof2 less_Suc_eq numeral_2_eq_2 s s2)+
+  thus ?thesis by (simp add: Quantum.unitary_def Qm_eq)
 qed
 
 lemma Qm_Rot: "(Qm\<^sup>\<dagger>) * Rot b * Qm = dmat 2 (\<lambda>a. if a = 0 then - b else b)"
@@ -226,7 +237,7 @@ proof -
     by (simp flip: of_real_mult)
   have s2: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2" by (simp flip: of_real_mult)
   show ?thesis
-    by (rule eq_matI) (auto simp: Qm_def Rot_def dmat_def mat_diag_def dagger_def scalar_prod_def sum2 less_Suc_eq numeral_2_eq_2 s s2
+    by (rule eq_matI) (auto simp: Qm_eq Rot_def dmat_def mat_diag_def dagger_def scalar_prod_def atLeast0LessThan sumof2 less_Suc_eq numeral_2_eq_2 s s2
         cis.ctr complex_eq_iff algebra_simps)
 qed
 
@@ -300,7 +311,7 @@ fun diag_gates :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> comp
 | "diag_gates (Suc k) \<phi> = (1\<^sub>m (2 ^ Suc k) \<Otimes> Qm) # ucr_gates (Suc k) 1 (ph_diff \<phi>)
      @ (1\<^sub>m (2 ^ Suc k) \<Otimes> (Qm\<^sup>\<dagger>)) # map (\<lambda>U. U \<Otimes> 1\<^sub>m 2) (diag_gates k (ph_mean \<phi>))"
 
-lemma Qm_dagger_carrier [simp]: "Qm\<^sup>\<dagger> \<in> carrier_mat 2 2" by (simp add: dagger_def Qm_def)
+lemma Qm_dagger_carrier [simp]: "Qm\<^sup>\<dagger> \<in> carrier_mat 2 2" by (simp add: dagger_def Qm_eq)
 
 lemma ucr1_carrier: "U \<in> set (ucr_gates j 1 \<theta>) \<Longrightarrow> U \<in> carrier_mat (2 ^ j * 2) (2 ^ j * 2)"
   using ucr_gates_ok[of U j 1 \<theta>] by simp
@@ -781,7 +792,11 @@ proof -
   have QQ: "?Q * (?Q\<^sup>\<dagger>) = 1\<^sub>m ?N" using bp(3,4) unfolding Quantum.unitary_def by auto
   fix i j assume i: "i < ?N" and j: "j < ?N"
   have Qi: "?Q $$ (l, 0) = p $ l" if "l < ?N" for l
-    using mult_unit_vec_index[OF bp(3) _ that, of 0] bp(1) by simp
+  proof -
+    have "(?Q *\<^sub>v unit_vec ?N 0) $ l = ?Q $$ (l, 0)"
+      using mult_unit_vec[OF bp(3), of 0] that carrier_matD[OF bp(3)] by simp
+    thus ?thesis unfolding bp(1) by simp
+  qed
   show "circuit_mat ?N (eig_gates m p \<theta>) $$ (i, j) = (if i = j then 1 else 0) + (cis \<theta> - 1) * p $ i * cnj (p $ j)"
     unfolding e using conj_rank1_entry[OF bp(3) QQ i j, of 0 \<theta>] Qi[OF i] Qi[OF j] by simp
 qed

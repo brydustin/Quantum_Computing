@@ -10,14 +10,10 @@ $1/(2(e-1))$ (Nielsen and Chuang, Eq.~(5.34)), so $t=n+\lceil\log_2(2+1/(2\varep
 clock qubits give $\varphi$ to within $2^{-n}$ with probability at least $1-\varepsilon$.\<close>
 
 definition circ_dist :: "real \<Rightarrow> real \<Rightarrow> real" where
-  "circ_dist x y = \<bar>(x - y) - of_int (round (x - y))\<bar>"
+  "circ_dist x y = \<bar>wrap (x - y)\<bar>"
 
 lemma circ_dist_le: "circ_dist x y \<le> 1 / 2"
-proof -
-  have "x - y - 1 / 2 \<le> of_int (round (x - y))" "of_int (round (x - y)) \<le> x - y + 1 / 2"
-    by (rule of_int_round_ge, rule of_int_round_le)
-  thus ?thesis unfolding circ_dist_def abs_le_iff by linarith
-qed
+  using wrap_range[of "x - y"] unfolding circ_dist_def by linarith
 
 lemma pe_amp_int: "pe_amp N (\<phi> + of_int z) j = pe_amp N \<phi> j"
 proof -
@@ -39,7 +35,7 @@ lemma pe_amp_circ_tail:
   shows "(cmod (pe_amp N \<phi> j))\<^sup>2 \<le> 1 / (4 * (real N)\<^sup>2 * (circ_dist \<phi> (real j / real N))\<^sup>2)"
 proof -
   define \<psi> where "\<psi> = \<phi> - of_int (round (\<phi> - real j / real N))"
-  have c: "circ_dist \<phi> (real j / real N) = \<bar>\<psi> - real j / real N\<bar>" unfolding circ_dist_def \<psi>_def by simp
+  have c: "circ_dist \<phi> (real j / real N) = \<bar>\<psi> - real j / real N\<bar>" unfolding circ_dist_def wrap_def \<psi>_def by simp
   have d: "\<bar>\<psi> - real j / real N\<bar> \<le> 1 / 2" using circ_dist_le[of \<phi> "real j / real N"] c by simp
   have ne: "\<psi> \<noteq> real j / real N" using d0 c by auto
   have "(cmod (pe_amp N \<phi> j))\<^sup>2 = (cmod (pe_amp N \<psi> j))\<^sup>2" unfolding \<psi>_def by (simp only: pe_amp_circ[symmetric])
@@ -55,7 +51,7 @@ definition pe_round :: "nat \<Rightarrow> real \<Rightarrow> nat" where
   "pe_round N \<phi> = nat (round (real N * \<phi>) mod int N)"
 
 lemma circ_dist_int: "circ_dist x y \<le> \<bar>x - y - of_int z\<bar>"
-  unfolding circ_dist_def by (rule round_diff_minimal)
+  unfolding circ_dist_def wrap_def by (rule round_diff_minimal)
 
 lemma pe_round_lt: "0 < N \<Longrightarrow> pe_round N \<phi> < N"
   unfolding pe_round_def by (simp add: nat_less_iff)
@@ -92,7 +88,7 @@ lemma pe_amp_near:
   shows "4 / pi\<^sup>2 \<le> (cmod (pe_amp N \<phi> j))\<^sup>2"
 proof -
   define \<psi> where "\<psi> = \<phi> - of_int (round (\<phi> - real j / real N))"
-  have c: "circ_dist \<phi> (real j / real N) = \<bar>\<psi> - real j / real N\<bar>" unfolding circ_dist_def \<psi>_def by simp
+  have c: "circ_dist \<phi> (real j / real N) = \<bar>\<psi> - real j / real N\<bar>" unfolding circ_dist_def wrap_def \<psi>_def by simp
   have "4 / pi\<^sup>2 \<le> (cmod (pe_amp N \<psi> j))\<^sup>2" by (rule phase_estimation_bound[OF N]) (use d c in simp)
   thus ?thesis unfolding \<psi>_def by (simp only: pe_amp_circ[symmetric])
 qed
@@ -194,7 +190,7 @@ theorem pe_tail_bound:
 proof -
   define y where "y j = real N * ((\<phi> - real j / real N) - of_int (round (\<phi> - real j / real N)))" for j
   have cy: "real N * circ_dist \<phi> (real j / real N) = \<bar>y j\<bar>" for j
-    unfolding circ_dist_def y_def using N by (simp add: abs_mult)
+    unfolding circ_dist_def wrap_def y_def using N by (simp add: abs_mult)
   define S where "S = {j. j < N \<and> e < real N * circ_dist \<phi> (real j / real N)}"
   define Sp where "Sp = {j \<in> S. 0 < y j}"
   define Sm where "Sm = {j \<in> S. y j < 0}"

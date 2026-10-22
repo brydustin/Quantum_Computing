@@ -112,9 +112,14 @@ definition fun_on_eigen :: "complex Matrix.mat \<Rightarrow> (real \<Rightarrow>
 definition mat_fun :: "(real \<Rightarrow> complex) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "mat_fun g A = (SOME B. B \<in> carrier_mat (dim_row A) (dim_row A) \<and> fun_on_eigen A g B)"
 
+text \<open>The spectrum: the real eigenvalues (JNF's \<open>eigenvalue\<close>).\<close>
+
 definition herm_spectrum :: "complex Matrix.mat \<Rightarrow> real set" where
-  "herm_spectrum A = {l. \<exists>v. dim_vec v = dim_row A \<and> v \<noteq> 0\<^sub>v (dim_row A) \<and>
-     A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v}"
+  "herm_spectrum A = {l. eigenvalue A (complex_of_real l)}"
+
+lemma herm_spectrum_iff:
+  "l \<in> herm_spectrum A \<longleftrightarrow> (\<exists>v. dim_vec v = dim_row A \<and> v \<noteq> 0\<^sub>v (dim_row A) \<and> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v)"
+  unfolding herm_spectrum_def mem_Collect_eq eigenvalue_def eigenvector_def carrier_vec_def by simp
 
 lemma fun_on_eigenD:
   "fun_on_eigen A g B \<Longrightarrow> dim_vec v = dim_row A \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow>
@@ -169,33 +174,32 @@ proof (intro allI impI)
   finally show "(U * diag_cmat (map g D) * (U\<^sup>\<dagger>)) *\<^sub>v v = g l \<cdot>\<^sub>v v" .
 qed
 
-text \<open>Uniqueness: two matrices that agree on the eigenvectors $u_j$ agree on $U$, hence are equal.\<close>
+text \<open>Two matrices that agree on every eigenvector of a Hermitian $A$ agree on its eigenbasis $U$, hence
+are equal.\<close>
 
-lemma fun_on_eigen_unique:
+lemma eigvec_mat_eqI:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
-      and B1: "B1 \<in> carrier_mat n n" "fun_on_eigen A g B1"
-      and B2: "B2 \<in> carrier_mat n n" "fun_on_eigen A g B2"
+      and B1: "B1 \<in> carrier_mat K n" and B2: "B2 \<in> carrier_mat K n"
+      and eq: "\<And>v l. dim_vec v = n \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow> B1 *\<^sub>v v = B2 *\<^sub>v v"
   shows "B1 = B2"
 proof -
   obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
   note d = spectral_decompD[OF A(1) sd]
-  have cU: "dim_vec (Matrix.col U j) = dim_row A" for j using d(1) A(1) by simp
   have BU: "B1 * U = B2 * U"
   proof (rule Matrix.mat_col_eqI)
     fix j assume "j < dim_col (B2 * U)"
     hence j: "j < n" using d(1) by simp
-    have ev: "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j" by (rule spectral_decomp_col[OF A(1) sd j])
-    have "Matrix.col (B1 * U) j = B1 *\<^sub>v Matrix.col U j" by (rule col_mult2[OF B1(1) d(1) j])
-    also have "\<dots> = g (D ! j) \<cdot>\<^sub>v Matrix.col U j" by (rule fun_on_eigenD[OF B1(2) cU ev])
-    also have "\<dots> = B2 *\<^sub>v Matrix.col U j" by (rule fun_on_eigenD[OF B2(2) cU ev, symmetric])
-    also have "\<dots> = Matrix.col (B2 * U) j" by (rule col_mult2[OF B2(1) d(1) j, symmetric])
+    have cU: "dim_vec (Matrix.col U j) = n" using d(1) by simp
+    have "Matrix.col (B1 * U) j = B1 *\<^sub>v Matrix.col U j" by (rule col_mult2[OF B1 d(1) j])
+    also have "\<dots> = B2 *\<^sub>v Matrix.col U j" by (rule eq[OF cU spectral_decomp_col[OF A(1) sd j]])
+    also have "\<dots> = Matrix.col (B2 * U) j" by (rule col_mult2[OF B2 d(1) j, symmetric])
     finally show "Matrix.col (B1 * U) j = Matrix.col (B2 * U) j" .
-  qed (use B1(1) B2(1) d(1) in simp_all)
+  qed (use B1 B2 d(1) in simp_all)
   have "B1 = (B1 * U) * (U\<^sup>\<dagger>)"
-    using assoc_mult_mat[OF B1(1) d(1) dagger_carrier[OF d(1)]] d(5) B1(1) by simp
+    using assoc_mult_mat[OF B1 d(1) dagger_carrier[OF d(1)]] d(5) B1 by simp
   also have "\<dots> = (B2 * U) * (U\<^sup>\<dagger>)" by (simp only: BU)
   also have "\<dots> = B2"
-    using assoc_mult_mat[OF B2(1) d(1) dagger_carrier[OF d(1)]] d(5) B2(1) by simp
+    using assoc_mult_mat[OF B2 d(1) dagger_carrier[OF d(1)]] d(5) B2 by simp
   finally show ?thesis .
 qed
 
@@ -225,7 +229,11 @@ lemma mat_fun_eqI:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
       and B: "B \<in> carrier_mat n n" "fun_on_eigen A g B"
   shows "mat_fun g A = B"
-  by (rule fun_on_eigen_unique[OF A mat_fun_carrier[OF A] mat_fun_on_eigen[OF A] B])
+proof (rule eigvec_mat_eqI[OF A mat_fun_carrier[OF A] B(1)])
+  fix v l assume v: "dim_vec v = n" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
+  show "mat_fun g A *\<^sub>v v = B *\<^sub>v v"
+    using fun_on_eigenD[OF mat_fun_on_eigen[OF A] _ ev] fun_on_eigenD[OF B(2) _ ev] v A(1) by simp
+qed
 
 theorem mat_fun_decomp:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and sd: "spectral_decomp A U D"
@@ -255,7 +263,7 @@ proof (rule mat_fun_eqI[OF A mat_fun_carrier[OF A]])
       thus ?thesis using hv by (auto intro!: eq_vecI)
     next
       case False
-      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_def using v ev by blast
+      hence "l \<in> herm_spectrum A" unfolding herm_spectrum_iff using v ev by blast
       thus ?thesis using hv gh by simp
     qed
   qed

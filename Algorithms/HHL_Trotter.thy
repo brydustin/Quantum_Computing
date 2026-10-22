@@ -74,28 +74,13 @@ proof -
   thus ?thesis using vnorm_add_le[of a "(-1) \<cdot>\<^sub>v b"] assms cpx_vec_length_smult[of "-1" b] by simp
 qed
 
-lemma vnorm_pos:
-  assumes v: "dim_vec v = n" and nz: "v \<noteq> 0\<^sub>v n"
-  shows "0 < \<parallel>v\<parallel>"
-proof -
-  have "\<parallel>v\<parallel> \<noteq> 0"
-  proof
-    assume "\<parallel>v\<parallel> = 0"
-    hence "(\<Sum>j<n. (cmod (v $ j))\<^sup>2) = 0" using vnorm_sq[of v] v by simp
-    hence "\<forall>j\<in>{..<n}. (cmod (v $ j))\<^sup>2 = 0" by (subst (asm) sum_nonneg_eq_0_iff) auto
-    hence "v = 0\<^sub>v n" using v by (intro eq_vecI) auto
-    thus False using nz by simp
-  qed
-  thus ?thesis using vnorm_ge0[of v] by linarith
-qed
-
 lemma herm_spectrum_bound:
   assumes A: "A \<in> carrier_mat n n" and b: "\<And>v. dim_vec v = n \<Longrightarrow> \<parallel>A *\<^sub>v v\<parallel> \<le> L * \<parallel>v\<parallel>"
       and l: "l \<in> herm_spectrum A"
   shows "\<bar>l\<bar> \<le> L"
 proof -
   obtain v where v: "dim_vec v = n" "v \<noteq> 0\<^sub>v n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
-    using l A unfolding herm_spectrum_def by auto
+    using l A unfolding herm_spectrum_iff by auto
   have "\<bar>l\<bar> * \<parallel>v\<parallel> = \<parallel>A *\<^sub>v v\<parallel>" using v(3) by (simp add: cpx_vec_length_smult)
   also have "\<dots> \<le> L * \<parallel>v\<parallel>" by (rule b[OF v(1)])
   finally show ?thesis using mult_right_le_imp_le vnorm_pos[OF v(1,2)] by blast
@@ -280,17 +265,23 @@ lemma herm_boundedD:
   shows "H \<in> carrier_mat n n" "hermitian H" "\<And>v. dim_vec v = n \<Longrightarrow> \<parallel>H *\<^sub>v v\<parallel> \<le> L * \<parallel>v\<parallel>"
   using assms unfolding herm_bounded_def by auto
 
+lemma herm_bounded_herm: "herm_bounded n L H \<Longrightarrow> H \<in> carrier_mat n n \<and> hermitian H"
+  by (simp add: herm_bounded_def)
+
+lemma tprod_carrier:
+  "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n \<and> hermitian H) \<Longrightarrow> tprod n d Hs \<in> carrier_mat n n"
+proof (induction Hs)
+  case (Cons H Hs)
+  have h: "H \<in> carrier_mat n n" "hermitian H" using Cons.prems by auto
+  show ?case using mult_carrier_mat[OF evolution_carrier[OF h] Cons.IH] Cons.prems by simp
+qed simp
+
+lemma hsum_carrier: "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n) \<Longrightarrow> hsum n Hs \<in> carrier_mat n n"
+  by (induction Hs) auto
+
 context
   fixes n :: nat and L :: real
 begin
-
-lemma tprod_carrier:
-  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> tprod n d Hs \<in> carrier_mat n n"
-proof (induction Hs)
-  case (Cons H Hs)
-  note h = herm_boundedD[OF Cons.prems[of H, OF list.set_intros(1)]]
-  show ?case using mult_carrier_mat[OF evolution_carrier[OF h(1,2)] Cons.IH] Cons.prems by simp
-qed simp
 
 lemma tprod_unitary:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> unitary (tprod n d Hs)"
@@ -302,16 +293,9 @@ next
   note h = herm_boundedD[OF Cons.prems[of H, OF list.set_intros(1)]]
   have "unitary (evolution H d * tprod n d Hs)"
     by (rule unitary_mult[OF evolution_unitary[OF h(1,2)] Cons.IH evolution_carrier[OF h(1,2)] tprod_carrier])
-      (use Cons.prems in simp_all)
+      (use Cons.prems in \<open>simp_all add: herm_bounded_def\<close>)
   thus ?case by simp
 qed
-
-lemma hsum_carrier:
-  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> hsum n Hs \<in> carrier_mat n n"
-proof (induction Hs)
-  case (Cons H Hs)
-  thus ?case using herm_boundedD(1)[OF Cons.prems[of H]] by simp
-qed simp
 
 lemma hsum_hermitian:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> hermitian (hsum n Hs)"
@@ -322,7 +306,7 @@ next
   case (Cons H Hs)
   note h = herm_boundedD[OF Cons.prems[of H, OF list.set_intros(1)]]
   have "hermitian (H + hsum n Hs)"
-    by (rule hermitian_plus[OF h(2) Cons.IH h(1) hsum_carrier]) (use Cons.prems in simp_all)
+    by (rule hermitian_plus[OF h(2) Cons.IH h(1) hsum_carrier]) (use Cons.prems in \<open>simp_all add: herm_bounded_def\<close>)
   thus ?case by simp
 qed
 
@@ -336,7 +320,7 @@ proof (induction Hs)
 next
   case (Cons H Hs)
   note h = herm_boundedD[OF Cons.prems(1)[of H, OF list.set_intros(1)]]
-  have S: "hsum n Hs \<in> carrier_mat n n" by (rule hsum_carrier) (use Cons.prems in simp)
+  have S: "hsum n Hs \<in> carrier_mat n n" by (rule hsum_carrier) (use Cons.prems in \<open>simp add: herm_bounded_def\<close>)
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF Cons.prems(2)])
   have "hsum n (H # Hs) *\<^sub>v v = H *\<^sub>v v + hsum n Hs *\<^sub>v v"
     using add_mult_distrib_mat_vec[OF h(1) S vc] by simp
@@ -349,7 +333,7 @@ qed
 
 lemma tprod_norm:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>tprod n d Hs *\<^sub>v v\<parallel> = \<parallel>v\<parallel>"
-  by (rule unitary_vnorm[OF tprod_carrier tprod_unitary])
+  by (rule unitary_vnorm[OF tprod_carrier[OF herm_bounded_herm] tprod_unitary])
 
 lemma tprod_step:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> dim_vec v = n \<Longrightarrow>
@@ -362,7 +346,7 @@ next
   case (Cons H Hs v)
   note h = herm_boundedD[OF Cons.prems(1)[of H, OF list.set_intros(1)]]
   have hs: "\<And>G. G \<in> set Hs \<Longrightarrow> herm_bounded n L G" using Cons.prems(1) by simp
-  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF hs])
+  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF herm_bounded_herm[OF hs]])
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF Cons.prems(2)])
   let ?w = "tprod n d Hs *\<^sub>v v"
   have w: "dim_vec ?w = n" using P by simp
@@ -395,8 +379,8 @@ next
   have hs: "\<And>G. G \<in> set Hs \<Longrightarrow> herm_bounded n L G" using Cons.prems(1) by simp
   have v: "dim_vec v = n" by (rule Cons.prems(2))
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF v])
-  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF hs])
-  have S: "hsum n Hs \<in> carrier_mat n n" by (rule hsum_carrier[OF hs])
+  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF herm_bounded_herm[OF hs]])
+  have S: "hsum n Hs \<in> carrier_mat n n" by (rule hsum_carrier[OF herm_boundedD(1)[OF hs]])
   have E: "evolution H d \<in> carrier_mat n n" by (rule evolution_carrier[OF h(1,2)])
   define c where "c = \<i> * complex_of_real d"
   define k where "k = real (length Hs)"
@@ -465,9 +449,9 @@ lemma trotter_step:
   unfolding op_close_def
 proof (intro allI impI)
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
-  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF Hs])
+  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF herm_bounded_herm[OF Hs]])
   have S: "hsum n Hs \<in> carrier_mat n n" "hermitian (hsum n Hs)"
-    using hsum_carrier[OF Hs] hsum_hermitian[OF Hs] by simp_all
+    using hsum_carrier[OF herm_boundedD(1)[OF Hs]] hsum_hermitian[OF Hs] by simp_all
   have E: "evolution (hsum n Hs) d \<in> carrier_mat n n" by (rule evolution_carrier[OF S])
   let ?c = "\<i> * complex_of_real d" and ?m = "real (length Hs)"
   let ?a = "tprod n d Hs *\<^sub>v v - v - ?c \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)"
@@ -533,10 +517,10 @@ theorem trotter:
            (tprod n (t / real r) Hs ^\<^sub>m r) (evolution (hsum n Hs) t)"
 proof -
   have S: "hsum n Hs \<in> carrier_mat n n" "hermitian (hsum n Hs)"
-    using hsum_carrier[OF Hs] hsum_hermitian[OF Hs] by simp_all
+    using hsum_carrier[OF herm_boundedD(1)[OF Hs]] hsum_hermitian[OF Hs] by simp_all
   have c: "op_close n (real r * (2 * (t / real r * L)\<^sup>2 * (real (length Hs))\<^sup>2))
       (tprod n (t / real r) Hs ^\<^sub>m r) (evolution (hsum n Hs) (t / real r) ^\<^sub>m r)"
-    by (rule op_close_pow[OF tprod_carrier[OF Hs] tprod_unitary[OF Hs] evolution_carrier[OF S]
+    by (rule op_close_pow[OF tprod_carrier[OF herm_bounded_herm[OF Hs]] tprod_unitary[OF Hs] evolution_carrier[OF S]
           evolution_unitary[OF S] trotter_step[OF Hs]])
   have p: "evolution (hsum n Hs) (t / real r) ^\<^sub>m r = evolution (hsum n Hs) t"
     using evolution_pow[OF S, of "t / real r" r] r by simp

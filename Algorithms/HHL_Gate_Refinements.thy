@@ -210,7 +210,7 @@ end
 subsection \<open>The window-state preparation as one reflection\<close>
 
 lemma win_state_first: "0 < N \<Longrightarrow> win_state N $ 0 = complex_of_real (sqrt (2 / real N) * sin (pi / (2 * real N)))"
-  by (simp add: win_state_def)
+  by (simp add: win_state_def win_coef_def)
 
 lemma win_state_first_lt: assumes N: "2 \<le> N" shows "sqrt (2 / real N) * sin (pi / (2 * real N)) < 1"
 proof -
@@ -543,14 +543,14 @@ theorem hhl_apx_fine:
   shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real ((C * t0 / pi)\<^sup>2 * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
      (prog_meas K (anc_proj K) (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) c)))
      (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
-    and "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
+    and "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K 2 (\<lambda>c. c = 1) c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
            \<and> real j \<le> pi\<^sup>2 / (4 * C * t0)
            \<and> state_sig.hoare_total_correct [2 ^ k, n, 2]
                (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-               (prog_meas K (anc_proj K) (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))))
+               (prog_meas K (anc_proj K) (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))))
                (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
-    and "\<And>j U. U \<in> set (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)))
-           \<Longrightarrow> U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<or> elementary K U"
+    and "\<And>j U. U \<in> set (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)))
+           \<Longrightarrow> U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<or> elementary K U"
 proof -
   have N: "2 \<le> (2::nat) ^ k" using power_increasing[of 1 k "2::nat"] k by simp
   interpret state_sig "[2 ^ k, n, 2]" .
@@ -578,37 +578,37 @@ proof -
       unfolding dd K_def c_def by (rule hhl_apx_program[OF A t0 N C th lmin spec b e NQ V Vc eta Prep small])
     show ?thesis using tr[OF g0 h0] unfolding dd .
   qed
-  show "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
+  show "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K 2 (\<lambda>c. c = 1) c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
            \<and> real j \<le> pi\<^sup>2 / (4 * C * t0)
            \<and> hoare_total_correct
                (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-               (prog_meas K (anc_proj K) (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))))
+               (prog_meas K (anc_proj K) (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))))
                (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
   proof -
     assume y1: "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1"
-    obtain j where j1: "calls (aa_prog K c j) = (2 * j + 1) * (2 * (2 ^ k - 1))" and j2: "real j \<le> pi\<^sup>2 / (4 * C * t0)"
+    obtain j where j1: "calls (aa_prog K 2 (\<lambda>c. c = 1) c j) = (2 * j + 1) * (2 * (2 ^ k - 1))" and j2: "real j \<le> pi\<^sup>2 / (4 * C * t0)"
       and j3: "hoare_total_correct
            (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-           (prog_meas K (anc_proj K) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
+           (prog_meas K (anc_proj K) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
       unfolding c_def K_def by (rule hhl_apx_amplified[OF A t0 N C th lmin spec b e NQ V Vc eta Prep small y1[unfolded c_def]])
-    have g: "gates_ok K (aa_prog K c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
+    have g: "gates_ok K (aa_prog K 2 (\<lambda>c. c = 1) c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
     have j3': "hoare_total_correct
            (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-           (prog_meas d (anc_proj d) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
+           (prog_meas d (anc_proj d) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
       using j3 unfolding dd .
     show ?thesis using j1 j2 tr[OF g j3'] unfolding dd by blast
   qed
-  show "\<And>j U. U \<in> set (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)))
-           \<Longrightarrow> U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<or> elementary K U"
+  show "\<And>j U. U \<in> set (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)))
+           \<Longrightarrow> U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<or> elementary K U"
   proof -
-    fix j U assume U: "U \<in> set (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)))"
-    have g: "gates_ok K (aa_prog K c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
-    have okU: "\<And>W. W \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<Longrightarrow>
+    fix j U assume U: "U \<in> set (fine_gates k (n * 2) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)))"
+    have g: "gates_ok K (aa_prog K 2 (\<lambda>c. c = 1) c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
+    have okU: "\<And>W. W \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<Longrightarrow>
                W \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary W"
-      using qgates_ok[OF ab(2,3), where c = "aa_prog K c j"] g by (simp add: K_def)
-    have "U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<or> elementary (2 ^ k * (n * 2)) U"
+      using qgates_ok[OF ab(2,3), where c = "aa_prog K 2 (\<lambda>c. c = 1) c j"] g by (simp add: K_def)
+    have "U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<or> elementary (2 ^ k * (n * 2)) U"
       by (rule fine_gates_props(3)[OF okU m0 U])
-    thus "U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<or> elementary K U" by (simp add: K_def)
+    thus "U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<or> elementary K U" by (simp add: K_def)
   qed
 qed
 

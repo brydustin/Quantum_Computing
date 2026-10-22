@@ -317,7 +317,7 @@ proof -
     by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: uniform_state_def uw)
   have "hhl_W A t0 N *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u w) =
         (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m (n * 2)) *\<^sub>v (ctrl_pow N (n * 2) ?V *\<^sub>v tensor_vec (uniform_state N) (tensor_vec u w))"
-    unfolding hhl_W_def pe_unitary_def nA by (rule assoc_mult_mat_vec[OF Fc ctrl_pow_carrier xc])
+    unfolding hhl_W_def pe_unitary_def nA by (rule assoc_mult_mat_vec[OF Fc ctrl_blocks_carrier xc])
   also have "\<dots> = tensor_vec alpha (tensor_vec u w)"
     unfolding alpha_def by (rule phase_estimation[OF Vc uw Vev])
   finally show ?thesis .

@@ -687,7 +687,7 @@ proof -
     by (rule carrier_vecI, rule tensor_vec_dim) (simp_all add: psi uw)
   have "hhl_Wd A t0 N d *\<^sub>v tensor_vec psi (tensor_vec u w) =
         (((fourier N)\<^sup>\<dagger>) \<Otimes> 1\<^sub>m (n * d)) *\<^sub>v (ctrl_pow N (n * d) ?V *\<^sub>v tensor_vec psi (tensor_vec u w))"
-    unfolding hhl_Wd_def pe_unitary_def nA by (rule assoc_mult_mat_vec[OF Fc ctrl_pow_carrier xc])
+    unfolding hhl_Wd_def pe_unitary_def nA by (rule assoc_mult_mat_vec[OF Fc ctrl_blocks_carrier xc])
   also have "\<dots> = tensor_vec dalpha (tensor_vec u w)"
     unfolding dalpha_def by (rule phase_estimation_reg[OF Vc uw Vev psi])
   finally show ?thesis .
@@ -851,27 +851,16 @@ proof -
   finally show ?thesis by (simp add: pe_amp_reg_def)
 qed
 
-definition wrap :: "real \<Rightarrow> real" where
-  "wrap x = x - real_of_int \<lceil>x - 1 / 2\<rceil>"
-
-lemma wrap_range: "- (1 / 2) < wrap x" "wrap x \<le> 1 / 2"
-  unfolding wrap_def by linarith+
-
-lemma wrap_int: "x - wrap x \<in> \<int>"
-  unfolding wrap_def by simp
-
 text \<open>The amplitude in terms of the wrapped distance $r=\mathrm{wrap}(\varphi-k/N)$.\<close>
 
 lemma win_amp_wrapped:
   fixes \<phi> :: real
   assumes N: "2 \<le> N" and k: "k < N"
   defines "r \<equiv> wrap (\<phi> - real k / real N)"
-  shows "(cmod (pe_amp_reg N (win_state N) \<phi> k))\<^sup>2 \<le> 2"
-    and "1 / real N \<le> \<bar>r\<bar> \<Longrightarrow> (cmod (pe_amp_reg N (win_state N) \<phi> k))\<^sup>2 \<le> pi\<^sup>2 / (2 * (real N) ^ 4 * r ^ 4)"
+  assumes lo: "1 / real N \<le> \<bar>r\<bar>"
+  shows "(cmod (pe_amp_reg N (win_state N) \<phi> k))\<^sup>2 \<le> pi\<^sup>2 / (2 * (real N) ^ 4 * r ^ 4)"
 proof -
-  show "(cmod (pe_amp_reg N (win_state N) \<phi> k))\<^sup>2 \<le> 2" by (rule win_amp_crude[OF k])
-  assume lo: "1 / real N \<le> \<bar>r\<bar>"
-  define m where "m = \<lceil>\<phi> - real k / real N - 1 / 2\<rceil>"
+  define m where "m = round (\<phi> - real k / real N)"
   have rr: "\<phi> - real_of_int m - real k / real N = r" unfolding r_def wrap_def m_def by simp
   have hi: "\<bar>r\<bar> \<le> 1 / 2" using wrap_range[of "\<phi> - real k / real N"] unfolding r_def by linarith
   have "(cmod (pe_amp_reg N (win_state N) (\<phi> - real_of_int m) k))\<^sup>2 \<le> pi\<^sup>2 / (2 * (real N) ^ 4 * (\<phi> - real_of_int m - real k / real N) ^ 4)"
@@ -897,7 +886,7 @@ proof -
       have "(real N * r)\<^sup>2 \<le> 1" using True by (simp add: abs_square_le_1)
       thus ?thesis using NR by (simp add: power_mult_distrib field_simps)
     qed
-    hence "(cmod (pe_amp_reg N (win_state N) \<phi> k))\<^sup>2 * r\<^sup>2 \<le> 2 * (1 / (real N)\<^sup>2)" by (intro mult_mono a(1)) simp_all
+    hence "(cmod (pe_amp_reg N (win_state N) \<phi> k))\<^sup>2 * r\<^sup>2 \<le> 2 * (1 / (real N)\<^sup>2)" by (intro mult_mono win_amp_crude[OF k]) simp_all
     thus ?thesis unfolding w by simp
   next
     case False
@@ -905,7 +894,7 @@ proof -
     have r0: "r \<noteq> 0" using lo NR by auto
     have w: "win_w (real N * r) = pi\<^sup>2 / (2 * (real N * r)\<^sup>2)" using False by (simp add: win_w_def)
     have "(cmod (pe_amp_reg N (win_state N) \<phi> k))\<^sup>2 * r\<^sup>2 \<le> pi\<^sup>2 / (2 * (real N) ^ 4 * r ^ 4) * r\<^sup>2"
-      by (intro mult_right_mono a(2)[OF lo]) simp
+      by (intro mult_right_mono a[OF lo]) simp
     also have "\<dots> = pi\<^sup>2 / (2 * (real N * r)\<^sup>2) / (real N)\<^sup>2" using r0 NR by (simp add: field_simps power2_eq_square power4_eq_xxxx)
     finally show ?thesis unfolding w .
   qed
@@ -1259,7 +1248,6 @@ proof -
   have F: "flagdiag 3 ((fourier N)\<^sup>\<dagger> \<Otimes> 1\<^sub>m (n * 3))"
     by (rule flagdiag_dvd[OF flagdiag_tensor_one]) (use n0 in simp_all)
   have C: "flagdiag 3 (ctrl_pow N (n * 3) (evolution A t0 \<Otimes> 1\<^sub>m 3))"
-    unfolding ctrl_pow_blocks
     by (rule flagdiag_ctrl_blocks) (use flagdiag_pow[OF flagdiag_tensor_one E] pow_carrier_mat[OF E] in simp_all)
   show ?thesis unfolding hhl_Wd_def pe_unitary_def nA
     by (rule flagdiag_mult[OF F C]) simp
@@ -1277,19 +1265,26 @@ proof (rule eq_vecI)
     using r ki f[OF ki(1)] m by (simp add: pflag_def reg_sum_def)
 qed simp
 
+lemma pflag_tensor_left:
+  assumes a: "dim_vec a = N" and z: "dim_vec z = m * d" and d0: "0 < d"
+  shows "pflag d P (tensor_vec a z) = tensor_vec a (pflag d P z)"
+proof (rule eq_vecI)
+  have da: "dim_vec (tensor_vec a z) = N * (m * d)" by (rule tensor_vec_dim[OF a z])
+  have dp: "dim_vec (tensor_vec a (pflag d P z)) = N * (m * d)" by (rule tensor_vec_dim[OF a]) (simp add: z)
+  show "dim_vec (pflag d P (tensor_vec a z)) = dim_vec (tensor_vec a (pflag d P z))" using da dp by simp
+  fix r assume "r < dim_vec (tensor_vec a (pflag d P z))"
+  hence r: "r < N * (m * d)" using dp by simp
+  have md: "0 < m * d" using r by (cases "m * d") simp_all
+  have mm: "r mod (m * d) mod d = r mod d" by (simp add: mod_mod_cancel)
+  have rm: "r mod (m * d) < m * d" using md by simp
+  show "pflag d P (tensor_vec a z) $ r = tensor_vec a (pflag d P z) $ r"
+    using r da tensor_vec_index[OF a z r] tensor_vec_index[OF a _ r, of "pflag d P z"] z rm mm by (simp add: pflag_def)
+qed
+
 lemma pflag_tensor:
   assumes u: "dim_vec u = n" and w: "dim_vec w = d" and d0: "0 < d"
   shows "pflag d P (tensor_vec u w) = tensor_vec u (pflag d P w)"
-proof (rule eq_vecI)
-  have du: "dim_vec (tensor_vec u w) = n * d" by (rule tensor_vec_dim[OF u w])
-  have dp: "dim_vec (tensor_vec u (pflag d P w)) = n * d" by (rule tensor_vec_dim[OF u]) (simp add: w)
-  show "dim_vec (pflag d P (tensor_vec u w)) = dim_vec (tensor_vec u (pflag d P w))" using du dp by simp
-  fix r assume "r < dim_vec (tensor_vec u (pflag d P w))"
-  hence r: "r < n * d" using dp by simp
-  have "r mod d < d" using d0 by simp
-  thus "pflag d P (tensor_vec u w) $ r = tensor_vec u (pflag d P w) $ r"
-    using r du tensor_vec_index[OF u w r] tensor_vec_index[OF u _ r, of "pflag d P w"] w by (simp add: pflag_def)
-qed
+  using pflag_tensor_left[of u n w 1 d P] u w d0 by simp
 
 lemma pflag_smult: "pflag d P (c \<cdot>\<^sub>v v) = c \<cdot>\<^sub>v pflag d P v"
   by (intro eq_vecI) (simp_all add: pflag_def)
@@ -1404,22 +1399,6 @@ lemma pflag_flag_norm:
   "\<parallel>pflag 3 (\<lambda>c. c \<noteq> 0) (hflag \<kappa> a)\<parallel>\<^sup>2 = (filt_f \<kappa> a)\<^sup>2 + (filt_g \<kappa> a)\<^sup>2"
   unfolding vnorm3_sq[OF dim_pflag[of 3 _ "hflag \<kappa> a", unfolded dim_hflag]] pflag3_entries[OF dim_hflag] hflag_entries
   by simp
-
-lemma pflag_tensor_left:
-  assumes a: "dim_vec a = N" and z: "dim_vec z = m * d" and d0: "0 < d"
-  shows "pflag d P (tensor_vec a z) = tensor_vec a (pflag d P z)"
-proof (rule eq_vecI)
-  have da: "dim_vec (tensor_vec a z) = N * (m * d)" by (rule tensor_vec_dim[OF a z])
-  have dp: "dim_vec (tensor_vec a (pflag d P z)) = N * (m * d)" by (rule tensor_vec_dim[OF a]) (simp add: z)
-  show "dim_vec (pflag d P (tensor_vec a z)) = dim_vec (tensor_vec a (pflag d P z))" using da dp by simp
-  fix r assume "r < dim_vec (tensor_vec a (pflag d P z))"
-  hence r: "r < N * (m * d)" using dp by simp
-  have md: "0 < m * d" using r by (cases "m * d") simp_all
-  have mm: "r mod (m * d) mod d = r mod d" by (simp add: mod_mod_cancel)
-  have rm: "r mod (m * d) < m * d" using md by simp
-  show "pflag d P (tensor_vec a z) $ r = tensor_vec a (pflag d P z) $ r"
-    using r da tensor_vec_index[OF a z r] tensor_vec_index[OF a _ r, of "pflag d P z"] z rm mm by (simp add: pflag_def)
-qed
 
 text \<open>Theorem 1(2) on an eigenvector: after post-selecting the flag on $\{\mathrm{well},\mathrm{ill}\}$
 the error is at most $\rho$ times the post-selected ideal, $\rho^2=36\pi^4(4+2\pi^2)\kappa^2/(Nt_0)^2$,

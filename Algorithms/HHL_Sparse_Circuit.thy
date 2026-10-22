@@ -6,60 +6,8 @@ section \<open>The sparse simulation circuit\<close>
 
 subsection \<open>Permutation gates\<close>
 
-lemma mat_vec_unit:
-  fixes M :: "complex Matrix.mat"
-  assumes M: "M \<in> carrier_mat N N" and j: "j < N"
-  shows "M *\<^sub>v unit_vec N j = Matrix.vec N (\<lambda>i. M $$ (i, j))"
-proof (rule eq_vecI)
-  fix i assume "i < dim_vec (Matrix.vec N (\<lambda>i. M $$ (i, j)))"
-  hence i: "i < N" by simp
-  have "(M *\<^sub>v unit_vec N j) $ i = Matrix.row M i \<bullet> unit_vec N j" using i M by simp
-  also have "\<dots> = Matrix.row M i $ j" by (rule scalar_prod_right_unit[OF j])
-  also have "\<dots> = M $$ (i, j)" using i M j by simp
-  finally show "(M *\<^sub>v unit_vec N j) $ i = Matrix.vec N (\<lambda>i. M $$ (i, j)) $ i" using i by simp
-qed (use M in simp)
-
-definition invol_mat :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat" where
-  "invol_mat N \<sigma> = Matrix.mat N N (\<lambda>(r, c). if r = \<sigma> c then 1 else 0)"
-
-lemma invol_mat_carrier [simp]: "invol_mat N \<sigma> \<in> carrier_mat N N"
-  by (simp add: invol_mat_def)
-
-lemma dim_invol_mat [simp]: "dim_row (invol_mat N \<sigma>) = N" "dim_col (invol_mat N \<sigma>) = N"
-  by (simp_all add: invol_mat_def)
-
-lemma invol_mat_unit:
-  assumes \<sigma>: "invol N \<sigma>" and j: "j < N"
-  shows "invol_mat N \<sigma> *\<^sub>v unit_vec N j = unit_vec N (\<sigma> j)"
-  unfolding mat_vec_unit[OF invol_mat_carrier j]
-  using invol_lt[OF \<sigma> j] j by (intro eq_vecI) (auto simp: invol_mat_def unit_vec_def)
-
-lemma invol_mat_unitary:
-  assumes \<sigma>: "invol N \<sigma>"
-  shows "unitary (invol_mat N \<sigma>)"
-proof -
-  let ?P = "invol_mat N \<sigma>"
-  have qq: "\<And>x. \<sigma> (\<sigma> x) = x" using \<sigma> unfolding invol_def by blast
-  have d: "?P\<^sup>\<dagger> = ?P"
-  proof (rule eq_matI)
-    fix r c assume "r < dim_row ?P" "c < dim_col ?P"
-    hence r: "r < N" and c: "c < N" by (simp_all add: invol_mat_def)
-    have "c = \<sigma> r \<longleftrightarrow> r = \<sigma> c" using qq by metis
-    thus "?P\<^sup>\<dagger> $$ (r, c) = ?P $$ (r, c)" using r c by (simp add: dagger_def invol_mat_def)
-  qed (simp_all add: dagger_def invol_mat_def)
-  have s: "?P * ?P = 1\<^sub>m N"
-  proof (rule eq_matI)
-    fix r c assume "r < dim_row (1\<^sub>m N :: complex Matrix.mat)" "c < dim_col (1\<^sub>m N :: complex Matrix.mat)"
-    hence r: "r < N" and c: "c < N" by simp_all
-    have "(?P * ?P) $$ (r, c) = (\<Sum>k = 0..<N. (if r = \<sigma> k then 1 else 0) * (if k = \<sigma> c then 1 else 0))"
-      using r c by (simp add: invol_mat_def scalar_prod_def atLeast0LessThan)
-    also have "\<dots> = (\<Sum>k = 0..<N. if k = \<sigma> c then (if r = \<sigma> k then 1 else 0) else 0)" by (rule sum.cong) auto
-    also have "\<dots> = (if r = \<sigma> (\<sigma> c) then 1 else 0)" using invol_lt[OF \<sigma> c] by simp
-    also have "\<dots> = 1\<^sub>m N $$ (r, c)" using \<sigma> r c by (simp add: invol_def)
-    finally show "(?P * ?P) $$ (r, c) = 1\<^sub>m N $$ (r, c)" .
-  qed simp_all
-  show ?thesis unfolding unitary_def using d s by simp
-qed
+lemma invol_pmat_unitary: "invol N \<sigma> \<Longrightarrow> unitary (pmat N \<sigma>)"
+  by (rule pmat_unitary_invol) (auto simp: invol_lt invol_def)
 
 subsection \<open>Registers\<close>
 
@@ -157,13 +105,13 @@ next
 qed
 
 definition cmp_gate :: "nat \<Rightarrow> complex Matrix.mat" where
-  "cmp_gate n = invol_mat (n * n * 2) (cmp_perm n)"
+  "cmp_gate n = pmat (n * n * 2) (cmp_perm n)"
 
 lemma cmp_gate_basis:
   assumes "x < n" "y < n" "b < 2"
   shows "cmp_gate n *\<^sub>v bstate n x y b =
     (if (y < x \<and> b = 0) \<or> (x < y \<and> b = 1) then bstate n y x (1 - b) else bstate n x y b)"
-  unfolding cmp_gate_def invol_mat_unit[OF cmp_perm_invol enc_lt[OF assms]] cmp_perm_enc[OF assms] by simp
+  unfolding cmp_gate_def pmat_unit[where f = "cmp_perm n", OF enc_lt[OF assms] invol_lt[OF cmp_perm_invol enc_lt[OF assms]]] cmp_perm_enc[OF assms] by simp
 
 subsection \<open>The colour oracle\<close>
 
@@ -224,14 +172,14 @@ qed
 
 lemma colour_oracle_exists:
   assumes q: "invol n q"
-  shows "colour_oracle n q (invol_mat (n * n * 2) (col_perm n q))"
+  shows "colour_oracle n q (pmat (n * n * 2) (col_perm n q))"
   unfolding colour_oracle_def
 proof (intro conjI allI impI)
-  show "unitary (invol_mat (n * n * 2) (col_perm n q))" by (rule invol_mat_unitary[OF col_perm_invol[OF q]])
+  show "unitary (pmat (n * n * 2) (col_perm n q))" by (rule invol_pmat_unitary[OF col_perm_invol[OF q]])
   fix x b :: nat assume x: "x < n" and b: "b < 2"
   have n: "0 < n" using x by simp
-  show "invol_mat (n * n * 2) (col_perm n q) *\<^sub>v bstate n x 0 b = bstate n x (q x) b"
-    unfolding invol_mat_unit[OF col_perm_invol[OF q] enc_lt[OF x n b]] col_perm_enc[OF x n b] by simp
+  show "pmat (n * n * 2) (col_perm n q) *\<^sub>v bstate n x 0 b = bstate n x (q x) b"
+    unfolding pmat_unit[where f = "col_perm n q", OF enc_lt[OF x n b] invol_lt[OF col_perm_invol[OF q] enc_lt[OF x n b]]] col_perm_enc[OF x n b] by simp
 qed simp
 
 subsection \<open>The entry gate\<close>
@@ -261,7 +209,7 @@ proof (rule eq_vecI)
   hence r: "r < n * n * 2" by simp
   have l: "(ent_gate n d A *\<^sub>v bstate n x y b) $ r =
       (if r div 2 = x * n + y then ent_block d A x y $$ (r mod 2, b) else 0)"
-    unfolding mat_vec_unit[OF ent_gate_carrier j] using r j
+    unfolding mult_unit_vec[OF ent_gate_carrier j] using r j
     by (simp add: ent_gate_def ctrl_blocks_index enc_div[OF b] enc_mod[OF b] reg_div[OF y] reg_mod[OF y] y)
   have e0: "enc n x y 0 = (x * n + y) * 2" and e1: "enc n x y 1 = (x * n + y) * 2 + 1" by (simp_all add: enc_def)
   show "(ent_gate n d A *\<^sub>v bstate n x y b) $ r =
@@ -597,18 +545,6 @@ qed
 
 subsection \<open>Intertwining\<close>
 
-lemma col_mult_unit:
-  fixes M :: "complex Matrix.mat"
-  assumes M: "M \<in> carrier_mat nr nc" and k: "k < nc"
-  shows "Matrix.col M k = M *\<^sub>v unit_vec nc k"
-proof (rule eq_vecI)
-  fix i assume "i < dim_vec (M *\<^sub>v unit_vec nc k)"
-  hence i: "i < nr" using M by simp
-  have "(M *\<^sub>v unit_vec nc k) $ i = Matrix.row M i \<bullet> unit_vec nc k" using i M by simp
-  also have "\<dots> = Matrix.row M i $ k" by (rule scalar_prod_right_unit[OF k])
-  finally show "Matrix.col M k $ i = (M *\<^sub>v unit_vec nc k) $ i" using i k M by simp
-qed (use M in simp)
-
 text \<open>A circuit $C$ that maps $\ket k\ket0\ket0$ to $(E\ket k)\ket0\ket0$ for all $k$ satisfies
 $C\,\mathrm{emb}=\mathrm{emb}\,E$.\<close>
 
@@ -620,9 +556,9 @@ proof (rule Matrix.mat_col_eqI)
   fix k assume "k < dim_col (emb n * E)"
   hence k: "k < n" using E by simp
   have "Matrix.col (C * emb n) k = C *\<^sub>v Matrix.col (emb n) k" by (rule col_mult2[OF C emb_carrier k])
-  also have "Matrix.col (emb n) k = bstate n k 0 0" using col_mult_unit[OF emb_carrier k] emb_unit[OF k] by simp
+  also have "Matrix.col (emb n) k = bstate n k 0 0" using mult_unit_vec[OF emb_carrier k] emb_unit[OF k] by simp
   also have "C *\<^sub>v bstate n k 0 0 = emb n *\<^sub>v (E *\<^sub>v unit_vec n k)" by (rule act[OF k])
-  also have "E *\<^sub>v unit_vec n k = Matrix.col E k" by (rule col_mult_unit[OF E k, symmetric])
+  also have "E *\<^sub>v unit_vec n k = Matrix.col E k" by (rule mult_unit_vec[OF E k])
   also have "emb n *\<^sub>v Matrix.col E k = Matrix.col (emb n * E) k" by (rule col_mult2[OF emb_carrier E k, symmetric])
   finally show "Matrix.col (C * emb n) k = Matrix.col (emb n * E) k" .
 qed (use C E in \<open>simp_all add: emb_def\<close>)
@@ -730,9 +666,8 @@ fun sgate_mat :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Righ
 | "sgate_mat n d A Os Ent = ent_gate n d A"
 | "sgate_mat n d A Os DiagQ = dia_gate n d A"
 
-fun sg_run :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> sgate list \<Rightarrow> complex Matrix.mat" where
-  "sg_run n d A Os [] = 1\<^sub>m (n * n * 2)"
-| "sg_run n d A Os (g # gs) = sg_run n d A Os gs * sgate_mat n d A Os g"
+abbreviation sg_run :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> sgate list \<Rightarrow> complex Matrix.mat" where
+  "sg_run n d A Os gs \<equiv> circuit_mat (n * n * 2) (map (sgate_mat n d A Os) gs)"
 
 fun gate_ok :: "nat \<Rightarrow> sgate \<Rightarrow> bool" where
   "gate_ok K (ColQ c) = (c < K)"
@@ -789,28 +724,12 @@ lemma sgate_carrier: "gate_ok K g \<Longrightarrow> sgate_mat n d A Os g \<in> c
   by (cases g) (auto simp: Oc dagger_carrier)
 
 lemma sg_run_carrier: "(\<And>g. g \<in> set gs \<Longrightarrow> gate_ok K g) \<Longrightarrow> sg_run n d A Os gs \<in> carrier_mat (n * n * 2) (n * n * 2)"
-proof (induction gs)
-  case (Cons g gs)
-  thus ?case using mult_carrier_mat[OF Cons.IH sgate_carrier] by simp
-qed simp
+  by (rule circuit_mat_carrier) (auto intro: sgate_carrier)
 
 lemma sg_run_append:
   "(\<And>g. g \<in> set xs \<Longrightarrow> gate_ok K g) \<Longrightarrow> (\<And>g. g \<in> set ys \<Longrightarrow> gate_ok K g) \<Longrightarrow>
    sg_run n d A Os (xs @ ys) = sg_run n d A Os ys * sg_run n d A Os xs"
-proof (induction xs)
-  case Nil
-  have Y: "sg_run n d A Os ys \<in> carrier_mat (n * n * 2) (n * n * 2)" by (rule sg_run_carrier) (rule Nil.prems(2))
-  show ?case using right_mult_one_mat[OF Y] by simp
-next
-  case (Cons x xs)
-  have Y: "sg_run n d A Os ys \<in> carrier_mat (n * n * 2) (n * n * 2)" by (rule sg_run_carrier) (rule Cons.prems(2))
-  have X: "sg_run n d A Os xs \<in> carrier_mat (n * n * 2) (n * n * 2)" by (rule sg_run_carrier) (use Cons.prems(1) in simp)
-  have G: "sgate_mat n d A Os x \<in> carrier_mat (n * n * 2) (n * n * 2)" by (rule sgate_carrier) (use Cons.prems(1) in simp)
-  have "sg_run n d A Os ((x # xs) @ ys) = (sg_run n d A Os ys * sg_run n d A Os xs) * sgate_mat n d A Os x"
-    using Cons by simp
-  also have "\<dots> = sg_run n d A Os ys * (sg_run n d A Os xs * sgate_mat n d A Os x)" by (rule assoc_mult_mat[OF Y X G])
-  finally show ?case by simp
-qed
+  unfolding map_append by (rule circuit_mat_append) (auto intro: sgate_carrier)
 
 lemma sg_run_colour:
   assumes c: "c < K"
@@ -844,17 +763,7 @@ qed
 
 lemma sg_run_replicate:
   "(\<And>g. g \<in> set gs \<Longrightarrow> gate_ok K g) \<Longrightarrow> sg_run n d A Os (concat (replicate r gs)) = sg_run n d A Os gs ^\<^sub>m r"
-proof (induction r)
-  case 0
-  have "sg_run n d A Os gs \<in> carrier_mat (n * n * 2) (n * n * 2)" by (rule sg_run_carrier) (rule 0)
-  thus ?case by simp
-next
-  case (Suc r)
-  have "sg_run n d A Os (concat (replicate (Suc r) gs)) = sg_run n d A Os (gs @ concat (replicate r gs))" by simp
-  also have "\<dots> = sg_run n d A Os (concat (replicate r gs)) * sg_run n d A Os gs"
-    by (rule sg_run_append) (use Suc.prems in auto)
-  finally show ?case using Suc by simp
-qed
+  unfolding map_concat map_replicate by (rule circuit_mat_concat_replicate) (auto intro: sgate_carrier)
 
 end
 
@@ -878,15 +787,13 @@ lemma colour_part_ok: "c < K \<Longrightarrow> colour_part n A (p c) \<in> carri
   using colour_part_hermitian[OF A pinv] by (simp add: colour_part_def)
 
 lemma tprod_colours_carrier:
-  "set cs \<subseteq> {..<K} \<Longrightarrow> tprod n d (map (\<lambda>c. colour_part n A (p c)) cs) \<in> carrier_mat n n"
-proof (induction cs)
-  case (Cons c cs)
-  have H: "colour_part n A (p c) \<in> carrier_mat n n" "hermitian (colour_part n A (p c))"
-    using colour_part_ok Cons.prems by auto
-  have "evolution (colour_part n A (p c)) d * tprod n d (map (\<lambda>c. colour_part n A (p c)) cs) \<in> carrier_mat n n"
-    by (rule mult_carrier_mat[OF evolution_carrier[OF H] Cons.IH]) (use Cons.prems in simp)
-  thus ?case by simp
-qed simp
+  assumes cs: "set cs \<subseteq> {..<K}"
+  shows "tprod n d (map (\<lambda>c. colour_part n A (p c)) cs) \<in> carrier_mat n n"
+proof (rule tprod_carrier)
+  fix H assume "H \<in> set (map (\<lambda>c. colour_part n A (p c)) cs)"
+  then obtain c where "c \<in> set cs" "H = colour_part n A (p c)" by auto
+  thus "H \<in> carrier_mat n n \<and> hermitian H" using colour_part_ok cs by auto
+qed
 
 lemma colours_intertwine:
   "set cs \<subseteq> {..<K} \<Longrightarrow>
@@ -1021,9 +928,9 @@ proof -
   show "sg_run n (t / real r) A Os (sim_gates (2 * s - 1) r) * emb n = emb n * sim_mat n (t / real r) A (2 * s - 1) p r"
     by (rule sim_intertwine[OF A pinv Os])
   show "sim_mat n (t / real r) A (2 * s - 1) p r \<in> carrier_mat n n"
-    unfolding sim_mat_def by (rule pow_carrier_mat[OF tprod_carrier[OF hb]])
+    unfolding sim_mat_def by (rule pow_carrier_mat[OF tprod_carrier[OF herm_bounded_herm[OF hb]]])
   show "unitary (sim_mat n (t / real r) A (2 * s - 1) p r)"
-    unfolding sim_mat_def by (rule unitary_pow[OF tprod_carrier[OF hb] tprod_unitary[OF hb]])
+    unfolding sim_mat_def by (rule unitary_pow[OF tprod_carrier[OF herm_bounded_herm[OF hb]] tprod_unitary[OF hb]])
   show "op_close n (8 * (real s * L * t)\<^sup>2 / real r) (sim_mat n (t / real r) A (2 * s - 1) p r) (evolution A t)"
     unfolding sim_mat_def by (rule sparse_trotter[OF A s L Lb cov r])
   have "3 * (2 * s - 1) + 1 = 6 * s - 2" using s by simp
@@ -1037,12 +944,12 @@ corollary sparse_oracles_exist:
   shows "\<exists>p Os. edge_cover n (2 * s - 1) p (edges n A) \<and> (\<forall>c < 2 * s - 1. colour_oracle n (p c) (Os c))"
 proof -
   obtain p where p: "edge_cover n (2 * s - 1) p (edges n A)" using sparse_split[OF A sp s] by blast
-  have o: "\<forall>c < 2 * s - 1. colour_oracle n (p c) (invol_mat (n * n * 2) (col_perm n (p c)))"
+  have o: "\<forall>c < 2 * s - 1. colour_oracle n (p c) (pmat (n * n * 2) (col_perm n (p c)))"
     using p colour_oracle_exists unfolding edge_cover_def by blast
   show ?thesis
-  proof (rule exI[of _ p], rule exI[of _ "\<lambda>c. invol_mat (n * n * 2) (col_perm n (p c))"])
+  proof (rule exI[of _ p], rule exI[of _ "\<lambda>c. pmat (n * n * 2) (col_perm n (p c))"])
     show "edge_cover n (2 * s - 1) p (edges n A) \<and>
-        (\<forall>c<2 * s - 1. colour_oracle n (p c) ((\<lambda>c. invol_mat (n * n * 2) (col_perm n (p c))) c))"
+        (\<forall>c<2 * s - 1. colour_oracle n (p c) ((\<lambda>c. pmat (n * n * 2) (col_perm n (p c))) c))"
       using p o by simp
   qed
 qed
@@ -1136,7 +1043,7 @@ next
   have Oc: "\<And>c. c < K \<Longrightarrow> Os c \<in> carrier_mat (n * n * 2) (n * n * 2)" using Os unfolding colour_oracle_def by blast
   have g: "gate_ok K g" using Cons.prems by simp
   have ug: "unitary (sgate_mat n d A Os g)"
-    using g Os by (cases g) (auto simp: colour_oracle_def unitary_dagger cmp_gate_def invol_mat_unitary
+    using g Os by (cases g) (auto simp: colour_oracle_def unitary_dagger cmp_gate_def invol_pmat_unitary
         cmp_perm_invol ent_gate_unitary dia_gate_unitary)
   have "unitary (sg_run n d A Os gs * sgate_mat n d A Os g)"
     by (rule unitary_mult[OF Cons.IH ug sg_run_carrier[where K = K] sgate_carrier[where K = K]])

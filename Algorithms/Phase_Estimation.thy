@@ -116,22 +116,26 @@ qed
 
 subsection \<open>Controlled powers and phase kickback\<close>
 
-text \<open>$\mathrm{C}U=\sum_k\ket k\bra k\otimes U^k$ on $\C^N\otimes\C^m$ (index $km+i$).\<close>
+text \<open>$\sum_k\ket k\bra k\otimes B_k$ on $\C^N\otimes\C^m$ (index $km+i$), and the controlled
+power $\mathrm{C}U=\sum_k\ket k\bra k\otimes U^k$.\<close>
 
-definition ctrl_pow :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "ctrl_pow N m U = Matrix.mat (N * m) (N * m)
-     (\<lambda>(r, c). if r div m = c div m then (U ^\<^sub>m (r div m)) $$ (r mod m, c mod m) else 0)"
+definition ctrl_blocks :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
+  "ctrl_blocks N m B = Matrix.mat (N * m) (N * m)
+     (\<lambda>(r, c). if r div m = c div m then B (r div m) $$ (r mod m, c mod m) else 0)"
 
-lemma ctrl_pow_carrier [simp]: "ctrl_pow N m U \<in> carrier_mat (N * m) (N * m)"
-  by (simp add: ctrl_pow_def)
+lemma ctrl_blocks_carrier [simp]: "ctrl_blocks N m B \<in> carrier_mat (N * m) (N * m)"
+  by (simp add: ctrl_blocks_def)
 
-lemma dim_ctrl_pow [simp]: "dim_row (ctrl_pow N m U) = N * m" "dim_col (ctrl_pow N m U) = N * m"
-  by (simp_all add: ctrl_pow_def)
+lemma dim_ctrl_blocks [simp]: "dim_row (ctrl_blocks N m B) = N * m" "dim_col (ctrl_blocks N m B) = N * m"
+  by (simp_all add: ctrl_blocks_def)
 
-lemma ctrl_pow_index:
+lemma ctrl_blocks_index:
   "r < N * m \<Longrightarrow> c < N * m \<Longrightarrow>
-   ctrl_pow N m U $$ (r, c) = (if r div m = c div m then (U ^\<^sub>m (r div m)) $$ (r mod m, c mod m) else 0)"
-  by (simp add: ctrl_pow_def)
+   ctrl_blocks N m B $$ (r, c) = (if r div m = c div m then B (r div m) $$ (r mod m, c mod m) else 0)"
+  by (simp add: ctrl_blocks_def)
+
+abbreviation ctrl_pow :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "ctrl_pow N m U \<equiv> ctrl_blocks N m (\<lambda>k. U ^\<^sub>m k)"
 
 lemma sum_blocks:
   fixes N m :: nat
@@ -202,7 +206,7 @@ proof -
       show "(\<Sum>i'<m. ctrl_pow N m U $$ (r, k' * m + i') * tensor_vec a u $ (k' * m + i')) =
             (if k' = k then (\<Sum>i'<m. (U ^\<^sub>m k) $$ (i, i') * (a $ k * u $ i')) else 0)"
         using block_index[OF k'] r a u
-        by (auto simp: ctrl_pow_index tensor_vec_index k_def i_def intro!: sum.cong)
+        by (auto simp: ctrl_blocks_index tensor_vec_index k_def i_def intro!: sum.cong)
     qed
     also have "\<dots> = (\<Sum>i'<m. (U ^\<^sub>m k) $$ (i, i') * (a $ k * u $ i'))" using k by simp
     also have "\<dots> = a $ k * ((U ^\<^sub>m k) *\<^sub>v u) $ i"
@@ -492,5 +496,16 @@ proof -
     thus ?thesis using j by blast
   qed
 qed
+
+subsection \<open>The signed distance to the nearest integer\<close>
+
+definition wrap :: "real \<Rightarrow> real" where
+  "wrap x = x - of_int (round x)"
+
+lemma wrap_range: "- (1 / 2) \<le> wrap x" "wrap x \<le> 1 / 2"
+  using of_int_round_ge[of x] of_int_round_le[of x] unfolding wrap_def by linarith+
+
+lemma wrap_int: "x - wrap x \<in> \<int>"
+  unfolding wrap_def by simp
 
 end

@@ -239,118 +239,6 @@ proof -
   ultimately show ?thesis unfolding bhmt_average[OF M sn] by linarith
 qed
 
-subsection \<open>Amplifying a post-selection on any flag values\<close>
-
-lemma refl_pflag: "1\<^sub>m K - 2 \<cdot>\<^sub>m pflag_mat K d P = sign_diag K (\<lambda>r. P (r mod d))"
-  unfolding refl_proj_set by simp
-
-definition grover_progP :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> qcirc \<Rightarrow> qcirc" where
-  "grover_progP K d P u = Seq (Gate (sign_diag K (\<lambda>r. P (r mod d)))) (Seq (adj u) (Seq (Gate (sign_diag K (\<lambda>i. i \<noteq> 0))) u))"
-
-primrec aa_progP :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> qcirc \<Rightarrow> nat \<Rightarrow> qcirc" where
-  "aa_progP K d P u 0 = u"
-| "aa_progP K d P u (Suc k) = Seq (aa_progP K d P u k) (grover_progP K d P u)"
-
-lemma calls_aa_progP: "calls (aa_progP K d P u k) = (2 * k + 1) * calls u"
-  by (induction k) (simp_all add: grover_progP_def)
-
-lemma gates_ok_aa_progP: "gates_ok K u \<Longrightarrow> gates_ok K (aa_progP K d P u k)"
-  by (induction k) (simp_all add: grover_progP_def gates_ok_adj sign_diag_carrier sign_diag_unitary)
-
-lemma sem_grover_progP:
-  assumes V: "V \<in> carrier_mat m m" "unitary V" and g: "gates_ok (N * m) u" and K: "0 < N * m"
-  shows "sem N m V (grover_progP (N * m) d P u) = grover (N * m) (pflag_mat (N * m) d P) (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
-proof -
-  let ?K = "N * m" and ?U = "sem N m V u"
-  have U: "?U \<in> carrier_mat ?K ?K" "unitary ?U" using sem_carrier[OF V g] sem_unitary[OF V g] by simp_all
-  have Ud: "(?U\<^sup>\<dagger>) \<in> carrier_mat ?K ?K" by (rule dagger_carrier[OF U(1)])
-  have D0: "sign_diag ?K (\<lambda>i. i \<noteq> 0) \<in> carrier_mat ?K ?K" and D1: "sign_diag ?K (\<lambda>r. P (r mod d)) \<in> carrier_mat ?K ?K"
-    by (simp_all add: sign_diag_carrier)
-  have "sem N m V (grover_progP ?K d P u) = ?U * (sign_diag ?K (\<lambda>i. i \<noteq> 0) * (?U\<^sup>\<dagger>)) * sign_diag ?K (\<lambda>r. P (r mod d))"
-    unfolding grover_progP_def sem.simps sem_adj[OF V g]
-    using assoc_mult_mat[OF U(1) D0 Ud] by simp
-  also have "\<dots> = grover ?K (pflag_mat ?K d P) (?U *\<^sub>v unit_vec ?K 0)"
-    unfolding reflection_conj[OF U K] grover_def refl_pflag ..
-  finally show ?thesis .
-qed
-
-lemma sem_aa_progP:
-  assumes V: "V \<in> carrier_mat m m" "unitary V" and g: "gates_ok (N * m) u" and K: "0 < N * m"
-  shows "sem N m V (aa_progP (N * m) d P u k) = grover (N * m) (pflag_mat (N * m) d P) (sem N m V u *\<^sub>v unit_vec (N * m) 0) ^\<^sub>m k * sem N m V u"
-proof (induction k)
-  case 0
-  have "sem N m V u \<in> carrier_mat (N * m) (N * m)" by (rule sem_carrier[OF V g])
-  moreover have "grover (N * m) (pflag_mat (N * m) d P) (sem N m V u *\<^sub>v unit_vec (N * m) 0) \<in> carrier_mat (N * m) (N * m)"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
-  ultimately show ?case by simp
-next
-  case (Suc k)
-  let ?Q = "grover (N * m) (pflag_mat (N * m) d P) (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
-  have Q: "?Q \<in> carrier_mat (N * m) (N * m)"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
-  have U: "sem N m V u \<in> carrier_mat (N * m) (N * m)" by (rule sem_carrier[OF V g])
-  have "sem N m V (aa_progP (N * m) d P u (Suc k)) = ?Q * (?Q ^\<^sub>m k * sem N m V u)"
-    using Suc sem_grover_progP[OF V g K] by simp
-  also have "\<dots> = ?Q ^\<^sub>m Suc k * sem N m V u"
-    using assoc_mult_mat[OF Q pow_carrier_mat[OF Q] U, symmetric] pow_mat_comm[OF Q, of k] by simp
-  finally show ?case .
-qed
-
-text \<open>Amplifying a circuit $u$: with $k=\lfloor\pi/(4\theta)\rfloor$ rounds, $\sin\theta=\norm{\mathrm{pflag d P}\,u\ket0}$,
-the success probability is at least $1-\sin^2\theta$, the post-selected state is unchanged, and the
-oracle is called $(2k+1)\cdot\mathrm{calls}(u)$ times with $k\le\pi/(4\sin\theta)$.\<close>
-
-theorem circuit_amplificationP:
-  assumes V: "V \<in> carrier_mat m m" "unitary V" and g: "gates_ok (N * m) u" and K: "0 < N * m"
-      and a0: "0 < \<parallel>pflag d P (sem N m V u *\<^sub>v unit_vec (N * m) 0)\<parallel>"
-      and a1: "\<parallel>pflag d P (sem N m V u *\<^sub>v unit_vec (N * m) 0)\<parallel> < 1"
-  obtains k where
-    "1 - \<parallel>pflag d P (sem N m V u *\<^sub>v unit_vec (N * m) 0)\<parallel>\<^sup>2 \<le> \<parallel>pflag d P (sem N m V (aa_progP (N * m) d P u k) *\<^sub>v unit_vec (N * m) 0)\<parallel>\<^sup>2"
-    "complex_of_real (1 / \<parallel>pflag d P (sem N m V (aa_progP (N * m) d P u k) *\<^sub>v unit_vec (N * m) 0)\<parallel>) \<cdot>\<^sub>v pflag d P (sem N m V (aa_progP (N * m) d P u k) *\<^sub>v unit_vec (N * m) 0)
-       = complex_of_real (1 / \<parallel>pflag d P (sem N m V u *\<^sub>v unit_vec (N * m) 0)\<parallel>) \<cdot>\<^sub>v pflag d P (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
-    "calls (aa_progP (N * m) d P u k) = (2 * k + 1) * calls u"
-    "real k \<le> pi / (4 * \<parallel>pflag d P (sem N m V u *\<^sub>v unit_vec (N * m) 0)\<parallel>)"
-proof -
-  let ?K = "N * m" and ?U = "sem N m V u"
-  let ?psi = "?U *\<^sub>v unit_vec ?K 0"
-  have U: "?U \<in> carrier_mat ?K ?K" "unitary ?U" using sem_carrier[OF V g] sem_unitary[OF V g] by simp_all
-  have e0: "dim_vec (unit_vec ?K 0) = ?K" by simp
-  have dpsi: "dim_vec ?psi = ?K" using U(1) by simp
-  have npsi: "\<parallel>?psi\<parallel> = 1" using unitary_vnorm[OF U e0] K by simp
-  have Pv: "pflag_mat ?K d P *\<^sub>v v = pflag d P v" if "dim_vec v = ?K" for v using pflag_mat_mult[OF that] .
-  have a0': "0 < \<parallel>pflag_mat ?K d P *\<^sub>v ?psi\<parallel>" and a1': "\<parallel>pflag_mat ?K d P *\<^sub>v ?psi\<parallel> < 1" using a0 a1 Pv[OF dpsi] by simp_all
-  obtain \<theta> where t0: "0 < \<theta>" and t1: "\<theta> < pi / 2" and st: "sin \<theta> = \<parallel>pflag_mat ?K d P *\<^sub>v ?psi\<parallel>"
-      and it: "\<And>k. pflag_mat ?K d P *\<^sub>v (grover ?K (pflag_mat ?K d P) ?psi ^\<^sub>m k *\<^sub>v ?psi) =
-                    complex_of_real (sin ((2 * real k + 1) * \<theta>) / sin \<theta>) \<cdot>\<^sub>v (pflag_mat ?K d P *\<^sub>v ?psi)"
-    by (rule amplitude_amplification[OF proj_set_carrier proj_set_idem proj_set_dagger dpsi npsi a0' a1']) blast
-  define k where "k = nat \<lfloor>pi / (4 * \<theta>)\<rfloor>"
-  note r = grover_rounds[OF t0 t1, folded k_def]
-  let ?Q = "grover ?K (pflag_mat ?K d P) ?psi"
-  have Q: "?Q \<in> carrier_mat ?K ?K"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
-  have aa: "sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0 = ?Q ^\<^sub>m k *\<^sub>v ?psi"
-    unfolding sem_aa_progP[OF V g K] using assoc_mult_mat_vec[OF pow_carrier_mat[OF Q] U(1), of "unit_vec ?K 0"] by (simp add: carrier_vecI)
-  have dq: "dim_vec (?Q ^\<^sub>m k *\<^sub>v ?psi) = ?K" using carrier_matD(1)[OF pow_carrier_mat[OF Q, of k]] by (simp only: dim_mult_mat_vec)
-  have s0: "0 < sin \<theta>" using st a0' by simp
-  have post: "pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0) = complex_of_real (sin ((2 * real k + 1) * \<theta>) / sin \<theta>) \<cdot>\<^sub>v pflag d P ?psi"
-    unfolding aa Pv[OF dq, symmetric] Pv[OF dpsi, symmetric] by (rule it)
-  have np: "\<parallel>pflag d P ?psi\<parallel> = sin \<theta>" using st Pv[OF dpsi] by simp
-  show ?thesis
-  proof (rule that)
-    have "\<parallel>pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)\<parallel> = sin ((2 * real k + 1) * \<theta>)"
-      unfolding post cpx_vec_length_smult norm_of_real np using s0 r(3) by simp
-    thus "1 - \<parallel>pflag d P ?psi\<parallel>\<^sup>2 \<le> \<parallel>pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)\<parallel>\<^sup>2"
-      unfolding np using r(1) by simp
-    show "complex_of_real (1 / \<parallel>pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)\<parallel>) \<cdot>\<^sub>v pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)
-          = complex_of_real (1 / \<parallel>pflag d P ?psi\<parallel>) \<cdot>\<^sub>v pflag d P ?psi"
-      unfolding post by (rule normalize_smult_pos) (use s0 r(3) np in simp_all)
-    show "calls (aa_progP ?K d P u k) = (2 * k + 1) * calls u" by (rule calls_aa_progP)
-    have "real k \<le> pi / (4 * \<theta>)" by (rule r(2))
-    also have "\<dots> \<le> pi / (4 * sin \<theta>)" using s0 sin_x_le_x[of \<theta>] t0 by (intro divide_left_mono) simp_all
-    finally show "real k \<le> pi / (4 * \<parallel>pflag d P ?psi\<parallel>)" unfolding np .
-  qed
-qed
-
 subsection \<open>The flag circuit with oracle calls\<close>
 
 definition flag_stage :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
@@ -428,8 +316,8 @@ theorem hhl_paper_runtime:
   shows "\<parallel>complex_of_real (1 / \<parallel>y\<parallel>) \<cdot>\<^sub>v y - tensor_vec (win_state N) (tensor_vec (complex_of_real (1 / \<parallel>x\<parallel>) \<cdot>\<^sub>v x) (unit_vec 3 1))\<parallel> \<le> \<epsilon>"
     and "1 / (4 * \<kappa>) \<le> \<parallel>y\<parallel>"
     and "\<parallel>y\<parallel> < 1 \<Longrightarrow> \<exists>k.
-           1 - \<parallel>y\<parallel>\<^sup>2 \<le> \<parallel>pflag 3 (\<lambda>c. c = 1) (sem N (n * 3) (evolution A t0 \<Otimes> 1\<^sub>m 3) (aa_progP (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) *\<^sub>v unit_vec (N * (n * 3)) 0)\<parallel>\<^sup>2
-         \<and> calls (aa_progP (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) = (2 * k + 1) * (2 * (N - 1))
+           1 - \<parallel>y\<parallel>\<^sup>2 \<le> \<parallel>pflag 3 (\<lambda>c. c = 1) (sem N (n * 3) (evolution A t0 \<Otimes> 1\<^sub>m 3) (aa_prog (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) *\<^sub>v unit_vec (N * (n * 3)) 0)\<parallel>\<^sup>2
+         \<and> calls (aa_prog (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) = (2 * k + 1) * (2 * (N - 1))
          \<and> real k \<le> pi * \<kappa>"
 proof -
   let ?\<psi> = "win_state N" and ?K = "N * (n * 3)"
@@ -575,15 +463,15 @@ proof -
   qed
   have gk: "gates_ok ?K (flag_full_prog N n G Prep)" by (rule gates_ok_flag_full_prog[where G = G, OF N0 G Prep(1,2)])
   have K0: "0 < ?K" using N0 n0 by simp
-  obtain k where k1: "1 - \<parallel>pflag 3 (\<lambda>c. c = 1) out\<parallel>\<^sup>2 \<le> \<parallel>pflag 3 (\<lambda>c. c = 1) (sem N (n * 3) (evolution A t0 \<Otimes> 1\<^sub>m 3) (aa_progP ?K 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) *\<^sub>v unit_vec ?K 0)\<parallel>\<^sup>2"
-      and k3: "calls (aa_progP ?K 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) = (2 * k + 1) * calls (flag_full_prog N n G Prep)"
+  obtain k where k1: "1 - \<parallel>pflag 3 (\<lambda>c. c = 1) out\<parallel>\<^sup>2 \<le> \<parallel>pflag 3 (\<lambda>c. c = 1) (sem N (n * 3) (evolution A t0 \<Otimes> 1\<^sub>m 3) (aa_prog ?K 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) *\<^sub>v unit_vec ?K 0)\<parallel>\<^sup>2"
+      and k3: "calls (aa_prog ?K 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) = (2 * k + 1) * calls (flag_full_prog N n G Prep)"
       and k4: "real k \<le> pi / (4 * \<parallel>pflag 3 (\<lambda>c. c = 1) out\<parallel>)"
-    using circuit_amplificationP[OF O gk K0, of 3 "\<lambda>c. c = 1", folded out_def] y0 y1 unfolding y_def by blast
+    using circuit_amplification[OF O gk K0, of 3 "\<lambda>c. c = 1", folded out_def] y0 y1 unfolding y_def by blast
   have "pi / (4 * \<parallel>y\<parallel>) \<le> pi / (4 * (1 / (4 * \<kappa>)))" using ylo k0 y0 by (intro divide_left_mono) simp_all
   also have "\<dots> = pi * \<kappa>" using k0 by simp
   finally have "real k \<le> pi * \<kappa>" using k4 unfolding y_def by linarith
-  thus "\<exists>k. 1 - \<parallel>y\<parallel>\<^sup>2 \<le> \<parallel>pflag 3 (\<lambda>c. c = 1) (sem N (n * 3) (evolution A t0 \<Otimes> 1\<^sub>m 3) (aa_progP (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) *\<^sub>v unit_vec (N * (n * 3)) 0)\<parallel>\<^sup>2
-         \<and> calls (aa_progP (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) = (2 * k + 1) * (2 * (N - 1))
+  thus "\<exists>k. 1 - \<parallel>y\<parallel>\<^sup>2 \<le> \<parallel>pflag 3 (\<lambda>c. c = 1) (sem N (n * 3) (evolution A t0 \<Otimes> 1\<^sub>m 3) (aa_prog (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) *\<^sub>v unit_vec (N * (n * 3)) 0)\<parallel>\<^sup>2
+         \<and> calls (aa_prog (N * (n * 3)) 3 (\<lambda>c. c = 1) (flag_full_prog N n G Prep) k) = (2 * k + 1) * (2 * (N - 1))
          \<and> real k \<le> pi * \<kappa>"
     using k1 k3[unfolded calls_flag_full_prog] unfolding y_def by (intro exI[of _ k] conjI)
 qed

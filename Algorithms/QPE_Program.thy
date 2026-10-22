@@ -124,7 +124,7 @@ proof -
   have Hu: "Quantum.unitary (Hadamard \<otimes>\<^bsup>k\<^esup> \<Otimes> 1\<^sub>m m)" by (rule tensor_mat_unitary_one_right[OF hadamard_layer_unitary[OF k]])
   have C: "ctrl_pow (2 ^ k) m U \<in> carrier_mat (2 ^ k * m) (2 ^ k * m)" by simp
   have Cu: "Quantum.unitary (ctrl_pow (2 ^ k) m U)"
-    unfolding ctrl_pow_blocks by (rule ctrl_blocks_unitary) (simp_all add: U(1) unitary_pow[OF U])
+    by (rule ctrl_blocks_unitary) (simp_all add: U(1) unitary_pow[OF U])
   have F: "(fourier (2 ^ k))\<^sup>\<dagger> \<Otimes> 1\<^sub>m m \<in> carrier_mat (2 ^ k * m) (2 ^ k * m)"
     by (rule tensor_carrier[OF dagger_carrier[OF fourier_carrier] one_carrier_mat])
   have Fu: "Quantum.unitary ((fourier (2 ^ k))\<^sup>\<dagger> \<Otimes> 1\<^sub>m m)"

@@ -63,15 +63,6 @@ qed
 
 subsection \<open>Programs with a two-outcome measurement, and the overlap with a target state\<close>
 
-definition prog_meas :: "nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
-  "prog_meas K M Us = init_com K ;; utrans_seq Us ;; Measure 2 M [SKIP, SKIP]"
-
-definition rus_meas :: "nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
-  "rus_meas K M Us = init_com K ;; utrans_seq Us ;; While (\<lambda>j. M (1 - j)) (init_com K ;; utrans_seq Us)"
-
-lemma hhl_prog_meas: "hhl_prog K Us = prog_meas K (anc_proj K) Us" by (simp add: hhl_prog_def prog_meas_def)
-lemma hhl_rus_meas: "hhl_rus_prog K Us = rus_meas K (anc_proj K) Us" by (simp add: hhl_rus_prog_def rus_meas_def)
-
 lemma inner_prod_zero_left:
   assumes w: "w \<in> carrier_vec n"
   shows "Complex_Matrix.inner_prod (0\<^sub>v n) w = (0 :: complex)"
@@ -554,29 +545,29 @@ is the single-run success probability), and the post-selected state is unchanged
 
 theorem hhl_apx_amplified:
   assumes y1: "\<parallel>post1 (apx_out (hhl_full_prog A t0 N C Prep))\<parallel> < 1"
-  obtains k where "calls (aa_prog apx_K (hhl_full_prog A t0 N C Prep) k) = (2 * k + 1) * (2 * (N - 1))"
+  obtains k where "calls (aa_prog apx_K 2 (\<lambda>c. c = 1) (hhl_full_prog A t0 N C Prep) k) = (2 * k + 1) * (2 * (N - 1))"
     and "real k \<le> pi\<^sup>2 / (4 * C * t0)"
     and "state_sig.hoare_total_correct [N, n, 2]
            (complex_of_real ((1 - \<parallel>post1 (apx_out (hhl_full_prog A t0 N C Prep))\<parallel>\<^sup>2) * (1 - apx_e\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m apx_K)
-           (prog_meas apx_K (anc_proj apx_K) (qgates N (n * 2) apx_O (aa_prog apx_K (hhl_full_prog A t0 N C Prep) k)))
+           (prog_meas apx_K (anc_proj apx_K) (qgates N (n * 2) apx_O (aa_prog apx_K 2 (\<lambda>c. c = 1) (hhl_full_prog A t0 N C Prep) k)))
            (outer_prod apx_t apx_t)"
 proof -
   note ab = apx_basics
   let ?c = "hhl_full_prog A t0 N C Prep" and ?y = "post1 (apx_out (hhl_full_prog A t0 N C Prep))"
   note hc = hhl_complete[OF A t0 N C th lmin spec b e NQ V Vc eta Prep small]
-  obtain k where k1: "1 - \<parallel>?y\<parallel>\<^sup>2 \<le> \<parallel>post1 (apx_out (aa_prog apx_K ?c k))\<parallel>\<^sup>2"
-    and k2: "complex_of_real (1 / \<parallel>post1 (apx_out (aa_prog apx_K ?c k))\<parallel>) \<cdot>\<^sub>v post1 (apx_out (aa_prog apx_K ?c k))
+  obtain k where k1: "1 - \<parallel>?y\<parallel>\<^sup>2 \<le> \<parallel>post1 (apx_out (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k))\<parallel>\<^sup>2"
+    and k2: "complex_of_real (1 / \<parallel>post1 (apx_out (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k))\<parallel>) \<cdot>\<^sub>v post1 (apx_out (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k))
              = complex_of_real (1 / \<parallel>?y\<parallel>) \<cdot>\<^sub>v ?y"
-    and k3: "calls (aa_prog apx_K ?c k) = (2 * k + 1) * (2 * (N - 1))" and k4: "real k \<le> pi\<^sup>2 / (4 * C * t0)"
+    and k3: "calls (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k) = (2 * k + 1) * (2 * (N - 1))" and k4: "real k \<le> pi\<^sup>2 / (4 * C * t0)"
     using hc(3)[OF _ y1] by blast
-  let ?z = "post1 (apx_out (aa_prog apx_K ?c k))"
-  have g: "gates_ok apx_K (aa_prog apx_K ?c k)" by (rule gates_ok_aa_prog[OF ab(4)])
+  let ?z = "post1 (apx_out (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k))"
+  have g: "gates_ok apx_K (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k)" by (rule gates_ok_aa_prog[OF ab(4)])
   have "0 < 1 - \<parallel>?y\<parallel>\<^sup>2" using y1 vnorm_ge0[of ?y] by (simp add: power_less_one_iff abs_square_less_1)
   hence z0: "0 < \<parallel>?z\<parallel>" using k1 by (smt (verit) power2_eq_square vnorm_ge0 mult_nonneg_nonneg zero_less_mult_iff)
   have D: "\<parallel>complex_of_real (1 / \<parallel>?z\<parallel>) \<cdot>\<^sub>v ?z - apx_t\<parallel> \<le> apx_e" unfolding k2 by (rule hc(2))
-  have F: "\<parallel>?z\<parallel>\<^sup>2 * (1 - apx_e\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod apx_t (circuit_mat apx_K (qgates N (n * 2) apx_O (aa_prog apx_K ?c k)) *\<^sub>v unit_vec apx_K 0)))\<^sup>2"
+  have F: "\<parallel>?z\<parallel>\<^sup>2 * (1 - apx_e\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod apx_t (circuit_mat apx_K (qgates N (n * 2) apx_O (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k)) *\<^sub>v unit_vec apx_K 0)))\<^sup>2"
     by (rule apx_fidelity[OF g z0 D])
-  have q: "(1 - \<parallel>?y\<parallel>\<^sup>2) * (1 - apx_e\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod apx_t (circuit_mat apx_K (qgates N (n * 2) apx_O (aa_prog apx_K ?c k)) *\<^sub>v unit_vec apx_K 0)))\<^sup>2"
+  have q: "(1 - \<parallel>?y\<parallel>\<^sup>2) * (1 - apx_e\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod apx_t (circuit_mat apx_K (qgates N (n * 2) apx_O (aa_prog apx_K 2 (\<lambda>c. c = 1) ?c k)) *\<^sub>v unit_vec apx_K 0)))\<^sup>2"
   proof (cases "0 \<le> 1 - apx_e\<^sup>2")
     case True
     thus ?thesis using F mult_right_mono[OF k1 True] by linarith
@@ -824,11 +815,11 @@ text \<open>Amplitude amplification of the filtered algorithm, as a program: at 
 
 theorem hhl_flag_amplified:
   assumes y1: "\<parallel>flg_y flg_c\<parallel> < 1"
-  obtains k where "calls (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k) = (2 * k + 1) * (2 * (N - 1))"
+  obtains k where "calls (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k) = (2 * k + 1) * (2 * (N - 1))"
     and "real k \<le> pi * \<kappa>"
     and "state_sig.hoare_total_correct [N, n, 3]
            (complex_of_real ((1 - \<parallel>flg_y flg_c\<parallel>\<^sup>2) * (1 - \<epsilon>\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m flg_K)
-           (prog_meas flg_K flg_M (qgates N (n * 3) flg_O (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)))
+           (prog_meas flg_K flg_M (qgates N (n * 3) flg_O (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)))
            (outer_prod flg_t flg_t)"
 proof -
   note fb = flg_basics
@@ -836,26 +827,26 @@ proof -
   have k0: "0 < \<kappa>" using k1 by simp
   have ylo: "1 / (4 * \<kappa>) \<le> \<parallel>flg_y flg_c\<parallel>" by (rule hr(2))
   have y0: "0 < \<parallel>flg_y flg_c\<parallel>" using ylo k0 by (smt (verit) divide_pos_pos)
-  obtain k where k1': "1 - \<parallel>flg_y flg_c\<parallel>\<^sup>2 \<le> \<parallel>flg_y (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)\<parallel>\<^sup>2"
-    and k2: "complex_of_real (1 / \<parallel>flg_y (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)\<parallel>) \<cdot>\<^sub>v flg_y (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)
+  obtain k where k1': "1 - \<parallel>flg_y flg_c\<parallel>\<^sup>2 \<le> \<parallel>flg_y (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)\<parallel>\<^sup>2"
+    and k2: "complex_of_real (1 / \<parallel>flg_y (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)\<parallel>) \<cdot>\<^sub>v flg_y (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)
              = complex_of_real (1 / \<parallel>flg_y flg_c\<parallel>) \<cdot>\<^sub>v flg_y flg_c"
-    and k3: "calls (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k) = (2 * k + 1) * calls flg_c"
+    and k3: "calls (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k) = (2 * k + 1) * calls flg_c"
     and k4: "real k \<le> pi / (4 * \<parallel>flg_y flg_c\<parallel>)"
-    by (rule circuit_amplificationP[OF fb(2,3,4,1) y0 y1])
+    by (rule circuit_amplification[OF fb(2,3,4,1) y0 y1])
   have k5: "real k \<le> pi * \<kappa>"
   proof -
     have "pi / (4 * \<parallel>flg_y flg_c\<parallel>) \<le> pi / (4 * (1 / (4 * \<kappa>)))"
       using ylo k0 y0 by (intro divide_left_mono mult_left_mono) simp_all
     thus ?thesis using k4 k0 by simp
   qed
-  let ?z = "flg_y (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)"
-  have g: "gates_ok flg_K (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)" by (rule gates_ok_aa_progP[OF fb(4)])
+  let ?z = "flg_y (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)"
+  have g: "gates_ok flg_K (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)" by (rule gates_ok_aa_prog[OF fb(4)])
   have "0 < 1 - \<parallel>flg_y flg_c\<parallel>\<^sup>2" using y1 vnorm_ge0[of "flg_y flg_c"] by (simp add: power_less_one_iff abs_square_less_1)
   hence z0: "0 < \<parallel>?z\<parallel>" using k1' by (smt (verit) power2_eq_square vnorm_ge0 mult_nonneg_nonneg zero_less_mult_iff)
   have D: "\<parallel>complex_of_real (1 / \<parallel>?z\<parallel>) \<cdot>\<^sub>v ?z - flg_t\<parallel> \<le> \<epsilon>" unfolding k2 by (rule hr(1))
-  have F: "\<parallel>?z\<parallel>\<^sup>2 * (1 - \<epsilon>\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod flg_t (circuit_mat flg_K (qgates N (n * 3) flg_O (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)) *\<^sub>v unit_vec flg_K 0)))\<^sup>2"
+  have F: "\<parallel>?z\<parallel>\<^sup>2 * (1 - \<epsilon>\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod flg_t (circuit_mat flg_K (qgates N (n * 3) flg_O (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)) *\<^sub>v unit_vec flg_K 0)))\<^sup>2"
     by (rule flg_triples(1)[OF g z0 D])
-  have q: "(1 - \<parallel>flg_y flg_c\<parallel>\<^sup>2) * (1 - \<epsilon>\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod flg_t (circuit_mat flg_K (qgates N (n * 3) flg_O (aa_progP flg_K 3 (\<lambda>c. c = 1) flg_c k)) *\<^sub>v unit_vec flg_K 0)))\<^sup>2"
+  have q: "(1 - \<parallel>flg_y flg_c\<parallel>\<^sup>2) * (1 - \<epsilon>\<^sup>2) \<le> (cmod (Complex_Matrix.inner_prod flg_t (circuit_mat flg_K (qgates N (n * 3) flg_O (aa_prog flg_K 3 (\<lambda>c. c = 1) flg_c k)) *\<^sub>v unit_vec flg_K 0)))\<^sup>2"
   proof (cases "0 \<le> 1 - \<epsilon>\<^sup>2")
     case True
     thus ?thesis using F mult_right_mono[OF k1' True] by linarith

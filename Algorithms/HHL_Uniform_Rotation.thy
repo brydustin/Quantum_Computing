@@ -17,65 +17,6 @@ by the last clock qubit (\<open>hhl_fine_gate_kinds\<close>); the same holds for
 amplified circuits (\<open>hhl_apx_fine2\<close>).\<close>
 
 
-subsection \<open>Permutation gates\<close>
-
-definition pmat :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat" where
-  "pmat N f = Matrix.mat N N (\<lambda>(r, t). if r = f t then 1 else 0)"
-
-lemma pmat_carrier [simp]: "pmat N f \<in> carrier_mat N N" by (simp add: pmat_def)
-
-lemma dim_pmat [simp]: "dim_row (pmat N f) = N" "dim_col (pmat N f) = N" by (simp_all add: pmat_def)
-
-lemma pmat_unit:
-  assumes t: "t < N" and f: "f t < N"
-  shows "pmat N f *\<^sub>v unit_vec N t = unit_vec N (f t)"
-proof (rule eq_vecI)
-  fix l assume "l < dim_vec (unit_vec N (f t) :: complex Matrix.vec)"
-  hence l: "l < N" by simp
-  show "(pmat N f *\<^sub>v unit_vec N t) $ l = unit_vec N (f t) $ l"
-    unfolding mult_unit_vec_index[OF pmat_carrier t l] using l t by (simp add: pmat_def unit_vec_def)
-qed simp
-
-lemma pmat_mult:
-  assumes g: "\<And>t. t < N \<Longrightarrow> g t < N"
-  shows "pmat N f * pmat N g = pmat N (f \<circ> g)"
-proof (rule eq_matI)
-  fix r t assume "r < dim_row (pmat N (f \<circ> g))" "t < dim_col (pmat N (f \<circ> g))"
-  hence rt: "r < N" "t < N" by (simp_all add: pmat_def)
-  have "(pmat N f * pmat N g) $$ (r, t) = (\<Sum>u<N. (if r = f u then 1 else 0) * (if u = g t then 1 else 0))"
-    using rt by (simp add: pmat_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>u<N. if u = g t then (if r = f (g t) then 1 else 0) else 0)"
-    by (rule sum.cong) auto
-  also have "\<dots> = (if r = f (g t) then 1 else 0)" using g[OF rt(2)] by (simp add: sum.delta)
-  finally show "(pmat N f * pmat N g) $$ (r, t) = pmat N (f \<circ> g) $$ (r, t)" using rt by (simp add: pmat_def)
-qed (simp_all add: pmat_def)
-
-lemma pmat_id: "pmat N id = 1\<^sub>m N" by (rule eq_matI) (auto simp: pmat_def)
-
-lemma pmat_dagger_invol:
-  assumes f: "\<And>t. t < N \<Longrightarrow> f t < N" "\<And>t. t < N \<Longrightarrow> f (f t) = t"
-  shows "(pmat N f)\<^sup>\<dagger> = pmat N f"
-proof (rule eq_matI)
-  fix r t assume "r < dim_row (pmat N f)" "t < dim_col (pmat N f)"
-  hence rt: "r < N" "t < N" by simp_all
-  have "(t = f r) \<longleftrightarrow> (r = f t)" using f rt by metis
-  thus "(pmat N f)\<^sup>\<dagger> $$ (r, t) = pmat N f $$ (r, t)" using rt by (simp add: dagger_def pmat_def)
-qed (simp_all add: dagger_def pmat_def)
-
-lemma pmat_unitary_invol:
-  assumes f: "\<And>t. t < N \<Longrightarrow> f t < N" "\<And>t. t < N \<Longrightarrow> f (f t) = t"
-  shows "Quantum.unitary (pmat N f)"
-proof -
-  have "pmat N f * pmat N f = 1\<^sub>m N"
-  proof -
-    have "pmat N f * pmat N f = pmat N (f \<circ> f)" by (rule pmat_mult[OF f(1)])
-    also have "\<dots> = pmat N id" unfolding pmat_def using f(2) by (intro eq_matI) auto
-    finally show ?thesis by (simp add: pmat_id)
-  qed
-  moreover have d: "(pmat N f)\<^sup>\<dagger> = pmat N f" by (rule pmat_dagger_invol) (use f in auto)
-  ultimately show ?thesis unfolding Quantum.unitary_def d by simp
-qed
-
 subsection \<open>Lifting a permutation of two adjacent bits\<close>
 
 definition lift2 :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat" where
@@ -245,16 +186,16 @@ lemma rot_Rot: "\<bar>c\<bar> \<le> 1 \<Longrightarrow> rot c = Rot (arcsin c)"
 
 subsection \<open>Parity of a set of clock bits, accumulated in the last clock qubit\<close>
 
-definition gc :: "nat \<Rightarrow> nat" where "gc x = (if x = 2 then 3 else if x = 3 then 2 else x)"
-definition gs :: "nat \<Rightarrow> nat" where "gs x = (if x = 1 then 2 else if x = 2 then 1 else x)"
+abbreviation gc :: "nat \<Rightarrow> nat" where "gc \<equiv> Transposition.transpose 2 3"
+abbreviation gs :: "nat \<Rightarrow> nat" where "gs \<equiv> Transposition.transpose 1 2"
 
-lemma gc_props: "x < 4 \<Longrightarrow> gc x < 4" "x < 4 \<Longrightarrow> gc (gc x) = x" by (auto simp: gc_def)
-lemma gs_props: "x < 4 \<Longrightarrow> gs x < 4" "x < 4 \<Longrightarrow> gs (gs x) = x" by (auto simp: gs_def)
+lemma gc_props: "x < 4 \<Longrightarrow> gc x < 4" "x < 4 \<Longrightarrow> gc (gc x) = x" by (auto simp: Transposition.transpose_def)
+lemma gs_props: "x < 4 \<Longrightarrow> gs x < 4" "x < 4 \<Longrightarrow> gs (gs x) = x" by (auto simp: Transposition.transpose_def)
 
 definition opg :: "bool \<Rightarrow> nat \<Rightarrow> nat" where "opg b = (if b then gc else gs)"
 
 lemma opg_props: "x < 4 \<Longrightarrow> opg b x < 4" "x < 4 \<Longrightarrow> opg b (opg b x) = x"
-  by (auto simp: opg_def gc_props gs_props)
+  by (auto simp: opg_def Transposition.transpose_def)
 
 definition opf :: "bool \<times> nat \<Rightarrow> nat \<Rightarrow> nat" where "opf op = lift2 (opg (fst op)) (snd op)"
 
@@ -292,7 +233,7 @@ lemma opg_low:
 proof -
   have "a = 0 \<or> a = 1" "b = 0 \<or> b = 1" using a b by auto
   thus "odd (opg True (2 * a + b)) = (odd b \<noteq> odd a)" "odd (opg False (2 * a + b)) = odd a"
-    by (auto simp: opg_def gc_def gs_def)
+    by (auto simp: opg_def Transposition.transpose_def)
 qed
 
 lemma mod4_split: "(2 * x + y) mod 4 = 2 * (x mod 2) + y" if "y < 2" for x y :: nat
@@ -461,18 +402,6 @@ proof (rule eq_vecI)
     using tensor_vec_index[of "unit_vec N (i div m)" N "unit_vec m (i mod m)" m r] r i m0
     by (auto simp: unit_vec_def less_mult_imp_div_less)
 qed
-
-lemma mat_eq_unit:
-  fixes A B :: "complex Matrix.mat"
-  assumes A: "A \<in> carrier_mat K K" and B: "B \<in> carrier_mat K K"
-    and e: "\<And>i. i < K \<Longrightarrow> A *\<^sub>v unit_vec K i = B *\<^sub>v unit_vec K i"
-  shows "A = B"
-proof (rule eq_matI)
-  fix r i assume "r < dim_row B" "i < dim_col B"
-  hence ri: "r < K" "i < K" using B by auto
-  show "A $$ (r, i) = B $$ (r, i)"
-    using mult_unit_vec_index[OF A ri(2) ri(1)] mult_unit_vec_index[OF B ri(2) ri(1)] e[OF ri(2)] by simp
-qed (use A B in auto)
 
 lemma ctrl_conj:
   assumes f: "\<And>t. t < N \<Longrightarrow> f t < N" and h: "\<And>t. t < N \<Longrightarrow> h (f t) = t"
@@ -1058,14 +987,14 @@ theorem hhl_apx_fine2:
   shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real ((C * t0 / pi)\<^sup>2 * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
      (prog_meas K (anc_proj K) (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) c)))
      (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
-    and "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
+    and "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K 2 (\<lambda>c. c = 1) c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
            \<and> real j \<le> pi\<^sup>2 / (4 * C * t0)
            \<and> state_sig.hoare_total_correct [2 ^ k, n, 2]
                (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-               (prog_meas K (anc_proj K) (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))))
+               (prog_meas K (anc_proj K) (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))))
                (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
-    and "\<And>j U. U \<in> set (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)))
-           \<Longrightarrow> (U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<and> U \<noteq> hhl_rot_stage A t0 (2 ^ k) C)
+    and "\<And>j U. U \<in> set (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)))
+           \<Longrightarrow> (U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<and> U \<noteq> hhl_rot_stage A t0 (2 ^ k) C)
                \<or> elementary K U \<or> (\<exists>a. U = cv0 k n (Rot a))"
 proof -
   have N: "2 \<le> (2::nat) ^ k" using power_increasing[of 1 k "2::nat"] k by simp
@@ -1097,39 +1026,39 @@ proof -
       unfolding dd K_def c_def by (rule hhl_apx_program[OF A t0 N C th lmin spec b e NQ V Vc eta Prep small])
     show ?thesis using tr[OF g0 h0] unfolding dd .
   qed
-  show "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
+  show "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1 \<Longrightarrow> \<exists>j. calls (aa_prog K 2 (\<lambda>c. c = 1) c j) = (2 * j + 1) * (2 * (2 ^ k - 1))
            \<and> real j \<le> pi\<^sup>2 / (4 * C * t0)
            \<and> hoare_total_correct
                (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-               (prog_meas K (anc_proj K) (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))))
+               (prog_meas K (anc_proj K) (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))))
                (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
   proof -
     assume y1: "\<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel> < 1"
-    obtain j where j1: "calls (aa_prog K c j) = (2 * j + 1) * (2 * (2 ^ k - 1))" and j2: "real j \<le> pi\<^sup>2 / (4 * C * t0)"
+    obtain j where j1: "calls (aa_prog K 2 (\<lambda>c. c = 1) c j) = (2 * j + 1) * (2 * (2 ^ k - 1))" and j2: "real j \<le> pi\<^sup>2 / (4 * C * t0)"
       and j3: "hoare_total_correct
            (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-           (prog_meas K (anc_proj K) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
+           (prog_meas K (anc_proj K) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
       unfolding c_def K_def by (rule hhl_apx_amplified[OF A t0 N C th lmin spec b e NQ V Vc eta Prep small y1[unfolded c_def]])
-    have g: "gates_ok K (aa_prog K c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
+    have g: "gates_ok K (aa_prog K 2 (\<lambda>c. c = 1) c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
     have j3': "hoare_total_correct
            (complex_of_real ((1 - \<parallel>post1 (apx_out V n (2 ^ k) c)\<parallel>\<^sup>2) * (1 - (apx_e A b (2 ^ k) C \<epsilon> \<eta>)\<^sup>2)) \<cdot>\<^sub>m 1\<^sub>m K)
-           (prog_meas d (anc_proj d) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
+           (prog_meas d (anc_proj d) (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j))) (outer_prod (apx_t A b (2 ^ k)) (apx_t A b (2 ^ k)))"
       using j3 unfolding dd .
     show ?thesis using j1 j2 tr[OF g j3'] unfolding dd by blast
   qed
-  show "\<And>j U. U \<in> set (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)))
-           \<Longrightarrow> (U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<and> U \<noteq> hhl_rot_stage A t0 (2 ^ k) C)
+  show "\<And>j U. U \<in> set (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)))
+           \<Longrightarrow> (U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<and> U \<noteq> hhl_rot_stage A t0 (2 ^ k) C)
                \<or> elementary K U \<or> (\<exists>a. U = cv0 k n (Rot a))"
   proof -
-    fix j U assume U: "U \<in> set (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)))"
-    have g: "gates_ok K (aa_prog K c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
-    have okU: "\<And>W. W \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<Longrightarrow>
+    fix j U assume U: "U \<in> set (fine2_gates k n \<theta>s (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)))"
+    have g: "gates_ok K (aa_prog K 2 (\<lambda>c. c = 1) c j)" unfolding K_def c_def by (rule gates_ok_aa_prog[OF ab(4)])
+    have okU: "\<And>W. W \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<Longrightarrow>
                W \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary W"
-      using qgates_ok[OF ab(2,3), where c = "aa_prog K c j"] g by (simp add: K_def)
-    have "(U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<and> U \<noteq> ctrl_blocks (2 ^ k) (n * 2) (\<lambda>c. 1\<^sub>m n \<Otimes> Rot (\<theta>s c)))
+      using qgates_ok[OF ab(2,3), where c = "aa_prog K 2 (\<lambda>c. c = 1) c j"] g by (simp add: K_def)
+    have "(U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<and> U \<noteq> ctrl_blocks (2 ^ k) (n * 2) (\<lambda>c. 1\<^sub>m n \<Otimes> Rot (\<theta>s c)))
           \<or> elementary (2 ^ k * (n * 2)) U \<or> (\<exists>a. U = cv0 k n (Rot a))"
       by (rule fine2_gates_props(3)[OF okU n0 U])
-    thus "(U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K c j)) \<and> U \<noteq> hhl_rot_stage A t0 (2 ^ k) C)
+    thus "(U \<in> set (qgates (2 ^ k) (n * 2) (V \<Otimes> 1\<^sub>m 2) (aa_prog K 2 (\<lambda>c. c = 1) c j)) \<and> U \<noteq> hhl_rot_stage A t0 (2 ^ k) C)
           \<or> elementary K U \<or> (\<exists>a. U = cv0 k n (Rot a))" unfolding rs by (simp add: K_def)
   qed
 qed

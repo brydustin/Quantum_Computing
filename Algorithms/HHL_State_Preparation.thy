@@ -400,47 +400,45 @@ qed
 
 subsection \<open>The sine window\<close>
 
-definition wamp :: "nat \<Rightarrow> nat \<Rightarrow> real" where
-  "wamp k \<tau> = sqrt (2 / real (2 ^ k)) * sin (pi * (real \<tau> + 1 / 2) / real (2 ^ k))"
-
-lemma win_state_wamp: "win_state (2 ^ k) = Matrix.vec (2 ^ k) (\<lambda>x. complex_of_real (wamp k x))"
-  by (rule eq_vecI) (simp_all add: win_state_def wamp_def)
-
-lemma wamp_nonneg: "\<tau> < 2 ^ k \<Longrightarrow> 0 \<le> wamp k \<tau>"
+lemma win_coef_nonneg: "\<tau> < N \<Longrightarrow> 0 \<le> win_coef N \<tau>"
 proof -
-  assume t: "\<tau> < 2 ^ k"
-  have "0 \<le> pi * (real \<tau> + 1 / 2) / real (2 ^ k)" by simp
-  moreover have "pi * (real \<tau> + 1 / 2) / real (2 ^ k) \<le> pi"
+  assume t: "\<tau> < N"
+  have "0 \<le> pi * (real \<tau> + 1 / 2) / real N" by simp
+  moreover have "pi * (real \<tau> + 1 / 2) / real N \<le> pi"
   proof -
-    have "\<tau> + 1 \<le> 2 ^ k" using t by simp
-    hence "real (\<tau> + 1) \<le> real (2 ^ k)" by (simp only: of_nat_le_iff)
-    hence "real \<tau> + 1 / 2 \<le> real (2 ^ k)" by simp
+    have "\<tau> + 1 \<le> N" using t by simp
+    hence "real (\<tau> + 1) \<le> real N" by (simp only: of_nat_le_iff)
+    hence "real \<tau> + 1 / 2 \<le> real N" by simp
     thus ?thesis by (simp add: divide_le_eq mult_left_le)
   qed
-  ultimately have "0 \<le> sin (pi * (real \<tau> + 1 / 2) / real (2 ^ k))" by (rule sin_ge_zero)
-  thus ?thesis unfolding wamp_def by simp
+  ultimately have "0 \<le> sin (pi * (real \<tau> + 1 / 2) / real N)" by (rule sin_ge_zero)
+  thus ?thesis unfolding win_coef_def by simp
 qed
 
-lemma wamp_norm: "1 \<le> k \<Longrightarrow> (\<Sum>x<2 ^ k. (wamp k x)\<^sup>2) = 1"
+lemma win_coef_norm: "2 \<le> N \<Longrightarrow> (\<Sum>x<N. (win_coef N x)\<^sup>2) = 1"
 proof -
-  assume k: "1 \<le> k"
-  have N: "2 \<le> (2::nat) ^ k" using power_increasing[of 1 k "2::nat"] k by simp
-  have "1 = \<parallel>win_state (2 ^ k)\<parallel>\<^sup>2" using win_state_norm[OF N] by simp
-  also have "\<dots> = (\<Sum>x<2 ^ k. (wamp k x)\<^sup>2)" unfolding vnorm_sq win_state_wamp by simp
+  assume N: "2 \<le> N"
+  have "1 = \<parallel>win_state N\<parallel>\<^sup>2" using win_state_norm[OF N] by simp
+  also have "\<dots> = (\<Sum>x<N. (win_coef N x)\<^sup>2)" unfolding vnorm_sq by (simp add: win_state_def)
   finally show ?thesis by simp
 qed
 
 theorem window_prep:
   assumes k: "1 \<le> k"
-  shows "circuit_mat (2 ^ k) (prep_gates k (wamp k)) *\<^sub>v unit_vec (2 ^ k) 0 = win_state (2 ^ k)"
-    and "\<And>U. U \<in> set (prep_gates k (wamp k)) \<Longrightarrow> elementary (2 ^ k) U"
-  using state_prep[OF wamp_norm[OF k] wamp_nonneg] unfolding win_state_wamp by simp_all
+  shows "circuit_mat (2 ^ k) (prep_gates k (win_coef (2 ^ k))) *\<^sub>v unit_vec (2 ^ k) 0 = win_state (2 ^ k)"
+    and "\<And>U. U \<in> set (prep_gates k (win_coef (2 ^ k))) \<Longrightarrow> elementary (2 ^ k) U"
+proof -
+  have N: "2 \<le> (2::nat) ^ k" using power_increasing[of 1 k "2::nat"] k by simp
+  show "circuit_mat (2 ^ k) (prep_gates k (win_coef (2 ^ k))) *\<^sub>v unit_vec (2 ^ k) 0 = win_state (2 ^ k)"
+    "\<And>U. U \<in> set (prep_gates k (win_coef (2 ^ k))) \<Longrightarrow> elementary (2 ^ k) U"
+    using state_prep[OF win_coef_norm[OF N] win_coef_nonneg] unfolding win_state_def by simp_all
+qed
 
 
 subsection \<open>The full preparation in gates\<close>
 
 definition win_prep_gates :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat list" where
-  "win_prep_gates k n Ub = map (\<lambda>G. G \<Otimes> 1\<^sub>m (n * 2)) (prep_gates k (wamp k)) @ [prep_gate (2 ^ k) Ub]"
+  "win_prep_gates k n Ub = map (\<lambda>G. G \<Otimes> 1\<^sub>m (n * 2)) (prep_gates k (win_coef (2 ^ k))) @ [prep_gate (2 ^ k) Ub]"
 
 definition win_prep_mat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "win_prep_mat k n Ub = circuit_mat (2 ^ k * (n * 2)) (win_prep_gates k n Ub)"
@@ -452,7 +450,7 @@ lemma win_prep_gates_props:
     and "win_prep_mat k n Ub \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2))" "Quantum.unitary (win_prep_mat k n Ub)"
     and "win_prep_mat k n Ub *\<^sub>v unit_vec (2 ^ k * (n * 2)) 0 = tensor_vec (win_state (2 ^ k)) (tensor_vec b (unit_vec 2 0))"
 proof -
-  let ?K = "2 ^ k * (n * 2)" and ?W = "circuit_mat (2 ^ k) (prep_gates k (wamp k))"
+  let ?K = "2 ^ k * (n * 2)" and ?W = "circuit_mat (2 ^ k) (prep_gates k (win_coef (2 ^ k)))"
   note wp = window_prep[OF k]
   have m0: "0 < n * 2" using n0 by simp
   have pc: "prep_gate (2 ^ k) Ub \<in> carrier_mat ?K ?K"
@@ -462,7 +460,7 @@ proof -
   show kind: "\<And>U. U \<in> set (win_prep_gates k n Ub) \<Longrightarrow> elementary ?K U \<or> U = prep_gate (2 ^ k) Ub"
   proof -
     fix U assume "U \<in> set (win_prep_gates k n Ub)"
-    hence "(\<exists>G \<in> set (prep_gates k (wamp k)). U = G \<Otimes> 1\<^sub>m (n * 2)) \<or> U = prep_gate (2 ^ k) Ub"
+    hence "(\<exists>G \<in> set (prep_gates k (win_coef (2 ^ k))). U = G \<Otimes> 1\<^sub>m (n * 2)) \<or> U = prep_gate (2 ^ k) Ub"
       unfolding win_prep_gates_def by auto
     thus "elementary ?K U \<or> U = prep_gate (2 ^ k) Ub" using elementary_right[OF wp(2) m0] by blast
   qed
@@ -487,12 +485,12 @@ proof -
       by (rule mat_mult_left_right_inverse[OF c adjoint_dim[OF c] r])
     show ?thesis using c r l unfolding Quantum.unitary_def dagger_eq_adjoint by simp
   qed
-  have wc: "\<And>G. G \<in> set (prep_gates k (wamp k)) \<Longrightarrow> G \<in> carrier_mat (2 ^ k) (2 ^ k)"
+  have wc: "\<And>G. G \<in> set (prep_gates k (win_coef (2 ^ k))) \<Longrightarrow> G \<in> carrier_mat (2 ^ k) (2 ^ k)"
     using wp(2) elementary_unitary(1) by blast
   have Wc: "?W \<in> carrier_mat (2 ^ k) (2 ^ k)" by (rule circuit_mat_carrier) (rule wc)
-  have c1: "circuit_mat ?K (map (\<lambda>G. G \<Otimes> 1\<^sub>m (n * 2)) (prep_gates k (wamp k))) = ?W \<Otimes> 1\<^sub>m (n * 2)"
+  have c1: "circuit_mat ?K (map (\<lambda>G. G \<Otimes> 1\<^sub>m (n * 2)) (prep_gates k (win_coef (2 ^ k)))) = ?W \<Otimes> 1\<^sub>m (n * 2)"
     by (rule circuit_mat_tensor_right) (use wc m0 in simp_all)
-  have "win_prep_mat k n Ub = circuit_mat ?K [prep_gate (2 ^ k) Ub] * circuit_mat ?K (map (\<lambda>G. G \<Otimes> 1\<^sub>m (n * 2)) (prep_gates k (wamp k)))"
+  have "win_prep_mat k n Ub = circuit_mat ?K [prep_gate (2 ^ k) Ub] * circuit_mat ?K (map (\<lambda>G. G \<Otimes> 1\<^sub>m (n * 2)) (prep_gates k (win_coef (2 ^ k))))"
     unfolding win_prep_mat_def win_prep_gates_def by (rule circuit_mat_append) (use wc pc in auto)
   also have "circuit_mat ?K [prep_gate (2 ^ k) Ub] = prep_gate (2 ^ k) Ub" using pc by (simp add: left_mult_one_mat)
   finally have e: "win_prep_mat k n Ub = prep_gate (2 ^ k) Ub * (?W \<Otimes> 1\<^sub>m (n * 2))" unfolding c1 .

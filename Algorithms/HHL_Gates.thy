@@ -12,41 +12,6 @@ section \<open>The HHL program in elementary gates\<close>
 
 subsection \<open>Circuits of gate lists\<close>
 
-lemma circuit_mat_append:
-  assumes "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K" and "\<And>U. U \<in> set Vs \<Longrightarrow> U \<in> carrier_mat K K"
-  shows "circuit_mat K (Us @ Vs) = circuit_mat K Vs * circuit_mat K Us"
-proof -
-  have Vc: "circuit_mat K Vs \<in> carrier_mat K K" by (rule circuit_mat_carrier) (use assms(2) in auto)
-  show ?thesis using assms(1)
-  proof (induction Us)
-    case Nil
-    show ?case using Vc by simp
-  next
-    case (Cons U Us)
-    have U: "U \<in> carrier_mat K K" and IH: "circuit_mat K (Us @ Vs) = circuit_mat K Vs * circuit_mat K Us" using Cons by auto
-    have Uc: "circuit_mat K Us \<in> carrier_mat K K" by (rule circuit_mat_carrier) (use Cons.prems in auto)
-    have "circuit_mat K ((U # Us) @ Vs) = circuit_mat K Vs * circuit_mat K Us * U" using IH by simp
-    also have "\<dots> = circuit_mat K Vs * (circuit_mat K Us * U)" by (rule assoc_mult_mat[OF Vc Uc U])
-    finally show ?case by simp
-  qed
-qed
-
-lemma circuit_mat_single: "U \<in> carrier_mat K K \<Longrightarrow> circuit_mat K [U] = U"
-  by simp
-
-lemma circuit_mat_concat:
-  assumes "\<And>Us U. Us \<in> set Bs \<Longrightarrow> U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K"
-  shows "circuit_mat K (concat Bs) = circuit_mat K (map (circuit_mat K) Bs)"
-  using assms
-proof (induction Bs)
-  case (Cons Us Bs)
-  have "circuit_mat K (concat (Us # Bs)) = circuit_mat K (concat Bs) * circuit_mat K Us"
-    unfolding concat.simps by (rule circuit_mat_append) (use Cons.prems in auto)
-  moreover have "circuit_mat K (concat Bs) = circuit_mat K (map (circuit_mat K) Bs)"
-    by (rule Cons.IH) (use Cons.prems in auto)
-  ultimately show ?case by simp
-qed simp
-
 lemma circuit_mat_tensor_right:
   assumes "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K" and K: "0 < K" and m: "0 < m"
   shows "circuit_mat (K * m) (map (\<lambda>U. U \<Otimes> 1\<^sub>m m) Us) = circuit_mat K Us \<Otimes> 1\<^sub>m m"
@@ -532,9 +497,6 @@ next
   thus ?case unfolding Suc by simp
 qed
 
-lemma circuit_mat_replicate: "G \<in> carrier_mat K K \<Longrightarrow> circuit_mat K (replicate e G) = G ^\<^sub>m e"
-  by (induction e) simp_all
-
 lemma ctrl_pow_bits:
   assumes G: "G \<in> carrier_mat m m"
   shows "circuit_mat (N * m) (map (\<lambda>j. ctrl_bit N m j (G ^\<^sub>m 2 ^ j)) [0..<k]) = ctrl_blocks N m (\<lambda>c. G ^\<^sub>m (c mod 2 ^ k))"
@@ -572,7 +534,7 @@ qed
 theorem ctrl_pow_qubits:
   assumes G: "G \<in> carrier_mat m m"
   shows "circuit_mat (2 ^ k * m) (map (\<lambda>j. ctrl_bit (2 ^ k) m j (G ^\<^sub>m 2 ^ j)) [0..<k]) = ctrl_pow (2 ^ k) m G"
-  unfolding ctrl_pow_bits[OF G] ctrl_pow_blocks by (rule ctrl_blocks_cong) simp
+  unfolding ctrl_pow_bits[OF G] by (rule ctrl_blocks_cong) simp
 
 text \<open>Counting oracle calls: the controlled power is $2^k-1$ applications of the singly
 controlled gates $\mathrm{C}_jU$.\<close>
