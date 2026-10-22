@@ -40,7 +40,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises forty-nine theories and about a
+entanglement witnesses.  The development comprises fifty theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -153,7 +153,7 @@ the names in brackets are the Isabelle theorems.
 
 {\small
 \begin{longtable}{p{0.31\textwidth}p{0.45\textwidth}rr}
-\caption{The forty-nine theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,598 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15, and the conjecture of Day~21 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 22\,134 lines, 1\,162 results, not included in the counts above).}\label{tab:theories}\\
+\caption{The fifty theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,614 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15, and the conjecture of Day~21 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 22\,134 lines, 1\,162 results, not included in the counts above).}\label{tab:theories}\\
 \toprule
 Theory & Lectures & lines & results\\
 \midrule
@@ -218,6 +218,7 @@ Theory & Lectures & lines & results\\
 \isa{Day22\_UCP\_Compact} & 22: UCP is compact & 222 & 9\\
 \isa{Day06\_15\_Universal} & 6, 15: the universal properties & 436 & 23\\
 \isa{Day21\_Average\_Conjecture} & 21: the conjecture D21-2, proved cases & 628 & 22\\
+\isa{Day21\_Average\_Two} & 21: D21-2 for $n=2$ & 878 & 16\\
 \midrule
 \isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 502 & 26\\
@@ -303,7 +304,7 @@ $\sum_jA_{mj}A_{m'j}^*=0$ for $m\ne m'$, the Fourier mixtures $B_{lj}=\sum_m\ome
 decomposition, since $\sum_l\omega^{l(m-m')}=n\delta_{mm'}$ (\isa{fourier\_split}).  This covers
 measurement maps $X\mapsto\sum_iX_{ii}Q_i$ (\isa{ra\_measurement}) and, applied to an eigenbasis,
 Horn's lemma: every density matrix is the average of $n$ pure states (\isa{horn\_lemma}, the case
-$d=1$), which in turn gives the maps with diagonal values (\isa{ra\_cq}).  The notes' reformulation
+$d=1$), which in turn gives the maps with diagonal values (\isa{ra\_cq}).  For $n=2$ every unital map is such an average (\isa{ra\_two}), following Bacon, Smolin and Wolf: the off-diagonal block of the Choi matrix is $R_1KR_2^*$ with $R_iR_i^*$ the diagonal blocks and $K$ a contraction, and $K=\frac12(U_1+U_2)$ for unitaries obtained from a singular value decomposition, which we build from the spectral theorem by completing an orthonormal family to a basis.  The notes' reformulation
 (i) for trace-preserving maps $M_n\to M_d$ is false as written: for $n=2$, $d=1$ no trace-preserving
 map $M_2\to\mathbb C$ has Choi rank one (\isa{notes\_form\_i\_false}); the equivalent dual form has the
 dimensions exchanged.

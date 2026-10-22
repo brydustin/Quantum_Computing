@@ -462,6 +462,16 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   sort `ord` and `sum.delta` silently fails — fix them to nat; `simp add: sum.swap` loops — use
   `subst sum.swap` with `rule sum.cong`; `R` and `W` are global constants; `meas_map` already exists
   (renamed `povm_map`); `metis` on choice-shaped obtains hangs — `rule choice[THEN exE]`.
+- **Day21_Average_Two** (2026-10-21; D21-2 continued).  The case n = 2 after Bacon–Smolin–Wolf,
+  with the missing linear algebra built from the spectral theorem: completion of an orthonormal
+  family (eigenvectors of I − Σ w w* with eigenvalue 1, counted by the trace, matched by a bijection),
+  a square SVD from K*K, Bessel's inequality for rows orthonormal or zero, factoring a wide d × K
+  matrix M = RS with RR* = MM*, a contraction as (U₁+U₂)/2 with U± = W diag(e^{±iθ}) V*.  The off-
+  diagonal Choi block of Φ : M₂ → M_d is R₁(S₁S₂*)R₂* with S₁S₂* a contraction; the two maps have Kraus
+  operators [R₁e_j | R₂U_l* e_j].  Traps: `\<lambda>` cannot be a variable name; `K`, `W`, `R` are global
+  constants; `simp add: sum.swap`, `of_nat_diff[symmetric]`, `of_real_sum[symmetric]`,
+  `sum.distrib[symmetric]` with algebra_simps all loop; numeral 1 becomes `Suc 0` inside simp, so
+  lemmas mentioning `L 1` must be applied by `unfolding`.
 - **HHL_All_Elementary** (2026-10-21; user: de-oracle the work where possible).  For n = 2^s the
   last assumed gates other than oracle calls go: cv0 (ancilla rotation controlled by the last clock
   qubit) is rewritten as ctrl_blocks over clock⊗system with blocks depending on d div 2^s
