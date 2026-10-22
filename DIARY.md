@@ -725,3 +725,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   are different parametrisations with a bridge `rot_Rot`; `run_gates` (state trajectory) and
   `circuit_mat` (product) are bridged by `circuit_mat_run`; `blk_lift` has register-dependent
   blocks.
+- **Paper after the de-duplication** (2026-10-22): counts 31 theories, 21 414 lines, 1 087 results
+  (per level 1 515/94, 10 317/495, 3 768/185, 5 814/313); Listing 8 shows `prog_meas`/`rus_meas`
+  with `hhl_prog`/`hhl_rus_prog` as abbreviations, Listing 5 `wrap` and `circ_dist`; `aa_progP` →
+  `aa_prog`; the identity of §5 cites `hhl_approx_error_real` (case of `flag_error`); three
+  listings made floats to avoid half-empty pages; 35 pp; links at 8211431.  Process slip: the
+  paper commit was amended to add the PDF and pushed with `--force-with-lease` (d8b10e5 replaced
+  c37ae0a, same content plus the PDF) — against the project rule; a follow-up commit is the
+  right way.
