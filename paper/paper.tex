@@ -57,7 +57,7 @@
 % Links to the formal sources at a fixed commit.  The repository is private at the time of
 % writing; replace \isalink by \isalogo to drop the links.
 \newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
-\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/f2607ba777ca1ac81bfd971269790ac84fb102bc}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/b2fa27a1a18a6a9661c7890ce35458ca1cc8a7c0}
 \newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
 
 \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
@@ -75,20 +75,21 @@
 \begin{abstract}
 The algorithm of Harrow, Hassidim and Lloyd (HHL) prepares a quantum state proportional to the
 solution of a linear system $Ax=b$, for sparse and well-conditioned $A$ in time polylogarithmic in
-the dimension. It is the prototype of the quantum algorithms for linear algebra. Its correctness
-combines the spectral theorem, phase estimation, a controlled rotation, uncomputation,
+the dimension. Its correctness combines the spectral theorem, phase estimation, a controlled rotation, uncomputation,
 post-selection and amplitude amplification, and the error analysis in the paper's appendix is
 intricate. We verify HHL in Isabelle/HOL as programs of the quantum while-language of the AFP entry
-\emph{QHLProver}, whose Hoare triples make probabilistic statements about measurements. For
-eigenvalues on the phase-estimation grid we prove total correctness: one run succeeds with
+\emph{QHLProver}, whose Hoare triples make probabilistic statements about measurements. Phase estimation, the core of
+HHL, is verified first as a program of its own, with the exact probability of every outcome and the
+textbook clock size for a given precision and confidence. For exact HHL, with eigenvalues on the phase-estimation grid, we prove total correctness:
+one run succeeds with
 probability $C^2\norm{A^{-1}b}^2$, after which the state is exactly
 $\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$, and the repeat-until-success loop terminates with
-probability one in that state, after $1/p$ rounds on average. For arbitrary spectra we prove
-Theorem~1 of the paper and its run-time bound with explicit constants, and fidelity triples for the
+probability one in that state, after $1/p$ rounds on average. For inexact HHL, with arbitrary
+spectra, we prove Theorem~1 of the paper and its run-time bound with explicit constants, and fidelity triples for the
 corresponding programs. We then refine the programs until every gate is a one- or two-qubit unitary,
 including the preparation of $\ket b$, the controlled rotation and, for sparse $A$, a Trotter circuit
-for $e^{iAt}$ with explicit error. The formalisation corrects several statements of the HHL paper;
-in particular, the constant in its Lemma~3 is off by a factor of two. The development rests on a
+for $e^{iAt}$ with explicit error. The formalisation corrects several statements of the HHL paper,
+among them the constant of its Lemma~3. The development rests on a
 formalisation of Paulsen's lecture course on quantum computing and completely positive maps, and it
 builds without \texttt{sorry}, axioms or oracles.
 
@@ -171,16 +172,23 @@ The first is the mathematics behind the algorithm. The second is the algorithm w
 analysis. The third is the program, with initialisation, measurement and loop. The fourth is the
 circuit of elementary gates. Concretely, the contributions are as follows.
 \begin{itemize}
+\item \emph{Phase estimation as a program} (Section~\ref{sec:math}). For every set $J$ of clock
+values, the probability that phase estimation ends with the clock in $J$ is exactly
+$\sum_{j\in J}|\alpha_j|^2$; this is a triple with the weakest possible precondition. The textbook
+guarantees follow as triples: an exact phase is read with certainty, the nearest grid value with
+probability at least $4/\pi^2$, and with $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits the
+estimate is within $2^{-n}$ with probability at least $1-\varepsilon$~\cite{nielsenchuang}.
 \item \emph{Exact HHL, total correctness} (Section~\ref{sec:exact}). One run of the program
 succeeds with probability $C^2\norm{A^{-1}b}^2$ and then holds exactly
 $\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$. The repeat-until-success loop terminates with
 probability one in that state; it exits after exactly $m$ failures with probability $(1-p)^mp$ and
 needs $1/p$ rounds on average. The logic has no total-correctness rule for loops, so we derive one
 for loops whose body re-initialises the state.
-\item \emph{The paper's regime} (Section~\ref{sec:approx}). For eigenvalues anywhere in the spectral
+\item \emph{Inexact HHL} (Section~\ref{sec:approx}). For eigenvalues anywhere in the spectral
 window, an inexact simulation oracle and the paper's filter functions, we prove the bounds of the
 paper's Theorem~1 and its run-time claim with explicit constants. We also prove fidelity triples
-$\{(1-e^2)\,I\}\,\mathit{HHL}\,\{\ketbra tt\}$ for the corresponding programs.
+$\{(1-e^2)\,I\}\,\mathit{HHL}\,\{\ketbra tt\}$ for the corresponding programs, the inexact
+counterparts of the exact triples (Table~\ref{tab:exact-inexact}).
 \item \emph{Elementary gates} (Section~\ref{sec:gates}). The programs are refined, triple by triple,
 until every gate is a one- or two-qubit unitary on adjacent wires. This covers the Fourier
 transform; the controlled rotation, as a uniformly controlled rotation with Walsh--Hadamard angles; the
@@ -207,17 +215,18 @@ meaning~\cite{ying2016book}.
   \isa{HHL\_Gates}, \isa{HHL\_Uniform\_Rotation}, \isa{HHL\_State\_Preparation}, \isa{HHL\_All\_Elementary},
   \isa{HHL\_Trotter}, \isa{HHL\_Sparse\_Split}, \isa{HHL\_Sparse\_Circuit}};
 \node[box, fill=blue!5, below=of L4] (L3) {\textbf{Program:} QHLProver programs and their Hoare triples
-  (\S\ref{sec:qhl}, \S\ref{sec:exact}, \S\ref{sec:approx})\\[1pt]
-  \isa{HHL\_Program}, \isa{HHL\_Termination}, \isa{HHL\_Paper\_Program}, \isa{HHL\_Gate\_Refinements},
-  \isa{HHL\_Preconditioned}};
+  (\S\ref{sec:qhl}, \S\ref{sec:qpe-program}, \S\ref{sec:exact}, \S\ref{sec:approx})\\[1pt]
+  \isa{QPE\_Program}, \isa{HHL\_Program}, \isa{HHL\_Termination}, \isa{HHL\_Paper\_Program},
+  \isa{HHL\_Gate\_Refinements}, \isa{HHL\_Preconditioned}};
 \node[box, fill=violet!5, below=of L3] (L2) {\textbf{Algorithm:} circuits as matrices, error analysis,
   the rest of the paper (\S\ref{sec:exact}, \S\ref{sec:approx})\\[1pt]
   \isa{HHL}, \isa{HHL\_Trajectory}, \isa{HHL\_Approximate}, \isa{HHL\_Window}, \isa{HHL\_Simulation},
   \isa{HHL\_Complete}, \isa{HHL\_Filter}, \isa{HHL\_Filter\_Bounds}, \isa{HHL\_Runtime},
   \isa{HHL\_Reduction}, \isa{HHL\_Rectangular}, \isa{HHL\_Discussion}, \isa{HHL\_Optimality}};
 \node[box, fill=orange!6, below=of L2] (L1) {\textbf{Mathematics:} functional calculus, phase estimation
-  (\S\ref{sec:math})\\[1pt]
-  \isa{Hermitian\_Functional\_Calculus}, \isa{Phase\_Estimation}, \isa{QFT\_Fourier}, \isa{QPE\_Register}};
+  and its precision (\S\ref{sec:math})\\[1pt]
+  \isa{Hermitian\_Functional\_Calculus}, \isa{Phase\_Estimation}, \isa{QPE\_Precision}, \isa{QFT\_Fourier},
+  \isa{QPE\_Register}};
 \node[box, fill=gray!8, below=of L1] (L0) {\textbf{Foundation:} Paulsen's lectures, formalised and audited
   (\S\ref{sec:paulsen}): spectral theorem, positivity, tensor products, measurement (Lectures 1--10);
   channels, Choi--Kraus, extreme points, separability, error correction (Lectures 11--34).\\[1pt]
@@ -226,7 +235,7 @@ meaning~\cite{ying2016book}.
 \foreach \a/\b in {L0/L1, L1/L2, L2/L3, L3/L4} \draw[arr] (\a.north) -- (\b.south);
 \end{tikzpicture}
 \caption{The four levels of the HHL development and the theories at each level. Part VI of the
-development has 29 theories; the foundation has 50.}\label{fig:layers}
+development has 31 theories; the foundation has 50.}\label{fig:layers}
 \end{figure}
 
 All results are checked by Isabelle2025-2 with \texttt{quick\_and\_dirty = false}, so no
@@ -237,8 +246,9 @@ its source line (\isalogo).
 
 The rest of the paper is organised as follows. Section~\ref{sec:qhl} recalls quantum Hoare logic and
 explains how HHL's specifications read as triples. Section~\ref{sec:math} covers the functional
-calculus and phase estimation. Section~\ref{sec:exact} verifies exact HHL as a program, and
-Section~\ref{sec:approx} treats the regime of the paper's error analysis. Section~\ref{sec:gates}
+calculus and phase estimation, including its precision and its verification as a program.
+Section~\ref{sec:exact} verifies exact HHL as a program, and Section~\ref{sec:approx} verifies inexact
+HHL, in the regime of the paper's error analysis. Section~\ref{sec:gates}
 compiles the programs to elementary gates, and Section~\ref{sec:errata} collects the errata.
 Section~\ref{sec:paulsen} describes the foundation. Sections~\ref{sec:related}
 and~\ref{sec:discussion} discuss related work, the trusted base and the limitations.
@@ -375,7 +385,7 @@ whose body re-initialises the state, we derive total correctness from the semant
 \paragraph{Fidelity triples.} For a program that initialises, runs a circuit and measures, the
 probability of $\ketbra tt$ is the overlap $|\braket t\psi|^2$ with the circuit's output~$\psi$.
 Section~\ref{sec:approx-programs} uses this to turn the error bounds of the algorithm into triples.
-\section{The Mathematics: Functional Calculus and Phase Estimation}\label{sec:math}
+\section{Functional Calculus and Phase Estimation}\label{sec:math}
 
 \subsection{A Functional Calculus for Hermitian Matrices}
 
@@ -461,12 +471,165 @@ theorem hadamard_layer_zero:
       n)"
 \end{lstlisting}
 \end{minipage}
+\subsection{The Precision of Phase Estimation}\label{sec:qpe-precision}
+
+Theorem~\ref{thm:qpe} bounds the probability of the best outcome from below. Choosing the size of the
+clock needs the converse: distant outcomes must be unlikely. We measure the error of outcome~$j$ on the
+circle $\R/\mathbb{Z}$, as the distance $d_j$ from $\varphi-j/N$ to the nearest integer (\isa{circ\_dist}), so
+that phases close to $0$ and to $1$ count as close.
+
+\begin{theorem}[precision of phase estimation]\label{thm:qpe-tail}
+Let $N\ge1$ and $e>1$. For every phase~$\varphi$, the outcomes with $Nd_j>e$ have total probability
+\[
+\textstyle\sum_{Nd_j>e}|\alpha_j|^2\;\le\;\frac1{2(e-1)}.
+\]
+With $k=n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits, the outcome therefore satisfies
+$d_j\le2^{-n}$ with probability at least $1-\varepsilon$.
+\end{theorem}
+
+This is Eq.~(5.34) of Nielsen and Chuang and the choice of the clock size after
+it~\cite[Sect.~5.2.1]{nielsenchuang}; Fig.~\ref{fig:qpe} shows an instance. The proof has two steps. The
+geometric sum gives $|\alpha_j|\le1/(2Nd_j)$ (\isa{pe\_amp\_circ\_tail}). The signed errors $y_j$, which are
+$N(\varphi-j/N)$ reduced into $[-\frac N2,\frac N2]$, differ by nonzero integers for distinct outcomes.
+So $j\mapsto\lceil y_j-e\rceil$ is injective on the outcomes with $y_j>e$, and
+$y_j>e+\lceil y_j-e\rceil-1$. Telescoping gives
+$\sum_{y_j>e}y_j^{-2}\le\sum_{m\ge1}(e+m-1)^{-2}\le1/(e-1)$ (\isa{sum\_inv\_sq\_spaced}). The same holds
+below $-e$, and the two halves give $\frac14\cdot\frac2{e-1}$. For the second part, $\sum_j|\alpha_j|^2=1$
+and $e=2^{k-n}\ge2+1/(2\varepsilon)$.\isalink{Algorithms/QPE_Precision.thy}{191}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Theorem~\ref{thm:qpe-tail}},label={lst:qpetail}]
+definition circ_dist :: "real ~$\Rightarrow$~ real ~$\Rightarrow$~ real" where
+  "circ_dist x y = ~$|$~(x - y) - of_int (round (x - y))~$|$~"
+theorem pe_tail_bound:
+  assumes N: "0 < N" and e: "1 < e"
+  shows "(~$\sum$~j | j < N ~$\wedge$~ e < real N * circ_dist ~$\varphi$~ (real j /
+      real N). (cmod (pe_amp N ~$\varphi$~ j))~$^{2}$~) ~$\le$~ 1 / (2 * (e - 1))"
+theorem pe_precision:
+  assumes eps: "0 < ~$\varepsilon$~"
+      and t: "t = n + nat ~$\lceil$~log 2 (2 + 1 / (2 * ~$\varepsilon$~))~$\rceil$~"
+  shows "1 - ~$\varepsilon$~ ~$\le$~ (~$\sum$~j | j < 2 ^ t ~$\wedge$~ circ_dist ~$\varphi$~ (real j /
+      2 ^ t) ~$\le$~ 1 / 2 ^ n. (cmod (pe_amp (2 ^ t) ~$\varphi$~ j))~$^{2}$~)"
+\end{lstlisting}
+\end{minipage}
+
+\begin{figure}[t]
+\centering
+\scalebox{0.85}{%
+\begin{quantikz}[row sep={0.8cm,between origins}, column sep=0.3cm]
+\lstick{clock $\ket{0}^{\otimes k}$} & \qwbundle{k} & & \gate{H^{\otimes k}} & \ctrl{1} &
+  \gate{F^\dagger} & \meter{} \rstick{$j$}\\
+\lstick{system $\ket{0}^{\otimes s}$} & \qwbundle{s} & \gate{U_u} & & \gate{U^{c}} & & \rstick{$u$}
+\end{quantikz}}
+\\[0.4em]
+\begin{tikzpicture}
+\begin{axis}[width=10.5cm, height=4.3cm, ymode=log, log origin y=infty, ymin=1e-3, ymax=1.3,
+  xmin=-0.6, xmax=15.6,
+  axis lines=left, xtick={0,...,15}, ytick={0.001,0.01,0.1,1},
+  xlabel={outcome $j$}, ylabel={$|\alpha_j|^2$}, tick label style={font=\scriptsize},
+  label style={font=\footnotesize}]
+\fill[red!8] (axis cs:-0.6,0.001) rectangle (axis cs:2.3,1.3);
+\fill[red!8] (axis cs:8.3,0.001) rectangle (axis cs:15.6,1.3);
+\addplot[densely dotted, thick, domain=-0.6:4.6, samples=40] {1/(4*(5.3-x)^2)};
+\addplot[densely dotted, thick, domain=6:13.3, samples=40] {1/(4*(x-5.3)^2)};
+\addplot[densely dotted, thick, domain=13.3:15.6, samples=10] {1/(4*(21.3-x)^2)};
+\addplot[dashed, gray, domain=-0.6:15.6, samples=2] {4/pi^2};
+\addplot[ycomb, very thick, blue!70, mark=*, mark size=1.2pt] coordinates
+  {(3,0.0134) (4,0.0401) (5,0.7377) (6,0.1362) (7,0.0238) (8,0.0100)};
+\addplot[ycomb, very thick, red!70, mark=*, mark size=1.2pt] coordinates
+  {(0,0.0034) (1,0.0046) (2,0.0070) (9,0.0058) (10,0.0040) (11,0.0032) (12,0.0027) (13,0.0026)
+   (14,0.0026) (15,0.0029)};
+\end{axis}
+\end{tikzpicture}
+\caption{Phase estimation as a program (top), and its outcome distribution for $N=16$ and
+$N\varphi=5.3$ (bottom, logarithmic scale). The nearest value $j=5$ has probability $0.74\ge4/\pi^2$
+(dashed line). The dotted curve is the tail bound $|\alpha_j|^2\le1/(4N^2d_j^2)$. The outcomes more than
+$e=3$ from $N\varphi$ (shaded) have total probability $0.039$, below the bound $1/(2(e-1))=\frac14$ of
+Theorem~\ref{thm:qpe-tail}.}\label{fig:qpe}
+\end{figure}
+
+\subsection{Phase Estimation as a Program}\label{sec:qpe-program}
+
+Before HHL, phase estimation itself shows how probabilistic guarantees become triples. The program
+\isa{qpe\_program} initialises the state, prepares an eigenvector $u=U_u\ket0$ of~$U$ in the system
+register, and applies the gates of Theorem~\ref{thm:qpe} (Fig.~\ref{fig:qpe}, top). For a set $J$ of
+clock values, the predicate $\Pi_J=\sum_{j\in J}\ketbra jj\otimes I$ (\isa{clock\_proj}) holds when the
+clock reads a value in~$J$.
+
+\begin{theorem}[phase estimation as a program]\label{thm:qpe-prog}
+Let $U$ and $U_u$ be unitary, $u=U_u\ket0$, $Uu=e^{2\pi i\varphi}u$ and $N=2^k$. For every set $J$ of
+clock values,
+\[
+\hoaret{\textstyle\bigl(\sum_{j\in J}|\alpha_j|^2\bigr)\,I}{\mathit{QPE}}{\Pi_J},
+\]
+and on every input $\rho$ the probability of $\Pi_J$ is exactly $\sum_{j\in J}|\alpha_j|^2\Tr\rho$, so no
+larger multiple of $I$ is a precondition. In particular:
+\begin{enumerate}
+\item if $\varphi=j_0/N$ with $j_0<N$, then $\hoaret{I}{\mathit{QPE}}{\Pi_{\{j_0\}}}$;
+\item for every $\varphi$, $\hoaret{(4/\pi^2)\,I}{\mathit{QPE}}{\Pi_{\{j^*\}}}$, where
+$j^*=\mathrm{round}(N\varphi)\bmod N$;
+\item if $k=n+\lceil\log_2(2+1/(2\varepsilon))\rceil$, then
+$\hoaret{(1-\varepsilon)\,I}{\mathit{QPE}}{\Pi_{\{j\,:\,d_j\le2^{-n}\}}}$.
+\end{enumerate}
+The first triple also holds for the program whose gates are $k$ Hadamard gates, one controlled
+$U^{2^j}$ per clock qubit and the inverted Fourier circuit of the AFP.
+\end{theorem}
+
+The program initialises and then runs a unitary circuit, so its semantics maps every $\rho$ to
+$\Tr\rho\,\ketbra\psi\psi$, where $\psi=(\sum_j\alpha_j\ket j)\otimes u$ by Theorem~\ref{thm:qpe} and
+\isa{hadamard\_layer\_zero} (\isa{qpe\_out}, \isa{qpe\_prob}). The rule for initialisation and the gate
+rules of Section~\ref{sec:qhl} give the triple with the precondition $\bra\psi\Pi_J\ket\psi\,I$, and
+$\bra\psi\Pi_J\ket\psi=\sum_{j\in J}|\alpha_j|^2$ because $u$ is a unit vector (\isa{clock\_proj\_value}).
+Soundness gives the semantic triple, and the program has no loop, so partial and total correctness
+agree. Items (1)--(3) weaken the precondition by Theorems~\ref{thm:qpe} and~\ref{thm:qpe-tail}; for~(2),
+$j^*$ is within $\frac1{2N}$ of $\varphi$ on the circle, and the periodicity of $\alpha_j$ in $\varphi$
+reduces this to Theorem~\ref{thm:qpe} (\isa{pe\_round\_dist}, \isa{pe\_amp\_near}). In the gate-level
+program the Hadamard gates multiply to $H^{\otimes k}$ (\isa{had\_gates}), the controlled powers to
+$\Lambda(U)$ (\isa{ctrl\_pow\_qubits}) and the inverted gate list to $F_N^\dagger$
+(\isa{qft\_inv\_circuit}). The triples of an initialised circuit depend only on the product of its
+gates (\isa{init\_circuit\_transfer}, \isa{qpe\_elem\_total}).\isalink{Algorithms/QPE_Program.thy}{238}
+
+\begin{lstlisting}[float=tp, caption={Theorem~\ref{thm:qpe-prog} (\isa{Js} is the set $J$)},label={lst:qpeprog}]
+definition qpe_program :: "nat ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ complex mat ~$\Rightarrow$~
+    com" where
+  "qpe_program k U Uu = init_com (2 ^ k * dim_row U) ;; utrans_seq
+      (qpe_gates k U Uu)"
+context
+  fixes U Uu :: "complex mat" and u :: "complex vec" and m k :: nat
+      and ~$\varphi$~ :: real
+  assumes U: "U ~$\in$~ carrier_mat m m" "unitary U" and m0: "0 < m"
+      and k: "1 ~$\le$~ k"
+    and Uu: "Uu ~$\in$~ carrier_mat m m" "unitary Uu" "Uu *~$_{v}$~ unit_vec m 0
+        = u"
+    and ev: "U *~$_{v}$~ u = cis (2 * pi * ~$\varphi$~) ~$\cdot_{v}$~ u"
+begin
+theorem qpe_total:
+  "state_sig.hoare_total_correct [2 ^ k, m]
+     (complex_of_real (~$\sum$~j | j < 2 ^ k ~$\wedge$~ j ~$\in$~ Js. (cmod (pe_amp
+         (2 ^ k) ~$\varphi$~ j))~$^{2}$~) ~$\cdot_{m}$~ 1~$_{m}$~ (2 ^ k * m))
+     (qpe_program k U Uu) (clock_proj (2 ^ k) m Js)"
+corollary qpe_nearest_total:
+  "state_sig.hoare_total_correct [2 ^ k, m] (complex_of_real (4 /
+      pi~$^{2}$~) ~$\cdot_{m}$~ 1~$_{m}$~ (2 ^ k * m))
+     (qpe_program k U Uu) (clock_proj (2 ^ k) m {pe_round (2 ^ k)
+         ~$\varphi$~})"
+corollary qpe_precision_total:
+  assumes eps: "0 < ~$\varepsilon$~"
+      and t: "k = n + nat ~$\lceil$~log 2 (2 + 1 / (2 * ~$\varepsilon$~))~$\rceil$~"
+  shows "state_sig.hoare_total_correct [2 ^ k, m] (complex_of_real (1
+      - ~$\varepsilon$~) ~$\cdot_{m}$~ 1~$_{m}$~ (2 ^ k * m))
+     (qpe_program k U Uu) (clock_proj (2 ^ k) m {j. circ_dist ~$\varphi$~
+         (real j / 2 ^ k) ~$\le$~ 1 / 2 ^ n})"
+\end{lstlisting}
+
 \section{Exact HHL as a Verified Program}\label{sec:exact}
 
 In this section every eigenvalue of $A$ is a grid value: $\lambda_k=2\pi k/(Nt_0)$ for $k<N/2$ and
 $2\pi(k-N)/(Nt_0)$ otherwise (\isa{reg\_eig}), so that $e^{it_0\lambda_k}=\omega^k$ and phase
 estimation is exact. This is the setting of the Coq proofs~\cite{zhou2023coqq,wu2024local};
-Section~\ref{sec:approx} removes it.
+Section~\ref{sec:approx} removes it. The HHL program extends the phase-estimation program of
+Section~\ref{sec:qpe-program} by the controlled rotation, the uncomputation and a measurement of an
+ancilla.
 
 \subsection{The Circuit}
 
@@ -671,11 +834,14 @@ $A^\dagger Ax=A^\dagger b$ and $x$ in the range of $A^\dagger$. So $x$ is the mi
 when $Ax=b$ is solvable, and a least-squares solution otherwise (\isa{pinv\_solution},
 \isa{normal\_eq\_least\_squares}). The proof uses $Jg(H)J=g(-H)$ for the parity~$J$, and it is here
 that $1/0=0$, which makes \isa{herm\_inv} the pseudo-inverse, pays off.
-\section{Beyond Exact Phase Estimation: the Paper's Error Analysis}\label{sec:approx}
+\section{Inexact HHL: the Paper's Error Analysis}\label{sec:approx}
 
-In general the eigenvalues of $A$ lie anywhere in a spectral window, $e^{iAt_0}$ is available only
-approximately, and the success probability must be amplified. This section follows the paper's
-analysis~\cite[App.~A]{hhl2008arxiv} and ends with programs whose triples carry the resulting error bounds.
+Section~\ref{sec:exact} assumed that every eigenvalue lies on the phase-estimation grid. In general the
+eigenvalues of $A$ lie anywhere in a spectral window, $e^{iAt_0}$ is available only approximately, and
+the success probability must be amplified. This section verifies this inexact case. It follows the
+paper's analysis~\cite[App.~A]{hhl2008arxiv} at the level of the algorithm and ends with the inexact
+counterparts of the triples of Section~\ref{sec:exact} (Section~\ref{sec:approx-programs},
+Table~\ref{tab:exact-inexact}).
 
 \subsection{Inexact Phase Estimation and the Sine Window}
 
@@ -894,19 +1060,57 @@ $M\ge1/\sin2\theta$, the mean of $\sin^2((2k+1)\theta)$ is at least $\frac14$ (\
 with $k$ uniform below $1,2,4,\dots$, stopped at the first success, therefore succeed with probability at
 least $\frac14$ in fewer than $8\sqrt2\,\kappa$ rounds (\isa{doubling\_schedule\_kappa}).
 
-\subsection{Programs in the Paper's Regime}\label{sec:approx-programs}
+\subsection{Inexact HHL as a Program}\label{sec:approx-programs}
 
 The circuits of this section become gate lists with the same semantics (\isa{qgates\_sem}) and run as
-programs. Their postcondition $\ketbra tt$ measures the fidelity with the target. For a program that
-initialises, runs a circuit with output $\psi$ and measures with $M$, where $\ket t$ lies in the range
-of $M_1$, we prove the triple $\hoaret{|\braket t\psi|^2I}{\mathit{prog}}{\ketbra tt}$. For the
-repeat-until-success loop we prove the precondition $|\braket t\psi|^2/\norm{M_1\psi}^2$
-(\isa{hoare\_prog\_overlap}, \isa{hoare\_rus\_overlap}). If the post-selected state is within $e$ of
-$\ket t$, the fidelity is at least $1-e^2$. With
-$e=2(\varepsilon+2(N-1)\eta)/(C\norm{A^{-1}b})$ from Theorem~\ref{thm:window} and the oracle bound, one
-run satisfies $\{(Ct_0/\pi)^2(1-e^2)\,I\}$ and the loop satisfies $\{(1-e^2)\,I\}$ (\isa{hhl\_apx\_program},
-\isa{hhl\_apx\_rus}). The filtered version gives $\{(1-\varepsilon^2)\,I\}$, and amplitude amplification as
-a program needs at most $\pi\kappa$ rounds (\isa{hhl\_flag\_rus}, \isa{hhl\_flag\_amplified}).\isalink{Algorithms/HHL_Paper_Program.thy}{534}
+programs. The post-selected state is now only close to the target, so the triples of
+Theorems~\ref{thm:prog} and~\ref{thm:rus}, which assert the target exactly, become fidelity triples, the
+last shape of Table~\ref{tab:readings}. For a program that initialises, runs a circuit with output
+$\psi$ and measures with $M$, where $\ket t$ lies in the range of $M_1$, we prove the triple
+$\hoaret{|\braket t\psi|^2I}{\mathit{prog}}{\ketbra tt}$. For the repeat-until-success loop we prove the
+precondition $|\braket t\psi|^2/\norm{M_1\psi}^2$ (\isa{hoare\_prog\_overlap},
+\isa{hoare\_rus\_overlap}). If the post-selected state is within $e$ of $\ket t$, the fidelity is at
+least $1-e^2$.
+
+\begin{theorem}[inexact HHL as programs]\label{thm:apxprog}
+Assume the hypotheses of Theorem~\ref{thm:window} with $\norm b=1$ and $N\ge Q/\varepsilon$, a
+unitary oracle $V$ with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ and $\varepsilon+2(N-1)\eta\le Ct_0/\pi$, and
+a unitary that prepares $\psi\otimes b\otimes\ket0$, where $\psi$ is the window state. Let
+$e=2(\varepsilon+2(N-1)\eta)/(C\norm{A^{-1}b})$ and $\ket t=\psi\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$.
+Then one run satisfies $\hoaret{(Ct_0/\pi)^2(1-e^2)\,I}{\mathit{prog}}{\ketbra tt}$, and the
+repeat-until-success loop satisfies $\hoaret{(1-e^2)\,I}{\mathit{rus}}{\ketbra tt}$.
+\end{theorem}
+
+With $e$ from Theorem~\ref{thm:window} and the oracle bound, these are \isa{hhl\_apx\_program} and
+\isa{hhl\_apx\_rus}. Amplitude amplification as a program needs at most $\pi^2/(4Ct_0)$ rounds
+(\isa{hhl\_apx\_amplified}). The filtered version of Theorem~\ref{thm:runtime} gives
+$\{(1-\varepsilon^2)\,I\}$ for the loop, and amplitude amplification as a program needs at most
+$\pi\kappa$ rounds (\isa{hhl\_flag\_rus}, \isa{hhl\_flag\_amplified}). Table~\ref{tab:exact-inexact}
+puts the exact and the inexact triples side by side.\isalink{Algorithms/HHL_Paper_Program.thy}{534}
+
+\begin{table}[t]
+\caption{HHL as programs: the triples of the exact case (Section~\ref{sec:exact}) and their inexact
+counterparts (this section). In the exact column $p=C^2\norm{A^{-1}b}^2$ and the clock of $\ket t$ is
+$\ket0$; in the inexact column $e$ is as in Theorem~\ref{thm:apxprog}, the clock of $\ket t$ is the
+window state, and $y$ is the post-selected part of one run.}\label{tab:exact-inexact}
+\centering\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{4.45cm}>{\raggedright\arraybackslash}p{5.3cm}@{}}
+\toprule
+& Exact & Inexact\\
+\midrule
+One run & $\{p\,I\}\,S\,\{P_1\}$ and $\{I\}\,S\,\{P_0+\ketbra tt\}$ &
+  $\{(Ct_0/\pi)^2(1-e^2)\,I\}\,S\,\{\ketbra tt\}$\\
+Repeat until success & $\{I\}\,S\,\{\ketbra tt\}$, $1/p$ rounds on average & $\{(1-e^2)\,I\}\,S\,\{\ketbra tt\}$\\
+Amplified & -- & $\{(1-\norm y^2)(1-e^2)\,I\}\,S\,\{\ketbra tt\}$, at most $\pi^2/(4Ct_0)$ rounds\\
+Filter functions & -- & loop $\{(1-\varepsilon^2)\,I\}$; amplified, at most $\pi\kappa$ rounds\\
+\midrule
+Theorems & \mbox{\isa{hhl\_success\_total}}, \mbox{\isa{hhl\_correct\_total}}, \mbox{\isa{hhl\_rus\_total}} &
+  \mbox{\isa{hhl\_apx\_program}}, \mbox{\isa{hhl\_apx\_rus}}, \mbox{\isa{hhl\_apx\_amplified}},
+  \mbox{\isa{hhl\_flag\_rus}}, \mbox{\isa{hhl\_flag\_amplified}}\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={The repeat-until-success loop in the paper's regime (inside a context with the
@@ -1279,7 +1483,7 @@ obtained from a singular value decomposition, which we build from the spectral t
 reformulation in the notes turned out to be false (Section~\ref{sec:errata}).
 
 \paragraph{Size.} The formalisation of the notes has 50 theories with 51\,729 lines and 1\,614 results
-(lemmas, theorems, corollaries and propositions). Part VI has 29 theories with 22\,174 lines and 1\,161
+(lemmas, theorems, corollaries and propositions). Part VI has 31 theories with 22\,980 lines and 1\,206
 results, plus an 80-line bridge to the AFP's quantum search bound in a separate session
 (Table~\ref{tab:stats}).
 \section{Related Work}\label{sec:related}
@@ -1301,7 +1505,9 @@ records the errata of Section~\ref{sec:errata}.
 estimation, Grover's algorithm and others~\cite{hietala2021sqir}, and an end-to-end implementation of
 Shor's algorithm, including the reversible arithmetic of modular exponentiation~\cite{peng2023shor}. In
 Why3, QBricks verifies phase estimation, Grover's algorithm and the order-finding part of Shor's
-algorithm~\cite{chareton2021qbricks}. A recent HOL Light development treats Grover's
+algorithm~\cite{chareton2021qbricks}. Besides the $4/\pi^2$ bound, our phase-estimation results include the tail
+bound and the number of clock qubits of Nielsen and Chuang, stated as triples with exact weakest
+preconditions. A recent HOL Light development treats Grover's
 algorithm~\cite{sun2026grover}. In Isabelle, \IMD{} formalises qubits, gates, teleportation, the no-cloning
 theorem and the Deutsch--Jozsa algorithm~\cite{bordg2021imd,bordg2020afp}. QHLProver verifies Grover's
 algorithm with the logic we use~\cite{liu2019qhl}, and the AFP contains the quantum Fourier
@@ -1342,12 +1548,12 @@ complexity-theoretic facts they cite.
 \toprule
 Part & Theories & Lines & Results\\
 \midrule
-Mathematics (functional calculus, phase estimation) & 4 & 1\,133 & 73\\
+Mathematics (functional calculus, phase estimation) & 5 & 1\,513 & 91\\
 Algorithm (circuits, error analysis, rest of the paper) & 13 & 11\,371 & 561\\
-Program (QHLProver programs and triples) & 5 & 3\,593 & 187\\
+Program (QHLProver programs and triples) & 6 & 4\,019 & 214\\
 Circuit (elementary gates, sparse simulation) & 7 & 6\,077 & 340\\
 \midrule
-Part VI, HHL & 29 & 22\,174 & 1\,161\\
+Part VI, HHL & 31 & 22\,980 & 1\,206\\
 Bridge to the AFP search bound (separate session) & 1 & 80 & 4\\
 Paulsen's lectures (the foundation) & 50 & 51\,729 & 1\,614\\
 \bottomrule
@@ -1370,11 +1576,14 @@ of such a definition reports the oracle \isa{skip\_proof}, even in a development
 \section{Conclusion}\label{sec:conclusion}
 
 We have verified the HHL algorithm in Isabelle/HOL as programs of a quantum while-language, with
-quantum Hoare logic as the common language from the functional calculus up to elementary gates. In the
-exact case the program is totally correct: it succeeds with probability $C^2\norm{A^{-1}b}^2$, it is
-exact on success, and its repeat-until-success loop terminates with probability one after $1/p$
-expected rounds. In the paper's regime, the bounds of Theorem~1 and the run time hold with explicit
-constants, and the programs satisfy the corresponding fidelity triples. All of this persists down to
+quantum Hoare logic as the common language from the functional calculus up to elementary gates. Phase
+estimation, its core, is verified as a program with exact weakest preconditions, from which the
+textbook guarantees, including the clock size for a given precision and confidence, follow as triples.
+In the exact case the HHL program is totally correct: it succeeds with probability
+$C^2\norm{A^{-1}b}^2$, it is exact on success, and its repeat-until-success loop terminates with
+probability one after $1/p$ expected rounds. In the inexact case, the regime of the paper's error
+analysis, the bounds of Theorem~1 and the run time hold with explicit constants, and the programs
+satisfy the corresponding fidelity triples. All of this persists down to
 circuits of one- and two-qubit gates, including the preparation of $\ket b$ and, for sparse $A$, the
 simulation of $e^{iAt}$. On the way, the formalisation corrected the constant of Lemma~3 and several
 statements of the paper's optimality proofs.
@@ -1409,6 +1618,7 @@ Theory & Content & Lines & Results\\
 \multicolumn{4}{@{}l}{\emph{Mathematics}}\\
 \isa{Hermitian\_Functional\_Calculus} & $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
 \isa{Phase\_Estimation} & Fourier matrix, phase estimation, $4/\pi^2$ & 502 & 26\\
+\isa{QPE\_Precision} & tail bound, number of clock qubits & 380 & 18\\
 \isa{QFT\_Fourier} & the AFP QFT circuit is $F_{2^n}$ & 104 & 4\\
 \isa{QPE\_Register} & $H^{\otimes n}\ket{0\cdots0}$ is uniform & 104 & 7\\
 \midrule
@@ -1428,6 +1638,7 @@ Theory & Content & Lines & Results\\
 \isa{HHL\_Optimality} & Theorems 4--6 up to cited facts & 1\,055 & 60\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Program}}\\
+\isa{QPE\_Program} & phase estimation as a program & 426 & 27\\
 \isa{HHL\_Program} & initialisation, programs, triples & 1\,402 & 89\\
 \isa{HHL\_Termination} & repeat until success: total correctness & 502 & 19\\
 \isa{HHL\_Paper\_Program} & the paper's regime as programs & 877 & 31\\
