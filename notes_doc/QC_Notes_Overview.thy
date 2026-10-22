@@ -67,6 +67,8 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
     Vern_Paulsen_QC_Algorithms.HHL_All_Elementary
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
+    Vern_Paulsen_QC_Algorithms.QPE_Precision
+    Vern_Paulsen_QC_Algorithms.QPE_Program
 begin
 
 section \<open>Reading guide\<close>
@@ -151,6 +153,12 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the rotation as one ancilla rotation per clock value; window state by one reflection; elementary Fourier gates in the amplified circuit & \texttt{HHL\_Gate\_Refinements}\\
 --     & the rotation stage as a uniformly controlled rotation: Walsh--Hadamard angles, parity chains of nearest-neighbour CNOT/SWAP gates; the program and the paper-regime circuits with only elementary gates, oracle calls, $U_b$ and rotations controlled by the last clock qubit & \texttt{HHL\_Uniform\_Rotation}\\
 --     & state preparation by $k$ levels of uniformly controlled rotations, all gates elementary; the sine window; the paper-regime programs with only elementary gates, controlled ancilla rotations, $U_b$ and oracle calls & \texttt{HHL\_State\_Preparation}\\
+--     & the Lie--Trotter formula with error $2(mLt)^2/r$ & \texttt{HHL\_Trotter}\\
+--     & an $s$-sparse Hermitian matrix as its diagonal plus $2s-1$ one-sparse parts; sparse Trotter error $8(sLt)^2/r$ & \texttt{HHL\_Sparse\_Split}\\
+--     & the sparse simulation oracle as a verified circuit with $r(6s-2)$ queries, plugged into the HHL error bound & \texttt{HHL\_Sparse\_Circuit}\\
+--     & for $n=2^s$ every gate of HHL elementary or an oracle call; every $\ket b$ prepared in elementary gates; exact universality & \texttt{HHL\_All\_Elementary}\\
+--     & the textbook precision of phase estimation: outcomes more than $e/N$ from $\varphi$ have probability $\le1/(2(e-1))$; $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits give $n$ bits with probability $\ge1-\varepsilon$ & \texttt{QPE\_Precision}\\
+--     & phase estimation as a program of quantum Hoare logic: the exact weakest precondition of every clock outcome; exact phases, the $4/\pi^2$ bound, the tail and the precision as triples; the same in elementary gates & \texttt{QPE\_Program}\\
 \end{tabular}
 \end{center}
 

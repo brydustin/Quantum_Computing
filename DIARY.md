@@ -611,3 +611,22 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   claim Lemma 2's π/2 is wrong, but `hflag_lipschitz` proves it (κ' = 2κ).  The old refs.bib credited
   arXiv:2308.04741 to Feng–Zhou–Xu; it is by Huiling Wu, Yuxin Deng and Ming Xu (fixed).  Source links
   point at commit f2607ba; the repository is private, so they work only once it is public.
+- **Phase estimation as a program, its precision, inexact HHL** (2026-10-22; user: "fill in these missing
+  components and add verification ... section 4 has Exact HHL but is there not an 'inexact' case?").
+  The gaps named in the answer about phase estimation: no standalone triple, no textbook tail bound.
+  `QPE_Precision`: error of outcome j on the circle (`circ_dist`); `pe_tail_bound` (Nielsen–Chuang
+  (5.34): outcomes with N d_j > e have probability ≤ 1/(2(e−1)), for every φ), proved by the injection
+  j ↦ ⌈y_j − e⌉ of the signed errors (they differ by nonzero integers) and telescoping
+  (`sum_inv_sq_spaced`); `pe_precision` (t = n + ⌈log₂(2+1/(2ε))⌉ qubits: within 2^{−n} with probability
+  ≥ 1 − ε); `pe_round_dist`, `pe_amp_near` (4/π² for every φ, wrap-around included).  `QPE_Program`:
+  init; prepare u; H^{⊗k}; Λ(U); F† as a QHLProver program; `qpe_total` {(Σ_{j∈J}|α_j|²) I} qpe {Π_J}
+  and `qpe_prob` (the probability is exactly Σ_{j∈J}|α_j|² tr ρ, so the precondition is the weakest);
+  corollaries for exact phases, 4/π², the tail and the clock size; the elementary-gate program with the
+  same triple (`qpe_elem_total`, via `init_circuit_transfer` from `denote_init_circuit`).  The inexact
+  case was already Section 5 of the paper; it is now titled "Inexact HHL", and its programs subsection
+  has a theorem and a table of exact vs inexact triples.  Paper: 34 pp; Part VI 31 theories, 22 980
+  lines, 1 206 results.  Traps: `J` is a global constant (use `Js`); `simp` turns
+  `complex_of_real ((cmod z)²)` into `(complex_of_real (cmod z))²` before `complex_norm_square` can
+  fire (use `simp only`); after `interpret state_sig` the `\<turnstile>\<^sub>p` notation is unavailable,
+  write `hoare_partial P S Q`; `total_scalar_weaken` wants `1\<^sub>m (state_sig.d dims)` (fold the
+  dimension first); pgfplots `ycomb` on a log axis needs `log origin y=infty`.
