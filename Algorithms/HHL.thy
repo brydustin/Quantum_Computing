@@ -400,57 +400,75 @@ subsection \<open>All right-hand sides\<close>
 lemma mult_zero_vec_right: "B \<in> carrier_mat K n \<Longrightarrow> B *\<^sub>v 0\<^sub>v n = 0\<^sub>v K"
   by (rule eq_vecI) (auto simp: scalar_prod_def)
 
-text \<open>The matrix of $b\mapsto a\otimes(M_0b\otimes\ket0+M_1b\otimes\ket1)$.\<close>
+text \<open>$b\mapsto a\otimes\sum_{c<d}H_c\,b\otimes\ket c$ as an $(\dim a\cdot nd)\times n$ matrix.\<close>
 
-definition lift_mat :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "lift_mat n a M0 M1 = Matrix.mat (dim_vec a * (n * 2)) n
-     (\<lambda>(r, s). a $ (r div (n * 2)) *
-        (if r mod 2 = 0 then M0 $$ (r mod (n * 2) div 2, s) else M1 $$ (r mod (n * 2) div 2, s)))"
+definition lift :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
+  "lift d n a H = Matrix.mat (dim_vec a * (n * d)) n
+     (\<lambda>(r, s). a $ (r div (n * d)) * H (r mod (n * d) mod d) $$ (r mod (n * d) div d, s))"
 
-lemma lift_mat_carrier [simp]: "lift_mat n a M0 M1 \<in> carrier_mat (dim_vec a * (n * 2)) n"
-  by (simp add: lift_mat_def)
+lemma lift_carrier [simp]: "lift d n a H \<in> carrier_mat (dim_vec a * (n * d)) n"
+  by (simp add: lift_def)
+
+lemma lift_mult_vec:
+  assumes H: "\<And>c. c < d \<Longrightarrow> H c \<in> carrier_mat n n" and v: "dim_vec v = n"
+  shows "lift d n a H *\<^sub>v v = tensor_vec a (Matrix.vec (n * d) (\<lambda>j. (H (j mod d) *\<^sub>v v) $ (j div d)))"
+proof (rule eq_vecI)
+  let ?z = "Matrix.vec (n * d) (\<lambda>j. (H (j mod d) *\<^sub>v v) $ (j div d))"
+  have dz: "dim_vec ?z = n * d" by simp
+  show "dim_vec (lift d n a H *\<^sub>v v) = dim_vec (tensor_vec a ?z)" using tensor_vec_dim[OF refl dz] by (simp add: lift_def)
+  fix r assume "r < dim_vec (tensor_vec a ?z)"
+  hence r: "r < dim_vec a * (n * d)" using tensor_vec_dim[OF refl dz] by simp
+  have n3: "0 < n * d" using r by (cases "n * d") simp_all
+  have j: "r mod (n * d) < n * d" using n3 by simp
+  have c: "r mod (n * d) mod d < d" using n3 by simp
+  have i: "r mod (n * d) div d < n" using j by (simp add: less_mult_imp_div_less)
+  have "(lift d n a H *\<^sub>v v) $ r = (\<Sum>s<n. a $ (r div (n * d)) * H (r mod (n * d) mod d) $$ (r mod (n * d) div d, s) * v $ s)"
+    using r v by (simp add: lift_def scalar_prod_def atLeast0LessThan)
+  also have "\<dots> = a $ (r div (n * d)) * (H (r mod (n * d) mod d) *\<^sub>v v) $ (r mod (n * d) div d)"
+    using H[OF c] i v by (simp add: scalar_prod_def atLeast0LessThan sum_distrib_left mult_ac)
+  also have "\<dots> = tensor_vec a ?z $ r" using tensor_vec_index[OF refl dz r] j by simp
+  finally show "(lift d n a H *\<^sub>v v) $ r = tensor_vec a ?z $ r" .
+qed
+
+lemma flag_vec_eigen:
+  assumes u: "dim_vec u = n"
+  shows "Matrix.vec (n * d) (\<lambda>j. (z (j mod d) \<cdot>\<^sub>v u) $ (j div d)) = tensor_vec u (Matrix.vec d z)"
+proof (rule eq_vecI)
+  have dt: "dim_vec (tensor_vec u (Matrix.vec d z)) = n * d" by (rule tensor_vec_dim[OF u]) simp
+  show "dim_vec (Matrix.vec (n * d) (\<lambda>j. (z (j mod d) \<cdot>\<^sub>v u) $ (j div d))) = dim_vec (tensor_vec u (Matrix.vec d z))" using dt by simp
+  fix j assume "j < dim_vec (tensor_vec u (Matrix.vec d z))"
+  hence j: "j < n * d" using dt by simp
+  have i: "j div d < n" using j by (simp add: less_mult_imp_div_less)
+  have m: "j mod d < d" using j by (cases d) simp_all
+  show "Matrix.vec (n * d) (\<lambda>j. (z (j mod d) \<cdot>\<^sub>v u) $ (j div d)) $ j = tensor_vec u (Matrix.vec d z) $ j"
+    using j i m u tensor_vec_index[OF u _ j, of "Matrix.vec d z"] by (simp add: mult.commute)
+qed
+
+abbreviation lift_mat :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "lift_mat n a M0 M1 \<equiv> lift 2 n a (\<lambda>c. if c = 0 then M0 else M1)"
 
 lemma lift_mat_mult_vec:
   assumes M0: "M0 \<in> carrier_mat n n" and M1: "M1 \<in> carrier_mat n n" and b: "dim_vec b = n"
   shows "lift_mat n a M0 M1 *\<^sub>v b =
          tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1))"
 proof -
-  let ?N = "dim_vec a"
-  have d0: "dim_vec (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0)) = n * 2" by (rule tensor_vec_dim) (use M0 in simp_all)
-  have d1: "dim_vec (tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) = n * 2" by (rule tensor_vec_dim) (use M1 in simp_all)
-  have dX: "dim_vec (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) = n * 2"
-    using d1 by simp
-  have dt: "dim_vec (tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1))) = ?N * (n * 2)"
-    by (rule tensor_vec_dim[OF refl dX])
-  show ?thesis
+  have H: "(if c = 0 then M0 else M1) \<in> carrier_mat n n" for c :: nat using M0 M1 by simp
+  have dH: "dim_vec (M0 *\<^sub>v b) = n" "dim_vec (M1 *\<^sub>v b) = n" using M0 M1 by simp_all
+  have "Matrix.vec (n * 2) (\<lambda>j. ((if j mod 2 = 0 then M0 else M1) *\<^sub>v b) $ (j div 2)) =
+        tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)"
   proof (rule eq_vecI)
-    fix r assume "r < dim_vec (tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)))"
-    hence r: "r < ?N * (n * 2)" using dt by simp
-    hence n: "0 < n" by (cases n) auto
-    define q where "q = r mod (n * 2)"
-    have q: "q < n * 2" unfolding q_def using n by simp
-    have s0: "q div 2 < n" using q by linarith
-    have t: "q mod 2 = r mod 2" unfolding q_def by (simp add: mod_mod_cancel)
-    have Md: "dim_row M0 = n" "dim_col M0 = n" "dim_row M1 = n" "dim_col M1 = n" using M0 M1 by auto
-    have "(lift_mat n a M0 M1 *\<^sub>v b) $ r =
-          (\<Sum>s<n. a $ (r div (n * 2)) * (if r mod 2 = 0 then M0 $$ (q div 2, s) else M1 $$ (q div 2, s)) * b $ s)"
-      unfolding q_def using r b by (simp add: lift_mat_def scalar_prod_def atLeast0LessThan)
-    also have "\<dots> = a $ (r div (n * 2)) * (if r mod 2 = 0 then (M0 *\<^sub>v b) $ (q div 2) else (M1 *\<^sub>v b) $ (q div 2))"
-      using s0 Md b by (simp add: scalar_prod_def atLeast0LessThan sum_distrib_left mult_ac)
-    also have "\<dots> = tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) $ r"
-    proof -
-      have "(tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) $ q =
-            (M0 *\<^sub>v b) $ (q div 2) * unit_vec 2 0 $ (q mod 2) + (M1 *\<^sub>v b) $ (q div 2) * unit_vec 2 1 $ (q mod 2)"
-        using q d1 Md tensor_vec_index[of "M0 *\<^sub>v b" n "unit_vec 2 0" 2 q] tensor_vec_index[of "M1 *\<^sub>v b" n "unit_vec 2 1" 2 q]
-        by simp
-      also have "\<dots> = (if r mod 2 = 0 then (M0 *\<^sub>v b) $ (q div 2) else (M1 *\<^sub>v b) $ (q div 2))"
-        using t by (auto simp: unit_vec_def)
-      finally show ?thesis
-        using tensor_vec_index[OF refl dX r] by (simp add: q_def)
-    qed
-    finally show "(lift_mat n a M0 M1 *\<^sub>v b) $ r =
-      tensor_vec a (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) $ r" .
-  qed (use dt in \<open>simp add: lift_mat_def\<close>)
+    have dt: "dim_vec (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0)) = n * 2" "dim_vec (tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) = n * 2"
+      by (rule tensor_vec_dim[OF dH(1)], simp, rule tensor_vec_dim[OF dH(2)], simp)
+    show "dim_vec (Matrix.vec (n * 2) (\<lambda>j. ((if j mod 2 = 0 then M0 else M1) *\<^sub>v b) $ (j div 2))) =
+          dim_vec (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1))" using dt by simp
+    fix j assume "j < dim_vec (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1))"
+    hence j: "j < n * 2" using dt by simp
+    show "Matrix.vec (n * 2) (\<lambda>j. ((if j mod 2 = 0 then M0 else M1) *\<^sub>v b) $ (j div 2)) $ j =
+          (tensor_vec (M0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec (M1 *\<^sub>v b) (unit_vec 2 1)) $ j"
+      using j dt tensor_vec_index[OF dH(1) _ j, of "unit_vec 2 0"] tensor_vec_index[OF dH(2) _ j, of "unit_vec 2 1"]
+      by (cases "j mod 2 = 0") (auto simp: unit_vec_def)
+  qed
+  thus ?thesis unfolding lift_mult_vec[OF H b] by simp
 qed
 
 text \<open>The embedding $b\mapsto a\otimes b\otimes\ket0$, and on an eigenvector the ideal output
@@ -540,8 +558,8 @@ proof -
   have Hc: "?H \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
     unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
-  have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
-  have Oc: "?Out \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
+  have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_carrier[of 2 n ?u] du by simp
+  have Oc: "?Out \<in> carrier_mat (N * (n * 2)) n" using lift_carrier[of 2 n ?u] du by simp
   note emb = lift_mat_emb[where a = ?u]
   have HE: "?H * ?Emb = ?Out"
   proof (rule eigvec_mat_eqI[OF A mult_carrier_mat[OF Hc Ec] Oc])

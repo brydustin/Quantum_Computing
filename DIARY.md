@@ -711,3 +711,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Trap: `X[OF … G …]` with a rule-shaped G (`⋀k. k < N ⟹ …`) lifts the premise and leaves
   `⋀k. k < N ⟹ k < N` behind, so the instance is conditional and `unfolding` silently does
   nothing; state the instance with `by (rule X[OF … _ …]) (rule G)` and unfold that.
+- **No redundancies, batch 4b** (2026-10-22): from eigenvectors to every b, once.
+  `hhl_clamped_bound`, `hhl_window_bound` and `flag_bound` each repeated the spectral argument
+  (eigenbasis, orthogonal error images, bound per eigenvector, `orth_image_bound` or
+  `orth_image_eq`); now one lemma `every_rhs_bound` (in `HHL_Approximate`, from `orth_image_eq`
+  and `unitary_dagger_norm`, moved from `HHL_Filter_Bounds`), and the three theorems supply only
+  the orthogonality and the eigenvector bound; `orth_image_bound` is gone.  The block-column
+  matrices `lift_mat` (flag of 2 levels, `HHL`) and `lift3` (3 levels, `HHL_Filter_Bounds`) are one
+  `lift d n a H` with `lift_mat` an abbreviation (`lift_mult_vec`, `flag_vec_eigen` for any d).  The
+  vector-norm lemmas moved from `HHL_Simulation` to `HHL_Approximate` (first user).  `abs_split`
+  in `HHL_Filter` shadowed HOL's split rule; renamed `abs_dist_between`.  33 theories, 2 204
+  theorems, no oracles.  Kept on purpose: `rot c` (amplitude form, any c) and `Rot a` (angle form)
+  are different parametrisations with a bridge `rot_Rot`; `run_gates` (state trajectory) and
+  `circuit_mat` (product) are bridged by `circuit_mat_run`; `blk_lift` has register-dependent
+  blocks.

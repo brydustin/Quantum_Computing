@@ -419,9 +419,9 @@ proof -
     finally show ?thesis .
   qed
   have PX: "pflag 3 (\<lambda>c. c = 1) (?I *\<^sub>v b) = ?X"
-    unfolding flag_idl_def by (rule lift3_post(1)[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b(1) dim_win_state])
+    unfolding flag_idl_def by (rule lift_post(1)[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b(1) dim_win_state])
   have dCb: "dim_vec (?C *\<^sub>v ?bx) = ?K" using Cc by simp
-  have dIb: "dim_vec (?I *\<^sub>v b) = ?K" using carrier_matD(1)[OF lift3_carrier[of n ?\<psi> "flag_H \<kappa> A"]] by (simp add: flag_idl_def)
+  have dIb: "dim_vec (?I *\<^sub>v b) = ?K" using carrier_matD(1)[OF lift_carrier[of 3 n ?\<psi> "flag_H \<kappa> A"]] by (simp add: flag_idl_def)
   have errb: "\<parallel>?C *\<^sub>v ?bx - ?I *\<^sub>v b\<parallel> \<le> \<rho> / 2"
   proof (rule power2_le_imp_le)
     have "\<parallel>?C *\<^sub>v ?bx - ?I *\<^sub>v b\<parallel>\<^sup>2 \<le> 9 * pi ^ 4 * (4 + 2 * pi\<^sup>2) * \<kappa>\<^sup>2 / ((real N)\<^sup>2 * t0\<^sup>2) * \<parallel>b\<parallel>\<^sup>2"

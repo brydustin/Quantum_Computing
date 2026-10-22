@@ -296,7 +296,7 @@ qed
 
 end
 
-lemma abs_split:
+lemma abs_dist_between:
   fixes x y z L :: real
   assumes "x \<le> y" "y \<le> z"
   shows "L * \<bar>x - y\<bar> + L * \<bar>y - z\<bar> = L * \<bar>x - z\<bar>"
@@ -336,13 +336,13 @@ proof -
     have "\<parallel>?H a - ?H \<nu>\<parallel> \<le> ?L * \<bar>a - \<nu>\<bar>" by (rule R3) (use 4 in linarith)+
     moreover have "\<parallel>?H \<nu> - ?H b\<parallel> \<le> ?L * \<bar>\<nu> - b\<bar>" by (rule R2) (use 4 in linarith)+
     ultimately have "\<parallel>?H a - ?H b\<parallel> \<le> ?L * \<bar>a - \<nu>\<bar> + ?L * \<bar>\<nu> - b\<bar>" using tri[where x = a and y = \<nu> and z = b] by linarith
-    thus ?thesis using abs_split[of a \<nu> b ?L] 4 by simp
+    thus ?thesis using abs_dist_between[of a \<nu> b ?L] 4 by simp
   next
     case 5
     have "\<parallel>?H a - ?H \<mu>\<parallel> \<le> ?L * \<bar>a - \<mu>\<bar>" by (rule R2) (use 5 nm in linarith)+
     moreover have "\<parallel>?H \<mu> - ?H b\<parallel> \<le> ?L * \<bar>\<mu> - b\<bar>" by (rule R1) (use 5 in linarith)+
     ultimately have "\<parallel>?H a - ?H b\<parallel> \<le> ?L * \<bar>a - \<mu>\<bar> + ?L * \<bar>\<mu> - b\<bar>" using tri[where x = a and y = \<mu> and z = b] by linarith
-    thus ?thesis using abs_split[of a \<mu> b ?L] 5 by simp
+    thus ?thesis using abs_dist_between[of a \<mu> b ?L] 5 by simp
   next
     case 6
     have "\<parallel>?H a - ?H b\<parallel> \<le> \<parallel>?H a - ?H \<nu>\<parallel> + (\<parallel>?H \<nu> - ?H \<mu>\<parallel> + \<parallel>?H \<mu> - ?H b\<parallel>)"
@@ -353,7 +353,7 @@ proof -
       show "\<parallel>?H \<nu> - ?H \<mu>\<parallel> \<le> ?L * \<bar>\<nu> - \<mu>\<bar>" by (rule R2) (use nm in linarith)+
       show "\<parallel>?H \<mu> - ?H b\<parallel> \<le> ?L * \<bar>\<mu> - b\<bar>" by (rule R1) (use 6 in linarith)+
     qed
-    finally show ?thesis using abs_split[of \<nu> \<mu> b ?L] abs_split[of a \<nu> b ?L] 6 nm by simp
+    finally show ?thesis using abs_dist_between[of \<nu> \<mu> b ?L] abs_dist_between[of a \<nu> b ?L] 6 nm by simp
   qed
 qed
 

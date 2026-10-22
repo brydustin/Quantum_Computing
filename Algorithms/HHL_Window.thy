@@ -746,8 +746,6 @@ proof -
   let ?e = "(8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * lmin ^ 4))"
   let ?f = "\<lambda>k. clamp (C / reg_eig t0 N k)"
   have N0: "0 < N" using N by simp
-  obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
-  note d = spectral_decompD[OF A(1) sd]
   have du: "dim_vec ?u = N" by simp
   have nA: "dim_row A = n" using A(1) by simp
   have G0: "?G0 \<in> carrier_mat n n" using A by simp
@@ -755,8 +753,8 @@ proof -
   have Hc: "?H \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
     unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
-  have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
-  have Ic: "?Idl \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
+  have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_carrier[of 2 n ?u] du by simp
+  have Ic: "?Idl \<in> carrier_mat (N * (n * 2)) n" using lift_carrier[of 2 n ?u] du by simp
   have Errc: "?Err \<in> carrier_mat (N * (n * 2)) n" by (rule minus_carrier_mat[OF Ic])
   have Errv: "?Err *\<^sub>v v = ?H *\<^sub>v tensor_vec ?u (tensor_vec v (unit_vec 2 0)) - ?Idl *\<^sub>v v" if v: "dim_vec v = n" for v
   proof -
@@ -765,59 +763,36 @@ proof -
     also have "(?H * ?Emb) *\<^sub>v v = ?H *\<^sub>v (?Emb *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Hc Ec vc])
     finally show ?thesis unfolding lift_mat_emb[OF v] .
   qed
+  have ErrU: "?Err *\<^sub>v v = ?H *\<^sub>v tensor_vec ?u (tensor_vec v (unit_vec 2 0)) - tensor_vec ?u (tensor_vec v (rot (C / l) *\<^sub>v unit_vec 2 0))"
+    if v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" for v l
+    unfolding Errv[OF v(1)] ideal_mat_eigen[OF A v] ..
   have lmin0: "0 < lmin"
   proof -
     have "0 < 2 * C / \<theta>" using C th by simp
     thus ?thesis using lmin by linarith
   qed
-  \<comment> \<open>the columns of @{term U}: eigenvectors with eigenvalues in the spectrum\<close>
-  have col: "dim_vec (Matrix.col U j) = n" "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j"
-            "lmin \<le> D ! j" "t0 * D ! j \<le> pi / 2" "2 * C / \<theta> \<le> D ! j" if j: "j < n" for j
-  proof -
-    show "dim_vec (Matrix.col U j) = n" using d(1) by simp
-    show "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j" by (rule spectral_decomp_col[OF A(1) sd j])
-    have "D ! j \<in> herm_spectrum A" by (rule spectral_decomp_eig_in_spectrum[OF A(1) sd j])
-    from spec[OF this] show "lmin \<le> D ! j" "t0 * D ! j \<le> pi / 2" by simp_all
-    thus "2 * C / \<theta> \<le> D ! j" using lmin by linarith
-  qed
-  have ErrU: "?Err *\<^sub>v Matrix.col U j =
-              hhl_gen A t0 N ?f *\<^sub>v tensor_vec ?u (tensor_vec (Matrix.col U j) (unit_vec 2 0)) -
-              tensor_vec ?u (tensor_vec (Matrix.col U j) (rot (C / D ! j) *\<^sub>v unit_vec 2 0))" if j: "j < n" for j
-    unfolding Errv[OF col(1)[OF j]] ideal_mat_eigen[OF A col(1,2)[OF j]] ..
-  have diag: "\<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U j\<rangle> =
-              (if i = j then complex_of_real (Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle>) else 0)"
-    if i: "i < n" and j: "j < n" for i j
-  proof (cases "i = j")
-    case True
-    have dE: "dim_vec (?Err *\<^sub>v Matrix.col U j) = N * (n * 2)" using carrier_matD(1)[OF Errc] by simp
-    show ?thesis unfolding True by (simp only: refl if_True inner_self_real[OF dE, symmetric])
+  have "\<parallel>?Err *\<^sub>v b\<parallel>\<^sup>2 \<le> ?e * \<parallel>b\<parallel>\<^sup>2"
+  proof (rule every_rhs_bound[OF A Errc _ _ b])
+    fix v v' l l' assume v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" "l \<in> herm_spectrum A"
+      and v': "dim_vec v' = n" "A *\<^sub>v v' = complex_of_real l' \<cdot>\<^sub>v v'" "l' \<in> herm_spectrum A" and o: "\<langle>v|v'\<rangle> = 0"
+    show "\<langle>?Err *\<^sub>v v|?Err *\<^sub>v v'\<rangle> = 0"
+      unfolding ErrU[OF v(1,2)] ErrU[OF v'(1,2)] by (rule hhl_err_orth[OF A t0 N0 v(1,2) v'(1,2) o du])
   next
-    case False
-    have orth: "\<langle>Matrix.col U i|Matrix.col U j\<rangle> = 0"
-      using unitary_cols_orthonormal[OF d(2), of i j] d(1) i j False by simp
-    show ?thesis unfolding ErrU[OF i] ErrU[OF j]
-      using hhl_err_orth[OF A t0 N0 col(1,2)[OF i] col(1,2)[OF j] orth dim_win_state, of ?f "C / D ! i" ?f "C / D ! j"] False by simp
-  qed
-  have me: "Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle> \<le> ?e" if i: "i < n" for i
-  proof -
-    have one: "\<langle>Matrix.col U i|Matrix.col U i\<rangle> = 1" using unitary_cols_orthonormal[OF d(2), of i i] d(1) i by simp
-    have "Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle> \<le>
-          Re \<langle>Matrix.col U i|Matrix.col U i\<rangle> * (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * (D ! i) ^ 4))"
-      unfolding ErrU[OF i]
-      by (rule hhl_window_error_bound[OF A t0 N col(1,2)[OF i] C th col(5,4)[OF i]])
-    also have "\<dots> \<le> 1 * ?e"
+    fix v l assume v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" "l \<in> herm_spectrum A" "\<parallel>v\<parallel> = 1"
+    have sl: "lmin \<le> l" "t0 * l \<le> pi / 2" using spec[OF v(3)] by simp_all
+    have "Re \<langle>?Err *\<^sub>v v|?Err *\<^sub>v v\<rangle> \<le> Re \<langle>v|v\<rangle> * (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * l ^ 4))"
+      unfolding ErrU[OF v(1,2)] by (rule hhl_window_error_bound[OF A t0 N v(1,2) C th _ sl(2)]) (use sl(1) lmin in linarith)
+    also have "\<dots> \<le> ?e"
     proof -
-      have "512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * (D ! i) ^ 4) \<le> 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * lmin ^ 4)"
-        using col(3)[OF i] lmin0 N t0 by (intro divide_left_mono mult_left_mono power_mono) simp_all
-      hence "8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * (D ! i) ^ 4) \<le> ?e"
+      have "512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * l ^ 4) \<le> 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * lmin ^ 4)"
+        using sl(1) lmin0 N t0 by (intro divide_left_mono mult_left_mono power_mono) simp_all
+      hence "8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / ((real N)\<^sup>2 * t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 * l ^ 4) \<le> ?e"
         by (rule add_left_mono)
-      thus ?thesis unfolding one by simp
+      thus ?thesis using v(4) vnorm_Re_inner[of v] by simp
     qed
-    finally show ?thesis by simp
+    finally show "\<parallel>?Err *\<^sub>v v\<parallel>\<^sup>2 \<le> ?e" unfolding vnorm_Re_inner .
   qed
-  have "Re \<langle>?Err *\<^sub>v b|?Err *\<^sub>v b\<rangle> \<le> ?e * Re \<langle>b|b\<rangle>"
-    by (rule orth_image_bound[OF d(1) d(2) Errc diag me b])
-  thus ?thesis unfolding Errv[OF b] lift_mat_mult_vec[OF G0 G1 b] .
+  thus ?thesis unfolding vnorm_Re_inner Errv[OF b] lift_mat_mult_vec[OF G0 G1 b] .
 qed
 
 lemma window_rate:

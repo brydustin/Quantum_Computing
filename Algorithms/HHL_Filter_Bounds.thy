@@ -14,49 +14,6 @@ the total evolution time.  Householder reflections provide the flag gates.\<clos
 
 subsection \<open>Every right-hand side\<close>
 
-text \<open>$b\mapsto a\otimes\sum_{c<3}H_c\,b\otimes\ket c$ as an $(\dim a\cdot3n)\times n$ matrix.\<close>
-
-definition lift3 :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
-  "lift3 n a H = Matrix.mat (dim_vec a * (n * 3)) n
-     (\<lambda>(r, s). a $ (r div (n * 3)) * H (r mod (n * 3) mod 3) $$ (r mod (n * 3) div 3, s))"
-
-lemma lift3_carrier [simp]: "lift3 n a H \<in> carrier_mat (dim_vec a * (n * 3)) n"
-  by (simp add: lift3_def)
-
-lemma lift3_mult_vec:
-  assumes H: "\<And>c. c < 3 \<Longrightarrow> H c \<in> carrier_mat n n" and v: "dim_vec v = n"
-  shows "lift3 n a H *\<^sub>v v = tensor_vec a (Matrix.vec (n * 3) (\<lambda>j. (H (j mod 3) *\<^sub>v v) $ (j div 3)))"
-proof (rule eq_vecI)
-  let ?z = "Matrix.vec (n * 3) (\<lambda>j. (H (j mod 3) *\<^sub>v v) $ (j div 3))"
-  have dz: "dim_vec ?z = n * 3" by simp
-  show "dim_vec (lift3 n a H *\<^sub>v v) = dim_vec (tensor_vec a ?z)" using tensor_vec_dim[OF refl dz] by (simp add: lift3_def)
-  fix r assume "r < dim_vec (tensor_vec a ?z)"
-  hence r: "r < dim_vec a * (n * 3)" using tensor_vec_dim[OF refl dz] by simp
-  have n3: "0 < n * 3" using r by (cases "n * 3") simp_all
-  have j: "r mod (n * 3) < n * 3" using n3 by simp
-  have c: "r mod (n * 3) mod 3 < 3" by simp
-  have i: "r mod (n * 3) div 3 < n" using j by (simp add: less_mult_imp_div_less)
-  have "(lift3 n a H *\<^sub>v v) $ r = (\<Sum>s<n. a $ (r div (n * 3)) * H (r mod (n * 3) mod 3) $$ (r mod (n * 3) div 3, s) * v $ s)"
-    using r v by (simp add: lift3_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = a $ (r div (n * 3)) * (H (r mod (n * 3) mod 3) *\<^sub>v v) $ (r mod (n * 3) div 3)"
-    using H[OF c] i v by (simp add: scalar_prod_def atLeast0LessThan sum_distrib_left mult_ac)
-  also have "\<dots> = tensor_vec a ?z $ r" using tensor_vec_index[OF refl dz r] j by simp
-  finally show "(lift3 n a H *\<^sub>v v) $ r = tensor_vec a ?z $ r" .
-qed
-
-lemma flag_vec_eigen:
-  assumes u: "dim_vec u = n"
-  shows "Matrix.vec (n * 3) (\<lambda>j. (z (j mod 3) \<cdot>\<^sub>v u) $ (j div 3)) = tensor_vec u (Matrix.vec 3 z)"
-proof (rule eq_vecI)
-  have dt: "dim_vec (tensor_vec u (Matrix.vec 3 z)) = n * 3" by (rule tensor_vec_dim[OF u]) simp
-  show "dim_vec (Matrix.vec (n * 3) (\<lambda>j. (z (j mod 3) \<cdot>\<^sub>v u) $ (j div 3))) = dim_vec (tensor_vec u (Matrix.vec 3 z))" using dt by simp
-  fix j assume "j < dim_vec (tensor_vec u (Matrix.vec 3 z))"
-  hence j: "j < n * 3" using dt by simp
-  have i: "j div 3 < n" using j by (simp add: less_mult_imp_div_less)
-  show "Matrix.vec (n * 3) (\<lambda>j. (z (j mod 3) \<cdot>\<^sub>v u) $ (j div 3)) $ j = tensor_vec u (Matrix.vec 3 z) $ j"
-    using j i u tensor_vec_index[OF u _ j, of "Matrix.vec 3 z"] by (simp add: mult.commute)
-qed
-
 lemma flag_vec_split:
   assumes H: "\<And>c. c < 3 \<Longrightarrow> H c \<in> carrier_mat n n" and v: "dim_vec v = n"
   shows "Matrix.vec (n * 3) (\<lambda>j. (H (j mod 3) *\<^sub>v v) $ (j div 3)) =
@@ -82,10 +39,10 @@ definition flag_H :: "real \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<
   "flag_H \<kappa> A c = mat_fun (\<lambda>x. complex_of_real (if c = 0 then filt_s \<kappa> x else if c = 1 then filt_f \<kappa> x else filt_g \<kappa> x)) A"
 
 definition flag_idl :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
-  "flag_idl n \<kappa> A a = lift3 n a (flag_H \<kappa> A)"
+  "flag_idl n \<kappa> A a = lift 3 n a (flag_H \<kappa> A)"
 
 definition flag_emb :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
-  "flag_emb n a = lift3 n a (\<lambda>c. if c = 0 then 1\<^sub>m n else 0\<^sub>m n n)"
+  "flag_emb n a = lift 3 n a (\<lambda>c. if c = 0 then 1\<^sub>m n else 0\<^sub>m n n)"
 
 lemma flag_H_carrier: "A \<in> carrier_mat n n \<Longrightarrow> hermitian A \<Longrightarrow> flag_H \<kappa> A c \<in> carrier_mat n n"
   unfolding flag_H_def by simp
@@ -107,7 +64,7 @@ proof -
     ultimately show ?thesis using False by simp
   qed
   have u3: "Matrix.vec 3 ?z = unit_vec 3 0" by (intro eq_vecI) (simp_all add: unit_vec_def)
-  show ?thesis unfolding flag_emb_def lift3_mult_vec[OF H v] e flag_vec_eigen[where z = ?z, OF v] u3 ..
+  show ?thesis unfolding flag_emb_def lift_mult_vec[OF H v] e flag_vec_eigen[where z = ?z, OF v] u3 ..
 qed
 
 lemma flag_idl_eigen:
@@ -117,7 +74,7 @@ proof -
   let ?z = "\<lambda>c::nat. complex_of_real (if c = 0 then filt_s \<kappa> l else if c = 1 then filt_f \<kappa> l else filt_g \<kappa> l)"
   have e: "flag_H \<kappa> A c *\<^sub>v u = ?z c \<cdot>\<^sub>v u" for c unfolding flag_H_def by (rule mat_fun_eigen[OF A u ev])
   have h: "Matrix.vec 3 ?z = hflag \<kappa> l" by (simp add: hflag_def)
-  show ?thesis unfolding flag_idl_def lift3_mult_vec[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] u] e flag_vec_eigen[where z = ?z, OF u] h ..
+  show ?thesis unfolding flag_idl_def lift_mult_vec[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] u] e flag_vec_eigen[where z = ?z, OF u] h ..
 qed
 
 lemma flag_idl_mult:
@@ -125,7 +82,7 @@ lemma flag_idl_mult:
   shows "flag_idl n \<kappa> A a *\<^sub>v b = tensor_vec a
            (tensor_vec (flag_H \<kappa> A 0 *\<^sub>v b) (unit_vec 3 0) + tensor_vec (flag_H \<kappa> A 1 *\<^sub>v b) (unit_vec 3 1)
             + tensor_vec (flag_H \<kappa> A 2 *\<^sub>v b) (unit_vec 3 2))"
-  unfolding flag_idl_def lift3_mult_vec[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b] flag_vec_split[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b] ..
+  unfolding flag_idl_def lift_mult_vec[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b] flag_vec_split[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b] ..
 
 text \<open>The post-selected error vector as a branch sum behind $W^*$.\<close>
 
@@ -187,82 +144,6 @@ proof -
   show ?thesis unfolding e e' by (rule unitary_reg_sum_orth[OF Wc Wu u u' orth]) (use h h' in simp_all)
 qed
 
-lemma inner_as_sum: "dim_vec y = n \<Longrightarrow> \<langle>x|y\<rangle> = (\<Sum>i<n. cnj (x $ i) * y $ i)"
-  by (simp add: Quantum.inner_prod_def atLeast0LessThan)
-
-text \<open>If $M$ maps the orthonormal columns $u_j$ of $U$ to mutually orthogonal vectors then
-$\norm{Mb}^2=\sum_j\norm{Mu_j}^2\,|\langle u_j|b\rangle|^2$.\<close>
-
-lemma orth_image_eq:
-  fixes M U :: "complex Matrix.mat"
-  assumes U: "U \<in> carrier_mat n n" "unitary U" and M: "M \<in> carrier_mat K n"
-      and orth: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> i \<noteq> j \<Longrightarrow> \<langle>M *\<^sub>v Matrix.col U i|M *\<^sub>v Matrix.col U j\<rangle> = 0"
-      and b: "dim_vec b = n"
-  shows "\<parallel>M *\<^sub>v b\<parallel>\<^sup>2 = (\<Sum>j<n. \<parallel>M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 * (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2)"
-proof -
-  define \<beta> where "\<beta> = (U\<^sup>\<dagger>) *\<^sub>v b"
-  let ?MU = "M * U"
-  let ?m = "\<lambda>j. \<parallel>M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2"
-  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U(1)])
-  have MU: "?MU \<in> carrier_mat K n" by (rule mult_carrier_mat[OF M U(1)])
-  have bc: "b \<in> carrier_vec n" using b by (rule carrier_vecI)
-  have db: "dim_vec \<beta> = n" using U(1) unfolding \<beta>_def by simp
-  have UU: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using U unfolding unitary_def by auto
-  have Ub: "U *\<^sub>v \<beta> = b" unfolding \<beta>_def using assoc_mult_mat_vec[OF U(1) Ud bc, symmetric] UU bc by simp
-  have Mb: "M *\<^sub>v b = ?MU *\<^sub>v \<beta>" using assoc_mult_mat_vec[OF M U(1) carrier_vecI[OF db]] Ub by simp
-  define D where "D = Matrix.mat n n (\<lambda>(i, j). if i = j then complex_of_real (?m i) else 0)"
-  have DD: "?MU\<^sup>\<dagger> * ?MU = D"
-  proof (rule eq_matI)
-    fix i j assume "i < dim_row D" "j < dim_col D"
-    hence i: "i < n" and j: "j < n" by (simp_all add: D_def)
-    have "(?MU\<^sup>\<dagger> * ?MU) $$ (i, j) = \<langle>Matrix.col ?MU i|Matrix.col ?MU j\<rangle>" by (rule dagger_mult_entry[OF MU i j])
-    also have "\<dots> = \<langle>M *\<^sub>v Matrix.col U i|M *\<^sub>v Matrix.col U j\<rangle>" unfolding col_mult2[OF M U(1) i] col_mult2[OF M U(1) j] ..
-    also have "\<dots> = D $$ (i, j)"
-    proof (cases "i = j")
-      case True thus ?thesis unfolding D_def using i by (simp add: cpx_vec_length_inner_prod[symmetric])
-    next
-      case False thus ?thesis unfolding D_def using i j orth by simp
-    qed
-    finally show "(?MU\<^sup>\<dagger> * ?MU) $$ (i, j) = D $$ (i, j)" .
-  qed (use MU U(1) in \<open>simp_all add: D_def\<close>)
-  have dMU: "dim_vec (?MU *\<^sub>v \<beta>) = K" using M by simp
-  have MUd: "?MU\<^sup>\<dagger> \<in> carrier_mat n K" by (rule dagger_carrier[OF MU])
-  have "\<langle>?MU *\<^sub>v \<beta>|?MU *\<^sub>v \<beta>\<rangle> = \<langle>\<beta>|?MU\<^sup>\<dagger> *\<^sub>v (?MU *\<^sub>v \<beta>)\<rangle>"
-    using inner_prod_adjoint_swap[OF MUd db dMU] by (simp add: dagger_of_dagger_is_id)
-  also have "?MU\<^sup>\<dagger> *\<^sub>v (?MU *\<^sub>v \<beta>) = D *\<^sub>v \<beta>" unfolding DD[symmetric] by (rule assoc_mult_mat_vec[OF MUd MU carrier_vecI[OF db], symmetric])
-  also have "\<langle>\<beta>|D *\<^sub>v \<beta>\<rangle> = (\<Sum>j<n. complex_of_real (?m j * (cmod (\<beta> $ j))\<^sup>2))"
-  proof -
-    have Dv: "(D *\<^sub>v \<beta>) $ i = complex_of_real (?m i) * \<beta> $ i" if "i < n" for i
-      using that db by (simp add: D_def scalar_prod_def atLeast0LessThan if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-    have "\<langle>\<beta>|D *\<^sub>v \<beta>\<rangle> = (\<Sum>j<n. cnj (\<beta> $ j) * (complex_of_real (?m j) * \<beta> $ j))"
-    proof -
-      have dD: "dim_vec (D *\<^sub>v \<beta>) = n" by (simp add: D_def)
-      show ?thesis unfolding inner_as_sum[OF dD] by (rule sum.cong[OF refl]) (simp add: Dv)
-    qed
-    also have "\<dots> = (\<Sum>j<n. complex_of_real (?m j * (cmod (\<beta> $ j))\<^sup>2))"
-    proof (rule sum.cong[OF refl])
-      fix j
-      have "cnj (\<beta> $ j) * \<beta> $ j = complex_of_real ((cmod (\<beta> $ j))\<^sup>2)" by (metis complex_norm_square mult.commute)
-      thus "cnj (\<beta> $ j) * (complex_of_real (?m j) * \<beta> $ j) = complex_of_real (?m j * (cmod (\<beta> $ j))\<^sup>2)"
-        by (simp add: mult_ac)
-    qed
-    finally show ?thesis .
-  qed
-  finally have "complex_of_real (\<parallel>M *\<^sub>v b\<parallel>\<^sup>2) = complex_of_real (\<Sum>j<n. ?m j * (cmod (\<beta> $ j))\<^sup>2)"
-    unfolding cpx_vec_length_inner_prod Mb by (simp add: of_real_sum)
-  thus ?thesis unfolding \<beta>_def by (simp only: of_real_eq_iff)
-qed
-
-lemma unitary_dagger_norm:
-  assumes U: "U \<in> carrier_mat n n" "unitary U" and b: "dim_vec b = n"
-  shows "(\<Sum>j<n. (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2) = \<parallel>b\<parallel>\<^sup>2"
-proof -
-  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U(1)])
-  have "\<parallel>(U\<^sup>\<dagger>) *\<^sub>v b\<parallel> = \<parallel>b\<parallel>" by (rule unitary_vnorm[OF Ud unitary_dagger[OF U(2)] b])
-  hence "\<parallel>(U\<^sup>\<dagger>) *\<^sub>v b\<parallel>\<^sup>2 = \<parallel>b\<parallel>\<^sup>2" by simp
-  thus ?thesis unfolding vnorm_sq using U(1) by simp
-qed
-
 lemma pflag_all: "pflag d (\<lambda>_. True) v = v"
   by (intro eq_vecI) (simp_all add: pflag_def)
 
@@ -286,13 +167,11 @@ proof -
   let ?e = "9 * pi ^ 4 * (4 + 2 * pi\<^sup>2) * \<kappa>\<^sup>2 / ((real N)\<^sup>2 * t0\<^sup>2)"
   have N0: "0 < N" using N by simp
   have nA: "dim_row A = n" using A(1) by simp
-  obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
-  note d = spectral_decompD[OF A(1) sd]
   have Cc: "?C \<in> carrier_mat ?K ?K"
     unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
-  have Ec: "?E \<in> carrier_mat ?K n" using lift3_carrier[of n ?\<psi>] by (simp add: flag_emb_def)
-  have Ic: "?I \<in> carrier_mat ?K n" using lift3_carrier[of n ?\<psi>] by (simp add: flag_idl_def)
+  have Ec: "?E \<in> carrier_mat ?K n" using lift_carrier[of 3 n ?\<psi>] by (simp add: flag_emb_def)
+  have Ic: "?I \<in> carrier_mat ?K n" using lift_carrier[of 3 n ?\<psi>] by (simp add: flag_idl_def)
   have Mc: "?M \<in> carrier_mat ?K n" by (rule minus_carrier_mat[OF Ic])
   have Mv: "?M *\<^sub>v v = ?C *\<^sub>v tensor_vec ?\<psi> (tensor_vec v (unit_vec 3 0)) - ?I *\<^sub>v v" if v: "dim_vec v = n" for v
   proof -
@@ -301,42 +180,23 @@ proof -
     also have "(?C * ?E) *\<^sub>v v = ?C *\<^sub>v (?E *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Cc Ec vc])
     finally show ?thesis unfolding flag_emb_mult[OF v] .
   qed
-  have col: "dim_vec (Matrix.col U j) = n" "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j"
-            "\<bar>t0 * D ! j\<bar> \<le> pi / 2" if j: "j < n" for j
-  proof -
-    show "dim_vec (Matrix.col U j) = n" using d(1) by simp
-    show "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j" by (rule spectral_decomp_col[OF A(1) sd j])
-    show "\<bar>t0 * D ! j\<bar> \<le> pi / 2" by (rule spec[OF spectral_decomp_eig_in_spectrum[OF A(1) sd j]])
-  qed
-  have MU: "?M *\<^sub>v Matrix.col U j = ?C *\<^sub>v tensor_vec ?\<psi> (tensor_vec (Matrix.col U j) (unit_vec 3 0))
-                                      - tensor_vec ?\<psi> (tensor_vec (Matrix.col U j) (hflag \<kappa> (D ! j)))" if j: "j < n" for j
-    unfolding Mv[OF col(1)[OF j]] flag_idl_eigen[OF A col(1,2)[OF j]] ..
-  have orth: "\<langle>?M *\<^sub>v Matrix.col U i|?M *\<^sub>v Matrix.col U j\<rangle> = 0" if i: "i < n" and j: "j < n" and ij: "i \<noteq> j" for i j
-  proof -
-    have o: "\<langle>Matrix.col U i|Matrix.col U j\<rangle> = 0" using unitary_cols_orthonormal[OF d(2), of i j] d(1) i j ij by simp
-    show ?thesis unfolding MU[OF i] MU[OF j]
-      using flag_perr_orth[where P = "\<lambda>_. True" and G = G and h = "hflag \<kappa> (D ! i)" and h' = "hflag \<kappa> (D ! j)",
-              OF A n0 t0 N0 col(1,2)[OF i] col(1,2)[OF j] o dim_win_state G dim_hflag dim_hflag]
+  have MU: "?M *\<^sub>v v = ?C *\<^sub>v tensor_vec ?\<psi> (tensor_vec v (unit_vec 3 0)) - tensor_vec ?\<psi> (tensor_vec v (hflag \<kappa> l))"
+    if v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" for v l
+    unfolding Mv[OF v(1)] flag_idl_eigen[OF A v] ..
+  show ?thesis unfolding Mv[OF b, symmetric]
+  proof (rule every_rhs_bound[OF A Mc _ _ b])
+    fix v v' l l' assume v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" "l \<in> herm_spectrum A"
+      and v': "dim_vec v' = n" "A *\<^sub>v v' = complex_of_real l' \<cdot>\<^sub>v v'" "l' \<in> herm_spectrum A" and o: "\<langle>v|v'\<rangle> = 0"
+    show "\<langle>?M *\<^sub>v v|?M *\<^sub>v v'\<rangle> = 0" unfolding MU[OF v(1,2)] MU[OF v'(1,2)]
+      using flag_perr_orth[where P = "\<lambda>_. True" and G = G and h = "hflag \<kappa> l" and h' = "hflag \<kappa> l'",
+              OF A n0 t0 N0 v(1,2) v'(1,2) o dim_win_state G dim_hflag dim_hflag]
       unfolding pflag_all .
+  next
+    fix v l assume v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" "l \<in> herm_spectrum A" "\<parallel>v\<parallel> = 1"
+    have "\<parallel>?M *\<^sub>v v\<parallel>\<^sup>2 \<le> \<parallel>v\<parallel>\<^sup>2 * ?e"
+      using flag_window_eigen[OF A t0 N v(1,2) k0 spec[OF v(3)] G Gh] unfolding MU[OF v(1,2)] vnorm_Re_inner .
+    thus "\<parallel>?M *\<^sub>v v\<parallel>\<^sup>2 \<le> ?e" using v(4) by simp
   qed
-  have me: "\<parallel>?M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 \<le> ?e" if j: "j < n" for j
-  proof -
-    have one: "\<parallel>Matrix.col U j\<parallel>\<^sup>2 = 1"
-    proof -
-      have "\<langle>Matrix.col U j|Matrix.col U j\<rangle> = 1" using unitary_cols_orthonormal[OF d(2), of j j] d(1) j by simp
-      hence "complex_of_real (\<parallel>Matrix.col U j\<parallel>\<^sup>2) = complex_of_real 1" unfolding cpx_vec_length_inner_prod[symmetric] by simp
-      thus ?thesis by (simp only: of_real_eq_iff)
-    qed
-    have "\<parallel>?M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 \<le> \<parallel>Matrix.col U j\<parallel>\<^sup>2 * ?e"
-      using flag_window_eigen[OF A t0 N col(1,2)[OF j] k0 col(3)[OF j] G Gh] unfolding MU[OF j] vnorm_Re_inner .
-    thus ?thesis unfolding one by simp
-  qed
-  have "\<parallel>?M *\<^sub>v b\<parallel>\<^sup>2 = (\<Sum>j<n. \<parallel>?M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 * (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2)"
-    by (rule orth_image_eq[OF d(1,2) Mc orth b])
-  also have "\<dots> \<le> (\<Sum>j<n. ?e * (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2)"
-    by (rule sum_mono) (intro mult_right_mono me, simp_all)
-  also have "\<dots> = ?e * \<parallel>b\<parallel>\<^sup>2" unfolding sum_distrib_left[symmetric] unitary_dagger_norm[OF d(1,2) b] ..
-  finally show ?thesis unfolding Mv[OF b] .
 qed
 
 lemma sum_factor3: "(\<Sum>j\<in>S. (r::real) * a j * c j) = r * (\<Sum>j\<in>S. a j * c j)"
@@ -369,8 +229,8 @@ proof -
   have Cc: "?C \<in> carrier_mat ?K ?K"
     unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
-  have Ec: "?E \<in> carrier_mat ?K n" using lift3_carrier[of n ?\<psi>] by (simp add: flag_emb_def)
-  have Ic: "?I \<in> carrier_mat ?K n" using lift3_carrier[of n ?\<psi>] by (simp add: flag_idl_def)
+  have Ec: "?E \<in> carrier_mat ?K n" using lift_carrier[of 3 n ?\<psi>] by (simp add: flag_emb_def)
+  have Ic: "?I \<in> carrier_mat ?K n" using lift_carrier[of 3 n ?\<psi>] by (simp add: flag_idl_def)
   have Mc: "?M \<in> carrier_mat ?K n" by (rule mult_carrier_mat[OF proj_set_carrier minus_carrier_mat[OF Ic]])
   have Qc: "?Q \<in> carrier_mat ?K n" by (rule mult_carrier_mat[OF proj_set_carrier Ic])
   have dCx: "dim_vec (?C *\<^sub>v tensor_vec ?\<psi> (tensor_vec v (unit_vec 3 0))) = ?K" for v using Cc by simp
@@ -487,7 +347,7 @@ proof (rule normalized_close[OF _ _ r1 x0])
     show ?thesis unfolding flag_circuit_def hhl_Wd_def nA
       by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
   qed
-  show "dim_vec y = dim_vec x" unfolding x_def y_def using Cc carrier_matD(1)[OF lift3_carrier[of n "win_state N" "flag_H \<kappa> A"]] by (simp add: flag_idl_def)
+  show "dim_vec y = dim_vec x" unfolding x_def y_def using Cc carrier_matD(1)[OF lift_carrier[of 3 n "win_state N" "flag_H \<kappa> A"]] by (simp add: flag_idl_def)
   have sq: "\<parallel>y - x\<parallel>\<^sup>2 \<le> \<rho>\<^sup>2 * \<parallel>x\<parallel>\<^sup>2"
   proof -
     have "\<rho>\<^sup>2 = 36 * pi ^ 4 * (4 + 2 * pi\<^sup>2) * \<kappa>\<^sup>2 / ((real N)\<^sup>2 * t0\<^sup>2)"
@@ -504,16 +364,16 @@ qed
 lemma pflag_sub: "(\<And>c. Q c \<Longrightarrow> P c) \<Longrightarrow> pflag d Q v = pflag d Q (pflag d P v)"
   by (intro eq_vecI) (auto simp: pflag_def)
 
-lemma lift3_post:
+lemma lift_post:
   assumes H: "\<And>c. c < 3 \<Longrightarrow> H c \<in> carrier_mat n n" and v: "dim_vec v = n" and a: "dim_vec a = N"
-  shows "pflag 3 (\<lambda>c. c = 1) (lift3 n a H *\<^sub>v v) = tensor_vec a (tensor_vec (H 1 *\<^sub>v v) (unit_vec 3 1))"
-    and "H 2 *\<^sub>v v = 0\<^sub>v n \<Longrightarrow> pflag 3 (\<lambda>c. c \<noteq> 0) (lift3 n a H *\<^sub>v v) = pflag 3 (\<lambda>c. c = 1) (lift3 n a H *\<^sub>v v)"
+  shows "pflag 3 (\<lambda>c. c = 1) (lift 3 n a H *\<^sub>v v) = tensor_vec a (tensor_vec (H 1 *\<^sub>v v) (unit_vec 3 1))"
+    and "H 2 *\<^sub>v v = 0\<^sub>v n \<Longrightarrow> pflag 3 (\<lambda>c. c \<noteq> 0) (lift 3 n a H *\<^sub>v v) = pflag 3 (\<lambda>c. c = 1) (lift 3 n a H *\<^sub>v v)"
 proof -
   let ?z = "Matrix.vec (n * 3) (\<lambda>j. (H (j mod 3) *\<^sub>v v) $ (j div 3))"
   have dz: "dim_vec ?z = n * 3" by simp
   have d3: "0 < (3::nat)" by simp
   have dH: "dim_vec (H c *\<^sub>v v) = n" if "c < 3" for c using H[OF that] by simp
-  have L: "lift3 n a H *\<^sub>v v = tensor_vec a ?z" by (rule lift3_mult_vec[OF H v])
+  have L: "lift 3 n a H *\<^sub>v v = tensor_vec a ?z" by (rule lift_mult_vec[OF H v])
   have z1: "pflag 3 (\<lambda>c. c = 1) ?z = tensor_vec (H 1 *\<^sub>v v) (unit_vec 3 1)"
   proof (rule eq_vecI)
     have dt: "dim_vec (tensor_vec (H 1 *\<^sub>v v) (unit_vec 3 1)) = n * 3" by (rule tensor_vec_dim[OF dH]) simp_all
@@ -524,7 +384,7 @@ proof -
     show "pflag 3 (\<lambda>c. c = 1) ?z $ j = tensor_vec (H 1 *\<^sub>v v) (unit_vec 3 1) $ j"
       using j i tensor_vec_index[OF dH[of 1] _ j, of "unit_vec 3 1"] by (simp add: pflag_def unit_vec_def)
   qed
-  show "pflag 3 (\<lambda>c. c = 1) (lift3 n a H *\<^sub>v v) = tensor_vec a (tensor_vec (H 1 *\<^sub>v v) (unit_vec 3 1))"
+  show "pflag 3 (\<lambda>c. c = 1) (lift 3 n a H *\<^sub>v v) = tensor_vec a (tensor_vec (H 1 *\<^sub>v v) (unit_vec 3 1))"
     unfolding L pflag_tensor_left[OF a dz d3] z1 ..
   assume h2: "H 2 *\<^sub>v v = 0\<^sub>v n"
   have z2: "pflag 3 (\<lambda>c. c \<noteq> 0) ?z = pflag 3 (\<lambda>c. c = 1) ?z"
@@ -536,7 +396,7 @@ proof -
     thus "pflag 3 (\<lambda>c. c \<noteq> 0) ?z $ j = pflag 3 (\<lambda>c. c = 1) ?z $ j"
       using j i h2 by (auto simp: pflag_def)
   qed simp
-  show "pflag 3 (\<lambda>c. c \<noteq> 0) (lift3 n a H *\<^sub>v v) = pflag 3 (\<lambda>c. c = 1) (lift3 n a H *\<^sub>v v)"
+  show "pflag 3 (\<lambda>c. c \<noteq> 0) (lift 3 n a H *\<^sub>v v) = pflag 3 (\<lambda>c. c = 1) (lift 3 n a H *\<^sub>v v)"
     unfolding L pflag_tensor_left[OF a dz d3] z2 ..
 qed
 
@@ -565,8 +425,8 @@ proof -
     unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
   have dCx: "dim_vec ?Cx = N * (n * 3)" using Cc by simp
-  have dIb: "dim_vec ?Ib = N * (n * 3)" using carrier_matD(1)[OF lift3_carrier[of n "win_state N" "flag_H \<kappa> A"]] by (simp add: flag_idl_def)
-  note lp = lift3_post[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b dim_win_state, folded flag_idl_def]
+  have dIb: "dim_vec ?Ib = N * (n * 3)" using carrier_matD(1)[OF lift_carrier[of 3 n "win_state N" "flag_H \<kappa> A"]] by (simp add: flag_idl_def)
+  note lp = lift_post[where H = "flag_H \<kappa> A", OF flag_H_carrier[OF A] b dim_win_state, folded flag_idl_def]
   have xI: "x = pflag 3 ?Pw ?Ib" unfolding x_def lp(1) ..
   have PI: "pflag 3 ?P ?Ib = x" unfolding xI by (rule lp(2)[OF ill])
   have x0: "\<parallel>x\<parallel> \<noteq> 0"

@@ -11,6 +11,107 @@ register to the uniform state.  The output is compared with the ideal output
 $u\otimes R(C/\lambda)\ket0$ of the exact case; the squared distance is
 $\sum_j|\alpha_j|^2\,\norm{R(C/\lambda_j)\ket0-R(C/\lambda)\ket0}^2$.\<close>
 
+subsection \<open>Vector norms\<close>
+
+lemma vnorm_L2: "\<parallel>v\<parallel> = L2_set (\<lambda>i. cmod (v $ i)) {..<dim_vec v}"
+  by (simp add: cpx_vec_length_def L2_set_def)
+
+lemma vnorm_ge0: "0 \<le> \<parallel>v\<parallel>"
+  by (simp add: cpx_vec_length_def sum_nonneg)
+
+lemma vnorm_pos: "dim_vec v = n \<Longrightarrow> v \<noteq> 0\<^sub>v n \<Longrightarrow> 0 < \<parallel>v\<parallel>"
+  using cpx_vec_length_zero_iff[of v] vnorm_ge0[of v] by (auto simp: order_less_le)
+
+lemma vnorm_sq: "\<parallel>v\<parallel>\<^sup>2 = (\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2)"
+  by (simp add: cpx_vec_length_def sum_nonneg)
+
+lemma vnorm_Re_inner: "Re \<langle>v|v\<rangle> = \<parallel>v\<parallel>\<^sup>2"
+  unfolding cpx_vec_length_inner_prod[symmetric] by simp
+
+lemma vnorm_add_le:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<parallel>a + b\<parallel> \<le> \<parallel>a\<parallel> + \<parallel>b\<parallel>"
+proof -
+  have "\<parallel>a + b\<parallel> = L2_set (\<lambda>i. cmod (a $ i + b $ i)) {..<dim_vec b}"
+    unfolding vnorm_L2 using assms by (intro L2_set_cong) simp_all
+  also have "\<dots> \<le> L2_set (\<lambda>i. cmod (a $ i) + cmod (b $ i)) {..<dim_vec b}"
+    by (rule L2_set_mono) (simp_all add: norm_triangle_ineq)
+  also have "\<dots> \<le> L2_set (\<lambda>i. cmod (a $ i)) {..<dim_vec b} + L2_set (\<lambda>i. cmod (b $ i)) {..<dim_vec b}"
+    by (rule L2_set_triangle_ineq)
+  finally show ?thesis unfolding vnorm_L2 assms .
+qed
+
+lemma vnorm_minus_commute:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<parallel>a - b\<parallel> = \<parallel>b - a\<parallel>"
+  using assms by (simp add: cpx_vec_length_def norm_minus_commute)
+
+lemma vnorm_diff_le:
+  assumes a: "dim_vec a = n" and b: "dim_vec b = n" and c: "dim_vec c = n"
+  shows "\<parallel>a - c\<parallel> \<le> \<parallel>a - b\<parallel> + \<parallel>b - c\<parallel>"
+proof -
+  have "a - c = (a - b) + (b - c)" using a b c by (intro eq_vecI) simp_all
+  thus ?thesis using vnorm_add_le[of "a - b" "b - c"] a b c by simp
+qed
+
+lemma vnorm_le_diff_add:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<parallel>a\<parallel> \<le> \<parallel>a - b\<parallel> + \<parallel>b\<parallel>"
+proof -
+  have "(a - b) + b = a" using assms by (intro eq_vecI) simp_all
+  thus ?thesis using vnorm_add_le[of "a - b" b] assms by simp
+qed
+
+lemma vnorm_reverse:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<bar>\<parallel>a\<parallel> - \<parallel>b\<parallel>\<bar> \<le> \<parallel>a - b\<parallel>"
+  using vnorm_le_diff_add[OF assms] vnorm_le_diff_add[of b a] assms vnorm_minus_commute[OF assms] by simp
+
+lemma vnorm_zero_vec: "\<parallel>0\<^sub>v m\<parallel> = 0"
+  by (simp add: cpx_vec_length_def)
+
+text \<open>For a unit vector $b$ and invertible $A$ the solution $A^{-1}b$ is not zero.\<close>
+
+lemma herm_inv_sol_pos:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and z: "0 \<notin> herm_spectrum A" and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1"
+  shows "0 < \<parallel>herm_inv A *\<^sub>v b\<parallel>"
+proof (rule vnorm_pos)
+  have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
+  thus "dim_vec (herm_inv A *\<^sub>v b) = n" by simp
+  show "herm_inv A *\<^sub>v b \<noteq> 0\<^sub>v n"
+  proof
+    assume "herm_inv A *\<^sub>v b = 0\<^sub>v n"
+    hence "b = 0\<^sub>v n" using herm_inv_solves[OF A z b(1)] mult_zero_vec_right[OF A(1)] by simp
+    thus False using b(2) vnorm_zero_vec by simp
+  qed
+qed
+
+lemma unitary_inner_self:
+  assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
+  shows "\<langle>W\<^sup>\<dagger> *\<^sub>v y|W\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>y|y\<rangle>"
+proof -
+  have yc: "y \<in> carrier_vec K" by (rule carrier_vecI[OF y])
+  have Wd: "W\<^sup>\<dagger> \<in> carrier_mat K K" by (rule dagger_carrier[OF W(1)])
+  have d: "dim_vec (W\<^sup>\<dagger> *\<^sub>v y) = K" using carrier_matD(2)[OF W(1)] by simp
+  have "\<langle>W\<^sup>\<dagger> *\<^sub>v y|W\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v (W\<^sup>\<dagger> *\<^sub>v y)|y\<rangle>"
+    by (rule inner_prod_adjoint_swap[OF Wd d y])
+  also have "(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v (W\<^sup>\<dagger> *\<^sub>v y) = (W * (W\<^sup>\<dagger>)) *\<^sub>v y"
+    unfolding dagger_of_dagger_is_id by (rule assoc_mult_mat_vec[OF W(1) Wd yc, symmetric])
+  also have "W * (W\<^sup>\<dagger>) = 1\<^sub>m K" using W unfolding unitary_def by auto
+  finally show ?thesis using yc by simp
+qed
+
+lemma unitary_vnorm:
+  assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
+  shows "\<parallel>W *\<^sub>v y\<parallel> = \<parallel>y\<parallel>"
+proof -
+  have Wd: "W\<^sup>\<dagger> \<in> carrier_mat K K" by (rule dagger_carrier[OF W(1)])
+  have "\<langle>(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v y|(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>y|y\<rangle>"
+    by (rule unitary_inner_self[OF Wd unitary_dagger[OF W(2)] y])
+  hence "\<parallel>W *\<^sub>v y\<parallel>\<^sup>2 = \<parallel>y\<parallel>\<^sup>2" unfolding dagger_of_dagger_is_id cpx_vec_length_inner_prod[symmetric] of_real_power[symmetric] of_real_eq_iff .
+  thus ?thesis using vnorm_ge0 by (metis power2_eq_iff_nonneg)
+qed
+
 subsection \<open>Register sums\<close>
 
 text \<open>$\sum_{j<N}\ket j\otimes f_j$ on $\C^N\otimes\C^m$.\<close>
@@ -134,21 +235,6 @@ subsection \<open>Phase estimation on a branch\<close>
 
 text \<open>$W(u_N\otimes u\otimes w)=\alpha\otimes u\otimes w$ for every ancilla vector $w$, where
 $\alpha_j=\alpha_j(\varphi)$, $e^{it_0\lambda}=e^{2\pi i\varphi}$.\<close>
-
-lemma unitary_inner_self:
-  assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
-  shows "\<langle>W\<^sup>\<dagger> *\<^sub>v y|W\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>y|y\<rangle>"
-proof -
-  have yc: "y \<in> carrier_vec K" by (rule carrier_vecI[OF y])
-  have Wd: "W\<^sup>\<dagger> \<in> carrier_mat K K" by (rule dagger_carrier[OF W(1)])
-  have d: "dim_vec (W\<^sup>\<dagger> *\<^sub>v y) = K" using carrier_matD(2)[OF W(1)] by simp
-  have "\<langle>W\<^sup>\<dagger> *\<^sub>v y|W\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v (W\<^sup>\<dagger> *\<^sub>v y)|y\<rangle>"
-    by (rule inner_prod_adjoint_swap[OF Wd d y])
-  also have "(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v (W\<^sup>\<dagger> *\<^sub>v y) = (W * (W\<^sup>\<dagger>)) *\<^sub>v y"
-    unfolding dagger_of_dagger_is_id by (rule assoc_mult_mat_vec[OF W(1) Wd yc, symmetric])
-  also have "W * (W\<^sup>\<dagger>) = 1\<^sub>m K" using W unfolding unitary_def by auto
-  finally show ?thesis using yc by simp
-qed
 
 lemma rot_e0_vec:
   "rot c *\<^sub>v unit_vec 2 0 = Matrix.vec 2 (\<lambda>i. if i = 0 then complex_of_real (sqrt (1 - c\<^sup>2)) else complex_of_real c)"
@@ -961,105 +1047,121 @@ lemma dagger_mult_entry:
   shows "(P\<^sup>\<dagger> * P) $$ (i, j) = \<langle>Matrix.col P i|Matrix.col P j\<rangle>"
   using P i j by (simp add: dagger_def scalar_prod_def inner_prod_def atLeast0LessThan)
 
-lemma inner_prod_minus_right:
-  assumes "dim_vec a = n" "dim_vec x = n" "dim_vec y = n"
-  shows "\<langle>a|x - y\<rangle> = \<langle>a|x\<rangle> - \<langle>a|y\<rangle>"
-  using assms by (simp add: inner_prod_def scalar_prod_def sum_subtractf algebra_simps)
+lemma inner_as_sum: "dim_vec y = n \<Longrightarrow> \<langle>x|y\<rangle> = (\<Sum>i<n. cnj (x $ i) * y $ i)"
+  by (simp add: Quantum.inner_prod_def atLeast0LessThan)
 
-text \<open>If $\mathrm{Err}$ maps the orthonormal columns of $U$ to mutually orthogonal vectors of
-squared norm at most $e$, then $\norm{\mathrm{Err}\,b}^2\le e\norm b^2$ for every $b$:
-$U^*\mathrm{Err}^*\mathrm{Err}\,U$ is diagonal, so $eI-\mathrm{Err}^*\mathrm{Err}$ is positive.\<close>
+text \<open>If $M$ maps the orthonormal columns $u_j$ of $U$ to mutually orthogonal vectors then
+$\norm{Mb}^2=\sum_j\norm{Mu_j}^2\,|\langle u_j|b\rangle|^2$.\<close>
 
-lemma orth_image_bound:
-  fixes Err U :: "complex Matrix.mat"
-  assumes U: "U \<in> carrier_mat n n" "unitary U" and E: "Err \<in> carrier_mat K n"
-      and diag: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
-                   \<langle>Err *\<^sub>v Matrix.col U i|Err *\<^sub>v Matrix.col U j\<rangle> = (if i = j then complex_of_real (m i) else 0)"
-      and me: "\<And>i. i < n \<Longrightarrow> m i \<le> e" and b: "dim_vec b = n"
-  shows "Re \<langle>Err *\<^sub>v b|Err *\<^sub>v b\<rangle> \<le> e * Re \<langle>b|b\<rangle>"
+lemma orth_image_eq:
+  fixes M U :: "complex Matrix.mat"
+  assumes U: "U \<in> carrier_mat n n" "unitary U" and M: "M \<in> carrier_mat K n"
+      and orth: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> i \<noteq> j \<Longrightarrow> \<langle>M *\<^sub>v Matrix.col U i|M *\<^sub>v Matrix.col U j\<rangle> = 0"
+      and b: "dim_vec b = n"
+  shows "\<parallel>M *\<^sub>v b\<parallel>\<^sup>2 = (\<Sum>j<n. \<parallel>M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 * (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2)"
 proof -
-  let ?P = "Err\<^sup>\<dagger> * Err"
-  let ?Dm = "diag_mat_of_real (map m [0..<n])"
-  define D where "D = map (\<lambda>i. e - m i) [0..<n]"
-  have Ed: "Err\<^sup>\<dagger> \<in> carrier_mat n K" by (rule dagger_carrier[OF E])
+  define \<beta> where "\<beta> = (U\<^sup>\<dagger>) *\<^sub>v b"
+  let ?MU = "M * U"
+  let ?m = "\<lambda>j. \<parallel>M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2"
   have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U(1)])
-  have Pc: "?P \<in> carrier_mat n n" by (rule mult_carrier_mat[OF Ed E])
-  have EU: "Err * U \<in> carrier_mat K n" by (rule mult_carrier_mat[OF E U(1)])
-  have bc: "b \<in> carrier_vec n" by (rule carrier_vecI[OF b])
+  have MU: "?MU \<in> carrier_mat K n" by (rule mult_carrier_mat[OF M U(1)])
+  have bc: "b \<in> carrier_vec n" using b by (rule carrier_vecI)
+  have db: "dim_vec \<beta> = n" using U(1) unfolding \<beta>_def by simp
   have UU: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using U unfolding unitary_def by auto
-  have H: "(Err * U)\<^sup>\<dagger> * (Err * U) = U\<^sup>\<dagger> * ?P * U"
+  have Ub: "U *\<^sub>v \<beta> = b" unfolding \<beta>_def using assoc_mult_mat_vec[OF U(1) Ud bc, symmetric] UU bc by simp
+  have Mb: "M *\<^sub>v b = ?MU *\<^sub>v \<beta>" using assoc_mult_mat_vec[OF M U(1) carrier_vecI[OF db]] Ub by simp
+  define D where "D = Matrix.mat n n (\<lambda>(i, j). if i = j then complex_of_real (?m i) else 0)"
+  have DD: "?MU\<^sup>\<dagger> * ?MU = D"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row D" "j < dim_col D"
+    hence i: "i < n" and j: "j < n" by (simp_all add: D_def)
+    have "(?MU\<^sup>\<dagger> * ?MU) $$ (i, j) = \<langle>Matrix.col ?MU i|Matrix.col ?MU j\<rangle>" by (rule dagger_mult_entry[OF MU i j])
+    also have "\<dots> = \<langle>M *\<^sub>v Matrix.col U i|M *\<^sub>v Matrix.col U j\<rangle>" unfolding col_mult2[OF M U(1) i] col_mult2[OF M U(1) j] ..
+    also have "\<dots> = D $$ (i, j)"
+    proof (cases "i = j")
+      case True thus ?thesis unfolding D_def using i by (simp add: cpx_vec_length_inner_prod[symmetric])
+    next
+      case False thus ?thesis unfolding D_def using i j orth by simp
+    qed
+    finally show "(?MU\<^sup>\<dagger> * ?MU) $$ (i, j) = D $$ (i, j)" .
+  qed (use MU U(1) in \<open>simp_all add: D_def\<close>)
+  have dMU: "dim_vec (?MU *\<^sub>v \<beta>) = K" using M by simp
+  have MUd: "?MU\<^sup>\<dagger> \<in> carrier_mat n K" by (rule dagger_carrier[OF MU])
+  have "\<langle>?MU *\<^sub>v \<beta>|?MU *\<^sub>v \<beta>\<rangle> = \<langle>\<beta>|?MU\<^sup>\<dagger> *\<^sub>v (?MU *\<^sub>v \<beta>)\<rangle>"
+    using inner_prod_adjoint_swap[OF MUd db dMU] by (simp add: dagger_of_dagger_is_id)
+  also have "?MU\<^sup>\<dagger> *\<^sub>v (?MU *\<^sub>v \<beta>) = D *\<^sub>v \<beta>" unfolding DD[symmetric] by (rule assoc_mult_mat_vec[OF MUd MU carrier_vecI[OF db], symmetric])
+  also have "\<langle>\<beta>|D *\<^sub>v \<beta>\<rangle> = (\<Sum>j<n. complex_of_real (?m j * (cmod (\<beta> $ j))\<^sup>2))"
   proof -
-    have "(Err * U)\<^sup>\<dagger> * (Err * U) = (U\<^sup>\<dagger> * (Err\<^sup>\<dagger>)) * (Err * U)"
-      using dagger_of_prod[of Err U] E U(1) by simp
-    also have "\<dots> = U\<^sup>\<dagger> * ((Err\<^sup>\<dagger>) * (Err * U))" by (rule assoc_mult_mat[OF Ud Ed EU])
-    also have "(Err\<^sup>\<dagger>) * (Err * U) = ?P * U" by (rule assoc_mult_mat[OF Ed E U(1), symmetric])
-    also have "U\<^sup>\<dagger> * (?P * U) = U\<^sup>\<dagger> * ?P * U" by (rule assoc_mult_mat[OF Ud Pc U(1), symmetric])
+    have Dv: "(D *\<^sub>v \<beta>) $ i = complex_of_real (?m i) * \<beta> $ i" if "i < n" for i
+      using that db by (simp add: D_def scalar_prod_def atLeast0LessThan if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
+    have "\<langle>\<beta>|D *\<^sub>v \<beta>\<rangle> = (\<Sum>j<n. cnj (\<beta> $ j) * (complex_of_real (?m j) * \<beta> $ j))"
+    proof -
+      have dD: "dim_vec (D *\<^sub>v \<beta>) = n" by (simp add: D_def)
+      show ?thesis unfolding inner_as_sum[OF dD] by (rule sum.cong[OF refl]) (simp add: Dv)
+    qed
+    also have "\<dots> = (\<Sum>j<n. complex_of_real (?m j * (cmod (\<beta> $ j))\<^sup>2))"
+    proof (rule sum.cong[OF refl])
+      fix j
+      have "cnj (\<beta> $ j) * \<beta> $ j = complex_of_real ((cmod (\<beta> $ j))\<^sup>2)" by (metis complex_norm_square mult.commute)
+      thus "cnj (\<beta> $ j) * (complex_of_real (?m j) * \<beta> $ j) = complex_of_real (?m j * (cmod (\<beta> $ j))\<^sup>2)"
+        by (simp add: mult_ac)
+    qed
     finally show ?thesis .
   qed
-  have M: "U\<^sup>\<dagger> * ?P * U = ?Dm"
-  proof (rule eq_matI)
-    fix i j assume "i < dim_row ?Dm" "j < dim_col ?Dm"
-    hence i: "i < n" and j: "j < n" by simp_all
-    have "(U\<^sup>\<dagger> * ?P * U) $$ (i, j) = \<langle>Matrix.col (Err * U) i|Matrix.col (Err * U) j\<rangle>"
-      unfolding H[symmetric] by (rule dagger_mult_entry[OF EU i j])
-    also have "\<dots> = \<langle>Err *\<^sub>v Matrix.col U i|Err *\<^sub>v Matrix.col U j\<rangle>"
-      unfolding col_mult2[OF E U(1) i] col_mult2[OF E U(1) j] ..
-    also have "\<dots> = ?Dm $$ (i, j)" unfolding diag[OF i j] using i j by (simp add: diag_mat_of_real_def)
-    finally show "(U\<^sup>\<dagger> * ?P * U) $$ (i, j) = ?Dm $$ (i, j)" .
-  qed (use Ud Pc U(1) in auto)
-  have PU: "?P = U * ?Dm * (U\<^sup>\<dagger>)" by (rule hermitian_spectral_decomp_eq[OF U(1) Pc U(2) M])
-  have Dmc: "?Dm \<in> carrier_mat n n" using diag_mat_of_real_carrier[of "map m [0..<n]"] by simp
-  have Dc: "diag_mat_of_real D \<in> carrier_mat n n" using diag_mat_of_real_carrier[of D] by (simp add: D_def)
-  have Dd: "diag_mat_of_real D = complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n - ?Dm"
-    by (rule eq_matI) (auto simp: diag_mat_of_real_def D_def)
-  have Q: "U * diag_mat_of_real D * (U\<^sup>\<dagger>) = complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n - ?P"
-  proof -
-    have "U * diag_mat_of_real D = U * (complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n) - U * ?Dm"
-      unfolding Dd by (rule mult_minus_distrib_mat[OF U(1) _ Dmc]) simp
-    also have "U * (complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n) = complex_of_real e \<cdot>\<^sub>m U"
-      using mult_smult_distrib[OF U(1), of "1\<^sub>m n" n "complex_of_real e"] U(1) by simp
-    finally have "U * diag_mat_of_real D * (U\<^sup>\<dagger>) = (complex_of_real e \<cdot>\<^sub>m U - U * ?Dm) * (U\<^sup>\<dagger>)" by simp
-    also have "\<dots> = (complex_of_real e \<cdot>\<^sub>m U) * (U\<^sup>\<dagger>) - U * ?Dm * (U\<^sup>\<dagger>)"
-      by (rule minus_mult_distrib_mat[OF _ mult_carrier_mat[OF U(1) Dmc] Ud]) (use U(1) in simp)
-    also have "(complex_of_real e \<cdot>\<^sub>m U) * (U\<^sup>\<dagger>) = complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n"
-      using mult_smult_assoc_mat[OF U(1) Ud, of "complex_of_real e"] UU by simp
-    finally show ?thesis unfolding PU[symmetric] .
-  qed
-  have psdQ: "psd (complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n - ?P)"
-    unfolding Q[symmetric] by (rule psd_U_diag_Udag[OF U(1)]) (use me in \<open>simp_all add: D_def\<close>)
-  have Qb: "(complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n - ?P) *\<^sub>v b = complex_of_real e \<cdot>\<^sub>v b - ?P *\<^sub>v b"
-    using minus_mult_distrib_mat_vec[OF _ Pc bc, of "complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n"] smult_mat_mult_vec[of "1\<^sub>m n" n n b] b bc
-    by simp
-  have Pb: "\<langle>b|?P *\<^sub>v b\<rangle> = \<langle>Err *\<^sub>v b|Err *\<^sub>v b\<rangle>"
-  proof -
-    have dEb: "dim_vec (Err *\<^sub>v b) = K" using E by simp
-    have "?P *\<^sub>v b = Err\<^sup>\<dagger> *\<^sub>v (Err *\<^sub>v b)" by (rule assoc_mult_mat_vec[OF Ed E bc])
-    also have "\<langle>b|Err\<^sup>\<dagger> *\<^sub>v (Err *\<^sub>v b)\<rangle> = \<langle>(Err\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v b|Err *\<^sub>v b\<rangle>"
-      by (rule inner_prod_adjoint_swap[OF Ed b dEb])
-    finally show ?thesis by (simp add: dagger_of_dagger_is_id)
-  qed
-  define rb r2 where "rb = (\<Sum>i<n. (cmod (b $ i))\<^sup>2)" and "r2 = (\<Sum>i<K. (cmod ((Err *\<^sub>v b) $ i))\<^sup>2)"
-  have bb: "\<langle>b|b\<rangle> = complex_of_real rb" unfolding rb_def inner_self_sum[OF b] by (simp add: of_real_sum)
-  have ee: "\<langle>Err *\<^sub>v b|Err *\<^sub>v b\<rangle> = complex_of_real r2"
-    unfolding r2_def using inner_self_sum[of "Err *\<^sub>v b" K] E by (simp add: of_real_sum)
-  have dQ: "dim_row (complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n - ?P) = n" using carrier_matD(1)[OF Pc] by simp
-  have "0 \<le> Re \<langle>b|(complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n - ?P) *\<^sub>v b\<rangle>"
-    using conjunct2[OF psdQ[unfolded psd_def], rule_format, of b] b dQ by simp
-  also have "\<langle>b|(complex_of_real e \<cdot>\<^sub>m 1\<^sub>m n - ?P) *\<^sub>v b\<rangle> = complex_of_real e * \<langle>b|b\<rangle> - \<langle>b|?P *\<^sub>v b\<rangle>"
-  proof -
-    have d1: "dim_vec (?P *\<^sub>v b) = n" using carrier_matD(1)[OF Pc] by simp
-    have "\<langle>b|complex_of_real e \<cdot>\<^sub>v b - ?P *\<^sub>v b\<rangle> = \<langle>b|complex_of_real e \<cdot>\<^sub>v b\<rangle> - \<langle>b|?P *\<^sub>v b\<rangle>"
-      by (rule inner_prod_minus_right[OF b _ d1]) (simp add: b)
-    also have "\<langle>b|complex_of_real e \<cdot>\<^sub>v b\<rangle> = complex_of_real e * \<langle>b|b\<rangle>" by (rule inner_prod_distrib_right) simp
-    finally show ?thesis unfolding Qb .
-  qed
-  also have "\<dots> = complex_of_real (e * rb - r2)" unfolding Pb bb ee by simp
-  finally show ?thesis unfolding bb ee by simp
+  finally have "complex_of_real (\<parallel>M *\<^sub>v b\<parallel>\<^sup>2) = complex_of_real (\<Sum>j<n. ?m j * (cmod (\<beta> $ j))\<^sup>2)"
+    unfolding cpx_vec_length_inner_prod Mb by (simp add: of_real_sum)
+  thus ?thesis unfolding \<beta>_def by (simp only: of_real_eq_iff)
 qed
 
+lemma unitary_dagger_norm:
+  assumes U: "U \<in> carrier_mat n n" "unitary U" and b: "dim_vec b = n"
+  shows "(\<Sum>j<n. (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2) = \<parallel>b\<parallel>\<^sup>2"
+proof -
+  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U(1)])
+  have "\<parallel>(U\<^sup>\<dagger>) *\<^sub>v b\<parallel> = \<parallel>b\<parallel>" by (rule unitary_vnorm[OF Ud unitary_dagger[OF U(2)] b])
+  hence "\<parallel>(U\<^sup>\<dagger>) *\<^sub>v b\<parallel>\<^sup>2 = \<parallel>b\<parallel>\<^sup>2" by simp
+  thus ?thesis unfolding vnorm_sq using U(1) by simp
+qed
 
-lemma inner_self_real: "dim_vec v = n \<Longrightarrow> \<langle>v|v\<rangle> = complex_of_real (Re \<langle>v|v\<rangle>)"
-  unfolding inner_self_sum[of v n] by (simp add: of_real_sum)
+text \<open>From eigenvectors to every $b$: if $M$ maps orthogonal eigenvectors of $A$ to orthogonal
+vectors and every unit eigenvector to a vector of squared norm at most $e$, then
+$\norm{Mb}^2\le e\norm b^2$.\<close>
+
+lemma every_rhs_bound:
+  fixes M :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and M: "M \<in> carrier_mat K n"
+      and orth: "\<And>u u' l l'. dim_vec u = n \<Longrightarrow> A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u \<Longrightarrow> l \<in> herm_spectrum A \<Longrightarrow>
+                   dim_vec u' = n \<Longrightarrow> A *\<^sub>v u' = complex_of_real l' \<cdot>\<^sub>v u' \<Longrightarrow> l' \<in> herm_spectrum A \<Longrightarrow>
+                   \<langle>u|u'\<rangle> = 0 \<Longrightarrow> \<langle>M *\<^sub>v u|M *\<^sub>v u'\<rangle> = 0"
+      and bnd: "\<And>u l. dim_vec u = n \<Longrightarrow> A *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u \<Longrightarrow> l \<in> herm_spectrum A \<Longrightarrow>
+                  \<parallel>u\<parallel> = 1 \<Longrightarrow> \<parallel>M *\<^sub>v u\<parallel>\<^sup>2 \<le> e"
+      and b: "dim_vec b = n"
+  shows "\<parallel>M *\<^sub>v b\<parallel>\<^sup>2 \<le> e * \<parallel>b\<parallel>\<^sup>2"
+proof -
+  obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
+  note d = spectral_decompD[OF A(1) sd]
+  have col: "dim_vec (Matrix.col U j) = n" "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j"
+    "D ! j \<in> herm_spectrum A" if j: "j < n" for j
+    using d(1) spectral_decomp_col[OF A(1) sd j] spectral_decomp_eig_in_spectrum[OF A(1) sd j] by simp_all
+  have one: "\<parallel>Matrix.col U j\<parallel> = 1" if j: "j < n" for j
+  proof -
+    have "\<langle>Matrix.col U j|Matrix.col U j\<rangle> = 1" using unitary_cols_orthonormal[OF d(2), of j j] d(1) j by simp
+    hence "\<parallel>Matrix.col U j\<parallel>\<^sup>2 = 1" using vnorm_Re_inner[of "Matrix.col U j"] by simp
+    thus ?thesis using vnorm_ge0[of "Matrix.col U j"] by (simp add: power2_eq_1_iff)
+  qed
+  have o: "\<langle>M *\<^sub>v Matrix.col U i|M *\<^sub>v Matrix.col U j\<rangle> = 0" if i: "i < n" and j: "j < n" and ij: "i \<noteq> j" for i j
+    by (rule orth[OF col[OF i] col[OF j]]) (use unitary_cols_orthonormal[OF d(2), of i j] d(1) i j ij in simp)
+  have "\<parallel>M *\<^sub>v b\<parallel>\<^sup>2 = (\<Sum>j<n. \<parallel>M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 * (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2)"
+    by (rule orth_image_eq[OF d(1,2) M o b])
+  also have "\<dots> \<le> (\<Sum>j<n. e * (cmod (((U\<^sup>\<dagger>) *\<^sub>v b) $ j))\<^sup>2)"
+  proof (rule sum_mono, rule mult_right_mono)
+    fix j assume "j \<in> {..<n}"
+    hence j: "j < n" by simp
+    show "\<parallel>M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 \<le> e" by (rule bnd[OF col[OF j] one[OF j]])
+  qed simp
+  also have "\<dots> = e * \<parallel>b\<parallel>\<^sup>2" unfolding sum_distrib_left[symmetric] unitary_dagger_norm[OF d(1,2) b] ..
+  finally show ?thesis .
+qed
 
 text \<open>The error bound for every right-hand side.  The ideal output is the exact-HHL output
 (theorem \<open>hhl\<close>); the error vectors of the eigenvectors are orthogonal, so the bound on each
@@ -1088,8 +1190,6 @@ proof -
   let ?Err = "?H * ?Emb - ?Idl"
   let ?e = "pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / lmin\<^sup>2)"
   let ?f = "\<lambda>k. clamp (C / reg_eig t0 N k)"
-  obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
-  note d = spectral_decompD[OF A(1) sd]
   have du: "dim_vec ?u = N" by (simp add: uniform_state_def)
   have nA: "dim_row A = n" using A(1) by simp
   have G0: "?G0 \<in> carrier_mat n n" using A by simp
@@ -1097,8 +1197,8 @@ proof -
   have Hc: "?H \<in> carrier_mat (N * (n * 2)) (N * (n * 2))"
     unfolding flag_circuit_def hhl_Wd_def nA
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
-  have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
-  have Ic: "?Idl \<in> carrier_mat (N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
+  have Ec: "?Emb \<in> carrier_mat (N * (n * 2)) n" using lift_carrier[of 2 n ?u] du by simp
+  have Ic: "?Idl \<in> carrier_mat (N * (n * 2)) n" using lift_carrier[of 2 n ?u] du by simp
   have Errc: "?Err \<in> carrier_mat (N * (n * 2)) n" by (rule minus_carrier_mat[OF Ic])
   have Errv: "?Err *\<^sub>v v = ?H *\<^sub>v tensor_vec ?u (tensor_vec v (unit_vec 2 0)) - ?Idl *\<^sub>v v" if v: "dim_vec v = n" for v
   proof -
@@ -1107,59 +1207,35 @@ proof -
     also have "(?H * ?Emb) *\<^sub>v v = ?H *\<^sub>v (?Emb *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Hc Ec vc])
     finally show ?thesis unfolding lift_mat_emb[OF v] .
   qed
+  have ErrU: "?Err *\<^sub>v v = ?H *\<^sub>v tensor_vec ?u (tensor_vec v (unit_vec 2 0)) - tensor_vec ?u (tensor_vec v (rot (C / l) *\<^sub>v unit_vec 2 0))"
+    if v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" for v l
+    unfolding Errv[OF v(1)] ideal_mat_eigen[OF A v] ..
   have lmin0: "0 < lmin"
   proof -
     have "0 < 2 * C / \<theta>" using C th by simp
     thus ?thesis using lmin by linarith
   qed
-  \<comment> \<open>the columns of @{term U}: eigenvectors with eigenvalues in the spectrum\<close>
-  have col: "dim_vec (Matrix.col U j) = n" "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j"
-            "lmin \<le> D ! j" "t0 * D ! j \<le> pi / 2" "2 * C / \<theta> \<le> D ! j" if j: "j < n" for j
-  proof -
-    show "dim_vec (Matrix.col U j) = n" using d(1) by simp
-    show "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j" by (rule spectral_decomp_col[OF A(1) sd j])
-    have "D ! j \<in> herm_spectrum A" by (rule spectral_decomp_eig_in_spectrum[OF A(1) sd j])
-    from spec[OF this] show "lmin \<le> D ! j" "t0 * D ! j \<le> pi / 2" by simp_all
-    thus "2 * C / \<theta> \<le> D ! j" using lmin by linarith
-  qed
-  have ErrU: "?Err *\<^sub>v Matrix.col U j =
-              hhl_gen A t0 N ?f *\<^sub>v tensor_vec ?u (tensor_vec (Matrix.col U j) (unit_vec 2 0)) -
-              tensor_vec ?u (tensor_vec (Matrix.col U j) (rot (C / D ! j) *\<^sub>v unit_vec 2 0))" if j: "j < n" for j
-    unfolding Errv[OF col(1)[OF j]] ideal_mat_eigen[OF A col(1,2)[OF j]] ..
-  have diag: "\<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U j\<rangle> =
-              (if i = j then complex_of_real (Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle>) else 0)"
-    if i: "i < n" and j: "j < n" for i j
-  proof (cases "i = j")
-    case True
-    have dE: "dim_vec (?Err *\<^sub>v Matrix.col U j) = N * (n * 2)" using carrier_matD(1)[OF Errc] by simp
-    show ?thesis unfolding True by (simp only: refl if_True inner_self_real[OF dE, symmetric])
+  have "\<parallel>?Err *\<^sub>v b\<parallel>\<^sup>2 \<le> ?e * \<parallel>b\<parallel>\<^sup>2"
+  proof (rule every_rhs_bound[OF A Errc _ _ b])
+    fix v v' l l' assume v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" "l \<in> herm_spectrum A"
+      and v': "dim_vec v' = n" "A *\<^sub>v v' = complex_of_real l' \<cdot>\<^sub>v v'" "l' \<in> herm_spectrum A" and o: "\<langle>v|v'\<rangle> = 0"
+    show "\<langle>?Err *\<^sub>v v|?Err *\<^sub>v v'\<rangle> = 0"
+      unfolding ErrU[OF v(1,2)] ErrU[OF v'(1,2)] by (rule hhl_err_orth[OF A t0 N v(1,2) v'(1,2) o du])
   next
-    case False
-    have orth: "\<langle>Matrix.col U i|Matrix.col U j\<rangle> = 0"
-      using unitary_cols_orthonormal[OF d(2), of i j] d(1) i j False by simp
-    show ?thesis unfolding ErrU[OF i] ErrU[OF j]
-      using hhl_err_orth[OF A t0 N col(1,2)[OF i] col(1,2)[OF j] orth du, of ?f "C / D ! i" ?f "C / D ! j"] False by simp
-  qed
-  have me: "Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle> \<le> ?e" if i: "i < n" for i
-  proof -
-    have one: "\<langle>Matrix.col U i|Matrix.col U i\<rangle> = 1" using unitary_cols_orthonormal[OF d(2), of i i] d(1) i by simp
-    have "Re \<langle>?Err *\<^sub>v Matrix.col U i|?Err *\<^sub>v Matrix.col U i\<rangle> \<le>
-          Re \<langle>Matrix.col U i|Matrix.col U i\<rangle> * (pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / (D ! i)\<^sup>2))"
-      unfolding ErrU[OF i]
-      by (rule hhl_clamped_error_bound[OF A t0 N col(1,2)[OF i] C th col(5,4)[OF i]])
-    also have "\<dots> \<le> 1 * ?e"
+    fix v l assume v: "dim_vec v = n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v" "l \<in> herm_spectrum A" "\<parallel>v\<parallel> = 1"
+    have sl: "lmin \<le> l" "t0 * l \<le> pi / 2" using spec[OF v(3)] by simp_all
+    have "Re \<langle>?Err *\<^sub>v v|?Err *\<^sub>v v\<rangle> \<le> Re \<langle>v|v\<rangle> * (pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / l\<^sup>2))"
+      unfolding ErrU[OF v(1,2)] by (rule hhl_clamped_error_bound[OF A t0 N v(1,2) C th _ sl(2)]) (use sl(1) lmin in linarith)
+    also have "\<dots> \<le> ?e"
     proof -
-      have "16 / (D ! i)\<^sup>2 \<le> 16 / lmin\<^sup>2"
-        using col(3)[OF i] lmin0 by (intro divide_left_mono power_mono) simp_all
-      hence "pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / (D ! i)\<^sup>2) \<le> ?e"
+      have "16 / l\<^sup>2 \<le> 16 / lmin\<^sup>2" using sl(1) lmin0 by (intro divide_left_mono power_mono) simp_all
+      hence "pi\<^sup>2 / (real N * t0\<^sup>2) * (\<theta> ^ 4 / (C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 16 / l\<^sup>2) \<le> ?e"
         by (intro mult_left_mono add_left_mono) simp_all
-      thus ?thesis unfolding one by simp
+      thus ?thesis using v(4) vnorm_Re_inner[of v] by simp
     qed
-    finally show ?thesis by simp
+    finally show "\<parallel>?Err *\<^sub>v v\<parallel>\<^sup>2 \<le> ?e" unfolding vnorm_Re_inner .
   qed
-  have "Re \<langle>?Err *\<^sub>v b|?Err *\<^sub>v b\<rangle> \<le> ?e * Re \<langle>b|b\<rangle>"
-    by (rule orth_image_bound[OF d(1) d(2) Errc diag me b])
-  thus ?thesis unfolding Errv[OF b] lift_mat_mult_vec[OF G0 G1 b] .
+  thus ?thesis unfolding vnorm_Re_inner Errv[OF b] lift_mat_mult_vec[OF G0 G1 b] .
 qed
 
 end

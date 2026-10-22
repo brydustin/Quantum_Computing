@@ -234,7 +234,7 @@ proof -
   have Ec: "?E \<in> carrier_mat n n" using A by simp
   have Vc: "?V \<in> carrier_mat (n * 2) (n * 2)" by (rule tensor_carrier[OF Ec one_carrier_mat])
   have Wc: "?W \<in> carrier_mat (?N * (n * 2)) (?N * (n * 2))" by simp
-  have Ec': "?Emb \<in> carrier_mat (?N * (n * 2)) n" using lift_mat_carrier[of n ?u] du by simp
+  have Ec': "?Emb \<in> carrier_mat (?N * (n * 2)) n" using lift_carrier[of 2 n ?u] du by simp
   have emb: "?Emb *\<^sub>v v = tensor_vec ?u (tensor_vec v (unit_vec 2 0))" if v: "dim_vec v = n" for v
   proof -
     have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
