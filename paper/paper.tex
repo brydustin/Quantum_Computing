@@ -91,7 +91,8 @@ including the preparation of $\ket b$, the controlled rotation and, for sparse $
 for $e^{iAt}$ with explicit error. The formalisation corrects several statements of the HHL paper,
 among them the constant of its Lemma~3. The development rests on a
 formalisation of Paulsen's lecture course on quantum computing and completely positive maps, and it
-builds without \texttt{sorry}, axioms or oracles.
+builds without \texttt{sorry} or axioms; the one oracle is the Types-To-Sets rule behind an imported AFP
+result.
 
 \keywords{Isabelle/HOL \and Quantum Hoare logic \and HHL algorithm \and Phase estimation \and
 Hamiltonian simulation \and Formal verification}
@@ -241,8 +242,10 @@ development has 31 theories; the foundation has 50.}\label{fig:layers}
 \end{figure}
 
 All results are checked by Isabelle2025-2 with \texttt{quick\_and\_dirty = false}, so no
-\texttt{sorry} survives, and an audit with \isa{Thm\_Deps.all\_oracles} over all theorems of the
-development finds no oracles. The sources, the generated documents and the audits are in the project
+\texttt{sorry} survives. An audit with \isa{Thm\_Deps.all\_oracles} over all theorems of the
+development finds one oracle: the search bound imported from the AFP entry \emph{Compressed Oracles}
+inherits the Types-To-Sets rule \isa{cancel\_type\_definition}, an extension of HOL that Isabelle
+records as an oracle. The sources, the generated documents and the audits are in the project
 repository.\footnote{\url{https://github.com/brydustin/Quantum_Computing}} Each listing below links to
 its source line (\isalogo).
 

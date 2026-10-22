@@ -46,3 +46,7 @@ Applied_Math_Formalization/
 # generated notes document
 notes_doc/output/
 Sylvester/output/
+
+# check reports
+tools/check/output/
+tools/check/output.log

@@ -751,3 +751,23 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   by the preprocessor, so pass precomputed data as a function argument instead; `value` without
   `[code]` silently falls back to slow evaluators; a multi-conclusion lemma gets its own type
   variable per conclusion (annotate `:: complex Matrix.vec`).
+- **Tools in the repository** (2026-10-22): the checks lived in a temporary scratch folder; now
+  `tools/` holds `build_all.sh`, `check_all.sh`, `watch_build.sh`, `eval.sh`, `paper_listings.py`,
+  `paper_links.py`, `counts.py` (settings in `env.sh`, overview in `tools/README.md`).  `tools/check/`
+  has one check session per project session; `project_checks.ML` audits oracles (with an explicit
+  allow list) and finds duplicate facts (against everything in the context and within the
+  targets), duplicate definitions (bodies compared without types, so specialisations count),
+  and fact/constant name clashes (locale-internal and record-generated names excepted); reports go
+  to `tools/check/output/`, and strict checks fail the build.  First run: Part VI audit clean, but
+  three name clashes (`normalize_stable` ~ `Rat.normalize_stable`, constructor `Seq` ~ QHLProver's
+  `Seq`, constant `H` ~ IMD's Hadamard `H`); Sylvester reproves `dagger_adjoint` of
+  `Two_Hermitian_Results`; the notes have 6 lemmas the AFP already has, 51 duplicated pairs, `Phase_S`
+  with the body of IMD's `S`, two XOR functions and two name clashes.  Correction: the search
+  bound imported from `Compressed_Oracles` inherits the Types-To-Sets oracle
+  `cancel_type_definition`; the paper and the audit said "no oracles" and now say so.
+  Deferred, to return to: the paper's venue and length (36 pp vs ~16 for LNCS conferences, or a
+  journal); AFP submission of the functional calculus and phase estimation; tightening the
+  partial audit rows (Lemma 3's constant, Theorems 4–6 up to cited complexity facts).  Dropped:
+  UTP-style sampling execution (needs a non-AFP ITree stack; little mathematical content).
+  Incident: a build through a symlinked AFP view rebuilt and first deleted the shared
+  Jordan_Normal_Form heap; the stack was rebuilt from the real AFP path.

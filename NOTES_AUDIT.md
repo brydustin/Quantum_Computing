@@ -7,7 +7,7 @@ Completely Positive Maps*, Houston, Fall 2011; notes by Brandon Lee), transcribe
 
 Verification status (2026-10-19): all sessions build
 with `quick_and_dirty = false`; no `sorry`, no `axiomatization`, no `oops`; a
-`Thm_Deps.all_oracles` check of the main theorems reports no oracles.  The theorem on
+`Thm_Deps.all_oracles` check of all theorems reports no oracles, except that the search bound imported from AFP `Compressed_Oracles` (session `Vern_Paulsen_QC_Search`) inherits the Types-To-Sets rule `cancel_type_definition`.  `tools/check_all.sh` reruns the build, this audit and the redundancy checks (`tools/check/`).  The theorem on
 unambiguous discrimination (D8-3), formerly kept in a comment block with a `sorry`, is now
 proved (`lin_indep_states_unambiguous`); the priority-A gap list and B1 below were closed in
 the same pass.

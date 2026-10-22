@@ -1,0 +1,21 @@
+(* Check sessions: build with tools/check_all.sh (needs the heaps of the project sessions). *)
+
+session VP_Check_Algorithms in "Algorithms" = Vern_Paulsen_QC_Algorithms +
+  options [document = false]
+  theories Check_Algorithms
+
+session VP_Check_Notes in "Notes" = Vern_Paulsen_QC +
+  options [document = false]
+  theories Check_Notes
+
+session VP_Check_Sylvester in "Sylvester" = Vern_Paulsen_QC_Sylvester +
+  options [document = false]
+  theories Check_Sylvester
+
+session VP_Check_Search in "Search" = Vern_Paulsen_QC_Search +
+  options [document = false]
+  theories Check_Search
+
+session VP_Check_Demo in "Demo" = Vern_Paulsen_QC_Demo +
+  options [document = false]
+  theories Check_Demo
