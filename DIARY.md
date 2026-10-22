@@ -448,6 +448,20 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `full_prog_gates`).  Traps: `O` is relation composition and `W` a global constant (renamed);
   `1\<^sub>m 1` vs `1\<^sub>m (Suc 0)` normal forms — keep `right_tensor_id` facts literal; `intro exI exI …`
   instantiates in unpredictable order — chain `rule exI[of _ x]` and prove conjuncts separately.
+- **Day21_Average_Conjecture** (2026-10-21; user: work on proving the D21-2 conjecture).  Literature
+  check first: D21-2 is the strong Ruskai–Audenaert conjecture (Ruskai 2007, numerics by Audenaert;
+  Massey 2007 Conj. 4.8) for the dual channel M_d → M_n, still open; Kumar–Wolf (arXiv 2607.23066)
+  prove d = 2 (Borsuk–Ulam on SU(2) plus a second-variation argument on U(nd)), cq/qc channels and a
+  positive-measure set; Bacon–Smolin–Wolf settle n = 2 (a contraction is the average of two
+  unitaries).  Formalised: the statement `D21_2`; the reduction `fourier_split` (Kraus operators in n
+  groups with Σ_j A_mj A_m'j* = 0 ⟹ B_lj = Σ_m ω^{lm} A_mj works, by Σ_l ω^{l(m−m')} = nδ); measurement
+  maps (cross sums vanish automatically); Horn's lemma (eigenbasis + Fourier, d = 1); diagonal-valued
+  maps from Horn's lemma; form (i) of the notes refuted (n = 2, d = 1).  Not done: n = 2 needs a
+  unitary polar decomposition of singular matrices (absent from AFP and the project), d = 2 needs
+  Borsuk–Ulam and a compactness/variational argument.  Traps: unannotated `n`, `i` in sum lemmas get
+  sort `ord` and `sum.delta` silently fails — fix them to nat; `simp add: sum.swap` loops — use
+  `subst sum.swap` with `rule sum.cong`; `R` and `W` are global constants; `meas_map` already exists
+  (renamed `povm_map`); `metis` on choice-shaped obtains hangs — `rule choice[THEN exE]`.
 - **HHL_All_Elementary** (2026-10-21; user: de-oracle the work where possible).  For n = 2^s the
   last assumed gates other than oracle calls go: cv0 (ancilla rotation controlled by the last clock
   qubit) is rewritten as ctrl_blocks over clock⊗system with blocks depending on d div 2^s

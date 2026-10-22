@@ -40,7 +40,7 @@ mechanics for pure and mixed states, partial traces, completely positive maps wi
 Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
 unital and trace-preserving completely positive maps (Choi's Theorem~3), the
 Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises forty-eight theories and about a
+entanglement witnesses.  The development comprises forty-nine theories and about a
 thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
 builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
 audit records, for each statement in the notes, its formal counterpart or the reason
@@ -153,7 +153,7 @@ the names in brackets are the Isabelle theorems.
 
 {\small
 \begin{longtable}{p{0.31\textwidth}p{0.45\textwidth}rr}
-\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 22\,134 lines, 1\,162 results, not included in the counts above).}\label{tab:theories}\\
+\caption{The forty-nine theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,598 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15, and the conjecture of Day~21 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 22\,134 lines, 1\,162 results, not included in the counts above).}\label{tab:theories}\\
 \toprule
 Theory & Lectures & lines & results\\
 \midrule
@@ -217,6 +217,7 @@ Theory & Lectures & lines & results\\
 \isa{Day16\_Block\_Form} & 16: block form on $H_A\otimes H_B$ & 206 & 13\\
 \isa{Day22\_UCP\_Compact} & 22: UCP is compact & 222 & 9\\
 \isa{Day06\_15\_Universal} & 6, 15: the universal properties & 436 & 23\\
+\isa{Day21\_Average\_Conjecture} & 21: the conjecture D21-2, proved cases & 628 & 22\\
 \midrule
 \isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
 \isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 502 & 26\\
@@ -293,6 +294,20 @@ of the adjoint operators (\isa{kraus\_adjoint\_correct}), and $\Phi$ is unital i
 trace preserving (\isa{cp\_unital\_iff\_adjoint\_tp}); positive functionals are
 completely positive (\isa{positive\_scalar\_is\_cp}); the sets UCP and CPTP are convex.
 
+\paragraph{The conjecture of Lecture~21.}  The notes ask whether every unital completely
+positive $\Phi:M_n\to M_d$ is the average of $n$ unital maps of Choi rank at most $d$.  This is
+the strong Ruskai--Audenaert conjecture for the dual channel $M_d\to M_n$, open in general
+\cite{kumarwolf2026}; we state it formally (\isa{D21\_2}) and prove the cases that have direct
+constructions.  If the Kraus operators split into $n$ groups $A_{m1},\dots,A_{md}$ with
+$\sum_jA_{mj}A_{m'j}^*=0$ for $m\ne m'$, the Fourier mixtures $B_{lj}=\sum_m\omega^{lm}A_{mj}$ give the
+decomposition, since $\sum_l\omega^{l(m-m')}=n\delta_{mm'}$ (\isa{fourier\_split}).  This covers
+measurement maps $X\mapsto\sum_iX_{ii}Q_i$ (\isa{ra\_measurement}) and, applied to an eigenbasis,
+Horn's lemma: every density matrix is the average of $n$ pure states (\isa{horn\_lemma}, the case
+$d=1$), which in turn gives the maps with diagonal values (\isa{ra\_cq}).  The notes' reformulation
+(i) for trace-preserving maps $M_n\to M_d$ is false as written: for $n=2$, $d=1$ no trace-preserving
+map $M_2\to\mathbb C$ has Choi rank one (\isa{notes\_form\_i\_false}); the equivalent dual form has the
+dimensions exchanged.
+
 \paragraph{Lecture 23: Choi's Theorem 3.}\label{sec:choi3}  Choi's characterisation of the
 extreme points of UCP~\cite{choi1975} is formalised in its trace-preserving form, for a
 channel given by a Kraus list $V_1,\dots,V_r$ of linearly independent operators
@@ -350,8 +365,8 @@ every definition, theorem, proposition, corollary, example and remark of the not
 its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ formalised
 in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
 (overviews, history, numerical examples, classical asides such as stochastic matrices
-or cyclic codes).  Of the 170 items, 10 are deliberate omissions; of the remaining 160
-mathematical items, 155 are faithful, 5 are variants and none is a gap.\footnote{Counts as
+or cyclic codes).  Of the 170 items, 9 are deliberate omissions; of the remaining 161
+mathematical items, 156 are faithful, 5 are variants and none is a gap.\footnote{Counts as
 of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
 drove a final round of proofs: small statements omitted along the way (the converses
 isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the

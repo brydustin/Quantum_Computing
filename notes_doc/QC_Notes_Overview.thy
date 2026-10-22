@@ -41,6 +41,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day16_Block_Form
     Vern_Paulsen_QC.Day22_UCP_Compact
     Vern_Paulsen_QC.Day06_15_Universal
+    Vern_Paulsen_QC.Day21_Average_Conjecture
     Vern_Paulsen_QC_Algorithms.HHL_Approximate
     Vern_Paulsen_QC_Algorithms.HHL_Window
     Vern_Paulsen_QC_Algorithms.HHL_Simulation
@@ -114,6 +115,7 @@ reuse earlier infrastructure.  The table gives the correspondence.
 22     & the adjoint $\Phi^*$ of a linear map; $\Gamma(\Phi)=\Phi^*$ is an affine bijection UCP $\to$ CPTP & \texttt{Day22\_Adjoint\_Maps}\\
 22     & UCP$(M_n,M_d)$ is compact (in Choi coordinates) & \texttt{Day22\_UCP\_Compact}\\
 6, 15  & universal properties: bilinear maps factor uniquely through $v\otimes w$; $\Gamma(R\otimes T)=R\otimes T$ determines $\Gamma$ & \texttt{Day06\_15\_Universal}\\
+21     & the conjecture D21-2 stated; Fourier mixing, measurement maps, Horn's lemma, diagonal-valued maps; form (i) false & \texttt{Day21\_Average\_Conjecture}\\
 23     & Choi's Theorem~3 for unital maps, via the adjoint & \texttt{Day23\_Choi3\_UCP}\\
 16     & $H_A\otimes H_B\cong H_A^{(p)}$ isometrically; $X=\sum X_{ij}\otimes E_{ij}$; block action, partial traces & \texttt{Day16\_Block\_Form}\\
 6, 10  & the Schmidt rank: rank $1$ iff a product state, entangled iff rank $>1$ & \texttt{Day06\_Schmidt\_Rank}\\
