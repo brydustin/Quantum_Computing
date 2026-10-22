@@ -19,3 +19,7 @@ session VP_Check_Search in "Search" = Vern_Paulsen_QC_Search +
 session VP_Check_Demo in "Demo" = Vern_Paulsen_QC_Demo +
   options [document = false]
   theories Check_Demo
+
+session VP_Check_Channels in "Channels" = Vern_Paulsen_QC_Channels +
+  options [document = false]
+  theories Check_Channels

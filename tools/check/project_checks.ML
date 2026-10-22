@@ -81,7 +81,12 @@ fun run {name, audit, allow, targets, ignore, strict} thy =
     val is_target = in_sessions targets
     val (tf, lf) = List.partition (is_target o fst) facts
     val lf = filter (not o in_sessions ignore o fst) lf
-    val tf = filter (fn (n, _) => not (is_generated n) andalso length (Long_Name.explode n) = 2) tf
+    val loc_names = map Long_Name.base_name (Locale.get_locales thy)
+    fun top_or_locale n = (case Long_Name.explode n of
+        [_, _] => true
+      | [_, l, _] => member (op =) loc_names l
+      | _ => false)
+    val tf = filter (fn (n, _) => not (is_generated n) andalso top_or_locale n) tf
     val ltab = fold (fn (n, ths) => fold (fn th => Termtab.cons_list (canon (Thm.prop_of th), n)) ths) lf Termtab.empty
     fun hits th =
       Termtab.lookup_list ltab (canon (Thm.prop_of th)) @

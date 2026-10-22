@@ -124,6 +124,21 @@ session Vern_Paulsen_QC_Demo in "Demo" = Vern_Paulsen_QC_Algorithms +
   document_files
     "root.tex"
 
+session Vern_Paulsen_QC_Channels in "Channels" = Vern_Paulsen_QC +
+  description "
+    Loop-free QHLProver programs are channels: Kraus operators read off the program,
+    the meaning is their Kraus map, completely positive and trace preserving (the notes'
+    Lectures 19-33 applied to the programs of Part VI)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    Vern_Paulsen_QC_Algorithms
+  theories
+    Program_Channels
+  document_files
+    "root.tex"
+
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
     D5-1: Sylvester's criterion, imported from the AFP entry Two_Hermitian_Results

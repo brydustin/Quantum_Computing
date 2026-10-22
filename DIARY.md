@@ -793,3 +793,16 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   21 397 lines, 1 084 results.  Traps: a multi-conclusion fact whose first part duplicates a lemma
   (e.g. `idx_mp`) must keep its other parts; when two copies sit in one theory keep the earlier
   one; my grep for primed names (`\bname'\b`) silently matched nothing.
+- **Programs are channels** (2026-10-22): new session `Vern_Paulsen_QC_Channels`
+  (`Channels/Program_Channels.thy`, 208 lines, 9 results) joins the notes and Part VI.  `kraus_of`
+  reads Kraus operators off a QHLProver program (gate U ↦ [U], sequence ↦ the notes' `kraus_compose`,
+  measurement ↦ `meas_kraus`: B·M_k for every Kraus operator B of branch k); for loop-free,
+  well-formed programs `denote c ρ = kraus_map_dim d (kraus_of d c) ρ` (`denote_kraus`), the
+  operators are complete (`kraus_of_operators`, via the notes' `sum_wdag_w_*` and
+  `kraus_operators_compose`), so `cptp_kraus_rep` (`program_channel`), completely positive and
+  trace preserving (`program_cptp`, from `kraus_is_cp`, `kraus_is_trace_preserving`); the HHL
+  program is an instance (`hhl_program_channel`).  Every proof under a second.  The redundancy
+  check now also covers facts proved inside locales; it caught a reproved `sum_wdag_w_append`.
+  Traps: `S`, `W`, `X` are constants in the merged context (IMD's gates, Part VI); simp would not
+  use a fact `adjoint U * U = 1` stated next to the conjunctive premise, auto did.  Paper: §8
+  paragraph "Programs are channels" (Listing 13); the conclusion now names loops as the next step.
