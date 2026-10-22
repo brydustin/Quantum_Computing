@@ -57,7 +57,7 @@
 % Links to the formal sources at a fixed commit.  The repository is private at the time of
 % writing; replace \isalink by \isalogo to drop the links.
 \newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
-\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/2a6ae4264ab2148c5b2de019c05559f0ac26e642}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/ec36b2019a17da0b8a5b3770ef9682cd01540981}
 \newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
 
 \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
@@ -1511,6 +1511,28 @@ theorem choi_theorem:
 \end{lstlisting}
 \end{minipage}
 
+\paragraph{Programs are channels.} The two halves of the development meet in one theorem. For a
+QHLProver program $c$ without loops, \isa{kraus\_of} reads Kraus operators off the program text: a gate
+$U$ gives $U$, a sequence gives the products $BA$ (the composition \isa{kraus\_compose} of
+Lectures~32--33), and a measurement $\{M_k\}$ gives $BM_k$ for every Kraus operator $B$ of branch~$k$
+(Listing~\ref{lst:channels}). The meaning of $c$ is the Kraus map of these operators, and they satisfy
+$\sum_i K_i^*K_i=I$ (\isa{denote\_kraus}, \isa{kraus\_of\_operators}); by Choi's theorem the meaning is
+completely positive and trace preserving (\isa{program\_cptp}). The HHL program is an instance
+(\isa{hhl\_program\_channel}). The theory is a separate session, since it loads both the notes and
+Part~VI.\isalink{Channels/Program_Channels.thy}{171}
+
+\begin{lstlisting}[float=tp,caption={Kraus operators of a loop-free program, and the program as a channel (in the locale of the registers, with $d$ their dimension)},label={lst:channels}]
+fun kraus_of :: "nat ~$\Rightarrow$~ com ~$\Rightarrow$~ complex mat list" where
+  "kraus_of d SKIP = [1~$_{m}$~ d]"
+| "kraus_of d (Utrans U) = [U]"
+| "kraus_of d (c1 ;; c2) = kraus_compose (kraus_of d c2) (kraus_of d c1)"
+| "kraus_of d (Measure n M Ss) = meas_kraus n M (map (kraus_of d) Ss)"
+| "kraus_of d (While M c) = []"
+theorem program_channel:
+  assumes "well_com c" "while_free c"
+  shows "cptp_kraus_rep d d (denote c) (kraus_of d c)"
+\end{lstlisting}
+
 \paragraph{Two lessons.} First, HOL functions are total, while a map $M_n\to M_d$ is constrained only on
 the carrier. The naive definition of an extreme point (``$\Phi$ is not the midpoint of two different
 channels'') is therefore vacuous, since any channel agrees on the carrier with maps that differ from it
@@ -1606,6 +1628,7 @@ Circuit (elementary gates, sparse simulation) & 7 & 5\,805 & 310\\
 Part VI, HHL & 31 & 21\,397 & 1\,084\\
 Bridge to the AFP search bound (separate session) & 1 & 80 & 4\\
 The example run of Section~\ref{sec:run} (separate session) & 1 & 313 & 34\\
+Programs are channels (separate session) & 1 & 208 & 9\\
 Paulsen's lectures (the foundation) & 50 & 51\,101 & 1\,551\\
 \bottomrule
 \end{tabular}
@@ -1642,8 +1665,9 @@ statements of the paper's optimality proofs.
 The development is also an argument for formalising a whole course before an algorithm. Paulsen's
 notes supplied the spectral theorem and the positivity theory that HHL needs. Their later lectures
 supply the completely positive maps and Choi--Kraus representations that are the semantics of quantum
-programs, which suggests the next step: proving that QHLProver's denotations are the channels of
-Lecture~19, so that the two halves of the development meet in one theorem. Higher-order simulation with
+programs, and for programs without loops the two halves of the development now meet in one theorem:
+QHLProver's denotations are the channels of Lecture~19. Programs with loops, whose meaning is a limit,
+are the next step. Higher-order simulation with
 verified arithmetic oracles, gate-count bounds for compilation, and the later linear-systems algorithms
 are further natural continuations.
 
