@@ -57,7 +57,7 @@
 % Links to the formal sources at a fixed commit.  The repository is private at the time of
 % writing; replace \isalink by \isalogo to drop the links.
 \newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
-\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/317f62a938a3caeedfa63d1bec47c13a7b9b84c5}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/2a6ae4264ab2148c5b2de019c05559f0ac26e642}
 \newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
 
 \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
@@ -455,7 +455,7 @@ bound follows from the geometric sum, $|e^{ix}-1|=2|\sin(x/2)|$ and Jordan's ine
 $\sin x\ge2x/\pi$ on $[0,\pi/2]$. Two bridges connect the theorem to circuits. The quantum Fourier
 transform circuit of the AFP~\cite{manrique2025qft} is the Fourier matrix (\isa{ordered\_QFT\_fourier},
 by induction over its Kronecker structure), and $k$ Hadamard gates prepare the uniform state from
-$\ket{0\cdots0}$ (\isa{hadamard\_layer\_zero}, from \IMD).\isalink{Algorithms/Phase_Estimation.thy}{291}
+$\ket{0\cdots0}$ (\isa{hadamard\_layer\_zero}, from \IMD).\isalink{Algorithms/Phase_Estimation.thy}{280}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Phase estimation, the $4/\pi^2$ bound, and the bridges to circuits},label={lst:qpe}]
@@ -1361,7 +1361,7 @@ second register. A comparator sorts the pair and records the order in~$b$. An en
 by $e^{id\left(\begin{smallmatrix}0&a\\\bar a&0\end{smallmatrix}\right)}$ with $a=A_{xy}$. The comparator and
 $O_c^\dagger$ then uncompute (\isa{colour\_circ\_basis}). The oracle is a hypothesis, any unitary with
 $\ket x\ket0\ket b\mapsto\ket x\ket{q_c(x)}\ket b$, and one exists for every colouring. A final gate
-applies the phases of the diagonal.\isalink{Algorithms/HHL_Sparse_Circuit.thy}{914}
+applies the phases of the diagonal.\isalink{Algorithms/HHL_Sparse_Circuit.thy}{908}
 
 \begin{figure}[t]
 \centering
@@ -1496,7 +1496,7 @@ extension theorem, and the separating-hyperplane theory of entanglement witnesse
 classical and quantum codes, the Knill--Laflamme conditions in both directions, and Shor's nine-qubit
 code. One CPTP map corrects every single-qubit unitary error on each of the nine qubits
 (\isa{shor\_code\_theorem}); the $2^9$-dimensional space is never handled entrywise but as three blocks of
-three qubits.\isalink{Day11/Quantum_Computing11.thy}{6486}
+three qubits.\isalink{Day11/Quantum_Computing11.thy}{6399}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Choi's theorem (Lecture 19)},label={lst:choi}]
@@ -1532,8 +1532,8 @@ block of the Choi matrix is $R_1KR_2^\dagger$ for a contraction $K$, and $K=\fra
 obtained from a singular value decomposition, which we build from the spectral theorem. A
 reformulation in the notes turned out to be false (Section~\ref{sec:errata}).
 
-\paragraph{Size.} The formalisation of the notes has 50 theories with 51\,729 lines and 1\,614 results
-(lemmas, theorems, corollaries and propositions). Part VI has 31 theories with 21\,414 lines and 1\,087
+\paragraph{Size.} The formalisation of the notes has 50 theories with 51\,101 lines and 1\,551 results
+(lemmas, theorems, corollaries and propositions). Part VI has 31 theories with 21\,397 lines and 1\,084
 results, plus an 80-line bridge to the AFP's quantum search bound in a separate session
 (Table~\ref{tab:stats}).
 \section{Related Work}\label{sec:related}
@@ -1598,15 +1598,15 @@ complexity-theoretic facts they cite.
 \toprule
 Part & Theories & Lines & Results\\
 \midrule
-Mathematics (functional calculus, phase estimation) & 5 & 1\,515 & 94\\
+Mathematics (functional calculus, phase estimation) & 5 & 1\,504 & 93\\
 Algorithm (circuits, error analysis, rest of the paper) & 13 & 10\,320 & 496\\
 Program (QHLProver programs and triples) & 6 & 3\,768 & 185\\
-Circuit (elementary gates, sparse simulation) & 7 & 5\,811 & 312\\
+Circuit (elementary gates, sparse simulation) & 7 & 5\,805 & 310\\
 \midrule
-Part VI, HHL & 31 & 21\,414 & 1\,087\\
+Part VI, HHL & 31 & 21\,397 & 1\,084\\
 Bridge to the AFP search bound (separate session) & 1 & 80 & 4\\
 The example run of Section~\ref{sec:run} (separate session) & 1 & 313 & 34\\
-Paulsen's lectures (the foundation) & 50 & 51\,729 & 1\,614\\
+Paulsen's lectures (the foundation) & 50 & 51\,101 & 1\,551\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1669,7 +1669,7 @@ Theory & Content & Lines & Results\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Mathematics}}\\
 \isa{Hermitian\_Functional\_Calculus} & $g(A)$, $e^{itA}$, $A^{-1}$ & 434 & 36\\
-\isa{Phase\_Estimation} & Fourier matrix, phase estimation, $4/\pi^2$ & 532 & 30\\
+\isa{Phase\_Estimation} & Fourier matrix, phase estimation, $4/\pi^2$ & 521 & 29\\
 \isa{QPE\_Precision} & tail bound, number of clock qubits & 341 & 17\\
 \isa{QFT\_Fourier} & the AFP QFT circuit is $F_{2^n}$ & 104 & 4\\
 \isa{QPE\_Register} & $H^{\otimes n}\ket{0\cdots0}$ is uniform & 104 & 7\\
@@ -1704,7 +1704,7 @@ Theory & Content & Lines & Results\\
 \isa{HHL\_All\_Elementary} & $\ket b$, routing, exact universality & 1\,037 & 44\\
 \isa{HHL\_Trotter} & Lie--Trotter with explicit error & 533 & 24\\
 \isa{HHL\_Sparse\_Split} & sparse $A$ as $2s$ 1-sparse parts & 446 & 18\\
-\isa{HHL\_Sparse\_Circuit} & the sparse simulation circuit & 1\,096 & 64\\
+\isa{HHL\_Sparse\_Circuit} & the sparse simulation circuit & 1\,090 & 62\\
 \bottomrule
 \end{tabular}
 \end{table}
