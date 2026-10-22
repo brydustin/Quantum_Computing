@@ -57,7 +57,7 @@
 % Links to the formal sources at a fixed commit.  The repository is private at the time of
 % writing; replace \isalink by \isalogo to drop the links.
 \newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
-\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/b2fa27a1a18a6a9661c7890ce35458ca1cc8a7c0}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/884879cf77efca33777f9614db2a9eb12fc910b2}
 \newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
 
 \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
@@ -408,7 +408,7 @@ $\isa{evolution}\ A\ t=e^{itA}$, with its group law, and $\isa{herm\_inv}\ A=A^{
 HOL, \isa{herm\_inv} is the pseudo-inverse when $0$ is an eigenvalue (Section~\ref{sec:exact-other}).
 The device behind the whole development is the following lemma: two matrices that agree on every
 eigenvector of a Hermitian $A$ are equal (\isa{eigvec\_mat\_eqI}). It lets every statement about all
-right-hand sides~$b$ be proved for an eigenvector, without sums over an eigenbasis.\isalink{Algorithms/Hermitian_Functional_Calculus.thy}{113}
+right-hand sides~$b$ be proved for an eigenvector, without sums over an eigenbasis.\isalink{Algorithms/Hermitian_Functional_Calculus.thy}{108}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={The functional calculus},label={lst:matfun}]
@@ -450,7 +450,7 @@ bound follows from the geometric sum, $|e^{ix}-1|=2|\sin(x/2)|$ and Jordan's ine
 $\sin x\ge2x/\pi$ on $[0,\pi/2]$. Two bridges connect the theorem to circuits. The quantum Fourier
 transform circuit of the AFP~\cite{manrique2025qft} is the Fourier matrix (\isa{ordered\_QFT\_fourier},
 by induction over its Kronecker structure), and $k$ Hadamard gates prepare the uniform state from
-$\ket{0\cdots0}$ (\isa{hadamard\_layer\_zero}, from \IMD).\isalink{Algorithms/Phase_Estimation.thy}{260}
+$\ket{0\cdots0}$ (\isa{hadamard\_layer\_zero}, from \IMD).\isalink{Algorithms/Phase_Estimation.thy}{255}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Phase estimation, the $4/\pi^2$ bound, and the bridges to circuits},label={lst:qpe}]
@@ -587,7 +587,7 @@ reduces this to Theorem~\ref{thm:qpe} (\isa{pe\_round\_dist}, \isa{pe\_amp\_near
 program the Hadamard gates multiply to $H^{\otimes k}$ (\isa{had\_gates}), the controlled powers to
 $\Lambda(U)$ (\isa{ctrl\_pow\_qubits}) and the inverted gate list to $F_N^\dagger$
 (\isa{qft\_inv\_circuit}). The triples of an initialised circuit depend only on the product of its
-gates (\isa{init\_circuit\_transfer}, \isa{qpe\_elem\_total}).\isalink{Algorithms/QPE_Program.thy}{238}
+gates (\isa{init\_circuit\_transfer}, \isa{qpe\_elem\_total}).\isalink{Algorithms/QPE_Program.thy}{222}
 
 \begin{lstlisting}[float=tp, caption={Theorem~\ref{thm:qpe-prog} (\isa{Js} is the set $J$)},label={lst:qpeprog}]
 definition qpe_program :: "nat ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ complex mat ~$\Rightarrow$~
@@ -684,7 +684,7 @@ every~$b$. Phase estimation leaves $\sum_j\ket j\otimes\Pi_jb\otimes\ket0$, wher
 indicator $g_j$ of $\{\lambda_j\}$. With the unitary rule and the rule of consequence, each line
 becomes a triple $\{\ketbra{\psi_i}{\psi_i}\}\,U_i\,\{\ketbra{\psi_{i+1}}{\psi_{i+1}}\}$
 (\isa{hhl\_step\_triples}). The program initialises all registers, runs the gates and measures the
-ancilla (Listing~\ref{lst:prog}).\isalink{Algorithms/HHL_Program.thy}{681}
+ancilla (Listing~\ref{lst:prog}).\isalink{Algorithms/HHL_Program.thy}{668}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={The HHL programs: one run, and repeat until the ancilla reads $1$},label={lst:prog}]
@@ -715,7 +715,7 @@ $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$. Then
 By Table~\ref{tab:readings}, a single run succeeds with probability at least~$p$, and on success the
 state is exactly~$\ket t$. The hypothesis on $C$ makes the rotation gate unitary, as the program
 semantics requires. Listing~\ref{lst:progthm} shows the formal statement, including the context that
-fixes the hypotheses.\isalink{Algorithms/HHL_Program.thy}{1310}
+fixes the hypotheses.\isalink{Algorithms/HHL_Program.thy}{1294}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Theorem~\ref{thm:prog} (\isa{state\_sig.hoare\_total\_correct dims} is $\models_t$ on the registers \isa{dims})},label={lst:progthm}]
@@ -873,7 +873,7 @@ $0<C$, $0<\theta<1$ and $2C/\theta\le\lambda_{\min}$. Then for every $b$, the cl
 \]
 where $w$ is the exact output of Theorem~\ref{thm:hhl},
 $K_1=8\pi^2(2+\pi^2)\theta^4/(t_0^2C^2(1-\theta^2))$ and $K_2=512\pi^6/(t_0^4\lambda_{\min}^4)$. Hence $N\ge Q/\varepsilon$ gives error at most
-$\varepsilon\norm b$, for an explicit~$Q$.\isalink{Algorithms/HHL_Window.thy}{1061}
+$\varepsilon\norm b$, for an explicit~$Q$.\isalink{Algorithms/HHL_Window.thy}{1055}
 \end{theorem}
 
 \noindent\begin{minipage}{\linewidth}
@@ -1025,7 +1025,7 @@ $Nt_0\ge12\pi^2\sqrt{4+2\pi^2}\,\kappa/\varepsilon$, and let the flag gates prep
 $\ket{h(\tilde\lambda_k)}$. Then the post-selected well-conditioned output is within $\varepsilon$ of
 $A^{-1}b/\norm{A^{-1}b}$, its amplitude is at least $1/(4\kappa)$, and at most $\pi\kappa$ rounds of
 amplitude amplification, each with $2(N-1)$ oracle calls, succeed with probability at least
-$1-\norm y^2$, where $y$ is the well-flagged part of one run.\isalink{Algorithms/HHL_Runtime.thy}{433}
+$1-\norm y^2$, where $y$ is the well-flagged part of one run.\isalink{Algorithms/HHL_Runtime.thy}{420}
 \end{theorem}
 
 \noindent\begin{minipage}{\linewidth}
@@ -1177,7 +1177,7 @@ stage is one rotation of the ancilla by $\sum_Sw_S$, followed by one block per n
 computes $\pi_S(c)$ into the last clock qubit with a chain of nearest-neighbour CNOT and SWAP gates,
 rotates the ancilla by $-2w_S$ controlled by that qubit, and uncomputes the chain
 (Fig.~\ref{fig:ucr}a, \isa{ucr\_circuit}). For a system register of $s$ qubits, the controlled rotation
-is moved next to the clock by $s$ adjacent swaps (\isa{route\_cv0}).\isalink{Algorithms/HHL_Uniform_Rotation.thy}{765}
+is moved next to the clock by $s$ adjacent swaps (\isa{route\_cv0}).\isalink{Algorithms/HHL_Uniform_Rotation.thy}{762}
 
 \begin{figure}[t]
 \centering
@@ -1483,7 +1483,7 @@ obtained from a singular value decomposition, which we build from the spectral t
 reformulation in the notes turned out to be false (Section~\ref{sec:errata}).
 
 \paragraph{Size.} The formalisation of the notes has 50 theories with 51\,729 lines and 1\,614 results
-(lemmas, theorems, corollaries and propositions). Part VI has 31 theories with 22\,980 lines and 1\,206
+(lemmas, theorems, corollaries and propositions). Part VI has 31 theories with 22\,668 lines and 1\,153
 results, plus an 80-line bridge to the AFP's quantum search bound in a separate session
 (Table~\ref{tab:stats}).
 \section{Related Work}\label{sec:related}
@@ -1548,12 +1548,12 @@ complexity-theoretic facts they cite.
 \toprule
 Part & Theories & Lines & Results\\
 \midrule
-Mathematics (functional calculus, phase estimation) & 5 & 1\,513 & 91\\
-Algorithm (circuits, error analysis, rest of the paper) & 13 & 11\,371 & 561\\
-Program (QHLProver programs and triples) & 6 & 4\,019 & 214\\
-Circuit (elementary gates, sparse simulation) & 7 & 6\,077 & 340\\
+Mathematics (functional calculus, phase estimation) & 5 & 1\,466 & 88\\
+Algorithm (circuits, error analysis, rest of the paper) & 13 & 11\,203 & 525\\
+Program (QHLProver programs and triples) & 6 & 3\,965 & 208\\
+Circuit (elementary gates, sparse simulation) & 7 & 6\,034 & 332\\
 \midrule
-Part VI, HHL & 31 & 22\,980 & 1\,206\\
+Part VI, HHL & 31 & 22\,668 & 1\,153\\
 Bridge to the AFP search bound (separate session) & 1 & 80 & 4\\
 Paulsen's lectures (the foundation) & 50 & 51\,729 & 1\,614\\
 \bottomrule
@@ -1616,43 +1616,43 @@ the AFP entry \emph{Compressed Oracles}.}\label{tab:theories}
 Theory & Content & Lines & Results\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Mathematics}}\\
-\isa{Hermitian\_Functional\_Calculus} & $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
-\isa{Phase\_Estimation} & Fourier matrix, phase estimation, $4/\pi^2$ & 502 & 26\\
-\isa{QPE\_Precision} & tail bound, number of clock qubits & 380 & 18\\
+\isa{Hermitian\_Functional\_Calculus} & $g(A)$, $e^{itA}$, $A^{-1}$ & 416 & 34\\
+\isa{Phase\_Estimation} & Fourier matrix, phase estimation, $4/\pi^2$ & 497 & 26\\
+\isa{QPE\_Precision} & tail bound, number of clock qubits & 345 & 17\\
 \isa{QFT\_Fourier} & the AFP QFT circuit is $F_{2^n}$ & 104 & 4\\
 \isa{QPE\_Register} & $H^{\otimes n}\ket{0\cdots0}$ is uniform & 104 & 7\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Algorithm}}\\
-\isa{HHL} & exact circuit, solution, $1/\kappa^2$, dilation & 816 & 46\\
+\isa{HHL} & exact circuit, solution, $1/\kappa^2$, dilation & 813 & 45\\
 \isa{HHL\_Trajectory} & the eight gates and their states & 591 & 28\\
-\isa{HHL\_Approximate} & inexact phase estimation, clamping & 1\,174 & 53\\
-\isa{HHL\_Window} & sine window, $N\sim1/\varepsilon$ & 1\,210 & 46\\
-\isa{HHL\_Simulation} & oracle circuits, robustness & 745 & 49\\
-\isa{HHL\_Complete} & readout, amplitude amplification & 865 & 42\\
+\isa{HHL\_Approximate} & inexact phase estimation, clamping & 1\,173 & 53\\
+\isa{HHL\_Window} & sine window, $N\sim1/\varepsilon$ & 1\,204 & 44\\
+\isa{HHL\_Simulation} & oracle circuits, robustness & 737 & 48\\
+\isa{HHL\_Complete} & readout, amplitude amplification & 859 & 41\\
 \isa{HHL\_Filter} & filter functions, Lemmas 2--3 & 1\,548 & 68\\
-\isa{HHL\_Filter\_Bounds} & Theorem 1 for every $b$ & 816 & 29\\
-\isa{HHL\_Runtime} & (A32), BHMT averaging, run time & 611 & 21\\
-\isa{HHL\_Reduction} & circuits to matrix inversion & 647 & 55\\
-\isa{HHL\_Rectangular} & rectangular $A$, pseudo-inverse & 385 & 20\\
-\isa{HHL\_Discussion} & $f(A)\ket b$, SWAP test, estimation & 908 & 44\\
-\isa{HHL\_Optimality} & Theorems 4--6 up to cited facts & 1\,055 & 60\\
+\isa{HHL\_Filter\_Bounds} & Theorem 1 for every $b$ & 764 & 28\\
+\isa{HHL\_Runtime} & (A32), BHMT averaging, run time & 598 & 20\\
+\isa{HHL\_Reduction} & circuits to matrix inversion & 596 & 40\\
+\isa{HHL\_Rectangular} & rectangular $A$, pseudo-inverse & 382 & 20\\
+\isa{HHL\_Discussion} & $f(A)\ket b$, SWAP test, estimation & 905 & 43\\
+\isa{HHL\_Optimality} & Theorems 4--6 up to cited facts & 1\,033 & 47\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Program}}\\
-\isa{QPE\_Program} & phase estimation as a program & 426 & 27\\
-\isa{HHL\_Program} & initialisation, programs, triples & 1\,402 & 89\\
+\isa{QPE\_Program} & phase estimation as a program & 410 & 26\\
+\isa{HHL\_Program} & initialisation, programs, triples & 1\,386 & 87\\
 \isa{HHL\_Termination} & repeat until success: total correctness & 502 & 19\\
 \isa{HHL\_Paper\_Program} & the paper's regime as programs & 877 & 31\\
-\isa{HHL\_Gate\_Refinements} & rotation split, window reflection & 635 & 29\\
-\isa{HHL\_Preconditioned} & preconditioned systems & 177 & 19\\
+\isa{HHL\_Gate\_Refinements} & rotation split, window reflection & 616 & 27\\
+\isa{HHL\_Preconditioned} & preconditioned systems & 174 & 18\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Circuit}}\\
-\isa{HHL\_Gates} & elementary gates, QFT circuit, count & 895 & 75\\
-\isa{HHL\_Uniform\_Rotation} & uniformly controlled rotation & 1\,142 & 73\\
-\isa{HHL\_State\_Preparation} & state preparation, window & 785 & 32\\
+\isa{HHL\_Gates} & elementary gates, QFT circuit, count & 892 & 74\\
+\isa{HHL\_Uniform\_Rotation} & uniformly controlled rotation & 1\,138 & 71\\
+\isa{HHL\_State\_Preparation} & state preparation, window & 783 & 31\\
 \isa{HHL\_All\_Elementary} & $\ket b$, routing, exact universality & 1\,031 & 44\\
-\isa{HHL\_Trotter} & Lie--Trotter with explicit error & 572 & 26\\
-\isa{HHL\_Sparse\_Split} & sparse $A$ as $2s$ 1-sparse parts & 460 & 20\\
-\isa{HHL\_Sparse\_Circuit} & the sparse simulation circuit & 1\,192 & 70\\
+\isa{HHL\_Trotter} & Lie--Trotter with explicit error & 549 & 24\\
+\isa{HHL\_Sparse\_Split} & sparse $A$ as $2s$ 1-sparse parts & 452 & 19\\
+\isa{HHL\_Sparse\_Circuit} & the sparse simulation circuit & 1\,189 & 69\\
 \bottomrule
 \end{tabular}
 \end{table}
