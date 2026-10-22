@@ -586,3 +586,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `X`, `Y` (Paulis), `S` — silently turn variables into constants (a lemma about `Y` is about the
   constant, and `OF` then fails with "no unifiers"); after importing QHLProver, `unitary` means
   `Complex_Matrix.unitary` — write `Quantum.unitary`; `simp add: carrier_vecI` hung again.
+- **Lemma 3 erratum, formal** (2026-10-21; user: write a better paper, with the results presented
+  informally and formally).  The paper rewrite needs every reported erratum backed by a theorem, and
+  the Lemma 3 constant was only a text remark.  `HHL_Filter`: `lemma3_paper_constant` (for every κ > 0,
+  at λ = 1/(2κ) and λ̃ = 1/κ the paper's right side π²/32 is below the left side 1/2) and
+  `lemma3_sharp` (for every c < π² some λ, λ̃ in the middle region violate the bound: there the left
+  side is sin²(πκ(λ−λ̃)/2), and sin w ≥ w − w³/6 from `Maclaurin_sin_bound`); `pi_sq_lt_16`.
+  Trap: the full build of Notes/Sylvester/Search re-processes changed Algorithms theories inside the
+  Notes session but does not rebuild the Algorithms heap; build it explicitly before evals or audits.
+  Also: `ev.sh` on a modified session file triggers a full heap rebuild, so test new lemmas in a
+  scratch theory importing the session first.

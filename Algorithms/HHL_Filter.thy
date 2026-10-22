@@ -378,6 +378,12 @@ qed
 
 end
 
+lemma pi_sq_lt_16: "pi\<^sup>2 < 16"
+proof -
+  have "pi * pi < 4 * 4" by (rule mult_strict_mono) (use pi_less_4 pi_gt_zero in auto)
+  thus ?thesis by (simp add: power2_eq_square)
+qed
+
 context
   fixes \<kappa> :: real
   assumes k0: "0 < \<kappa>"
@@ -510,6 +516,120 @@ proof -
       finally show ?thesis unfolding rhs .
     qed
   qed
+qed
+
+text \<open>The paper's constant fails at $\lambda=1/(2\kappa)$, $\tilde\lambda=1/\kappa$; $\pi^2$ is sharp.\<close>
+
+theorem lemma3_paper_constant:
+  "pi\<^sup>2 / 2 * \<kappa>\<^sup>2 * (1 / (2 * \<kappa>) - 1 / \<kappa>)\<^sup>2 * ((filt_f \<kappa> (1 / (2 * \<kappa>)))\<^sup>2 + (filt_g \<kappa> (1 / (2 * \<kappa>)))\<^sup>2)
+   < (filt_f \<kappa> (1 / (2 * \<kappa>)) - filt_f \<kappa> (1 / \<kappa>))\<^sup>2 + (filt_g \<kappa> (1 / (2 * \<kappa>)) - filt_g \<kappa> (1 / \<kappa>))\<^sup>2"
+proof -
+  have fa: "filt_f \<kappa> (1 / (2 * \<kappa>)) = 0" "filt_g \<kappa> (1 / (2 * \<kappa>)) = 1 / 2"
+    using region3[OF k0, of "1 / (2 * \<kappa>)"] by simp_all
+  have fb: "filt_f \<kappa> (1 / \<kappa>) = 1 / 2" "filt_g \<kappa> (1 / \<kappa>) = 0"
+    using region1[OF k0, of "1 / \<kappa>"] k0 by simp_all
+  have d: "\<kappa>\<^sup>2 * (1 / (2 * \<kappa>) - 1 / \<kappa>)\<^sup>2 = 1 / 4"
+  proof -
+    have e: "\<kappa> * (1 / (2 * \<kappa>) - 1 / \<kappa>) = - (1 / 2)" using k0 by (simp add: field_simps)
+    have "\<kappa>\<^sup>2 * (1 / (2 * \<kappa>) - 1 / \<kappa>)\<^sup>2 = (\<kappa> * (1 / (2 * \<kappa>) - 1 / \<kappa>))\<^sup>2" by (simp only: power_mult_distrib)
+    also have "\<dots> = 1 / 4" unfolding e by (simp add: power2_eq_square)
+    finally show ?thesis .
+  qed
+  have L: "pi\<^sup>2 / 2 * \<kappa>\<^sup>2 * (1 / (2 * \<kappa>) - 1 / \<kappa>)\<^sup>2 * ((filt_f \<kappa> (1 / (2 * \<kappa>)))\<^sup>2 + (filt_g \<kappa> (1 / (2 * \<kappa>)))\<^sup>2)
+           = pi\<^sup>2 / 32"
+  proof -
+    have "pi\<^sup>2 / 2 * \<kappa>\<^sup>2 * (1 / (2 * \<kappa>) - 1 / \<kappa>)\<^sup>2 * ((filt_f \<kappa> (1 / (2 * \<kappa>)))\<^sup>2 + (filt_g \<kappa> (1 / (2 * \<kappa>)))\<^sup>2)
+          = pi\<^sup>2 / 2 * (\<kappa>\<^sup>2 * (1 / (2 * \<kappa>) - 1 / \<kappa>)\<^sup>2) * (1 / 4)" unfolding fa by (simp add: power2_eq_square)
+    also have "\<dots> = pi\<^sup>2 / 32" unfolding d by simp
+    finally show ?thesis .
+  qed
+  have R: "(filt_f \<kappa> (1 / (2 * \<kappa>)) - filt_f \<kappa> (1 / \<kappa>))\<^sup>2 + (filt_g \<kappa> (1 / (2 * \<kappa>)) - filt_g \<kappa> (1 / \<kappa>))\<^sup>2 = 1 / 2"
+    unfolding fa fb by (simp add: power2_eq_square)
+  show ?thesis unfolding L R using pi_sq_lt_16 by simp
+qed
+
+theorem lemma3_sharp:
+  assumes c: "c < pi\<^sup>2"
+  shows "\<exists>a b. c * \<kappa>\<^sup>2 * (a - b)\<^sup>2 * ((filt_f \<kappa> a)\<^sup>2 + (filt_g \<kappa> a)\<^sup>2)
+                < (filt_f \<kappa> a - filt_f \<kappa> b)\<^sup>2 + (filt_g \<kappa> a - filt_g \<kappa> b)\<^sup>2"
+proof -
+  define r where "r = c / pi\<^sup>2"
+  have r1: "r < 1" using c by (simp add: r_def)
+  define w where "w = min (pi / 4) (sqrt (3 * (1 - r)) / 2)"
+  have w0: "0 < w" using r1 pi_gt_zero by (simp add: w_def)
+  have w4: "w \<le> pi / 4" by (simp add: w_def)
+  have w1: "w < 1" using w4 pi_less_4 by linarith
+  have ww: "w\<^sup>2 < 3 * (1 - r)"
+  proof -
+    have "w \<le> sqrt (3 * (1 - r)) / 2" by (simp add: w_def)
+    hence "w\<^sup>2 \<le> (sqrt (3 * (1 - r)) / 2)\<^sup>2" using w0 by (intro power_mono) simp_all
+    also have "\<dots> = 3 * (1 - r) / 4" using r1 by (simp add: power_divide)
+    finally have "w\<^sup>2 \<le> 3 * (1 - r) / 4" .
+    moreover have "3 * (1 - r) / 4 < 3 * (1 - r)" using r1 by simp
+    ultimately show ?thesis by (rule le_less_trans)
+  qed
+  have sb: "w - w ^ 3 / 6 \<le> sin w"
+  proof -
+    have "\<bar>sin w - (\<Sum>m<3. sin_coeff m * w ^ m)\<bar> \<le> inverse (fact 3) * \<bar>w\<bar> ^ 3" by (rule Maclaurin_sin_bound)
+    moreover have "(\<Sum>m<3. sin_coeff m * w ^ m) = w" by (simp add: numeral_3_eq_3 sin_coeff_def)
+    moreover have "inverse (fact 3 :: real) = 1 / 6" by (simp add: fact_numeral)
+    ultimately have "\<bar>sin w - w\<bar> \<le> w ^ 3 / 6" using w0 by simp
+    thus ?thesis unfolding abs_le_iff by linarith
+  qed
+  have w2: "w\<^sup>2 < 1" using w0 w1 by (simp add: power2_eq_square) (metis mult_strict_mono' less_eq_real_def mult_1 w0)
+  have sq: "w\<^sup>2 * r < (sin w)\<^sup>2"
+  proof -
+    have "w\<^sup>2 * r < w\<^sup>2 * (1 - w\<^sup>2 / 3)" using ww w0 by (intro mult_strict_left_mono) simp_all
+    also have "\<dots> \<le> w\<^sup>2 * (1 - w\<^sup>2 / 6)\<^sup>2"
+    proof (rule mult_left_mono)
+      have "(1 - w\<^sup>2 / 6)\<^sup>2 = 1 - w\<^sup>2 / 3 + (w\<^sup>2)\<^sup>2 / 36" by (simp add: power2_eq_square field_simps)
+      thus "1 - w\<^sup>2 / 3 \<le> (1 - w\<^sup>2 / 6)\<^sup>2" by simp
+    qed simp
+    also have "\<dots> = (w - w ^ 3 / 6)\<^sup>2" by (simp add: power2_eq_square power3_eq_cube field_simps)
+    also have "\<dots> \<le> (sin w)\<^sup>2"
+    proof (rule power_mono[OF sb])
+      have "w ^ 3 = w * w\<^sup>2" by (simp add: power2_eq_square power3_eq_cube)
+      hence "w ^ 3 / 6 \<le> w" using w0 w2 by (simp add: mult_le_cancel_left1)
+      thus "0 \<le> w - w ^ 3 / 6" by simp
+    qed
+    finally show ?thesis .
+  qed
+  define a where "a = 1 / (2 * \<kappa>)"
+  define b where "b = (1 + 4 * w / pi) / (2 * \<kappa>)"
+  have ab: "a \<le> b" "b \<le> 1 / \<kappa>"
+  proof -
+    show "a \<le> b" using w0 k0 pi_gt_zero by (simp add: a_def b_def divide_right_mono)
+    have "4 * w / pi \<le> 1" using w4 pi_gt_zero by (simp add: field_simps)
+    hence "(1 + 4 * w / pi) / (2 * \<kappa>) \<le> 2 / (2 * \<kappa>)" using k0 by (intro divide_right_mono) simp_all
+    thus "b \<le> 1 / \<kappa>" using k0 by (simp add: b_def)
+  qed
+  have fa: "filt_f \<kappa> a = 0" "filt_g \<kappa> a = 1 / 2" using region3[OF k0, of a] by (simp_all add: a_def)
+  have th: "pi / 2 * (2 * \<kappa> * b - 1) = 2 * w" using k0 pi_gt_zero by (simp add: b_def field_simps)
+  have fb: "filt_f \<kappa> b = sin (2 * w) / 2" "filt_g \<kappa> b = cos (2 * w) / 2"
+    using region2[OF k0, of b] ab unfolding th by (simp_all add: a_def)
+  have lhs: "(filt_f \<kappa> a - filt_f \<kappa> b)\<^sup>2 + (filt_g \<kappa> a - filt_g \<kappa> b)\<^sup>2 = (sin w)\<^sup>2"
+  proof -
+    have "(0 - sin (2 * w) / 2)\<^sup>2 + (1 / 2 - cos (2 * w) / 2)\<^sup>2 = ((sin (2 * w))\<^sup>2 + (cos (2 * w))\<^sup>2 + 1 - 2 * cos (2 * w)) / 4"
+      by (simp add: power2_eq_square field_simps)
+    also have "\<dots> = (1 - cos (2 * w)) / 2" by simp
+    also have "\<dots> = (sin w)\<^sup>2" by (simp add: cos_double_sin)
+    finally show ?thesis unfolding fa fb .
+  qed
+  have ab2: "\<kappa>\<^sup>2 * (a - b)\<^sup>2 = 4 * w\<^sup>2 / pi\<^sup>2"
+  proof -
+    have e: "\<kappa> * (a - b) = - (2 * w / pi)" using k0 pi_gt_zero by (simp add: a_def b_def field_simps)
+    have "\<kappa>\<^sup>2 * (a - b)\<^sup>2 = (\<kappa> * (a - b))\<^sup>2" by (simp only: power_mult_distrib)
+    also have "\<dots> = 4 * w\<^sup>2 / pi\<^sup>2" unfolding e by (simp add: power2_eq_square)
+    finally show ?thesis .
+  qed
+  have rhs: "c * \<kappa>\<^sup>2 * (a - b)\<^sup>2 * ((filt_f \<kappa> a)\<^sup>2 + (filt_g \<kappa> a)\<^sup>2) = w\<^sup>2 * r"
+  proof -
+    have "c * \<kappa>\<^sup>2 * (a - b)\<^sup>2 * ((filt_f \<kappa> a)\<^sup>2 + (filt_g \<kappa> a)\<^sup>2) = c * (\<kappa>\<^sup>2 * (a - b)\<^sup>2) * (1 / 4)"
+      unfolding fa by (simp add: power2_eq_square)
+    also have "\<dots> = w\<^sup>2 * r" unfolding ab2 r_def using pi_gt_zero by simp
+    finally show ?thesis .
+  qed
+  show ?thesis by (rule exI[of _ a], rule exI[of _ b]) (simp only: lhs rhs sq)
 qed
 
 end
