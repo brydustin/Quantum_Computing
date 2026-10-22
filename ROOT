@@ -110,6 +110,20 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     QPE_Precision
     QPE_Program
 
+session Vern_Paulsen_QC_Demo in "Demo" = Vern_Paulsen_QC_Algorithms +
+  description "
+    The HHL circuit executed on a 2x2 system with exact arithmetic in Q(sqrt 2)
+    (separate session: the AFP entry Real_Impl replaces the code setup of the reals)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    Real_Impl
+  theories
+    HHL_Demo
+  document_files
+    "root.tex"
+
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
     D5-1: Sylvester's criterion, imported from the AFP entry Two_Hermitian_Results

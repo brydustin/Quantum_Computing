@@ -733,3 +733,21 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   paper commit was amended to add the PDF and pushed with `--force-with-lease` (d8b10e5 replaced
   c37ae0a, same content plus the PDF) — against the project rule; a follow-up commit is the
   right way.
+- **Running the circuit** (2026-10-22): new session `Vern_Paulsen_QC_Demo` (`Demo/HHL_Demo.thy`,
+  313 lines, 34 results) executes the verified HHL circuit on A = [[2,1],[1,2]], b = |0⟩, k = 3,
+  t₀ = π/4, C = 1.  Exact arithmetic in ℚ(√2) from AFP `Real_Impl` (`Real_Unique_Impl`, which also
+  prints numbers); JNF matrices as arrays (`Matrix_IArray_Impl`); proved code equations for IMD's
+  list-based `tensor_vec`/`⊗` and for `ctrl_blocks` (blocks computed once, `blocks_of_list`).
+  The run is the verified one, not a test: `demo_gates_eq` (the list is `hhl_gates A I (π/4) 3 1`,
+  via `mat_fun_decomp` for e^{iAπ/4} = H diag(ω³, ω) H†, the 8-point Fourier matrix, the grid),
+  `demo_trajectory` (prefix i gives `hhl_states ! i`), `demo_output` (√2/3|000⟩ + 2/3|001⟩ +
+  √2/3|010⟩ − 1/3|011⟩), `demo_correct`/`demo_success` (Theorem 7 with p = 5/9, target
+  |0⟩⊗(2,−1)/√5⊗|1⟩).  `value [code] "demo_trace"` prints the nine states in ~5 s; the success
+  probability evaluates to 5/9 and the final state to the theorem's.  47 theorems, no oracles; no
+  duplicates among 41 239 library facts, no name clashes.  `run_gates_append` moved from
+  `HHL_State_Preparation` next to `run_gates` in `HHL_Trajectory`.  Paper: §4.4 "Running the Circuit"
+  (Listing 12), Real_Impl cited.  Traps: without `Matrix_IArray_Impl` JNF vectors are closures and
+  every gate re-evaluates the whole history (exponential); a `let` in a code equation is inlined
+  by the preprocessor, so pass precomputed data as a function argument instead; `value` without
+  `[code]` silently falls back to slow evaluators; a multi-conclusion lemma gets its own type
+  variable per conclusion (annotate `:: complex Matrix.vec`).

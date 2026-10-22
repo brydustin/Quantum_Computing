@@ -188,9 +188,6 @@ lemma pvec_full:
   shows "pvec k a k = Matrix.vec (2 ^ k) (\<lambda>x. complex_of_real (a x))"
   by (rule eq_vecI) (simp_all add: pvec_def pnorm_def a)
 
-lemma run_gates_append: "run_gates v (xs @ ys) = run_gates (run_gates v xs) ys"
-  by (induction xs arbitrary: v) simp_all
-
 lemma lev_carrier: "j < k \<Longrightarrow> lev k a j \<in> carrier_mat (2 ^ k) (2 ^ k)"
 proof -
   assume j: "j < k"

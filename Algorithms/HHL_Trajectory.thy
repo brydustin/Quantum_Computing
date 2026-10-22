@@ -121,6 +121,9 @@ proof (induction Us arbitrary: v)
   finally show ?case by simp
 qed simp
 
+lemma run_gates_append: "run_gates v (xs @ ys) = run_gates (run_gates v xs) ys"
+  by (induction xs arbitrary: v) simp_all
+
 lemma tensor_carrier: "A \<in> carrier_mat a a \<Longrightarrow> B \<in> carrier_mat c c \<Longrightarrow> A \<Otimes> B \<in> carrier_mat (a * c) (a * c)"
   by (rule carrier_matI) auto
 
