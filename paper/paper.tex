@@ -1,813 +1,1449 @@
-\documentclass[11pt,a4paper]{article}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
+\documentclass[runningheads]{llncs}
+\bibliographystyle{splncs04}
+
+% Latin Modern: Type 1 fonts throughout (see the SEFM camera-ready).
 \usepackage{lmodern}
-\usepackage{amsmath,amssymb,amsthm}
-\usepackage[margin=1.05in]{geometry}
+\usepackage[T1]{fontenc}
+\renewcommand{\ttdefault}{txtt}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{xcolor}
 \usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{url}
+\usepackage{array}
 \usepackage[hidelinks]{hyperref}
-\usepackage{xspace}
+\usepackage{xurl}
+\usepackage{listings}
+\usepackage{isabelle-listings}
+\usepackage{tikz}
+\usetikzlibrary{quantikz2,arrows.meta,positioning,calc,fit,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{orcidlink}
 
 \newcommand{\C}{\mathbb{C}}
 \newcommand{\R}{\mathbb{R}}
-\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Tr}{tr}
 \DeclareMathOperator{\crk}{cr}
-\DeclareMathOperator{\rank}{rank}
+% quantikz defines \ket, \bra and \braket; we use our own.
+\let\ket\relax\let\bra\relax\let\braket\relax\let\ketbra\relax
 \newcommand{\ket}[1]{|#1\rangle}
 \newcommand{\bra}[1]{\langle #1|}
 \newcommand{\braket}[2]{\langle #1|#2\rangle}
 \newcommand{\ketbra}[2]{|#1\rangle\langle #2|}
 \newcommand{\norm}[1]{\|#1\|}
-\newcommand{\isa}[1]{\textsf{#1}}
-\newcommand{\IMD}{Isabelle Marries Dirac\xspace}
+\DeclareRobustCommand{\isa}[1]{\textsf{\def\_{\char95\allowbreak}#1}}
+\newcommand{\sem}[1]{\llbracket #1\rrbracket}
+\newcommand{\hoaret}[3]{\models_{t}\{#1\}\;#2\;\{#3\}}
+\newcommand{\hoarep}[3]{\models_{p}\{#1\}\;#2\;\{#3\}}
+\newcommand{\IMD}{Isabelle Marries Dirac}
 
-\title{Paulsen's Lectures on Quantum Computing and Completely Positive Maps,
-  Formalised in Isabelle/HOL\\[0.4em]
-  \large and a verified HHL algorithm}
-\author{Dustin Bryant}
-\date{October 2026}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.93}
+\lstdefinestyle{isabellestyle}{
+    backgroundcolor=\color{backcolour},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=true, breaklines=true, columns=fullflexible,
+    captionpos=b, keepspaces=true,
+    numbers=none, showspaces=false, showstringspaces=false, tabsize=2,
+    aboveskip=6pt, belowskip=6pt,
+    xleftmargin=2pt, xrightmargin=2pt, framexleftmargin=2pt, framexrightmargin=2pt}
+\lstset{language={Isabelle}, style=isabellestyle, mathescape=true, escapeinside=~~}
+\renewcommand{\lstlistingname}{Listing}
+\AtBeginDocument{\renewcommand{\thelstlisting}{\arabic{lstlisting}}}
+\tikzset{slice/.style={thin, gray!80, dash pattern=on 2pt off 1.5pt, align=center}}
+
+% Links to the formal sources at a fixed commit.  The repository is private at the time of
+% writing; replace \isalink by \isalogo to drop the links.
+\newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/f2607ba777ca1ac81bfd971269790ac84fb102bc}
+\newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
+
+\setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{5pt plus 2pt minus 2pt}
+\raggedbottom
 
 \begin{document}
-\maketitle
 
+\title{Verifying the HHL Algorithm in Isabelle/HOL}
+\subtitle{Quantum Hoare Logic from the Spectral Theorem to Elementary Gates}
+\author{Dustin Bryant\orcidlink{0000-0001-9876-3804}}
+\authorrunning{D. Bryant}
+\institute{Independent, USA \email{brydustin@gmail.com}}
+\maketitle
 \begin{abstract}
-We report on a formalisation in Isabelle/HOL of the mathematical content of Vern
-Paulsen's 2011 lecture course \emph{Quantum Computing and Completely Positive Maps}
-(34 lectures): finite-dimensional Hilbert space theory, the postulates of quantum
-mechanics for pure and mixed states, partial traces, completely positive maps with
-Choi's theorem and the Choi--Kraus representation, the extreme points of the sets of
-unital and trace-preserving completely positive maps (Choi's Theorem~3), the
-Hahn--Banach theorem on matrix spaces, and the separating-hyperplane theory of
-entanglement witnesses.  The development comprises fifty theories and about a
-thousand checked statements on top of the Jordan-Normal-Form and \IMD libraries; it
-builds without \texttt{sorry} or axioms and passes an oracle audit.  A lecture-by-lecture
-audit records, for each statement in the notes, its formal counterpart or the reason
-it is absent, and an Isabelle-generated document reproduces the notes with the formal
-statements in place of the informal proofs.  We then ask what this body of verified
-mathematics contributes towards a machine-checked proof of the Harrow--Hassidim--Lloyd
-(HHL) algorithm in Isabelle, and answer it with a sixth part beyond the notes: a
-functional calculus for Hermitian matrices, quantum phase estimation (exact case and the
-$4/\pi^2$ success bound, on the Archive's QFT circuit) and the HHL algorithm for
-eigenvalues representable in the register, with the output state, the solution
-property, a $1/\kappa^2$ success bound and the reduction of non-Hermitian systems.  The
-for an eigenvalue that is not representable, the output of the physical (angle-clamped)
-circuit is within an explicit $O(1/(t_0\sqrt N))$ of the exact-HHL output, for every
-right-hand side.
+The algorithm of Harrow, Hassidim and Lloyd (HHL) prepares a quantum state proportional to the
+solution of a linear system $Ax=b$, for sparse and well-conditioned $A$ in time polylogarithmic in
+the dimension. It is the prototype of the quantum algorithms for linear algebra. Its correctness
+combines the spectral theorem, phase estimation, a controlled rotation, uncomputation,
+post-selection and amplitude amplification, and the error analysis in the paper's appendix is
+intricate. We verify HHL in Isabelle/HOL as programs of the quantum while-language of the AFP entry
+\emph{QHLProver}, whose Hoare triples make probabilistic statements about measurements. For
+eigenvalues on the phase-estimation grid we prove total correctness: one run succeeds with
+probability $C^2\norm{A^{-1}b}^2$, after which the state is exactly
+$\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$, and the repeat-until-success loop terminates with
+probability one in that state, after $1/p$ rounds on average. For arbitrary spectra we prove
+Theorem~1 of the paper and its run-time bound with explicit constants, and fidelity triples for the
+corresponding programs. We then refine the programs until every gate is a one- or two-qubit unitary,
+including the preparation of $\ket b$, the controlled rotation and, for sparse $A$, a Trotter circuit
+for $e^{iAt}$ with explicit error. The formalisation corrects several statements of the HHL paper;
+in particular, the constant in its Lemma~3 is off by a factor of two. The development rests on a
+formalisation of Paulsen's lecture course on quantum computing and completely positive maps, and it
+builds without \texttt{sorry}, axioms or oracles.
+
+\keywords{Isabelle/HOL \and Quantum Hoare logic \and HHL algorithm \and Phase estimation \and
+Hamiltonian simulation \and Formal verification}
 \end{abstract}
 
-\section{Introduction}
+\section{Introduction}\label{sec:intro}
 
-Machine-checked quantum computing in Isabelle/HOL has so far concentrated on
-algorithms: \IMD~\cite{bordg2021imd,bordg2020afp} formalises qubits, gates, the
-no-cloning theorem, teleportation and the Deutsch and Deutsch--Jozsa algorithms on
-concrete matrices; the quantum Hoare logic of Liu et al.~\cite{liu2019qhl,liu2019afp}
-verifies Grover's algorithm; Manrique~\cite{manrique2025qft} adds the quantum Fourier
-transform.  The mathematics that a graduate course on the subject spends most of its
-time on---positive matrices, the density-matrix formulation, partial traces,
-completely positive maps and their Choi matrices, the convex geometry of channels and
-of separable states---is covered unevenly.  Unruh's libraries~\cite{caballero2021cbo,
-unruh2024tensor,unruh2025kraus} develop much of this for arbitrary Hilbert spaces, in a
-type-based representation of operators; Echenim's entry~\cite{echenim2021pm}
-formalises projective measurements.
+Solving a linear system $Ax=b$ is the workhorse of scientific computing. Harrow, Hassidim and
+Lloyd~\cite{hhl2009} observed that a quantum computer can prepare the state $\ket x\propto A^{-1}\ket
+b$ for a Hermitian $A\in\C^{N\times N}$ in time polynomial in $\log N$, in the condition number
+$\kappa$ and in $1/\varepsilon$, provided $A$ is sparse and $\ket b$ is easy to prepare, while
+classical algorithms take time polynomial in $N$. The algorithm, now called HHL, started the study of
+quantum algorithms for linear algebra and quantum machine learning. Its fine print (state
+preparation, sparse access, the condition number, and the fact that the output is a quantum state
+rather than a list of numbers) has become part of how quantum speedups are assessed~\cite{aaronson2015}.
 
-This paper describes a different kind of project: the end-to-end formalisation of one
-set of lecture notes, Paulsen's \emph{Lectures on Quantum Computing and Completely
-Positive Maps} (Houston, Fall 2011)~\cite{paulsen2011notes}, taken as the specification.
-The notes are an unedited transcription of 34 lectures in five parts (basic
-mathematics; introduction to quantum computing; the theory of completely positive maps;
-entanglement; error correction).  Following them lecture by lecture forces one to
-formalise the whole supporting theory rather than the shortest path to a headline
-theorem, and it produces a natural, externally fixed measure of completeness: the audit
-of Section~\ref{sec:audit}.
+Figure~\ref{fig:hhl} shows the circuit. Write $A=\sum_j\lambda_j\ketbra{u_j}{u_j}$ and $\ket
+b=\sum_j\beta_j\ket{u_j}$. Phase estimation with the unitaries $e^{iAt_0}$ writes an approximation
+$\tilde\lambda_j$ of each eigenvalue into a clock register, which gives the state
+$\sum_j\beta_j\ket{\tilde\lambda_j}\ket{u_j}$. A rotation of an ancilla qubit, controlled by the clock,
+produces the amplitudes $C/\tilde\lambda_j$. Uncomputing the clock and measuring the ancilla then
+leaves, on outcome~$1$, the state $\sum_j(\beta_j/\lambda_j)\ket{u_j}$, which is $A^{-1}\ket b$ up to
+normalisation. The success probability is $C^2\norm{A^{-1}b}^2$, which is at least $1/\kappa^2$ for
+$C=\lambda_{\min}$ and unit~$b$, so the measurement is repeated or amplified. Moreover, every step is
+approximate: the eigenvalues are not exactly representable in the clock, $e^{iAt_0}$ has to be
+simulated, and the condition number enters through the rotation angles. The appendix of the HHL paper
+bounds all of these errors.
 
-The project started as an autoformalisation experiment and was finished by the author
-with AI assistance; everything reported here is checked by Isabelle2025-2 with the
-strict build option \texttt{quick\_and\_dirty = false}, and the principal theorems have
-been checked to depend on no oracles.  The sources, the audit, and the generated
-document are available in the project repository.\footnote{\url{https://github.com/brydustin/Quantum_Computing}}
+\begin{figure}[t]
+\centering
+\scalebox{0.8}{%
+\begin{quantikz}[row sep={0.8cm,between origins}, column sep=0.2cm]
+\lstick{clock $\ket{0}^{\otimes k}$} & \qwbundle{k} &  & \gate{H^{\otimes k}}\slice{$\psi_2$}
+  & \ctrl{1}\slice{$\psi_3$} & \gate{F^\dagger}\slice{$\psi_4$} & \ctrl{2}\slice{$\psi_5$}
+  & \gate{F}\slice{$\psi_6$} & \ctrl{1}\slice{$\psi_7$} & \gate{H^{\otimes k}}\slice{$\psi_8$} & \\
+\lstick{system $\ket{0}^{\otimes s}$} & \qwbundle{s} & \gate{U_b}\slice{$\psi_1$} & & \gate{U^{c}}
+  & & & & \gate{U^{-c}} & & \rstick{$\propto A^{-1}b$ if $1$}\\
+\lstick{ancilla $\ket0$} & & & & & & \gate{R(C/\lambda_c)} & & & & \meter{}
+\end{quantikz}}
+\\[0.6em]
+\renewcommand{\arraystretch}{1.15}\small
+\begin{tabular}{@{}l@{\enspace}l@{\qquad}l@{\enspace}l@{}}
+$\psi_1$ & $\ket0\otimes b\otimes\ket0$ &
+$\psi_5$ & $\sum_j\ket j\otimes\Pi_jb\otimes R(C/\lambda_j)\ket0$\\
+$\psi_2$ & $u\otimes b\otimes\ket0$ &
+$\psi_6$ & $\sum_j\ket j\otimes N^{-1/2}(U^{j}\otimes I)\,w$\\
+$\psi_3$ & $\sum_j\ket j\otimes N^{-1/2}U^{j}b\otimes\ket0$ &
+$\psi_7$ & $u\otimes w$\\
+$\psi_4$ & $\sum_j\ket j\otimes\Pi_jb\otimes\ket0$ &
+$\psi_8$ & $\ket0\otimes w$
+\end{tabular}\\[0.2em]
+{\small $w=\sqrt{I-C^2A^{-2}}\,b\otimes\ket0+CA^{-1}b\otimes\ket1$}
+\caption{The HHL circuit and the state after each of its eight gates, from $\psi_0=\ket{0}\ket{0}\ket{0}$,
+for $N=2^k$, $U=e^{iAt_0}$, $u=N^{-1/2}\sum_j\ket j$ and every eigenvalue of $A$ on the grid
+$\lambda_j=2\pi j/(Nt_0)$ (taken as $2\pi(j-N)/(Nt_0)$ for $j\ge N/2$). Gate~3 applies $U^c$ when
+the clock holds $c$, gate~5 applies $R(C/\lambda_c)$ to the ancilla, where
+$R(c)\ket0=\sqrt{1-c^2}\ket0+c\ket1$, and $\Pi_j$ is the spectral projector of $A$ at $\lambda_j$.
+The table is the theorem \isa{hhl\_steps} (Section~\ref{sec:exact}).}\label{fig:hhl}
+\end{figure}
 
-Contributions.  (1)~A verified formalisation of Parts I--IV of the notes and of the
-elementary part of Part~V: in particular Schur's theorem, the spectral theorem for
-Hermitian matrices, four characterisations of positivity, Cholesky's reduction, the
-measurement postulates and POVMs, the characterisation of density matrices by
-ensembles, partial traces and their compatibility with local measurements, Choi's
-theorem and the Choi--Kraus representation of channels, the adjoint duality between
-unital and trace-preserving maps, Choi's Theorem~3 on extreme points, the Hahn--Banach
-theorem for matrix spaces, and the entanglement-witness characterisation of
-separability.  (2)~A lecture-by-lecture audit that classifies every definition and
-result of the notes as formalised, formalised in a variant form, not formalised, or
-deliberately omitted.  (3)~A document, generated by Isabelle from the theories, that
-restates the notes with the formal statements replacing the informal proofs.
-(4)~A sixth part beyond the notes: phase estimation and the HHL algorithm, verified on
-top of this material (Section~\ref{sec:hhl}).
+HHL is a natural target for program verification. Its specification is probabilistic: it says what
+holds after a measurement and with which probability, and the full algorithm is a loop whose number of
+rounds is random. Quantum Hoare logic~\cite{ying2011,dhondt2006} was designed for such statements. A
+predicate is an operator $0\le P\le I$, read as the observable ``$P$ holds'', and the triple
+$\{P\}\,S\,\{Q\}$ states that for every input the probability of $Q$ after running $S$ is at least the
+probability of $P$ before. HHL has been verified in this style in Coq: Zhou et al.~\cite{zhou2023coqq}
+formalised the pen-and-paper proof of~\cite{zhou2019applied}, and Wu, Deng and Xu~\cite{wu2024local}
+verified it in a logic with distribution formulas. Both treat the exact case, in which every
+eigenvalue satisfies $\lambda_jt_0/2\pi\in\{1,\dots,N-1\}$. Both prove the partial-correctness
+triple $\{I\}\,\mathit{HHL}\,\{\ketbra xx\}$ for the repeat-until-success loop (whenever the loop
+terminates, the system holds $\ket x$), and both take $U_b$, the controlled rotation and the controlled
+evolution as given unitaries.
 
-\section{The notes and the formalisation method}
+This paper reports a verification of HHL in Isabelle/HOL that goes beyond the exact case and below
+the given unitaries. Its theme is one kind of statement, a Hoare triple of the logic of Liu et
+al.~\cite{liu2019qhl,liu2019afp} about a program, established at four levels (Fig.~\ref{fig:layers}).
+The first is the mathematics behind the algorithm. The second is the algorithm with its error
+analysis. The third is the program, with initialisation, measurement and loop. The fourth is the
+circuit of elementary gates. Concretely, the contributions are as follows.
+\begin{itemize}
+\item \emph{Exact HHL, total correctness} (Section~\ref{sec:exact}). One run of the program
+succeeds with probability $C^2\norm{A^{-1}b}^2$ and then holds exactly
+$\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$. The repeat-until-success loop terminates with
+probability one in that state; it exits after exactly $m$ failures with probability $(1-p)^mp$ and
+needs $1/p$ rounds on average. The logic has no total-correctness rule for loops, so we derive one
+for loops whose body re-initialises the state.
+\item \emph{The paper's regime} (Section~\ref{sec:approx}). For eigenvalues anywhere in the spectral
+window, an inexact simulation oracle and the paper's filter functions, we prove the bounds of the
+paper's Theorem~1 and its run-time claim with explicit constants. We also prove fidelity triples
+$\{(1-e^2)\,I\}\,\mathit{HHL}\,\{\ketbra tt\}$ for the corresponding programs.
+\item \emph{Elementary gates} (Section~\ref{sec:gates}). The programs are refined, triple by triple,
+until every gate is a one- or two-qubit unitary on adjacent wires. This covers the Fourier
+transform; the controlled rotation, as a uniformly controlled rotation with Walsh--Hadamard angles; the
+preparation of the clock and of an arbitrary $\ket b$; and, for $s$-sparse $A$, a Trotter circuit for
+$e^{iAt}$ obtained from a graph colouring, with error $8(sLt)^2/r$ after $r(6s-2)$ queries.
+\item \emph{Errata} (Section~\ref{sec:errata}). Mechanising the appendix exposed several false
+statements in the HHL paper, among them the constant in Lemma~3, which must be $\pi^2$ rather than
+$\pi^2/2$. Each erratum reported here is backed by a formal counterexample or a corrected theorem.
+\item \emph{The foundation} (Section~\ref{sec:paulsen}). Everything rests on a formalisation of Vern
+Paulsen's lectures on quantum computing and completely positive maps~\cite{paulsen2011notes}. Its 34
+lectures are formalised in 50 theories and audited statement by
+statement. The spectral theorem and positivity theory of its first ten lectures carry the HHL
+development. Its later lectures develop the completely positive maps that give quantum programs their
+meaning~\cite{ying2016book}.
+\end{itemize}
 
-\paragraph{Representation.}  All objects of the notes are concrete: vectors in $\C^n$ and
-matrices in $M_{m,n}$.  We use the Jordan-Normal-Form library~\cite{thiemann2015jnf}:
-vectors are \isa{complex Matrix.vec} with a dimension hypothesis
-\isa{dim\_vec v = n}, matrices are \isa{complex Matrix.mat} with carrier hypotheses
-\isa{A $\in$ carrier\_mat m n}.  Dimensions are hypotheses rather than types, which is
-how the notes treat them and which is the convention of \IMD, so that its gates,
-inner product, adjoint (\isa{dagger}) and tensor products can be reused directly.  Maps
-$\Phi:M_n\to M_d$ are HOL functions \isa{complex Matrix.mat $\Rightarrow$ complex
-Matrix.mat} constrained only on the carrier; linearity, positivity and complete
-positivity are predicates on such functions.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=0.32cm,
+  box/.style={draw, rounded corners=2pt, align=left, text width=11.3cm, inner sep=4pt, font=\footnotesize},
+  arr/.style={-{Stealth[length=4pt]}, thick, gray}]
+\node[box, fill=teal!6] (L4) {\textbf{Circuit:} every gate a one- or two-qubit unitary on adjacent wires
+  (\S\ref{sec:gates})\\[1pt]
+  \isa{HHL\_Gates}, \isa{HHL\_Uniform\_Rotation}, \isa{HHL\_State\_Preparation}, \isa{HHL\_All\_Elementary},
+  \isa{HHL\_Trotter}, \isa{HHL\_Sparse\_Split}, \isa{HHL\_Sparse\_Circuit}};
+\node[box, fill=blue!5, below=of L4] (L3) {\textbf{Program:} QHLProver programs and their Hoare triples
+  (\S\ref{sec:qhl}, \S\ref{sec:exact}, \S\ref{sec:approx})\\[1pt]
+  \isa{HHL\_Program}, \isa{HHL\_Termination}, \isa{HHL\_Paper\_Program}, \isa{HHL\_Gate\_Refinements},
+  \isa{HHL\_Preconditioned}};
+\node[box, fill=violet!5, below=of L3] (L2) {\textbf{Algorithm:} circuits as matrices, error analysis,
+  the rest of the paper (\S\ref{sec:exact}, \S\ref{sec:approx})\\[1pt]
+  \isa{HHL}, \isa{HHL\_Trajectory}, \isa{HHL\_Approximate}, \isa{HHL\_Window}, \isa{HHL\_Simulation},
+  \isa{HHL\_Complete}, \isa{HHL\_Filter}, \isa{HHL\_Filter\_Bounds}, \isa{HHL\_Runtime},
+  \isa{HHL\_Reduction}, \isa{HHL\_Rectangular}, \isa{HHL\_Discussion}, \isa{HHL\_Optimality}};
+\node[box, fill=orange!6, below=of L2] (L1) {\textbf{Mathematics:} functional calculus, phase estimation
+  (\S\ref{sec:math})\\[1pt]
+  \isa{Hermitian\_Functional\_Calculus}, \isa{Phase\_Estimation}, \isa{QFT\_Fourier}, \isa{QPE\_Register}};
+\node[box, fill=gray!8, below=of L1] (L0) {\textbf{Foundation:} Paulsen's lectures, formalised and audited
+  (\S\ref{sec:paulsen}): spectral theorem, positivity, tensor products, measurement (Lectures 1--10);
+  channels, Choi--Kraus, extreme points, separability, error correction (Lectures 11--34).\\[1pt]
+  AFP: \isa{Jordan\_Normal\_Form}, \isa{Isabelle\_Marries\_Dirac}, \isa{Quantum\_Fourier\_Transform},
+  \isa{QHLProver}};
+\foreach \a/\b in {L0/L1, L1/L2, L2/L3, L3/L4} \draw[arr] (\a.north) -- (\b.south);
+\end{tikzpicture}
+\caption{The four levels of the HHL development and the theories at each level. Part VI of the
+development has 29 theories; the foundation has 50.}\label{fig:layers}
+\end{figure}
 
-Two places in the notes genuinely need topology (compactness and the separation of a
-point from a closed convex cone, Days 22 and 27--28).  For these we introduce a typed
-wrapper \isa{('a,'m,'n) lmat} of matrices of fixed dimension, instantiate the
-HOL-Analysis type classes up to \isa{euclidean\_space} and \isa{heine\_borel}, and
-transport the relevant statements across the wrapper.  The carrier-predicate world and
-the typed world coexist; the former carries almost all of the development, the latter
-is used only where HOL-Analysis is applied.
+All results are checked by Isabelle2025-2 with \texttt{quick\_and\_dirty = false}, so no
+\texttt{sorry} survives, and an audit with \isa{Thm\_Deps.all\_oracles} over all theorems of the
+development finds no oracles. The sources, the generated documents and the audits are in the project
+repository.\footnote{\url{https://github.com/brydustin/Quantum_Computing}} Each listing below links to
+its source line (\isalogo).
 
-\paragraph{Fidelity.}  Statements are formalised as close to the notes as the
-representation permits.  The audit distinguishes faithful statements from
-\emph{variants}; the main variants are: the predicate \isa{psd} carries Hermiticity as an
-explicit conjunct (equivalent by the notes' own Theorem that $\braket{x}{Hx}\in\R$ for
-all $x$ iff $H=H^*$); Cholesky's reduction adds the hypothesis $p_{11}>0$ that the notes
-leave implicit; linear maps are given with explicit additivity and homogeneity
-hypotheses on the carrier; and Choi's Theorem~3 is proved in its trace-preserving form
-with a fixed Kraus list of linearly independent operators, see Section~\ref{sec:choi3}.
-Where the notes themselves are inconsistent we formalise the correct statement and say
-so in the commentary (the notes claim $H^2=X$ on Day~10 and correct it to $H^2=I$ on
-Day~11; they use two sign conventions for the Pauli matrix $Y$).
+The rest of the paper is organised as follows. Section~\ref{sec:qhl} recalls quantum Hoare logic and
+explains how HHL's specifications read as triples. Section~\ref{sec:math} covers the functional
+calculus and phase estimation. Section~\ref{sec:exact} verifies exact HHL as a program, and
+Section~\ref{sec:approx} treats the regime of the paper's error analysis. Section~\ref{sec:gates}
+compiles the programs to elementary gates, and Section~\ref{sec:errata} collects the errata.
+Section~\ref{sec:paulsen} describes the foundation. Sections~\ref{sec:related}
+and~\ref{sec:discussion} discuss related work, the trusted base and the limitations.
+\section{Quantum Hoare Logic in Isabelle}\label{sec:qhl}
 
-\paragraph{Verification discipline.}  The project builds as three Isabelle sessions
-with \texttt{quick\_and\_dirty = false}, so no \texttt{sorry} can survive.  We also
-ran an oracle audit (\isa{Thm\_Deps.all\_oracles} over the principal theorems).  This
-turned up a methodological point worth recording: under \texttt{quick\_and\_dirty =
-true}, Isabelle's \isa{Goal.prove\_sorry} discharges package-internal goals of
-\isa{fun} and \isa{record} definitions with \isa{Skip\_Proof.cheat\_tac}, so every
-theorem downstream of such a definition reports the oracle \isa{Pure.skip\_proof} even
-in a development that contains no \texttt{sorry} at all.  Oracle audits are only
-meaningful on builds with the strict option.
+\subsection{States, Gates and Programs}
 
-\section{What is formalised}\label{sec:what}
+We use the concrete representation of the Jordan-Normal-Form library~\cite{thiemann2015jnf}, shared
+by \IMD~\cite{bordg2021imd,bordg2020afp}, the quantum Fourier transform entry~\cite{manrique2025qft}
+and QHLProver~\cite{liu2019qhl,liu2019afp}. A state is a vector \isa{v :: complex vec} with a
+dimension hypothesis \isa{dim\_vec v = n}, an operator is a matrix with a carrier hypothesis
+\isa{A $\in$ carrier\_mat n n}, $\otimes$ is the Kronecker product (\isa{tensor\_vec} for vectors),
+$\ket j$ is the unit vector \isa{unit\_vec n j}, $\braket vw$ is antilinear in~$v$, and $A^\dagger$ is
+the conjugate transpose. Dimensions are hypotheses rather than types, which is how the lecture notes
+and the physics literature treat them, and which lets the libraries share their definitions. The
+registers of HHL are ordered clock $\otimes$ system $\otimes$ ancilla, of dimensions $N=2^k$, $n$
+and~$2$.
 
-Table~\ref{tab:theories} lists the theories.  We describe the content by lecture group;
-the names in brackets are the Isabelle theorems.
+QHLProver formalises Ying's quantum while-language~\cite{ying2011,ying2016book}:
+\[
+S \;::=\; \mathbf{skip} \;\mid\; U \;\mid\; S_1;S_2 \;\mid\; \mathbf{measure}\ M\ [S_0,\dots,S_{m-1}]
+\;\mid\; \mathbf{while}\ M\ \mathbf{do}\ S .
+\]
+A measurement is a family $M_0,\dots,M_{m-1}$ with $\sum_kM_k^\dagger M_k=I$, and a loop is controlled
+by a two-outcome measurement. Programs act on partial density operators ($\rho\ge0$,
+$\Tr\rho\le1$):
+\begin{gather*}
+\sem{U}\rho=U\rho U^\dagger,\qquad \sem{S_1;S_2}=\sem{S_2}\circ\sem{S_1},\\
+\sem{\mathbf{measure}\ M\ \bar S}\rho=\textstyle\sum_k\sem{S_k}(M_k\rho M_k^\dagger),\\
+\sem{\mathbf{while}\ M\ \mathbf{do}\ S}\rho=\textstyle\sum_{m\ge0}M_0\,\bigl((\sem S\circ\mathcal
+M_1)^m\rho\bigr)\,M_0^\dagger,\quad\text{where } \mathcal M_1(\rho)=M_1\rho M_1^\dagger .
+\end{gather*}
+The loop runs $S$ on outcome~$1$ and exits on outcome~$0$, and the $m$-th summand is the part of the
+input that exits after $m$ rounds. The meaning of a program is a completely positive,
+trace-non-increasing map, and the trace lost by a loop is the probability that it does not terminate.
 
-{\small
-\begin{longtable}{p{0.31\textwidth}p{0.45\textwidth}rr}
-\caption{The fifty theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,614 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15, and the conjecture of Day~21 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 22\,134 lines, 1\,162 results, not included in the counts above).}\label{tab:theories}\\
+\subsection{Predicates and Triples}
+
+A quantum predicate is an operator $0\le P\le I$. For a state $\rho$, $\Tr(P\rho)$ is the expected
+value of the observable $P$; for a projector it is the probability that measuring $\{P,I-P\}$ yields
+$P$. A triple compares these probabilities before and after the program (Listing~\ref{lst:triples}):
+$\hoaret PSQ$ holds if $\Tr(P\rho)\le\Tr(Q\sem S\rho)$ for every input $\rho$, and partial correctness
+adds the probability $\Tr\rho-\Tr\sem S\rho$ of not terminating to the right-hand side. These are
+D'Hondt and Panangaden's predicates~\cite{dhondt2006} with Ying's notion of
+correctness~\cite{ying2011}.
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Quantum predicates and triples in QHLProver (inside the locale
+\isa{state\_sig}, where \isa{d} is the dimension of the state space; syntax annotations
+omitted)},label={lst:triples}]
+definition is_quantum_predicate :: "complex mat ~$\Rightarrow$~ bool" where
+  "is_quantum_predicate P ~$\longleftrightarrow$~ P ~$\in$~ carrier_mat d d ~$\wedge$~ positive P ~$\wedge$~ P ~$\le_{L}$~
+      1~$_{m}$~ d"
+definition hoare_total_correct :: "complex mat ~$\Rightarrow$~ com ~$\Rightarrow$~ complex mat
+    ~$\Rightarrow$~ bool" where
+  "~$\models_{t}$~ {P} S {Q} ~$\longleftrightarrow$~ (~$\forall\rho\in$~density_states. trace (P * ~$\rho$~) ~$\le$~ trace (Q *
+      denote S ~$\rho$~))"
+definition hoare_partial_correct :: "complex mat ~$\Rightarrow$~ com ~$\Rightarrow$~ complex
+    mat ~$\Rightarrow$~ bool" where
+  "~$\models_{p}$~ {P} S {Q} ~$\longleftrightarrow$~ (~$\forall\rho\in$~density_states.
+      trace (P * ~$\rho$~) ~$\le$~ trace (Q * denote S ~$\rho$~) + (trace ~$\rho$~ - trace
+          (denote S ~$\rho$~)))"
+\end{lstlisting}
+\end{minipage}
+
+QHLProver also defines a proof system $\vdash_p$ for partial correctness and proves it sound and
+complete~\cite{liu2019qhl}:
+\begin{gather*}
+\frac{}{\{U^\dagger PU\}\;U\;\{P\}}\quad\
+\frac{\{P\}\,S_1\,\{Q\}\quad\{Q\}\,S_2\,\{R\}}{\{P\}\;S_1;S_2\;\{R\}}\quad\
+\frac{P\le P'\quad\{P'\}\,S\,\{Q'\}\quad Q'\le Q}{\{P\}\;S\;\{Q\}}\\[0.5em]
+\frac{\{P_k\}\,S_k\,\{Q\}\ \ (k<m)}{\{\sum_kM_k^\dagger P_kM_k\}\;\mathbf{measure}\ M\ \bar S\;\{Q\}}\qquad
+\frac{\{Q\}\;S\;\{R\}}{\{R\}\;\mathbf{while}\ M\ \mathbf{do}\ S\;\{P\}}
+\end{gather*}
+where $R=M_0^\dagger PM_0+M_1^\dagger QM_1$ in the loop rule,
+together with the rule for \textbf{skip}. The rules compute weakest preconditions backwards through
+a program. For loop-free programs, partial and total correctness coincide because such programs
+preserve the trace.
+
+\subsection{HHL's Specification as Triples}
+
+Every statement about HHL in this paper is a triple of one of four shapes
+(Table~\ref{tab:readings}). Let $P_0$ and $P_1$ be the projectors onto ancilla value $0$ and~$1$
+(\isa{anc\_proj}), and let $\ket t$ be a unit vector with $P_1\ket t=\ket t$, typically
+$\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$. Since $\Tr\rho=1$ for a state, a precondition
+$q\cdot I$ asserts the number $q$ for every input. The second reading needs a short argument. Let
+$\sigma=\sem S\rho$ for a state $\rho$. Then $\Tr\sigma\le1$, and $\Tr((P_0+\ketbra tt)\sigma)\ge1$
+forces $\Tr((P_1-\ketbra tt)\sigma)\le0$. Since $P_1-\ketbra tt\ge0$, this gives
+$P_1\sigma P_1=\bra t\sigma\ket t\,\ketbra tt$: whenever the ancilla reads~$1$, the state is
+exactly~$\ket t$.
+
+\begin{table}[t]
+\caption{The four shapes of triple used for HHL, for a state $\rho$ with $\Tr\rho=1$.}\label{tab:readings}
+\centering\small
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{6.9cm}@{}}
 \toprule
-Theory & Lectures & lines & results\\
+Triple & Reading\\
 \midrule
-\endfirsthead
-\toprule
-Theory & Lectures & lines & results\\
-\midrule
-\endhead
+$\hoaret{p\cdot I}{S}{P_1}$ & $S$ terminates with the ancilla in $\ket1$ with probability $\ge p$\\
+$\hoaret{I}{S}{P_0+\ketbra tt}$ & whenever the ancilla reads $1$ at the end, the state is exactly $\ket t$\\
+$\hoaret{I}{S}{\ketbra tt}$ & $S$ terminates with probability one, in the state $\ket t$\\
+$\hoaret{q\cdot I}{S}{\ketbra tt}$ & the output has fidelity at least $q$ with $\ket t$\\
 \bottomrule
-\endfoot
-\isa{Basic\_Math} & 1--2: inner products, matrix units, trace, projections, Parseval & 1\,672 & 74\\
-\isa{Quantum\_Computing\_3\_10} & 3--10: unitaries, Schur, spectral theorem, positivity, tensors, postulates & 7\,946 & 162\\
-\isa{Quantum\_Computing11} & 11--22, 29--32: channels, density matrices, Choi, convexity, codes & 11\,232 & 315\\
-\isa{Day23\_ChoiExtremeUCP} & 23: Choi's Theorem~3, CP Radon--Nikodym & 7\,002 & 104\\
-\isa{Matrix\_Typed} & 25: Hahn--Banach on matrix spaces & 1\,346 & 44\\
-\isa{Essential\_Functional\_Analysis} & Hilbert--Schmidt analysis, Carath\'eodory & 2\,536 & 38\\
-\isa{Lmat\_Euclidean} & typed matrices as a Euclidean space & 780 & 24\\
-\isa{Separable\_Cone} & 27--28: separable cone, witnesses & 3\,107 & 63\\
-\isa{Day24\_Separability} & 26--28 restated lecture by lecture & 211 & 16\\
+\end{tabular}
+\end{table}
+
+\subsection{What We Add to the Logic}
+
+\paragraph{Initialisation.} QHLProver has no statement that prepares a fixed state. We build one from
+a measurement in the computational basis followed by a permutation that moves the outcome~$k$
+to~$0$. Its rule says that after \isa{init\_com} the probability of $Q$ is $\bra0Q\ket0$, whatever the
+input.\isalink{Algorithms/HHL_Program.thy}{152}
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Initialisation: a measurement and $K$ swaps, and its proof rule},label={lst:init}]
+definition init_com :: "nat ~$\Rightarrow$~ com" where
+  "init_com K = Measure K (proj_basis K) (map (~$\lambda$~k. Utrans (swap0 K
+      k)) [0..<K])"
+theorem hoare_init:
+  assumes Q: "is_quantum_predicate Q" and d0: "0 < d"
+  shows "~$\vdash_{p}$~ {Q ~\$\$~ (0, 0) ~$\cdot_{m}$~ 1~$_{m}$~ d} init_com d {Q}"
+\end{lstlisting}
+\end{minipage}
+
+\paragraph{Gate lists.} A circuit $U_1,\dots,U_m$ becomes the program
+$\isa{utrans\_seq}\,[U_1,\dots,U_m]=U_1;\dots;U_m$. All theorems about HHL programs are proved for
+every list of unitaries whose product (\isa{circuit\_mat}) equals that of the eight gates of
+Fig.~\ref{fig:hhl}. A refinement that replaces gates by circuits with the same product therefore
+inherits every triple, which is how Section~\ref{sec:gates} reaches elementary gates.
+
+\paragraph{Total correctness of loops.} The proof system covers partial correctness only. For loops
+whose body re-initialises the state, we derive total correctness from the semantics
+(Section~\ref{sec:rus}).
+
+\paragraph{Fidelity triples.} For a program that initialises, runs a circuit and measures, the
+probability of $\ketbra tt$ is the overlap $|\braket t\psi|^2$ with the circuit's output~$\psi$.
+Section~\ref{sec:approx-programs} uses this to turn the error bounds of the algorithm into triples.
+\section{The Mathematics: Functional Calculus and Phase Estimation}\label{sec:math}
+
+\subsection{A Functional Calculus for Hermitian Matrices}
+
+HHL applies three functions to $A$: the evolution $e^{iAt}$, the inverse $A^{-1}$, and
+$x\mapsto\sqrt{1-C^2/x^2}$, which appears in the output. We define $g(A)$ for Hermitian $A$ and any
+$g:\R\to\C$ as the matrix that acts on every eigenvector by the value of $g$ at its eigenvalue
+(Listing~\ref{lst:matfun}).
+
+\begin{theorem}[functional calculus]\label{thm:matfun}
+Let $A\in\C^{n\times n}$ be Hermitian. There is exactly one matrix $g(A)$ with $g(A)v=g(\lambda)v$ for
+every eigenvector $v$ of $A$ with eigenvalue~$\lambda$, and $g(A)=U\operatorname{diag}(g(d_1),\dots,g(d_n))
+U^\dagger$ for every spectral decomposition $U^\dagger AU=\operatorname{diag}(d_1,\dots,d_n)$.
+\end{theorem}
+
+Existence comes from the spectral theorem of Paulsen's Lecture~4
+(\isa{hermitian\_spectral\_decomp}), and uniqueness from the fact that the eigenvectors span.
+Multiplicativity $g(A)h(A)=(gh)(A)$, $g(A)^\dagger=\bar g(A)$, unitarity when $|g|=1$ on the spectrum,
+and positivity when $g\ge0$ on it are all checked on eigenvectors. The instances are
+$\isa{evolution}\ A\ t=e^{itA}$, with its group law, and $\isa{herm\_inv}\ A=A^{-1}$. Since $1/0=0$ in
+HOL, \isa{herm\_inv} is the pseudo-inverse when $0$ is an eigenvalue (Section~\ref{sec:exact-other}).
+The device behind the whole development is the following lemma: two matrices that agree on every
+eigenvector of a Hermitian $A$ are equal (\isa{eigvec\_mat\_eqI}). It lets every statement about all
+right-hand sides~$b$ be proved for an eigenvector, without sums over an eigenbasis.\isalink{Algorithms/Hermitian_Functional_Calculus.thy}{113}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={The functional calculus},label={lst:matfun}]
+definition fun_on_eigen :: "complex mat ~$\Rightarrow$~ (real ~$\Rightarrow$~ complex) ~$\Rightarrow$~
+    complex mat ~$\Rightarrow$~ bool" where
+  "fun_on_eigen A g B ~$\longleftrightarrow$~ (~$\forall$~v l. dim_vec v = dim_row A ~$\longrightarrow$~
+     A *~$_{v}$~ v = complex_of_real l ~$\cdot_{v}$~ v ~$\longrightarrow$~ B *~$_{v}$~ v = g l ~$\cdot_{v}$~ v)"
+definition mat_fun :: "(real ~$\Rightarrow$~ complex) ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ complex
+    mat" where
+  "mat_fun g A = (SOME B. B ~$\in$~ carrier_mat (dim_row A) (dim_row A)
+      ~$\wedge$~ fun_on_eigen A g B)"
+theorem mat_fun_eigen:
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A"
+      and v: "dim_vec v = n" and ev: "A *~$_{v}$~ v = complex_of_real l ~$\cdot_{v}$~
+          v"
+  shows "mat_fun g A *~$_{v}$~ v = g l ~$\cdot_{v}$~ v"
+theorem mat_fun_decomp:
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and sd:
+      "spectral_decomp A U D"
+  shows "mat_fun g A = U * diag_cmat (map g D) * (U~$^{\dagger}$~)"
+\end{lstlisting}
+\end{minipage}
+
+\subsection{Phase Estimation}
+
+Let $F_N$ be the Fourier matrix, $(F_N)_{jk}=\omega^{jk}/\sqrt N$ with $\omega=e^{2\pi i/N}$, and let
+$\Lambda(U)=\sum_c\ketbra cc\otimes U^c$ be the controlled powers of~$U$ (\isa{ctrl\_pow}). Phase
+estimation is $(F_N^\dagger\otimes I)\Lambda(U)$ applied to the uniform clock state
+$u=N^{-1/2}\sum_c\ket c$ (Fig.~\ref{fig:hhl}, gates~2--4).
+
+\begin{theorem}[phase estimation]\label{thm:qpe}
+If $Uv=e^{2\pi i\varphi}v$, then $(F_N^\dagger\otimes I)\Lambda(U)(u\otimes v)=(\sum_j\alpha_j\ket
+j)\otimes v$ with $\alpha_j=\frac1N\sum_{k<N}e^{2\pi ik(\varphi-j/N)}$. If $\varphi=j_0/N$, then
+$\alpha=\ket{j_0}$. If $|\varphi-j/N|\le1/(2N)$, then $|\alpha_j|^2\ge4/\pi^2$.
+\end{theorem}
+
+The first part is phase kickback: $\Lambda(U)(\ket c\otimes v)=e^{2\pi ic\varphi}\ket c\otimes v$. The
+bound follows from the geometric sum, $|e^{ix}-1|=2|\sin(x/2)|$ and Jordan's inequality
+$\sin x\ge2x/\pi$ on $[0,\pi/2]$. Two bridges connect the theorem to circuits. The quantum Fourier
+transform circuit of the AFP~\cite{manrique2025qft} is the Fourier matrix (\isa{ordered\_QFT\_fourier},
+by induction over its Kronecker structure), and $k$ Hadamard gates prepare the uniform state from
+$\ket{0\cdots0}$ (\isa{hadamard\_layer\_zero}, from \IMD).\isalink{Algorithms/Phase_Estimation.thy}{260}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Phase estimation, the $4/\pi^2$ bound, and the bridges to circuits},label={lst:qpe}]
+theorem phase_estimation:
+  assumes U: "U ~$\in$~ carrier_mat m m" and u: "dim_vec u = m"
+      and ev: "U *~$_{v}$~ u = cis (2 * pi * ~$\varphi$~) ~$\cdot_{v}$~ u"
+  shows "(((fourier N)~$^{\dagger}$~) ~$\otimes$~ 1~$_{m}$~ m) *~$_{v}$~ (ctrl_pow N m U *~$_{v}$~ tensor_vec
+      (uniform_state N) u) =
+         tensor_vec (Matrix.vec N (pe_amp N ~$\varphi$~)) u"
+theorem phase_estimation_bound:
+  assumes N: "0 < N" and close: "~$|\varphi$~ - real j / real N~$|$~ ~$\le$~ 1 / (2 *
+      real N)"
+  shows "4 / pi~$^{2}$~ ~$\le$~ (cmod (pe_amp N ~$\varphi$~ j))~$^{2}$~"
+theorem ordered_QFT_fourier: "ordered_QFT n = fourier (2 ^ n)"
+theorem hadamard_layer_zero:
+  assumes n: "1 ~$\le$~ n"
+  shows "(Hadamard ~$\otimes^{n}$~) *~$_{v}$~ unit_vec (2 ^ n) 0 = uniform_state (2 ^
+      n)"
+\end{lstlisting}
+\end{minipage}
+\section{Exact HHL as a Verified Program}\label{sec:exact}
+
+In this section every eigenvalue of $A$ is a grid value: $\lambda_k=2\pi k/(Nt_0)$ for $k<N/2$ and
+$2\pi(k-N)/(Nt_0)$ otherwise (\isa{reg\_eig}), so that $e^{it_0\lambda_k}=\omega^k$ and phase
+estimation is exact. This is the setting of the Coq proofs~\cite{zhou2023coqq,wu2024local};
+Section~\ref{sec:approx} removes it.
+
+\subsection{The Circuit}
+
+The circuit is $W^\dagger RW$, with phase estimation $W=(F_N^\dagger\otimes I)\Lambda(e^{iAt_0}\otimes I)$
+and the controlled rotation $R=\sum_k\ketbra kk\otimes I\otimes R(C/\lambda_k)$. Here
+$R(c)=\left(\begin{smallmatrix}\sqrt{1-c^2}&-c\\c&\sqrt{1-c^2}\end{smallmatrix}\right)$ is unitary for
+$|c|\le1$.
+
+\begin{theorem}[exact HHL]\label{thm:hhl}
+Let $A\in\C^{n\times n}$ be Hermitian with every eigenvalue a nonzero grid value $\lambda_k$, $0<k<N$.
+Then for every $b\in\C^n$ and every real $C$,
+\[
+W^\dagger RW\,(u\otimes b\otimes\ket0)=u\otimes\bigl(\sqrt{I-C^2A^{-2}}\,b\otimes\ket0+CA^{-1}b\otimes\ket1\bigr).
+\]
+Hence $x=A^{-1}b$ solves $Ax=b$, the ancilla reads $1$ with probability $C^2\norm x^2$, and if
+$C\le|\lambda|\le\Lambda$ on the spectrum, this probability is at least $(C/\Lambda)^2\norm b^2$, which
+is $1/\kappa^2$ for unit $b$ and $C=\lambda_{\min}$.\isalink{Algorithms/HHL.thy}{481}
+\end{theorem}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Exact HHL as a matrix identity, for every right-hand side},label={lst:hhl}]
+theorem hhl:
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and t0: "0 < t0"
+      and N: "0 < N"
+      and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ ~$\exists$~k. 0 < k ~$\wedge$~ k < N ~$\wedge$~ l =
+          reg_eig t0 N k"
+      and b: "dim_vec b = n"
+  shows "hhl_circuit A t0 N C *~$_{v}$~ tensor_vec (uniform_state N)
+      (tensor_vec b (unit_vec 2 0)) =
+         tensor_vec (uniform_state N)
+           (tensor_vec (mat_fun (~$\lambda$~x. complex_of_real (sqrt (1 - (C
+               / x)~$^{2}$~))) A *~$_{v}$~ b) (unit_vec 2 0) +
+            tensor_vec ((complex_of_real C ~$\cdot_{m}$~ herm_inv A) *~$_{v}$~ b)
+                (unit_vec 2 1))"
+\end{lstlisting}
+\end{minipage}
+
+The proof first takes $b$ to be an eigenvector with eigenvalue $\lambda_k$
+(\isa{hhl\_eigen}). Phase estimation sends $u\otimes b$ to $\ket k\otimes b$ by
+Theorem~\ref{thm:qpe}, the rotation acts on the single branch~$k$, and $W^\dagger$ undoes~$W$. Both
+sides of the identity are linear in $b$ and of the form $Mb$ for matrices $M$ built with
+\isa{lift\_mat}, so \isa{eigvec\_mat\_eqI} extends the identity to all~$b$. The success bound applies
+the functional calculus to $g(x)=1/x^2-1/\Lambda^2$, which is non-negative on the spectrum, so $g(A)$ is
+positive (\isa{hhl\_success\_bound}).
+
+\subsection{The Program and its Trajectory}
+
+As a program, HHL starts from $\ket{0}\ket{0}\ket{0}$. It prepares $\ket b=U_b\ket0$ and the uniform
+clock with Hadamard gates, so the circuit has eight gates (\isa{hhl\_gates}, Fig.~\ref{fig:hhl}). The
+table of Fig.~\ref{fig:hhl} is the theorem \isa{hhl\_steps}, which gives the state after each gate for
+every~$b$. Phase estimation leaves $\sum_j\ket j\otimes\Pi_jb\otimes\ket0$, where $\Pi_j=g_j(A)$ for the
+indicator $g_j$ of $\{\lambda_j\}$. With the unitary rule and the rule of consequence, each line
+becomes a triple $\{\ketbra{\psi_i}{\psi_i}\}\,U_i\,\{\ketbra{\psi_{i+1}}{\psi_{i+1}}\}$
+(\isa{hhl\_step\_triples}). The program initialises all registers, runs the gates and measures the
+ancilla (Listing~\ref{lst:prog}).\isalink{Algorithms/HHL_Program.thy}{681}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={The HHL programs: one run, and repeat until the ancilla reads $1$},label={lst:prog}]
+definition hhl_prog :: "nat ~$\Rightarrow$~ complex mat list ~$\Rightarrow$~ com" where
+  "hhl_prog K Us = init_com K ;; utrans_seq Us ;; Measure 2
+      (anc_proj K) [SKIP, SKIP]"
+definition hhl_rus_prog :: "nat ~$\Rightarrow$~ complex mat list ~$\Rightarrow$~ com" where
+  "hhl_rus_prog K Us = init_com K ;; utrans_seq Us ;;
+                       While (~$\lambda$~j. anc_proj K (1 - j)) (init_com K
+                           ;; utrans_seq Us)"
+definition hhl_program :: "complex mat ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ real ~$\Rightarrow$~ nat
+    ~$\Rightarrow$~ real ~$\Rightarrow$~ com" where
+  "hhl_program A Ub t0 k C = hhl_prog (2 ^ k * (dim_row A * 2))
+      (hhl_gates A Ub t0 k C)"
+\end{lstlisting}
+\end{minipage}
+
+\begin{theorem}[exact HHL, one run]\label{thm:prog}
+Let $A$ be as in Theorem~\ref{thm:hhl} with $N=2^k$, let $U_b$ be a unitary with $U_b\ket0=b$, and let
+$|C/\lambda_j|\le1$ for all $j<N$. Let $p=C^2\norm{A^{-1}b}^2$ and
+$\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$. Then
+\[
+\hoaret{p\cdot I}{\mathit{hhl\_program}}{P_1}\qquad\text{and}\qquad
+\hoaret{I}{\mathit{hhl\_program}}{P_0+\ketbra tt}.
+\]
+\end{theorem}
+
+By Table~\ref{tab:readings}, a single run succeeds with probability at least~$p$, and on success the
+state is exactly~$\ket t$. The hypothesis on $C$ makes the rotation gate unitary, as the program
+semantics requires. Listing~\ref{lst:progthm} shows the formal statement, including the context that
+fixes the hypotheses.\isalink{Algorithms/HHL_Program.thy}{1310}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Theorem~\ref{thm:prog} (\isa{state\_sig.hoare\_total\_correct dims} is $\models_t$ on the registers \isa{dims})},label={lst:progthm}]
+context
+  fixes A Ub :: "complex mat" and b :: "complex vec" and n k ::
+      nat and t0 C :: real
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and n0: "0 < n"
+      and k: "1 ~$\le$~ k" and t0: "0 < t0"
+    and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ ~$\exists$~j. 0 < j ~$\wedge$~ j < 2 ^ k ~$\wedge$~ l
+        = reg_eig t0 (2 ^ k) j"
+    and Ub: "Ub ~$\in$~ carrier_mat n n" "unitary Ub" "Ub *~$_{v}$~ unit_vec n
+        0 = b"
+    and Cb: "~$\bigwedge$~j. j < 2 ^ k ~$\Longrightarrow$~ ~$|$~C / reg_eig t0 (2 ^ k) j~$|$~ ~$\le$~ 1"
+begin
+theorem hhl_success_total:
+  "state_sig.hoare_total_correct [2 ^ k, n, 2]
+     (complex_of_real (C~$^{2}$~ * ~$\|$~herm_inv A *~$_{v}$~ b~$\|^{2}$~) ~$\cdot_{m}$~ 1~$_{m}$~ (2 ^ k * (n
+         * 2)))
+     (hhl_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
+theorem hhl_correct_total:
+  "state_sig.hoare_total_correct [2 ^ k, n, 2] (1~$_{m}$~ (2 ^ k * (n *
+      2))) (hhl_program A Ub t0 k C)
+     (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b)
+         (hhl_target A k b))"
+\end{lstlisting}
+\end{minipage}
+
+The partial-correctness versions are derived with the proof rules (\isa{hhl\_success},
+\isa{hhl\_correct}). The postcondition is pulled back through the measurement with the measurement
+rule, through the gates with the unitary rule, which along the trajectory turns it into a predicate
+whose value on $\ket{000}$ is $p$ (respectively~$1$), and through the initialisation with
+\isa{hoare\_init}. Total correctness follows because programs without loops preserve the trace
+(\isa{denote\_trace\_eq}). All of this is proved for any gate list with the circuit of the eight
+gates (\isa{hhl\_prog\_success}, \isa{hhl\_prog\_correct}).
+
+\subsection{Repeat Until Success}\label{sec:rus}
+
+A failed run (ancilla~$0$) is discarded and the program is run again. This is the loop
+\isa{hhl\_rus\_prog} of Listing~\ref{lst:prog}, which exits when the ancilla reads~$1$. Partial
+correctness, $\hoarep{I}{\mathit{hhl\_rus}}{\ketbra tt}$ (\isa{hhl\_rus\_correct}), follows from the
+loop rule. Its invariant is $P_0+\ketbra tt$, the postcondition of the second triple of
+Theorem~\ref{thm:prog}. It says nothing about termination,
+and QHLProver has no rule for total correctness of loops. We therefore work in the semantics.
+Because the body begins with \isa{init\_com}, it maps every input $\rho$ to $(\Tr\rho)\,\sigma$ for the
+fixed state $\sigma=\sem{\mathit{init};U_1;\dots;U_8}(\ketbra00)$. The $m$-th summand of the loop
+semantics is then $(1-p)^m$ times the exit of one round, and the loop is a geometric series.
+
+\begin{lemma}[loops with a resetting body]\label{lem:reset}
+Let $M$ be a two-outcome measurement and $S$ a body with $\sem S\rho=(\Tr\rho)\,\sigma$ for every
+partial density operator $\rho$, where $\Tr\sigma=1$, $\Tr(M_1\sigma M_1^\dagger)=1-p$ and $0<p\le1$.
+Let $Q$ be a predicate and $v=\Tr(QM_0\sigma M_0^\dagger)$. Then
+$\Tr\bigl(Q\,\sem{\mathbf{while}\ M\ \mathbf{do}\ S}(c\sigma)\bigr)\ge cv/p$ for $0\le c\le1$.\isalink{Algorithms/HHL_Termination.thy}{232}
+\end{lemma}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Lemma~\ref{lem:reset}},label={lst:reset}]
+lemma while_reset_total:
+  assumes M: "measurement d 2 M" and Sc: "well_com Sc"
+    and ~$\sigma$~: "~$\sigma$~ ~$\in$~ carrier_mat d d" "partial_density_operator ~$\sigma$~"
+        "trace ~$\sigma$~ = 1"
+    and reset: "~$\bigwedge\rho$~. ~$\rho$~ ~$\in$~ carrier_mat d d ~$\Longrightarrow$~ partial_density_operator
+        ~$\rho$~ ~$\Longrightarrow$~ denote Sc ~$\rho$~ = trace ~$\rho$~ ~$\cdot_{m}$~ ~$\sigma$~"
+    and p: "trace (M 1 * ~$\sigma$~ * adjoint (M 1)) = complex_of_real (1 -
+        p)" "0 < p" "p ~$\le$~ 1"
+    and Q: "is_quantum_predicate Q" and v: "trace (Q * (M 0 * ~$\sigma$~ *
+        adjoint (M 0))) = complex_of_real v"
+    and c: "0 ~$\le$~ c" "c ~$\le$~ 1"
+  shows "complex_of_real (c * v / p) ~$\le$~ trace (Q * denote (While M
+      Sc) (complex_of_real c ~$\cdot_{m}$~ ~$\sigma$~))"
+\end{lstlisting}
+\end{minipage}
+
+For HHL, $M_0=P_1$ and the exit of one round is $p\,\ketbra tt$, so $Q=\ketbra tt$ gives $v=p$. The
+probability of $\ket t$ at the end is then at least the trace of the input, which is total
+correctness.
+
+\begin{theorem}[exact HHL, repeat until success]\label{thm:rus}
+Under the hypotheses of Theorem~\ref{thm:prog} and $C\neq0$:
+\begin{enumerate}
+\item $\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$, i.e.\ the loop terminates with probability one in~$\ket t$;
+\item after exactly $m$ failed rounds the loop exits with probability $(1-p)^mp$, in the state $\ket t$,
+and is still running with probability $(1-p)^m$;
+\item the expected number of rounds is $\sum_m(m+1)p(1-p)^m=1/p$.\isalink{Algorithms/HHL_Termination.thy}{478}
+\end{enumerate}
+\end{theorem}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Theorem~\ref{thm:rus}(1) and~(3), in the context of Listing~\ref{lst:progthm}},label={lst:rus}]
+theorem hhl_rus_total:
+  assumes "C ~$\neq$~ 0"
+  shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (1~$_{m}$~ (2 ^ k *
+      (n * 2))) (hhl_rus A Ub t0 k C)
+     (outer_prod (hhl_target A k b) (hhl_target A k b))"
+theorem hhl_rus_expected_rounds:
+  assumes C0: "C ~$\neq$~ 0"
+  defines "p ~$\equiv$~ C~$^{2}$~ * ~$\|$~herm_inv A *~$_{v}$~ b~$\|^{2}$~"
+  shows "(~$\lambda$~m. real (Suc m) * (p * (1 - p) ^ m)) sums (1 / p)" and
+      "(~$\lambda$~m. (1 - p) ^ m) sums (1 / p)"
+\end{lstlisting}
+\end{minipage}
+
+Part~(2) is \isa{hhl\_rus\_prog\_rounds}, which computes the $m$-th iterate of the loop semantics
+in closed form. With $C=\lambda_{\min}$ and unit $b$, the expected number of rounds is at most
+$\kappa^2$; amplitude amplification reduces this to $O(\kappa)$ (Section~\ref{sec:approx}).
+
+\subsection{Other Systems}\label{sec:exact-other}
+
+For an invertible non-Hermitian $A$, the program runs on the Hermitian dilation
+$\tilde A=\left(\begin{smallmatrix}0&A\\A^\dagger&0\end{smallmatrix}\right)$, and $\tilde A^{-1}$ maps
+$b\oplus0$ to $0\oplus x$ (\isa{herm\_embed\_inverse}). A preconditioned system $BAx=Bb$ is run in the
+same way. On success the system register holds $0\oplus x/\norm x$ for the solution of the original
+$Ax=b$, and the success probability is at least $(C/s)^2$ when $\norm{BAv}\le s\norm v$
+(\isa{hhl\_elem\_precond\_correct}, \isa{hhl\_elem\_precond\_bound}). For a rectangular
+$A\in\C^{M\times N}$, the pseudo-inverse of the dilation maps $b\oplus0$ to $0\oplus x$ with
+$A^\dagger Ax=A^\dagger b$ and $x$ in the range of $A^\dagger$. So $x$ is the minimum-norm solution
+when $Ax=b$ is solvable, and a least-squares solution otherwise (\isa{pinv\_solution},
+\isa{normal\_eq\_least\_squares}). The proof uses $Jg(H)J=g(-H)$ for the parity~$J$, and it is here
+that $1/0=0$, which makes \isa{herm\_inv} the pseudo-inverse, pays off.
+\section{Beyond Exact Phase Estimation: the Paper's Error Analysis}\label{sec:approx}
+
+In general the eigenvalues of $A$ lie anywhere in a spectral window, $e^{iAt_0}$ is available only
+approximately, and the success probability must be amplified. This section follows the paper's
+analysis~\cite[App.~A]{hhl2008arxiv} and ends with programs whose triples carry the resulting error bounds.
+
+\subsection{Inexact Phase Estimation and the Sine Window}
+
+If $\lambda$ is not a grid value, phase estimation leaves the clock in a superposition
+$\sum_j\alpha_j\ket j$, the rotation acts on branch $j$ with angle $C/\lambda_j$, and uncomputation is
+inexact. We write states as register sums $\sum_j\ket j\otimes f_j$ (\isa{reg\_sum}). Block operators
+act branch by branch and branches are orthogonal, which gives an exact identity for an eigenvector~$v$
+(\isa{hhl\_approx\_error}):
+\[
+\bigl\|\,\mathrm{out}-u\otimes v\otimes R(c)\ket0\,\bigr\|^2=\norm v^2\sum_j|\alpha_j|^2\,
+\norm{R(c_j)\ket0-R(c)\ket0}^2,
+\]
+where $c_j=C/\lambda_j$ and $c=C/\lambda$.
+For grid values below~$C$ the coefficient $c_j$ exceeds~$1$ and $R(c_j)$ is not unitary, so the
+physical circuit clamps it to $[-1,1]$ (\isa{hhl\_circuit\_clamped}). The error vectors of distinct
+eigenvectors are orthogonal, so the bound for eigenvectors extends to every $b$ with no loss in the
+dimension. With the uniform clock state, the amplitudes decay only like $|\alpha_j|\le1/(2N|\delta_j|)$,
+where $\delta_j=\varphi-j/N$, and the squared error is $O(1/N)$ (\isa{hhl\_clamped\_bound}). Precision
+$\varepsilon$ would then need $N\sim1/\varepsilon^2$. The paper prepares the clock in the sine window
+$\psi_\tau=\sqrt{2/N}\,\sin(\pi(\tau+\frac12)/N)$ instead, whose amplitudes decay like~$\delta^{-2}$.
+From a closed form of the window sum we prove $|\alpha_j|^2\le\pi^2/(2N^4\delta_j^4)$ for
+$1/N\le|\delta_j|\le\frac12$ (\isa{win\_amp\_tail}). This gives the following theorem.
+
+\begin{theorem}[window register]\label{thm:window}
+Let $A$ be Hermitian, let its spectrum lie in the interval $[\lambda_{\min},\pi/(2t_0)]$, and let
+$0<C$, $0<\theta<1$ and $2C/\theta\le\lambda_{\min}$. Then for every $b$, the clamped circuit with the window register satisfies
+\[
+\norm{\mathrm{out}-\psi\otimes w}^2\le\Bigl(\frac{K_1}{N^2}+\frac{K_2}{N^3}\Bigr)\norm b^2,
+\]
+where $w$ is the exact output of Theorem~\ref{thm:hhl},
+$K_1=8\pi^2(2+\pi^2)\theta^4/(t_0^2C^2(1-\theta^2))$ and $K_2=512\pi^6/(t_0^4\lambda_{\min}^4)$. Hence $N\ge Q/\varepsilon$ gives error at most
+$\varepsilon\norm b$, for an explicit~$Q$.\isalink{Algorithms/HHL_Window.thy}{1061}
+\end{theorem}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Theorem~\ref{thm:window} (abridged: $\Delta$ is written out in the source)},label={lst:window}]
+theorem hhl_window_bound:
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and t0: "0 < t0"
+      and N: "2 ~$\le$~ N"
+      and C: "0 < C" and th: "0 < ~$\theta$~" "~$\theta$~ < 1" and lmin: "2 * C / ~$\theta$~
+          ~$\le$~ lmin"
+      and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ lmin ~$\le$~ l ~$\wedge$~ t0 * l ~$\le$~ pi
+          / 2"
+      and b: "dim_vec b = n"
+  shows "Re ~$\langle\Delta|\Delta\rangle$~ ~$\le$~ (8 * pi~$^{2}$~ * (2 + pi~$^{2}$~) * ~$\theta$~ ^ 4 / ((real N)~$^{2}$~ * t0~$^{2}$~ *
+      C~$^{2}$~ * (1 - ~$\theta^{2}$~))
+                       + 512 * pi ^ 6 / ((real N) ^ 3 * t0 ^ 4 *
+                           lmin ^ 4)) * Re ~$\langle$~b|b~$\rangle$~"
+  (* ~$\Delta$~ = hhl_circuit_clamped A t0 N C *~$_{v}$~ (win_state N ~$\otimes$~ b ~$\otimes$~ |0~$\rangle$~) -
+      win_state N ~$\otimes$~ hhl_out A C b *)
+\end{lstlisting}
+\end{minipage}
+
+On branches close to the eigenvalue the distance is $O(\delta_j^2)$, so each term is at most
+$K\,w(N\varphi-j)/N^2$ for a weight $w$ with $\sum_jw(N\varphi-j)\le4+2\pi^2$. Clamped and negative
+branches have $|\delta_j|\ge\varphi/2$ and contribute $O(1/N^3)$ in total.
+
+\subsection{Filter Functions and Theorem~1 of the Paper}
+
+The paper's appendix replaces the ancilla by a three-level flag register. The state
+$\ket{h(\lambda)}=\sqrt{1-f^2-g^2}\,\ket{\mathit{nothing}}+f\ket{\mathit{well}}+g\ket{\mathit{ill}}$ is
+built from two filter functions (Fig.~\ref{fig:filters}). The well-conditioned part $f=1/(2\kappa\lambda)$
+for $\lambda\ge1/\kappa$ inverts the matrix, and $g$ flags the ill-conditioned eigenvalues below
+$1/(2\kappa)$. Lemma~2 of the paper states that $\lambda\mapsto\ket{h(\lambda)}$ is
+$\frac\pi2\kappa$-Lipschitz, and we prove it with that constant (\isa{hflag\_lipschitz}). Lemma~3 is a
+relative version:
+\[
+|f(\lambda)-f(\tilde\lambda)|^2+|g(\lambda)-g(\tilde\lambda)|^2\;\le\;c\,\kappa^2(\lambda-\tilde\lambda)^2
+\bigl(f(\lambda)^2+g(\lambda)^2\bigr),
+\]
+stated with $c=\pi^2/2$. Its proof uses $f^2+g^2=\frac12$ on the middle region
+$[\frac1{2\kappa},\frac1\kappa)$, but there $f^2+g^2=\frac14$ (Fig.~\ref{fig:filters}). The lemma is false
+with $c=\pi^2/2$ and true with~$\pi^2$, and $\pi^2$ cannot be improved
+(Listing~\ref{lst:lemma3}).\isalink{Algorithms/HHL_Filter.thy}{402}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=10.5cm, height=4.6cm, xmin=0, xmax=1, ymin=0, ymax=0.62,
+  axis lines=left, xlabel={$\lambda$}, xtick={0,0.25,0.5,1}, xticklabels={$0$,$\frac1{2\kappa}$,$\frac1\kappa$,$\frac2\kappa$},
+  ytick={0,0.25,0.5}, yticklabels={$0$,$\frac14$,$\frac12$}, legend style={font=\scriptsize, draw=none,
+  at={(0.98,0.98)}, anchor=north east}, tick label style={font=\footnotesize}, label style={font=\footnotesize}]
+\addplot[blue, thick, domain=0:0.25, forget plot] {0};
+\addplot[blue, thick, domain=0.25:0.5, samples=40, forget plot] {0.5*sin(deg(pi/2*(4*x-1)))};
+\addplot[blue, thick, domain=0.5:1, samples=40, forget plot] {1/(4*x)};
+\addplot[red, thick, domain=0:0.25, forget plot] {0.5};
+\addplot[red, thick, domain=0.25:0.5, samples=40, forget plot] {0.5*cos(deg(pi/2*(4*x-1)))};
+\addplot[red, thick, domain=0.5:1, forget plot] {0};
+\addplot[black, densely dotted, very thick, domain=0:0.5, forget plot] {0.25};
+\addplot[black, densely dotted, very thick, domain=0.5:1, samples=40, forget plot] {1/(16*x*x)};
+\addlegendimage{blue, thick}\addlegendentry{$f$}
+\addlegendimage{red, thick}\addlegendentry{$g$}
+\addlegendimage{black, densely dotted, very thick}\addlegendentry{$f^2+g^2$}
+\addplot[gray, dashed, domain=0:0.5, forget plot] {0.5};
+\node[font=\scriptsize, gray, anchor=south] at (axis cs:0.25,0.5) {used in the proof of Lemma~3};
+\end{axis}
+\end{tikzpicture}
+\caption{The filter functions of the HHL paper for $\kappa=2$. On $[\frac1{2\kappa},\frac1\kappa)$ the
+point $(f,g)$ moves on a circle of radius~$\frac12$ with angular speed $\pi\kappa$. So
+$\ket{h(\lambda)}$ moves with speed exactly $\frac\pi2\kappa$ there (Lemma~2), $f^2+g^2=\frac14$ rather
+than the $\frac12$ used in the paper's proof of Lemma~3, and the constant of Lemma~3 is
+$\pi^2$.}\label{fig:filters}
+\end{figure}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={The filter functions, Lemma~3 with the corrected constant, the counterexample
+to the paper's constant, and sharpness (for fixed \isa{$\kappa$ > 0})},label={lst:lemma3}]
+definition filt_f :: "real ~$\Rightarrow$~ real ~$\Rightarrow$~ real" where
+  "filt_f ~$\kappa$~ x = (if 1 / ~$\kappa$~ ~$\le$~ x then 1 / (2 * ~$\kappa$~ * x)
+                   else if 1 / (2 * ~$\kappa$~) ~$\le$~ x then sin (pi / 2 * (2 *
+                       ~$\kappa$~ * x - 1)) / 2 else 0)"
+definition filt_g :: "real ~$\Rightarrow$~ real ~$\Rightarrow$~ real" where
+  "filt_g ~$\kappa$~ x = (if 1 / ~$\kappa$~ ~$\le$~ x then 0
+                   else if 1 / (2 * ~$\kappa$~) ~$\le$~ x then cos (pi / 2 * (2 *
+                       ~$\kappa$~ * x - 1)) / 2 else 1 / 2)"
+theorem lemma3:
+  "(filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ + (filt_g ~$\kappa$~ a - filt_g ~$\kappa$~ b)~$^{2}$~
+     ~$\le$~ pi~$^{2}$~ * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)"
+theorem lemma3_paper_constant:
+  "pi~$^{2}$~ / 2 * ~$\kappa^{2}$~ * (1 / (2 * ~$\kappa$~) - 1 / ~$\kappa$~)~$^{2}$~ * ((filt_f ~$\kappa$~ (1 / (2 *
+      ~$\kappa$~)))~$^{2}$~ + (filt_g ~$\kappa$~ (1 / (2 * ~$\kappa$~)))~$^{2}$~)
+   < (filt_f ~$\kappa$~ (1 / (2 * ~$\kappa$~)) - filt_f ~$\kappa$~ (1 / ~$\kappa$~))~$^{2}$~ + (filt_g ~$\kappa$~ (1 /
+       (2 * ~$\kappa$~)) - filt_g ~$\kappa$~ (1 / ~$\kappa$~))~$^{2}$~"
+theorem lemma3_sharp:
+  assumes c: "c < pi~$^{2}$~"
+  shows "~$\exists$~a b. c * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)
+                < (filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ + (filt_g ~$\kappa$~ a -
+                    filt_g ~$\kappa$~ b)~$^{2}$~"
+\end{lstlisting}
+\end{minipage}
+
+The counterexample is $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$, where the two sides are
+$\frac12$ and $\pi^2/32$. Sharpness takes both points in the middle region, where the left side is
+$\sin^2(\pi\kappa(\lambda-\tilde\lambda)/2)$, and uses $\sin w\ge w-w^3/6$. The paper uses Lemma~3 for
+the two error terms of the post-selected output, (A13)--(A17), and states Theorem~1 only up to
+$O(\kappa/t_0)$, so the corrected constant does not change that statement.
+With the corrected lemma, the window register and the wrapped distances of the grid values, all three
+parts of Theorem~1 of the paper hold for every~$b$ with explicit constants. For $t=Nt_0$ the total
+evolution time, $\norm{(\tilde U-U)b}\le3\pi^2\sqrt{4+2\pi^2}\,\kappa\norm b/t$, and the states
+post-selected on $\{\mathit{well},\mathit{ill}\}$, or on $\mathit{well}$ when $b$ lies in the
+well-conditioned subspace, are within $12\pi^2\sqrt{4+2\pi^2}\,\kappa/t$ of the ideal ones
+(\isa{flag\_bound}, \isa{flag\_post\_normalized}, \isa{flag\_well\_normalized}).
+
+\subsection{Oracles, Amplification and Run Time}
+
+The circuit uses $e^{iAt_0}$ only through controlled powers. We model it in a small language of fixed
+gates, controlled calls to an oracle $V$, and sequencing (\isa{qcirc}), with a matrix semantics
+(\isa{sem}) and a call count (\isa{calls}). HHL makes $2(N-1)$ calls, and replacing the oracle by any
+unitary $V$ with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most $2(N-1)\eta$, because each
+call adds at most $\eta$ (\isa{hhl\_sim\_robust}). Post-selection is stable: if the output is within
+$\delta$ of the exact one, the post-selected state is within $2\delta/(C\norm{A^{-1}b})$ of
+$\psi\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$ (\isa{hhl\_readout}). Amplitude amplification is proved
+in the plane spanned by the good and bad components (Fig.~\ref{fig:aa}). As a circuit, each round
+uses the HHL circuit and its inverse once.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[scale=1.55, >=Stealth]
+\draw[->] (0,0) -- (2.15,0) node[right, font=\footnotesize] {bad};
+\draw[->] (0,0) -- (0,1.75) node[above, font=\footnotesize] {good};
+\draw[gray!60] (1.6,0) arc (0:90:1.6);
+\draw[->, very thick, blue] (0,0) -- ({1.6*cos(14)},{1.6*sin(14)}) node[right, font=\footnotesize] {$\psi$};
+\draw[->, thick, blue!70] (0,0) -- ({1.6*cos(42)},{1.6*sin(42)}) node[right, font=\footnotesize] {$G\psi$};
+\draw[->, thick, blue!50] (0,0) -- ({1.6*cos(70)},{1.6*sin(70)}) node[above right, font=\footnotesize] {$G^2\psi$};
+\draw (0.5,0) arc (0:14:0.5); \node[font=\scriptsize] at (0.62,0.07) {$\theta$};
+\draw[->, red!70] ({1.25*cos(16)},{1.25*sin(16)}) arc (16:40:1.25); \node[font=\scriptsize, red!70] at (1.3,0.62) {$2\theta$};
+\draw[->, red!70] ({1.25*cos(44)},{1.25*sin(44)}) arc (44:68:1.25); \node[font=\scriptsize, red!70] at (0.75,1.22) {$2\theta$};
+\end{tikzpicture}
+\caption{Amplitude amplification. The Grover iterate $G=(2\ketbra\psi\psi-I)(I-2P)$ rotates the plane
+of the good component $P\psi$ and the bad component by $2\theta$, where $\sin\theta=\norm{P\psi}$. After
+$k$ rounds the good amplitude is $\sin((2k+1)\theta)$: $PG^k\psi=\frac{\sin((2k+1)\theta)}{\sin\theta}P\psi$
+(\isa{amplitude\_amplification}).}\label{fig:aa}
+\end{figure}
+
+The paper states its run time in a normalisation where the spectrum lies in $[1/\kappa,1]$. In that
+normalisation the components combine as follows.
+
+\begin{theorem}[run time]\label{thm:runtime}
+Let the spectrum of $A$ lie in $[1/\kappa,1]$, let $t_0\le\pi/2$, $\varepsilon\kappa\le1$ and
+$Nt_0\ge12\pi^2\sqrt{4+2\pi^2}\,\kappa/\varepsilon$, and let the flag gates prepare
+$\ket{h(\tilde\lambda_k)}$. Then the post-selected well-conditioned output is within $\varepsilon$ of
+$A^{-1}b/\norm{A^{-1}b}$, its amplitude is at least $1/(4\kappa)$, and at most $\pi\kappa$ rounds of
+amplitude amplification, each with $2(N-1)$ oracle calls, succeed with probability at least
+$1-\norm y^2$, where $y$ is the well-flagged part of one run.\isalink{Algorithms/HHL_Runtime.thy}{433}
+\end{theorem}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Theorem~\ref{thm:runtime} (hypotheses abridged; \isa{out} is the output of the flag circuit
+and \isa{y} its well-flagged part)},label={lst:runtime}]
+theorem hhl_paper_runtime:
+  assumes ... "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ 1 / ~$\kappa$~ ~$\le$~ l ~$\wedge$~ l ~$\le$~ 1"
+      and ... "0 < ~$\varepsilon$~" "~$\varepsilon$~ * ~$\kappa$~ ~$\le$~ 1" and "12 * pi~$^{2}$~ * sqrt (4 + 2 *
+          pi~$^{2}$~) * ~$\kappa$~ / ~$\varepsilon$~ ~$\le$~ real N * t0"
+  defines "out ~$\equiv$~ sem N (n * 3) (evolution A t0 ~$\otimes$~ 1~$_{m}$~ 3)
+      (flag_full_prog N n G Prep) *~$_{v}$~ unit_vec (N * (n * 3)) 0"
+  defines "y ~$\equiv$~ pflag 3 (~$\lambda$~c. c = 1) out" and "x ~$\equiv$~ herm_inv A *~$_{v}$~ b"
+  shows "~$\|$~complex_of_real (1 / ~$\|$~y~$\|$~) ~$\cdot_{v}$~ y - tensor_vec (win_state
+      N)
+            (tensor_vec (complex_of_real (1 / ~$\|$~x~$\|$~) ~$\cdot_{v}$~ x)
+                (unit_vec 3 1))~$\|$~ ~$\le$~ ~$\varepsilon$~"
+    and "1 / (4 * ~$\kappa$~) ~$\le$~ ~$\|$~y~$\|$~"
+    and "~$\|$~y~$\|$~ < 1 ~$\Longrightarrow$~ ~$\exists$~k. 1 - ~$\|$~y~$\|^{2}$~ ~$\le$~ ~$\|$~pflag 3 (~$\lambda$~c. c = 1) (sem
+        ... (aa_progP ... k) ...)~$\|^{2}$~
+           ~$\wedge$~ calls (aa_progP (N * (n * 3)) 3 (~$\lambda$~c. c = 1)
+               (flag_full_prog N n G Prep) k) = (2 * k + 1) * (2 *
+               (N - 1))
+           ~$\wedge$~ real k ~$\le$~ pi * ~$\kappa$~"
+\end{lstlisting}
+\end{minipage}
+
+Each round runs the circuit and its inverse, so the total simulated time is
+$(2k+1)\cdot2(N-1)t_0=O(\kappa^2/\varepsilon)$, and the state preparation is used $O(\kappa)$ times. The
+number of rounds depends on the unknown success amplitude. Following the paper, we use the
+averaging lemma of Brassard, H{\o}yer, Mosca and Tapp~\cite{bhmt2002}. For $k$ uniform below
+$M\ge1/\sin2\theta$, the mean of $\sin^2((2k+1)\theta)$ is at least $\frac14$ (\isa{bhmt\_quarter}). Stages
+with $k$ uniform below $1,2,4,\dots$, stopped at the first success, therefore succeed with probability at
+least $\frac14$ in fewer than $8\sqrt2\,\kappa$ rounds (\isa{doubling\_schedule\_kappa}).
+
+\subsection{Programs in the Paper's Regime}\label{sec:approx-programs}
+
+The circuits of this section become gate lists with the same semantics (\isa{qgates\_sem}) and run as
+programs. Their postcondition $\ketbra tt$ measures the fidelity with the target. For a program that
+initialises, runs a circuit with output $\psi$ and measures with $M$, where $\ket t$ lies in the range
+of $M_1$, we prove the triple $\hoaret{|\braket t\psi|^2I}{\mathit{prog}}{\ketbra tt}$. For the
+repeat-until-success loop we prove the precondition $|\braket t\psi|^2/\norm{M_1\psi}^2$
+(\isa{hoare\_prog\_overlap}, \isa{hoare\_rus\_overlap}). If the post-selected state is within $e$ of
+$\ket t$, the fidelity is at least $1-e^2$. With
+$e=2(\varepsilon+2(N-1)\eta)/(C\norm{A^{-1}b})$ from Theorem~\ref{thm:window} and the oracle bound, one
+run satisfies $\{(Ct_0/\pi)^2(1-e^2)\,I\}$ and the loop satisfies $\{(1-e^2)\,I\}$ (\isa{hhl\_apx\_program},
+\isa{hhl\_apx\_rus}). The filtered version gives $\{(1-\varepsilon^2)\,I\}$, and amplitude amplification as
+a program needs at most $\pi\kappa$ rounds (\isa{hhl\_flag\_rus}, \isa{hhl\_flag\_amplified}).\isalink{Algorithms/HHL_Paper_Program.thy}{534}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={The repeat-until-success loop in the paper's regime (inside a context with the
+hypotheses of Theorem~\ref{thm:window}, an oracle \isa{V} that is $\eta$-close to $e^{iAt_0}$ and a
+preparation \isa{Prep} of the window state)},label={lst:apx}]
+abbreviation (input) "apx_K ~$\equiv$~ N * (n * 2)"
+abbreviation (input) "apx_O ~$\equiv$~ V ~$\otimes$~ 1~$_{m}$~ 2"
+abbreviation (input) "apx_x ~$\equiv$~ herm_inv A *~$_{v}$~ b"
+abbreviation (input) "apx_t ~$\equiv$~ tensor_vec (win_state N) (tensor_vec
+    (complex_of_real (1 / ~$\|$~apx_x~$\|$~) ~$\cdot_{v}$~ apx_x) (unit_vec 2 1))"
+abbreviation (input) "apx_e ~$\equiv$~ 2 * (~$\varepsilon$~ + 2 * real (N - 1) * ~$\eta$~) / (C
+    * ~$\|$~apx_x~$\|$~)"
+theorem hhl_apx_rus:
+  "state_sig.hoare_total_correct [N, n, 2] (complex_of_real (1 -
+      apx_e~$^{2}$~) ~$\cdot_{m}$~ 1~$_{m}$~ apx_K)
+     (rus_meas apx_K (anc_proj apx_K) (qgates N (n * 2) apx_O
+         (hhl_full_prog A t0 N C Prep))) (outer_prod apx_t apx_t)"
+\end{lstlisting}
+\end{minipage}
+\section{Down to Elementary Gates}\label{sec:gates}
+
+The programs of Sections~\ref{sec:exact} and~\ref{sec:approx} use large gates: $H^{\otimes k}$, the
+controlled powers $\Lambda(U)$, $F_N$, the rotation stage, the preparations of $\ket b$ and of the clock,
+and the oracle $e^{iAt_0}$. A gate is \emph{elementary} if it is a one- or two-qubit unitary acting on
+adjacent wires, $I_a\otimes G\otimes I_b$ with $G$ a $2\times2$ or $4\times4$ unitary
+(Listing~\ref{lst:elem}). This section replaces every large gate by elementary ones. Each refinement
+proves that the product of the new gates equals the old gate, so every triple carries over
+(Section~\ref{sec:qhl}).
+
+\subsection{The Gate-Level Circuit}
+
+The Hadamard layer is $k$ single-qubit Hadamards. The controlled powers factor over the clock bits,
+$\Lambda(U)=\prod_jC_j(U^{2^j})$, where $C_j$ is controlled by bit~$j$ of the clock
+(\isa{ctrl\_pow\_qubits}). Equivalently, they use $2^k-1$ singly controlled copies of~$U$
+(\isa{ctrl\_pow\_queries}). The Fourier transform is the AFP's gate-level circuit, flattened into
+Hadamards, controlled phase rotations and swaps (\isa{qft\_circuit}). It has $(k^3+2k)/3$ gates, which
+is cubic because its controlled rotations are routed through nearest-neighbour swaps. The resulting
+circuit for HHL has $(2k^3+16k+6)/3$ gates (\isa{length\_hhl\_elem\_gates}), and every gate is
+elementary except the oracle calls $C_j(U^{\pm2^j})$, the preparation $U_b$ and the rotation stage
+(\isa{hhl\_elem\_gate\_kinds}).\isalink{Algorithms/HHL_Gates.thy}{119}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Elementary gates, the Fourier circuit, and the gate count},label={lst:elem}]
+definition elementary :: "nat ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ bool" where
+  "elementary K U ~$\longleftrightarrow$~ (~$\exists$~a b q G. q ~$\in$~ {1, 2} ~$\wedge$~ G ~$\in$~ carrier_mat (2 ^
+      q) (2 ^ q) ~$\wedge$~ unitary G ~$\wedge$~ 0 < a ~$\wedge$~ 0 < b ~$\wedge$~
+     K = a * (2 ^ q * b) ~$\wedge$~ U = 1~$_{m}$~ a ~$\otimes$~ (G ~$\otimes$~ 1~$_{m}$~ b))"
+theorem qft_circuit:
+  shows "circuit_mat (2 ^ n) (qft_circuit n) = fourier (2 ^ n)"
+    and "U ~$\in$~ set (qft_circuit n) ~$\Longrightarrow$~ elementary (2 ^ n) U"
+theorem length_hhl_elem_gates: "3 * length (hhl_elem_gates A Ub t0
+    k C) = 2 * k ^ 3 + 16 * k + 6"
+\end{lstlisting}
+\end{minipage}
+
+\subsection{The Rotation as a Uniformly Controlled Rotation}
+
+The rotation stage $\sum_c\ketbra cc\otimes I\otimes\mathrm{Rot}(\theta_c)$, with $\theta_c=\arcsin(C/\lambda_c)$
+and $\mathrm{Rot}(a)$ the real rotation by~$a$, applies a different angle for each of the $2^k$ clock
+values. Write the angles in the Walsh--Hadamard basis,
+$\theta_c=\sum_{S\subseteq\{0,\dots,k-1\}}w_S(-1)^{\pi_S(c)}$, where $\pi_S(c)$ is the parity of the bits
+of~$c$ in~$S$ and $w_S=2^{-k}\sum_{c'}\theta_{c'}(-1)^{\pi_S(c')}$ (\isa{walsh\_inversion}). Then the
+stage is one rotation of the ancilla by $\sum_Sw_S$, followed by one block per non-empty $S$. A block
+computes $\pi_S(c)$ into the last clock qubit with a chain of nearest-neighbour CNOT and SWAP gates,
+rotates the ancilla by $-2w_S$ controlled by that qubit, and uncomputes the chain
+(Fig.~\ref{fig:ucr}a, \isa{ucr\_circuit}). For a system register of $s$ qubits, the controlled rotation
+is moved next to the clock by $s$ adjacent swaps (\isa{route\_cv0}).\isalink{Algorithms/HHL_Uniform_Rotation.thy}{765}
+
+\begin{figure}[t]
+\centering
+\textbf{(a)}\quad
+\scalebox{0.8}{%
+\begin{quantikz}[row sep={0.62cm,between origins}, column sep=0.25cm]
+\lstick{$c_2$} & & \swap{1} & & & & \swap{1} & \midstick[5,brackets=none]{$\cdots$} & \\
+\lstick{$c_1$} & & \targX{} & \ctrl{1} & & \ctrl{1} & \targX{} & & \\
+\lstick{$c_0$} & & & \targ{} & \ctrl{2} & \targ{} & & & \\
+\lstick{system} & \qwbundle{s} & & & & & & & \\
+\lstick{ancilla} & \gate{\mathrm{Rot}(\textstyle\sum_Sw_S)} & & & \gate{\mathrm{Rot}(-2w_{\{0,2\}})} & & & &
+\end{quantikz}}
+\\[0.5em]
+\textbf{(b)}\quad
+\scalebox{0.8}{%
+\begin{quantikz}[row sep={0.62cm,between origins}, column sep=0.3cm]
+\lstick{$q_0$} & \gate{\mathrm{Rot}(a_{\varepsilon})} & \gate[2]{\mathrm{UCR}} & \gate[3]{\mathrm{UCR}} & \gate[3]{D_\phi} & \rstick[3]{$b$}\\
+\lstick{$q_1$} & & & & & \\
+\lstick{$q_2$} & & & & &
+\end{quantikz}}
+\caption{(a) One block of the uniformly controlled rotation for $k=3$ and $S=\{0,2\}$: the SWAP and
+CNOT put $c_0\oplus c_2$ into $c_0$, a rotation of the ancilla controlled by $c_0$ follows, and the chain
+is undone. The ancilla rotation controlled by $c_0$ crosses the system register, and is routed by
+adjacent swaps. (b) State preparation on three qubits. Level $j$ rotates qubit $j$ by an angle that
+depends on the qubits before it, $a_c=\arcsin(\norm{b_{c1}}/\norm{b_c})$ for the blocks $b_c$ of $b$
+indexed by the prefix~$c$, as a uniformly controlled rotation; a diagonal unitary $D_\phi$ then sets
+the phases.}\label{fig:ucr}
+\end{figure}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={The rotation stage as a uniformly controlled rotation},label={lst:ucr}]
+theorem ucr_circuit:
+  assumes n0: "0 < n"
+  shows "circuit_mat (2 ^ k * (n * 2)) (ucr_gates k n ~$\theta$~) =
+      ctrl_blocks (2 ^ k) (n * 2) (~$\lambda$~c. 1~$_{m}$~ n ~$\otimes$~ Rot (~$\theta$~ c))"
+theorem ucr_gate_kinds:
+  assumes U: "U ~$\in$~ set (ucr_gates k n ~$\theta$~)" and n0: "0 < n"
+  shows "elementary (2 ^ k * (n * 2)) U ~$\vee$~ (~$\exists$~a. U = cv0 k n (Rot
+      a))"
+\end{lstlisting}
+\end{minipage}
+
+\subsection{State Preparation}
+
+A state with non-negative amplitudes $a$ on $k$ qubits is prepared by $k$ levels of uniformly controlled
+rotations, the construction of Grover and Rudolph~\cite{groverrudolph2002} and M\"ott\"onen et
+al.~\cite{mottonen2005}. Level $j$ rotates qubit $j$ by the angle $\arcsin(\norm{a_{c1}}/\norm{a_c})$
+determined by the block norms (\isa{cascade\_prepares}, \isa{state\_prep}). The sine window is one
+instance (\isa{window\_prep}). For a complex $b$, the magnitudes are prepared first and the phases are
+set by a diagonal unitary. A diagonal unitary on $k+1$ qubits splits into a diagonal unitary on $k$
+qubits, carrying the means of the phases of each pair, and a uniformly controlled rotation conjugated by
+a fixed one-qubit gate, carrying their differences (\isa{diag\_gates\_circuit}). This yields the
+following theorem.\isalink{Algorithms/HHL_All_Elementary.thy}{442}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Every normalised $\ket b$ is prepared by elementary gates},label={lst:bprep}]
+theorem bprep:
+  assumes s: "1 ~$\le$~ s" and b: "dim_vec b = 2 ^ s" "~$\|$~b~$\|$~ = 1"
+  shows "circuit_mat (2 ^ s) (bprep_gates s b) *~$_{v}$~ unit_vec (2 ^ s)
+      0 = b"
+    and "~$\bigwedge$~U. U ~$\in$~ set (bprep_gates s b) ~$\Longrightarrow$~ elementary (2 ^ s) U"
+    and "circuit_mat (2 ^ s) (bprep_gates s b) ~$\in$~ carrier_mat (2 ^
+        s) (2 ^ s)"
+    and "unitary (circuit_mat (2 ^ s) (bprep_gates s b))"
+\end{lstlisting}
+\end{minipage}
+
+\subsection{Every Gate Elementary}
+
+For $n=2^s$, the refinements combine into the program \isa{hhl\_elementary}: it satisfies the three
+triples of Theorems~\ref{thm:prog} and~\ref{thm:rus}, and every gate is elementary or an oracle call
+$C_j(U^{\pm2^j})$. The same holds for the paper-regime programs of
+Section~\ref{sec:approx-programs} (\isa{hhl\_apx\_elementary}), where the oracle is the approximate
+evolution~$V$. The oracle calls themselves can be compiled. By the spectral theorem for normal matrices
+(taken from QHLProver), every unitary is $U=\prod_k(I+(\lambda_k-1)p_kp_k^\dagger)$ for an orthonormal
+eigenbasis $(p_k)$. Each factor is $Q_kD_kQ_k^\dagger$, where $Q_k$ is the preparation circuit of $p_k$
+and $D_k$ multiplies $\ket0$ by the phase~$\lambda_k$. This gives exact universality, and hence HHL
+programs in which every gate is elementary.\isalink{Algorithms/HHL_All_Elementary.thy}{798}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Exact universality, and HHL with every gate elementary (the triples are those of
+Listings~\ref{lst:progthm} and~\ref{lst:rus}; hypotheses as there, with $n=2^s$ and $\norm b=1$)},label={lst:univ}]
+theorem exact_universality:
+  assumes U: "U ~$\in$~ carrier_mat (2 ^ m) (2 ^ m)" "unitary U" and m:
+      "1 ~$\le$~ m"
+  shows "~$\exists$~Gs. (~$\forall$~G ~$\in$~ set Gs. elementary (2 ^ m) G) ~$\wedge$~ circuit_mat (2
+      ^ m) Gs = U"
+theorem hhl_compiled:
+  assumes ...
+  defines "K ~$\equiv$~ 2 ^ k * (2 ^ s * 2)"
+  shows "~$\exists$~Gs. (~$\forall$~G ~$\in$~ set Gs. elementary K G)
+     ~$\wedge$~ state_sig.hoare_total_correct [2 ^ k, 2 ^ s, 2]
+         (complex_of_real (C~$^{2}$~ * ~$\|$~herm_inv A *~$_{v}$~ b~$\|^{2}$~) ~$\cdot_{m}$~ 1~$_{m}$~ K)
+           (hhl_prog K Gs) (anc_proj K 1)
+     ~$\wedge$~ state_sig.hoare_total_correct [2 ^ k, 2 ^ s, 2] (1~$_{m}$~ K)
+         (hhl_prog K Gs)
+           (anc_proj K 0 + outer_prod (hhl_target A k b)
+               (hhl_target A k b))
+     ~$\wedge$~ (C ~$\neq$~ 0 ~$\longrightarrow$~ state_sig.hoare_total_correct [2 ^ k, 2 ^ s, 2]
+         (1~$_{m}$~ K) (hhl_rus_prog K Gs)
+           (outer_prod (hhl_target A k b) (hhl_target A k b)))"
+\end{lstlisting}
+\end{minipage}
+
+Universality comes with no useful bound on the number of gates, so for cost statements the oracle
+calls remain the unit of measure. When $A$ is sparse, a better circuit for the oracle exists.
+
+\subsection{Sparse Hamiltonian Simulation}
+
+The paper assumes $s$-sparse $A$ and cites simulation results for $e^{iAt}$~\cite{berry2007}. We
+formalise the first-order version of this construction in three steps.
+
+\paragraph{Trotter.} For Hermitian $H_1,\dots,H_m$ with $\norm{H_j}\le L$,
+\[
+\bigl\|(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}\bigr\|\le2(mLt)^2/r
+\]
+(\isa{trotter}, Listing~\ref{lst:sparse}). The proof stays in the functional calculus.
+$|e^{ix}-1-ix|\le x^2$ bounds each factor to first order, and the errors add along products and powers of
+unitaries.
+
+\paragraph{Colouring.} The graph of an $s$-sparse Hermitian $A$ is edge-coloured greedily with $2s-1$
+colours. Each colour class is a matching, given by an involution $q_c$ of the index set, so $A$ is its
+diagonal plus $2s-1$ Hermitian 1-sparse matrices whose entries are entries of~$A$
+(\isa{sparse\_split})~\cite{aharonov2003,berry2007}.
+
+\paragraph{The 1-sparse circuit.} Each 1-sparse evolution is implemented exactly on
+$\ket x\ket y\ket b$ (Fig.~\ref{fig:sparse}). A colour oracle $O_c$ writes the partner $q_c(x)$ into the
+second register. A comparator sorts the pair and records the order in~$b$. An entry gate rotates $b$
+by $e^{id\left(\begin{smallmatrix}0&a\\\bar a&0\end{smallmatrix}\right)}$ with $a=A_{xy}$. The comparator and
+$O_c^\dagger$ then uncompute (\isa{colour\_circ\_basis}). The oracle is a hypothesis, any unitary with
+$\ket x\ket0\ket b\mapsto\ket x\ket{q_c(x)}\ket b$, and one exists for every colouring. A final gate
+applies the phases of the diagonal.\isalink{Algorithms/HHL_Sparse_Circuit.thy}{1007}
+
+\begin{figure}[t]
+\centering
+\scalebox{0.85}{%
+\begin{quantikz}[row sep={0.7cm,between origins}, column sep=0.3cm]
+\lstick{$\ket x$} & \qwbundle{} & \gate[2]{O_c} & \gate[3]{\mathrm{CMP}} & \gate[3]{\mathrm{ENT}_d} & \gate[3]{\mathrm{CMP}} & \gate[2]{O_c^\dagger} & \midstick[3,brackets=none]{$\cdots$} & \gate{D_d} & \rstick{$V_d\ket x$}\\
+\lstick{$\ket 0$} & \qwbundle{} & & & & & & & & \rstick{$\ket0$}\\
+\lstick{$\ket 0$} & & & & & & & & & \rstick{$\ket0$}
+\end{quantikz}}
+\caption{One Trotter step for an $s$-sparse $A$ with $d=t/r$. For each of the $2s-1$ colours~$c$, five
+gates implement $e^{idH_c}$ on $\ket x$ with both ancilla registers returned to $\ket0$, where $H_c$ is
+the 1-sparse part of colour $c$. A diagonal phase gate $D_d=e^{id\operatorname{diag}A}$ follows, so the
+step acts on $\ket x$ as the product $V_d$ of the $2s$ part evolutions. It has $5(2s-1)+1$ gates, and
+$r$ steps use $r(6s-2)$ oracle queries.}\label{fig:sparse}
+\end{figure}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Trotter, the colouring, and the sparse simulation circuit},label={lst:sparse}]
+theorem trotter:
+  assumes Hs: "~$\bigwedge$~H. H ~$\in$~ set Hs ~$\Longrightarrow$~ herm_bounded n L H" and r: "0 < r"
+  shows "op_close n (2 * (real (length Hs) * L * t)~$^{2}$~ / real r)
+           (tprod n (t / real r) Hs ^~$_{m}$~ r) (evolution (hsum n Hs)
+               t)"
+theorem sparse_split:
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and sp: "sparse n
+      s A" and s: "1 ~$\le$~ s"
+  shows "~$\exists$~p. edge_cover n (2 * s - 1) p (edges n A) ~$\wedge$~
+           length (sparse_parts n A (2 * s - 1) p) = 2 * s ~$\wedge$~ hsum
+               n (sparse_parts n A (2 * s - 1) p) = A"
+theorem sparse_simulation_circuit:
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and s: "1 ~$\le$~ s"
+      and L: "0 ~$\le$~ L" and Lb: "~$\bigwedge$~i j. i < n ~$\Longrightarrow$~ j < n ~$\Longrightarrow$~ cmod (A ~\$\$~ (i,
+          j)) ~$\le$~ L"
+      and cov: "edge_cover n (2 * s - 1) p (edges n A)"
+      and Os: "~$\bigwedge$~c. c < 2 * s - 1 ~$\Longrightarrow$~ colour_oracle n (p c) (Os c)"
+          and r: "0 < r"
+  shows "sg_run n (t / real r) A Os (sim_gates (2 * s - 1) r) *
+      emb n = emb n * sim_mat n (t / real r) A (2 * s - 1) p r"
+    and "sim_mat n (t / real r) A (2 * s - 1) p r ~$\in$~ carrier_mat n
+        n"
+    and "unitary (sim_mat n (t / real r) A (2 * s - 1) p r)"
+    and "op_close n (8 * (real s * L * t)~$^{2}$~ / real r) (sim_mat n (t
+        / real r) A (2 * s - 1) p r) (evolution A t)"
+    and "length (filter is_query (sim_gates (2 * s - 1) r)) = r *
+        (6 * s - 2)"
+\end{lstlisting}
+\end{minipage}
+
+The circuit acts on inputs with both ancilla registers zero as a unitary $V$ on the system
+(\isa{emb} embeds the system). $V$ is within $8(sLt)^2/r$ of $e^{itA}$, where $L$ bounds the entries of~$A$.
+Plugged into the error bound of Section~\ref{sec:approx}, this gives the output error
+$(\varepsilon+16(N-1)(sLt_0)^2/r)\norm b$ (\isa{hhl\_sparse\_window\_error}). The higher-order formulas
+behind the paper's cited cost, and the reversible arithmetic inside the oracles, are not formalised.
+\section{What the Formalisation Found}\label{sec:errata}
+
+The HHL paper is a carefully written letter with a long appendix, and its main claims survive
+mechanisation. Its details do not all survive. Table~\ref{tab:errata} lists the statements of the
+arXiv version~\cite{hhl2008arxiv} that are false as written, with the correction and its formal witness.
+Most errors are in the appendix on the optimality of the algorithm, which reduces quantum circuits to
+matrix inversion (Theorems~4--6). Each optimality theorem is formalised up to the external
+complexity-theoretic fact it cites (PSPACE-completeness of TQBF, $\mathrm{BQP}\subseteq\mathrm{PSPACE}$,
+and the classical lower bounds for Simon's problem and parity). The search lower bound of Theorem~4(2)
+is imported from the AFP entry \emph{Compressed Oracles}.
+
+\begin{table}[t]
+\caption{Errata in the HHL paper (arXiv:0811.3171v3). ``Formal'' names the theorem that refutes the claim
+or proves the correction.}\label{tab:errata}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\begin{tabular}{@{}L{1.3cm}L{2.75cm}L{4.35cm}L{2.75cm}@{}}
+\toprule
+Where & Claim & Correction & Formal\\
 \midrule
-\isa{QC\_Prelims} & shared matrix and vector lemmas of the gap-closure pass & 315 & 25\\
-\isa{Day12\_Counting\_Probability} & 12: $H^{\otimes N}\ket{0\cdots0}$, the counting probability & 267 & 15\\
-\isa{Day18\_Positive\_Maps} & 17--18: density-preserving iff positive and TP; the transpose & 257 & 6\\
-\isa{Day22\_Kraus\_Independence} & 22: $\crk(\Phi)\le n$ for extreme CPTP maps & 181 & 9\\
-\isa{Day28\_Horodecki\_Peres} & 28: the two-qubit transpose criterion & 251 & 5\\
-\isa{Day30\_BitFlip\_Code} & 30: syndromes, recovery map, the recovery theorem & 441 & 31\\
-\isa{Day32\_Pauli\_Expansion} & 32: $\sum|a_k|^2=1$ for Pauli expansions of unitaries & 59 & 2\\
+Lemma 3 & $c=\pi^2/2$ & false for every $\kappa$ (at $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$); $c=\pi^2$ holds and is sharp & \isa{lemma3\_paper\_constant}, \isa{lemma3}, \isa{lemma3\_sharp}\\
+Proof of Thm.~4 & $m=\frac2\delta\log(2n)/\log\log n$ rounds suffice & too few: for $n_0=2^{64}$, $\delta=\frac12$ it gives $m=130/3$, and after $m\le44$ rounds the bound on $T_m$ still exceeds $n_0$; $m\ge\frac2\delta\ln(2n_0)$ suffices & \isa{paper\_rounds\_insufficient}, \isa{corrected\_rounds}\\
+(A34) & the dilation satisfies $\kappa^{-1}I\le A\le I$ & impossible: its diagonal is zero & \isa{herm\_embed\_diag}\\
+(A37) & the first qubit of $\vec y$ decides acceptance & the top half of $\vec y$ is always $0$; permuting the dilation fixes it & \isa{first\_half\_perm}, \isa{red\_first\_qubit}\\
+Thm.~6(2) & precision $\varepsilon=2^{-n-2}$ & cannot separate counts $C$ and $C+1$ once the clock factor ($\le\frac14$) is included & \isa{paper\_precision\_insufficient}\\
+App.~A5 & $1/(3\varepsilon^2)$ samples & too few: $\varepsilon=\frac14$, $p=\frac12$ and $6$ samples fail with probability $\frac{11}{16}$; $3/\varepsilon^2$ suffice & \isa{paper\_sample\_count\_too\_small}, \isa{estimate\_expectation}\\
+\S IV & preconditioned system $(AB)c=Bb$ & neither left nor right preconditioning: in a $2\times2$ example its unique solution gives no solution of $Ax=b$ & \isa{paper\_precondition\_wrong}\\
+App.~A5 & undo gates $U^\dagger_{3T+1-t}$ & must be $U^\dagger_{T+1-t}$ & construction \isa{red\_U}, \isa{red\_inverse}\\
+App.~A5 & $\kappa\le2T$ & $\kappa=\coth\frac1{2T}>2T$ when $3T$ is even (not formalised); we prove $\kappa\le2T+1$ & \isa{red\_A\_bounds}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The last two rows are corrections built into the formal construction rather than refutations: the
+reduction is defined with the correct undo gates, and only the weaker bound $2T+1$ is proved. The other
+rows are refuted by explicit counterexamples. Three observations are worth recording. First, none of
+the errors we found invalidates a main claim of the paper: those are stated with $O(\cdot)$ and survive
+with other constants.
+Second, the errors sit where a proof sketch compresses a computation, for instance an evaluation of
+$f^2+g^2$, an index, or a number of rounds. Third, a recent re-derivation of the error
+analysis~\cite{liphillips2024} remarks that the factor $\pi/2$ of Lemma~2 ``is not correct for certain
+values of~$\kappa$''. With the paper's choice $\kappa'=2\kappa$, which places the middle region at $[\frac1{2\kappa},\frac1\kappa)$,
+our proof \isa{hflag\_lipschitz} shows that $\lambda\mapsto\ket{h(\lambda)}$ is
+$\frac\pi2\kappa$-Lipschitz for every $\kappa>0$, so Lemma~2 is correct as stated. A machine-checked
+proof settles such disagreements.
+
+The lecture notes of Section~\ref{sec:paulsen} also contain false statements, all found because a
+statement failed to be provable as written. The Day~29 ``Hamming $[7,1,3]$'' code has distance $2$ and
+cannot correct one error (\isa{notes\_hamming\_not\_correcting}). The Day~32 claim that distinct
+one-qubit Pauli errors map the Shor code to orthogonal subspaces fails for $Z_1\neq Z_2$, which agree on
+the code space (\isa{shor\_notes\_Z1\_Z2}; the notes correct it on Day~33). A reformulation of the Day~21
+conjecture is false for $n=2$, $d=1$ (\isa{notes\_form\_i\_false}). Two Day~23 examples, a formula of
+Day~31 and Cholesky's reduction on Day~5 each need an extra hypothesis.
+\section{The Foundation: Paulsen's Lectures, Formalised}\label{sec:paulsen}
+
+The HHL development builds on a formalisation of one complete set of lecture notes: Vern Paulsen's
+\emph{Lectures on Quantum Computing and Completely Positive Maps} (Houston, 2011)~\cite{paulsen2011notes}.
+The notes are an unedited transcription of 34 lectures in five parts: basic mathematics, an introduction
+to quantum computing, completely positive maps, entanglement, and error correction. Taking a course as
+the specification forces one to formalise the whole supporting theory rather than the shortest path to
+a headline theorem. It also gives an external measure of completeness.
+
+\paragraph{Audit and document.} The repository's audit lists every definition, theorem, proposition,
+corollary, example and remark of the notes with its formal counterpart. Of the 170 items, 9 are
+deliberately not formalised (overviews, history, classical asides). Of the remaining 161, 156 are
+formalised faithfully, 5 in a variant form, and none is missing. The variants are a different proof
+route (Choi's Theorem~3 through a Radon--Nikodym theorem for completely positive maps, and Arveson's
+extension theorem by cone separation), or a statement of the notes that needs a hypothesis or is false
+(Section~\ref{sec:errata}). The HHL paper is audited in the same way, in 23 items. An Isabelle-generated
+document of 404 pages restates the notes lecture by lecture, with the formal statements in place of the
+informal proofs, and it is rebuilt and re-checked by every build.
+
+\paragraph{Contents.} Lectures 1--10 give the linear algebra and the postulates: Schur's theorem, the
+spectral theorem, four characterisations of positivity, Cholesky's reduction, tensor products,
+measurements and POVMs. Part VI imports exactly this part. Lectures 11--22 give density matrices,
+partial traces, and completely positive maps with Choi's theorem (Listing~\ref{lst:choi}) and the
+Choi--Kraus representation. Lectures 23--28 give the extreme points of the unital and of the
+trace-preserving channels (Choi's Theorem~3), the Hahn--Banach theorem on matrix spaces, Arveson's
+extension theorem, and the separating-hyperplane theory of entanglement witnesses. Lectures 29--34 give
+classical and quantum codes, the Knill--Laflamme conditions in both directions, and Shor's nine-qubit
+code. One CPTP map corrects every single-qubit unitary error on each of the nine qubits
+(\isa{shor\_code\_theorem}); the $2^9$-dimensional space is never handled entrywise but as three blocks of
+three qubits.\isalink{Day11/Quantum_Computing11.thy}{6486}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Choi's theorem (Lecture 19)},label={lst:choi}]
+theorem choi_theorem:
+  fixes ~$\Phi$~ :: "complex mat ~$\Rightarrow$~ complex mat"
+  assumes linear: "~$\bigwedge$~A B. A ~$\in$~ carrier_mat n n ~$\Longrightarrow$~ B ~$\in$~ carrier_mat n n
+      ~$\Longrightarrow$~ ~$\Phi$~ (A + B) = ~$\Phi$~ A + ~$\Phi$~ B"
+      and smult: "~$\bigwedge$~c A. A ~$\in$~ carrier_mat n n ~$\Longrightarrow$~ ~$\Phi$~ (c ~$\cdot_{m}$~ A) = c ~$\cdot_{m}$~ ~$\Phi$~ A"
+      and range: "~$\forall$~A. A ~$\in$~ carrier_mat n n ~$\longrightarrow$~ ~$\Phi$~ A ~$\in$~ carrier_mat d d"
+      and npos: "n > 0" and dpos: "d > 0"
+  shows "completely_positive n d ~$\Phi$~ ~$\longleftrightarrow$~ psd (choi_matrix n d ~$\Phi$~)"
+\end{lstlisting}
+\end{minipage}
+
+\paragraph{Two lessons.} First, HOL functions are total, while a map $M_n\to M_d$ is constrained only on
+the carrier. The naive definition of an extreme point (``$\Phi$ is not the midpoint of two different
+channels'') is therefore vacuous, since any channel agrees on the carrier with maps that differ from it
+elsewhere. Extremality has to be defined through disagreement on the carrier. Second, two places in the
+notes genuinely need topology: the compactness of the unital channels, and the separation of a point
+from the closed convex cone of separable matrices. For these we wrap matrices of fixed dimension in a
+type, instantiate HOL-Analysis up to \isa{euclidean\_space}, and transport the statements back. The
+carrier-predicate world carries almost all of the development, and the typed world is used only where
+HOL-Analysis is applied.
+
+\paragraph{An open problem.} Lecture~21 asks whether every unital completely positive map
+$\Phi:M_n\to M_d$ is the average of $n$ unital maps of Choi rank at most~$d$. This is the strong
+Ruskai--Audenaert conjecture for the dual channel, which is open in general~\cite{kumarwolf2026}. We state
+it formally (\isa{D21\_2}) and prove the cases with direct constructions. If the Kraus operators split
+into $n$ groups that are orthogonal in a suitable sense, Fourier mixtures give the decomposition
+(\isa{fourier\_split}). This covers measurement maps and, via Horn's lemma, the case $d=1$. Following
+Bacon, Smolin and Wolf, every unital map with $n=2$ is such an average (\isa{ra\_two}): the off-diagonal
+block of the Choi matrix is $R_1KR_2^\dagger$ for a contraction $K$, and $K=\frac12(U_1+U_2)$ for unitaries
+obtained from a singular value decomposition, which we build from the spectral theorem. A
+reformulation in the notes turned out to be false (Section~\ref{sec:errata}).
+
+\paragraph{Size.} The formalisation of the notes has 50 theories with 51\,729 lines and 1\,614 results
+(lemmas, theorems, corollaries and propositions). Part VI has 29 theories with 22\,174 lines and 1\,161
+results, plus an 80-line bridge to the AFP's quantum search bound in a separate session
+(Table~\ref{tab:stats}).
+\section{Related Work}\label{sec:related}
+
+\paragraph{Verified HHL.} Zhou, Yu and Ying introduced an applied quantum Hoare logic with projection
+predicates and rules for robustness, and used it for a pen-and-paper verification of
+HHL~\cite{zhou2019applied}. CoqQ~\cite{zhou2023coqq} formalised that proof in Coq. Under the assumption
+that every $\lambda_jt_0/2\pi$ lies in $\{1,\dots,N-1\}$, it proves $\hoarep{I}{\mathit{HHL}}{\ketbra xx}$
+for the repeat-until-success program, in about 280 lines. $U_b$ and the controlled rotation are built
+from partial specifications, and the controlled evolution is a built-in multiplexer. Wu, Deng and Xu~\cite{wu2024local} verify the
+same exact HHL, and Shor's algorithm, in a quantum Hoare logic with distribution formulas embedded in
+Coq. Our development is in Isabelle/HOL and differs in scope. It proves total correctness, including
+termination and the distribution of the number of rounds; it treats the regime of the paper's error
+analysis, with inexact eigenvalues, an approximate oracle, the filter functions and amplitude
+amplification; it compiles the programs to elementary gates and simulates sparse Hamiltonians; and it
+records the errata of Section~\ref{sec:errata}.
+
+\paragraph{Other verified quantum algorithms.} In Coq, SQIR and its applications verify phase
+estimation, Grover's algorithm and others~\cite{hietala2021sqir}, and an end-to-end implementation of
+Shor's algorithm, including the reversible arithmetic of modular exponentiation~\cite{peng2023shor}. In
+Why3, QBricks verifies phase estimation, Grover's algorithm and the order-finding part of Shor's
+algorithm~\cite{chareton2021qbricks}. A recent HOL Light development treats Grover's
+algorithm~\cite{sun2026grover}. In Isabelle, \IMD{} formalises qubits, gates, teleportation, the no-cloning
+theorem and the Deutsch--Jozsa algorithm~\cite{bordg2021imd,bordg2020afp}. QHLProver verifies Grover's
+algorithm with the logic we use~\cite{liu2019qhl}, and the AFP contains the quantum Fourier
+transform~\cite{manrique2025qft}. Unruh's libraries develop bounded operators, tensor products of Hilbert
+spaces and Kraus maps in infinite dimension~\cite{caballero2021cbo,unruh2024tensor,unruh2025kraus}; they
+underlie his quantum relational Hoare logic~\cite{unruh2019qrhl} and the compressed-oracle technique,
+whose search lower bound~\cite{unruh2025co} we import for Theorem~4(2) of the HHL paper. We also import
+Sylvester's criterion from the AFP~\cite{binder2024hermitian}.
+
+\paragraph{Error analyses of HHL.} Li and Phillips~\cite{liphillips2024} re-derive the paper's error
+analysis by hand, with corrections of typos and with more detail on the amplitudes after phase
+estimation. Their remark on Lemma~2 is discussed in Section~\ref{sec:errata}. The later literature
+improves the dependence on $\kappa$ and $\varepsilon$~\cite{childs2017}. Verifying those algorithms is
+future work.
+
+\section{Discussion}\label{sec:discussion}
+
+\paragraph{What is trusted.} Beyond Isabelle's kernel, the statements depend on the definitions they
+use. Those of the AFP entries Jordan-Normal-Form, \IMD{} and QHLProver fix matrices, gates, programs,
+their semantics and the meaning of triples. Our own definitions are the ones shown in the listings: the
+grid values \isa{reg\_eig}, the functional calculus, the eight gates and the programs, the filter
+functions, the predicate \isa{elementary}, and the colour oracle. A reader who accepts the listings and
+the AFP's semantics can check that the theorems say what this paper claims.
+
+\paragraph{Assumptions and limitations.} The preparation of $\ket b$ is a hypothesis
+($U_b\ket0=b$) in Sections~\ref{sec:exact}--\ref{sec:approx} and a circuit in Section~\ref{sec:gates}. The
+colour oracles of the sparse simulation are hypotheses about their action on basis states. The
+reversible arithmetic that would implement them, and the higher-order product formulas behind the
+paper's cost, are not formalised. Universality is exact but gives no gate count, and the routing of the
+controlled rotation assumes $n=2^s$. Costs are stated as numbers of gates, oracle calls and rounds,
+not as membership in complexity classes. The optimality theorems are formalised up to the
+complexity-theoretic facts they cite.
+
+\begin{table}[t]
+\caption{Size of the development (results are lemmas, theorems, corollaries and propositions).}\label{tab:stats}
+\centering\small
+\begin{tabular}{@{}l@{\qquad}r@{\quad}r@{\quad}r@{}}
+\toprule
+Part & Theories & Lines & Results\\
 \midrule
-\isa{Day21\_Unitary\_Freedom} & 21: rank-one decompositions, Choi's Theorem~2 & 709 & 15\\
-\isa{Day32\_Recovery\_Proposition} & 32--33: Kraus composition, the general recovery proposition & 823 & 43\\
-\isa{Day22\_Minimal\_Kraus} & 22: minimal Kraus representations are independent & 253 & 11\\
-\isa{Day34\_Knill\_Laflamme} & 34: Knill--Laflamme necessity and closure & 591 & 18\\
-\isa{Day20\_Choi\_Rank} & 20: $\crk(\Phi)=\rank P_\Phi$ & 217 & 7\\
-\isa{Day34\_KL\_Sufficiency} & 34: Knill--Laflamme sufficiency and the full Theorem~1 & 491 & 13\\
-\isa{Day33\_Shor\_Code} & 32--33: the nine-qubit Shor code, Shor's theorem & 1\,011 & 69\\
-\isa{Day17\_Environment\_Model} & 17: noise from a unitary interaction with an environment & 212 & 8\\
-\isa{Day24\_Operator\_Systems} & 24: operator systems, $M_p(S)$, CP maps on $S$ & 254 & 16\\
-\isa{Day25\_Arveson\_Correspondence} & 24--25: CP iff $d$-positive iff $S_\Phi\ge0$; $\Phi\leftrightarrow S_\Phi$ & 682 & 42\\
-\isa{Day26\_Arveson\_Extension} & 26: positive extensions, Arveson's extension theorem & 651 & 19\\
-\isa{Day27\_Positive\_Map\_Criterion} & 27--28: positive maps and separability & 440 & 16\\
+Mathematics (functional calculus, phase estimation) & 4 & 1\,133 & 73\\
+Algorithm (circuits, error analysis, rest of the paper) & 13 & 11\,371 & 561\\
+Program (QHLProver programs and triples) & 5 & 3\,593 & 187\\
+Circuit (elementary gates, sparse simulation) & 7 & 6\,077 & 340\\
 \midrule
-\isa{Day02\_11\_Supplement} & 2--11: projections, $V\oplus W$, tensor coordinates, SWAP & 744 & 43\\
-\isa{Day29\_Classical\_Codes} & 29--30: Hamming codes, error probabilities & 311 & 24\\
-\isa{Day31\_Code\_Fidelity} & 31: independent bit flips, fidelities & 297 & 14\\
-\isa{Day32\_Y\_Code} & 32: the code for $Y$ flips & 238 & 22\\
-\midrule
-\isa{Day19\_Choi\_TP\_Unital} & 19: TP and unital in Choi-matrix form & 170 & 12\\
-\isa{Day23\_Extremality\_Examples} & 23: the extreme and non-extreme examples & 645 & 32\\
-\isa{Day25\_Unital\_Functional\_Norm} & 25: unital functionals: positive iff norm one & 505 & 29\\
-\midrule
-\isa{Day26\_CP\_Factorization} & 26: CP maps through UCP and CPTP maps & 301 & 14\\
-\isa{Day27\_Entangled\_Examples} & 27: entanglement detected by the transpose & 178 & 12\\
-\isa{Day05\_Sylvester\_Criterion} & 5: Sylvester's criterion, imported from the AFP & 101 & 6\\
-\isa{Day05\_Cholesky\_Examples} & 5: Cholesky's algorithm on the two examples & 233 & 27\\
-\isa{Day10\_15\_Supplement} & 10--15: superdense coding, CCNOT, $\operatorname{tr}_A$ & 377 & 25\\
-\isa{Day04\_29\_Supplement} & 4--29: Hermitian tests, ensembles, Choi, codes & 344 & 22\\
-\isa{Day21\_Ranges} & 4, 21: ranges of positive matrices, spanning & 257 & 5\\
-\isa{Day06\_Schmidt\_Rank} & 6: the Schmidt rank & 143 & 9\\
-\isa{Day22\_Adjoint\_Maps} & 22: $\Phi\mapsto\Phi^*$, UCP $\cong$ CPTP & 255 & 16\\
-\isa{Day23\_Choi3\_UCP} & 23: Choi's Theorem~3 for unital maps & 250 & 9\\
-\isa{Day16\_Block\_Form} & 16: block form on $H_A\otimes H_B$ & 206 & 13\\
-\isa{Day22\_UCP\_Compact} & 22: UCP is compact & 222 & 9\\
-\isa{Day06\_15\_Universal} & 6, 15: the universal properties & 436 & 23\\
-\isa{Day21\_Average\_Conjecture} & 21: the conjecture D21-2, proved cases & 628 & 22\\
-\isa{Day21\_Average\_Two} & 21: D21-2 for $n=2$ & 878 & 16\\
-\midrule
-\isa{Hermitian\_Functional\_Calculus} & VI: $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
-\isa{Phase\_Estimation} & VI: Fourier matrix, phase estimation & 502 & 26\\
-\isa{QFT\_Fourier} & VI: the Archive's QFT circuit is $F_{2^n}$ & 104 & 4\\
-\isa{HHL} & VI: the HHL algorithm & 816 & 46\\
-\isa{HHL\_Approximate} & VI: inexact phase estimation, error bounds & 1174 & 53\\
-\isa{HHL\_Window} & VI: sine-window register, $N\sim1/\varepsilon$ & 1210 & 46\\
-\isa{HHL\_Simulation} & VI: oracle circuits, simulation error & 745 & 49\\
-\isa{HHL\_Complete} & VI: readout, amplitude amplification & 865 & 42\\
-\isa{HHL\_Filter} & VI: filter functions, Lemmas 2--3, flag register & 1428 & 65\\
-\isa{HHL\_Filter\_Bounds} & VI: Theorem 1 of the HHL paper for every $b$ & 816 & 29\\
-\isa{HHL\_Runtime} & VI: (A32), BHMT averaging, run time & 611 & 21\\
-\isa{HHL\_Reduction} & VI: circuits to matrix inversion (Section III) & 647 & 55\\
-\isa{HHL\_Rectangular} & VI: rectangular $A$, pseudo-inverse solutions & 385 & 20\\
-\isa{HHL\_Discussion} & VI: $f(A)\ket b$, sampling, SWAP test, estimation & 908 & 44\\
-\isa{HHL\_Optimality} & VI: Theorems 4--6 up to the cited results & 1055 & 60\\
-\isa{HHL\_Search\_Bound} & VI: AFP quantum search bound (separate session) & 80 & 4\\
-\isa{QPE\_Register} & VI: $H^{\otimes n}\ket{0\cdots0}$ is the uniform register & 104 & 7\\
-\isa{HHL\_Trajectory} & VI: the HHL circuit gate by gate & 591 & 28\\
-\isa{HHL\_Program} & VI: HHL as a verified quantum program (QHL) & 1402 & 89\\
-\isa{HHL\_Gates} & VI: the program in elementary gates & 895 & 75\\
-\isa{HHL\_Preconditioned} & VI: the program on a preconditioned system & 177 & 19\\
-\isa{HHL\_Termination} & VI: termination of the repeat-until-success loop & 502 & 19\\
-\isa{HHL\_Paper\_Program} & VI: the paper's regime as programs & 877 & 31\\
-\isa{HHL\_Gate\_Refinements} & VI: rotation, window preparation, Fourier gates & 635 & 29\\
-\isa{HHL\_Uniform\_Rotation} & VI: the rotation stage in elementary gates & 1142 & 73\\
-\isa{HHL\_State\_Preparation} & VI: state preparation, window in elementary gates & 785 & 32\\
-\isa{HHL\_Trotter} & VI: Lie--Trotter formula with explicit error & 572 & 26\\
-\isa{HHL\_Sparse\_Split} & VI: sparse $A$ as $2s$ Hermitian 1-sparse parts & 460 & 20\\
-\isa{HHL\_Sparse\_Circuit} & VI: the sparse simulation oracle as a circuit & 1192 & 70\\
-\isa{HHL\_All\_Elementary} & VI: $\ket b$, routing, exact universality & 1031 & 44\\
-\end{longtable}
-}
+Part VI, HHL & 29 & 22\,174 & 1\,161\\
+Bridge to the AFP search bound (separate session) & 1 & 80 & 4\\
+Paulsen's lectures (the foundation) & 50 & 51\,729 & 1\,614\\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\paragraph{Lectures 1--10: linear algebra and the postulates.}  Besides the inner-product
-algebra, matrix units and the trace (\isa{Tr\_cyclic}, \isa{hs\_inner\_prod\_as\_trace}),
-the first part proves the projection formula $P=\sum\ketbra{v_i}{v_i}$ and Parseval
-(\isa{parseval\_norm}), the characterisations of unitaries, Householder unitaries and
-Schur's lemma (\isa{schur\_lemma}), Schur's triangularisation (\isa{schur\_theorem}) and
-$\Tr A=\sum\lambda_i$, the spectral theorem for Hermitian matrices
-(\isa{hermitian\_spectral\_decomp}: $U^\dagger HU$ is a real diagonal matrix), and the
-positivity theory: $P\ge0$ iff Hermitian with non-negative eigenvalues
-(\isa{psd\_iff\_nonneg\_eigenvalues}), iff $P=\sum\ketbra{v_i}{v_i}$
-(\isa{psd\_kraus\_decomp}, \isa{outer\_sum\_psd}), positive definiteness iff the $v_i$ span
-(\isa{pd\_iff\_spanning}), the positive square root, and Cholesky's reduction
-(\isa{cholesky\_reduction}).  Tensor products are Kronecker products with bilinearity,
-the multiplicativity of inner products and the orthonormal product basis
-(\isa{tensor\_onb}).  The postulates are definitions: \isa{quantum\_state},
-\isa{evolve}, \isa{measurement\_system}, \isa{meas\_prob}, with the probabilities summing
-to one, POVMs with their square-root measurement systems (\isa{povm\_from\_sqrt}),
-perfect distinguishability of orthogonal states, and local measurements in composite
-systems (\isa{composite\_measurement\_prob}).
+\paragraph{Lessons.} Four proof patterns carried most of the work. First, statements about every
+right-hand side are proved for eigenvectors and extended by the lemma that matrices agreeing on all
+eigenvectors are equal, so no sum over an eigenbasis appears. Second, register sums
+$\sum_j\ket j\otimes f_j$ make block-diagonal operators act branch by branch, which turns the error analysis
+into scalar estimates. Third, every triple is proved for all gate lists with a given product, so each
+refinement towards elementary gates is a circuit identity with no new program reasoning. Fourth, the
+total correctness of repeat-until-success loops reduces to a geometric series once the body resets the
+state. On the side of the tools, an oracle audit (\isa{Thm\_Deps.all\_oracles}) is meaningful only for
+builds with \texttt{quick\_and\_dirty = false}. With \texttt{quick\_and\_dirty = true}, Isabelle discharges
+internal goals of the \isa{fun} and \isa{record} packages by \isa{Skip\_Proof.cheat\_tac}, and every theorem downstream
+of such a definition reports the oracle \isa{skip\_proof}, even in a development without a single
+\texttt{sorry}.
 
-\paragraph{Lectures 11--22: channels and Choi's theorem.}  The no-cloning theorem
-(\isa{no\_cloning}) and the existence of oracles $U_f$ (\isa{oracle\_exists}) open the
-second part.  Ensembles and their density matrices are defined, and density matrices are
-characterised as the positive matrices of trace one (\isa{density\_matrix\_iff\_ensemble},
-via the spectral ensemble); the ensembles of a pure state consist of multiples of the
-state (\isa{pure\_ensemble\_parallel}).  Partial traces are defined by the block formulas
-of the notes; they are trace preserving and positivity preserving
-(\isa{partial\_trace\_B\_is\_density}) and compatible with local measurements:
-$\Tr((M^\dagger M\otimes I)\rho)=\Tr(M^\dagger M\,\mathrm{tr}_B\rho)$
-(\isa{partial\_trace\_measurement}).  The coordinate form of
-$L(\mathcal H_A)\otimes L(\mathcal H_B)\cong L(\mathcal H_A\otimes\mathcal H_B)$ is an
-explicit linear isomorphism.  Measurement maps $\rho\mapsto\sum M_\alpha\rho M_\alpha^\dagger$
-preserve density matrices; Kraus maps are completely positive (\isa{kraus\_is\_cp}), with
-complete positivity defined through the block amplification $\Phi^{(p)}$.  Choi's theorem
-is \isa{choi\_theorem}: a linear $\Phi$ on the carrier is completely positive iff its Choi
-matrix $(\Phi(E_{ij}))_{ij}$ is positive, and \isa{kraus\_rep\_of\_psd\_choi} extracts a
-Kraus representation with $nd$ operators from a positive Choi matrix, which gives the
-Choi--Kraus characterisation of channels (\isa{choi\_kraus\_cptp}) and the Kraus-rank bound
-(\isa{kraus\_rank\_bound}).  The Hilbert--Schmidt adjoint of a Kraus map is the Kraus map
-of the adjoint operators (\isa{kraus\_adjoint\_correct}), and $\Phi$ is unital iff $\Phi^*$ is
-trace preserving (\isa{cp\_unital\_iff\_adjoint\_tp}); positive functionals are
-completely positive (\isa{positive\_scalar\_is\_cp}); the sets UCP and CPTP are convex.
+\section{Conclusion}\label{sec:conclusion}
 
-\paragraph{The conjecture of Lecture~21.}  The notes ask whether every unital completely
-positive $\Phi:M_n\to M_d$ is the average of $n$ unital maps of Choi rank at most $d$.  This is
-the strong Ruskai--Audenaert conjecture for the dual channel $M_d\to M_n$, open in general
-\cite{kumarwolf2026}; we state it formally (\isa{D21\_2}) and prove the cases that have direct
-constructions.  If the Kraus operators split into $n$ groups $A_{m1},\dots,A_{md}$ with
-$\sum_jA_{mj}A_{m'j}^*=0$ for $m\ne m'$, the Fourier mixtures $B_{lj}=\sum_m\omega^{lm}A_{mj}$ give the
-decomposition, since $\sum_l\omega^{l(m-m')}=n\delta_{mm'}$ (\isa{fourier\_split}).  This covers
-measurement maps $X\mapsto\sum_iX_{ii}Q_i$ (\isa{ra\_measurement}) and, applied to an eigenbasis,
-Horn's lemma: every density matrix is the average of $n$ pure states (\isa{horn\_lemma}, the case
-$d=1$), which in turn gives the maps with diagonal values (\isa{ra\_cq}).  For $n=2$ every unital map is such an average (\isa{ra\_two}), following Bacon, Smolin and Wolf: the off-diagonal block of the Choi matrix is $R_1KR_2^*$ with $R_iR_i^*$ the diagonal blocks and $K$ a contraction, and $K=\frac12(U_1+U_2)$ for unitaries obtained from a singular value decomposition, which we build from the spectral theorem by completing an orthonormal family to a basis.  The notes' reformulation
-(i) for trace-preserving maps $M_n\to M_d$ is false as written: for $n=2$, $d=1$ no trace-preserving
-map $M_2\to\mathbb C$ has Choi rank one (\isa{notes\_form\_i\_false}); the equivalent dual form has the
-dimensions exchanged.
+We have verified the HHL algorithm in Isabelle/HOL as programs of a quantum while-language, with
+quantum Hoare logic as the common language from the functional calculus up to elementary gates. In the
+exact case the program is totally correct: it succeeds with probability $C^2\norm{A^{-1}b}^2$, it is
+exact on success, and its repeat-until-success loop terminates with probability one after $1/p$
+expected rounds. In the paper's regime, the bounds of Theorem~1 and the run time hold with explicit
+constants, and the programs satisfy the corresponding fidelity triples. All of this persists down to
+circuits of one- and two-qubit gates, including the preparation of $\ket b$ and, for sparse $A$, the
+simulation of $e^{iAt}$. On the way, the formalisation corrected the constant of Lemma~3 and several
+statements of the paper's optimality proofs.
 
-\paragraph{Lecture 23: Choi's Theorem 3.}\label{sec:choi3}  Choi's characterisation of the
-extreme points of UCP~\cite{choi1975} is formalised in its trace-preserving form, for a
-channel given by a Kraus list $V_1,\dots,V_r$ of linearly independent operators
-(\isa{choi\_theorem\_3\_cptp\_iff}): $\Phi$ is extreme if and only if $\{V_j^\dagger V_i\}$ is
-linearly independent over $\C$.  (The perturbation argument of the notes produces a
-real-coefficient relation; a complex relation is first turned into a Hermitian one, using
-that the family $\{V_j^\dagger V_i\}$ is closed under adjoints, so both directions use the
-same notion of independence.)  Two aspects deserve comment.  First, because HOL functions are only
-constrained on the carrier, the naive definition of an extreme point (``$\Phi$ is not the
-midpoint of two \emph{different} CPTP maps'') is vacuous: any CPTP map agrees on the
-carrier with maps that differ from it elsewhere.  Extremality is therefore defined through
-disagreement on the carrier (\isa{extreme\_CPTP\_carrier}).  Second, the notes' proof uses
-the unitary freedom of Kraus representations (their ``Choi 2''), which was formalised only
-afterwards (\isa{choi\_2\_unitary\_freedom} in \isa{Day21\_Unitary\_Freedom}).  The forward
-direction instead goes through a CP Radon--Nikodym theorem
-(\isa{cp\_radon\_nikodym\_linear}): if $\Psi$ and $\Phi-\Psi$ are completely positive and
-$\Phi(X)=\sum_iV_iXV_i^\dagger$, then $\Psi(X)=\sum_{ij}T_{ij}V_iXV_j^\dagger$ for a positive
-matrix $T$.  Its proof reduces to a statement about positive matrices dominated by an
-outer sum, $0\le B\le VV^\dagger$ implies $B=VTV^\dagger$ with $T\ge0$, which we prove with
-the Moore--Penrose pseudoinverse of $VV^\dagger$ built from the spectral theorem: the
-identities $AA^+A=A$ and, for $0\le B\le A$, $AA^+B=B$ follow from the kernel inclusion
-$\ker A\subseteq\ker B$, and $T=(A^+V)^\dagger B(A^+V)$.
+The development is also an argument for formalising a whole course before an algorithm. Paulsen's
+notes supplied the spectral theorem and the positivity theory that HHL needs. Their later lectures
+supply the completely positive maps and Choi--Kraus representations that are the semantics of quantum
+programs, which suggests the next step: proving that QHLProver's denotations are the channels of
+Lecture~19, so that the two halves of the development meet in one theorem. Higher-order simulation with
+verified arithmetic oracles, gate-count bounds for compilation, and the later linear-systems algorithms
+are further natural continuations.
 
-\paragraph{Lectures 25--28: Hahn--Banach and entanglement witnesses.}  The notes state the
-Hahn--Banach theorem for bounded functionals on normed spaces and use it in Arveson's
-extension theorem.  We prove it for matrix spaces with the Hilbert--Schmidt norm
-(\isa{matrix\_hahn\_banach\_lmat}): HOL's Hahn--Banach theorem gives a norm-preserving
-real-linear extension of the real part, and the Bohnenblust--Sobczyk formula
-$f(x)=F(x)-iF(ix)$ recovers a complex-linear extension with the same bound.  Arveson's
-correspondence and extension theorem are formalised in the third block of
-Table~\ref{tab:theories} (Section~\ref{sec:audit}).  The entanglement theory of
-Days~27--28 is: the separable matrices form a closed convex cone
-(\isa{separable\_cone\_lmat\_closed}, using the closedness of the positive matrices, the
-compactness of the product density matrices and a Carath\'eodory bound on the number of
-generators), so a non-separable $\rho$ is separated from the cone by a real functional,
-which becomes a Hermitian witness $W$ with $\Re\Tr(W\rho)<0\le\Re\Tr(W\sigma)$ for all
-separable $\sigma$ (\isa{entanglement\_witness\_hermitian'}); this yields the
-Horodecki-type characterisation~\cite{horodecki1996}: a Hermitian $\rho$ is separable
-iff every such witness is non-negative on it (\isa{separable\_iff\_witness}), with a
-strict version for density matrices.  The notes phrase the criterion through positive
-maps, which needs the Arveson correspondence; the witness form is the equivalent
-statement that does not.
+\paragraph{Acknowledgements.} The lecture notes were written by Vern Paulsen and transcribed by Brandon
+Lee. The formalisation was carried out with the assistance of AI coding agents, and all statements were
+checked by Isabelle.
 
-\paragraph{Lectures 29--32: error correction.}  Hamming weight and distance, the parity
-check and repetition codes, the Pauli matrices and their orthogonality, the bit-flip,
-phase-flip and bit-phase-flip channels (as UCP and CPTP maps), the pure-state fidelity,
-and the code words of the three-qubit codes are formalised.  The recovery theorems for
-the three-qubit code and the Shor code, and the Knill--Laflamme conditions of the last
-lectures, are not.
-
-\section{The audit}\label{sec:audit}
-
-The file \texttt{NOTES\_AUDIT.md} in the repository lists, for each of the 34 lectures,
-every definition, theorem, proposition, corollary, example and remark of the notes with
-its formal counterpart.  Each item is classified: $\checkmark$ faithful, $\sim$ formalised
-in a variant form, $\times$ not formalised, or $-$ deliberately not formalised
-(overviews, history, numerical examples, classical asides such as stochastic matrices
-or cyclic codes).  Of the 170 items, 9 are deliberate omissions; of the remaining 161
-mathematical items, 156 are faithful, 5 are variants and none is a gap.\footnote{Counts as
-of the third close-out of October 2026; the audit file is the authoritative record.}  The audit
-drove a final round of proofs: small statements omitted along the way (the converses
-isometry~$\Rightarrow$~unitary, positive definiteness iff positive eigenvalues, the
-expected value $\braket{\psi}{H\psi}$ of an observable, the phase invariance of
-$\ketbra\psi\psi$, that $\rho_1\otimes\rho_2$ is a density matrix, the unambiguous
-discrimination of linearly independent states, and the complex-coefficient form of
-Choi's Theorem~3) were proved during the close-out and are counted as faithful above.
-A second pass closed the medium-sized gaps that the notes prove in a page, each in its
-own theory (the second block of Table~\ref{tab:theories}): a linear map sends density
-matrices to density matrices iff it is positive and trace preserving
-(\isa{density\_preserving\_iff\_positive\_tp}); the transpose on $M_2$ is positive but not
-$2$-positive, with the notes' witness $(E_{ij})$; the Hadamard power
-$H^{\otimes N}\ket{0\cdots0}=2^{-N/2}\sum_J\ket J$ and the counting probability
-$p_0=(M/2^N)^2$ of Day~12, for any unitary acting as the oracle on the basis; the Pauli
-expansion identity $\sum|a_k|^2=1$ for unitaries; the bound $\crk(\Phi)\le n$ for extreme
-CPTP maps (linear independence bounds the length, through the vector-space library of
-the Jordan-Normal-Form entry); the two-qubit Horodecki--Peres criterion, $(\mathrm{id}\otimes
-t)(\ketbra vv)\ge0$ iff $v$ is a product vector, with the witness value
-$-2|v_0v_3-v_1v_2|^2$; and the three-qubit bit-flip code, whose syndrome projections,
-CPTP recovery map and recovery theorem $R(\ketbra{\psi_i}{\psi_i})=\ketbra\psi\psi$ for at
-most one flip are proved on explicit $8\times8$ matrices.  A third pass added the
-structural results of lectures 20--22 and 32--34: two rank-one decompositions
-$\sum v_jv_j^*=\sum w_lw_l^*$ with the $v_j$ independent are related by an isometry, and
-hence two Kraus representations of one map by an isometry (Choi's Theorem~2,
-\isa{choi\_2\_unitary\_freedom}, proved through the Choi matrix); a Kraus representation
-of minimal length $\crk(\Phi)$ is linearly independent; the Choi rank theorem
-$\crk(\Phi)=\rank P_\Phi$ (\isa{choi\_rank\_eq\_rank}, with the rank taken in the
-Jordan-Normal-Form vector-space library); the general recovery proposition of Day~32,
-$R(\ketbra\varphi\varphi)=(\sum_i|a_i|^2)\ketbra\psi\psi$ for $\varphi=\sum_ia_iU_i\psi$ with
-$PU_i^*U_jP=\delta_{ij}P$ (\isa{recovery\_linear\_combination}; the notes assume unitary
-$U_i$, but only $PU_i^*U_iP=P$ is used); and the Knill--Laflamme theory: the equivalence
-between correcting the states of $V$ and fixing $PXP$, Theorem~1 in both directions
-(\isa{knill\_laflamme}; necessity through Choi's Theorem~2, sufficiency by diagonalising
-$(\alpha_{ij})$ and applying the recovery proposition to the rescaled mixed errors, which
-need not be restrictions of unitaries) and the closure of the corrected errors under
-linear combinations.  Finally the Shor code: one CPTP map corrects every single-qubit
-unitary error on each of the nine qubits (\isa{shor\_code\_theorem}).  The $2^9$-dimensional
-space is never handled entrywise; nine qubits are three blocks of three, each single-qubit
-operator acts inside one block, inner products factor over the blocks, and the
-orthogonality of the $22$ error images reduces to the distinctness of $44$ block labels,
-decided by \isa{code\_simp}.  Here the formalisation found a false statement: the Day~32
-proposition that distinct 1-Paulis map the code space to orthogonal subspaces fails for
-$Z_1\ne Z_2$, which agree on the code space (\isa{shor\_notes\_Z1\_Z2}); the notes correct it
-on Day~33.  The environment model of Day~17 is proved as stated:
-$\operatorname{tr}_E(U(\rho\otimes\ketbra\varphi\varphi)U^*)=\sum_iW_i\rho W_i^*$ with
-$\sum_iW_i^*W_i=I$ (\isa{environment\_model}).  Last, the operator-system part of the
-course: Arveson's theorem that a linear map on an operator system is completely positive iff
-it is $d$-positive iff $S_\Phi$ is positive, the correspondence $\Phi\leftrightarrow S_\Phi$,
-the extension theorem (\isa{arveson\_extension}) with the Kraus form of completely positive
-maps on operator systems, and the positive-map criterion for separability
-(\isa{separable\_iff\_positive\_maps}).  The extension is not proved as in the notes (a state
-of norm one, Hahn--Banach, and a reduction to the unital case): the positive functional
-$S_\Phi$ on $M_d(S)$ is extended directly, by separating the positive definite cone from its
-kernel with HOL-Analysis' separating hyperplane theorem in the Euclidean space of typed
-matrices, which gives the extension $X\mapsto\operatorname{Tr}(DX)$ with $D\ge0$.  A fourth pass (the fourth block of Table~\ref{tab:theories}) proved the examples and small
-propositions that remained: the projection does not depend on the orthonormal basis; the
-unique coordinates $u=\sum_jx_j\otimes f_j$ for any basis and $X\otimes Y\cong X\oplus\cdots\oplus X$;
-outcome $i$ fires on $\psi_2$ with probability at least $|\braket{\psi_1}{\psi_2}|^2$ if it is
-certain on $\psi_1$; the Bell-pair measurement of Day~9; $\mathrm{SWAP}=\mathrm{CNOT}\cdot
-\mathrm{CNOT}'\cdot\mathrm{CNOT}$; the classical error probabilities of Day~30; the bit-flip
-code under independent flips, with $R\circ E$ and both minimum fidelities of Day~31; and the
-code for $Y$ flips.  Two statements of the notes needed correction.  The Day~29 ``Hamming
-$[7,1,3]$'' code (seven data bits, three parity bits) has distance $2$: it detects one error but
-cannot correct one (\isa{notes\_hamming\_not\_correcting}); the standard $[7,4,3]$ code corrects
-one.  The Day~31 formula $R\circ E(Y)=c_1Y+c_2XYX$ holds for $Y$ supported on the code space,
-not for a general $Y$.  The 6 remaining gaps are Sylvester's criterion (stated without proof
-in the notes), the Choi-matrix form of trace preservation and unitality, two lists of
-examples, and the two lemmas that only the notes' route to the extension theorem uses.
-
-Beyond the omissions, the audit documents where the formalisation strengthens the
-notes (strict witnesses for density matrices; Cholesky with the missing hypothesis;
-the vacuity of the naive extreme-point definition) and where it changes the route of a
-proof (Choi's Theorem~3 through CP Radon--Nikodym).
-
-A fifth pass (the fifth block) proved the three items that remained: the Choi-matrix form
-of trace preservation and unitality, the Day~23 examples, and the proposition that a
-unital functional is positive iff it has norm one.  Two examples needed correction: the
-average $\tfrac12(U_1^*XU_1+U_2^*XU_2)$ is non-extreme only when $U_1,U_2$ are linearly
-independent (it is extreme when $U_2$ is a unimodular multiple of $U_1$), and the map
-$X\mapsto\Tr(X)I_d$ is trace preserving only after division by $d$.  The norm
-proposition is proved without the spectral theorem, from $P^2\le\norm PP$ for $P\ge0$.
-
-A sixth pass (the sixth block) closed the last three gaps.  The two Day~26 factorisations of a
-completely positive map, $\Phi(X)=V^*\psi(X)V$ with $\psi$ unital and $\Phi(X)=\psi(VXV^*)$ with
-$\psi$ trace preserving (\isa{cp\_unital\_factor}, \isa{cp\_tp\_factor}), are proved from the
-Kraus form on the operator system with block embeddings $B_i$ satisfying $\sum_iB_iB_i^*=I$,
-instead of the notes' compression to the range of $\Phi(I)$ and dualisation.  The Day~27 examples
-$\left(\begin{smallmatrix}E_{ii}&E_{ij}\\E_{ji}&E_{jj}\end{smallmatrix}\right)$ and $(E_{ij})$ are
-positive and not separable, since the transpose's ampliation takes the value $-2$ on
-$e_0\otimes e_j-e_1\otimes e_i$ (\isa{entangled\_example\_2}, \isa{entangled\_example\_choi\_seed}).
-Sylvester's criterion is not reproved: it is imported from the AFP entry \emph{Two Hermitian
-Results}, whose notions of Hermitian and positive definite matrices are shown to agree with ours
-(\isa{pd\_iff\_leading\_minors\_pos}).  Because that entry builds on HOL-Analysis,
-HOL-Probability and QHLProver, the bridge is a separate session with its own document; the
-main document states the criterion in its Day~5 commentary.  The two numerical $3\times3$ examples
-of Cholesky's algorithm on Day~5, first counted as illustrations, are also checked step by step
-(\isa{notes\_example\_1}, \isa{notes\_example\_2}), together with the rank-one decomposition
-the algorithm produces.  Seven variant rows were completed: the superdense-coding table (the
-notes' fourth matrix is $ZX$), the CCNOT truth table, and the partial trace over $A$, obtained from
-the $B$ side by the index permutation that exchanges the factors
-(\isa{partial\_trace\_A\_is\_density}); the converse directions of the Hermitian tests, the density
-of a composite ensemble, Choi's theorem with $n$-positivity as its own condition
-(\isa{choi\_four\_conditions}), and the distance of subspace codes with unique decoding; and the ranges of
-positive matrices on Day~21 ($R(\sum_lw_lw_l^*)=\operatorname{span}\{w_l\}$, \isa{outer\_sum\_range}), which
-also gives the Day~4 statement in its literal form: $\sum_iv_iv_i^*>0$ iff the $v_i$ span $\C^n$.
-The Schmidt rank was defined as the \emph{minimum} of the set of lengths of representations by
-elementary tensors; that set is infinite, and Isabelle's \isa{Min} is unspecified on infinite sets,
-so the definition was replaced by the least element.  With it, a nonzero vector has Schmidt rank~$1$
-iff it is a product state, and is entangled iff its Schmidt rank exceeds~$1$
-(\isa{entangled\_iff\_schmidt\_rank}).  Finally, bases of $\C^n$ and $\C^k$ give a basis of
-$\C^n\oplus\C^k$ (Day~5, \isa{direct\_sum\_basis\_is\_basis}), and the adjoint $\Phi^*$ of a linear map
-makes $\Gamma(\Phi)=\Phi^*$ an affine bijection from the unital onto the trace-preserving
-completely positive maps (Day~22, \isa{adjoint\_ucp\_imp\_cptp}, \isa{map\_adjoint\_adjoint}); through it,
-Choi's Theorem~3 is transported from the trace-preserving to the unital form stated in the notes
-(\isa{choi\_theorem\_3\_ucp}).  The block picture of Day~16, $X=\sum_{i,j}X_{ij}\otimes E_{ij}$ with
-$H_A\otimes H_B\cong H_A^{(p)}$ isometric, is proved as well (\isa{tensor\_block\_decomposition}), and so is the compactness of the unital
-completely positive maps, in Choi coordinates (\isa{compact\_ucp}).  The Kronecker model of Day~6 and the
-coordinate isomorphism of Day~15 now carry the notes' universal properties: every bilinear map
-factors uniquely through $v\otimes w$ (\isa{tensor\_universal\_property\_vec}), and $\Gamma$ is the
-unique linear map with $\Gamma(R\otimes T)=R\otimes T$ (\isa{gamma\_unique}).  The five remaining
-variants are deliberate: a different proof route (Choi's Theorem~3 through CP Radon--Nikodym, the
-extension theorem by cone separation), or a statement of the notes that needs a hypothesis or is
-false as stated (Cholesky with $p_{11}>0$, the Day~23 examples, the Day~32 Pauli claim).
-
-\section{The generated document}
-
-Isabelle's document preparation turns the theories into a PDF in which proofs are
-folded and the commentary appears between the formal statements.  During this project
-we rewrote the top-level comments of all theories as document markup: each lecture is a
-section, and before each group of formal statements a text block restates the notes'
-definitions and results in their own words and LaTeX, says which Isabelle statements
-correspond to them and how they differ, and names the audit items for what is missing.
-The result is a 2011 lecture course in which every displayed theorem has been checked,
-organised by theory rather than strictly by date because later lectures reuse earlier
-infrastructure; a reading guide at the front gives the map from lectures to theories.
-The document is produced by a fourth session, \isa{Vern\_Paulsen\_QC\_Notes}, through
-Isabelle's \texttt{document\_theories} mechanism, so it is regenerated and re-checked by
-every build.
-
-\section{Relation to the Archive of Formal Proofs}
-
-\IMD~\cite{bordg2020afp} and the quantum Fourier transform entry~\cite{manrique2025qft}
-use the same matrix representation as this project (\isa{complex Matrix.mat} with
-carriers), and we import both; our tensor-product lemmas (mixed product, adjoint,
-unitarity, product bases), measurement calculus and density-matrix theory extend them
-in the same style.  The quantum Hoare logic entry~\cite{liu2019afp} contains a positivity
-predicate, the Loewner order and a decomposition of positive matrices, overlapping with
-our Days~4 and~18, but no Choi theory.  Unruh's \emph{Complex Bounded Operators},
-\emph{Tensor Products in Hilbert Spaces} and \emph{Kraus Maps}
-\cite{caballero2021cbo,unruh2024tensor,unruh2025kraus} are far more general---arbitrary
-Hilbert spaces, trace-class and Hilbert--Schmidt operators, the spectral theorem for
-compact operators, Kraus families for possibly infinite-dimensional channels---but live
-in a type-based representation of operators (\isa{'a $\Rightarrow_{CL}$ 'b}); they contain
-neither Choi's theorem nor the extreme-point and separability results, and connecting
-them to the matrix world would require a transfer layer of the kind our \isa{lmat}
-wrapper provides in miniature.  Echenim's projective measurements~\cite{echenim2021pm}
-are formulated on \isa{complex\^{}'n} vectors.  To our knowledge the results of Days~19--28
-(Choi's theorem in its matrix form with explicit Kraus extraction, Choi's Theorem~3, the
-Hahn--Banach theorem on matrix spaces, the closedness of the separable cone and the
-witness characterisation) have no counterpart in the Archive.
-
-\section{A verified HHL algorithm}\label{sec:hhl}
-
-The HHL algorithm~\cite{hhl2009} prepares, for a Hermitian $A$ with eigen-decomposition
-$A=\sum_j\lambda_j\ketbra{u_j}{u_j}$ and a unit vector $\ket b=\sum_j\beta_j\ket{u_j}$, a
-state proportional to $A^{-1}\ket b$: phase estimation with the unitaries $e^{iAt}$ writes
-the eigenvalues into a register, a controlled rotation of an ancilla produces the
-amplitudes $C/\lambda_j$, uncomputation and a measurement of the ancilla postselect the
-branch $\sum_j(\beta_j/\lambda_j)\ket{u_j}$, up to the approximation error of phase
-estimation and with a success probability governed by the condition number.  Machine
-checked proofs exist in Coq, in the quantum Hoare logic of Zhou, Yu and Ying
-\cite{zhou2019applied,zhou2023coqq,feng2023coqqlr}; none existed in Isabelle/HOL, whose
-verified algorithms were Deutsch--Jozsa, Grover and the QFT (a recent HOL Light development
-treats Grover~\cite{sun2026grover}).  Part~VI of the development (session
-\isa{Vern\_Paulsen\_QC\_Algorithms}, the last block of Table~\ref{tab:theories}) builds HHL
-on the library of Parts I--V; it goes beyond the notes and is not counted in the audit.
-
-\paragraph{Functional calculus.}  For Hermitian $A$ and $g:\mathbb R\to\mathbb C$ we define
-$g(A)$ as the matrix with $g(A)v=g(\lambda)v$ for every eigenvector $v$ with eigenvalue
-$\lambda$.  The eigenvectors span, so this determines $g(A)$; no interpolation or
-independence-of-decomposition argument is needed.  The spectral theorem of Part~I gives
-existence and $g(A)=U\,\mathrm{diag}(g(D))\,U^\dagger$ for every decomposition.
-Multiplicativity, $g(A)^\dagger=\bar g(A)$, unitarity for $|g|=1$ and positivity for $g\ge0$
-on the spectrum follow by checking eigenvectors.  Instances are $e^{itA}$, with its group
-law, and $A^{-1}$ (the pseudo-inverse when $0$ is an eigenvalue, since $1/0=0$ in HOL).
-
-\paragraph{Phase estimation.}  The Fourier matrix $F_N$, $(F_N)_{jk}=\omega^{jk}/\sqrt N$, is
-unitary by the roots-of-unity sum.  Controlled powers $\sum_k\ketbra kk\otimes U^k$ act by
-phase kickback, and for $Uu=e^{2\pi i\varphi}u$ the circuit leaves the register in
-$\sum_j\alpha_j\ket j$ with $\alpha_j=\frac1N\sum_ke^{2\pi ik(\varphi-j/N)}$.  If
-$\varphi=j_0/N$ the outcome is $j_0$.  Otherwise the outcome nearest $N\varphi$ (mod $N$) has
-probability at least $4/\pi^2$, by Jordan's inequality and $|e^{ix}-1|=2|\sin(x/2)|$.  The
-Archive's QFT entry~\cite{manrique2025qft} gives its circuit's output in product form; by
-induction over the Kronecker list we show that the circuit \isa{ordered\_QFT}~$n$ equals
-$F_{2^n}$, so these theorems hold for the Archive's circuit.
-
-\paragraph{HHL.}  The state space is register $\otimes$ (system $\otimes$ ancilla), so phase
-estimation applies unchanged to $e^{it_0A}\otimes I$.  The circuit is $W^\dagger\,R\,W$ with $W$
-phase estimation and $R=\sum_k\ketbra kk\otimes I\otimes R(C/\lambda_k)$; register value $k$
-stands for $\lambda_k=2\pi k/(t_0N)$, or $2\pi(k-N)/(t_0N)$ for $k\ge N/2$.  Assuming every
-eigenvalue of an invertible Hermitian $A$ is some $\lambda_k$, we prove that the output on
-$\ket{u}\otimes\ket b\otimes\ket0$ ($u$ the uniform register state) is
-\[u\otimes\bigl(\sqrt{I-C^2A^{-2}}\,b\otimes\ket0+C\,A^{-1}b\otimes\ket1\bigr).\]
-The proof treats an eigenvector and extends to all $b$ by the fact that two matrices
-agreeing on all eigenvectors are equal, so no sums over an eigenbasis appear.  Hence
-$x=A^{-1}b$ solves $Ax=b$, the ancilla outcome $\ket1$ has probability $C^2\norm x^2$, and
-for $C\le|\lambda|\le\Lambda$ on the spectrum this is at least $(C/\Lambda)^2\norm b^2$,
-i.e.\ $1/\kappa^2$ for unit $b$ and $C=\lambda_{\min}$.  A non-Hermitian invertible $A$ is
-handled through $\left(\begin{smallmatrix}0&A\\A^\dagger&0\end{smallmatrix}\right)$, whose
-inverse maps $b\oplus0$ to $0\oplus x$.
-
-\paragraph{Inexact phase estimation.}  When $\lambda$ is not a register value, phase
-estimation leaves the register in $\sum_j\alpha_j\ket j$, the rotation acts with
-$C/\lambda_j$ on the $j$-th branch and uncomputation is inexact.  Writing states as
-register sums $\sum_j\ket j\otimes f_j$ (block operators act branch by branch, branches
-are orthogonal) gives the exact identity
-$\norm{\text{output}-u_N\otimes u\otimes R(C/\lambda)\ket0}^2
- =\norm u^2\sum_j|\alpha_j|^2\norm{R(c_j)\ket0-R(c)\ket0}^2$.
-For register values below $C$ the rotation $R(C/\lambda_j)$ is not unitary and the branch
-error is unbounded, so the physical circuit clamps the angle to $[-1,1]$; for it, with
-$\sum_j|\alpha_j|^2=1$, the tail bound $|\alpha_j|\le1/(2N|\delta_j|)$, Jordan's inequality
-and a Lipschitz estimate for $c\mapsto R(c)\ket0$ on $[0,\theta]$, we prove: if
-$\lambda\ge2C/\theta$ and $t_0\lambda\le\pi/2$ then the squared distance is at most
-$\norm u^2\,\frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda^2}\bigr)$
-(\isa{hhl\_clamped\_error\_bound}).  The error vectors of distinct eigenvectors are
-orthogonal (each lies in $\C^N\otimes\mathrm{span}(u_j)\otimes\C^2$), so with $U$ the
-eigenbasis, $U^*E^*EU$ is diagonal for the error operator $E$ and $\varepsilon^2I-E^*E$ is
-positive: for every $b$, with the spectrum in $[\lambda_{\min},\pi/2t_0]$ and
-$\lambda_{\min}\ge2C/\theta$,
-$\norm{\text{output}-\text{exact output}}^2\le
- \frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda_{\min}^2}\bigr)\norm b^2$
-(\isa{hhl\_clamped\_bound}), with no loss in the dimension.
-
-\paragraph{Sharper constants.}  The bound above is $O(1/N)$ in the squared error, so precision
-$\varepsilon$ needs a register of size $N\sim1/\varepsilon^2$.  The uniform register state is the
-culprit: its amplitudes decay only like $1/(N\delta)$.  Preparing the register in the sine window
-$\psi_\tau=\sqrt{2/N}\,\sin(\pi(\tau+\frac12)/N)$, as in the HHL paper, the window sum has a
-closed form and $|\alpha_j|^2\le\pi^2/(2N^4\delta_j^4)$ for $1/N\le|\delta_j|\le\frac12$
-(\isa{win\_amp\_tail}).  On good branches the distance is $O(\delta_j^2)$, so each term is at
-most $K\,w(N\varphi-j)/N^2$ for a weight $w$ with $\sum_jw(N\varphi-j)\le4+2\pi^2$; clamped and
-negative branches have $|\delta_j|\ge\varphi/2$ and contribute $O(1/N^3)$ in total.  For every $b$,
-$\norm{\text{output}-\text{exact output}}^2\le
- \bigl(\frac{8\pi^2(2+\pi^2)\theta^4}{N^2t_0^2C^2(1-\theta^2)}+\frac{512\pi^6}{N^3t_0^4\lambda_{\min}^4}\bigr)\norm b^2$
-(\isa{hhl\_window\_bound}), so $N\ge Q/\varepsilon$ gives error at most $\varepsilon\norm b$
-(\isa{hhl\_window\_precision}).
-
-\paragraph{The surrounding algorithm.}  The circuit uses $e^{iAt_0}$ only through controlled
-powers, so we write it in a small language of fixed gates and controlled oracle calls with a
-semantics and a call count: HHL makes $2(N-1)$ calls, and replacing the oracle by any unitary $V$
-with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most $2(N-1)\eta$
-(\isa{hhl\_sim\_robust}, from a general lemma: each call adds at most $\eta$).  End to end the
-output is within $(\varepsilon+2(N-1)\eta)\norm b$ of the exact one.  The answer is read by
-post-selecting the ancilla; normalisation is stable, so the post-selected state is within
-$2\delta/(C\norm{A^{-1}b})$ of $\psi\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$
-(\isa{hhl\_readout}).  Amplitude amplification is proved in the plane of the good and bad
-components ($k$ rounds give $\sin^2((2k+1)\theta)$), and as a circuit it uses the HHL circuit and
-its inverse once per round.  Theorem \isa{hhl\_complete} combines state preparation, the window,
-the simulation oracle, amplification and readout: success probability at least $1-p$ after
-$k\le\pi^2/(4Ct_0)$ rounds, i.e.\ $O(\kappa)$, with $(2k+1)\cdot2(N-1)$ oracle calls.
-
-\paragraph{The paper's error analysis.}  Appendix~A of the HHL paper uses a three-level flag
-register (nothing, well, ill) set by filter functions $f,g$.  We formalise $f,g$ and
-$\ket{h(\lambda)}$, Lemma~2 ($\lambda\mapsto\ket{h(\lambda)}$ is $\frac\pi2\kappa$-Lipschitz; the constant is
-attained) and Lemma~3, the relative bound
-$|f-\tilde f|^2+|g-\tilde g|^2\le c\,\kappa^2(\lambda-\tilde\lambda)^2(f^2+g^2)$.  The paper states $c=\pi^2/2$;
-this is false.  On $[1/2\kappa,1/\kappa)$ the proof uses $f^2+g^2=\frac12$, but there $f^2+g^2=\frac14$, and the
-ratio of the two sides tends to $\pi^2$.  We prove the lemma with $c=\pi^2$, which is sharp, by gluing
-region estimates (\isa{lemma3}).  With the window register and the wrapped distances of the
-register eigenvalues, all three parts of Theorem~1 follow for every $b$ with explicit constants:
-$\norm{(\tilde U-U)b}\le3\pi^2\sqrt{4+2\pi^2}\,\kappa\norm b/t$, and the post-selected states are within
-$12\pi^2\sqrt{4+2\pi^2}\,\kappa/t$ of the ideal ones, $t=Nt_0$ the total evolution time
-(\isa{flag\_bound}, \isa{flag\_post\_normalized}, \isa{flag\_well\_normalized}).  The audit of the
-paper's results against the formalisation is part of the notes audit.  The concentration bound
-(A32), $|\alpha_{k|j}|\le8\pi/\delta^2$, holds for $2\pi\le|\delta|\le N$ (\isa{win\_amp\_A32}).  For the
-paper's run-time claim we work in its normalisation (spectrum in $[1/\kappa,1]$): total evolution time
-$t\ge c\kappa/\varepsilon$ gives accuracy $\varepsilon$ for the post-selected state, the success amplitude is at
-least $1/(4\kappa)$, and amplification takes at most $\pi\kappa$ rounds, so the oracle is run for total time
-$O(\kappa^2/\varepsilon)$ and the state preparation $O(\kappa)$ times (\isa{hhl\_paper\_runtime}).  Running
-amplification without knowing $p$ rests on BHMT's averaging lemma (\isa{bhmt\_quarter}): stages with a
-random number of rounds below $1,2,4,\dots$, stopped at the first success, succeed with probability at
-least $1/4$ in fewer than $8\sqrt2\,\kappa$ rounds (\isa{doubling\_schedule\_kappa}).  The
-reduction from circuits to matrix inversion behind the optimality results is formalised as a
-construction (\isa{red\_inverse}, \isa{red\_A\_bounds}, \isa{red\_clock\_prob}, \isa{red\_post\_state}),
-with two corrections: the undo gates are $U^*_{T+1-t}$, not $U^*_{3T+1-t}$, and the condition number is
-$\coth\frac1{2T}\le2T+1$ rather than at most $2T$.
-
-\paragraph{Theorems 4--6.}  BQP, PSPACE, BPP and PP are not in the AFP (\isa{Cook\_Levin} has P and
-NP), so each optimality theorem is formalised up to the external fact it cites.  Clock in $[T,2T)$
-and outcome $P$ has probability $e^{-2}/(1+e^{-2}+e^{-4})\norm{PU_T\cdots U_1\psi}^2$
-(\isa{red\_M0\_prob}); the Hermitian dilation (A34) keeps the bounds $1\pm e^{-1/T}$
-(\isa{red\_dilation}); and a permutation fixing $\ket0$ turns $M_0$ into a first-qubit measurement
-(\isa{red\_first\_qubit}).  For Theorem~4 the speedup iteration gives
-$T_\ell\le\max(g^{2/\delta},T_0^{(1-\delta/2)^m})$ with $n_i\le n_0+i\log18+\frac2\delta\log T_0$
-(\isa{speedup\_iteration}, \isa{qubit\_growth}), hence a $\mathrm{poly}(n)$-gate simulation of every
-computation with $T\le2^{2n}$ (\isa{speedup\_collapse}).  The relativised part ends with polynomially
-many queries for search on $2^n$ inputs, refuted with the AFP bound $sN\le(5q+11)^2$ of
-\emph{Compressed Oracles}, imported in a separate session (\isa{search\_speedup\_impossible},
-\isa{search\_query\_bound}).  Theorems~5 and~6(2) reduce to growth-rate arguments with the cited
-lower bounds as hypotheses ($3\alpha+4\beta\ge\frac12$, $\alpha+\beta\ge1$; \isa{simon\_exponents},
-\isa{parity\_exponents}), and Theorem~6(1) to the counting state, whose last qubit reads $1$ with
-probability $\#\{z:\varphi(z)\}/2^n$ (\isa{count\_state\_prob}).  Not formalised: TQBF's
-PSPACE-completeness, $\mathrm{BQP}\subseteq\mathrm{PSPACE}$, and the classical Simon and parity bounds.
-Four errata: the proof's $m=\frac2\delta\log(2n)/\log\log n$ rounds do not give $T_m\le n_0$ (for $n_0=2^{64}$,
-$\delta=\frac12$ the bound is still above $2^{64}$; $m\ge\frac2\delta\ln(2n_0)$ works); (A34) cannot satisfy the
-demanded $\kappa^{-1}I\le A$, its diagonal being zero; in (A37) the top half of $\vec y$ is always $0$,
-so its first qubit carries no information; and Theorem~6(2)'s $\epsilon=2^{-n-2}$ cannot separate counts
-$C$ and $C+1$ once the clock factor $\le\frac14$ is included (\isa{paper\_rounds\_insufficient},
-\isa{herm\_embed\_diag}, \isa{paper\_precision\_insufficient}).
-
-\paragraph{A verified program.}  The results above are statements about matrices.  To show that
-a program computes them we use the quantum while-language and Hoare logic of the AFP entry
-\emph{QHLProver}, which is sound and complete for partial correctness and works on the same
-matrices.  The program \isa{hhl\_program} initialises all registers (QHLProver has no
-initialisation statement; we build one from a computational-basis measurement and swaps,
-\isa{hoare\_init}), applies eight gates (prepare $\ket b=U_b\ket0$, the Hadamard layer, the
-controlled evolution, $F^\dagger$, the controlled rotation, $F$, the inverse controlled evolution,
-the Hadamard layer) and measures the ancilla.  The state after each gate is computed for every
-$b$; phase estimation leaves $\sum_j\ket j\otimes\Pi_jb$ with $\Pi_j$ the spectral projector at the
-grid eigenvalue (\isa{hhl\_steps}, \isa{hhl\_step\_triples}).  With the proof rules we derive
-$\{C^2\norm{A^{-1}b}^2\,I\}\ \mathit{hhl\_program}\ \{P_1\}$ (success probability) and
-$\{I\}\ \mathit{hhl\_program}\ \{P_0+\ket t\bra t\}$ with $t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$
-(on success the state is exactly the solution); since loop-free programs preserve the trace,
-both hold for total correctness (\isa{hhl\_success\_total}, \isa{hhl\_correct\_total}).  The
-repeat-until-success program, a \textbf{while} loop around the circuit, satisfies
-$\{I\}\ \mathit{hhl\_rus}\ \{\ket t\bra t\}$ (\isa{hhl\_rus\_correct}), and, since its body re-initialises the
-registers, every round is an independent trial with success probability $p=C^2\norm{A^{-1}b}^2$: the loop
-terminates with probability one, so the triple holds for total correctness when $C\neq0$
-(\isa{hhl\_rus\_total}; QHLProver has no total-correctness rule for loops, so this is derived from
-the semantics of a loop whose body resets the state, \isa{while\_reset\_total}), it exits after
-exactly $m$ failed rounds with probability $(1-p)^mp$ in the target state
-(\isa{hhl\_rus\_prog\_rounds}), and the expected number of rounds is $1/p$
-(\isa{hhl\_rus\_expected\_rounds}).  The register is prepared by
-$H^{\otimes n}$, which takes $\ket{0\cdots0}$ to the uniform state (\isa{hadamard\_layer\_zero}, from
-\emph{Isabelle Marries Dirac}).  The evolution $e^{iAt_0}$ enters as a gate, as in the rest of
-Part~VI.  The theorems hold for every gate list with the circuit matrix of the eight gates, and
-\isa{HHL\_Gates} gives one in elementary gates: $H^{\otimes k}$ as $k$ single-qubit Hadamards, the
-controlled evolution $\sum_c\ket c\bra c\otimes U^c$ as one controlled $U^{2^j}$ per clock qubit
-(\isa{ctrl\_pow\_qubits}; $2^k-1$ controlled-$U$ calls, \isa{ctrl\_pow\_queries}), and $F$ as the
-AFP's gate-level Fourier circuit, flattened into Hadamards, controlled phase rotations and swaps
-(\isa{qft\_circuit}); the whole circuit has $(2k^3+16k+6)/3$ gates (\isa{length\_hhl\_elem\_gates}), the
-cubic term being the Fourier circuit, whose controlled rotations are routed through nearest-neighbour
-swaps.  Apart from the controlled powers, the preparation of $\ket b$ and the
-controlled rotation, every gate is a one- or two-qubit unitary on adjacent wires
-(\isa{hhl\_elem\_gate\_kinds}), and success probability, correctness and the loop carry over
-(\isa{hhl\_elem\_correct\_total}).  \isa{HHL\_Preconditioned} runs the program on a preconditioned
-system $BAx=Bb$: $BA$ need not be Hermitian, so the program takes its Hermitian dilation and the
-right-hand side $Bb/\norm{Bb}\oplus0$; on success the system register holds $0\oplus x/\norm x$
-for the solution of the original $Ax=b$ (\isa{hhl\_elem\_precond\_correct}), with success
-probability $C^2\norm x^2/\norm{Bb}^2\ge(C/s)^2$ when $\norm{BAv}\le s\norm v$
-(\isa{hhl\_elem\_precond\_bound}).  The programs so far assume that every eigenvalue is a register
-value; \isa{HHL\_Paper\_Program} removes this.  The circuits of the paper's regime (window register,
-eigenvalues anywhere in the spectral window, an $\eta$-accurate evolution oracle, the filtered
-three-level version) become gate lists of the same semantics (\isa{qgates\_sem}) and run as
-programs whose postcondition $\ket t\bra t$ measures fidelity with the target: one run gives
-$\{(Ct_0/\pi)^2(1-e^2)\,I\}$, where $e$ is the error bound of \isa{hhl\_complete}, and the
-repeat-until-success loop gives $\{(1-e^2)\,I\}$ with termination (\isa{hhl\_apx\_rus}); the
-filtered version gives $\{(1-\varepsilon^2)\,I\}$ in the run-time normalisation (\isa{hhl\_flag\_rus}),
-and amplitude amplification is a program with at most $\pi\kappa$ rounds (\isa{hhl\_flag\_amplified}).
-\isa{HHL\_Gate\_Refinements} splits the controlled rotation into one ancilla rotation per clock
-value (\isa{hhl\_split\_gate\_kinds}), prepares the window state with one Householder reflection
-(\isa{hhl\_apx\_program\_prepared}) and replaces the Fourier gates of the amplified circuit by
-the gate-level circuit (\isa{hhl\_apx\_fine}).  \isa{HHL\_Uniform\_Rotation} finally writes the rotation stage
-$\sum_c\ket c\bra c\otimes I\otimes R(\theta_c)$ itself in elementary gates: with Walsh--Hadamard
-coefficients it is one ancilla rotation and $2^k-1$ parity-controlled rotations, each parity being
-computed into the last clock qubit by nearest-neighbour CNOT and SWAP gates (\isa{ucr\_circuit}).  In
-the resulting program every gate is elementary, an oracle call, the preparation of $\ket b$, or a
-rotation of the ancilla controlled by the last clock qubit (\isa{hhl\_fine\_gate\_kinds},
-\isa{hhl\_apx\_fine2}).  \isa{HHL\_State\_Preparation} prepares any state with non-negative amplitudes by $k$
-levels of uniformly controlled rotations, all elementary (\isa{state\_prep}); for the sine window this
-replaces the reflection, and in the paper-regime programs every gate is then elementary, a controlled
-ancilla rotation, the preparation of $\ket b$ or an oracle call (\isa{hhl\_apx\_fine3}).
-
-\paragraph{Sparse Hamiltonian simulation.}  \isa{HHL\_Trotter} proves the Lie--Trotter product
-formula with an explicit constant: for Hermitian $H_1,\dots,H_m$ with $\norm{H_j}\le L$,
-$\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le 2(mLt)^2/r$ (\isa{trotter}).  The proof
-stays in the functional calculus: $|e^{ix}-1-ix|\le x^2$ bounds each factor to first order, and the
-errors add along products and powers of unitaries.  \isa{HHL\_Sparse\_Split} colours the graph of an
-$s$-sparse Hermitian $A$ greedily with $2s-1$ matchings, each an involution of the index set, so $A$
-is its diagonal plus $2s-1$ Hermitian 1-sparse matrices whose entries are entries of $A$
-(\isa{sparse\_split}).  \isa{HHL\_Sparse\_Circuit} implements each 1-sparse evolution exactly on
-$\ket x\ket y\ket b$: a colour query writes the partner $q(x)$ into the second register, a comparator
-sorts the pair and records the order in $b$, an entry gate rotates $b$ by
-$e^{id\left(\begin{smallmatrix}0&a\\\bar a&0\end{smallmatrix}\right)}$ with $a=A_{xy}$, and the
-comparator and the inverse query uncompute (\isa{colour\_circ\_basis}).  The colour oracle is any
-unitary with $\ket x\ket0\ket b\mapsto\ket x\ket{q(x)}\ket b$, and one exists for every colouring.
-Written as a list of $5(2s-1)+1$ unitary gates per round, $r$ rounds act on $\ket x\ket0\ket0$ as a unitary
-$V$ with $\norm{V-e^{itA}}\le8(sLt)^2/r$, using $r(6s-2)$ queries (\isa{sparse\_simulation\_circuit}).  In
-the HHL bound this gives the error $(\varepsilon+16(N-1)(sLt_0)^2/r)\norm b$
-(\isa{hhl\_sparse\_window\_error}).
-
-\paragraph{Removing the assumed gates.}  For $n=2^s$, \isa{HHL\_All\_Elementary} removes the last
-assumed gates other than oracle calls.  An ancilla rotation controlled by the last clock qubit is
-conjugated by $s$ adjacent swaps that move the ancilla next to the clock (\isa{route\_cv0}).  A
-diagonal unitary on $k+1$ qubits splits into a diagonal on $k$ qubits for the pair means and a
-uniformly controlled rotation, conjugated by a fixed one-qubit gate, for the pair differences
-(\isa{diag\_gates\_circuit}); with the rotation cascade for the magnitudes this prepares every
-normalised $\ket b$ (\isa{bprep}).  In the exact-phase and the paper-regime programs every gate is
-then elementary or an oracle call (\isa{hhl\_elementary}, \isa{hhl\_apx\_elementary}).  The oracle
-calls can be compiled as well.  By the spectral theorem (from QHLProver)
-$U=\prod_k(I+(\lambda_k-1)p_kp_k^*)$, and each factor is $Q_kD_kQ_k^*$ with $Q_k$ the preparation
-circuit of the eigenvector $p_k$ and $D_k$ a phase on $\ket0$, so every unitary on $m\ge1$ qubits is a
-product of elementary gates (\isa{exact\_universality}) and there are HHL programs, exact and
-paper-regime, in which every gate is elementary (\isa{hhl\_compiled}, \isa{hhl\_apx\_compiled}).
-Universality gives no useful gate count, so the call counts remain the cost statements.
-
-\paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
-$H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero
-eigenspaces.  The pseudo-inverse maps $b\oplus0$ to $0\oplus x$ with $A^*Ax=A^*b$ and $x$ in the
-range of $A^*$, so $x$ is the minimum-norm solution when $Ax=b$ is solvable and a least-squares
-solution otherwise (\isa{pinv\_solution}, \isa{normal\_eq\_least\_squares}); the proof uses
-$Jg(H)J=g(-H)$ for the parity $J$.  For Section~IV we prove that rotation angle $h(\lambda)$ yields
-$h(A)\ket b$, that expectations, sampled distributions and $k$-fold copies move by $O(\norm{\tilde x-x})$,
-and that the SWAP test, built from $H\otimes I$ and a controlled SWAP, reads $\ket0$ with probability
-$(1+|\langle\psi|\varphi\rangle|^2)/2$.  The estimation procedure of Appendix~A5 is formalised with an
-expectation operator over $n$ independent bits: mean, variance and Chebyshev give $3/\varepsilon^2$
-samples (\isa{estimate\_expectation}).  Two more errata: the paper's $1/(3\varepsilon^2)$ samples are too few
-(for $\varepsilon=\frac14$, $p=\frac12$ and six samples the estimate fails with probability $\frac{11}{16}$), and
-its preconditioned system $(AB)c=Bb$ is neither left nor right preconditioning; in a $2\times2$
-example its unique solution gives no solution of $Ax=b$ (\isa{paper\_precondition\_wrong}).
-
-\paragraph{What remains.}  The evolution oracle is built from sparse access to first order only.  The higher-order
-formulas behind the paper's cited cost and the reversible arithmetic inside the colour and entry
-oracles are not formalised, so the complexity statements count oracle queries.
-
-\section{Conclusion}
-
-Taking a complete set of lecture notes as the specification turned out to be a productive
-way to build a library: it fixes the scope, orders the work, and makes completeness
-measurable.  The cost is visible in the audit: a course mentions many results it does
-not prove, and a formalisation faithful to the notes must decide, item by item, what to
-prove, what to restate, and what to leave.  The commentary pass that produced the
-generated document is the record of those decisions; we recommend it as a deliverable for
-any formalisation of a text, because it is the only place where the informal and the
-formal statements are read side by side.
-
-\paragraph{Acknowledgements.}  The notes were written by Vern Paulsen and transcribed by
-Brandon Lee.  The formalisation was carried out with the assistance of AI coding agents;
-all statements were checked by Isabelle.
-
-\bibliographystyle{plain}
 \bibliography{refs}
+
+\appendix
+\section{The Theories of Part VI}\label{app:theories}
+
+\begin{table}[h]
+\caption{The theories of Part VI (session \isa{Vern\_Paulsen\_QC\_Algorithms}), by level, with their lines and
+results. The bridge \isa{HHL\_Search\_Bound} (80 lines, 4 results) is a separate session because it imports
+the AFP entry \emph{Compressed Oracles}.}\label{tab:theories}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Theory & Content & Lines & Results\\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Mathematics}}\\
+\isa{Hermitian\_Functional\_Calculus} & $g(A)$, $e^{itA}$, $A^{-1}$ & 423 & 36\\
+\isa{Phase\_Estimation} & Fourier matrix, phase estimation, $4/\pi^2$ & 502 & 26\\
+\isa{QFT\_Fourier} & the AFP QFT circuit is $F_{2^n}$ & 104 & 4\\
+\isa{QPE\_Register} & $H^{\otimes n}\ket{0\cdots0}$ is uniform & 104 & 7\\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Algorithm}}\\
+\isa{HHL} & exact circuit, solution, $1/\kappa^2$, dilation & 816 & 46\\
+\isa{HHL\_Trajectory} & the eight gates and their states & 591 & 28\\
+\isa{HHL\_Approximate} & inexact phase estimation, clamping & 1\,174 & 53\\
+\isa{HHL\_Window} & sine window, $N\sim1/\varepsilon$ & 1\,210 & 46\\
+\isa{HHL\_Simulation} & oracle circuits, robustness & 745 & 49\\
+\isa{HHL\_Complete} & readout, amplitude amplification & 865 & 42\\
+\isa{HHL\_Filter} & filter functions, Lemmas 2--3 & 1\,548 & 68\\
+\isa{HHL\_Filter\_Bounds} & Theorem 1 for every $b$ & 816 & 29\\
+\isa{HHL\_Runtime} & (A32), BHMT averaging, run time & 611 & 21\\
+\isa{HHL\_Reduction} & circuits to matrix inversion & 647 & 55\\
+\isa{HHL\_Rectangular} & rectangular $A$, pseudo-inverse & 385 & 20\\
+\isa{HHL\_Discussion} & $f(A)\ket b$, SWAP test, estimation & 908 & 44\\
+\isa{HHL\_Optimality} & Theorems 4--6 up to cited facts & 1\,055 & 60\\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Program}}\\
+\isa{HHL\_Program} & initialisation, programs, triples & 1\,402 & 89\\
+\isa{HHL\_Termination} & repeat until success: total correctness & 502 & 19\\
+\isa{HHL\_Paper\_Program} & the paper's regime as programs & 877 & 31\\
+\isa{HHL\_Gate\_Refinements} & rotation split, window reflection & 635 & 29\\
+\isa{HHL\_Preconditioned} & preconditioned systems & 177 & 19\\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Circuit}}\\
+\isa{HHL\_Gates} & elementary gates, QFT circuit, count & 895 & 75\\
+\isa{HHL\_Uniform\_Rotation} & uniformly controlled rotation & 1\,142 & 73\\
+\isa{HHL\_State\_Preparation} & state preparation, window & 785 & 32\\
+\isa{HHL\_All\_Elementary} & $\ket b$, routing, exact universality & 1\,031 & 44\\
+\isa{HHL\_Trotter} & Lie--Trotter with explicit error & 572 & 26\\
+\isa{HHL\_Sparse\_Split} & sparse $A$ as $2s$ 1-sparse parts & 460 & 20\\
+\isa{HHL\_Sparse\_Circuit} & the sparse simulation circuit & 1\,192 & 70\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{document}

@@ -596,3 +596,18 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Notes session but does not rebuild the Algorithms heap; build it explicitly before evals or audits.
   Also: `ev.sh` on a modified session file triggers a full heap rebuild, so test new lemmas in a
   scratch theory importing the session first.
+- **Paper rewritten around HHL** (2026-10-22; user: "write a better paper ... no theme ... HHL almost an
+  afterthought ... motivate the quantum Hoare logic and present our results using that with both informal
+  and formal versions", as in the SEFM numerical-methods paper).  `paper/paper.tex` is now an LNCS paper,
+  "Verifying the HHL Algorithm in Isabelle/HOL: Quantum Hoare Logic from the Spectral Theorem to
+  Elementary Gates" (31 pp).  Theme: one Hoare triple at four levels (mathematics, algorithm, program,
+  circuit).  Each main result is an informal theorem followed by its Isabelle statement (19 listings,
+  converted from the sources and checked token by token against them; three abridged listings are
+  marked).  Figures: the HHL circuit with the state after each gate (= `hhl_steps`), the four levels, the
+  filter functions (the f²+g² = 1/4 erratum), amplitude amplification, the uniformly controlled rotation
+  and state preparation, one sparse Trotter step.  Errata table with formal witnesses.  The lecture-notes
+  formalisation is condensed into one foundation section (the audit file stays authoritative).
+  Literature check: CoqQ and Wu–Deng–Xu verify only exact HHL, partial correctness; Li–Phillips 2024
+  claim Lemma 2's π/2 is wrong, but `hflag_lipschitz` proves it (κ' = 2κ).  The old refs.bib credited
+  arXiv:2308.04741 to Feng–Zhou–Xu; it is by Huiling Wu, Yuxin Deng and Ming Xu (fixed).  Source links
+  point at commit f2607ba; the repository is private, so they work only once it is public.
