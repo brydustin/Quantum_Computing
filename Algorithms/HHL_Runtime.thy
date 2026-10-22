@@ -24,10 +24,10 @@ lemma unit_dist:
   assumes a: "dim_vec a = n" "\<parallel>a\<parallel> = 1" and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1"
   shows "\<parallel>a - b\<parallel> = sqrt (2 * (1 - Re \<langle>a|b\<rangle>))"
 proof -
-  have aa: "\<langle>a|a\<rangle> = 1" and bb: "\<langle>b|b\<rangle> = 1" using a(2) b(2) unfolding vnorm_inner by simp_all
+  have aa: "\<langle>a|a\<rangle> = 1" and bb: "\<langle>b|b\<rangle> = 1" using a(2) b(2) unfolding cpx_vec_length_inner_prod[symmetric] by simp_all
   have ba: "\<langle>b|a\<rangle> = cnj \<langle>a|b\<rangle>" using inner_prod_cnj[of a b] a b by simp
   have "complex_of_real (\<parallel>a - b\<parallel>\<^sup>2) = 2 - (\<langle>a|b\<rangle> + cnj \<langle>a|b\<rangle>)"
-    unfolding vnorm_inner[symmetric] inner_minus_expand[OF a(1) b(1)] aa bb ba by simp
+    unfolding cpx_vec_length_inner_prod inner_minus_expand[OF a(1) b(1)] aa bb ba by simp
   also have "\<langle>a|b\<rangle> + cnj \<langle>a|b\<rangle> = complex_of_real (2 * Re \<langle>a|b\<rangle>)" by (simp add: complex_add_cnj)
   finally have "complex_of_real (\<parallel>a - b\<parallel>\<^sup>2) = complex_of_real (2 * (1 - Re \<langle>a|b\<rangle>))" by simp
   hence "\<parallel>a - b\<parallel>\<^sup>2 = 2 * (1 - Re \<langle>a|b\<rangle>)" by (simp only: of_real_eq_iff)
@@ -280,19 +280,6 @@ proof -
   finally show ?thesis .
 qed
 
-lemma pow_mat_comm:
-  assumes A: "A \<in> carrier_mat n n"
-  shows "A * A ^\<^sub>m k = A ^\<^sub>m k * A"
-proof (induction k)
-  case 0
-  show ?case using A by simp
-next
-  case (Suc k)
-  have "A * A ^\<^sub>m Suc k = (A * A ^\<^sub>m k) * A" using assoc_mult_mat[OF A pow_carrier_mat[OF A] A] by simp
-  also have "\<dots> = A ^\<^sub>m Suc k * A" unfolding Suc by simp
-  finally show ?case .
-qed
-
 lemma sem_aa_progP:
   assumes V: "V \<in> carrier_mat m m" "unitary V" and g: "gates_ok (N * m) u" and K: "0 < N * m"
   shows "sem N m V (aa_progP (N * m) d P u k) = grover (N * m) (pflag_mat (N * m) d P) (sem N m V u *\<^sub>v unit_vec (N * m) 0) ^\<^sub>m k * sem N m V u"
@@ -357,7 +344,7 @@ proof -
   show ?thesis
   proof (rule that)
     have "\<parallel>pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)\<parallel> = sin ((2 * real k + 1) * \<theta>)"
-      unfolding post vnorm_smult norm_of_real np using s0 r(3) by simp
+      unfolding post cpx_vec_length_smult norm_of_real np using s0 r(3) by simp
     thus "1 - \<parallel>pflag d P ?psi\<parallel>\<^sup>2 \<le> \<parallel>pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)\<parallel>\<^sup>2"
       unfolding np using r(1) by simp
     show "complex_of_real (1 / \<parallel>pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)\<parallel>) \<cdot>\<^sub>v pflag d P (sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0)
@@ -485,7 +472,7 @@ proof -
   have dx: "dim_vec x = n" unfolding x_def using Hi by simp
   have ill: "flag_H \<kappa> A 2 *\<^sub>v b = 0\<^sub>v n" unfolding H2 using b(1) by (intro eq_vecI) (simp_all add: scalar_prod_def)
   have H1b: "flag_H \<kappa> A 1 *\<^sub>v b = complex_of_real (1 / (2 * \<kappa>)) \<cdot>\<^sub>v x"
-    unfolding H1 x_def by (rule smult_mat_mult_vec[OF Hi b(1)])
+    unfolding H1 x_def by (rule smult_mat_mult_vec[OF Hi carrier_vecI[OF b(1)]])
   have xge: "1 \<le> \<parallel>x\<parallel>"
   proof -
     have sp: "1 / \<kappa> \<le> \<bar>l\<bar> \<and> \<bar>l\<bar> \<le> 1" if "l \<in> herm_spectrum A" for l
@@ -502,7 +489,7 @@ proof -
   proof
     assume "flag_H \<kappa> A 1 *\<^sub>v b = 0\<^sub>v n"
     hence "\<parallel>complex_of_real (1 / (2 * \<kappa>)) \<cdot>\<^sub>v x\<parallel> = 0" unfolding H1b by (simp add: cpx_vec_length_def)
-    thus False unfolding vnorm_smult using k0 x0 by simp
+    thus False unfolding cpx_vec_length_smult using k0 x0 by simp
   qed
   define \<rho> where "\<rho> = 6 * pi\<^sup>2 * sqrt (4 + 2 * pi\<^sup>2) * \<kappa> / (real N * t0)"
   have \<rho>e: "2 * \<rho> \<le> \<epsilon>"
@@ -546,7 +533,7 @@ proof -
     have t1: "\<parallel>tensor_vec (flag_H \<kappa> A 1 *\<^sub>v b) (unit_vec 3 1)\<parallel> = \<parallel>flag_H \<kappa> A 1 *\<^sub>v b\<parallel>"
       using vnorm_tensor[OF dX, where b = "unit_vec 3 1" and m = 3] by simp
     have "\<parallel>?X\<parallel> = \<parallel>flag_H \<kappa> A 1 *\<^sub>v b\<parallel>" unfolding vnorm_tensor[OF dim_win_state x1] t1 win_state_norm[OF N] by simp
-    also have "\<dots> = \<parallel>x\<parallel> / (2 * \<kappa>)" unfolding H1b vnorm_smult norm_of_real using k0 by simp
+    also have "\<dots> = \<parallel>x\<parallel> / (2 * \<kappa>)" unfolding H1b cpx_vec_length_smult norm_of_real using k0 by simp
     finally show ?thesis .
   qed
   have PX: "pflag 3 (\<lambda>c. c = 1) (?I *\<^sub>v b) = ?X"

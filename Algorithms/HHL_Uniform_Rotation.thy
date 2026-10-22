@@ -743,16 +743,13 @@ next
   finally show ?case .
 qed
 
-lemma sum_list_filter_if: "sum_list (map g (filter P L)) = sum_list (map (\<lambda>x. if P x then g x else 0) L)"
-  by (induction L) simp_all
-
 lemma ucr_angle:
   assumes c: "c < 2 ^ k"
   shows "sum_list (map (\<lambda>ms. if par ms c then - 2 * walsh k \<theta> ms else 0) (nzmasks k)) + sum_list (map (walsh k \<theta>) (masks k)) = \<theta> c"
 proof -
   have e: "sum_list (map (\<lambda>ms. if par ms c then - 2 * walsh k \<theta> ms else 0) (nzmasks k))
            = sum_list (map (\<lambda>ms. if par ms c then - 2 * walsh k \<theta> ms else 0) (masks k))"
-    unfolding nzmasks_def sum_list_filter_if
+    unfolding nzmasks_def sum_list_map_filter'
     by (rule arg_cong[where f = sum_list], rule map_cong[OF refl]) (auto dest: par_false)
   have "\<theta> c = sum_list (map (\<lambda>ms. walsh k \<theta> ms * sg (par ms c)) (masks k))" by (rule walsh_inversion[OF c, symmetric])
   also have "\<dots> = sum_list (map (\<lambda>ms. (if par ms c then - 2 * walsh k \<theta> ms else 0) + walsh k \<theta> ms) (masks k))"
@@ -861,12 +858,11 @@ context
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
 begin
 
-lemma fine_nA: "dim_row A = n" using A(1) by simp
 
 lemma rot_gate_ucr: "rot_gate A t0 (2 ^ k) C = circuit_mat (2 ^ k * (n * 2)) (ucr_gates k n (hhl_theta A t0 k C))"
 proof -
   have "rot_gate A t0 (2 ^ k) C = ctrl_blocks (2 ^ k) (n * 2) (\<lambda>c. 1\<^sub>m n \<Otimes> Rot (hhl_theta A t0 k C c))"
-    unfolding rot_gate_def hhl_rot_def fine_nA hhl_theta_def by (rule ctrl_blocks_cong) (simp add: rot_Rot[OF Cb])
+    unfolding rot_gate_def hhl_rot_def carrier_matD(1)[OF A(1)] hhl_theta_def by (rule ctrl_blocks_cong) (simp add: rot_Rot[OF Cb])
   thus ?thesis unfolding ucr_circuit[OF n0] .
 qed
 
@@ -895,7 +891,7 @@ proof -
   then obtain B where B: "B \<in> set (hhl_fine_blocks A Ub t0 k C)" and U: "U \<in> set B" unfolding hhl_fine_gates_def by auto
   have "B = ucr_gates k n (hhl_theta A t0 k C) \<or> B \<in> set (hhl_blocks A Ub t0 k C)"
     using B set_update_subset_insert[of "hhl_blocks A Ub t0 k C" 4 "ucr_gates k n (hhl_theta A t0 k C)"]
-    unfolding hhl_fine_blocks_def fine_nA by auto
+    unfolding hhl_fine_blocks_def carrier_matD(1)[OF A(1)] by auto
   thus ?thesis
   proof
     assume "B = ucr_gates k n (hhl_theta A t0 k C)" thus ?thesis using ucr_ok U by simp
@@ -912,7 +908,7 @@ proof -
   let ?D = "2 ^ k * (n * 2)"
   have "map (circuit_mat ?D) (hhl_fine_blocks A Ub t0 k C)
         = (map (circuit_mat ?D) (hhl_blocks A Ub t0 k C))[4 := circuit_mat ?D (ucr_gates k n (hhl_theta A t0 k C))]"
-    unfolding hhl_fine_blocks_def fine_nA by (simp add: map_update)
+    unfolding hhl_fine_blocks_def carrier_matD(1)[OF A(1)] by (simp add: map_update)
   also have "circuit_mat ?D (ucr_gates k n (hhl_theta A t0 k C)) = rot_gate A t0 (2 ^ k) C" by (rule rot_gate_ucr[symmetric])
   also have "map (circuit_mat ?D) (hhl_blocks A Ub t0 k C) = hhl_gates A Ub t0 k C" by (rule hhl_blocks_circuit[OF A(1,2) n0 k Ub(1)])
   also have "(hhl_gates A Ub t0 k C)[4 := rot_gate A t0 (2 ^ k) C] = hhl_gates A Ub t0 k C" by (simp add: hhl_gates_def)
@@ -924,19 +920,19 @@ qed
 theorem hhl_fine_success_total:
   "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
      (hhl_fine_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
-  unfolding hhl_fine_program_def fine_nA
+  unfolding hhl_fine_program_def carrier_matD(1)[OF A(1)]
   by (rule hhl_prog_success_total[OF A n0 k t0 spec Ub Cb fine_gates_ok hhl_fine_circuit])
 
 theorem hhl_fine_correct_total:
   "state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_fine_program A Ub t0 k C)
      (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b) (hhl_target A k b))"
-  unfolding hhl_fine_program_def fine_nA
+  unfolding hhl_fine_program_def carrier_matD(1)[OF A(1)]
   by (rule hhl_prog_correct_total[OF A n0 k t0 spec Ub Cb fine_gates_ok hhl_fine_circuit])
 
 theorem hhl_fine_rus_total:
   "C \<noteq> 0 \<Longrightarrow> state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_fine_rus A Ub t0 k C)
      (outer_prod (hhl_target A k b) (hhl_target A k b))"
-  unfolding hhl_fine_rus_def fine_nA
+  unfolding hhl_fine_rus_def carrier_matD(1)[OF A(1)]
   by (rule hhl_rus_prog_total[OF A n0 k t0 spec Ub Cb fine_gates_ok hhl_fine_circuit])
 
 text \<open>Every gate is elementary (one or two neighbouring qubits), a singly controlled $U^{\pm2^j}$
@@ -959,15 +955,15 @@ proof -
   have f: "\<forall>U \<in> set (clk_gates n (qft_circuit k)). elementary ?D U"
     by (rule clk_gates_elementary) (use qft_circuit(2) n0 in auto)
   have ei: "U \<in> set (rev (map dagger (evo_gates A t0 k))) \<Longrightarrow> \<exists>j<k. U = ctrl_bit (2 ^ k) (n * 2) j ((?E ^\<^sub>m 2 ^ j)\<^sup>\<dagger>)" for U
-    unfolding evo_gates_def fine_nA using ctrl_bit_dagger[OF pow_carrier_mat[OF Ec]] by auto
+    unfolding evo_gates_def carrier_matD(1)[OF A(1)] using ctrl_bit_dagger[OF pow_carrier_mat[OF Ec]] by auto
   have e: "U \<in> set (evo_gates A t0 k) \<Longrightarrow> \<exists>j<k. U = ctrl_bit (2 ^ k) (n * 2) j (?E ^\<^sub>m 2 ^ j)" for U
-    unfolding evo_gates_def fine_nA by auto
+    unfolding evo_gates_def carrier_matD(1)[OF A(1)] by auto
   have r: "U \<in> set (ucr_gates k n (hhl_theta A t0 k C)) \<Longrightarrow> elementary ?D U \<or> (\<exists>a. U = cv0 k n (Rot a))" for U
     by (rule ucr_gate_kinds[OF _ n0])
   have "U = prep_gate (2 ^ k) Ub \<or> U \<in> set (clk_gates n (had_gates k)) \<or> U \<in> set (evo_gates A t0 k)
         \<or> U \<in> set (clk_gates n (rev (map dagger (qft_circuit k)))) \<or> U \<in> set (ucr_gates k n (hhl_theta A t0 k C))
         \<or> U \<in> set (clk_gates n (qft_circuit k)) \<or> U \<in> set (rev (map dagger (evo_gates A t0 k)))"
-    using U unfolding hhl_fine_gates_def hhl_fine_blocks_def hhl_blocks_def fine_nA by auto
+    using U unfolding hhl_fine_gates_def hhl_fine_blocks_def hhl_blocks_def carrier_matD(1)[OF A(1)] by auto
   thus ?thesis using h fi f e ei r by blast
 qed
 

@@ -19,12 +19,9 @@ independently of $P$; with $P=\ket i\bra i$ this samples the circuit's output di
 
 context
   fixes T m :: nat and Ug :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes T0: "0 < T" and Ug: "\<And>j. 1 \<le> j \<Longrightarrow> j \<le> T \<Longrightarrow> Ug j \<in> carrier_mat m m \<and> unitary (Ug j)"
+  assumes T0: "0 < T" and Ug: "\<forall>j. 1 \<le> j \<longrightarrow> j \<le> T \<longrightarrow> Ug j \<in> carrier_mat m m \<and> unitary (Ug j)"
 begin
 
-lemma opt_Wc: "W T m Ug k \<in> carrier_mat m m" by (rule W_carrier[OF T0 Ug])
-lemma opt_Wu: "unitary (W T m Ug k)" by (rule W_unitary[OF T0 Ug])
-lemma opt_Wmid: "T \<le> k \<Longrightarrow> k \<le> 2 * T \<Longrightarrow> W T m Ug k = circ m Ug T" by (rule W_middle[OF T0 Ug])
 
 theorem red_M0_prob:
   assumes \<psi>: "dim_vec \<psi> = m" "\<parallel>\<psi>\<parallel> = 1" and P: "P \<in> carrier_mat m m"
@@ -32,23 +29,23 @@ theorem red_M0_prob:
          = exp (- 2) / (1 + exp (- 2) + exp (- 4)) * \<parallel>P *\<^sub>v (circ m Ug T *\<^sub>v \<psi>)\<parallel>\<^sup>2"
 proof -
   let ?x = "circ m Ug T *\<^sub>v \<psi>" and ?b = "blk m (red_x T m Ug \<psi>)"
-  have Wm: "circ m Ug T = W T m Ug T" using opt_Wmid[of T] by simp
-  have Cc: "circ m Ug T \<in> carrier_mat m m" using opt_Wc[of T] unfolding Wm .
+  have Wm: "circ m Ug T = W T m Ug T" using W_middle[OF T0 Ug, of T] by simp
+  have Cc: "circ m Ug T \<in> carrier_mat m m" using W_carrier[OF T0 Ug, of T] unfolding Wm .
   have xc: "?x \<in> carrier_vec m" by (rule carrier_vecI) (use Cc \<psi>(1) in simp)
   have nx: "\<parallel>?x\<parallel> = 1"
   proof -
-    have "\<parallel>W T m Ug T *\<^sub>v \<psi>\<parallel> = \<parallel>\<psi>\<parallel>" by (rule unitary_vnorm[OF opt_Wc opt_Wu \<psi>(1)])
+    have "\<parallel>W T m Ug T *\<^sub>v \<psi>\<parallel> = \<parallel>\<psi>\<parallel>" by (rule unitary_vnorm[OF W_carrier[OF T0 Ug] W_unitary[OF T0 Ug] \<psi>(1)])
     thus ?thesis using Wm \<psi>(2) by simp
   qed
   have each: "\<parallel>P *\<^sub>v ?b c\<parallel>\<^sup>2 = \<parallel>?b c\<parallel>\<^sup>2 * \<parallel>P *\<^sub>v ?x\<parallel>\<^sup>2" if c: "c \<in> {T..<2 * T}" for c
   proof -
     let ?k = "complex_of_real (red_coeff T c)"
     have "?b c = ?k \<cdot>\<^sub>v (W T m Ug c *\<^sub>v \<psi>)" using c by (intro red_x_blocks[OF T0 Ug \<psi>(1)]) auto
-    also have "W T m Ug c = circ m Ug T" using c by (intro opt_Wmid) simp_all
+    also have "W T m Ug c = circ m Ug T" using c by (intro W_middle[OF T0 Ug]) simp_all
     finally have bc: "?b c = ?k \<cdot>\<^sub>v ?x" .
     have "P *\<^sub>v ?b c = ?k \<cdot>\<^sub>v (P *\<^sub>v ?x)" unfolding bc by (rule mult_mat_vec[OF P xc])
-    hence "\<parallel>P *\<^sub>v ?b c\<parallel> = cmod ?k * \<parallel>P *\<^sub>v ?x\<parallel>" by (simp add: vnorm_smult)
-    moreover have "\<parallel>?b c\<parallel> = cmod ?k" unfolding bc vnorm_smult nx by simp
+    hence "\<parallel>P *\<^sub>v ?b c\<parallel> = cmod ?k * \<parallel>P *\<^sub>v ?x\<parallel>" by (simp add: cpx_vec_length_smult)
+    moreover have "\<parallel>?b c\<parallel> = cmod ?k" unfolding bc cpx_vec_length_smult nx by simp
     ultimately show ?thesis by (simp add: power_mult_distrib)
   qed
   have "(\<Sum>c\<in>{T..<2 * T}. \<parallel>P *\<^sub>v ?b c\<parallel>\<^sup>2) = (\<Sum>c\<in>{T..<2 * T}. \<parallel>?b c\<parallel>\<^sup>2) * \<parallel>P *\<^sub>v ?x\<parallel>\<^sup>2"
@@ -89,10 +86,10 @@ proof -
   proof -
     have "(1\<^sub>m n - complex_of_real e \<cdot>\<^sub>m U) *\<^sub>v v = 1\<^sub>m n *\<^sub>v v - (complex_of_real e \<cdot>\<^sub>m U) *\<^sub>v v"
       by (rule minus_mult_distrib_mat_vec[OF one_carrier_mat smult_carrier_mat[OF U] vc])
-    thus ?thesis using vc smult_mat_mult_vec[OF U v] by simp
+    thus ?thesis using vc smult_mat_mult_vec[OF U carrier_vecI[OF v]] by simp
   qed
   have du: "dim_vec ?u = n" using U by simp
-  have nu: "\<parallel>complex_of_real e \<cdot>\<^sub>v ?u\<parallel> = e * \<parallel>v\<parallel>" unfolding vnorm_smult iso[OF v] using e by simp
+  have nu: "\<parallel>complex_of_real e \<cdot>\<^sub>v ?u\<parallel> = e * \<parallel>v\<parallel>" unfolding cpx_vec_length_smult iso[OF v] using e by simp
   show "\<parallel>(1\<^sub>m n - complex_of_real e \<cdot>\<^sub>m U) *\<^sub>v v\<parallel> \<le> (1 + e) * \<parallel>v\<parallel>"
   proof -
     have "\<parallel>v - complex_of_real e \<cdot>\<^sub>v ?u\<parallel> \<le> \<parallel>v - 0\<^sub>v n\<parallel> + \<parallel>0\<^sub>v n - complex_of_real e \<cdot>\<^sub>v ?u\<parallel>"
@@ -123,13 +120,9 @@ qed (simp_all add: red_A_def)
 
 context
   fixes T m :: nat and Ug :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes T0: "0 < T" and Ug: "\<And>j. 1 \<le> j \<Longrightarrow> j \<le> T \<Longrightarrow> Ug j \<in> carrier_mat m m \<and> unitary (Ug j)"
+  assumes T0: "0 < T" and Ug: "\<forall>j. 1 \<le> j \<longrightarrow> j \<le> T \<longrightarrow> Ug j \<in> carrier_mat m m \<and> unitary (Ug j)"
 begin
 
-lemma opt_A_lo: "dim_vec v = 3 * T * m \<Longrightarrow> (1 - exp (- 1 / real T)) * \<parallel>v\<parallel> \<le> \<parallel>red_A T m Ug *\<^sub>v v\<parallel>"
-  by (rule red_A_bounds(1)[OF T0 Ug])
-lemma opt_A_hi: "dim_vec v = 3 * T * m \<Longrightarrow> \<parallel>red_A T m Ug *\<^sub>v v\<parallel> \<le> (1 + exp (- 1 / real T)) * \<parallel>v\<parallel>"
-  by (rule red_A_bounds(2)[OF T0 Ug])
 
 lemma red_U_unitary: "unitary (red_U T m Ug)"
   by (rule unitary_of_isometry[OF red_U_carrier]) (rule red_U_norm[OF T0 Ug], simp)
@@ -155,7 +148,7 @@ proof -
     by (subst wc, rule H_mult[OF red_A_carrier da dc])
   have e0: "0 \<le> ?e" and e1: "?e < 1" using T0 by simp_all
   have Ac: "(1 - ?e) * \<parallel>?c\<parallel> \<le> \<parallel>?A *\<^sub>v ?c\<parallel>" "\<parallel>?A *\<^sub>v ?c\<parallel> \<le> (1 + ?e) * \<parallel>?c\<parallel>"
-    using opt_A_lo[OF dc] opt_A_hi[OF dc] by simp_all
+    using red_A_bounds(1)[OF T0 Ug dc] red_A_bounds(2)[OF T0 Ug dc] by simp_all
   have Ad: "(1 - ?e) * \<parallel>?a\<parallel> \<le> \<parallel>?A\<^sup>\<dagger> *\<^sub>v ?a\<parallel>" "\<parallel>?A\<^sup>\<dagger> *\<^sub>v ?a\<parallel> \<le> (1 + ?e) * \<parallel>?a\<parallel>"
     unfolding red_A_dagger
     using shift_bounds[OF dagger_carrier[OF red_U_carrier] red_U_dagger_norm da e0] by simp_all
@@ -393,25 +386,10 @@ qed
 
 context
   fixes T m :: nat and Ug :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes T0: "0 < T" and Ug: "\<And>j. 1 \<le> j \<Longrightarrow> j \<le> T \<Longrightarrow> Ug j \<in> carrier_mat m m \<and> unitary (Ug j)"
+  assumes T0: "0 < T" and Ug: "\<forall>j. 1 \<le> j \<longrightarrow> j \<le> T \<longrightarrow> Ug j \<in> carrier_mat m m \<and> unitary (Ug j)"
 begin
 
-lemma opt_dil_herm: "hermitian (herm_embed (red_A T m Ug))"
-  by (rule H_hermitian[OF red_A_carrier])
-lemma opt_dil_lo: "dim_vec w = 3 * T * m + 3 * T * m \<Longrightarrow> (1 - exp (- 1 / real T)) * \<parallel>w\<parallel> \<le> \<parallel>herm_embed (red_A T m Ug) *\<^sub>v w\<parallel>"
-  by (rule red_dilation(2)[OF T0 Ug])
-lemma opt_dil_hi: "dim_vec w = 3 * T * m + 3 * T * m \<Longrightarrow> \<parallel>herm_embed (red_A T m Ug) *\<^sub>v w\<parallel> \<le> (1 + exp (- 1 / real T)) * \<parallel>w\<parallel>"
-  by (rule red_dilation(3)[OF T0 Ug])
-lemma opt_dil_sol: "dim_vec \<psi> = m \<Longrightarrow> herm_embed (red_A T m Ug) *\<^sub>v (0\<^sub>v (3 * T * m) @\<^sub>v red_x T m Ug \<psi>) = ket0 T m \<psi> @\<^sub>v 0\<^sub>v (3 * T * m)"
-  by (rule red_dilation_solution[OF T0 Ug])
-lemma opt_M0: "dim_vec \<psi> = m \<Longrightarrow> \<parallel>\<psi>\<parallel> = 1 \<Longrightarrow> P \<in> carrier_mat m m \<Longrightarrow>
-    (\<Sum>c\<in>{T..<2 * T}. \<parallel>P *\<^sub>v blk m (red_x T m Ug \<psi>) c\<parallel>\<^sup>2) / (\<Sum>c<3 * T. \<parallel>blk m (red_x T m Ug \<psi>) c\<parallel>\<^sup>2)
-    = exp (- 2) / (1 + exp (- 2) + exp (- 4)) * \<parallel>P *\<^sub>v (circ m Ug T *\<^sub>v \<psi>)\<parallel>\<^sup>2"
-  by (rule red_M0_prob[OF T0 Ug])
-lemma opt_Wc2: "W T m Ug k \<in> carrier_mat m m" by (rule W_carrier[OF T0 Ug])
-lemma opt_Wmid2: "T \<le> k \<Longrightarrow> k \<le> 2 * T \<Longrightarrow> W T m Ug k = circ m Ug T" by (rule W_middle[OF T0 Ug])
-lemma opt_circ_dim: "dim_vec (circ m Ug T *\<^sub>v v) = m" using opt_Wc2[of T] opt_Wmid2[of T] by simp
-lemma opt_x_dim: "dim_vec (red_x T m Ug \<psi>) = 3 * T * m" by (rule dim_red_x[OF T0 Ug])
+lemma opt_circ_dim: "dim_vec (circ m Ug T *\<^sub>v v) = m" using W_carrier[OF T0 Ug, of T] W_middle[OF T0 Ug, of T] by simp
 
 lemma ket0_unit: "0 < m \<Longrightarrow> ket0 T m (unit_vec m 0) @\<^sub>v 0\<^sub>v (3 * T * m) = unit_vec (3 * T * m + 3 * T * m) 0"
 proof -
@@ -459,14 +437,14 @@ proof -
   have bij: "bij_betw \<sigma> {..<Dm + Dm} {..<Dm + Dm}" using \<sigma>(1) unfolding DmDm .
   let ?C = "perm_conj (Dm + Dm) \<sigma> ?H"
   have Hc: "?H \<in> carrier_mat (Dm + Dm) (Dm + Dm)" unfolding Dm_def by (rule H_carrier[OF red_A_carrier])
-  have dx: "dim_vec ?x = Dm" unfolding Dm_def by (rule opt_x_dim)
+  have dx: "dim_vec ?x = Dm" unfolding Dm_def by (rule dim_red_x[OF T0 Ug])
   have dz: "dim_vec ?z = Dm + Dm" using dx by simp
   have \<psi>: "dim_vec ?\<psi> = m" "\<parallel>?\<psi>\<parallel> = 1" using m by (simp_all add: cpx_vec_length_def unit_vec_def lessThan_atLeast0 sum.atLeast_Suc_lessThan[OF m])
   show ?thesis
   proof
     show "bij_betw \<sigma> {..<Dm + Dm} {..<Dm + Dm}" by (rule bij)
     show "\<sigma> 0 = 0" by (rule \<sigma>(2))
-    show "hermitian ?C" by (rule perm_conj_hermitian[OF bij Hc opt_dil_herm])
+    show "hermitian ?C" by (rule perm_conj_hermitian[OF bij Hc H_hermitian[OF red_A_carrier]])
     fix w :: "complex Matrix.vec" assume w: "dim_vec w = Dm + Dm"
     obtain y where y: "dim_vec y = Dm + Dm" "w = perm_vec (Dm + Dm) \<sigma> y" by (rule perm_vec_surj[OF bij w])
     have Cw: "?C *\<^sub>v w = perm_vec (Dm + Dm) \<sigma> (?H *\<^sub>v y)" unfolding y(2) by (rule perm_conj_mult[OF bij Hc y(1)])
@@ -474,10 +452,10 @@ proof -
     have nw: "\<parallel>w\<parallel> = \<parallel>y\<parallel>" unfolding y(2) by (rule perm_vec_norm[OF bij y(1)])
     have yD: "dim_vec y = 3 * T * m + 3 * T * m" using y(1) by (simp add: Dm_def)
     show "(1 - exp (- 1 / real T)) * \<parallel>w\<parallel> \<le> \<parallel>?C *\<^sub>v w\<parallel> \<and> \<parallel>?C *\<^sub>v w\<parallel> \<le> (1 + exp (- 1 / real T)) * \<parallel>w\<parallel>"
-      unfolding nCw nw using opt_dil_lo[OF yD] opt_dil_hi[OF yD] by simp
+      unfolding nCw nw using red_dilation(2)[OF T0 Ug yD] red_dilation(3)[OF T0 Ug yD] by simp
   next
     have "?C *\<^sub>v perm_vec (Dm + Dm) \<sigma> ?z = perm_vec (Dm + Dm) \<sigma> (?H *\<^sub>v ?z)" by (rule perm_conj_mult[OF bij Hc dz])
-    also have "?H *\<^sub>v ?z = unit_vec (Dm + Dm) 0" using opt_dil_sol[OF \<psi>(1)] ket0_unit[OF m] by (simp add: Dm_def)
+    also have "?H *\<^sub>v ?z = unit_vec (Dm + Dm) 0" using red_dilation_solution[OF T0 Ug \<psi>(1)] ket0_unit[OF m] by (simp add: Dm_def)
     also have "perm_vec (Dm + Dm) \<sigma> (unit_vec (Dm + Dm) 0) = unit_vec (Dm + Dm) 0"
     proof (rule eq_vecI)
       fix i assume "i < dim_vec (unit_vec (Dm + Dm) 0)"
@@ -536,7 +514,7 @@ proof -
     qed
     show "(\<Sum>i<Dm. (cmod (?y $ i))\<^sup>2) / \<parallel>?y\<parallel>\<^sup>2
          = exp (- 2) / (1 + exp (- 2) + exp (- 4)) * (\<Sum>i\<in>A. (cmod ((circ m Ug T *\<^sub>v ?\<psi>) $ i))\<^sup>2)"
-      unfolding top acc ny opt_M0[OF \<psi> proj_set_carrier]
+      unfolding top acc ny red_M0_prob[OF T0 Ug \<psi> proj_set_carrier]
       using proj_set_norm[OF A] opt_circ_dim by simp
   qed
 qed
@@ -925,7 +903,7 @@ proof -
     have u: "\<parallel>unit_vec 2 (if \<phi> z then 1 else 0)\<parallel> = 1"
       by (simp add: cpx_vec_length_def numeral_2_eq_2 lessThan_Suc unit_vec_def)
     show "\<parallel>complex_of_real (1 / sqrt (2 ^ n)) \<cdot>\<^sub>v unit_vec 2 (if \<phi> z then 1 else 0)\<parallel>\<^sup>2 = 1 / 2 ^ n"
-      unfolding vnorm_smult u by (simp add: norm_divide power_divide)
+      unfolding cpx_vec_length_smult u by (simp add: norm_divide power_divide)
   qed
   also have "\<dots> = 1" by simp
   finally have "\<parallel>count_state n \<phi>\<parallel> = 1 \<or> \<parallel>count_state n \<phi>\<parallel> = - 1" by (simp only: power2_eq_1_iff)

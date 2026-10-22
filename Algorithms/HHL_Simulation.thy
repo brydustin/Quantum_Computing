@@ -23,11 +23,8 @@ lemma vnorm_ge0: "0 \<le> \<parallel>v\<parallel>"
 lemma vnorm_sq: "\<parallel>v\<parallel>\<^sup>2 = (\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2)"
   by (simp add: cpx_vec_length_def sum_nonneg)
 
-lemma vnorm_inner: "\<langle>v|v\<rangle> = complex_of_real (\<parallel>v\<parallel>\<^sup>2)"
-  unfolding vnorm_sq inner_self_sum[of v "dim_vec v", OF refl] by (simp add: of_real_sum)
-
 lemma vnorm_Re_inner: "Re \<langle>v|v\<rangle> = \<parallel>v\<parallel>\<^sup>2"
-  unfolding vnorm_inner by simp
+  unfolding cpx_vec_length_inner_prod[symmetric] by simp
 
 lemma vnorm_add_le:
   assumes "dim_vec a = dim_vec b"
@@ -55,14 +52,6 @@ proof -
   thus ?thesis using vnorm_add_le[of "a - b" "b - c"] a b c by simp
 qed
 
-lemma vnorm_smult: "\<parallel>z \<cdot>\<^sub>v v\<parallel> = cmod z * \<parallel>v\<parallel>"
-proof -
-  have "\<parallel>z \<cdot>\<^sub>v v\<parallel> = sqrt ((cmod z)\<^sup>2 * (\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2))"
-    by (simp add: cpx_vec_length_def norm_mult power_mult_distrib sum_distrib_left)
-  also have "\<dots> = cmod z * \<parallel>v\<parallel>" by (simp add: real_sqrt_mult cpx_vec_length_def)
-  finally show ?thesis .
-qed
-
 lemma vnorm_le_diff_add:
   assumes "dim_vec a = dim_vec b"
   shows "\<parallel>a\<parallel> \<le> \<parallel>a - b\<parallel> + \<parallel>b\<parallel>"
@@ -76,6 +65,9 @@ lemma vnorm_reverse:
   shows "\<bar>\<parallel>a\<parallel> - \<parallel>b\<parallel>\<bar> \<le> \<parallel>a - b\<parallel>"
   using vnorm_le_diff_add[OF assms] vnorm_le_diff_add[of b a] assms vnorm_minus_commute[OF assms] by simp
 
+lemma vnorm_zero_vec: "\<parallel>0\<^sub>v m\<parallel> = 0"
+  by (simp add: cpx_vec_length_def)
+
 lemma unitary_vnorm:
   assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
   shows "\<parallel>W *\<^sub>v y\<parallel> = \<parallel>y\<parallel>"
@@ -83,7 +75,7 @@ proof -
   have Wd: "W\<^sup>\<dagger> \<in> carrier_mat K K" by (rule dagger_carrier[OF W(1)])
   have "\<langle>(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v y|(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>y|y\<rangle>"
     by (rule unitary_inner_self[OF Wd unitary_dagger[OF W(2)] y])
-  hence "\<parallel>W *\<^sub>v y\<parallel>\<^sup>2 = \<parallel>y\<parallel>\<^sup>2" unfolding dagger_of_dagger_is_id vnorm_inner of_real_power[symmetric] of_real_eq_iff .
+  hence "\<parallel>W *\<^sub>v y\<parallel>\<^sup>2 = \<parallel>y\<parallel>\<^sup>2" unfolding dagger_of_dagger_is_id cpx_vec_length_inner_prod[symmetric] of_real_power[symmetric] of_real_eq_iff .
   thus ?thesis using vnorm_ge0 by (metis power2_eq_iff_nonneg)
 qed
 
@@ -103,7 +95,7 @@ lemma reg_sum_blk:
 proof (rule eq_vecI)
   fix r assume "r < dim_vec x"
   hence r: "r < N * m" using assms by simp
-  note ki = reg_sum_index_div[OF r]
+  note ki = less_mult_imp_div_less[OF r] reg_sum_index_mod[OF r]
   show "reg_sum N m (blk m x) $ r = x $ r"
     using r ki by (simp add: reg_sum_def blk_def mult.commute)
 qed (simp add: assms)
@@ -113,8 +105,8 @@ lemma vnorm_reg_sum_sq:
   shows "\<parallel>reg_sum N m f\<parallel>\<^sup>2 = (\<Sum>k<N. \<parallel>f k\<parallel>\<^sup>2)"
 proof -
   have "complex_of_real (\<parallel>reg_sum N m f\<parallel>\<^sup>2) = (\<Sum>k<N. \<langle>f k|f k\<rangle>)"
-    unfolding vnorm_inner[symmetric] by (rule reg_sum_inner[OF f f])
-  also have "\<dots> = complex_of_real (\<Sum>k<N. \<parallel>f k\<parallel>\<^sup>2)" by (simp add: vnorm_inner of_real_sum)
+    unfolding cpx_vec_length_inner_prod by (rule reg_sum_inner[OF f f])
+  also have "\<dots> = complex_of_real (\<Sum>k<N. \<parallel>f k\<parallel>\<^sup>2)" by (simp add: cpx_vec_length_inner_prod[symmetric] of_real_sum)
   finally show ?thesis by (simp only: of_real_eq_iff)
 qed
 
@@ -666,7 +658,7 @@ proof -
   have "\<langle>tensor_vec a b|tensor_vec a b\<rangle> = \<langle>a|a\<rangle> * \<langle>b|b\<rangle>"
     by (rule tensor_inner_prod[OF assms(1) assms(1) assms(2) assms(2)])
   hence "complex_of_real (\<parallel>tensor_vec a b\<parallel>\<^sup>2) = complex_of_real (\<parallel>a\<parallel>\<^sup>2 * \<parallel>b\<parallel>\<^sup>2)"
-    unfolding vnorm_inner of_real_mult .
+    unfolding cpx_vec_length_inner_prod[symmetric] of_real_mult .
   hence "\<parallel>tensor_vec a b\<parallel>\<^sup>2 = (\<parallel>a\<parallel> * \<parallel>b\<parallel>)\<^sup>2" unfolding of_real_eq_iff power_mult_distrib .
   thus ?thesis using power2_eq_iff_nonneg[OF vnorm_ge0 mult_nonneg_nonneg[OF vnorm_ge0 vnorm_ge0]] by simp
 qed

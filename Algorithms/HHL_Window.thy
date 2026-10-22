@@ -18,12 +18,6 @@ lemma cis_minus_cis_neg: "cis t - cis (- t) = 2 * \<i> * complex_of_real (sin t)
 lemma of_real_sin_cis: "complex_of_real (sin t) = (cis t - cis (- t)) / (2 * \<i>)"
   unfolding cis_minus_cis_neg by simp
 
-lemma cis_add_pi: "cis (y + pi) = - cis y"
-  by (simp add: cis_mult[symmetric])
-
-lemma cis_diff_pi: "cis (y - pi) = - cis y"
-  by (simp add: cis_divide[symmetric])
-
 text \<open>The window sum: with $a=\pi/N$,
 $\bigl|\sum_{\tau<N}\sin(a\tau+a/2)\,e^{i\tau x}\bigr|\le|\sin(a/2)|/(|\sin\frac{x+a}2|\,|\sin\frac{x-a}2|)$.\<close>
 
@@ -47,9 +41,9 @@ proof -
     finally show ?thesis .
   qed
   have pN: "p ^ N = - cis (real N * x)"
-    unfolding p_def DeMoivre using Na by (simp add: distrib_left cis_add_pi)
+    unfolding p_def DeMoivre using Na by (simp add: distrib_left minus_cis[symmetric])
   have qN: "q ^ N = - cis (real N * x)"
-    unfolding q_def DeMoivre using Na by (simp add: right_diff_distrib cis_diff_pi)
+    unfolding q_def DeMoivre using Na by (simp add: right_diff_distrib minus_cis'[symmetric])
   have Sp: "(\<Sum>\<tau><N. p ^ \<tau>) = (p ^ N - 1) / (p - 1)" using geometric_sum[of p N] p1 by (simp add: p_def)
   have Sq: "(\<Sum>\<tau><N. q ^ \<tau>) = (q ^ N - 1) / (q - 1)" using geometric_sum[of q N] q1 by (simp add: q_def)
   have p1': "p - 1 \<noteq> 0" and q1': "q - 1 \<noteq> 0" using p1 q1 by (simp_all add: p_def q_def)
@@ -1043,7 +1037,7 @@ proof -
   have G1: "?G1 \<in> carrier_mat n n" using Hi by simp
   have g0: "?G0 *\<^sub>v u = complex_of_real ?s \<cdot>\<^sub>v u" by (rule mat_fun_eigen[OF A u ev])
   have g1: "?G1 *\<^sub>v u = complex_of_real ?c \<cdot>\<^sub>v u"
-    using smult_mat_mult_vec[OF Hi u, of "complex_of_real C"] herm_inv_eigen[OF A u ev]
+    using smult_mat_mult_vec[OF Hi carrier_vecI[OF u], of "complex_of_real C"] herm_inv_eigen[OF A u ev]
     by (simp add: smult_smult_assoc divide_inverse)
   have "lift_mat n (psi) ?G0 ?G1 *\<^sub>v u =
         tensor_vec (psi) (tensor_vec (?G0 *\<^sub>v u) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v u) (unit_vec 2 1))"

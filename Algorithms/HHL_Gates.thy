@@ -199,9 +199,6 @@ fun swap_up_gates :: "nat \<Rightarrow> complex Matrix.mat list" where
 lemma elementary_SWAP: "elementary 4 SWAP"
   using elementary_gate[OF SWAP_is_gate] by simp
 
-lemma elementary_ok: "elementary K U \<Longrightarrow> U \<in> carrier_mat K K"
-  by (rule elementary_unitary(1))
-
 lemma elementary_map_right:
   "\<forall>U \<in> set Us. elementary K U \<Longrightarrow> 0 < m \<Longrightarrow> \<forall>U \<in> set (map (\<lambda>U. U \<Otimes> 1\<^sub>m m) Us). elementary (K * m) U"
   using elementary_right by auto
@@ -211,7 +208,7 @@ lemma elementary_map_left:
   using elementary_left by auto
 
 lemma elementary_carriers: "\<forall>U \<in> set Us. elementary K U \<Longrightarrow> U \<in> set Us \<Longrightarrow> U \<in> carrier_mat K K"
-  using elementary_ok by blast
+  using elementary_unitary(1) by blast
 
 lemma pow_Suc3: "(2::nat) ^ Suc (Suc (Suc n)) = 2 ^ Suc (Suc n) * 2" "(2::nat) ^ Suc (Suc (Suc n)) = 2 * 2 ^ Suc (Suc n)"
     "(2::nat) ^ Suc (Suc (Suc n)) = 2 ^ Suc n * 4" "(2::nat) ^ Suc (Suc (Suc n)) = 4 * 2 ^ Suc n"
@@ -234,11 +231,11 @@ next
     unfolding pow_Suc3(3) by (rule elementary_left[OF elementary_SWAP]) simp
   have "circuit_mat ?K (swap_down_gates (Suc (Suc (Suc n))))
         = circuit_mat ?K [1\<^sub>m (2 ^ Suc n) \<Otimes> SWAP] * circuit_mat ?K (map (\<lambda>U. U \<Otimes> 1\<^sub>m 2) ?g)"
-    unfolding swap_down_gates.simps by (rule circuit_mat_append) (use elementary_carriers[OF e1] elementary_ok[OF e2] in auto)
+    unfolding swap_down_gates.simps by (rule circuit_mat_append) (use elementary_carriers[OF e1] elementary_unitary(1)[OF e2] in auto)
   also have "circuit_mat ?K (map (\<lambda>U. U \<Otimes> 1\<^sub>m 2) ?g) = SWAP_down (Suc (Suc n)) \<Otimes> 1\<^sub>m 2"
     unfolding pow_Suc3(1) IH(1)[symmetric] by (rule circuit_mat_tensor_right) (use elementary_carriers[OF IH(2)] in auto)
   also have "circuit_mat ?K [1\<^sub>m (2 ^ Suc n) \<Otimes> SWAP] = 1\<^sub>m (2 ^ Suc n) \<Otimes> SWAP"
-    by (rule circuit_mat_single[OF elementary_ok[OF e2]])
+    by (rule circuit_mat_single[OF elementary_unitary(1)[OF e2]])
   finally have c: "circuit_mat ?K (swap_down_gates (Suc (Suc (Suc n)))) = SWAP_down (Suc (Suc (Suc n)))" by simp
   have "\<forall>U \<in> set (swap_down_gates (Suc (Suc (Suc n)))). elementary ?K U"
     unfolding swap_down_gates.simps set_append using e1 e2 by auto
@@ -271,11 +268,11 @@ next
     unfolding pow_Suc3(4) by (rule elementary_right[OF elementary_SWAP]) simp
   have "circuit_mat ?K (swap_up_gates (Suc (Suc (Suc n))))
         = circuit_mat ?K [SWAP \<Otimes> 1\<^sub>m (2 ^ Suc n)] * circuit_mat ?K (map (\<lambda>U. 1\<^sub>m 2 \<Otimes> U) ?g)"
-    unfolding swap_up_gates.simps by (rule circuit_mat_append) (use elementary_carriers[OF e1] elementary_ok[OF e2] in auto)
+    unfolding swap_up_gates.simps by (rule circuit_mat_append) (use elementary_carriers[OF e1] elementary_unitary(1)[OF e2] in auto)
   also have "circuit_mat ?K (map (\<lambda>U. 1\<^sub>m 2 \<Otimes> U) ?g) = 1\<^sub>m 2 \<Otimes> SWAP_up (Suc (Suc n))"
     unfolding pow_Suc3(2) IH(1)[symmetric] by (rule circuit_mat_tensor_left) (use elementary_carriers[OF IH(2)] in auto)
   also have "circuit_mat ?K [SWAP \<Otimes> 1\<^sub>m (2 ^ Suc n)] = SWAP \<Otimes> 1\<^sub>m (2 ^ Suc n)"
-    by (rule circuit_mat_single[OF elementary_ok[OF e2]])
+    by (rule circuit_mat_single[OF elementary_unitary(1)[OF e2]])
   finally have c: "circuit_mat ?K (swap_up_gates (Suc (Suc (Suc n)))) = SWAP_up (Suc (Suc (Suc n)))" by simp
   have "\<forall>U \<in> set (swap_up_gates (Suc (Suc (Suc n)))). elementary ?K U"
     unfolding swap_up_gates.simps set_append using e1 e2 by auto
@@ -313,14 +310,14 @@ next
     unfolding pow_Suc3(4) by (rule elementary_right[OF elementary_four[OF control2_is_gate[OF U]]]) simp
   have "circuit_mat ?K (control_gates (Suc (Suc (Suc n))) U)
         = circuit_mat ?K ([?c] @ map (\<lambda>V. 1\<^sub>m 2 \<Otimes> V) ?d) * circuit_mat ?K (map (\<lambda>V. 1\<^sub>m 2 \<Otimes> V) ?u)"
-    unfolding control_gates.simps by (rule circuit_mat_append) (use elementary_carriers[OF eu] elementary_carriers[OF ed] elementary_ok[OF ec] in auto)
+    unfolding control_gates.simps by (rule circuit_mat_append) (use elementary_carriers[OF eu] elementary_carriers[OF ed] elementary_unitary(1)[OF ec] in auto)
   also have "circuit_mat ?K ([?c] @ map (\<lambda>V. 1\<^sub>m 2 \<Otimes> V) ?d) = circuit_mat ?K (map (\<lambda>V. 1\<^sub>m 2 \<Otimes> V) ?d) * circuit_mat ?K [?c]"
-    by (rule circuit_mat_append) (use elementary_carriers[OF ed] elementary_ok[OF ec] in auto)
+    by (rule circuit_mat_append) (use elementary_carriers[OF ed] elementary_unitary(1)[OF ec] in auto)
   also have "circuit_mat ?K (map (\<lambda>V. 1\<^sub>m 2 \<Otimes> V) ?d) = 1\<^sub>m 2 \<Otimes> SWAP_down (Suc (Suc n))"
     unfolding pow_Suc3(2) d(1)[symmetric] by (rule circuit_mat_tensor_left) (use elementary_carriers[OF d(2)] in auto)
   also have "circuit_mat ?K (map (\<lambda>V. 1\<^sub>m 2 \<Otimes> V) ?u) = 1\<^sub>m 2 \<Otimes> SWAP_up (Suc (Suc n))"
     unfolding pow_Suc3(2) u(1)[symmetric] by (rule circuit_mat_tensor_left) (use elementary_carriers[OF u(2)] in auto)
-  also have "circuit_mat ?K [?c] = ?c" by (rule circuit_mat_single[OF elementary_ok[OF ec]])
+  also have "circuit_mat ?K [?c] = ?c" by (rule circuit_mat_single[OF elementary_unitary(1)[OF ec]])
   finally have c: "circuit_mat ?K (control_gates (Suc (Suc (Suc n))) U) = control (Suc (Suc (Suc n))) U" by simp
   have "\<forall>V \<in> set (control_gates (Suc (Suc (Suc n))) U). elementary ?K V"
     unfolding control_gates.simps set_append using eu ed ec by auto
@@ -685,7 +682,7 @@ lemma qft_inv_circuit:
     and "\<forall>U \<in> set (rev (map dagger (qft_circuit k))). elementary (2 ^ k) U"
 proof -
   show "circuit_mat (2 ^ k) (rev (map dagger (qft_circuit k))) = (fourier (2 ^ k))\<^sup>\<dagger>"
-    unfolding qft_circuit(1)[symmetric] by (rule circuit_mat_dagger) (use qft_circuit(2) elementary_ok in blast)
+    unfolding qft_circuit(1)[symmetric] by (rule circuit_mat_dagger) (use qft_circuit(2) elementary_unitary(1) in blast)
   show "\<forall>U \<in> set (rev (map dagger (qft_circuit k))). elementary (2 ^ k) U"
     using qft_circuit(2) elementary_dagger by auto
 qed
@@ -720,11 +717,11 @@ proof -
   have rc: "rot_gate A t0 (2 ^ k) C \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2))"
     unfolding rot_gate_def blocks_nA by simp
   have h: "circuit_mat (2 ^ k * (n * 2)) (clk_gates n (had_gates k)) = clock_gate (Hadamard \<otimes>\<^bsup>k\<^esup>) n"
-    unfolding had_circuit[symmetric] by (rule clk_gates_circuit[OF _ n0]) (use had_ok elementary_ok in blast)
+    unfolding had_circuit[symmetric] by (rule clk_gates_circuit[OF _ n0]) (use had_ok elementary_unitary(1) in blast)
   have fi: "circuit_mat (2 ^ k * (n * 2)) (clk_gates n (rev (map dagger (qft_circuit k)))) = clock_gate ((fourier (2 ^ k))\<^sup>\<dagger>) n"
-    unfolding qft_inv_circuit(1)[symmetric] by (rule clk_gates_circuit[OF _ n0]) (use qft_inv_circuit(2) elementary_ok in blast)
+    unfolding qft_inv_circuit(1)[symmetric] by (rule clk_gates_circuit[OF _ n0]) (use qft_inv_circuit(2) elementary_unitary(1) in blast)
   have f: "circuit_mat (2 ^ k * (n * 2)) (clk_gates n (qft_circuit k)) = clock_gate (fourier (2 ^ k)) n"
-    unfolding qft_circuit(1)[symmetric] by (rule clk_gates_circuit[OF _ n0]) (use qft_circuit(2) elementary_ok in blast)
+    unfolding qft_circuit(1)[symmetric] by (rule clk_gates_circuit[OF _ n0]) (use qft_circuit(2) elementary_unitary(1) in blast)
   show ?thesis unfolding hhl_blocks_def hhl_gates_def blocks_nA
     using circuit_mat_single[OF pc] circuit_mat_single[OF rc] h fi f evo_gates_circuit evo_inv_circuit by simp
 qed
@@ -878,7 +875,7 @@ proof -
   have dd: "d = 2 ^ k * (n * 2)" by (simp add: d_def)
   have nA': "dim_row A = n" using A(1) by simp
   have g: "\<And>U. U \<in> set (hhl_elem_gates A Ub t0 k C) \<Longrightarrow> U \<in> carrier_mat d d \<and> Complex_Matrix.unitary U" using elem_gates_ok dd by auto
-  have g0: "\<And>U. U \<in> set (hhl_gates A Ub t0 k C) \<Longrightarrow> U \<in> carrier_mat d d" using gates_ok[OF A n0 k t0 spec Ub Cb] dd by auto
+  have g0: "\<And>U. U \<in> set (hhl_gates A Ub t0 k C) \<Longrightarrow> U \<in> carrier_mat d d" using prog_gates[OF A n0 k t0 spec Ub Cb] dd by auto
   have S: "dim_vec ?\<psi> = d" "inner_prod ?\<psi> ?\<psi> = 1" using states_ok[OF A n0 k t0 spec Ub Cb, of 0] dd by auto
   have "run_gates ?\<psi> (hhl_elem_gates A Ub t0 k C) = circuit_mat d (hhl_elem_gates A Ub t0 k C) *\<^sub>v ?\<psi>"
     by (rule circuit_mat_run[symmetric]) (use g S in auto)

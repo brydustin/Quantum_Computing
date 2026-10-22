@@ -547,7 +547,7 @@ proof -
   have Gc: "mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A \<in> carrier_mat n n" by (rule mat_fun_carrier[OF A])
   have dg: "dim_vec ?g0 = n" and dx: "dim_vec ?x = n" using Hc Gc b_dim by simp_all
   have g1: "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b = complex_of_real C \<cdot>\<^sub>v ?x"
-    by (rule smult_mat_mult_vec[OF Hc b_dim])
+    by (rule smult_mat_mult_vec[OF Hc carrier_vecI[OF b_dim]])
   have o: "\<langle>tensor_vec ?g0 (unit_vec 2 0)|tensor_vec (complex_of_real C \<cdot>\<^sub>v ?x) (unit_vec 2 1)\<rangle> = 0"
   proof -
     have z: "\<langle>unit_vec 2 0|unit_vec 2 1\<rangle> = 0" by (simp add: Quantum.inner_prod_def unit_vec_def numeral_2_eq_2 atLeast0LessThan lessThan_Suc)
@@ -560,7 +560,7 @@ proof -
   proof -
     have e: "\<parallel>unit_vec 2 i\<parallel> = 1" if "i < 2" for i
       using that by (auto simp: cpx_vec_length_def numeral_2_eq_2 lessThan_Suc unit_vec_def)
-    show ?thesis using e[of 0] e[of 1] dg dx by (simp add: vnorm_tensor vnorm_smult power_mult_distrib)
+    show ?thesis using e[of 0] e[of 1] dg dx by (simp add: vnorm_tensor cpx_vec_length_smult power_mult_distrib)
   qed
   finally show ?thesis by simp
 qed

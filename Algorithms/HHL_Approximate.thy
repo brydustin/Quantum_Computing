@@ -39,14 +39,13 @@ proof (rule eq_vecI)
     using tensor_vec_index[OF a w r] r m w by (simp add: reg_sum_def)
 qed (simp add: tensor_vec_dim[OF a w])
 
-lemma reg_sum_index_div:
+lemma reg_sum_index_mod:
   fixes r N m :: nat
   assumes "r < N * m"
-  shows "r div m < N" "r mod m < m"
+  shows "r mod m < m"
 proof -
-  show "r div m < N" using assms by (simp add: less_mult_imp_div_less)
   have "0 < m" using assms by (cases m) auto
-  thus "r mod m < m" by simp
+  thus ?thesis by simp
 qed
 
 lemma reg_sum_add:
@@ -55,7 +54,7 @@ lemma reg_sum_add:
 proof (rule eq_vecI)
   fix r assume "r < dim_vec (reg_sum N m (\<lambda>k. f k + g k))"
   hence r: "r < N * m" by simp
-  note ki = reg_sum_index_div[OF r]
+  note ki = less_mult_imp_div_less[OF r] reg_sum_index_mod[OF r]
   show "(reg_sum N m f + reg_sum N m g) $ r = reg_sum N m (\<lambda>k. f k + g k) $ r"
     using r ki g[OF ki(1)] by (simp add: reg_sum_def)
 qed simp
@@ -66,7 +65,7 @@ lemma reg_sum_diff:
 proof (rule eq_vecI)
   fix r assume "r < dim_vec (reg_sum N m (\<lambda>k. f k - g k))"
   hence r: "r < N * m" by simp
-  note ki = reg_sum_index_div[OF r]
+  note ki = less_mult_imp_div_less[OF r] reg_sum_index_mod[OF r]
   show "(reg_sum N m f - reg_sum N m g) $ r = reg_sum N m (\<lambda>k. f k - g k) $ r"
     using r ki g[OF ki(1)] by (simp add: reg_sum_def)
 qed simp
@@ -77,7 +76,7 @@ lemma reg_sum_smult:
 proof (rule eq_vecI)
   fix r assume "r < dim_vec (reg_sum N m (\<lambda>k. c \<cdot>\<^sub>v f k))"
   hence r: "r < N * m" by simp
-  note ki = reg_sum_index_div[OF r]
+  note ki = less_mult_imp_div_less[OF r] reg_sum_index_mod[OF r]
   show "(c \<cdot>\<^sub>v reg_sum N m f) $ r = reg_sum N m (\<lambda>k. c \<cdot>\<^sub>v f k) $ r"
     using r ki f[OF ki(1)] by (simp add: reg_sum_def)
 qed simp
@@ -1054,7 +1053,7 @@ proof -
   have G1: "?G1 \<in> carrier_mat n n" using Hi by simp
   have g0: "?G0 *\<^sub>v u = complex_of_real ?s \<cdot>\<^sub>v u" by (rule mat_fun_eigen[OF A u ev])
   have g1: "?G1 *\<^sub>v u = complex_of_real ?c \<cdot>\<^sub>v u"
-    using smult_mat_mult_vec[OF Hi u, of "complex_of_real C"] herm_inv_eigen[OF A u ev]
+    using smult_mat_mult_vec[OF Hi carrier_vecI[OF u], of "complex_of_real C"] herm_inv_eigen[OF A u ev]
     by (simp add: smult_smult_assoc divide_inverse)
   have "lift_mat n (uniform_state N) ?G0 ?G1 *\<^sub>v u =
         tensor_vec (uniform_state N) (tensor_vec (?G0 *\<^sub>v u) (unit_vec 2 0) + tensor_vec (?G1 *\<^sub>v u) (unit_vec 2 1))"

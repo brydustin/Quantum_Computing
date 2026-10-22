@@ -1081,7 +1081,7 @@ proof -
   proof -
     have "(\<Sum>k<N. complex_of_real (?a k) * \<langle>G k *\<^sub>v unit_vec 3 0 - hflag \<kappa> l|G k *\<^sub>v unit_vec 3 0 - hflag \<kappa> l\<rangle>)
           = (\<Sum>k<N. complex_of_real (?a k * ?h k))"
-      by (rule sum.cong) (simp_all add: Gh vnorm_inner \<phi>_def)
+      by (rule sum.cong) (simp_all add: Gh cpx_vec_length_inner_prod[symmetric] \<phi>_def)
     moreover have d3: "0 < (3::nat)" by simp
     ultimately show ?thesis using flag_error[OF A t0 N0 u ev dim_win_state d3 G dim_hflag[of \<kappa> l]] unfolding \<phi>_def by (simp add: of_real_sum)
   qed
@@ -1289,7 +1289,7 @@ lemma pflag_reg_sum:
 proof (rule eq_vecI)
   fix r assume "r < dim_vec (reg_sum N (n * d) (\<lambda>k. pflag d P (f k)))"
   hence r: "r < N * (n * d)" by simp
-  note ki = reg_sum_index_div[OF r]
+  note ki = less_mult_imp_div_less[OF r] reg_sum_index_mod[OF r]
   have m: "r mod (n * d) mod d = r mod d" by (simp add: mod_mod_cancel)
   show "pflag d P (reg_sum N (n * d) f) $ r = reg_sum N (n * d) (\<lambda>k. pflag d P (f k)) $ r"
     using r ki f[OF ki(1)] m by (simp add: pflag_def reg_sum_def)
@@ -1531,7 +1531,7 @@ proof -
   proof -
     have "complex_of_real (\<parallel>pflag 3 P (?C *\<^sub>v ?x) - pflag 3 P ?I\<parallel>\<^sup>2)
           = complex_of_real (\<parallel>u\<parallel>\<^sup>2) * (\<Sum>k<N. complex_of_real ((cmod (?a k))\<^sup>2) * complex_of_real (\<parallel>pflag 3 P (?w k)\<parallel>\<^sup>2))"
-      unfolding vnorm_inner[symmetric] nrm ..
+      unfolding cpx_vec_length_inner_prod nrm ..
     also have "\<dots> = complex_of_real (\<parallel>u\<parallel>\<^sup>2 * (\<Sum>k<N. (cmod (?a k))\<^sup>2 * \<parallel>pflag 3 P (?w k)\<parallel>\<^sup>2))"
       by (simp add: of_real_sum)
     finally show ?thesis by (simp only: of_real_eq_iff)

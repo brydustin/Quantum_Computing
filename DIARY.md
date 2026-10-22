@@ -630,3 +630,24 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   fire (use `simp only`); after `interpret state_sig` the `\<turnstile>\<^sub>p` notation is unavailable,
   write `hoare_partial P S Q`; `total_scalar_weaken` wants `1\<^sub>m (state_sig.d dims)` (fold the
   dimension first); pgfplots `ycomb` on a log axis needs `log origin y=infty`.
+- **No redundancies, batch 1** (2026-10-22; user: "We don't want redundancies!", about Part VI's own
+  Householder reflection).  `HHL_Filter_Bounds` no longer defines a Householder matrix:
+  `householder_props` is now about Lecture 3's `householder (vec_normalize (|0⟩ − h))` (unitarity from
+  `householder_unitary`, the action from `householder_mult_vec`).  `HHL_Complete.outer` is gone in
+  favour of the notes' `v ⊘ w` (`outer_prod_mat` gives it as an explicit matrix); `pinv` is gone, it is
+  `herm_inv` (1/0 = 0).  A duplicate detector (ML: canonical propositions up to renaming of variables
+  and orientation of equations, against all 39 543 library facts and within Part VI) found library
+  duplicates `zero_dagger`, `reg_sum_index_div`(1), two `sum_two`, `inner_unit_diag`, `vnorm_inner`,
+  `vnorm_smult`, `sum_list_filter_if`, `cis_add_pi`, `cis_diff_pi`, and internal ones (a second
+  `sum_blocks`, a second `pow_mat_comm`, `vnorm_0v`/`vnorm_zero_vec`, `spectral_decomp_spectrum`,
+  `elementary_ok`, `mat_fun_spec`(1), my `pe_amp_norm` = `pe_amp_sum_sq`, three |0⟩⊗|0⟩ lemmas,
+  `gates_ok`, `split_nA`/`fine_nA`, 14 restatements in `HHL_Reduction`, 13 in `HHL_Optimality`); a
+  name-clash check found the near-duplicates `smult_mat_mult_vec` and `hermitian_index` (both in the
+  notes) and two `sum_split_add`.  All removed; `sum_blocks` is now derived from HOL's `sum.nat_group`.
+  `HHL_Reduction`'s four identical contexts are merged into one, and its assumption `Ug` is stated as
+  an object-level ∀ so that `X[OF T0 Ug]` instantiates cleanly (with a rule-shaped assumption `OF`
+  lifts the premise and leaves trivial premises behind, which is why the restatements existed).  The
+  detector now reports nothing.  Part VI: 22 668 lines, 1 153 results.  Traps: after the QHLProver
+  import `vec_normalize` and `outer_prod` resolve to QHLProver's (write
+  `Quantum_Computing_3_10.vec_normalize`); `private lemma` still exports the fact; editing a session
+  theory makes `ev.sh` rebuild the heap, so test against the base session.

@@ -239,7 +239,7 @@ proof -
     also have "\<dots> = \<langle>M *\<^sub>v Matrix.col U i|M *\<^sub>v Matrix.col U j\<rangle>" unfolding col_mult2[OF M U(1) i] col_mult2[OF M U(1) j] ..
     also have "\<dots> = D $$ (i, j)"
     proof (cases "i = j")
-      case True thus ?thesis unfolding D_def using i by (simp add: vnorm_inner)
+      case True thus ?thesis unfolding D_def using i by (simp add: cpx_vec_length_inner_prod[symmetric])
     next
       case False thus ?thesis unfolding D_def using i j orth by simp
     qed
@@ -269,7 +269,7 @@ proof -
     finally show ?thesis .
   qed
   finally have "complex_of_real (\<parallel>M *\<^sub>v b\<parallel>\<^sup>2) = complex_of_real (\<Sum>j<n. ?m j * (cmod (\<beta> $ j))\<^sup>2)"
-    unfolding vnorm_inner[symmetric] Mb by (simp add: of_real_sum)
+    unfolding cpx_vec_length_inner_prod Mb by (simp add: of_real_sum)
   thus ?thesis unfolding \<beta>_def by (simp only: of_real_eq_iff)
 qed
 
@@ -353,7 +353,7 @@ proof -
     have one: "\<parallel>Matrix.col U j\<parallel>\<^sup>2 = 1"
     proof -
       have "\<langle>Matrix.col U j|Matrix.col U j\<rangle> = 1" using unitary_cols_orthonormal[OF d(2), of j j] d(1) j by simp
-      hence "complex_of_real (\<parallel>Matrix.col U j\<parallel>\<^sup>2) = complex_of_real 1" unfolding vnorm_inner by simp
+      hence "complex_of_real (\<parallel>Matrix.col U j\<parallel>\<^sup>2) = complex_of_real 1" unfolding cpx_vec_length_inner_prod[symmetric] by simp
       thus ?thesis by (simp only: of_real_eq_iff)
     qed
     have "\<parallel>?M *\<^sub>v Matrix.col U j\<parallel>\<^sup>2 \<le> \<parallel>Matrix.col U j\<parallel>\<^sup>2 * ?e"
@@ -676,109 +676,57 @@ proof -
   thus ?thesis using power2_eq_iff_nonneg[OF vnorm_ge0 zero_le_one] by simp
 qed
 
-text \<open>A Householder reflection maps $\ket0$ to any unit vector $h$ with real $h_0<1$.\<close>
-
-definition householder :: "nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
-  "householder d h = 1\<^sub>m d - complex_of_real (2 / \<parallel>unit_vec d 0 - h\<parallel>\<^sup>2) \<cdot>\<^sub>m outer (unit_vec d 0 - h)"
-
-lemma outer_sq: "outer v * outer v = complex_of_real (\<parallel>v\<parallel>\<^sup>2) \<cdot>\<^sub>m outer v"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row (complex_of_real (\<parallel>v\<parallel>\<^sup>2) \<cdot>\<^sub>m outer v)" "j < dim_col (complex_of_real (\<parallel>v\<parallel>\<^sup>2) \<cdot>\<^sub>m outer v)"
-  hence i: "i < dim_vec v" and j: "j < dim_vec v" by (simp_all add: outer_def)
-  have "(outer v * outer v) $$ (i, j) = (\<Sum>k<dim_vec v. v $ i * cnj (v $ k) * (v $ k * cnj (v $ j)))"
-    using i j by (simp add: outer_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = v $ i * cnj (v $ j) * (\<Sum>k<dim_vec v. cnj (v $ k) * v $ k)"
-    by (simp add: sum_distrib_left algebra_simps)
-  also have "(\<Sum>k<dim_vec v. cnj (v $ k) * v $ k) = complex_of_real (\<parallel>v\<parallel>\<^sup>2)"
-    unfolding vnorm_inner[symmetric] by (simp add: Quantum.inner_prod_def atLeast0LessThan)
-  finally show "(outer v * outer v) $$ (i, j) = (complex_of_real (\<parallel>v\<parallel>\<^sup>2) \<cdot>\<^sub>m outer v) $$ (i, j)"
-    using i j by (simp add: outer_def mult.commute)
-qed (simp_all add: outer_def)
+text \<open>The Householder unitary of Lecture 3 for $w=(\ket0-h)/\norm{\ket0-h}$ maps $\ket0$ to any
+unit vector $h$ with real $h_0<1$.\<close>
 
 lemma householder_props:
   assumes h: "dim_vec h = d" "\<parallel>h\<parallel> = 1" and h0: "h $ 0 = complex_of_real r" "r < 1" and d0: "0 < d"
-  shows "householder d h \<in> carrier_mat d d" "unitary (householder d h)" "householder d h *\<^sub>v unit_vec d 0 = h"
+  defines "w \<equiv> vec_normalize (unit_vec d 0 - h)"
+  shows "householder w \<in> carrier_mat d d" "unitary (householder w)" "householder w *\<^sub>v unit_vec d 0 = h"
 proof -
   let ?v = "unit_vec d 0 - h"
   have dv: "dim_vec ?v = d" using h by simp
-  have O: "outer ?v \<in> carrier_mat d d" by (rule outer_carrier[OF dv])
   have nv: "\<parallel>?v\<parallel>\<^sup>2 = 2 * (1 - r)"
   proof -
-    have "complex_of_real (\<parallel>?v\<parallel>\<^sup>2) = \<langle>unit_vec d 0 - h|unit_vec d 0 - h\<rangle>" by (simp add: vnorm_inner)
+    have "complex_of_real (\<parallel>?v\<parallel>\<^sup>2) = \<langle>unit_vec d 0 - h|unit_vec d 0 - h\<rangle>" by (simp add: cpx_vec_length_inner_prod[symmetric])
     also have "\<dots> = \<langle>unit_vec d 0|unit_vec d 0\<rangle> - \<langle>unit_vec d 0|h\<rangle> - \<langle>h|unit_vec d 0\<rangle> + \<langle>h|h\<rangle>"
       using h by (simp add: Quantum.inner_prod_def atLeast0LessThan sum_subtractf algebra_simps sum.distrib)
     also have "\<langle>unit_vec d 0|unit_vec d 0\<rangle> = 1" using d0 by (simp add: Quantum.inner_prod_def atLeast0LessThan unit_vec_def if_distrib[of cnj] if_distrib[of "\<lambda>x. x * _"] if_distrib[of "\<lambda>x. _ * x"] sum.delta cong: if_cong)
     also have "\<langle>unit_vec d 0|h\<rangle> = complex_of_real r" using d0 h h0 by (simp add: Quantum.inner_prod_def atLeast0LessThan unit_vec_def if_distrib[of cnj] if_distrib[of "\<lambda>x. x * _"] if_distrib[of "\<lambda>x. _ * x"] sum.delta cong: if_cong)
     also have "\<langle>h|unit_vec d 0\<rangle> = complex_of_real r" using d0 h h0 by (simp add: Quantum.inner_prod_def atLeast0LessThan unit_vec_def if_distrib[of cnj] if_distrib[of "\<lambda>x. x * _"] if_distrib[of "\<lambda>x. _ * x"] sum.delta cong: if_cong)
-    also have "\<langle>h|h\<rangle> = 1" unfolding vnorm_inner h(2) by simp
+    also have "\<langle>h|h\<rangle> = 1" unfolding cpx_vec_length_inner_prod[symmetric] h(2) by simp
     finally have "complex_of_real (\<parallel>?v\<parallel>\<^sup>2) = complex_of_real (2 * (1 - r))" by simp
     thus ?thesis by (simp only: of_real_eq_iff)
   qed
-  have nv0: "0 < \<parallel>?v\<parallel>\<^sup>2" unfolding nv using h0 by simp
-  let ?c = "complex_of_real (2 / \<parallel>?v\<parallel>\<^sup>2)"
-  have Hc: "householder d h \<in> carrier_mat d d" unfolding householder_def by (rule minus_carrier_mat[OF smult_carrier_mat[OF O]])
-  thus "householder d h \<in> carrier_mat d d" .
-  have Hd: "(householder d h)\<^sup>\<dagger> = householder d h"
-  proof (rule eq_matI)
-    fix i j assume "i < dim_row (householder d h)" "j < dim_col (householder d h)"
-    hence i: "i < d" and j: "j < d" using Hc by simp_all
-    show "(householder d h)\<^sup>\<dagger> $$ (i, j) = householder d h $$ (i, j)"
-      using i j dv by (simp add: householder_def dagger_def outer_def mult.commute)
-  qed (use Hc in \<open>simp_all add: dagger_def\<close>)
-  have HH: "householder d h * householder d h = 1\<^sub>m d"
+  have nv0: "0 < \<parallel>?v\<parallel>" using nv h0 vnorm_ge0[of ?v] by (cases "\<parallel>?v\<parallel> = 0") auto
+  have v0: "?v \<noteq> 0\<^sub>v d" using nv0 cpx_vec_length_zero_iff[of ?v] dv by auto
+  have w: "w = complex_of_real (1 / \<parallel>?v\<parallel>) \<cdot>\<^sub>v ?v" unfolding w_def vec_normalize_def using v0 dv by simp
+  have dw: "dim_vec w = d" unfolding w_def using dv by simp
+  show "householder w \<in> carrier_mat d d" unfolding householder_def using dw by simp
+  have nw: "\<parallel>w\<parallel> = 1" unfolding w_def by (rule normalized_vec_norm[OF carrier_vecI[OF dv] v0])
+  show "unitary (householder w)" by (rule householder_unitary[OF nw])
+  have v_e0: "\<langle>?v|unit_vec d 0\<rangle> = complex_of_real (1 - r)"
+    using d0 h h0 by (simp add: Quantum.inner_prod_def atLeast0LessThan unit_vec_def if_distrib[of cnj] if_distrib[of "\<lambda>x. x * _"] if_distrib[of "\<lambda>x. _ * x"] sum.delta cong: if_cong)
+  have "householder w *\<^sub>v unit_vec d 0 = unit_vec d 0 - (2 * \<langle>w|unit_vec d 0\<rangle>) \<cdot>\<^sub>v w"
+    by (rule householder_mult_vec) (simp add: dw)
+  also have "(2 * \<langle>w|unit_vec d 0\<rangle>) \<cdot>\<^sub>v w = ?v"
   proof -
-    let ?Q = "?c \<cdot>\<^sub>m outer ?v"
-    have Q: "?Q \<in> carrier_mat d d" by (rule smult_carrier_mat[OF O])
-    have QQ: "?Q * ?Q = (2 * ?c) \<cdot>\<^sub>m outer ?v"
-    proof -
-      have cc: "?c * complex_of_real (\<parallel>?v\<parallel>\<^sup>2) = 2" using nv0 by (simp flip: of_real_mult)
-      have "?Q * ?Q = ?c \<cdot>\<^sub>m (outer ?v * ?Q)" by (rule mult_smult_assoc_mat[OF O Q])
-      also have "outer ?v * ?Q = ?c \<cdot>\<^sub>m (outer ?v * outer ?v)" by (rule mult_smult_distrib[OF O O])
-      also have "outer ?v * outer ?v = complex_of_real (\<parallel>?v\<parallel>\<^sup>2) \<cdot>\<^sub>m outer ?v" by (rule outer_sq)
-      also have "?c \<cdot>\<^sub>m (?c \<cdot>\<^sub>m (complex_of_real (\<parallel>?v\<parallel>\<^sup>2) \<cdot>\<^sub>m outer ?v)) = (2 * ?c) \<cdot>\<^sub>m outer ?v"
-      proof (rule eq_matI)
-        fix i j assume "i < dim_row ((2 * ?c) \<cdot>\<^sub>m outer ?v)" "j < dim_col ((2 * ?c) \<cdot>\<^sub>m outer ?v)"
-        hence "i < d" "j < d" using O by simp_all
-        moreover have "?c * (?c * (complex_of_real (\<parallel>?v\<parallel>\<^sup>2) * z)) = 2 * ?c * z" for z
-        proof -
-          have "?c * (?c * (complex_of_real (\<parallel>?v\<parallel>\<^sup>2) * z)) = ?c * ((?c * complex_of_real (\<parallel>?v\<parallel>\<^sup>2)) * z)" by (simp only: mult_ac)
-          thus ?thesis unfolding cc by (simp only: mult_ac)
-        qed
-        ultimately show "(?c \<cdot>\<^sub>m (?c \<cdot>\<^sub>m (complex_of_real (\<parallel>?v\<parallel>\<^sup>2) \<cdot>\<^sub>m outer ?v))) $$ (i, j) = ((2 * ?c) \<cdot>\<^sub>m outer ?v) $$ (i, j)"
-          using O by simp
-      qed (use O in simp_all)
-      finally show ?thesis .
-    qed
-    have IQ: "1\<^sub>m d - ?Q \<in> carrier_mat d d" by (rule minus_carrier_mat[OF Q])
-    have "(1\<^sub>m d - ?Q) * (1\<^sub>m d - ?Q) = 1\<^sub>m d * (1\<^sub>m d - ?Q) - ?Q * (1\<^sub>m d - ?Q)"
-      by (rule minus_mult_distrib_mat[OF one_carrier_mat Q IQ])
-    also have "1\<^sub>m d * (1\<^sub>m d - ?Q) = 1\<^sub>m d - ?Q" by (rule left_mult_one_mat[OF IQ])
-    also have "?Q * (1\<^sub>m d - ?Q) = ?Q * 1\<^sub>m d - ?Q * ?Q" by (rule mult_minus_distrib_mat[OF Q one_carrier_mat Q])
-    also have "?Q * 1\<^sub>m d = ?Q" by (rule right_mult_one_mat[OF Q])
-    also have "1\<^sub>m d - ?Q - (?Q - ?Q * ?Q) = 1\<^sub>m d" unfolding QQ using O by (intro eq_matI) (auto simp: algebra_simps)
-    finally show ?thesis unfolding householder_def .
-  qed
-  show "unitary (householder d h)" unfolding unitary_def using Hc Hd HH by simp
-  show "householder d h *\<^sub>v unit_vec d 0 = h"
-  proof -
-    have e0: "unit_vec d 0 \<in> carrier_vec d" by (rule carrier_vecI) simp
-    have "outer ?v *\<^sub>v unit_vec d 0 = \<langle>?v|unit_vec d 0\<rangle> \<cdot>\<^sub>v ?v" by (rule outer_mult_vec[OF dv]) simp
-    also have "\<langle>?v|unit_vec d 0\<rangle> = complex_of_real (1 - r)"
-      using d0 h h0 by (simp add: Quantum.inner_prod_def atLeast0LessThan unit_vec_def if_distrib[of cnj] if_distrib[of "\<lambda>x. x * _"] if_distrib[of "\<lambda>x. _ * x"] sum.delta cong: if_cong)
-    finally have ov: "outer ?v *\<^sub>v unit_vec d 0 = complex_of_real (1 - r) \<cdot>\<^sub>v ?v" .
-    have "householder d h *\<^sub>v unit_vec d 0 = unit_vec d 0 - ?c \<cdot>\<^sub>v (complex_of_real (1 - r) \<cdot>\<^sub>v ?v)"
-      unfolding householder_def using minus_mult_distrib_mat_vec[OF one_carrier_mat smult_carrier_mat[OF O] e0, of ?c]
-        smult_mat_mult_vec[OF O, of "unit_vec d 0" ?c] ov e0 by simp
-    also have "?c \<cdot>\<^sub>v (complex_of_real (1 - r) \<cdot>\<^sub>v ?v) = ?v"
-    proof -
-      have rr: "2 / (2 * (1 - r)) * (1 - r) = 1" using h0 by (simp add: field_simps)
-      have "?c * complex_of_real (1 - r) = complex_of_real (2 / (2 * (1 - r)) * (1 - r))" unfolding nv of_real_mult ..
-      hence "?c * complex_of_real (1 - r) = 1" unfolding rr by simp
-      thus ?thesis by (simp add: smult_smult_assoc)
-    qed
-    also have "unit_vec d 0 - ?v = h" using h by (intro eq_vecI) simp_all
+    have "\<langle>w|unit_vec d 0\<rangle> = cnj (complex_of_real (1 / \<parallel>?v\<parallel>)) * \<langle>?v|unit_vec d 0\<rangle>"
+      unfolding w by (rule inner_prod_left_smult') (simp add: h)
+    hence "\<langle>w|unit_vec d 0\<rangle> = complex_of_real (1 / \<parallel>?v\<parallel>) * complex_of_real (1 - r)"
+      unfolding v_e0 by simp
+    hence "2 * \<langle>w|unit_vec d 0\<rangle> * complex_of_real (1 / \<parallel>?v\<parallel>) = complex_of_real (2 * (1 - r) / \<parallel>?v\<parallel>\<^sup>2)"
+      by (simp add: power2_eq_square field_simps)
+    also have "2 * (1 - r) / \<parallel>?v\<parallel>\<^sup>2 = 1" unfolding nv using h0 by simp
+    finally have c: "2 * \<langle>w|unit_vec d 0\<rangle> * complex_of_real (1 / \<parallel>?v\<parallel>) = 1" by simp
+    have "(2 * \<langle>w|unit_vec d 0\<rangle>) \<cdot>\<^sub>v w = (2 * \<langle>w|unit_vec d 0\<rangle>) \<cdot>\<^sub>v (complex_of_real (1 / \<parallel>?v\<parallel>) \<cdot>\<^sub>v ?v)"
+      by (rule arg_cong[where f = "\<lambda>x. (2 * \<langle>w|unit_vec d 0\<rangle>) \<cdot>\<^sub>v x", OF w])
+    also have "\<dots> = (2 * \<langle>w|unit_vec d 0\<rangle> * complex_of_real (1 / \<parallel>?v\<parallel>)) \<cdot>\<^sub>v ?v" by (rule smult_smult_assoc)
+    also have "\<dots> = ?v" unfolding c by simp
     finally show ?thesis .
   qed
+  also have "unit_vec d 0 - ?v = h" using h by (intro eq_vecI) simp_all
+  finally show "householder w *\<^sub>v unit_vec d 0 = h" .
 qed
 
 text \<open>So gates with $G_k\ket0=\ket{h(\tilde\lambda_k)}$ exist: the hypotheses of Theorem 1 are met.\<close>
@@ -793,7 +741,7 @@ proof -
     have h0: "hflag \<kappa> x $ 0 = complex_of_real (filt_s \<kappa> x)" by (simp add: hflag_def)
     have d3: "0 < (3::nat)" by simp
     note hp = householder_props[OF dim_hflag hflag_unit[OF k0] h0 True d3]
-    show ?thesis by (rule exI[of _ "householder 3 (hflag \<kappa> x)"]) (intro conjI hp)
+    show ?thesis by (rule exI[of _ "householder (vec_normalize (unit_vec 3 0 - hflag \<kappa> x))"]) (intro conjI hp)
   next
     case False
     have f1: "filt_s \<kappa> x \<le> 1" unfolding filt_s_def using fg_sq_le[OF k0, of x] by simp

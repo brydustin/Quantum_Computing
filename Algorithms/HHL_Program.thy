@@ -254,15 +254,6 @@ proof -
   finally show ?thesis using il by simp
 qed
 
-lemma inner_unit_diag: "(A :: complex Matrix.mat) \<in> carrier_mat K K \<Longrightarrow> i < K \<Longrightarrow> inner_prod (unit_vec K i) (A *\<^sub>v unit_vec K i) = A $$ (i, i)"
-proof -
-  assume A: "A \<in> carrier_mat K K" and i: "i < K"
-  have "inner_prod (unit_vec K i) (A *\<^sub>v unit_vec K i) = (\<Sum>l<K. (A *\<^sub>v unit_vec K i) $ l * conjugate (unit_vec K i $ l))"
-    using A by (simp add: scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{i}. (A *\<^sub>v unit_vec K i) $ l * conjugate (unit_vec K i $ l))" using i by (intro sum.mono_neutral_cong_right) auto
-  finally show ?thesis using A i by (simp add: mult_unit_vec_index)
-qed
-
 context state_sig
 begin
 
@@ -272,14 +263,14 @@ lemma qp_diag:
 proof -
   have Qd: "Q \<in> carrier_mat d d" and pQ: "positive Q" and le: "Q \<le>\<^sub>L 1\<^sub>m d" using Q unfolding is_quantum_predicate_def by auto
   let ?e = "unit_vec d i"
-  have qe: "inner_prod ?e (Q *\<^sub>v ?e) = Q $$ (i, i)" by (rule inner_unit_diag[OF Qd i])
+  have qe: "inner_prod ?e (Q *\<^sub>v ?e) = Q $$ (i, i)" by (rule unit_vec_bracket[OF Qd i])
   have "inner_prod ?e (Q *\<^sub>v ?e) \<ge> 0" using pQ Qd i unfolding positive_def by auto
   hence g: "Q $$ (i, i) \<ge> 0" using qe by simp
   thus "Q $$ (i, i) \<in> \<real>" "0 \<le> Re (Q $$ (i, i))" by (auto simp: less_eq_complex_def complex_is_Real_iff)
   have p1: "positive (1\<^sub>m d - Q)" using le unfolding lowner_le_def by simp
   have "inner_prod ?e ((1\<^sub>m d - Q) *\<^sub>v ?e) \<ge> 0" using p1 Qd i unfolding positive_def by auto
   moreover have "inner_prod ?e ((1\<^sub>m d - Q) *\<^sub>v ?e) = 1 - Q $$ (i, i)"
-    using inner_unit_diag[OF minus_carrier_mat[OF Qd] i] Qd i by simp
+    using unit_vec_bracket[OF minus_carrier_mat[OF Qd] i] Qd i by simp
   ultimately show "Re (Q $$ (i, i)) \<le> 1" by (simp add: less_eq_complex_def)
 qed
 
@@ -494,7 +485,7 @@ proof -
     have e0: "unit_vec d 0 \<in> carrier_vec d" by simp
     have \<psi>c: "\<psi> \<in> carrier_vec d" unfolding \<psi>_def using C by simp
     have "(adjoint ?C * ?PM * ?C) $$ (0, 0) = inner_prod (unit_vec d 0) ((adjoint ?C * ?PM * ?C) *\<^sub>v unit_vec d 0)"
-      by (rule inner_unit_diag[symmetric]) (use C PMc d0 in \<open>auto intro: mult_carrier_mat adjoint_dim\<close>)
+      by (rule unit_vec_bracket[symmetric]) (use C PMc d0 in \<open>auto intro: mult_carrier_mat adjoint_dim\<close>)
     also have "(adjoint ?C * ?PM * ?C) *\<^sub>v unit_vec d 0 = adjoint ?C *\<^sub>v (?PM *\<^sub>v \<psi>)"
       unfolding \<psi>_def by (rule assoc3_mult_vec[OF adjoint_dim[OF C] PMc C e0])
     also have "inner_prod (unit_vec d 0) (adjoint ?C *\<^sub>v (?PM *\<^sub>v \<psi>)) = inner_prod (adjoint (adjoint ?C) *\<^sub>v unit_vec d 0) (?PM *\<^sub>v \<psi>)"
@@ -533,7 +524,7 @@ proof -
     have e0: "unit_vec d 0 \<in> carrier_vec d" by simp
     have \<psi>c: "\<psi> \<in> carrier_vec d" unfolding \<psi>_def using C by simp
     have "(adjoint ?C * Rp * ?C) $$ (0, 0) = inner_prod (unit_vec d 0) ((adjoint ?C * Rp * ?C) *\<^sub>v unit_vec d 0)"
-      by (rule inner_unit_diag[symmetric]) (use C Rd d0 in \<open>auto intro: mult_carrier_mat adjoint_dim\<close>)
+      by (rule unit_vec_bracket[symmetric]) (use C Rd d0 in \<open>auto intro: mult_carrier_mat adjoint_dim\<close>)
     also have "(adjoint ?C * Rp * ?C) *\<^sub>v unit_vec d 0 = adjoint ?C *\<^sub>v (Rp *\<^sub>v \<psi>)"
       unfolding \<psi>_def by (rule assoc3_mult_vec[OF adjoint_dim[OF C] Rd C e0])
     also have "inner_prod (unit_vec d 0) (adjoint ?C *\<^sub>v (Rp *\<^sub>v \<psi>)) = inner_prod (adjoint (adjoint ?C) *\<^sub>v unit_vec d 0) (Rp *\<^sub>v \<psi>)"
@@ -655,24 +646,20 @@ qed
 
 end
 
-lemma unit_vec_tensor0:
-  "tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec 2 0)) = unit_vec (N * (n * 2)) 0"
+lemma unit_vec_tensor: "tensor_vec (unit_vec N 0) (unit_vec m 0) = unit_vec (N * m) 0"
 proof (rule eq_vecI)
-  fix r assume "r < dim_vec (unit_vec (N * (n * 2)) 0)"
-  hence r: "r < N * (n * 2)" by simp
-  have q: "r mod (n * 2) < n * 2" using r by (cases "n * 2") auto
-  have "tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec 2 0)) $ r
-        = unit_vec N 0 $ (r div (n * 2)) * (unit_vec n 0 $ (r mod (n * 2) div 2) * unit_vec 2 0 $ (r mod (n * 2) mod 2))"
-    using tensor_vec_index[of "unit_vec N 0" N "tensor_vec (unit_vec n 0) (unit_vec 2 0)" "n * 2" r]
-          tensor_vec_index[of "unit_vec n 0" n "unit_vec 2 0" 2 "r mod (n * 2)"] r q by (simp add: tensor_vec_dim)
-  also have "\<dots> = unit_vec (N * (n * 2)) 0 $ r"
+  fix r assume "r < dim_vec (unit_vec (N * m) 0)"
+  hence r: "r < N * m" by simp
+  have m: "0 < m" using r by (cases m) auto
+  have "tensor_vec (unit_vec N 0) (unit_vec m 0) $ r = unit_vec N 0 $ (r div m) * unit_vec m 0 $ (r mod m)"
+    using tensor_vec_index[of "unit_vec N 0" N "unit_vec m 0" m r] r by simp
+  also have "\<dots> = unit_vec (N * m) 0 $ r"
   proof -
-    have "r div (n * 2) = 0 \<and> r mod (n * 2) div 2 = 0 \<and> r mod (n * 2) mod 2 = 0 \<longleftrightarrow> r = 0"
-      by (metis div_mult_mod_eq mult_0_right add_0 div_0 mod_0 mult_2_right add.commute)
-    moreover have "r div (n * 2) < N" "r mod (n * 2) div 2 < n" using r q by (auto simp: less_mult_imp_div_less)
-    ultimately show ?thesis using r by (auto simp: unit_vec_def)
+    have "r div m = 0 \<and> r mod m = 0 \<longleftrightarrow> r = 0" by (metis div_mult_mod_eq mult_0_right add_0 div_0 mod_0)
+    moreover have "r div m < N" using r by (simp add: less_mult_imp_div_less)
+    ultimately show ?thesis using r m by (auto simp: unit_vec_def)
   qed
-  finally show "tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec 2 0)) $ r = unit_vec (N * (n * 2)) 0 $ r" .
+  finally show "tensor_vec (unit_vec N 0) (unit_vec m 0) $ r = unit_vec (N * m) 0 $ r" .
 qed (simp add: tensor_vec_dim)
 
 text \<open>The programs for any gate list \<open>Us\<close>: initialise, run \<open>Us\<close>, measure the ancilla; or repeat
@@ -722,7 +709,7 @@ proof -
         = run_gates (unit_vec (2 ^ k * (n * 2)) 0) (hhl_gates A Ub t0 k C)"
     by (rule circuit_mat_run) (use prog_gates in auto)
   also have "\<dots> = tensor_vec (unit_vec (2 ^ k) 0) (hhl_out A C b)"
-    unfolding unit_vec_tensor0[symmetric] by (rule hhl_run[OF A n0 k t0 spec Ub])
+    unfolding unit_vec_tensor[symmetric] by (rule hhl_run[OF A n0 k t0 spec Ub])
   finally show ?thesis .
 qed
 
@@ -799,7 +786,7 @@ proof -
     proof -
       have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
       have "?g1 = complex_of_real C \<cdot>\<^sub>v (herm_inv A *\<^sub>v b)" using Ub by (intro smult_mat_mult_vec[OF Hc]) auto
-      thus ?thesis by (simp add: vnorm_smult)
+      thus ?thesis by (simp add: cpx_vec_length_smult)
     qed
     finally have i1: "inner_prod ?w ?w = complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2)" by (simp add: power_mult_distrib)
     have dw0: "dim_vec (tensor_vec ?a (tensor_vec ?g0 (unit_vec 2 0))) = ?D" by (simp add: tensor_vec_dim prog_branch(3))
@@ -848,7 +835,7 @@ proof -
   have dx: "dim_vec ?x = n" by simp
   have "\<parallel>hhl_target A k b\<parallel> = \<parallel>complex_of_real (1 / \<parallel>?x\<parallel>) \<cdot>\<^sub>v ?x\<parallel>"
     unfolding hhl_target_def using unitN_norm unit2_norm[of 1] by (simp add: vnorm_tensor tensor_vec_dim)
-  also have "\<dots> = 1" using sol_nonzero by (simp add: vnorm_smult norm_divide)
+  also have "\<dots> = 1" using sol_nonzero by (simp add: cpx_vec_length_smult norm_divide)
   finally have "\<parallel>hhl_target A k b\<parallel> = 1" .
   hence "\<langle>hhl_target A k b|hhl_target A k b\<rangle> = 1" using cpx_vec_length_inner_prod[of "hhl_target A k b"] by simp
   thus ?thesis using inner_bridge[of "hhl_target A k b" "hhl_target A k b"] by simp
@@ -1232,9 +1219,6 @@ context
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
 begin
 
-lemma gates_ok: "U \<in> set (hhl_gates A Ub t0 k C) \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
-  by (rule prog_gates[OF A n0 k t0 spec Ub Cb])
-
 lemma hhl_prog_well_com:
   assumes Us: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
   shows "state_sig.well_com [2 ^ k, n, 2] (hhl_prog (2 ^ k * (n * 2)) Us)"
@@ -1256,10 +1240,10 @@ proof -
 qed
 
 lemma hhl_program_well_com: "state_sig.well_com [2 ^ k, n, 2] (hhl_program A Ub t0 k C)"
-  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_well_com[OF gates_ok])
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_well_com[OF prog_gates[OF A n0 k t0 spec Ub Cb]])
 
 lemma hhl_rus_well_com: "state_sig.well_com [2 ^ k, n, 2] (hhl_rus A Ub t0 k C)"
-  unfolding hhl_rus_def carrier_matD(1)[OF A(1)] by (rule hhl_rus_prog_well_com[OF gates_ok])
+  unfolding hhl_rus_def carrier_matD(1)[OF A(1)] by (rule hhl_rus_prog_well_com[OF prog_gates[OF A n0 k t0 spec Ub Cb]])
 
 lemma hhl_prog_while_free: "while_free (hhl_prog K Us)"
 proof -
@@ -1310,17 +1294,17 @@ qed
 theorem hhl_success_total:
   "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
      (hhl_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
-  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_success_total[OF gates_ok refl])
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_success_total[OF prog_gates[OF A n0 k t0 spec Ub Cb] refl])
 
 theorem hhl_correct_total:
   "state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_program A Ub t0 k C)
      (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b) (hhl_target A k b))"
-  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_correct_total[OF gates_ok refl])
+  unfolding hhl_program_def carrier_matD(1)[OF A(1)] by (rule hhl_prog_correct_total[OF prog_gates[OF A n0 k t0 spec Ub Cb] refl])
 
 theorem hhl_rus_partial:
   "state_sig.hoare_partial_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_rus A Ub t0 k C)
      (outer_prod (hhl_target A k b) (hhl_target A k b))"
-  unfolding hhl_rus_def carrier_matD(1)[OF A(1)] by (rule hhl_rus_prog_partial[OF gates_ok refl])
+  unfolding hhl_rus_def carrier_matD(1)[OF A(1)] by (rule hhl_rus_prog_partial[OF prog_gates[OF A n0 k t0 spec Ub Cb] refl])
 
 lemma states_ok:
   "i \<le> 8 \<Longrightarrow> dim_vec (hhl_states A b t0 k C ! i) = 2 ^ k * (n * 2)
@@ -1345,7 +1329,7 @@ next
   proof -
     have m: "hhl_gates A Ub t0 k C ! i \<in> set (hhl_gates A Ub t0 k C)" by (rule nth_mem) (use i in simp)
     show "hhl_gates A Ub t0 k C ! i \<in> carrier_mat d d" "Complex_Matrix.unitary (hhl_gates A Ub t0 k C ! i)"
-      using gates_ok[OF m] dd by auto
+      using prog_gates[OF A n0 k t0 spec Ub Cb m] dd by auto
   qed
   have IH: "dim_vec (hhl_states A b t0 k C ! i) = d" "inner_prod (hhl_states A b t0 k C ! i) (hhl_states A b t0 k C ! i) = 1"
     using Suc.IH i dd by auto
@@ -1371,7 +1355,7 @@ proof -
   proof -
     have m: "hhl_gates A Ub t0 k C ! i \<in> set (hhl_gates A Ub t0 k C)" by (rule nth_mem) (use i in simp)
     show "hhl_gates A Ub t0 k C ! i \<in> carrier_mat d d" "Complex_Matrix.unitary (hhl_gates A Ub t0 k C ! i)"
-      using gates_ok[OF m] dd by auto
+      using prog_gates[OF A n0 k t0 spec Ub Cb m] dd by auto
   qed
   have S: "dim_vec (hhl_states A b t0 k C ! i) = d" "inner_prod (hhl_states A b t0 k C ! i) (hhl_states A b t0 k C ! i) = 1"
     using states_ok[of i] i dd by auto
@@ -1392,7 +1376,7 @@ proof -
   have r: "run_gates (hhl_states A b t0 k C ! 0) (hhl_gates A Ub t0 k C) = hhl_states A b t0 k C ! 8"
     using hhl_run[OF A n0 k t0 spec Ub] by (simp add: hhl_states_def Let_def nA)
   have g: "\<And>U. U \<in> set (hhl_gates A Ub t0 k C) \<Longrightarrow> U \<in> carrier_mat d d \<and> Complex_Matrix.unitary U"
-    using gates_ok dd by auto
+    using prog_gates[OF A n0 k t0 spec Ub Cb] dd by auto
   show ?thesis using hoare_run[where Us = "hhl_gates A Ub t0 k C", OF g S] unfolding r .
 qed
 

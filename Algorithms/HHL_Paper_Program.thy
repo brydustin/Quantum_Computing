@@ -298,7 +298,7 @@ lemma fidelity_from_close:
 proof -
   let ?h = "complex_of_real (1 / \<parallel>y\<parallel>) \<cdot>\<^sub>v y"
   have hd: "dim_vec ?h = K" using y by simp
-  have hn: "\<parallel>?h\<parallel> = 1" unfolding vnorm_smult norm_of_real using y(2) by simp
+  have hn: "\<parallel>?h\<parallel> = 1" unfolding cpx_vec_length_smult norm_of_real using y(2) by simp
   have ud: "\<parallel>?h - t\<parallel> = sqrt (2 * (1 - Re \<langle>?h|t\<rangle>))" by (rule unit_dist[OF hd hn t])
   have e0: "0 \<le> e" using D vnorm_ge0[of "?h - t"] by linarith
   have x: "2 * (1 - Re \<langle>?h|t\<rangle>) \<le> e\<^sup>2"
@@ -417,7 +417,7 @@ proof -
   have Hr: "dim_row (herm_inv A) = n" using Hc by simp
   have dx: "dim_vec (complex_of_real (1 / \<parallel>apx_x\<parallel>) \<cdot>\<^sub>v apx_x) = n" using Hc by simp
   show tc: "apx_t \<in> carrier_vec apx_K" by (rule carrier_vecI) (simp add: tensor_vec_dim dx Hr)
-  show "\<parallel>apx_t\<parallel> = 1" using win_state_norm[OF N] xp dx Hr by (simp add: vnorm_tensor tensor_vec_dim vnorm_smult norm_divide)
+  show "\<parallel>apx_t\<parallel> = 1" using win_state_norm[OF N] xp dx Hr by (simp add: vnorm_tensor tensor_vec_dim cpx_vec_length_smult norm_divide)
   show "anc_proj apx_K 1 *\<^sub>v apx_t = apx_t" using anc_proj_tensor[of "win_state N" N _ n 1 1] dx Hr by simp
   show "anc_proj apx_K 0 *\<^sub>v apx_t = 0\<^sub>v apx_K" using anc_proj_tensor[of "win_state N" N _ n 1 0] dx Hr by simp
 qed
@@ -684,7 +684,7 @@ proof -
   qed
   have dx: "dim_vec (complex_of_real (1 / \<parallel>flg_x\<parallel>) \<cdot>\<^sub>v flg_x) = n" using Hc by simp
   show tc: "flg_t \<in> carrier_vec flg_K" by (rule carrier_vecI) (simp add: tensor_vec_dim dx Hr)
-  show "\<parallel>flg_t\<parallel> = 1" using win_state_norm[OF N] xp dx Hr by (simp add: vnorm_tensor tensor_vec_dim vnorm_smult norm_divide)
+  show "\<parallel>flg_t\<parallel> = 1" using win_state_norm[OF N] xp dx Hr by (simp add: vnorm_tensor tensor_vec_dim cpx_vec_length_smult norm_divide)
   have pt: "pflag 3 P flg_t = tensor_vec (win_state N) (tensor_vec (complex_of_real (1 / \<parallel>flg_x\<parallel>) \<cdot>\<^sub>v flg_x) (pflag 3 P (unit_vec 3 1)))" for P
     using pflag_tensor_left[of "win_state N" N _ n 3 P] pflag_tensor[OF dx, of "unit_vec 3 1" 3 P] dx Hr by (simp add: tensor_vec_dim)
   show "pflag_mat flg_K 3 (\<lambda>c. c = 1) *\<^sub>v flg_t = flg_t"

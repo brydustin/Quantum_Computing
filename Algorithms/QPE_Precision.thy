@@ -247,42 +247,7 @@ proof -
   finally show ?thesis unfolding S_def .
 qed
 
-subsection \<open>Normalisation and the number of clock qubits\<close>
-
-lemma pe_amp_norm:
-  assumes N: "0 < N"
-  shows "(\<Sum>j<N. (cmod (pe_amp N \<phi> j))\<^sup>2) = 1"
-proof -
-  let ?b = "Matrix.vec N (\<lambda>k. cis (2 * pi * \<phi>) ^ k * uniform_state N $ k)"
-  have Fb: "(fourier N)\<^sup>\<dagger> *\<^sub>v ?b = Matrix.vec N (pe_amp N \<phi>)"
-  proof (rule eq_vecI)
-    fix i assume "i < dim_vec (Matrix.vec N (pe_amp N \<phi>))"
-    hence i: "i < N" by simp
-    show "((fourier N)\<^sup>\<dagger> *\<^sub>v ?b) $ i = Matrix.vec N (pe_amp N \<phi>) $ i"
-      unfolding fourier_dagger_kick[OF i] using i by simp
-  qed simp
-  have I: "\<langle>v|v\<rangle> = complex_of_real (\<Sum>j<dim_vec v. (cmod (v $ j))\<^sup>2)" for v :: "complex Matrix.vec"
-  proof -
-    have "\<langle>v|v\<rangle> = (\<Sum>j<dim_vec v. cnj (v $ j) * v $ j)" unfolding inner_prod_def by (simp add: scalar_prod_def atLeast0LessThan)
-    also have "\<dots> = (\<Sum>j<dim_vec v. complex_of_real ((cmod (v $ j))\<^sup>2))"
-      by (rule sum.cong[OF refl]) (simp only: complex_norm_square mult.commute)
-    finally show ?thesis by simp
-  qed
-  have bs: "(\<Sum>k<N. (cmod (?b $ k))\<^sup>2) = 1"
-  proof -
-    have "(cmod (?b $ k))\<^sup>2 = 1 / real N" if "k < N" for k
-      using that N by (simp add: uniform_state_def norm_mult norm_power norm_divide power_divide)
-    hence "(\<Sum>k<N. (cmod (?b $ k))\<^sup>2) = (\<Sum>k<N. 1 / real N)" by simp
-    thus ?thesis using N by simp
-  qed
-  have "complex_of_real (\<Sum>j<N. (cmod (pe_amp N \<phi> j))\<^sup>2) = \<langle>Matrix.vec N (pe_amp N \<phi>)|Matrix.vec N (pe_amp N \<phi>)\<rangle>"
-    using I[of "Matrix.vec N (pe_amp N \<phi>)"] by simp
-  also have "\<dots> = \<langle>(fourier N)\<^sup>\<dagger> *\<^sub>v ?b|(fourier N)\<^sup>\<dagger> *\<^sub>v ?b\<rangle>" unfolding Fb ..
-  also have "\<dots> = \<langle>?b|?b\<rangle>" by (rule unitary_inner_self[OF fourier_carrier fourier_unitary[OF N]]) simp
-  also have "\<dots> = complex_of_real (\<Sum>k<N. (cmod (?b $ k))\<^sup>2)" using I[of ?b] by simp
-  also have "\<dots> = 1" unfolding bs by simp
-  finally show ?thesis by (simp only: of_real_eq_1_iff)
-qed
+subsection \<open>The number of clock qubits\<close>
 
 text \<open>Outcomes within $e/N$ of $\varphi$ have probability at least $1-1/(2(e-1))$.\<close>
 
@@ -294,7 +259,7 @@ proof -
   let ?G = "{j. j < N \<and> real N * circ_dist \<phi> (real j / real N) \<le> e}"
   let ?B = "{j. j < N \<and> e < real N * circ_dist \<phi> (real j / real N)}"
   have UB: "{..<N} = ?G \<union> ?B" and GB: "?G \<inter> ?B = {}" by auto
-  have "1 = (\<Sum>j<N. ?f j)" by (rule pe_amp_norm[OF N, symmetric])
+  have "1 = (\<Sum>j<N. ?f j)" by (rule pe_amp_sum_sq[OF N, symmetric])
   also have "\<dots> = sum ?f ?G + sum ?f ?B" unfolding UB by (rule sum.union_disjoint) (use GB in simp_all)
   finally have "sum ?f ?G = 1 - sum ?f ?B" by simp
   thus ?thesis using pe_tail_bound[OF N e, of \<phi>] by simp

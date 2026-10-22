@@ -132,22 +132,6 @@ lemma init_circuit_transfer:
 
 end
 
-lemma unit_vec_tensor2: "tensor_vec (unit_vec N 0) (unit_vec m 0) = unit_vec (N * m) 0"
-proof (rule eq_vecI)
-  fix r assume "r < dim_vec (unit_vec (N * m) 0)"
-  hence r: "r < N * m" by simp
-  have m: "0 < m" using r by (cases m) auto
-  have "tensor_vec (unit_vec N 0) (unit_vec m 0) $ r = unit_vec N 0 $ (r div m) * unit_vec m 0 $ (r mod m)"
-    using tensor_vec_index[of "unit_vec N 0" N "unit_vec m 0" m r] r by simp
-  also have "\<dots> = unit_vec (N * m) 0 $ r"
-  proof -
-    have "r div m = 0 \<and> r mod m = 0 \<longleftrightarrow> r = 0" by (metis div_mult_mod_eq mult_0_right add_0 div_0 mod_0)
-    moreover have "r div m < N" using r by (simp add: less_mult_imp_div_less)
-    ultimately show ?thesis using r m by (auto simp: unit_vec_def)
-  qed
-  finally show "tensor_vec (unit_vec N 0) (unit_vec m 0) $ r = unit_vec (N * m) 0 $ r" .
-qed (simp add: tensor_vec_dim)
-
 lemma qpe_while_free: "while_free (qpe_program k U Uu)"
 proof -
   have "while_free (utrans_seq Us)" for Us by (induction Us) auto
@@ -208,7 +192,7 @@ proof -
   proof -
     have "(1\<^sub>m ?N \<Otimes> Uu) *\<^sub>v tensor_vec (unit_vec ?N 0) (unit_vec m 0) = tensor_vec (1\<^sub>m ?N *\<^sub>v unit_vec ?N 0) (Uu *\<^sub>v unit_vec m 0)"
       by (rule tensor_mat_vec_mult[OF one_carrier_mat Uu(1)]) simp_all
-    thus ?thesis unfolding unit_vec_tensor2 using Uu(3) by simp
+    thus ?thesis unfolding unit_vec_tensor using Uu(3) by simp
   qed
   have s2: "(Hadamard \<otimes>\<^bsup>k\<^esup> \<Otimes> 1\<^sub>m m) *\<^sub>v tensor_vec (unit_vec ?N 0) u = tensor_vec (uniform_state ?N) u"
   proof -
@@ -387,7 +371,7 @@ proof -
     using circuit_mat_tensor_right[of "had_gates k" "2 ^ k" m] had_gates[OF k] elementary_carriers m0 by auto
   have C: "circuit_mat ?K ?Cs = ctrl_pow (2 ^ k) m U" by (rule ctrl_pow_qubits[OF U(1)])
   have Fc0: "V \<in> carrier_mat (2 ^ k) (2 ^ k)" if "V \<in> set (rev (map dagger (qft_circuit k)))" for V
-    using qft_inv_circuit(2) elementary_ok that by blast
+    using qft_inv_circuit(2) elementary_unitary(1) that by blast
   have F: "circuit_mat ?K ?Fs = (fourier (2 ^ k))\<^sup>\<dagger> \<Otimes> 1\<^sub>m m"
     using circuit_mat_tensor_right[of "rev (map dagger (qft_circuit k))" "2 ^ k" m, OF Fc0 _ m0] qft_inv_circuit(1) by simp
   have "circuit_mat ?K (qpe_elem_gates k U Uu) = circuit_mat ?K (?Hs @ ?Cs @ ?Fs) * ?P"

@@ -110,14 +110,13 @@ context
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
 begin
 
-lemma split_nA: "dim_row A = n" using A(1) by simp
 
 lemma rot_gates_ok:
   "U \<in> set (rot_gates A t0 k C) \<Longrightarrow> U \<in> carrier_mat (2 ^ k * (n * 2)) (2 ^ k * (n * 2)) \<and> Complex_Matrix.unitary U"
 proof -
   assume "U \<in> set (rot_gates A t0 k C)"
   then obtain c where c: "c < 2 ^ k" and U: "U = vctrl (2 ^ k) (n * 2) c (hhl_rot C t0 (2 ^ k) n c)"
-    unfolding rot_gates_def split_nA by auto
+    unfolding rot_gates_def carrier_matD(1)[OF A(1)] by auto
   have r: "Quantum.unitary (rot (C / reg_eig t0 (2 ^ k) c))" by (rule rot_unitary[OF Cb[OF c]])
   have u: "Quantum.unitary (hhl_rot C t0 (2 ^ k) n c)" unfolding hhl_rot_def using r by simp
   have uc: "Quantum.unitary U" unfolding U by (rule vctrl_unitary[OF hhl_rot_carrier u])
@@ -148,7 +147,7 @@ proof -
   let ?D = "2 ^ k * (n * 2)"
   have "map (circuit_mat ?D) (hhl_split_blocks A Ub t0 k C) = (map (circuit_mat ?D) (hhl_blocks A Ub t0 k C))[4 := circuit_mat ?D (rot_gates A t0 k C)]"
     unfolding hhl_split_blocks_def by (simp add: map_update)
-  also have "circuit_mat ?D (rot_gates A t0 k C) = rot_gate A t0 (2 ^ k) C" using rot_gates_circuit[of k A t0 C] split_nA by simp
+  also have "circuit_mat ?D (rot_gates A t0 k C) = rot_gate A t0 (2 ^ k) C" using rot_gates_circuit[of k A t0 C] carrier_matD(1)[OF A(1)] by simp
   also have "map (circuit_mat ?D) (hhl_blocks A Ub t0 k C) = hhl_gates A Ub t0 k C" by (rule hhl_blocks_circuit[OF A(1,2) n0 k Ub(1)])
   also have "(hhl_gates A Ub t0 k C)[4 := rot_gate A t0 (2 ^ k) C] = hhl_gates A Ub t0 k C" by (simp add: hhl_gates_def)
   finally have m: "map (circuit_mat ?D) (hhl_split_blocks A Ub t0 k C) = hhl_gates A Ub t0 k C" .
@@ -159,19 +158,19 @@ qed
 theorem hhl_split_success_total:
   "state_sig.hoare_total_correct [2 ^ k, n, 2] (complex_of_real (C\<^sup>2 * \<parallel>herm_inv A *\<^sub>v b\<parallel>\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m (2 ^ k * (n * 2)))
      (hhl_split_program A Ub t0 k C) (anc_proj (2 ^ k * (n * 2)) 1)"
-  unfolding hhl_split_program_def split_nA
+  unfolding hhl_split_program_def carrier_matD(1)[OF A(1)]
   by (rule hhl_prog_success_total[OF A n0 k t0 spec Ub Cb split_gates_ok hhl_split_circuit])
 
 theorem hhl_split_correct_total:
   "state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_split_program A Ub t0 k C)
      (anc_proj (2 ^ k * (n * 2)) 0 + outer_prod (hhl_target A k b) (hhl_target A k b))"
-  unfolding hhl_split_program_def split_nA
+  unfolding hhl_split_program_def carrier_matD(1)[OF A(1)]
   by (rule hhl_prog_correct_total[OF A n0 k t0 spec Ub Cb split_gates_ok hhl_split_circuit])
 
 theorem hhl_split_rus_total:
   "C \<noteq> 0 \<Longrightarrow> state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_split_rus A Ub t0 k C)
      (outer_prod (hhl_target A k b) (hhl_target A k b))"
-  unfolding hhl_split_rus_def split_nA
+  unfolding hhl_split_rus_def carrier_matD(1)[OF A(1)]
   by (rule hhl_rus_prog_total[OF A n0 k t0 spec Ub Cb split_gates_ok hhl_split_circuit])
 
 text \<open>Every gate is elementary, a singly controlled $U^{\pm2^j}$, the preparation of $\ket b$, or a
@@ -193,15 +192,15 @@ proof -
   have f: "\<forall>U \<in> set (clk_gates n (qft_circuit k)). elementary ?D U"
     by (rule clk_gates_elementary) (use qft_circuit(2) n0 in auto)
   have ei: "U \<in> set (rev (map dagger (evo_gates A t0 k))) \<Longrightarrow> \<exists>j<k. U = ctrl_bit (2 ^ k) (n * 2) j ((?E ^\<^sub>m 2 ^ j)\<^sup>\<dagger>)" for U
-    unfolding evo_gates_def split_nA using ctrl_bit_dagger[OF pow_carrier_mat[OF Ec]] by auto
+    unfolding evo_gates_def carrier_matD(1)[OF A(1)] using ctrl_bit_dagger[OF pow_carrier_mat[OF Ec]] by auto
   have e: "U \<in> set (evo_gates A t0 k) \<Longrightarrow> \<exists>j<k. U = ctrl_bit (2 ^ k) (n * 2) j (?E ^\<^sub>m 2 ^ j)" for U
-    unfolding evo_gates_def split_nA by auto
+    unfolding evo_gates_def carrier_matD(1)[OF A(1)] by auto
   have r: "U \<in> set (rot_gates A t0 k C) \<Longrightarrow> \<exists>c<2 ^ k. U = vctrl (2 ^ k) (n * 2) c (1\<^sub>m n \<Otimes> rot (C / reg_eig t0 (2 ^ k) c))" for U
-    unfolding rot_gates_def hhl_rot_def split_nA by auto
+    unfolding rot_gates_def hhl_rot_def carrier_matD(1)[OF A(1)] by auto
   have "U = prep_gate (2 ^ k) Ub \<or> U \<in> set (clk_gates n (had_gates k)) \<or> U \<in> set (evo_gates A t0 k)
         \<or> U \<in> set (clk_gates n (rev (map dagger (qft_circuit k)))) \<or> U \<in> set (rot_gates A t0 k C)
         \<or> U \<in> set (clk_gates n (qft_circuit k)) \<or> U \<in> set (rev (map dagger (evo_gates A t0 k)))"
-    using U unfolding hhl_split_gates_def hhl_split_blocks_def hhl_blocks_def split_nA by auto
+    using U unfolding hhl_split_gates_def hhl_split_blocks_def hhl_blocks_def carrier_matD(1)[OF A(1)] by auto
   thus ?thesis using h fi f e ei r by blast
 qed
 
@@ -236,33 +235,15 @@ qed
 
 lemma win_reflection:
   assumes N: "2 \<le> N"
-  shows "householder N (win_state N) \<in> carrier_mat N N" "Quantum.unitary (householder N (win_state N))"
-    "householder N (win_state N) *\<^sub>v unit_vec N 0 = win_state N"
+  shows "householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) \<in> carrier_mat N N" "Quantum.unitary (householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)))"
+    "householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) *\<^sub>v unit_vec N 0 = win_state N"
   using householder_props[OF dim_win_state win_state_norm[OF N] win_state_first win_state_first_lt[OF N]] N by auto
-
-lemma unit_vec_tensor_zero:
-  assumes a: "0 < a" and c: "0 < c"
-  shows "tensor_vec (unit_vec a 0) (unit_vec c 0) = (unit_vec (a * c) 0 :: complex Matrix.vec)"
-proof (rule eq_vecI)
-  show "dim_vec (tensor_vec (unit_vec a 0) (unit_vec c 0)) = dim_vec (unit_vec (a * c) 0 :: complex Matrix.vec)"
-    by (simp add: tensor_vec_dim)
-  fix i assume "i < dim_vec (unit_vec (a * c) 0 :: complex Matrix.vec)"
-  hence i: "i < a * c" by simp
-  have "i div c < a" using i by (simp add: less_mult_imp_div_less)
-  moreover have "i mod c < c" using c by simp
-  moreover have "(i div c = 0 \<and> i mod c = 0) \<longleftrightarrow> i = 0"
-  proof
-    assume "i div c = 0 \<and> i mod c = 0" thus "i = 0" using div_mult_mod_eq[of i c] by simp
-  qed simp
-  ultimately show "tensor_vec (unit_vec a 0) (unit_vec c 0) $ i = unit_vec (a * c) 0 $ i"
-    using tensor_vec_index[of "unit_vec a 0" a "unit_vec c 0" c i] i by (auto simp: unit_vec_def)
-qed
 
 text \<open>The full preparation: the reflection on the clock register, $U_b$ on the system, nothing on
 the ancilla or flag register of $e$ levels.\<close>
 
 definition win_prep :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "win_prep N Ub e = householder N (win_state N) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)"
+  "win_prep N Ub e = householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)"
 
 lemma win_prep_ok:
   assumes N: "2 \<le> N" and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
@@ -277,12 +258,12 @@ proof -
     by (rule tensor_mat_unitary[OF W(2) tensor_mat_unitary[OF Ub(2) id_is_unitary]])
   have N0: "0 < N" using N by simp
   have u: "unit_vec (N * (n * e)) 0 = tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec e 0))"
-    using unit_vec_tensor_zero[OF n0 e0] unit_vec_tensor_zero[OF N0, of "n * e"] n0 e0 by simp
+    using unit_vec_tensor[of n e] unit_vec_tensor[of N "n * e"] by simp
   show "win_prep N Ub e *\<^sub>v unit_vec (N * (n * e)) 0 = tensor_vec (win_state N) (tensor_vec b (unit_vec e 0))"
   proof -
     have d1: "dim_vec (tensor_vec (unit_vec n 0) (unit_vec e 0) :: complex Matrix.vec) = n * e" by (simp add: tensor_vec_dim)
-    have "(householder N (win_state N) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)) *\<^sub>v tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec e 0))
-          = tensor_vec (householder N (win_state N) *\<^sub>v unit_vec N 0) ((Ub \<Otimes> 1\<^sub>m e) *\<^sub>v tensor_vec (unit_vec n 0) (unit_vec e 0))"
+    have "(householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)) *\<^sub>v tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec e 0))
+          = tensor_vec (householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) *\<^sub>v unit_vec N 0) ((Ub \<Otimes> 1\<^sub>m e) *\<^sub>v tensor_vec (unit_vec n 0) (unit_vec e 0))"
       by (rule tensor_mat_vec_mult[OF W(1) I]) (simp_all add: d1)
     also have "(Ub \<Otimes> 1\<^sub>m e) *\<^sub>v tensor_vec (unit_vec n 0) (unit_vec e 0) = tensor_vec (Ub *\<^sub>v unit_vec n 0) (1\<^sub>m e *\<^sub>v unit_vec e 0)"
       by (rule tensor_mat_vec_mult[OF Ub(1) one_carrier_mat]) simp_all

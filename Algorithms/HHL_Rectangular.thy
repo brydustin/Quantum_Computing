@@ -7,12 +7,9 @@ section \<open>Rectangular matrices\<close>
 
 text \<open>App.~A4 of the paper: for $A\in\C^{M\times N}$ the algorithm runs on
 $H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero eigenspaces.
-With the pseudo-inverse $H^+=g(H)$, $g(\lambda)=1/\lambda$ for $\lambda\ne0$ and $g(0)=0$, the input
-$b\oplus0$ is mapped to $0\oplus x$ where $x$ solves the normal equations $A^*Ax=A^*b$ and lies in
+The pseudo-inverse is $H^+=$ \<^const>\<open>herm_inv\<close> $H=g(H)$ with $g(\lambda)=1/\lambda$, since
+$1/0=0$ in HOL; the input $b\oplus0$ is mapped to $0\oplus x$ where $x$ solves the normal equations $A^*Ax=A^*b$ and lies in
 the range of $A^*$: the least-squares solution, of minimum norm.\<close>
-
-definition pinv :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "pinv H = mat_fun (\<lambda>l. if l = 0 then 0 else complex_of_real (1 / l)) H"
 
 definition parity :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "parity M N = Matrix.mat (M + N) (M + N) (\<lambda>(i, j). if i = j then (if i < M then 1 else - 1) else 0)"
@@ -47,9 +44,9 @@ lemma vnorm_pythagoras:
   shows "\<parallel>u + w\<parallel>\<^sup>2 = \<parallel>u\<parallel>\<^sup>2 + \<parallel>w\<parallel>\<^sup>2"
 proof -
   have rev: "\<langle>w|u\<rangle> = 0" using inner_prod_cnj[of u w] o u w by simp
-  have "complex_of_real (\<parallel>u + w\<parallel>\<^sup>2) = \<langle>u + w|u + w\<rangle>" by (rule vnorm_inner[symmetric])
+  have "complex_of_real (\<parallel>u + w\<parallel>\<^sup>2) = \<langle>u + w|u + w\<rangle>" by (rule cpx_vec_length_inner_prod)
   also have "\<dots> = \<langle>u|u\<rangle> + \<langle>w|w\<rangle>" using No_Cloning.inner_prod_expand[of u w u w] u w o rev by simp
-  finally have "complex_of_real (\<parallel>u + w\<parallel>\<^sup>2) = complex_of_real (\<parallel>u\<parallel>\<^sup>2 + \<parallel>w\<parallel>\<^sup>2)" unfolding vnorm_inner by simp
+  finally have "complex_of_real (\<parallel>u + w\<parallel>\<^sup>2) = complex_of_real (\<parallel>u\<parallel>\<^sup>2 + \<parallel>w\<parallel>\<^sup>2)" unfolding cpx_vec_length_inner_prod[symmetric] by simp
   thus ?thesis by (simp only: of_real_eq_iff)
 qed
 
@@ -68,7 +65,7 @@ proof -
   have "H\<^sup>\<dagger> = four_block_mat ((0\<^sub>m M M)\<^sup>\<dagger>) ((A\<^sup>\<dagger>)\<^sup>\<dagger>) (A\<^sup>\<dagger>) ((0\<^sub>m N N)\<^sup>\<dagger>)"
     unfolding herm_embed_def using A
     by (simp add: dagger_four_block_mat_complex[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat])
-  also have "\<dots> = H" using A by (simp add: herm_embed_def zero_dagger dagger_of_dagger_is_id)
+  also have "\<dots> = H" using A by (simp add: herm_embed_def dagger_zero_mat dagger_of_dagger_is_id)
   finally show ?thesis unfolding hermitian_def .
 qed
 
@@ -223,20 +220,20 @@ proof -
 qed
 
 
-lemma pinv_factor: "pinv H = H * mat_fun inv_sq H"
+lemma pinv_factor: "herm_inv H = H * mat_fun inv_sq H"
 proof -
   have "H * mat_fun inv_sq H = mat_fun complex_of_real H * mat_fun inv_sq H" using mat_fun_id[OF H_carrier H_hermitian] by simp
   also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * inv_sq x) H" by (rule mat_fun_mult[OF H_carrier H_hermitian])
-  also have "\<dots> = pinv H" unfolding pinv_def
-    by (rule mat_fun_cong[OF H_carrier H_hermitian]) (auto simp: inv_sq_def power2_eq_square field_simps)
+  also have "\<dots> = herm_inv H" unfolding herm_inv_def
+    by (rule mat_fun_cong[OF H_carrier H_hermitian]) (auto simp: inv_sq_def power2_eq_square field_simps inverse_eq_divide)
   finally show ?thesis ..
 qed
 
-lemma H_pinv: "H * pinv H = mat_fun nz_ind H"
+lemma H_pinv: "H * herm_inv H = mat_fun nz_ind H"
 proof -
-  have "H * pinv H = mat_fun complex_of_real H * pinv H" using mat_fun_id[OF H_carrier H_hermitian] by simp
-  also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * (if x = 0 then 0 else complex_of_real (1 / x))) H"
-    unfolding pinv_def by (rule mat_fun_mult[OF H_carrier H_hermitian])
+  have "H * herm_inv H = mat_fun complex_of_real H * herm_inv H" using mat_fun_id[OF H_carrier H_hermitian] by simp
+  also have "\<dots> = mat_fun (\<lambda>x. complex_of_real x * complex_of_real (inverse x)) H"
+    unfolding herm_inv_def by (rule mat_fun_mult[OF H_carrier H_hermitian])
   also have "\<dots> = mat_fun nz_ind H" by (rule mat_fun_cong[OF H_carrier H_hermitian]) (simp add: nz_ind_def flip: of_real_mult)
   finally show ?thesis .
 qed
@@ -257,7 +254,7 @@ text \<open>The pseudo-inverse solution (App.~A4).\<close>
 
 theorem pinv_solution:
   assumes b: "dim_vec b = M"
-  obtains x c where "dim_vec x = N" "dim_vec c = M" "pinv H *\<^sub>v (b @\<^sub>v 0\<^sub>v N) = 0\<^sub>v M @\<^sub>v x" "x = A\<^sup>\<dagger> *\<^sub>v c"
+  obtains x c where "dim_vec x = N" "dim_vec c = M" "herm_inv H *\<^sub>v (b @\<^sub>v 0\<^sub>v N) = 0\<^sub>v M @\<^sub>v x" "x = A\<^sup>\<dagger> *\<^sub>v c"
     "A\<^sup>\<dagger> *\<^sub>v (A *\<^sub>v x) = A\<^sup>\<dagger> *\<^sub>v b"
     "\<And>z. dim_vec z = N \<Longrightarrow> A *\<^sub>v z = b \<Longrightarrow> A *\<^sub>v x = b \<and> \<parallel>x\<parallel> \<le> \<parallel>z\<parallel>"
 proof -
@@ -275,17 +272,17 @@ proof -
   have dx: "dim_vec x = N" unfolding x_def using A by simp
   have A0: "A *\<^sub>v 0\<^sub>v N = 0\<^sub>v M" using A by (intro eq_vecI) (simp_all add: scalar_prod_def)
   have Ad0: "A\<^sup>\<dagger> *\<^sub>v 0\<^sub>v M = 0\<^sub>v N" using A Ad by (intro eq_vecI) (simp_all add: scalar_prod_def)
-  have y: "pinv H *\<^sub>v ?v = 0\<^sub>v M @\<^sub>v x"
+  have y: "herm_inv H *\<^sub>v ?v = 0\<^sub>v M @\<^sub>v x"
   proof -
-    have "pinv H *\<^sub>v ?v = H *\<^sub>v (?Q *\<^sub>v ?v)" unfolding pinv_factor by (rule assoc_mult_mat_vec[OF H_carrier Qc vc])
+    have "herm_inv H *\<^sub>v ?v = H *\<^sub>v (?Q *\<^sub>v ?v)" unfolding pinv_factor by (rule assoc_mult_mat_vec[OF H_carrier Qc vc])
     also have "\<dots> = (A *\<^sub>v 0\<^sub>v N) @\<^sub>v (A\<^sup>\<dagger> *\<^sub>v c)" unfolding Qv by (rule H_mult[OF dc]) simp
     finally show ?thesis unfolding A0 x_def .
   qed
   have Hy: "H *\<^sub>v (0\<^sub>v M @\<^sub>v x) = p @\<^sub>v 0\<^sub>v N"
   proof -
-    have "H *\<^sub>v (0\<^sub>v M @\<^sub>v x) = H *\<^sub>v (pinv H *\<^sub>v ?v)" unfolding y ..
-    also have "\<dots> = (H * pinv H) *\<^sub>v ?v"
-      by (rule assoc_mult_mat_vec[OF H_carrier _ vc, symmetric]) (simp add: pinv_def mat_fun_carrier[OF H_carrier H_hermitian])
+    have "H *\<^sub>v (0\<^sub>v M @\<^sub>v x) = H *\<^sub>v (herm_inv H *\<^sub>v ?v)" unfolding y ..
+    also have "\<dots> = (H * herm_inv H) *\<^sub>v ?v"
+      by (rule assoc_mult_mat_vec[OF H_carrier _ vc, symmetric]) (simp add: herm_inv_def mat_fun_carrier[OF H_carrier H_hermitian])
     finally show ?thesis unfolding H_pinv Pv .
   qed
   have Ax: "A *\<^sub>v x = p"
@@ -333,10 +330,10 @@ proof -
       have zx: "z = x + (z - x)" using dz dx by (intro eq_vecI) simp_all
       have dzx: "dim_vec (z - x) = N" using dx by simp
       have rev: "\<langle>z - x|x\<rangle> = 0" using inner_prod_cnj[of x "z - x"] orth dzx dx by simp
-      have "complex_of_real (\<parallel>z\<parallel>\<^sup>2) = \<langle>x + (z - x)|x + (z - x)\<rangle>" unfolding vnorm_inner[symmetric] using zx by simp
+      have "complex_of_real (\<parallel>z\<parallel>\<^sup>2) = \<langle>x + (z - x)|x + (z - x)\<rangle>" unfolding cpx_vec_length_inner_prod using zx by simp
       also have "\<dots> = \<langle>x|x\<rangle> + \<langle>z - x|z - x\<rangle>"
         using No_Cloning.inner_prod_expand[of x "z - x" x "z - x"] dx dzx orth rev by simp
-      finally have "complex_of_real (\<parallel>z\<parallel>\<^sup>2) = complex_of_real (\<parallel>x\<parallel>\<^sup>2 + \<parallel>z - x\<parallel>\<^sup>2)" unfolding vnorm_inner by simp
+      finally have "complex_of_real (\<parallel>z\<parallel>\<^sup>2) = complex_of_real (\<parallel>x\<parallel>\<^sup>2 + \<parallel>z - x\<parallel>\<^sup>2)" unfolding cpx_vec_length_inner_prod[symmetric] by simp
       thus ?thesis by (simp only: of_real_eq_iff)
     qed
     hence "\<parallel>x\<parallel>\<^sup>2 \<le> \<parallel>z\<parallel>\<^sup>2" by simp

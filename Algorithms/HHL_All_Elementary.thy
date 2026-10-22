@@ -459,8 +459,8 @@ proof -
     unfolding bprep_gates_def using sp(2) eD by auto
   show "circuit_mat (2 ^ s) (bprep_gates s b) \<in> carrier_mat (2 ^ s) (2 ^ s)"
     "Quantum.unitary (circuit_mat (2 ^ s) (bprep_gates s b))" using circuit_elementary_unitary[OF el] by blast+
-  have Pc: "\<And>U. U \<in> set ?P \<Longrightarrow> U \<in> carrier_mat (2 ^ s) (2 ^ s)" using sp(2) elementary_ok by blast
-  have Dc: "\<And>U. U \<in> set ?D \<Longrightarrow> U \<in> carrier_mat (2 ^ s) (2 ^ s)" using eD elementary_ok by blast
+  have Pc: "\<And>U. U \<in> set ?P \<Longrightarrow> U \<in> carrier_mat (2 ^ s) (2 ^ s)" using sp(2) elementary_unitary(1) by blast
+  have Dc: "\<And>U. U \<in> set ?D \<Longrightarrow> U \<in> carrier_mat (2 ^ s) (2 ^ s)" using eD elementary_unitary(1) by blast
   have cP: "circuit_mat (2 ^ s) ?P \<in> carrier_mat (2 ^ s) (2 ^ s)" by (rule circuit_mat_carrier[OF Pc])
   have cD: "circuit_mat (2 ^ s) ?D = dmat (2 ^ s) (\<lambda>x. Arg (b $ x))" using diag_gates_circuit[of "s - 1"] S by metis
   have ap: "circuit_mat (2 ^ s) (?P @ ?D) = circuit_mat (2 ^ s) ?D * circuit_mat (2 ^ s) ?P"
@@ -513,7 +513,7 @@ proof -
   let ?K = "2 ^ k * (2 ^ s * 2)" and ?P = "prep_gate (2 ^ k) (circuit_mat (2 ^ s) (bprep_gates s b))"
   let ?f = "\<lambda>U. if U = ?P then map (prep_gate (2 ^ k)) (bprep_gates s b) else if (\<exists>a. U = cv0 k (2 ^ s) (Rot a)) then route k s U else [U]"
   note bp = bprep[OF s b]
-  have bc: "\<And>U. U \<in> set (bprep_gates s b) \<Longrightarrow> U \<in> carrier_mat (2 ^ s) (2 ^ s)" using bp(2) elementary_ok by blast
+  have bc: "\<And>U. U \<in> set (bprep_gates s b) \<Longrightarrow> U \<in> carrier_mat (2 ^ s) (2 ^ s)" using bp(2) elementary_unitary(1) by blast
   have kind: "elementary ?K W \<or> (W \<in> set Us \<and> W \<noteq> ?P \<and> (\<forall>a. W \<noteq> cv0 k (2 ^ s) (Rot a)))" if W: "W \<in> set (elem_refine k s b Us)" for W
   proof -
     obtain U where U: "U \<in> set Us" and WU: "W \<in> set (?f U)" using W unfolding elem_refine_def set_concat set_map by blast
@@ -777,9 +777,9 @@ proof -
   have eD: "\<And>G. G \<in> set (diag_gates (m - 1) ?E) \<Longrightarrow> elementary ?N G" using diag_gates_elementary[of _ "m - 1"] S by metis
   show el: "\<And>G. G \<in> set (eig_gates m p \<theta>) \<Longrightarrow> elementary ?N G"
     unfolding eig_gates_def using bp(2) eD elementary_dagger by auto
-  have bc: "\<And>G. G \<in> set (bprep_gates m p) \<Longrightarrow> G \<in> carrier_mat ?N ?N" using bp(2) elementary_ok by blast
+  have bc: "\<And>G. G \<in> set (bprep_gates m p) \<Longrightarrow> G \<in> carrier_mat ?N ?N" using bp(2) elementary_unitary(1) by blast
   have rc: "\<And>G. G \<in> set (rev (map dagger (bprep_gates m p))) \<Longrightarrow> G \<in> carrier_mat ?N ?N" using bc dagger_carrier by auto
-  have dc: "\<And>G. G \<in> set (diag_gates (m - 1) ?E) \<Longrightarrow> G \<in> carrier_mat ?N ?N" using eD elementary_ok by blast
+  have dc: "\<And>G. G \<in> set (diag_gates (m - 1) ?E) \<Longrightarrow> G \<in> carrier_mat ?N ?N" using eD elementary_unitary(1) by blast
   have c1: "circuit_mat ?N (eig_gates m p \<theta>) = circuit_mat ?N (diag_gates (m - 1) ?E @ bprep_gates m p) * circuit_mat ?N (rev (map dagger (bprep_gates m p)))"
     unfolding eig_gates_def by (rule circuit_mat_append) (use rc dc bc in auto)
   have c2: "circuit_mat ?N (diag_gates (m - 1) ?E @ bprep_gates m p) = ?Q * circuit_mat ?N (diag_gates (m - 1) ?E)"
@@ -894,10 +894,10 @@ proof -
   next
     show "dim_row (circuit_mat ?N (eig_gates m (Matrix.col P k) (\<theta> k))) = dim_row (P * dmat ?N (\<lambda>x. if x = k then \<theta> k else 0) * (P\<^sup>\<dagger>))"
       "dim_col (circuit_mat ?N (eig_gates m (Matrix.col P k) (\<theta> k))) = dim_col (P * dmat ?N (\<lambda>x. if x = k then \<theta> k else 0) * (P\<^sup>\<dagger>))"
-      using circuit_mat_carrier[of "eig_gates m (Matrix.col P k) (\<theta> k)" ?N] eig_gates(1)[OF m pk[OF k]] elementary_ok Pc by auto
+      using circuit_mat_carrier[of "eig_gates m (Matrix.col P k) (\<theta> k)" ?N] eig_gates(1)[OF m pk[OF k]] elementary_unitary(1) Pc by auto
   qed
   have "circuit_mat ?N Gs = circuit_mat ?N (map (circuit_mat ?N) (map (\<lambda>k. eig_gates m (Matrix.col P k) (\<theta> k)) [0..<?N]))"
-    unfolding Gs_def by (rule circuit_mat_concat) (use eig_gates(1)[OF m pk] elementary_ok in auto)
+    unfolding Gs_def by (rule circuit_mat_concat) (use eig_gates(1)[OF m pk] elementary_unitary(1) in auto)
   also have "map (circuit_mat ?N) (map (\<lambda>k. eig_gates m (Matrix.col P k) (\<theta> k)) [0..<?N]) = map (\<lambda>D. P * D * (P\<^sup>\<dagger>)) Ds"
     unfolding Ds_def using each by simp
   finally have "circuit_mat ?N Gs = U" using Uc by simp

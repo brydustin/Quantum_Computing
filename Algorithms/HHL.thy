@@ -537,7 +537,7 @@ proof -
       proof -
         have g0: "?G0 *\<^sub>v v = complex_of_real ?s \<cdot>\<^sub>v v" by (rule mat_fun_eigen[OF A v ev])
         have g1: "?G1 *\<^sub>v v = complex_of_real ?c \<cdot>\<^sub>v v"
-          using smult_mat_mult_vec[of "herm_inv A" n n v "complex_of_real C"] herm_inv_eigen[OF A v ev]
+          using smult_mat_mult_vec[of "herm_inv A" n n v "complex_of_real C"] carrier_vecI[OF v] herm_inv_eigen[OF A v ev]
                 herm_inv_def A v l0
           by (simp add: smult_smult_assoc divide_inverse)
         show ?thesis unfolding g0 g1
@@ -602,7 +602,7 @@ proof -
   also have "A * herm_inv A = 1\<^sub>m n" by (rule herm_inv(2)[OF A z])
   finally show "A *\<^sub>v x = b" using bc by simp
   have g1: "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b = complex_of_real C \<cdot>\<^sub>v x"
-    unfolding x_def by (rule smult_mat_mult_vec[OF Hi b])
+    unfolding x_def by (rule smult_mat_mult_vec[OF Hi carrier_vecI[OF b]])
   have G0d: "dim_vec (?G0 *\<^sub>v b) = n" using carrier_matD(1)[OF mat_fun_carrier[OF A]] by simp
   have d0: "dim_vec (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0)) = n * 2" by (rule tensor_vec_dim[OF G0d]) simp
   have d1: "dim_vec (tensor_vec x (unit_vec 2 1)) = n * 2" by (rule tensor_vec_dim[OF xd]) simp
@@ -761,9 +761,6 @@ definition herm_embed :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" w
 lemma herm_embed_carrier: "A \<in> carrier_mat n n \<Longrightarrow> herm_embed A \<in> carrier_mat (n + n) (n + n)"
   by (auto simp: herm_embed_def)
 
-lemma zero_dagger: "(0\<^sub>m n m :: complex Matrix.mat)\<^sup>\<dagger> = 0\<^sub>m m n"
-  by (rule eq_matI) (simp_all add: dagger_def)
-
 lemma herm_embed_hermitian:
   assumes A: "A \<in> carrier_mat n n"
   shows "hermitian (herm_embed A)"
@@ -771,7 +768,7 @@ proof -
   have "(herm_embed A)\<^sup>\<dagger> = four_block_mat ((0\<^sub>m n n)\<^sup>\<dagger>) ((A\<^sup>\<dagger>)\<^sup>\<dagger>) (A\<^sup>\<dagger>) ((0\<^sub>m n n)\<^sup>\<dagger>)"
     unfolding herm_embed_def using A
     by (simp add: dagger_four_block_mat_complex[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat])
-  also have "\<dots> = herm_embed A" using A by (simp add: herm_embed_def zero_dagger dagger_of_dagger_is_id)
+  also have "\<dots> = herm_embed A" using A by (simp add: herm_embed_def dagger_zero_mat dagger_of_dagger_is_id)
   finally show ?thesis unfolding hermitian_def .
 qed
 

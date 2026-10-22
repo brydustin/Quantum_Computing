@@ -54,11 +54,6 @@ qed (use M in simp)
 lemma diag_cmat_dagger: "(diag_cmat xs)\<^sup>\<dagger> = diag_cmat (map cnj xs)"
   by (rule eq_matI) (auto simp: diag_cmat_def dagger_def)
 
-lemma smult_mat_mult_vec:
-  "A \<in> carrier_mat n m \<Longrightarrow> dim_vec v = m \<Longrightarrow> (c \<cdot>\<^sub>m A) *\<^sub>v v = c \<cdot>\<^sub>v (A *\<^sub>v v)"
-  by (smt (verit, ccfv_SIG) carrier_matD(1) carrier_vec_dim_vec dim_mult_mat_vec eq_vecI index_mult_mat_vec index_smult_mat(2)
-      index_smult_vec(1,2) row_carrier_vec row_smult smult_scalar_prod_distrib)
-
 lemma diag_conj_carrier:
   assumes U: "U \<in> carrier_mat n n" and xs: "length xs = n"
   shows "U * diag_cmat xs * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
@@ -204,9 +199,10 @@ proof -
   finally show ?thesis .
 qed
 
-lemma mat_fun_spec:
+lemma
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
-  shows "mat_fun g A \<in> carrier_mat n n" "fun_on_eigen A g (mat_fun g A)"
+  shows mat_fun_carrier [simp]: "mat_fun g A \<in> carrier_mat n n"
+    and mat_fun_on_eigen: "fun_on_eigen A g (mat_fun g A)"
 proof -
   obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
   note d = spectral_decompD[OF A(1) sd]
@@ -219,20 +215,17 @@ proof -
   thus "mat_fun g A \<in> carrier_mat n n" "fun_on_eigen A g (mat_fun g A)" using A(1) by auto
 qed
 
-lemma mat_fun_carrier [simp]: "A \<in> carrier_mat n n \<Longrightarrow> hermitian A \<Longrightarrow> mat_fun g A \<in> carrier_mat n n"
-  by (rule mat_fun_spec(1))
-
 theorem mat_fun_eigen:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
       and v: "dim_vec v = n" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
   shows "mat_fun g A *\<^sub>v v = g l \<cdot>\<^sub>v v"
-  using fun_on_eigenD[OF mat_fun_spec(2)[OF A] _ ev] v A(1) by simp
+  using fun_on_eigenD[OF mat_fun_on_eigen[OF A] _ ev] v A(1) by simp
 
 lemma mat_fun_eqI:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
       and B: "B \<in> carrier_mat n n" "fun_on_eigen A g B"
   shows "mat_fun g A = B"
-  by (rule fun_on_eigen_unique[OF A mat_fun_spec[OF A] B])
+  by (rule fun_on_eigen_unique[OF A mat_fun_carrier[OF A] mat_fun_on_eigen[OF A] B])
 
 theorem mat_fun_decomp:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and sd: "spectral_decomp A U D"

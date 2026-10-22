@@ -136,16 +136,11 @@ lemma ctrl_pow_index:
 lemma sum_blocks:
   fixes N m :: nat
   shows "(\<Sum>c<N * m. f c) = (\<Sum>k<N. \<Sum>i<m. f (k * m + i))"
-proof (induction N)
-  case (Suc N)
-  have "(\<Sum>c<Suc N * m. f c) = (\<Sum>c\<in>{..<N * m} \<union> {N * m..<N * m + m}. f c)"
-    by (rule sum.cong) auto
-  also have "\<dots> = (\<Sum>c<N * m. f c) + (\<Sum>c\<in>{N * m..<N * m + m}. f c)"
-    by (rule sum.union_disjoint) auto
-  also have "(\<Sum>c\<in>{N * m..<N * m + m}. f c) = (\<Sum>i<m. f (N * m + i))"
-    by (rule sum.reindex_bij_witness[of _ "\<lambda>i. N * m + i" "\<lambda>c. c - N * m"]) auto
-  finally show ?case using Suc by simp
-qed simp
+proof -
+  have "(\<Sum>c\<in>{k * m..<k * m + m}. f c) = (\<Sum>i<m. f (k * m + i))" for k
+    using sum.shift_bounds_nat_ivl[of f 0 "k * m" m] by (simp add: atLeast0LessThan add.commute)
+  thus ?thesis unfolding sum.nat_group[symmetric] by simp
+qed
 
 lemma block_index:
   fixes k i N m :: nat

@@ -297,10 +297,10 @@ proof -
   let ?t = "hhl_target A k b"
   note dims = prog_branch(3,4)[OF A n0 k t0 spec Ub Cb]
   have cc: "circuit_mat Dm (hhl_gates A Ub t0 k C) \<in> carrier_mat Dm Dm"
-    unfolding Dm_def by (rule circuit_mat_carrier) (use gates_ok[OF A n0 k t0 spec Ub Cb] in auto)
+    unfolding Dm_def by (rule circuit_mat_carrier) (use prog_gates[OF A n0 k t0 spec Ub Cb] in auto)
   have dd': "d = 2 ^ k * (n * 2)" by (simp add: d_def)
   have cu: "Complex_Matrix.unitary (circuit_mat d (hhl_gates A Ub t0 k C))"
-    by (rule circuit_mat_unitary) (use gates_ok[OF A n0 k t0 spec Ub Cb] dd' in auto)
+    by (rule circuit_mat_unitary) (use prog_gates[OF A n0 k t0 spec Ub Cb] dd' in auto)
   have \<psi>e: "\<psi> = circuit_mat Dm (hhl_gates A Ub t0 k C) *\<^sub>v unit_vec Dm 0"
     unfolding \<psi>_def Dm_def by (rule prog_out[OF A n0 k t0 spec Ub Cb, symmetric])
   show \<psi>c: "\<psi> \<in> carrier_vec Dm" unfolding \<psi>e by (rule mult_mat_vec_carrier[OF cc unit_vec_carrier])
@@ -463,7 +463,7 @@ proof -
     have "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b = complex_of_real C \<cdot>\<^sub>v (herm_inv A *\<^sub>v b)"
       using Ub by (intro smult_mat_mult_vec[OF Hc]) auto
     hence "\<parallel>w1\<parallel> = \<bar>C\<bar> * \<parallel>herm_inv A *\<^sub>v b\<parallel>" unfolding w1_def using Ub
-      by (simp add: vnorm_tensor tensor_vec_dim vnorm_smult carrier_matD[OF mat_fun_carrier[OF A]] herm_inv_def)
+      by (simp add: vnorm_tensor tensor_vec_dim cpx_vec_length_smult carrier_matD[OF mat_fun_carrier[OF A]] herm_inv_def)
     hence "\<langle>w1|w1\<rangle> = complex_of_real p" unfolding cpx_vec_length_inner_prod[symmetric] p_def by (simp add: power_mult_distrib)
     thus ?thesis unfolding trace_outer_prod[OF w1c w1c] using inner_bridge[of w1 w1] by simp
   qed
@@ -487,7 +487,7 @@ theorem hhl_rus_total:
   shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (1\<^sub>m (2 ^ k * (n * 2))) (hhl_rus A Ub t0 k C)
      (outer_prod (hhl_target A k b) (hhl_target A k b))"
   unfolding hhl_rus_def carrier_matD(1)[OF A(1)]
-  by (rule hhl_rus_prog_total[OF gates_ok[OF A n0 k t0 spec Ub Cb] refl assms])
+  by (rule hhl_rus_prog_total[OF prog_gates[OF A n0 k t0 spec Ub Cb] refl assms])
 
 theorem hhl_elem_rus_total:
   assumes "C \<noteq> 0"

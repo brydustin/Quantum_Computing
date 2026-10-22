@@ -66,15 +66,12 @@ qed
 
 subsection \<open>Bounds from the spectrum\<close>
 
-lemma vnorm_0v: "\<parallel>0\<^sub>v m\<parallel> = 0"
-  by (simp add: cpx_vec_length_def)
-
 lemma vnorm_minus_le:
   assumes "dim_vec a = dim_vec b"
   shows "\<parallel>a - b\<parallel> \<le> \<parallel>a\<parallel> + \<parallel>b\<parallel>"
 proof -
   have "a - b = a + (-1) \<cdot>\<^sub>v b" using assms by (intro eq_vecI) simp_all
-  thus ?thesis using vnorm_add_le[of a "(-1) \<cdot>\<^sub>v b"] assms vnorm_smult[of "-1" b] by simp
+  thus ?thesis using vnorm_add_le[of a "(-1) \<cdot>\<^sub>v b"] assms cpx_vec_length_smult[of "-1" b] by simp
 qed
 
 lemma vnorm_pos:
@@ -99,29 +96,9 @@ lemma herm_spectrum_bound:
 proof -
   obtain v where v: "dim_vec v = n" "v \<noteq> 0\<^sub>v n" "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     using l A unfolding herm_spectrum_def by auto
-  have "\<bar>l\<bar> * \<parallel>v\<parallel> = \<parallel>A *\<^sub>v v\<parallel>" using v(3) by (simp add: vnorm_smult)
+  have "\<bar>l\<bar> * \<parallel>v\<parallel> = \<parallel>A *\<^sub>v v\<parallel>" using v(3) by (simp add: cpx_vec_length_smult)
   also have "\<dots> \<le> L * \<parallel>v\<parallel>" by (rule b[OF v(1)])
   finally show ?thesis using mult_right_le_imp_le vnorm_pos[OF v(1,2)] by blast
-qed
-
-lemma spectral_decomp_spectrum:
-  assumes A: "A \<in> carrier_mat n n" and sd: "spectral_decomp A U Dl" and j: "j < n"
-  shows "Dl ! j \<in> herm_spectrum A"
-proof -
-  note d = spectral_decompD[OF A sd]
-  have c: "dim_vec (Matrix.col U j) = n" using d(1) by simp
-  have "Matrix.col U j \<noteq> 0\<^sub>v n"
-  proof
-    assume z: "Matrix.col U j = 0\<^sub>v n"
-    have "(U\<^sup>\<dagger> * U) $$ (j, j) = 1" using d(4) j by simp
-    moreover have "(U\<^sup>\<dagger> * U) $$ (j, j) = Matrix.row (U\<^sup>\<dagger>) j \<bullet> Matrix.col U j" by (rule index_mult_mat(1)) (use d(1) j in simp_all)
-    moreover have "Matrix.row (U\<^sup>\<dagger>) j \<bullet> 0\<^sub>v n = 0" using d(1) j by simp
-    ultimately show False using z by simp
-  qed
-  hence "dim_vec (Matrix.col U j) = dim_row A \<and> Matrix.col U j \<noteq> 0\<^sub>v (dim_row A) \<and>
-      A *\<^sub>v Matrix.col U j = complex_of_real (Dl ! j) \<cdot>\<^sub>v Matrix.col U j"
-    using c spectral_decomp_col[OF A sd j] A by simp
-  thus ?thesis unfolding herm_spectrum_def by blast
 qed
 
 lemma mat_fun_bound:
@@ -151,7 +128,7 @@ proof -
     also have "\<dots> \<le> (\<Sum>i<n. c\<^sup>2 * (cmod (w $ i))\<^sup>2)"
     proof (rule sum_mono)
       fix i assume "i \<in> {..<n}"
-      hence "cmod (g (Dl ! i)) \<le> c" using g spectral_decomp_spectrum[OF A(1) sd] by simp
+      hence "cmod (g (Dl ! i)) \<le> c" using g spectral_decomp_eig_in_spectrum[OF A(1) sd] by simp
       hence "(cmod (g (Dl ! i)))\<^sup>2 \<le> c\<^sup>2" by (rule power_mono) simp
       thus "(cmod (g (Dl ! i) * w $ i))\<^sup>2 \<le> c\<^sup>2 * (cmod (w $ i))\<^sup>2"
         by (simp add: norm_mult power_mult_distrib mult_right_mono)
@@ -183,7 +160,7 @@ proof (rule mat_fun_eqI[OF A])
     also have "\<dots> = evolution A d *\<^sub>v v - 1\<^sub>m n *\<^sub>v v - ((\<i> * complex_of_real d) \<cdot>\<^sub>m A) *\<^sub>v v"
       by (simp only: m1)
     also have "\<dots> = cis (d * l) \<cdot>\<^sub>v v - v - (\<i> * complex_of_real d) \<cdot>\<^sub>v (complex_of_real l \<cdot>\<^sub>v v)"
-      using e ev smult_mat_mult_vec[OF A(1) vn] vc by simp
+      using e ev smult_mat_mult_vec[OF A(1) carrier_vecI[OF vn]] vc by simp
     also have "\<dots> = (cis (d * l) - 1 - \<i> * complex_of_real (d * l)) \<cdot>\<^sub>v v"
       by (intro eq_vecI) (simp_all add: algebra_simps)
     finally show "?B *\<^sub>v v = (cis (d * l) - 1 - \<i> * complex_of_real (d * l)) \<cdot>\<^sub>v v" .
@@ -230,7 +207,7 @@ proof -
   also have "\<dots> = (evolution A d - 1\<^sub>m n) *\<^sub>v v - ((\<i> * complex_of_real d) \<cdot>\<^sub>m A) *\<^sub>v v"
     by (rule minus_mult_distrib_mat_vec[OF E1 smult_carrier_mat[OF A(1)] vc])
   also have "\<dots> = evolution A d *\<^sub>v v - v - (\<i> * complex_of_real d) \<cdot>\<^sub>v (A *\<^sub>v v)"
-    using m1 smult_mat_mult_vec[OF A(1) v] vc by simp
+    using m1 smult_mat_mult_vec[OF A(1) carrier_vecI[OF v]] vc by simp
   finally have e: "mat_fun (\<lambda>x. cis (d * x) - 1 - \<i> * complex_of_real (d * x)) A *\<^sub>v v =
       evolution A d *\<^sub>v v - v - (\<i> * complex_of_real d) \<cdot>\<^sub>v (A *\<^sub>v v)" .
   have "\<parallel>mat_fun (\<lambda>x. cis (d * x) - 1 - \<i> * complex_of_real (d * x)) A *\<^sub>v v\<parallel> \<le> (d * L)\<^sup>2 * \<parallel>v\<parallel>"
@@ -440,7 +417,7 @@ next
     using Cons.IH[OF hs v] unfolding c_def k_def .
   have b3: "\<parallel>c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))\<parallel> \<le> (d * L)\<^sup>2 * k * \<parallel>v\<parallel>"
   proof -
-    have "\<parallel>c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))\<parallel> = \<bar>d\<bar> * \<parallel>H *\<^sub>v (?w - v)\<parallel>" by (simp add: vnorm_smult c_def norm_mult)
+    have "\<parallel>c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))\<parallel> = \<bar>d\<bar> * \<parallel>H *\<^sub>v (?w - v)\<parallel>" by (simp add: cpx_vec_length_smult c_def norm_mult)
     also have "\<dots> \<le> \<bar>d\<bar> * (L * \<parallel>?w - v\<parallel>)" by (rule mult_left_mono[OF h(3)]) (use w v in simp_all)
     also have "\<dots> \<le> \<bar>d\<bar> * (L * (k * (\<bar>d\<bar> * L) * \<parallel>v\<parallel>))"
     proof (cases "n = 0")
@@ -519,7 +496,7 @@ proof (induction k)
   proof (intro allI impI)
     fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
     have "U ^\<^sub>m 0 *\<^sub>v v - V ^\<^sub>m 0 *\<^sub>v v = 0\<^sub>v n" using v carrier_matD[OF U(1)] carrier_matD[OF V(1)] carrier_vecI[OF v] by (intro eq_vecI) simp_all
-    thus "\<parallel>U ^\<^sub>m 0 *\<^sub>v v - V ^\<^sub>m 0 *\<^sub>v v\<parallel> \<le> real 0 * \<eta> * \<parallel>v\<parallel>" by (simp add: vnorm_0v)
+    thus "\<parallel>U ^\<^sub>m 0 *\<^sub>v v - V ^\<^sub>m 0 *\<^sub>v v\<parallel> \<le> real 0 * \<eta> * \<parallel>v\<parallel>" by (simp add: vnorm_zero_vec)
   qed
 next
   case (Suc k)

@@ -169,7 +169,7 @@ lemma vnorm_cs:
   shows "cmod \<langle>u|v\<rangle> \<le> \<parallel>u\<parallel> * \<parallel>v\<parallel>"
 proof -
   have "(cmod \<langle>u|v\<rangle>)\<^sup>2 \<le> Re (\<langle>u|u\<rangle> * \<langle>v|v\<rangle>)" by (rule No_Cloning.cauchy_schwarz_ineq[OF assms])
-  also have "\<dots> = (\<parallel>u\<parallel> * \<parallel>v\<parallel>)\<^sup>2" unfolding vnorm_inner power_mult_distrib by (simp flip: of_real_mult)
+  also have "\<dots> = (\<parallel>u\<parallel> * \<parallel>v\<parallel>)\<^sup>2" unfolding cpx_vec_length_inner_prod[symmetric] power_mult_distrib by (simp flip: of_real_mult)
   finally show ?thesis by (rule power2_le_imp_le) (simp add: vnorm_ge0)
 qed
 
@@ -395,7 +395,7 @@ lemma had_blk_mult:
          (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v (a + c)) @\<^sub>v (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v (a - c))"
 proof -
   have I: "(z \<cdot>\<^sub>m 1\<^sub>m K) *\<^sub>v w = z \<cdot>\<^sub>v w" if w: "dim_vec w = K" for z :: complex and w
-    using smult_mat_mult_vec[OF one_carrier_mat w] one_mult_mat_vec[OF carrier_vecI[OF w]] by simp
+    using smult_mat_mult_vec[OF one_carrier_mat carrier_vecI[OF w]] one_mult_mat_vec[OF carrier_vecI[OF w]] by simp
   have "had_blk K *\<^sub>v (a @\<^sub>v c) =
         (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v a + complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v c) @\<^sub>v
         (complex_of_real (1 / sqrt 2) \<cdot>\<^sub>v a + complex_of_real (- 1 / sqrt 2) \<cdot>\<^sub>v c)"
@@ -520,10 +520,10 @@ theorem swap_test_prob:
 proof -
   let ?w = "tensor_vec \<psi> \<phi>" and ?w' = "tensor_vec \<phi> \<psi>"
   have dw: "dim_vec ?w = n * n" and dw': "dim_vec ?w' = n * n" using tensor_vec_dim p f by blast+
-  have pp: "\<langle>\<psi>|\<psi>\<rangle> = 1" and ff: "\<langle>\<phi>|\<phi>\<rangle> = 1" using p(2) f(2) unfolding vnorm_inner by simp_all
+  have pp: "\<langle>\<psi>|\<psi>\<rangle> = 1" and ff: "\<langle>\<phi>|\<phi>\<rangle> = 1" using p(2) f(2) unfolding cpx_vec_length_inner_prod[symmetric] by simp_all
   have c: "\<langle>\<phi>|\<psi>\<rangle> = cnj \<langle>\<psi>|\<phi>\<rangle>" using inner_prod_cnj[of \<psi> \<phi>] p f by simp
   have sq: "\<langle>\<psi>|\<phi>\<rangle> * cnj \<langle>\<psi>|\<phi>\<rangle> = complex_of_real ((cmod \<langle>\<psi>|\<phi>\<rangle>)\<^sup>2)" using complex_norm_square[of "\<langle>\<psi>|\<phi>\<rangle>"] by simp
-  have "complex_of_real (\<parallel>?w + ?w'\<parallel>\<^sup>2) = \<langle>?w + ?w'|?w + ?w'\<rangle>" by (rule vnorm_inner[symmetric])
+  have "complex_of_real (\<parallel>?w + ?w'\<parallel>\<^sup>2) = \<langle>?w + ?w'|?w + ?w'\<rangle>" by (rule cpx_vec_length_inner_prod)
   also have "\<dots> = \<langle>?w|?w\<rangle> + \<langle>?w|?w'\<rangle> + \<langle>?w'|?w\<rangle> + \<langle>?w'|?w'\<rangle>"
     by (rule No_Cloning.inner_prod_expand) (simp_all add: dw dw')
   also have "\<langle>?w|?w\<rangle> = 1" using tensor_inner_prod[OF p(1) p(1) f(1) f(1)] pp ff by simp
@@ -534,7 +534,7 @@ proof -
   also note sq
   finally have "complex_of_real (\<parallel>?w + ?w'\<parallel>\<^sup>2) = complex_of_real (2 + 2 * (cmod \<langle>\<psi>|\<phi>\<rangle>)\<^sup>2)" by simp
   hence "\<parallel>?w + ?w'\<parallel>\<^sup>2 = 2 + 2 * (cmod \<langle>\<psi>|\<phi>\<rangle>)\<^sup>2" by (simp only: of_real_eq_iff)
-  moreover have "\<parallel>(1 / 2) \<cdot>\<^sub>v (?w + ?w')\<parallel> = \<parallel>?w + ?w'\<parallel> / 2" by (simp add: vnorm_smult)
+  moreover have "\<parallel>(1 / 2) \<cdot>\<^sub>v (?w + ?w')\<parallel> = \<parallel>?w + ?w'\<parallel> / 2" by (simp add: cpx_vec_length_smult)
   ultimately have "\<parallel>(1 / 2) \<cdot>\<^sub>v (?w + ?w')\<parallel>\<^sup>2 = (2 + 2 * (cmod \<langle>\<psi>|\<phi>\<rangle>)\<^sup>2) / 2\<^sup>2" by (simp only: power_divide)
   thus ?thesis by simp
 qed
@@ -739,9 +739,6 @@ definition "pc_B = Matrix.mat 2 2 (\<lambda>(i, j). if i = 0 \<and> j = 1 then 0
 definition "pc_b = Matrix.vec 2 (\<lambda>i. if i = 0 then 1 else (0::complex))"
 definition "pc_c = Matrix.vec 2 (\<lambda>i. if i = 0 then 0 else (1::complex))"
 
-lemma sum_two: "(\<Sum>i = 0..<2. f i) = f 0 + f (1::nat)" "(\<Sum>i<2. f i) = f 0 + f (1::nat)"
-  by (simp_all add: numeral_2_eq_2)
-
 lemma paper_precondition_wrong:
   "(pc_A * pc_B) *\<^sub>v pc_c = pc_B *\<^sub>v pc_b"
   "\<And>d. dim_vec d = 2 \<Longrightarrow> (pc_A * pc_B) *\<^sub>v d = pc_B *\<^sub>v pc_b \<Longrightarrow> d = pc_c"
@@ -752,25 +749,25 @@ proof -
     fix i assume "i < dim_vec (pc_B *\<^sub>v pc_b)"
     hence "i = 0 \<or> i = 1" by (simp add: pc_B_def less_2_cases_iff)
     thus "((pc_A * pc_B) *\<^sub>v pc_c) $ i = (pc_B *\<^sub>v pc_b) $ i"
-      by (elim disjE) (simp_all add: pc_A_def pc_B_def pc_b_def pc_c_def scalar_prod_def sum_two)
+      by (elim disjE) (simp_all add: pc_A_def pc_B_def pc_b_def pc_c_def scalar_prod_def atLeast0LessThan sumof2)
   qed (simp add: pc_A_def pc_B_def)
   show "pc_A *\<^sub>v pc_c \<noteq> pc_b"
   proof
     assume "pc_A *\<^sub>v pc_c = pc_b"
     hence "(pc_A *\<^sub>v pc_c) $ 1 = pc_b $ 1" by simp
-    thus False by (simp add: pc_A_def pc_b_def pc_c_def scalar_prod_def sum_two)
+    thus False by (simp add: pc_A_def pc_b_def pc_c_def scalar_prod_def atLeast0LessThan sumof2)
   qed
   show "pc_A *\<^sub>v (pc_B *\<^sub>v pc_c) \<noteq> pc_b"
   proof
     assume "pc_A *\<^sub>v (pc_B *\<^sub>v pc_c) = pc_b"
     hence "(pc_A *\<^sub>v (pc_B *\<^sub>v pc_c)) $ 1 = pc_b $ 1" by simp
-    thus False by (simp add: pc_A_def pc_B_def pc_b_def pc_c_def scalar_prod_def sum_two)
+    thus False by (simp add: pc_A_def pc_B_def pc_b_def pc_c_def scalar_prod_def atLeast0LessThan sumof2)
   qed
   fix d :: "complex Matrix.vec" assume d: "dim_vec d = 2" and e: "(pc_A * pc_B) *\<^sub>v d = pc_B *\<^sub>v pc_b"
   have e0: "2 * d $ 0 + d $ 1 = 1" using arg_cong[OF e, of "\<lambda>v. v $ 0"] d
-    by (simp add: pc_A_def pc_B_def pc_b_def scalar_prod_def sum_two)
+    by (simp add: pc_A_def pc_B_def pc_b_def scalar_prod_def atLeast0LessThan sumof2)
   have e1: "d $ 0 + d $ 1 = 1" using arg_cong[OF e, of "\<lambda>v. v $ 1"] d
-    by (simp add: pc_A_def pc_B_def pc_b_def scalar_prod_def sum_two)
+    by (simp add: pc_A_def pc_B_def pc_b_def scalar_prod_def atLeast0LessThan sumof2)
   have "d $ 0 = (2 * d $ 0 + d $ 1) - (d $ 0 + d $ 1)" by (simp add: algebra_simps)
   hence d0: "d $ 0 = 0" unfolding e0 e1 by simp
   have d1: "d $ 1 = 1" using e1 d0 by simp

@@ -24,9 +24,6 @@ proof -
   thus ?thesis by (simp add: cpx_vec_length_def sum_nonneg)
 qed
 
-lemma vnorm_zero_vec: "\<parallel>0\<^sub>v m\<parallel> = 0"
-  by (simp add: cpx_vec_length_def)
-
 context state_sig
 begin
 
@@ -74,7 +71,7 @@ lemma pc_Bb: "0 < \<parallel>B *\<^sub>v b\<parallel>"
 proof (rule ccontr)
   assume "\<not> 0 < \<parallel>B *\<^sub>v b\<parallel>"
   hence z: "\<parallel>B *\<^sub>v b\<parallel> = 0" using vnorm_ge0[of "B *\<^sub>v b"] by linarith
-  have "\<parallel>pc_rhs B b\<parallel> = 0" unfolding pc_rhs_def vnorm_append vnorm_smult z vnorm_zero_vec by simp
+  have "\<parallel>pc_rhs B b\<parallel> = 0" unfolding pc_rhs_def vnorm_append cpx_vec_length_smult z vnorm_zero_vec by simp
   moreover have "\<parallel>pc_rhs B b\<parallel> = 1"
   proof -
     have "\<parallel>pc_rhs B b\<parallel> = \<parallel>unit_vec (n + n) 0\<parallel>" using unitary_vnorm[OF Ub(1,2), of "unit_vec (n + n) 0"] Ub(3) by simp
@@ -110,7 +107,7 @@ proof -
 qed
 
 lemma pc_norm: "\<parallel>herm_inv (herm_embed (B * A)) *\<^sub>v pc_rhs B b\<parallel> = \<parallel>x\<parallel> / \<parallel>B *\<^sub>v b\<parallel>"
-  unfolding pc_solve vnorm_append vnorm_zero_vec vnorm_smult using pc_Bb vnorm_ge0[of x] by (simp add: norm_divide)
+  unfolding pc_solve vnorm_append vnorm_zero_vec cpx_vec_length_smult using pc_Bb vnorm_ge0[of x] by (simp add: norm_divide)
 
 lemma pc_target_eq: "hhl_target (herm_embed (B * A)) k (pc_rhs B b) = pc_target k x"
 proof -

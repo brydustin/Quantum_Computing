@@ -23,8 +23,8 @@ proof -
   let ?u = "complex_of_real (1 / \<parallel>b\<parallel>) \<cdot>\<^sub>v (a - b)" and ?w = "complex_of_real (1 / \<parallel>a\<parallel> - 1 / \<parallel>b\<parallel>) \<cdot>\<^sub>v a"
   have split: "complex_of_real (1 / \<parallel>a\<parallel>) \<cdot>\<^sub>v a - complex_of_real (1 / \<parallel>b\<parallel>) \<cdot>\<^sub>v b = ?u + ?w"
     using d by (intro eq_vecI) (simp_all add: algebra_simps)
-  have u: "\<parallel>?u\<parallel> = \<parallel>a - b\<parallel> / \<parallel>b\<parallel>" unfolding vnorm_smult norm_of_real using b0 by simp
-  have "\<parallel>?w\<parallel> = \<bar>1 / \<parallel>a\<parallel> - 1 / \<parallel>b\<parallel>\<bar> * \<parallel>a\<parallel>" unfolding vnorm_smult norm_of_real ..
+  have u: "\<parallel>?u\<parallel> = \<parallel>a - b\<parallel> / \<parallel>b\<parallel>" unfolding cpx_vec_length_smult norm_of_real using b0 by simp
+  have "\<parallel>?w\<parallel> = \<bar>1 / \<parallel>a\<parallel> - 1 / \<parallel>b\<parallel>\<bar> * \<parallel>a\<parallel>" unfolding cpx_vec_length_smult norm_of_real ..
   also have "\<dots> = \<bar>\<parallel>b\<parallel> - \<parallel>a\<parallel>\<bar> / \<parallel>b\<parallel>"
   proof -
     have e: "1 / \<parallel>a\<parallel> - 1 / \<parallel>b\<parallel> = (\<parallel>b\<parallel> - \<parallel>a\<parallel>) / (\<parallel>a\<parallel> * \<parallel>b\<parallel>)" using a0 b0 by (simp add: diff_divide_distrib)
@@ -130,7 +130,7 @@ proof -
   have G0: "?G0 \<in> carrier_mat n n" using A by simp
   have dx: "dim_vec ?x = n" using Hi by simp
   have d0: "dim_vec (?G0 *\<^sub>v b) = n" using G0 by simp
-  have Cx: "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b = complex_of_real C \<cdot>\<^sub>v ?x" by (rule smult_mat_mult_vec[OF Hi b])
+  have Cx: "(complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b = complex_of_real C \<cdot>\<^sub>v ?x" by (rule smult_mat_mult_vec[OF Hi carrier_vecI[OF b]])
   have dCx: "dim_vec (complex_of_real C \<cdot>\<^sub>v ?x) = n" using dx by simp
   have dx1: "dim_vec (tensor_vec ?x (unit_vec 2 1)) = n * 2" using tensor_vec_dim[OF dx, of _ 2] by simp
   have sl: "tensor_vec (c \<cdot>\<^sub>v ?x) (unit_vec 2 1) = c \<cdot>\<^sub>v tensor_vec ?x (unit_vec 2 1)" for c
@@ -148,7 +148,7 @@ proof -
     have t1: "\<parallel>tensor_vec ?x (unit_vec 2 1)\<parallel> = \<parallel>?x\<parallel>" using vnorm_tensor[OF dx, where b = "unit_vec 2 1" and m = 2] by simp
     show ?thesis unfolding vnorm_tensor[OF dim_win_state dx1] t1 win_state_norm[OF N] by simp
   qed
-  have npy: "\<parallel>post1 ?y\<parallel> = C * \<parallel>?x\<parallel>" unfolding py vnorm_smult np using C by simp
+  have npy: "\<parallel>post1 ?y\<parallel> = C * \<parallel>?x\<parallel>" unfolding py cpx_vec_length_smult np using C by simp
   have dy: "dim_vec ?y = N * (n * 2)"
   proof -
     have "dim_vec (tensor_vec (?G0 *\<^sub>v b) (unit_vec 2 0) + tensor_vec ((complex_of_real C \<cdot>\<^sub>m herm_inv A) *\<^sub>v b) (unit_vec 2 1)) = n * 2"
@@ -203,19 +203,13 @@ $\psi=\sin\theta\,g+\cos\theta\,h$.  The Grover operator $Q=(2\ketbra\psi\psi-I)
 the plane spanned by $g,h$ by $2\theta$, so after $k$ rounds the good amplitude is
 $\sin((2k+1)\theta)$.\<close>
 
-definition outer :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
-  "outer v = Matrix.mat (dim_vec v) (dim_vec v) (\<lambda>(i, j). v $ i * cnj (v $ j))"
+text \<open>The outer product $\ketbra vw$ of the notes as an explicit matrix.\<close>
 
-lemma outer_carrier: "dim_vec v = K \<Longrightarrow> outer v \<in> carrier_mat K K"
-  by (simp add: outer_def)
-
-lemma outer_mult_vec:
-  assumes "dim_vec v = K" "dim_vec w = K"
-  shows "outer v *\<^sub>v w = \<langle>v|w\<rangle> \<cdot>\<^sub>v v"
-  using assms by (intro eq_vecI) (simp_all add: outer_def scalar_prod_def inner_prod_def sum_distrib_left mult_ac)
+lemma outer_prod_mat: "v \<oslash> w = Matrix.mat (dim_vec v) (dim_vec w) (\<lambda>(i, j). v $ i * cnj (w $ j))"
+  by (rule eq_matI) (simp_all add: outer_prod_index ket_vec_def bra_vec_def row_vec_def cpx_mat_cnj_def)
 
 definition grover :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
-  "grover K P psi = (2 \<cdot>\<^sub>m outer psi - 1\<^sub>m K) * (1\<^sub>m K - 2 \<cdot>\<^sub>m P)"
+  "grover K P psi = (2 \<cdot>\<^sub>m (psi \<oslash> psi) - 1\<^sub>m K) * (1\<^sub>m K - 2 \<cdot>\<^sub>m P)"
 
 context
   fixes K :: nat and P :: "complex Matrix.mat" and g h :: "complex Matrix.vec"
@@ -263,21 +257,21 @@ proof -
   have cc: "comb a c \<in> carrier_vec K" by (rule carrier_vecI) simp
   have "(1\<^sub>m K - 2 \<cdot>\<^sub>m P) *\<^sub>v comb a c = 1\<^sub>m K *\<^sub>v comb a c - (2 \<cdot>\<^sub>m P) *\<^sub>v comb a c"
     by (rule minus_mult_distrib_mat_vec[OF one_carrier_mat smult_carrier_mat[OF P] cc])
-  also have "(2 \<cdot>\<^sub>m P) *\<^sub>v comb a c = 2 \<cdot>\<^sub>v comb a 0" using smult_mat_mult_vec[OF P, of "comb a c" 2] P_comb by simp
+  also have "(2 \<cdot>\<^sub>m P) *\<^sub>v comb a c = 2 \<cdot>\<^sub>v comb a 0" using smult_mat_mult_vec[OF P carrier_vecI, of "comb a c" 2] P_comb by simp
   also have "1\<^sub>m K *\<^sub>v comb a c - 2 \<cdot>\<^sub>v comb a 0 = comb (- a) c"
     using cc g h by (intro eq_vecI) (simp_all add: comb_def algebra_simps)
   finally show ?thesis .
 qed
 
 lemma reflpsi_comb:
-  "(2 \<cdot>\<^sub>m outer (comb s c) - 1\<^sub>m K) *\<^sub>v comb a d = comb (2 * (s * a + c * d) * s - a) (2 * (s * a + c * d) * c - d)"
+  "(2 \<cdot>\<^sub>m (comb s c \<oslash> comb s c) - 1\<^sub>m K) *\<^sub>v comb a d = comb (2 * (s * a + c * d) * s - a) (2 * (s * a + c * d) * c - d)"
 proof -
-  have O: "outer (comb s c) \<in> carrier_mat K K" by (rule outer_carrier) simp
+  have O: "(comb s c \<oslash> comb s c) \<in> carrier_mat K K" by (rule outer_prod_carrier) simp_all
   have cc: "comb a d \<in> carrier_vec K" by (rule carrier_vecI) simp
-  have "(2 \<cdot>\<^sub>m outer (comb s c) - 1\<^sub>m K) *\<^sub>v comb a d = (2 \<cdot>\<^sub>m outer (comb s c)) *\<^sub>v comb a d - 1\<^sub>m K *\<^sub>v comb a d"
+  have "(2 \<cdot>\<^sub>m (comb s c \<oslash> comb s c) - 1\<^sub>m K) *\<^sub>v comb a d = (2 \<cdot>\<^sub>m (comb s c \<oslash> comb s c)) *\<^sub>v comb a d - 1\<^sub>m K *\<^sub>v comb a d"
     by (rule minus_mult_distrib_mat_vec[OF smult_carrier_mat[OF O] one_carrier_mat cc])
-  also have "(2 \<cdot>\<^sub>m outer (comb s c)) *\<^sub>v comb a d = 2 \<cdot>\<^sub>v (complex_of_real (s * a + c * d) \<cdot>\<^sub>v comb s c)"
-    using smult_mat_mult_vec[OF O, of "comb a d" 2] outer_mult_vec[of "comb s c" K "comb a d"] comb_inner by simp
+  also have "(2 \<cdot>\<^sub>m (comb s c \<oslash> comb s c)) *\<^sub>v comb a d = 2 \<cdot>\<^sub>v (complex_of_real (s * a + c * d) \<cdot>\<^sub>v comb s c)"
+    using smult_mat_mult_vec[OF O carrier_vecI, of "comb a d" 2] outer_prod_mult_vec[of "comb a d" "comb s c" "comb s c"] comb_inner by simp
   also have "\<dots> - 1\<^sub>m K *\<^sub>v comb a d = comb (2 * (s * a + c * d) * s - a) (2 * (s * a + c * d) * c - d)"
     using cc g h by (intro eq_vecI) (simp_all add: comb_def algebra_simps)
   finally show ?thesis .
@@ -286,11 +280,11 @@ qed
 lemma grover_comb:
   "grover K P (comb (sin \<theta>) (cos \<theta>)) *\<^sub>v comb (sin \<phi>) (cos \<phi>) = comb (sin (\<phi> + 2 * \<theta>)) (cos (\<phi> + 2 * \<theta>))"
 proof -
-  have O: "outer (comb (sin \<theta>) (cos \<theta>)) \<in> carrier_mat K K" by (rule outer_carrier) simp
+  have O: "(comb (sin \<theta>) (cos \<theta>) \<oslash> comb (sin \<theta>) (cos \<theta>)) \<in> carrier_mat K K" by (rule outer_prod_carrier) simp_all
   have R: "1\<^sub>m K - 2 \<cdot>\<^sub>m P \<in> carrier_mat K K" by (rule minus_carrier_mat[OF smult_carrier_mat[OF P]])
-  have S: "2 \<cdot>\<^sub>m outer (comb (sin \<theta>) (cos \<theta>)) - 1\<^sub>m K \<in> carrier_mat K K" by (rule minus_carrier_mat[OF one_carrier_mat])
+  have S: "2 \<cdot>\<^sub>m (comb (sin \<theta>) (cos \<theta>) \<oslash> comb (sin \<theta>) (cos \<theta>)) - 1\<^sub>m K \<in> carrier_mat K K" by (rule minus_carrier_mat[OF one_carrier_mat])
   have "grover K P (comb (sin \<theta>) (cos \<theta>)) *\<^sub>v comb (sin \<phi>) (cos \<phi>) =
-        (2 \<cdot>\<^sub>m outer (comb (sin \<theta>) (cos \<theta>)) - 1\<^sub>m K) *\<^sub>v ((1\<^sub>m K - 2 \<cdot>\<^sub>m P) *\<^sub>v comb (sin \<phi>) (cos \<phi>))"
+        (2 \<cdot>\<^sub>m (comb (sin \<theta>) (cos \<theta>) \<oslash> comb (sin \<theta>) (cos \<theta>)) - 1\<^sub>m K) *\<^sub>v ((1\<^sub>m K - 2 \<cdot>\<^sub>m P) *\<^sub>v comb (sin \<phi>) (cos \<phi>))"
     unfolding grover_def by (rule assoc_mult_mat_vec[OF S R]) (rule carrier_vecI, simp)
   also have "\<dots> = comb (2 * (sin \<theta> * - sin \<phi> + cos \<theta> * cos \<phi>) * sin \<theta> + sin \<phi>)
                        (2 * (sin \<theta> * - sin \<phi> + cos \<theta> * cos \<phi>) * cos \<theta> - cos \<phi>)"
@@ -340,7 +334,7 @@ corollary grover_success:
   "\<parallel>P *\<^sub>v ((grover K P (comb (sin \<theta>) (cos \<theta>)) ^\<^sub>m k) *\<^sub>v comb (sin \<theta>) (cos \<theta>))\<parallel>\<^sup>2 = (sin ((2 * real k + 1) * \<theta>))\<^sup>2"
 proof -
   have "complex_of_real (\<parallel>comb (sin ((2 * real k + 1) * \<theta>)) 0\<parallel>\<^sup>2) = complex_of_real ((sin ((2 * real k + 1) * \<theta>))\<^sup>2)"
-    unfolding vnorm_inner[symmetric] comb_inner by (simp add: power2_eq_square)
+    unfolding cpx_vec_length_inner_prod comb_inner by (simp add: power2_eq_square)
   thus ?thesis unfolding grover_iterate P_comb of_real_eq_iff .
 qed
 
@@ -413,9 +407,9 @@ proof -
   define c where "c = \<parallel>?r\<parallel>"
   have pyth: "a\<^sup>2 + c\<^sup>2 = 1"
   proof -
-    have "complex_of_real (\<parallel>psi\<parallel>\<^sup>2) = \<langle>?p + ?r|?p + ?r\<rangle>" unfolding vnorm_inner[symmetric] using split by simp
+    have "complex_of_real (\<parallel>psi\<parallel>\<^sup>2) = \<langle>?p + ?r|?p + ?r\<rangle>" unfolding cpx_vec_length_inner_prod using split by simp
     also have "\<dots> = \<langle>?p|?p\<rangle> + \<langle>?r|?r\<rangle>" using No_Cloning.inner_prod_expand[of ?p ?r ?p ?r] dp dr pr rp by simp
-    finally have "complex_of_real 1 = complex_of_real (a\<^sup>2 + c\<^sup>2)" unfolding vnorm_inner a_def c_def psi(2) by simp
+    finally have "complex_of_real 1 = complex_of_real (a\<^sup>2 + c\<^sup>2)" unfolding cpx_vec_length_inner_prod[symmetric] a_def c_def psi(2) by simp
     thus ?thesis by (simp only: of_real_eq_iff)
   qed
   have a0': "0 < a" and a1': "a < 1" using a0 a1 by (simp_all add: a_def)
@@ -434,9 +428,9 @@ proof -
   define h where "h = complex_of_real (1 / c) \<cdot>\<^sub>v ?r"
   have dg: "dim_vec g = K" and dh: "dim_vec h = K" using dp dr by (simp_all add: g_def h_def)
   have gg: "\<langle>g|g\<rangle> = 1"
-    unfolding g_def vnorm_inner vnorm_smult norm_of_real a_def[symmetric] using a0' by simp
+    unfolding g_def cpx_vec_length_inner_prod[symmetric] cpx_vec_length_smult norm_of_real a_def[symmetric] using a0' by simp
   have hh: "\<langle>h|h\<rangle> = 1"
-    unfolding h_def vnorm_inner vnorm_smult norm_of_real c_def[symmetric] using c0 by simp
+    unfolding h_def cpx_vec_length_inner_prod[symmetric] cpx_vec_length_smult norm_of_real c_def[symmetric] using c0 by simp
   have gh: "\<langle>g|h\<rangle> = 0"
   proof -
     have "\<langle>g|h\<rangle> = cnj (complex_of_real (1 / a)) * (complex_of_real (1 / c) * \<langle>?p|?r\<rangle>)"
@@ -506,49 +500,49 @@ lemma proj1_dagger: "(proj1 K)\<^sup>\<dagger> = proj1 K"
 lemma refl_proj1: "1\<^sub>m K - 2 \<cdot>\<^sub>m proj1 K = sign_diag K odd"
   by (intro eq_matI) (auto simp: proj1_def sign_diag_def)
 
-lemma refl_zero: "2 \<cdot>\<^sub>m outer (unit_vec K 0) - 1\<^sub>m K = sign_diag K (\<lambda>i. i \<noteq> 0)"
-  by (intro eq_matI) (auto simp: outer_def sign_diag_def unit_vec_def)
+lemma refl_zero: "2 \<cdot>\<^sub>m (unit_vec K 0 \<oslash> unit_vec K 0) - 1\<^sub>m K = sign_diag K (\<lambda>i. i \<noteq> 0)"
+  by (intro eq_matI) (auto simp: outer_prod_mat sign_diag_def unit_vec_def)
 
 text \<open>Reflection about $U\ket0$: $U(2\ketbra00-I)U^*=2\ketbra\psi\psi-I$ for $\psi=U\ket0$.\<close>
 
 lemma outer_conj:
   assumes U: "U \<in> carrier_mat K K" and K: "0 < K"
-  shows "U * outer (unit_vec K 0) * (U\<^sup>\<dagger>) = outer (U *\<^sub>v unit_vec K 0)"
+  shows "U * (unit_vec K 0 \<oslash> unit_vec K 0) * (U\<^sup>\<dagger>) = ((U *\<^sub>v unit_vec K 0) \<oslash> (U *\<^sub>v unit_vec K 0))"
 proof -
-  have E: "outer (unit_vec K 0) \<in> carrier_mat K K" by (rule outer_carrier) simp
-  have UE: "U * outer (unit_vec K 0) = Matrix.mat K K (\<lambda>(i, k). if k = 0 then U $$ (i, 0) else 0)"
+  have E: "(unit_vec K 0 \<oslash> unit_vec K 0) \<in> carrier_mat K K" by (rule outer_prod_carrier) simp_all
+  have UE: "U * (unit_vec K 0 \<oslash> unit_vec K 0) = Matrix.mat K K (\<lambda>(i, k). if k = 0 then U $$ (i, 0) else 0)"
   proof (rule eq_matI)
     fix i k assume "i < dim_row (Matrix.mat K K (\<lambda>(i, k). if k = 0 then U $$ (i, 0) else 0))"
         "k < dim_col (Matrix.mat K K (\<lambda>(i, k). if k = 0 then U $$ (i, 0) else 0))"
     hence i: "i < K" and k: "k < K" by simp_all
-    have "(U * outer (unit_vec K 0)) $$ (i, k) = (\<Sum>l<K. U $$ (i, l) * ((if l = 0 then 1 else 0) * cnj (if k = 0 then 1 else 0)))"
-      using U i k by (simp add: outer_def scalar_prod_def unit_vec_def atLeast0LessThan)
+    have "(U * (unit_vec K 0 \<oslash> unit_vec K 0)) $$ (i, k) = (\<Sum>l<K. U $$ (i, l) * ((if l = 0 then 1 else 0) * cnj (if k = 0 then 1 else 0)))"
+      using U i k by (simp add: outer_prod_mat scalar_prod_def unit_vec_def atLeast0LessThan)
     also have "\<dots> = (if k = 0 then U $$ (i, 0) else 0)"
       using K by (simp add: if_distrib[of "\<lambda>x. _ * x"] if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-    finally show "(U * outer (unit_vec K 0)) $$ (i, k) = Matrix.mat K K (\<lambda>(i, k). if k = 0 then U $$ (i, 0) else 0) $$ (i, k)"
+    finally show "(U * (unit_vec K 0 \<oslash> unit_vec K 0)) $$ (i, k) = Matrix.mat K K (\<lambda>(i, k). if k = 0 then U $$ (i, 0) else 0) $$ (i, k)"
       using i k by simp
-  qed (use U in \<open>simp_all add: outer_def\<close>)
+  qed (use U in \<open>simp_all add: outer_prod_mat\<close>)
   show ?thesis
   proof (rule eq_matI)
-    fix i j assume "i < dim_row (outer (U *\<^sub>v unit_vec K 0))" "j < dim_col (outer (U *\<^sub>v unit_vec K 0))"
-    hence i: "i < K" and j: "j < K" using U by (simp_all add: outer_def)
+    fix i j assume "i < dim_row (((U *\<^sub>v unit_vec K 0) \<oslash> (U *\<^sub>v unit_vec K 0)))" "j < dim_col (((U *\<^sub>v unit_vec K 0) \<oslash> (U *\<^sub>v unit_vec K 0)))"
+    hence i: "i < K" and j: "j < K" using U by (simp_all add: outer_prod_mat)
     have col: "(U *\<^sub>v unit_vec K 0) $ r = U $$ (r, 0)" if "r < K" for r
       using U that K by (simp add: scalar_prod_def unit_vec_def atLeast0LessThan if_distrib[of "\<lambda>x. _ * x"] sum.delta cong: if_cong)
-    have "(U * outer (unit_vec K 0) * (U\<^sup>\<dagger>)) $$ (i, j) = (\<Sum>k<K. (if k = 0 then U $$ (i, 0) else 0) * cnj (U $$ (j, k)))"
+    have "(U * (unit_vec K 0 \<oslash> unit_vec K 0) * (U\<^sup>\<dagger>)) $$ (i, j) = (\<Sum>k<K. (if k = 0 then U $$ (i, 0) else 0) * cnj (U $$ (j, k)))"
       unfolding UE using U i j by (simp add: dagger_def scalar_prod_def atLeast0LessThan)
     also have "\<dots> = U $$ (i, 0) * cnj (U $$ (j, 0))"
       using K by (simp add: if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-    finally show "(U * outer (unit_vec K 0) * (U\<^sup>\<dagger>)) $$ (i, j) = outer (U *\<^sub>v unit_vec K 0) $$ (i, j)"
-      using i j U col by (simp add: outer_def)
-  qed (use U in \<open>simp_all add: outer_def\<close>)
+    finally show "(U * (unit_vec K 0 \<oslash> unit_vec K 0) * (U\<^sup>\<dagger>)) $$ (i, j) = ((U *\<^sub>v unit_vec K 0) \<oslash> (U *\<^sub>v unit_vec K 0)) $$ (i, j)"
+      using i j U col by (simp add: outer_prod_mat)
+  qed (use U in \<open>simp_all add: outer_prod_mat\<close>)
 qed
 
 lemma reflection_conj:
   assumes U: "U \<in> carrier_mat K K" "unitary U" and K: "0 < K"
-  shows "U * (sign_diag K (\<lambda>i. i \<noteq> 0) * (U\<^sup>\<dagger>)) = 2 \<cdot>\<^sub>m outer (U *\<^sub>v unit_vec K 0) - 1\<^sub>m K"
+  shows "U * (sign_diag K (\<lambda>i. i \<noteq> 0) * (U\<^sup>\<dagger>)) = 2 \<cdot>\<^sub>m ((U *\<^sub>v unit_vec K 0) \<oslash> (U *\<^sub>v unit_vec K 0)) - 1\<^sub>m K"
 proof -
-  let ?E = "outer (unit_vec K 0)"
-  have E: "?E \<in> carrier_mat K K" by (rule outer_carrier) simp
+  let ?E = "(unit_vec K 0 \<oslash> unit_vec K 0)"
+  have E: "?E \<in> carrier_mat K K" by (rule outer_prod_carrier) simp_all
   have Ud: "U\<^sup>\<dagger> \<in> carrier_mat K K" by (rule dagger_carrier[OF U(1)])
   have UU: "U * (U\<^sup>\<dagger>) = 1\<^sub>m K" using U unfolding unitary_def by auto
   have "U * (sign_diag K (\<lambda>i. i \<noteq> 0) * (U\<^sup>\<dagger>)) = U * ((2 \<cdot>\<^sub>m ?E - 1\<^sub>m K) * (U\<^sup>\<dagger>))" unfolding refl_zero ..
@@ -665,7 +659,7 @@ lemma normalize_smult_pos:
   assumes r: "0 < r" and v: "\<parallel>v\<parallel> \<noteq> 0"
   shows "complex_of_real (1 / \<parallel>complex_of_real r \<cdot>\<^sub>v v\<parallel>) \<cdot>\<^sub>v (complex_of_real r \<cdot>\<^sub>v v) = complex_of_real (1 / \<parallel>v\<parallel>) \<cdot>\<^sub>v v"
 proof -
-  have "\<parallel>complex_of_real r \<cdot>\<^sub>v v\<parallel> = r * \<parallel>v\<parallel>" unfolding vnorm_smult norm_of_real using r by simp
+  have "\<parallel>complex_of_real r \<cdot>\<^sub>v v\<parallel> = r * \<parallel>v\<parallel>" unfolding cpx_vec_length_smult norm_of_real using r by simp
   thus ?thesis using r v by (intro eq_vecI) simp_all
 qed
 
@@ -711,7 +705,7 @@ proof -
   show ?thesis
   proof (rule that)
     have "\<parallel>post1 (sem N m V (aa_prog ?K u k) *\<^sub>v unit_vec ?K 0)\<parallel> = sin ((2 * real k + 1) * \<theta>)"
-      unfolding post vnorm_smult norm_of_real np using s0 r(3) by simp
+      unfolding post cpx_vec_length_smult norm_of_real np using s0 r(3) by simp
     thus "1 - \<parallel>post1 ?psi\<parallel>\<^sup>2 \<le> \<parallel>post1 (sem N m V (aa_prog ?K u k) *\<^sub>v unit_vec ?K 0)\<parallel>\<^sup>2"
       unfolding np using r(1) by simp
     show "complex_of_real (1 / \<parallel>post1 (sem N m V (aa_prog ?K u k) *\<^sub>v unit_vec ?K 0)\<parallel>) \<cdot>\<^sub>v post1 (sem N m V (aa_prog ?K u k) *\<^sub>v unit_vec ?K 0)

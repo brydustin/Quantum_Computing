@@ -444,7 +444,7 @@ proof -
     using colour_circ_apply[OF Oc, of "bstate n k 0 0" d A] Oa[of k 0] k qk by simp
   have hk: "colour_h A q k = A $$ (k, v)" if "k \<noteq> v" using that qk unfolding colour_h_def by simp
   have hv: "colour_h A q v = A $$ (v, k)" if "k \<noteq> v" using that qv unfolding colour_h_def by simp
-  have herm: "A $$ (v, k) = cnj (A $$ (k, v))" by (rule hermitian_index[OF A v k])
+  have herm: "A $$ (v, k) = cnj (A $$ (k, v))" by (rule hermitian_index[OF A(2)]) (use A(1) v k in simp_all)
   show ?thesis
   proof (cases "k = v")
     case True
@@ -547,7 +547,7 @@ next
   case False
   have qq: "q (q i) = i" using q unfolding invol_def by simp
   hence "q (q i) \<noteq> q i" using False by simp
-  thus ?thesis using False qq hermitian_index[OF A invol_lt[OF q i] i] by (simp add: colour_h_def)
+  thus ?thesis using False qq hermitian_index[OF A(2), of "q i" i] carrier_matD[OF A(1)] invol_lt[OF q i] i by (simp add: colour_h_def)
 qed
 
 text \<open>The closed form of $e^{idH}$ for the colour part $H$.\<close>
@@ -659,7 +659,7 @@ definition dia_evo :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \
 lemma hermitian_diag_real:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and i: "i < n"
   shows "A $$ (i, i) = complex_of_real (Re (A $$ (i, i)))"
-  using hermitian_index[OF A i i] by (simp add: complex_eq_iff)
+  using hermitian_index[OF A(2), of i i] carrier_matD[OF A(1)] i by (simp add: complex_eq_iff)
 
 theorem evolution_diag_part:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
@@ -1049,9 +1049,6 @@ qed
 
 subsection \<open>Every gate is unitary\<close>
 
-lemma sum_two: "(\<Sum>k<2. f k) = f 0 + f (1::nat)"
-  by (simp add: eval_nat_numeral)
-
 lemma ent_block_unitary: "unitary (ent_block d A x y)"
 proof -
   define a where "a = (if x = y then 0 else A $$ (x, y))"
@@ -1085,7 +1082,7 @@ proof -
     fix i j assume "i < dim_row (1\<^sub>m 2 :: complex Matrix.mat)" "j < dim_col (1\<^sub>m 2 :: complex Matrix.mat)"
     hence "i < 2" "j < 2" by simp_all
     thus "(Matrix.mat 2 2 (\<lambda>(i, j). if i = j then c else if i = 0 then - w else cnj w) * ?g) $$ (i, j) = 1\<^sub>m 2 $$ (i, j)"
-      using key key2 comm by (auto simp: scalar_prod_def sum_two less_2_cases_iff)
+      using key key2 comm by (auto simp: scalar_prod_def atLeast0LessThan sumof2 less_2_cases_iff)
   qed simp_all
   have r: "?g * (?g\<^sup>\<dagger>) = 1\<^sub>m 2"
     unfolding d
@@ -1093,7 +1090,7 @@ proof -
     fix i j assume "i < dim_row (1\<^sub>m 2 :: complex Matrix.mat)" "j < dim_col (1\<^sub>m 2 :: complex Matrix.mat)"
     hence "i < 2" "j < 2" by simp_all
     thus "(?g * Matrix.mat 2 2 (\<lambda>(i, j). if i = j then c else if i = 0 then - w else cnj w)) $$ (i, j) = 1\<^sub>m 2 $$ (i, j)"
-      using key key2 comm by (auto simp: scalar_prod_def sum_two less_2_cases_iff)
+      using key key2 comm by (auto simp: scalar_prod_def atLeast0LessThan sumof2 less_2_cases_iff)
   qed simp_all
   show ?thesis unfolding g unitary_def using l r by simp
 qed

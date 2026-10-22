@@ -22,8 +22,6 @@ definition pnorm :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> na
 definition pangle :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> real" where
   "pangle k a j c = (if pnorm k a j c = 0 then 0 else arcsin (pnorm k a (Suc j) (2 * c + 1) / pnorm k a j c))"
 
-lemma sum_split_add: "(\<Sum>x<h + h'. f x) = (\<Sum>x<h. f x) + (\<Sum>x<h'. f (h + x))" for f :: "nat \<Rightarrow> real"
-  by (induction h') (simp_all add: Groups.add_ac)
 
 lemma pnorm_split:
   assumes j: "j < k"

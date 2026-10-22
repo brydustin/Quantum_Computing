@@ -279,14 +279,6 @@ definition diag_part :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> comp
 definition sparse_parts :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat list" where
   "sparse_parts n A K p = diag_part n A # map (\<lambda>c. colour_part n A (p c)) [0..<K]"
 
-lemma hermitian_index:
-  assumes "A \<in> carrier_mat n n" "hermitian A" "i < n" "j < n"
-  shows "A $$ (i, j) = cnj (A $$ (j, i))"
-proof -
-  have "A $$ (i, j) = (A\<^sup>\<dagger>) $$ (i, j)" using assms(2) unfolding hermitian_def by simp
-  thus ?thesis using assms(1,3,4) by (simp add: dagger_def)
-qed
-
 lemma invol_id: "invol n (\<lambda>i. i)"
   by (simp add: invol_def)
 
@@ -299,7 +291,7 @@ proof (rule eq_matI)
   hence i: "i < n" and j: "j < n" by (simp_all add: colour_part_def one_sparse_def)
   have e: "i = q j \<longleftrightarrow> j = q i" using invol_eq[OF q] by metis
   show "(colour_part n A q)\<^sup>\<dagger> $$ (i, j) = colour_part n A q $$ (i, j)"
-    using i j e hermitian_index[OF A i j]
+    using i j e hermitian_index[OF A(2), of i j] carrier_matD[OF A(1)]
     by (auto simp: dagger_def colour_part_def one_sparse_def)
 qed (simp_all add: dagger_def colour_part_def one_sparse_def)
 
@@ -311,7 +303,7 @@ proof (rule eq_matI)
   fix i j assume i: "i < dim_row (diag_part n A)" and j: "j < dim_col (diag_part n A)"
   hence i: "i < n" and j: "j < n" by (simp_all add: diag_part_def one_sparse_def)
   show "(diag_part n A)\<^sup>\<dagger> $$ (i, j) = diag_part n A $$ (i, j)"
-    using i j hermitian_index[OF A i i] by (auto simp: dagger_def diag_part_def one_sparse_def)
+    using i j hermitian_index[OF A(2), of i i] carrier_matD[OF A(1)] by (auto simp: dagger_def diag_part_def one_sparse_def)
 qed (simp_all add: dagger_def diag_part_def one_sparse_def)
 
 lemma sparse_parts_bounded:
@@ -418,7 +410,7 @@ qed
 lemma hermitian_zero_sym:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
   shows "\<And>x y. x < n \<Longrightarrow> y < n \<Longrightarrow> A $$ (x, y) = 0 \<longleftrightarrow> A $$ (y, x) = 0"
-  using hermitian_index[OF A] by (metis complex_cnj_zero_iff)
+  using hermitian_index[OF A(2)] carrier_matD[OF A(1)] by (metis complex_cnj_zero_iff)
 
 text \<open>Every $s$-sparse Hermitian matrix is the sum of its diagonal and $2s-1$ Hermitian
 1-sparse matrices.\<close>
