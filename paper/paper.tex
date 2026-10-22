@@ -153,7 +153,7 @@ the names in brackets are the Isabelle theorems.
 
 {\small
 \begin{longtable}{p{0.31\textwidth}p{0.45\textwidth}rr}
-\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 21\,103 lines, 1\,118 results, not included in the counts above).}\label{tab:theories}\\
+\caption{The forty-eight theories after the commentary and gap-closure passes (results = lemmas, theorems, corollaries, propositions; 1\,576 in all).  The second block closes the medium-sized gaps of the first audit, the third the Choi-rank, unitary-freedom, Knill--Laflamme, Shor-code, environment-model and Arveson developments, the fourth the examples and small propositions of the second audit, the fifth the three items still open after it, the sixth the last three gaps, the Day~5 examples, fifteen variant rows and the universal properties of Days~6 and~15 (\isa{Day05\_Sylvester\_Criterion} is a separate session).  The last block is Part~VI, beyond the notes (Section~\ref{sec:hhl}; separate sessions, 22\,134 lines, 1\,162 results, not included in the counts above).}\label{tab:theories}\\
 \toprule
 Theory & Lectures & lines & results\\
 \midrule
@@ -247,6 +247,7 @@ Theory & Lectures & lines & results\\
 \isa{HHL\_Trotter} & VI: Lie--Trotter formula with explicit error & 572 & 26\\
 \isa{HHL\_Sparse\_Split} & VI: sparse $A$ as $2s$ Hermitian 1-sparse parts & 460 & 20\\
 \isa{HHL\_Sparse\_Circuit} & VI: the sparse simulation oracle as a circuit & 1192 & 70\\
+\isa{HHL\_All\_Elementary} & VI: $\ket b$, routing, exact universality & 1031 & 44\\
 \end{longtable}
 }
 
@@ -741,6 +742,21 @@ $V$ with $\norm{V-e^{itA}}\le8(sLt)^2/r$, using $r(6s-2)$ queries (\isa{sparse\_
 the HHL bound this gives the error $(\varepsilon+16(N-1)(sLt_0)^2/r)\norm b$
 (\isa{hhl\_sparse\_window\_error}).
 
+\paragraph{Removing the assumed gates.}  For $n=2^s$, \isa{HHL\_All\_Elementary} removes the last
+assumed gates other than oracle calls.  An ancilla rotation controlled by the last clock qubit is
+conjugated by $s$ adjacent swaps that move the ancilla next to the clock (\isa{route\_cv0}).  A
+diagonal unitary on $k+1$ qubits splits into a diagonal on $k$ qubits for the pair means and a
+uniformly controlled rotation, conjugated by a fixed one-qubit gate, for the pair differences
+(\isa{diag\_gates\_circuit}); with the rotation cascade for the magnitudes this prepares every
+normalised $\ket b$ (\isa{bprep}).  In the exact-phase and the paper-regime programs every gate is
+then elementary or an oracle call (\isa{hhl\_elementary}, \isa{hhl\_apx\_elementary}).  The oracle
+calls can be compiled as well.  By the spectral theorem (from QHLProver)
+$U=\prod_k(I+(\lambda_k-1)p_kp_k^*)$, and each factor is $Q_kD_kQ_k^*$ with $Q_k$ the preparation
+circuit of the eigenvector $p_k$ and $D_k$ a phase on $\ket0$, so every unitary on $m\ge1$ qubits is a
+product of elementary gates (\isa{exact\_universality}) and there are HHL programs, exact and
+paper-regime, in which every gate is elementary (\isa{hhl\_compiled}, \isa{hhl\_apx\_compiled}).
+Universality gives no useful gate count, so the call counts remain the cost statements.
+
 \paragraph{Rectangular systems and the Discussion.}  For $A\in\mathbb C^{M\times N}$ the algorithm runs on
 $H=\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$ and inverts it on its non-zero
 eigenspaces.  The pseudo-inverse maps $b\oplus0$ to $0\oplus x$ with $A^*Ax=A^*b$ and $x$ in the
@@ -756,8 +772,7 @@ samples (\isa{estimate\_expectation}).  Two more errata: the paper's $1/(3\varep
 its preconditioned system $(AB)c=Bb$ is neither left nor right preconditioning; in a $2\times2$
 example its unique solution gives no solution of $Ax=b$ (\isa{paper\_precondition\_wrong}).
 
-\paragraph{What remains.}  The window state and $\ket b$ are prepared by given unitaries.
-The evolution oracle is built from sparse access to first order only.  The higher-order
+\paragraph{What remains.}  The evolution oracle is built from sparse access to first order only.  The higher-order
 formulas behind the paper's cited cost and the reversible arithmetic inside the colour and entry
 oracles are not formalised, so the complexity statements count oracle queries.
 

@@ -104,6 +104,7 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL_Trotter
     HHL_Sparse_Split
     HHL_Sparse_Circuit
+    HHL_All_Elementary
 
 session Vern_Paulsen_QC_Sylvester in "Sylvester" = Two_Hermitian_Results +
   description "
@@ -218,5 +219,6 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL_Trotter
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Split
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
+    Vern_Paulsen_QC_Algorithms.HHL_All_Elementary
   document_files
     "root.tex"

@@ -448,6 +448,23 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `full_prog_gates`).  Traps: `O` is relation composition and `W` a global constant (renamed);
   `1\<^sub>m 1` vs `1\<^sub>m (Suc 0)` normal forms — keep `right_tensor_id` facts literal; `intro exI exI …`
   instantiates in unpredictable order — chain `rule exI[of _ x]` and prove conjuncts separately.
+- **HHL_All_Elementary** (2026-10-21; user: de-oracle the work where possible).  For n = 2^s the
+  last assumed gates other than oracle calls go: cv0 (ancilla rotation controlled by the last clock
+  qubit) is rewritten as ctrl_blocks over clock⊗system with blocks depending on d div 2^s
+  (`ctrl_blocks_left_one`) and conjugated by s adjacent swaps, the existing lift2/cgate machinery,
+  into cv0 on adjacent wires (`route_cv0`); the middle gate is defined as F·U·H from U itself, so no
+  choice is needed.  Diagonal unitaries: dmat(φ) on k+1 qubits = (dmat(mean) ⊗ I)·ctrl(dmat(∓diff)),
+  and diag(e^{−ib}, e^{ib}) = Q*·Rot b·Q for one fixed Q (eigenvectors (1, ±i)/√2), so the existing
+  UCR gives the differences.  Arbitrary |b⟩: magnitudes by the old cascade, phases by dmat(Arg b).
+  Exact universality: QHLProver's spectral theorem for normal matrices gives U = P B P*, B diagonal
+  unitary; B = Π_k D_k with one phase each, and P D_k P* has entries δ_ij + (λ_k−1)P_ik conj P_jk,
+  the same as Q D_0 Q* for any Q with Q|0⟩ = col P k, so the preparation circuit of the eigenvector
+  replaces P.  Hence HHL programs with only elementary gates (`hhl_compiled`, `hhl_apx_compiled`);
+  the oracle-call counts remain the cost statements since universality gives no gate count.
+  Traps: `arg` is not a constant (use `Arg`, `rcis_cmod_Arg`); `col` resolves to `Matrix_Legacy.col`
+  — write `Matrix.col`; `W` is a global constant; `dalpha` already exists as a fact name elsewhere;
+  `simp add: mult.commute` hangs; OF on lemmas with ⋀-premises fails or gives multiple unifiers —
+  `rule … (rule fok)` or `where Us = …`; `defines` cannot refer to an earlier `defines`.
 - **HHL_Trotter, HHL_Sparse_Split, HHL_Sparse_Circuit** (2026-10-21; user: formalise the sparse
   Hamiltonian simulation oracle as a verified circuit).  Trotter without calculus: |e^{ix}−1−ix| ≤ x²
   (cos via 2sin²(x/2), sin via `Maclaurin_sin_bound` n=3 for |x| ≤ 3, crude bound otherwise);
