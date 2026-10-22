@@ -328,26 +328,16 @@ proof -
   qed
 qed
 
-definition proj_set :: "nat \<Rightarrow> nat set \<Rightarrow> complex Matrix.mat" where
-  "proj_set m A = Matrix.mat m m (\<lambda>(i, j). if i = j \<and> i \<in> A then 1 else 0)"
-
-lemma proj_set_carrier: "proj_set m A \<in> carrier_mat m m" by (simp add: proj_set_def)
-
 lemma proj_set_norm:
   assumes A: "A \<subseteq> {..<m}" and v: "dim_vec v = m"
   shows "\<parallel>proj_set m A *\<^sub>v v\<parallel>\<^sup>2 = (\<Sum>i\<in>A. (cmod (v $ i))\<^sup>2)"
 proof -
   have e: "(proj_set m A *\<^sub>v v) $ i = (if i \<in> A then v $ i else 0)" if i: "i < m" for i
-  proof -
-    have "(proj_set m A *\<^sub>v v) $ i = (\<Sum>j<m. (if i = j \<and> i \<in> A then 1 else 0) * v $ j)"
-      using i v by (simp add: proj_set_def scalar_prod_def atLeast0LessThan)
-    also have "\<dots> = (\<Sum>j\<in>{i}. (if i \<in> A then v $ j else 0))" using i by (intro sum.mono_neutral_cong_right) auto
-    finally show ?thesis by simp
-  qed
-  have d: "dim_vec (proj_set m A *\<^sub>v v) = m" by (simp add: proj_set_def)
+    using i by (simp add: proj_set_mult_vec[OF v])
+  have d: "dim_vec (proj_set m A *\<^sub>v v) = m" by simp
   have "\<parallel>proj_set m A *\<^sub>v v\<parallel>\<^sup>2 = (\<Sum>i<m. (cmod ((proj_set m A *\<^sub>v v) $ i))\<^sup>2)"
     unfolding cpx_vec_length_def d by (simp add: sum_nonneg)
-  also have "\<dots> = (\<Sum>i<m. (cmod (if i \<in> A then v $ i else 0))\<^sup>2)" by (rule sum.cong[OF refl]) (simp add: e)
+  also have "\<dots> = (\<Sum>i<m. (cmod (if i \<in> A then v $ i else 0))\<^sup>2)" by (rule sum.cong[OF refl]) (subst e, simp_all)
   also have "\<dots> = (\<Sum>i\<in>A. (cmod (v $ i))\<^sup>2)"
     using A by (intro sum.mono_neutral_cong_right) auto
   finally show ?thesis .

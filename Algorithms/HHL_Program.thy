@@ -143,8 +143,11 @@ lemma swap_idx_eq: "swap_idx k i = j \<longleftrightarrow> i = swap_idx k j" by 
 definition swap0 :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "swap0 K k = Matrix.mat K K (\<lambda>(i, j). if j = swap_idx k i then 1 else 0)"
 
-definition proj_basis :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "proj_basis K k = Matrix.mat K K (\<lambda>(i, j). if i = k \<and> j = k then 1 else 0)"
+abbreviation proj_basis :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "proj_basis K k \<equiv> proj_set K {k}"
+
+lemma proj_set_adjoint: "adjoint (proj_set n A) = proj_set n A"
+  by (rule eq_matI) (auto simp: proj_set_def mat_diag_def adjoint_eval)
 
 text \<open>Initialisation of the whole state to $\ket0$: measure in the computational basis, then
 swap the outcome $\ket k$ to $\ket0$.\<close>
@@ -153,7 +156,6 @@ definition init_com :: "nat \<Rightarrow> com" where
   "init_com K = Measure K (proj_basis K) (map (\<lambda>k. Utrans (swap0 K k)) [0..<K])"
 
 lemma swap0_carrier [simp]: "swap0 K k \<in> carrier_mat K K" by (simp add: swap0_def)
-lemma proj_basis_carrier [simp]: "proj_basis K k \<in> carrier_mat K K" by (simp add: proj_basis_def)
 
 lemma swap0_adjoint: "k < K \<Longrightarrow> adjoint (swap0 K k) = swap0 K k"
   by (rule eq_matI) (auto simp: swap0_def adjoint_eval swap_idx_eq)
@@ -173,32 +175,18 @@ qed (simp_all add: swap0_def)
 lemma swap0_unitary: "k < K \<Longrightarrow> Complex_Matrix.unitary (swap0 K k)"
   unfolding Complex_Matrix.unitary_def inverts_mat_def using swap0_adjoint swap0_square by (simp add: swap0_def)
 
-lemma proj_basis_adjoint: "adjoint (proj_basis K k) = proj_basis K k"
-  by (rule eq_matI) (auto simp: proj_basis_def adjoint_eval)
-
-lemma proj_basis_square: "k < K \<Longrightarrow> proj_basis K k * proj_basis K k = proj_basis K k"
-proof (rule eq_matI)
-  fix i j assume "k < K" "i < dim_row (proj_basis K k)" "j < dim_col (proj_basis K k)"
-  hence kij: "k < K" "i < K" "j < K" by (simp_all add: proj_basis_def)
-  have "(proj_basis K k * proj_basis K k) $$ (i, j) = (\<Sum>l<K. (if i = k \<and> l = k then 1 else 0) * (if l = k \<and> j = k then 1 else 0))"
-    using kij by (simp add: proj_basis_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{k}. (if i = k \<and> l = k then 1 else 0) * (if l = k \<and> j = k then 1 else 0))"
-    using kij by (intro sum.mono_neutral_cong_right) auto
-  finally show "(proj_basis K k * proj_basis K k) $$ (i, j) = proj_basis K k $$ (i, j)" using kij by (simp add: proj_basis_def)
-qed (simp_all add: proj_basis_def)
-
 lemma proj_basis_sum: "matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K = 1\<^sub>m K"
 proof (rule eq_matI)
   fix i j assume "i < dim_row (1\<^sub>m K)" "j < dim_col (1\<^sub>m K)"
   hence ij: "i < K" "j < K" by simp_all
   have "matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K $$ (i, j) = (\<Sum>k<K. proj_basis K k $$ (i, j))"
-    by (subst matrix_sum_index) (use ij in \<open>simp_all add: proj_basis_adjoint proj_basis_square\<close>)
-  also have "\<dots> = (\<Sum>k\<in>{i}. proj_basis K k $$ (i, j))" using ij by (intro sum.mono_neutral_cong_right) (auto simp: proj_basis_def)
+    by (subst matrix_sum_index) (use ij in \<open>simp_all add: proj_set_adjoint proj_set_idem\<close>)
+  also have "\<dots> = (\<Sum>k\<in>{i}. proj_basis K k $$ (i, j))" using ij by (intro sum.mono_neutral_cong_right) (auto simp: proj_set_index)
   finally show "matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K $$ (i, j) = 1\<^sub>m K $$ (i, j)"
-    using ij by (simp add: proj_basis_def)
+    using ij by (simp add: proj_set_index)
 next
   have "matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K \<in> carrier_mat K K"
-    by (rule matrix_sum_dim) (simp add: proj_basis_adjoint proj_basis_square)
+    by (rule matrix_sum_dim) (simp add: proj_set_adjoint proj_set_idem)
   thus "dim_row (matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K) = dim_row (1\<^sub>m K)"
     "dim_col (matrix_sum K (\<lambda>k. adjoint (proj_basis K k) * proj_basis K k) K) = dim_col (1\<^sub>m K)" by auto
 qed
@@ -228,22 +216,22 @@ lemma proj_basis_sandwich:
   shows "proj_basis K k * P * proj_basis K k = P $$ (k, k) \<cdot>\<^sub>m proj_basis K k"
 proof (rule eq_matI)
   fix i j assume "i < dim_row (P $$ (k, k) \<cdot>\<^sub>m proj_basis K k)" "j < dim_col (P $$ (k, k) \<cdot>\<^sub>m proj_basis K k)"
-  hence ij: "i < K" "j < K" by (simp_all add: proj_basis_def)
+  hence ij: "i < K" "j < K" by simp_all
   have l: "(proj_basis K k * P) $$ (i, l) = (if i = k then P $$ (k, l) else 0)" if l: "l < K" for l
   proof -
-    have "(proj_basis K k * P) $$ (i, l) = (\<Sum>a<K. (if i = k \<and> a = k then 1 else 0) * P $$ (a, l))"
-      using P ij l by (simp add: proj_basis_def scalar_prod_def atLeast0LessThan)
-    also have "\<dots> = (\<Sum>a\<in>{k}. (if i = k \<and> a = k then 1 else 0) * P $$ (a, l))"
-      using k by (intro sum.mono_neutral_cong_right) auto
-    finally show ?thesis by simp
+    have "(proj_basis K k * P) $$ (i, l) = (\<Sum>a<K. proj_basis K k $$ (i, a) * P $$ (a, l))"
+      using P ij l by (simp add: scalar_prod_def atLeast0LessThan)
+    also have "\<dots> = (\<Sum>a\<in>{i}. proj_basis K k $$ (i, a) * P $$ (a, l))"
+      using ij by (intro sum.mono_neutral_cong_right) (auto simp: proj_set_index)
+    finally show ?thesis using ij by (simp add: proj_set_index)
   qed
-  have "(proj_basis K k * P * proj_basis K k) $$ (i, j) = (\<Sum>l<K. (proj_basis K k * P) $$ (i, l) * (if l = k \<and> j = k then 1 else 0))"
-    using P ij by (simp add: proj_basis_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{k}. (proj_basis K k * P) $$ (i, l) * (if l = k \<and> j = k then 1 else 0))"
-    using k by (intro sum.mono_neutral_cong_right) auto
-  also have "\<dots> = (P $$ (k, k) \<cdot>\<^sub>m proj_basis K k) $$ (i, j)" using l[OF k] ij by (simp add: proj_basis_def)
+  have "(proj_basis K k * P * proj_basis K k) $$ (i, j) = (\<Sum>l<K. (proj_basis K k * P) $$ (i, l) * proj_basis K k $$ (l, j))"
+    using P ij by (simp add: scalar_prod_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>l\<in>{j}. (proj_basis K k * P) $$ (i, l) * proj_basis K k $$ (l, j))"
+    using ij by (intro sum.mono_neutral_cong_right) (auto simp: proj_set_index)
+  also have "\<dots> = (P $$ (k, k) \<cdot>\<^sub>m proj_basis K k) $$ (i, j)" using l ij by (auto simp: proj_set_index)
   finally show "(proj_basis K k * P * proj_basis K k) $$ (i, j) = (P $$ (k, k) \<cdot>\<^sub>m proj_basis K k) $$ (i, j)" .
-qed (use P in \<open>simp_all add: proj_basis_def\<close>)
+qed (use P in simp_all)
 
 lemma mult_unit_vec_index: "(A :: complex Matrix.mat) \<in> carrier_mat K K \<Longrightarrow> i < K \<Longrightarrow> l < K \<Longrightarrow> (A *\<^sub>v unit_vec K i) $ l = A $$ (l, i)"
 proof -
@@ -319,7 +307,7 @@ proof -
     have Pc: "?P k \<in> carrier_mat d d" for k
       by (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF swap0_carrier] Qd] swap0_carrier])
     have PKc: "adjoint (proj_basis d k) * ?P k * proj_basis d k \<in> carrier_mat d d" for k
-      by (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF proj_basis_carrier] Pc] proj_basis_carrier])
+      by (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF proj_set_carrier] Pc] proj_set_carrier])
     have "matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d $$ (i, j)
           = (\<Sum>k<d. (Q $$ (0, 0) \<cdot>\<^sub>m proj_basis d k) $$ (i, j))"
     proof -
@@ -327,17 +315,17 @@ proof -
             = (\<Sum>k<d. (adjoint (proj_basis d k) * ?P k * proj_basis d k) $$ (i, j))"
         by (rule matrix_sum_index[OF PKc ij])
       also have "\<dots> = (\<Sum>k<d. (Q $$ (0, 0) \<cdot>\<^sub>m proj_basis d k) $$ (i, j))"
-        by (rule sum.cong[OF refl]) (simp add: proj_basis_adjoint proj_basis_sandwich[OF Pc] Pkk)
+        by (rule sum.cong[OF refl]) (simp add: proj_set_adjoint proj_basis_sandwich[OF Pc] Pkk)
       finally show ?thesis .
     qed
     also have "\<dots> = (\<Sum>k\<in>{i}. (Q $$ (0, 0) \<cdot>\<^sub>m proj_basis d k) $$ (i, j))"
-      using ij by (intro sum.mono_neutral_cong_right) (auto simp: proj_basis_def)
-    also have "\<dots> = (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d) $$ (i, j)" using ij by (simp add: proj_basis_def)
+      using ij by (intro sum.mono_neutral_cong_right) (auto simp: proj_set_index)
+    also have "\<dots> = (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d) $$ (i, j)" using ij by (simp add: proj_set_index)
     finally show "matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d $$ (i, j) = (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d) $$ (i, j)" .
   next
     have "matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d \<in> carrier_mat d d"
-      by (rule matrix_sum_dim) (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF proj_basis_carrier]
-          mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF swap0_carrier] Qd] swap0_carrier]] proj_basis_carrier])
+      by (rule matrix_sum_dim) (rule mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF proj_set_carrier]
+          mult_carrier_mat[OF mult_carrier_mat[OF adjoint_dim[OF swap0_carrier] Qd] swap0_carrier]] proj_set_carrier])
     thus "dim_row (matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d) = dim_row (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d)"
       "dim_col (matrix_sum d (\<lambda>k. adjoint (proj_basis d k) * ?P k * proj_basis d k) d) = dim_col (Q $$ (0, 0) \<cdot>\<^sub>m 1\<^sub>m d)" by auto
   qed
@@ -541,51 +529,22 @@ section \<open>The HHL program\<close>
 
 text \<open>Measuring the ancilla (the lowest qubit): $P_j$ projects onto ancilla value $j$.\<close>
 
-definition anc_proj :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "anc_proj K j = Matrix.mat K K (\<lambda>(r, s). if r = s \<and> r mod 2 = j then 1 else 0)"
-
-lemma anc_proj_carrier [simp]: "anc_proj K j \<in> carrier_mat K K" by (simp add: anc_proj_def)
-
-lemma anc_proj_adjoint: "adjoint (anc_proj K j) = anc_proj K j"
-  by (rule eq_matI) (auto simp: anc_proj_def adjoint_eval)
-
-lemma anc_proj_mult_vec: "dim_vec v = K \<Longrightarrow> anc_proj K j *\<^sub>v v = Matrix.vec K (\<lambda>r. if r mod 2 = j then v $ r else 0)"
-proof (rule eq_vecI)
-  fix r assume v: "dim_vec v = K" and "r < dim_vec (Matrix.vec K (\<lambda>r. if r mod 2 = j then v $ r else 0))"
-  hence r: "r < K" by simp
-  have "(anc_proj K j *\<^sub>v v) $ r = (\<Sum>s<K. (if r = s \<and> r mod 2 = j then 1 else 0) * v $ s)"
-    using r v by (simp add: anc_proj_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>s\<in>{r}. (if r = s \<and> r mod 2 = j then 1 else 0) * v $ s)" using r by (intro sum.mono_neutral_cong_right) auto
-  finally show "(anc_proj K j *\<^sub>v v) $ r = Matrix.vec K (\<lambda>r. if r mod 2 = j then v $ r else 0) $ r" using r by simp
-qed (simp add: anc_proj_def)
-
-lemma anc_proj_square: "anc_proj K j * anc_proj K j = anc_proj K j"
-proof (rule eq_matI)
-  fix r s assume "r < dim_row (anc_proj K j)" "s < dim_col (anc_proj K j)"
-  hence rs: "r < K" "s < K" by (simp_all add: anc_proj_def)
-  have "(anc_proj K j * anc_proj K j) $$ (r, s) = (\<Sum>l<K. (if r = l \<and> r mod 2 = j then 1 else 0) * (if l = s \<and> l mod 2 = j then 1 else 0))"
-    using rs by (simp add: anc_proj_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{r}. (if r = l \<and> r mod 2 = j then 1 else 0) * (if l = s \<and> l mod 2 = j then 1 else 0))"
-    using rs by (intro sum.mono_neutral_cong_right) auto
-  finally show "(anc_proj K j * anc_proj K j) $$ (r, s) = anc_proj K j $$ (r, s)" using rs by (simp add: anc_proj_def)
-qed (simp_all add: anc_proj_def)
-
 lemma anc_proj_sum: "anc_proj K 0 + anc_proj K 1 = 1\<^sub>m K"
-  by (rule eq_matI) (auto simp: anc_proj_def)
+  by (rule eq_matI) (auto simp: proj_set_index)
 
 lemma anc_proj_measurement: "measurement K 2 (anc_proj K)"
 proof -
   have "matrix_sum K (\<lambda>j. adjoint (anc_proj K j) * anc_proj K j) 2 = anc_proj K 1 + (anc_proj K 0 + 0\<^sub>m K K)"
-    by (simp add: numeral_2_eq_2 anc_proj_adjoint anc_proj_square)
-  also have "\<dots> = 1\<^sub>m K" by (rule eq_matI) (auto simp: anc_proj_def)
+    by (simp add: numeral_2_eq_2 proj_set_adjoint proj_set_idem)
+  also have "\<dots> = 1\<^sub>m K" by (rule eq_matI) (auto simp: proj_set_index)
   finally show ?thesis unfolding measurement_def by simp
 qed
 
 lemma anc_proj_swap_measurement: "measurement K 2 (\<lambda>j. anc_proj K (1 - j))"
 proof -
   have "matrix_sum K (\<lambda>j. adjoint (anc_proj K (1 - j)) * anc_proj K (1 - j)) 2 = anc_proj K 0 + (anc_proj K 1 + 0\<^sub>m K K)"
-    by (simp add: numeral_2_eq_2 anc_proj_adjoint anc_proj_square)
-  also have "\<dots> = 1\<^sub>m K" by (rule eq_matI) (auto simp: anc_proj_def)
+    by (simp add: numeral_2_eq_2 proj_set_adjoint proj_set_idem)
+  also have "\<dots> = 1\<^sub>m K" by (rule eq_matI) (auto simp: proj_set_index)
   finally show ?thesis unfolding measurement_def by simp
 qed
 
@@ -615,33 +574,22 @@ proof -
     fix r assume "r < dim_vec (if i = j then ?v else 0\<^sub>v (N * (n * 2)))"
     hence r: "r < N * (n * 2)" using dv by (cases "i = j") simp_all
     have "(anc_proj (N * (n * 2)) j *\<^sub>v ?v) $ r = (if r mod 2 = j then ?v $ r else 0)"
-      using r by (simp add: anc_proj_mult_vec[OF dv])
+      using r by (simp add: proj_set_mult_vec[OF dv])
     also have "\<dots> = (if i = j then ?v else 0\<^sub>v (N * (n * 2))) $ r"
       using r entry[OF r] by (cases "r mod 2 = i"; cases "i = j") auto
     finally show "(anc_proj (N * (n * 2)) j *\<^sub>v ?v) $ r = (if i = j then ?v else 0\<^sub>v (N * (n * 2))) $ r" .
-  qed (use dv in \<open>auto simp: anc_proj_def\<close>)
+  qed (use dv in \<open>auto simp: proj_set_index\<close>)
 qed
 
 context state_sig
 begin
 
-lemma qp_anc_proj: "is_quantum_predicate (anc_proj d j)"
+lemma qp_proj_set: "is_quantum_predicate (proj_set d A)"
 proof -
-  have p: "positive (anc_proj d i)" for i
-    by (rule positive_if_decomp[OF anc_proj_carrier]) (rule exI[of _ "anc_proj d i"], simp add: anc_proj_adjoint anc_proj_square)
-  have "1\<^sub>m d - anc_proj d j = anc_proj d (1 - j)" if "j < 2"
-  proof (cases "j = 0")
-    case True
-    thus ?thesis by (intro eq_matI) (auto simp: anc_proj_def)
-  next
-    case False
-    hence "j = 1" using that by simp
-    thus ?thesis by (intro eq_matI) (auto simp: anc_proj_def)
-  qed
-  moreover have "1\<^sub>m d - anc_proj d j = 1\<^sub>m d" if "\<not> j < 2"
-    using that by (intro eq_matI) (auto simp: anc_proj_def)
-  ultimately have "positive (1\<^sub>m d - anc_proj d j)" using p positive_one by (cases "j < 2") auto
-  thus ?thesis using p unfolding is_quantum_predicate_def lowner_le_def by (simp add: anc_proj_def)
+  have p: "positive (proj_set d B)" for B
+    by (rule positive_if_decomp[OF proj_set_carrier]) (rule exI[of _ "proj_set d B"], simp add: proj_set_adjoint proj_set_idem)
+  have "positive (1\<^sub>m d - proj_set d A)" unfolding proj_set_compl by (rule p)
+  thus ?thesis using p unfolding is_quantum_predicate_def lowner_le_def by simp
 qed
 
 end
@@ -743,7 +691,7 @@ proof -
   have P: "anc_proj (2 ^ k * (n * 2)) j *\<^sub>v tensor_vec ?a (hhl_out A C b)
            = anc_proj (2 ^ k * (n * 2)) j *\<^sub>v tensor_vec ?a (tensor_vec g0 (unit_vec 2 0))
            + anc_proj (2 ^ k * (n * 2)) j *\<^sub>v tensor_vec ?a (tensor_vec g1 (unit_vec 2 1))" for j
-    unfolding sp by (rule mult_add_distrib_mat_vec[OF anc_proj_carrier c0 c1])
+    unfolding sp by (rule mult_add_distrib_mat_vec[OF proj_set_carrier c0 c1])
   show "anc_proj (2 ^ k * (n * 2)) 0 *\<^sub>v tensor_vec ?a (hhl_out A C b) = tensor_vec ?a (tensor_vec g0 (unit_vec 2 0))"
     unfolding P using anc_proj_tensor[of ?a "2 ^ k" g0 n 0 0] anc_proj_tensor[of ?a "2 ^ k" g1 n 1 0] d0 d1 c0 by simp
   show "anc_proj (2 ^ k * (n * 2)) 1 *\<^sub>v tensor_vec ?a (hhl_out A C b) = tensor_vec ?a (tensor_vec g1 (unit_vec 2 1))"
@@ -768,7 +716,7 @@ proof -
   have h: "hoare_partial ((\<Sum>j<2. inner_prod (anc_proj d j *\<^sub>v (circuit_mat d Us *\<^sub>v unit_vec d 0))
                  (anc_proj d 1 *\<^sub>v (anc_proj d j *\<^sub>v (circuit_mat d Us *\<^sub>v unit_vec d 0)))) \<cdot>\<^sub>m 1\<^sub>m d)
              (init_com d ;; utrans_seq Us ;; Measure 2 (anc_proj d) [SKIP, SKIP]) (anc_proj d 1)"
-    by (rule hoare_init_circuit_measure[OF qp_anc_proj _ _ anc_proj_measurement]) (use Us dd n0 in auto)
+    by (rule hoare_init_circuit_measure[OF qp_proj_set _ _ anc_proj_measurement]) (use Us dd n0 in auto)
   have w1: "anc_proj ?D 1 *\<^sub>v tensor_vec ?a (tensor_vec ?g1 (unit_vec 2 1)) = tensor_vec ?a (tensor_vec ?g1 (unit_vec 2 1))"
     using anc_proj_tensor[of ?a "2 ^ k" ?g1 n 1 1] prog_branch(4) by simp
   have w0: "anc_proj ?D 1 *\<^sub>v tensor_vec ?a (tensor_vec ?g0 (unit_vec 2 0)) = 0\<^sub>v ?D"
@@ -941,16 +889,16 @@ proof -
   have T1: "adjoint (anc_proj Dm 1) * Tt * anc_proj Dm 1 = Tt"
   proof -
     have "anc_proj Dm 1 * Tt * anc_proj Dm 1 = outer_prod (anc_proj Dm 1 *\<^sub>v ?t) (adjoint (anc_proj Dm 1) *\<^sub>v ?t)"
-      unfolding Tt_def by (rule outer_prod_left_right_mat[OF tc tc anc_proj_carrier anc_proj_carrier])
-    thus ?thesis unfolding anc_proj_adjoint t1 Tt_def .
+      unfolding Tt_def by (rule outer_prod_left_right_mat[OF tc tc proj_set_carrier proj_set_carrier])
+    thus ?thesis unfolding proj_set_adjoint t1 Tt_def .
   qed
   have A0: "adjoint (anc_proj Dm 0) * 1\<^sub>m Dm * anc_proj Dm 0 = anc_proj Dm 0"
   proof -
-    have "anc_proj Dm 0 * 1\<^sub>m Dm = anc_proj Dm 0" by (rule right_mult_one_mat[OF anc_proj_carrier])
-    thus ?thesis unfolding anc_proj_adjoint by (simp add: anc_proj_square)
+    have "anc_proj Dm 0 * 1\<^sub>m Dm = anc_proj Dm 0" by (rule right_mult_one_mat[OF proj_set_carrier])
+    thus ?thesis unfolding proj_set_adjoint by (simp add: proj_set_idem)
   qed
   show e: "adjoint (anc_proj Dm 1) * Tt * anc_proj Dm 1 + adjoint (anc_proj Dm 0) * 1\<^sub>m Dm * anc_proj Dm 0 = anc_proj Dm 0 + Tt"
-    unfolding T1 A0 by (rule comm_add_mat[OF Tc anc_proj_carrier])
+    unfolding T1 A0 by (rule comm_add_mat[OF Tc proj_set_carrier])
   show m: "matrix_sum Dm (\<lambda>j. adjoint (anc_proj Dm (1 - j)) * (if j = 0 then Tt else 1\<^sub>m Dm) * anc_proj Dm (1 - j)) 2 = anc_proj Dm 0 + Tt"
     using A0 T1 Tc by (simp add: numeral_2_eq_2)
   show qT: "is_quantum_predicate Tt" unfolding Tt_def dd[symmetric] by (rule qp_pure) (simp_all add: target_dim target_unit dd Dm_def)
@@ -993,9 +941,9 @@ proof -
   have P01: "anc_proj Dm 0 *\<^sub>v w1 = 0\<^sub>v Dm"
     unfolding w1_def Dm_def using anc_proj_tensor[of "unit_vec (2 ^ k) 0" "2 ^ k" _ n 1 0] bd by simp
   show "(anc_proj Dm 0 + Tt) *\<^sub>v w0 = w0"
-    unfolding add_mult_distrib_mat_vec[OF anc_proj_carrier Tc w0c] P00 T0 using w0c by simp
+    unfolding add_mult_distrib_mat_vec[OF proj_set_carrier Tc w0c] P00 T0 using w0c by simp
   show "(anc_proj Dm 0 + Tt) *\<^sub>v w1 = ?c \<cdot>\<^sub>v ?t"
-    unfolding add_mult_distrib_mat_vec[OF anc_proj_carrier Tc w1c] P01 T1 using tc by simp
+    unfolding add_mult_distrib_mat_vec[OF proj_set_carrier Tc w1c] P01 T1 using tc by simp
 qed
 
 lemma one_branch_sum:

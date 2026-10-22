@@ -241,14 +241,8 @@ qed
 
 subsection \<open>Amplifying a post-selection on any flag values\<close>
 
-lemma pflag_mat_idem: "pflag_mat K d P * pflag_mat K d P = pflag_mat K d P"
-  by (intro eq_matI) (auto simp: pflag_mat_def scalar_prod_def if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-
-lemma pflag_mat_dagger: "(pflag_mat K d P)\<^sup>\<dagger> = pflag_mat K d P"
-  by (intro eq_matI) (auto simp: pflag_mat_def dagger_def)
-
 lemma refl_pflag: "1\<^sub>m K - 2 \<cdot>\<^sub>m pflag_mat K d P = sign_diag K (\<lambda>r. P (r mod d))"
-  by (intro eq_matI) (auto simp: pflag_mat_def sign_diag_def)
+  unfolding refl_proj_set by simp
 
 definition grover_progP :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> qcirc \<Rightarrow> qcirc" where
   "grover_progP K d P u = Seq (Gate (sign_diag K (\<lambda>r. P (r mod d)))) (Seq (adj u) (Seq (Gate (sign_diag K (\<lambda>i. i \<noteq> 0))) u))"
@@ -287,13 +281,13 @@ proof (induction k)
   case 0
   have "sem N m V u \<in> carrier_mat (N * m) (N * m)" by (rule sem_carrier[OF V g])
   moreover have "grover (N * m) (pflag_mat (N * m) d P) (sem N m V u *\<^sub>v unit_vec (N * m) 0) \<in> carrier_mat (N * m) (N * m)"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF pflag_mat_carrier]]])
+    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
   ultimately show ?case by simp
 next
   case (Suc k)
   let ?Q = "grover (N * m) (pflag_mat (N * m) d P) (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
   have Q: "?Q \<in> carrier_mat (N * m) (N * m)"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF pflag_mat_carrier]]])
+    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
   have U: "sem N m V u \<in> carrier_mat (N * m) (N * m)" by (rule sem_carrier[OF V g])
   have "sem N m V (aa_progP (N * m) d P u (Suc k)) = ?Q * (?Q ^\<^sub>m k * sem N m V u)"
     using Suc sem_grover_progP[OF V g K] by simp
@@ -328,12 +322,12 @@ proof -
   obtain \<theta> where t0: "0 < \<theta>" and t1: "\<theta> < pi / 2" and st: "sin \<theta> = \<parallel>pflag_mat ?K d P *\<^sub>v ?psi\<parallel>"
       and it: "\<And>k. pflag_mat ?K d P *\<^sub>v (grover ?K (pflag_mat ?K d P) ?psi ^\<^sub>m k *\<^sub>v ?psi) =
                     complex_of_real (sin ((2 * real k + 1) * \<theta>) / sin \<theta>) \<cdot>\<^sub>v (pflag_mat ?K d P *\<^sub>v ?psi)"
-    by (rule amplitude_amplification[OF pflag_mat_carrier pflag_mat_idem pflag_mat_dagger dpsi npsi a0' a1']) blast
+    by (rule amplitude_amplification[OF proj_set_carrier proj_set_idem proj_set_dagger dpsi npsi a0' a1']) blast
   define k where "k = nat \<lfloor>pi / (4 * \<theta>)\<rfloor>"
   note r = grover_rounds[OF t0 t1, folded k_def]
   let ?Q = "grover ?K (pflag_mat ?K d P) ?psi"
   have Q: "?Q \<in> carrier_mat ?K ?K"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF pflag_mat_carrier]]])
+    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
   have aa: "sem N m V (aa_progP ?K d P u k) *\<^sub>v unit_vec ?K 0 = ?Q ^\<^sub>m k *\<^sub>v ?psi"
     unfolding sem_aa_progP[OF V g K] using assoc_mult_mat_vec[OF pow_carrier_mat[OF Q] U(1), of "unit_vec ?K 0"] by (simp add: carrier_vecI)
   have dq: "dim_vec (?Q ^\<^sub>m k *\<^sub>v ?psi) = ?K" using carrier_matD(1)[OF pow_carrier_mat[OF Q, of k]] by (simp only: dim_mult_mat_vec)

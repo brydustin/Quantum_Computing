@@ -11,8 +11,8 @@ The pseudo-inverse is $H^+=$ \<^const>\<open>herm_inv\<close> $H=g(H)$ with $g(\
 $1/0=0$ in HOL; the input $b\oplus0$ is mapped to $0\oplus x$ where $x$ solves the normal equations $A^*Ax=A^*b$ and lies in
 the range of $A^*$: the least-squares solution, of minimum norm.\<close>
 
-definition parity :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "parity M N = Matrix.mat (M + N) (M + N) (\<lambda>(i, j). if i = j then (if i < M then 1 else - 1) else 0)"
+abbreviation parity :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "parity M N \<equiv> sign_diag (M + N) (\<lambda>i. M \<le> i)"
 
 definition inv_sq :: "real \<Rightarrow> complex" where
   "inv_sq l = (if l = 0 then 0 else complex_of_real (1 / l\<^sup>2))"
@@ -113,10 +113,8 @@ qed
 
 abbreviation "J \<equiv> parity M N"
 
-lemma parity_carrier: "J \<in> carrier_mat (M + N) (M + N)" by (simp add: parity_def)
-
 lemma parity_mult: "dim_vec v = M + N \<Longrightarrow> J *\<^sub>v v = Matrix.vec (M + N) (\<lambda>i. (if i < M then 1 else - 1) * v $ i)"
-  by (intro eq_vecI) (auto simp: parity_def scalar_prod_def if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
+  by (intro eq_vecI) (auto simp: sign_diag_def mat_diag_def scalar_prod_def if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
 
 lemma parity_parity: "dim_vec v = M + N \<Longrightarrow> J *\<^sub>v (J *\<^sub>v v) = v"
   by (intro eq_vecI) (simp_all add: parity_mult)
@@ -135,7 +133,7 @@ lemma H_anti: "dim_vec v = M + N \<Longrightarrow> H *\<^sub>v (J *\<^sub>v v) =
 proof (rule eq_vecI)
   assume v: "dim_vec v = M + N"
   fix r assume "r < dim_vec (- (J *\<^sub>v (H *\<^sub>v v)))"
-  hence r: "r < M + N" using parity_carrier by simp
+  hence r: "r < M + N" using sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
   have dHv: "dim_vec (H *\<^sub>v v) = M + N" using H_carrier by simp
   have "(H *\<^sub>v (J *\<^sub>v v)) $ r = (\<Sum>s<M + N. H $$ (r, s) * ((if s < M then 1 else - 1) * v $ s))"
     using r H_carrier v by (simp add: parity_mult scalar_prod_def atLeast0LessThan)
@@ -153,7 +151,7 @@ proof (rule eq_vecI)
   also have "\<dots> = (- (J *\<^sub>v (H *\<^sub>v v))) $ r"
     using r H_carrier v dHv by (simp add: parity_mult scalar_prod_def atLeast0LessThan sum_negf sum_distrib_left)
   finally show "(H *\<^sub>v (J *\<^sub>v v)) $ r = (- (J *\<^sub>v (H *\<^sub>v v))) $ r" .
-qed (use H_carrier parity_carrier in simp)
+qed (use H_carrier sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] in simp)
 
 text \<open>$Jg(H)J=g(-H)$; for even $g$, $g(H)$ commutes with $J$.\<close>
 
@@ -162,24 +160,24 @@ lemma mat_fun_parity:
 proof (rule mat_fun_eqI[OF H_carrier H_hermitian])
   let ?G = "mat_fun (\<lambda>l. g (- l)) H"
   have G: "?G \<in> carrier_mat (M + N) (M + N)" by (rule mat_fun_carrier[OF H_carrier H_hermitian])
-  show "J * ?G * J \<in> carrier_mat (M + N) (M + N)" using G parity_carrier by simp
+  show "J * ?G * J \<in> carrier_mat (M + N) (M + N)" using G sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
   show "fun_on_eigen H g (J * ?G * J)" unfolding fun_on_eigen_def
   proof (intro allI impI)
     fix u l assume u: "dim_vec u = dim_row H" and ev: "H *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
     have u': "dim_vec u = M + N" using u H_carrier by simp
     have uc: "u \<in> carrier_vec (M + N)" by (rule carrier_vecI[OF u'])
-    have Ju: "dim_vec (J *\<^sub>v u) = M + N" using parity_carrier by simp
+    have Ju: "dim_vec (J *\<^sub>v u) = M + N" using sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
     have evJ: "H *\<^sub>v (J *\<^sub>v u) = complex_of_real (- l) \<cdot>\<^sub>v (J *\<^sub>v u)"
     proof -
       have "H *\<^sub>v (J *\<^sub>v u) = - (J *\<^sub>v (complex_of_real l \<cdot>\<^sub>v u))" unfolding H_anti[OF u'] ev ..
-      also have "J *\<^sub>v (complex_of_real l \<cdot>\<^sub>v u) = complex_of_real l \<cdot>\<^sub>v (J *\<^sub>v u)" by (rule mult_mat_vec[OF parity_carrier uc])
-      finally show ?thesis by (intro eq_vecI) (use parity_carrier in simp_all)
+      also have "J *\<^sub>v (complex_of_real l \<cdot>\<^sub>v u) = complex_of_real l \<cdot>\<^sub>v (J *\<^sub>v u)" by (rule mult_mat_vec[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] uc])
+      finally show ?thesis by (intro eq_vecI) (use sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] in simp_all)
     qed
     have "?G *\<^sub>v (J *\<^sub>v u) = g (- (- l)) \<cdot>\<^sub>v (J *\<^sub>v u)" by (rule mat_fun_eigen[OF H_carrier H_hermitian Ju evJ])
     hence gJ: "?G *\<^sub>v (J *\<^sub>v u) = g l \<cdot>\<^sub>v (J *\<^sub>v u)" by simp
     have "(J * ?G * J) *\<^sub>v u = J *\<^sub>v (?G *\<^sub>v (J *\<^sub>v u))"
-      using assoc_mult_mat_vec[OF mult_carrier_mat[OF parity_carrier G] parity_carrier uc] assoc_mult_mat_vec[OF parity_carrier G carrier_vecI[OF Ju]] by simp
-    also have "\<dots> = g l \<cdot>\<^sub>v (J *\<^sub>v (J *\<^sub>v u))" unfolding gJ by (rule mult_mat_vec[OF parity_carrier carrier_vecI[OF Ju]])
+      using assoc_mult_mat_vec[OF mult_carrier_mat[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] G] sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] uc] assoc_mult_mat_vec[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] G carrier_vecI[OF Ju]] by simp
+    also have "\<dots> = g l \<cdot>\<^sub>v (J *\<^sub>v (J *\<^sub>v u))" unfolding gJ by (rule mult_mat_vec[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] carrier_vecI[OF Ju]])
     also have "J *\<^sub>v (J *\<^sub>v u) = u" by (rule parity_parity[OF u'])
     finally show "(J * ?G * J) *\<^sub>v u = g l \<cdot>\<^sub>v u" .
   qed
@@ -198,8 +196,8 @@ proof -
   proof -
     have "?G *\<^sub>v ?v = (J * ?G * J) *\<^sub>v ?v" using GJ by simp
     also have "\<dots> = J *\<^sub>v (?G *\<^sub>v (J *\<^sub>v ?v))"
-      using assoc_mult_mat_vec[OF mult_carrier_mat[OF parity_carrier G] parity_carrier carrier_vecI[OF dv]]
-            assoc_mult_mat_vec[OF parity_carrier G carrier_vecI[of "J *\<^sub>v ?v"]] parity_carrier by simp
+      using assoc_mult_mat_vec[OF mult_carrier_mat[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] G] sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] carrier_vecI[OF dv]]
+            assoc_mult_mat_vec[OF sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] G carrier_vecI[of "J *\<^sub>v ?v"]] sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
     finally show ?thesis unfolding Jv .
   qed
   have dw: "dim_vec (?G *\<^sub>v ?v) = M + N" using G by simp

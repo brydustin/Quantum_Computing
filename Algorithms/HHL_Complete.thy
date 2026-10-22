@@ -41,23 +41,27 @@ proof -
   finally show ?thesis unfolding split .
 qed
 
-subsection \<open>Post-selecting the ancilla\<close>
+subsection \<open>Post-selecting a flag register\<close>
 
-text \<open>The ancilla is the last tensor factor: \<^term>\<open>post1 v\<close> keeps the components with ancilla
-value $1$.  The success probability is $\norm{\mathrm{post1}\,v}^2$.\<close>
+text \<open>The flag (the ancilla, or a register of $d$ levels) is the last tensor factor:
+\<^term>\<open>pflag d P v\<close> keeps the components whose flag value $c$ satisfies $P\,c$.  Post-selection on
+ancilla value $1$ is \<^term>\<open>post1\<close>; its success probability is $\norm{\mathrm{post1}\,v}^2$.\<close>
 
-definition post1 :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
-  "post1 v = Matrix.vec (dim_vec v) (\<lambda>r. if odd r then v $ r else 0)"
+definition pflag :: "nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
+  "pflag d P v = Matrix.vec (dim_vec v) (\<lambda>r. if P (r mod d) then v $ r else 0)"
 
-lemma dim_post1 [simp]: "dim_vec (post1 v) = dim_vec v"
-  by (simp add: post1_def)
+abbreviation post1 :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
+  "post1 \<equiv> pflag 2 (\<lambda>c. c = 1)"
 
-lemma post1_minus: "dim_vec u = dim_vec v \<Longrightarrow> post1 (u - v) = post1 u - post1 v"
-  by (intro eq_vecI) (simp_all add: post1_def)
+lemma dim_pflag [simp]: "dim_vec (pflag d P v) = dim_vec v"
+  by (simp add: pflag_def)
 
-lemma vnorm_post1_le: "\<parallel>post1 v\<parallel> \<le> \<parallel>v\<parallel>"
+lemma pflag_minus: "dim_vec u = dim_vec v \<Longrightarrow> pflag d P (u - v) = pflag d P u - pflag d P v"
+  by (intro eq_vecI) (simp_all add: pflag_def)
+
+lemma vnorm_pflag_le: "\<parallel>pflag d P v\<parallel> \<le> \<parallel>v\<parallel>"
 proof -
-  have "\<parallel>post1 v\<parallel>\<^sup>2 \<le> \<parallel>v\<parallel>\<^sup>2" unfolding vnorm_sq dim_post1 by (intro sum_mono) (simp add: post1_def)
+  have "\<parallel>pflag d P v\<parallel>\<^sup>2 \<le> \<parallel>v\<parallel>\<^sup>2" unfolding vnorm_sq dim_pflag by (intro sum_mono) (simp add: pflag_def)
   thus ?thesis by (rule power2_le_imp_le) (simp add: vnorm_ge0)
 qed
 
@@ -85,7 +89,7 @@ proof -
     have Vr: "tensor_vec v (unit_vec 2 1) $ (r mod (n * 2)) = v $ (r mod (n * 2) div 2) * unit_vec 2 1 $ (r mod 2)"
       using tensor_vec_index[OF v _ s, of "unit_vec 2 1"] unfolding mm by simp
     have L: "post1 (tensor_vec w ?Z) $ r = (if odd r then w $ (r div (n * 2)) * ?Z $ (r mod (n * 2)) else 0)"
-      using r tensor_vec_index[OF w z r] tensor_vec_dim[OF w z] by (simp add: post1_def)
+      using r tensor_vec_index[OF w z r] tensor_vec_dim[OF w z] by (simp add: pflag_def odd_iff_mod_2_eq_one)
     have R: "tensor_vec w (tensor_vec v (unit_vec 2 1)) $ r = w $ (r div (n * 2)) * tensor_vec v (unit_vec 2 1) $ (r mod (n * 2))"
       by (rule tensor_vec_index[OF w zv r])
     show "post1 (tensor_vec w ?Z) $ r = tensor_vec w (tensor_vec v (unit_vec 2 1)) $ r"
@@ -156,7 +160,7 @@ proof -
     thus ?thesis using tensor_vec_dim[OF dim_win_state] by simp
   qed
   have pd: "\<parallel>post1 y' - post1 ?y\<parallel> \<le> \<delta>"
-    unfolding post1_minus[OF y'[folded dy], symmetric] using vnorm_post1_le close by (rule order_trans)
+    unfolding pflag_minus[OF y'[folded dy], symmetric] using vnorm_pflag_le close by (rule order_trans)
   show "\<bar>\<parallel>post1 y'\<parallel> - C * \<parallel>?x\<parallel>\<bar> \<le> \<delta>"
     unfolding npy[symmetric] using vnorm_reverse[of "post1 y'" "post1 ?y"] pd y' dy by simp
   assume small: "\<delta> < C * \<parallel>?x\<parallel>"
@@ -188,7 +192,7 @@ proof -
   qed
   have "\<parallel>complex_of_real (1 / \<parallel>post1 y'\<parallel>) \<cdot>\<^sub>v post1 y' - complex_of_real (1 / \<parallel>post1 ?y\<parallel>) \<cdot>\<^sub>v post1 ?y\<parallel>
         \<le> 2 * \<parallel>post1 y' - post1 ?y\<parallel> / \<parallel>post1 ?y\<parallel>"
-    by (rule normalize_stable[OF _ y'n yn]) (simp only: dim_post1 y' dy)
+    by (rule normalize_stable[OF _ y'n yn]) (simp only: dim_pflag y' dy)
   also have "\<dots> \<le> 2 * \<delta> / (C * \<parallel>?x\<parallel>)"
     unfolding npy using pd C xp by (intro divide_right_mono) simp_all
   finally show "\<parallel>complex_of_real (1 / \<parallel>post1 y'\<parallel>) \<cdot>\<^sub>v post1 y' -
@@ -451,57 +455,74 @@ proof -
   show ?thesis by (rule that[OF dg dh gg hh gh Pg Ph t0 t1 st[unfolded a_def] psi_eq])
 qed
 
-subsection \<open>Reflections as diagonal sign matrices\<close>
+subsection \<open>Diagonal projectors and reflections\<close>
+
+text \<open>The projector onto the basis vectors with index in $A$, and the diagonal sign matrix that
+reflects them: both are diagonal matrices (\<^const>\<open>mat_diag\<close>).  The projector onto ancilla value
+$j$ and the one onto the flag values satisfying $P$ are instances.\<close>
+
+definition proj_set :: "nat \<Rightarrow> nat set \<Rightarrow> complex Matrix.mat" where
+  "proj_set n A = mat_diag n (\<lambda>i. if i \<in> A then 1 else 0)"
+
+abbreviation anc_proj :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "anc_proj K j \<equiv> proj_set K {r. r mod 2 = j}"
+
+abbreviation pflag_mat :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> complex Matrix.mat" where
+  "pflag_mat K d P \<equiv> proj_set K {r. P (r mod d)}"
 
 definition sign_diag :: "nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> complex Matrix.mat" where
-  "sign_diag K f = Matrix.mat K K (\<lambda>(i, j). if i = j then (if f i then - 1 else 1) else 0)"
+  "sign_diag K f = mat_diag K (\<lambda>i. if f i then - 1 else 1)"
+
+lemma proj_set_carrier [simp]: "proj_set n A \<in> carrier_mat n n"
+  by (simp add: proj_set_def)
+
+lemma dim_proj_set [simp]: "dim_row (proj_set n A) = n" "dim_col (proj_set n A) = n"
+  by (simp_all add: proj_set_def mat_diag_def)
+
+lemma proj_set_index: "i < n \<Longrightarrow> j < n \<Longrightarrow> proj_set n A $$ (i, j) = (if i = j \<and> i \<in> A then 1 else 0)"
+  by (simp add: proj_set_def mat_diag_def)
+
+lemma proj_set_dagger: "(proj_set n A)\<^sup>\<dagger> = proj_set n A"
+  by (rule eq_matI) (auto simp: proj_set_def mat_diag_def dagger_def)
+
+lemma proj_set_idem: "proj_set n A * proj_set n A = proj_set n A"
+  unfolding proj_set_def mat_diag_diag by (rule arg_cong[where f = "mat_diag n"]) auto
+
+lemma proj_set_mult_vec: "dim_vec v = n \<Longrightarrow> proj_set n A *\<^sub>v v = Matrix.vec n (\<lambda>i. if i \<in> A then v $ i else 0)"
+  by (intro eq_vecI) (auto simp: proj_set_def mat_diag_def scalar_prod_def if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
+
+lemma proj_set_compl: "1\<^sub>m n - proj_set n A = proj_set n (- A)"
+  by (rule eq_matI) (auto simp: proj_set_def mat_diag_def)
+
+lemma pflag_mat_mult: "dim_vec v = K \<Longrightarrow> pflag_mat K d P *\<^sub>v v = pflag d P v"
+  by (simp add: proj_set_mult_vec pflag_def)
 
 lemma sign_diag_carrier: "sign_diag K f \<in> carrier_mat K K"
   by (simp add: sign_diag_def)
 
 lemma sign_diag_dagger: "(sign_diag K f)\<^sup>\<dagger> = sign_diag K f"
-  by (intro eq_matI) (auto simp: sign_diag_def dagger_def)
+  by (rule eq_matI) (auto simp: sign_diag_def mat_diag_def dagger_def)
 
 lemma sign_diag_sq: "sign_diag K f * sign_diag K f = 1\<^sub>m K"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row (1\<^sub>m K :: complex Matrix.mat)" "j < dim_col (1\<^sub>m K :: complex Matrix.mat)"
-  hence i: "i < K" and j: "j < K" by simp_all
-  have "(sign_diag K f * sign_diag K f) $$ (i, j) =
-        (\<Sum>k<K. (if i = k then (if f i then - 1 else 1) else 0) * (if k = j then (if f k then - 1 else 1) else 0))"
-    using i j by (simp add: sign_diag_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (if i = j then 1 else 0)"
-    using i j by (simp add: if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-  finally show "(sign_diag K f * sign_diag K f) $$ (i, j) = 1\<^sub>m K $$ (i, j)" using i j by simp
-qed (simp_all add: sign_diag_def)
+proof -
+  have "(\<lambda>i. (if f i then - 1 else 1) * (if f i then - 1 else 1)) = (\<lambda>_. 1 :: complex)" by auto
+  thus ?thesis unfolding sign_diag_def mat_diag_diag by simp
+qed
 
 lemma sign_diag_unitary: "unitary (sign_diag K f)"
 proof -
-  have d: "dim_row (sign_diag K f) = K" "dim_col (sign_diag K f) = K" by (simp_all add: sign_diag_def)
+  have d: "dim_row (sign_diag K f) = K" "dim_col (sign_diag K f) = K" by (simp_all add: sign_diag_def mat_diag_def)
   show ?thesis unfolding unitary_def sign_diag_dagger d sign_diag_sq by simp
 qed
 
-text \<open>Post-selection on the ancilla as a matrix.\<close>
+lemma refl_proj_set: "1\<^sub>m n - 2 \<cdot>\<^sub>m proj_set n A = sign_diag n (\<lambda>i. i \<in> A)"
+  by (rule eq_matI) (auto simp: proj_set_def sign_diag_def mat_diag_def)
 
-definition proj1 :: "nat \<Rightarrow> complex Matrix.mat" where
-  "proj1 K = Matrix.mat K K (\<lambda>(i, j). if i = j \<and> odd i then 1 else 0)"
-
-lemma proj1_carrier: "proj1 K \<in> carrier_mat K K"
-  by (simp add: proj1_def)
-
-lemma proj1_mult_vec: "dim_vec v = K \<Longrightarrow> proj1 K *\<^sub>v v = post1 v"
-  by (intro eq_vecI) (auto simp: proj1_def post1_def scalar_prod_def if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-
-lemma proj1_idem: "proj1 K * proj1 K = proj1 K"
-  by (intro eq_matI) (auto simp: proj1_def scalar_prod_def if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-
-lemma proj1_dagger: "(proj1 K)\<^sup>\<dagger> = proj1 K"
-  by (intro eq_matI) (auto simp: proj1_def dagger_def)
-
-lemma refl_proj1: "1\<^sub>m K - 2 \<cdot>\<^sub>m proj1 K = sign_diag K odd"
-  by (intro eq_matI) (auto simp: proj1_def sign_diag_def)
+lemma refl_anc_one: "1\<^sub>m K - 2 \<cdot>\<^sub>m anc_proj K 1 = sign_diag K odd"
+  unfolding refl_proj_set by (simp add: odd_iff_mod_2_eq_one)
 
 lemma refl_zero: "2 \<cdot>\<^sub>m (unit_vec K 0 \<oslash> unit_vec K 0) - 1\<^sub>m K = sign_diag K (\<lambda>i. i \<noteq> 0)"
-  by (intro eq_matI) (auto simp: outer_prod_mat sign_diag_def unit_vec_def)
+  by (intro eq_matI) (auto simp: outer_prod_mat sign_diag_def mat_diag_def unit_vec_def)
 
 text \<open>Reflection about $U\ket0$: $U(2\ketbra00-I)U^*=2\ketbra\psi\psi-I$ for $\psi=U\ket0$.\<close>
 
@@ -574,7 +595,7 @@ lemma gates_ok_aa_prog: "gates_ok K u \<Longrightarrow> gates_ok K (aa_prog K u 
 
 lemma sem_grover_prog:
   assumes V: "V \<in> carrier_mat m m" "unitary V" and g: "gates_ok (N * m) u" and K: "0 < N * m"
-  shows "sem N m V (grover_prog (N * m) u) = grover (N * m) (proj1 (N * m)) (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
+  shows "sem N m V (grover_prog (N * m) u) = grover (N * m) (anc_proj (N * m) 1) (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
 proof -
   let ?K = "N * m" and ?U = "sem N m V u"
   have U: "?U \<in> carrier_mat ?K ?K" "unitary ?U" using sem_carrier[OF V g] sem_unitary[OF V g] by simp_all
@@ -584,8 +605,8 @@ proof -
   have "sem N m V (grover_prog ?K u) = ?U * (sign_diag ?K (\<lambda>i. i \<noteq> 0) * (?U\<^sup>\<dagger>)) * sign_diag ?K odd"
     unfolding grover_prog_def sem.simps sem_adj[OF V g]
     using assoc_mult_mat[OF U(1) D0 Ud] by simp
-  also have "\<dots> = grover ?K (proj1 ?K) (?U *\<^sub>v unit_vec ?K 0)"
-    unfolding reflection_conj[OF U K] grover_def refl_proj1 ..
+  also have "\<dots> = grover ?K (anc_proj ?K 1) (?U *\<^sub>v unit_vec ?K 0)"
+    unfolding reflection_conj[OF U K] grover_def refl_anc_one ..
   finally show ?thesis .
 qed
 
@@ -604,18 +625,18 @@ qed
 
 lemma sem_aa_prog:
   assumes V: "V \<in> carrier_mat m m" "unitary V" and g: "gates_ok (N * m) u" and K: "0 < N * m"
-  shows "sem N m V (aa_prog (N * m) u k) = grover (N * m) (proj1 (N * m)) (sem N m V u *\<^sub>v unit_vec (N * m) 0) ^\<^sub>m k * sem N m V u"
+  shows "sem N m V (aa_prog (N * m) u k) = grover (N * m) (anc_proj (N * m) 1) (sem N m V u *\<^sub>v unit_vec (N * m) 0) ^\<^sub>m k * sem N m V u"
 proof (induction k)
   case 0
   have "sem N m V u \<in> carrier_mat (N * m) (N * m)" by (rule sem_carrier[OF V g])
-  moreover have "grover (N * m) (proj1 (N * m)) (sem N m V u *\<^sub>v unit_vec (N * m) 0) \<in> carrier_mat (N * m) (N * m)"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj1_carrier]]])
+  moreover have "grover (N * m) (anc_proj (N * m) 1) (sem N m V u *\<^sub>v unit_vec (N * m) 0) \<in> carrier_mat (N * m) (N * m)"
+    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
   ultimately show ?case by simp
 next
   case (Suc k)
-  let ?Q = "grover (N * m) (proj1 (N * m)) (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
+  let ?Q = "grover (N * m) (anc_proj (N * m) 1) (sem N m V u *\<^sub>v unit_vec (N * m) 0)"
   have Q: "?Q \<in> carrier_mat (N * m) (N * m)"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj1_carrier]]])
+    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
   have U: "sem N m V u \<in> carrier_mat (N * m) (N * m)" by (rule sem_carrier[OF V g])
   have "sem N m V (aa_prog (N * m) u (Suc k)) = ?Q * (?Q ^\<^sub>m k * sem N m V u)"
     using Suc sem_grover_prog[OF V g K] by simp
@@ -684,17 +705,17 @@ proof -
   have e0: "dim_vec (unit_vec ?K 0) = ?K" by simp
   have dpsi: "dim_vec ?psi = ?K" using U(1) by simp
   have npsi: "\<parallel>?psi\<parallel> = 1" using unitary_vnorm[OF U e0] K by simp
-  have Pv: "proj1 ?K *\<^sub>v v = post1 v" if "dim_vec v = ?K" for v using proj1_mult_vec[OF that] .
-  have a0': "0 < \<parallel>proj1 ?K *\<^sub>v ?psi\<parallel>" and a1': "\<parallel>proj1 ?K *\<^sub>v ?psi\<parallel> < 1" using a0 a1 Pv[OF dpsi] by simp_all
-  obtain \<theta> where t0: "0 < \<theta>" and t1: "\<theta> < pi / 2" and st: "sin \<theta> = \<parallel>proj1 ?K *\<^sub>v ?psi\<parallel>"
-      and it: "\<And>k. proj1 ?K *\<^sub>v (grover ?K (proj1 ?K) ?psi ^\<^sub>m k *\<^sub>v ?psi) =
-                    complex_of_real (sin ((2 * real k + 1) * \<theta>) / sin \<theta>) \<cdot>\<^sub>v (proj1 ?K *\<^sub>v ?psi)"
-    by (rule amplitude_amplification[OF proj1_carrier proj1_idem proj1_dagger dpsi npsi a0' a1']) blast
+  have Pv: "anc_proj ?K 1 *\<^sub>v v = post1 v" if "dim_vec v = ?K" for v using pflag_mat_mult[OF that] .
+  have a0': "0 < \<parallel>anc_proj ?K 1 *\<^sub>v ?psi\<parallel>" and a1': "\<parallel>anc_proj ?K 1 *\<^sub>v ?psi\<parallel> < 1" using a0 a1 Pv[OF dpsi] by simp_all
+  obtain \<theta> where t0: "0 < \<theta>" and t1: "\<theta> < pi / 2" and st: "sin \<theta> = \<parallel>anc_proj ?K 1 *\<^sub>v ?psi\<parallel>"
+      and it: "\<And>k. anc_proj ?K 1 *\<^sub>v (grover ?K (anc_proj ?K 1) ?psi ^\<^sub>m k *\<^sub>v ?psi) =
+                    complex_of_real (sin ((2 * real k + 1) * \<theta>) / sin \<theta>) \<cdot>\<^sub>v (anc_proj ?K 1 *\<^sub>v ?psi)"
+    by (rule amplitude_amplification[OF proj_set_carrier proj_set_idem proj_set_dagger dpsi npsi a0' a1']) blast
   define k where "k = nat \<lfloor>pi / (4 * \<theta>)\<rfloor>"
   note r = grover_rounds[OF t0 t1, folded k_def]
-  let ?Q = "grover ?K (proj1 ?K) ?psi"
+  let ?Q = "grover ?K (anc_proj ?K 1) ?psi"
   have Q: "?Q \<in> carrier_mat ?K ?K"
-    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj1_carrier]]])
+    unfolding grover_def by (rule mult_carrier_mat[OF minus_carrier_mat[OF one_carrier_mat] minus_carrier_mat[OF smult_carrier_mat[OF proj_set_carrier]]])
   have aa: "sem N m V (aa_prog ?K u k) *\<^sub>v unit_vec ?K 0 = ?Q ^\<^sub>m k *\<^sub>v ?psi"
     unfolding sem_aa_prog[OF V g K] using assoc_mult_mat_vec[OF pow_carrier_mat[OF Q] U(1), of "unit_vec ?K 0"] by (simp add: carrier_vecI)
   have dq: "dim_vec (?Q ^\<^sub>m k *\<^sub>v ?psi) = ?K" using carrier_matD(1)[OF pow_carrier_mat[OF Q, of k]] by (simp only: dim_mult_mat_vec)

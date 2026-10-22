@@ -1140,24 +1140,6 @@ qed
 
 subsection \<open>Post-selection on the flag register\<close>
 
-text \<open>The flag is the last tensor factor, of dimension $d$: \<^term>\<open>pflag d P v\<close> keeps the
-components whose flag value $c$ satisfies $P\,c$.\<close>
-
-definition pflag :: "nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
-  "pflag d P v = Matrix.vec (dim_vec v) (\<lambda>r. if P (r mod d) then v $ r else 0)"
-
-lemma dim_pflag [simp]: "dim_vec (pflag d P v) = dim_vec v"
-  by (simp add: pflag_def)
-
-lemma pflag_minus: "dim_vec u = dim_vec v \<Longrightarrow> pflag d P (u - v) = pflag d P u - pflag d P v"
-  by (intro eq_vecI) (simp_all add: pflag_def)
-
-lemma vnorm_pflag_le: "\<parallel>pflag d P v\<parallel> \<le> \<parallel>v\<parallel>"
-proof -
-  have "\<parallel>pflag d P v\<parallel>\<^sup>2 \<le> \<parallel>v\<parallel>\<^sup>2" unfolding vnorm_sq dim_pflag by (intro sum_mono) (simp add: pflag_def)
-  thus ?thesis by (rule power2_le_imp_le) (simp add: vnorm_ge0)
-qed
-
 text \<open>Matrices that do not mix flag values.\<close>
 
 definition flagdiag :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where

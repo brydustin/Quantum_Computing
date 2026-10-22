@@ -335,15 +335,15 @@ proof -
 qed
 
 lemma post1_anc_proj: "dim_vec v = K \<Longrightarrow> post1 v = anc_proj K 1 *\<^sub>v v"
-  by (rule eq_vecI) (auto simp: post1_def anc_proj_mult_vec odd_iff_mod_2_eq_one)
+  by (rule pflag_mat_mult[symmetric])
 
 lemma inner_anc_post1:
   assumes t: "t \<in> carrier_vec K" "anc_proj K 1 *\<^sub>v t = t" and v: "v \<in> carrier_vec K"
   shows "Complex_Matrix.inner_prod t (post1 v) = Complex_Matrix.inner_prod t v"
 proof -
   have "Complex_Matrix.inner_prod t (anc_proj K 1 *\<^sub>v v) = Complex_Matrix.inner_prod (adjoint (anc_proj K 1) *\<^sub>v t) v"
-    by (rule adjoint_def_alter[OF t(1) v anc_proj_carrier])
-  thus ?thesis unfolding post1_anc_proj[OF carrier_vecD[OF v]] anc_proj_adjoint t(2) .
+    by (rule adjoint_def_alter[OF t(1) v proj_set_carrier])
+  thus ?thesis unfolding post1_anc_proj[OF carrier_vecD[OF v]] proj_set_adjoint t(2) .
 qed
 
 subsection \<open>HHL in the paper's regime as a program\<close>
@@ -462,8 +462,8 @@ proof -
   have tc: "apx_t \<in> carrier_vec d" using ab(6) dd by simp
   have t1: "Complex_Matrix.inner_prod apx_t apx_t = 1"
     using inner_bridge[of apx_t apx_t] ab(7) cpx_vec_length_inner_prod[of apx_t] by simp
-  have m1: "adjoint (anc_proj d 1) *\<^sub>v apx_t = apx_t" unfolding anc_proj_adjoint dd by (rule ab(8))
-  have m0: "adjoint (anc_proj d 0) *\<^sub>v apx_t = 0\<^sub>v d" unfolding anc_proj_adjoint dd by (rule ab(9))
+  have m1: "adjoint (anc_proj d 1) *\<^sub>v apx_t = apx_t" unfolding proj_set_adjoint dd by (rule ab(8))
+  have m0: "adjoint (anc_proj d 0) *\<^sub>v apx_t = 0\<^sub>v d" unfolding proj_set_adjoint dd by (rule ab(9))
   have \<psi>: "circuit_mat d (qgates N (n * 2) apx_O c) *\<^sub>v unit_vec d 0 = apx_out c" unfolding dd qgates_sem[OF ab(2,3) g] ..
   have Sc: "sem N (n * 2) apx_O c \<in> carrier_mat apx_K apx_K" by (rule sem_carrier[OF ab(2,3) g])
   have oc: "apx_out c \<in> carrier_vec apx_K" by (rule mult_mat_vec_carrier[OF Sc unit_vec_carrier])
@@ -599,15 +599,12 @@ text \<open>Measurement of a flag register of $d$ levels: outcome 1 when the fla
 definition flag_meas :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "flag_meas K dd P j = pflag_mat K dd (\<lambda>c. P c = (j = 1))"
 
-lemma pflag_mat_adjoint: "adjoint (pflag_mat K dd P) = pflag_mat K dd P"
-  by (rule eq_matI) (auto simp: pflag_mat_def Complex_Matrix.adjoint_def)
-
 lemma flag_meas_measurement: "measurement K 2 (flag_meas K dd P)"
 proof -
   have "matrix_sum K (\<lambda>j. adjoint (flag_meas K dd P j) * flag_meas K dd P j) 2
         = pflag_mat K dd P + (pflag_mat K dd (\<lambda>c. \<not> P c) + 0\<^sub>m K K)"
-    by (simp add: numeral_2_eq_2 flag_meas_def pflag_mat_adjoint pflag_mat_idem)
-  also have "\<dots> = 1\<^sub>m K" by (rule eq_matI) (auto simp: pflag_mat_def)
+    by (simp add: numeral_2_eq_2 flag_meas_def proj_set_adjoint proj_set_idem)
+  also have "\<dots> = 1\<^sub>m K" by (rule eq_matI) (auto simp: proj_set_def mat_diag_def)
   finally show ?thesis unfolding measurement_def by (simp add: flag_meas_def)
 qed
 
@@ -688,9 +685,9 @@ proof -
   have pt: "pflag 3 P flg_t = tensor_vec (win_state N) (tensor_vec (complex_of_real (1 / \<parallel>flg_x\<parallel>) \<cdot>\<^sub>v flg_x) (pflag 3 P (unit_vec 3 1)))" for P
     using pflag_tensor_left[of "win_state N" N _ n 3 P] pflag_tensor[OF dx, of "unit_vec 3 1" 3 P] dx Hr by (simp add: tensor_vec_dim)
   show "pflag_mat flg_K 3 (\<lambda>c. c = 1) *\<^sub>v flg_t = flg_t"
-    unfolding pflag_mat_mult[OF carrier_vecD[OF tc]] pt pflag_unit3 by simp
+    unfolding pflag_mat_mult[OF carrier_vecD[OF tc], where P = "\<lambda>c. c = 1" and d = 3] pt pflag_unit3 by simp
   show "pflag_mat flg_K 3 (\<lambda>c. c \<noteq> 1) *\<^sub>v flg_t = 0\<^sub>v flg_K"
-    unfolding pflag_mat_mult[OF carrier_vecD[OF tc]] pt pflag_unit3 using dx Hr n0 tensor_zero_right[of "n * 3" "win_state N"]
+    unfolding pflag_mat_mult[OF carrier_vecD[OF tc], where P = "\<lambda>c. c \<noteq> 1" and d = 3] pt pflag_unit3 using dx Hr n0 tensor_zero_right[of "n * 3" "win_state N"]
     by (simp add: tensor_zero_right)
 qed
 
@@ -721,8 +718,8 @@ proof -
   have tc: "flg_t \<in> carrier_vec d" using fb(6) dd by simp
   have t1: "Complex_Matrix.inner_prod flg_t flg_t = 1"
     using inner_bridge[of flg_t flg_t] fb(7) cpx_vec_length_inner_prod[of flg_t] by simp
-  have m1: "adjoint (flag_meas d 3 (\<lambda>c. c = 1) 1) *\<^sub>v flg_t = flg_t" unfolding dd flg_M1 pflag_mat_adjoint by (rule fb(8))
-  have m0: "adjoint (flag_meas d 3 (\<lambda>c. c = 1) 0) *\<^sub>v flg_t = 0\<^sub>v d" unfolding dd flg_M0 pflag_mat_adjoint by (rule fb(9))
+  have m1: "adjoint (flag_meas d 3 (\<lambda>c. c = 1) 1) *\<^sub>v flg_t = flg_t" unfolding dd flg_M1 proj_set_adjoint by (rule fb(8))
+  have m0: "adjoint (flag_meas d 3 (\<lambda>c. c = 1) 0) *\<^sub>v flg_t = 0\<^sub>v d" unfolding dd flg_M0 proj_set_adjoint by (rule fb(9))
   have Sc: "sem N (n * 3) flg_O c \<in> carrier_mat flg_K flg_K" by (rule sem_carrier[OF fb(2,3) g])
   have oc: "sem N (n * 3) flg_O c *\<^sub>v unit_vec flg_K 0 \<in> carrier_vec flg_K" by (rule mult_mat_vec_carrier[OF Sc unit_vec_carrier])
   have \<psi>: "circuit_mat d (qgates N (n * 3) flg_O c) *\<^sub>v unit_vec d 0 = sem N (n * 3) flg_O c *\<^sub>v unit_vec flg_K 0"
@@ -734,7 +731,7 @@ proof -
     have "Complex_Matrix.inner_prod flg_t (flg_M 1 *\<^sub>v (sem N (n * 3) flg_O c *\<^sub>v unit_vec flg_K 0))
           = Complex_Matrix.inner_prod (adjoint (flg_M 1) *\<^sub>v flg_t) (sem N (n * 3) flg_O c *\<^sub>v unit_vec flg_K 0)"
       by (rule adjoint_def_alter[OF fb(6) oc]) (simp add: flag_meas_def)
-    also have "adjoint (flg_M 1) *\<^sub>v flg_t = flg_t" unfolding flg_M1 pflag_mat_adjoint by (rule fb(8))
+    also have "adjoint (flg_M 1) *\<^sub>v flg_t = flg_t" unfolding flg_M1 proj_set_adjoint by (rule fb(8))
     finally have "Complex_Matrix.inner_prod flg_t (flg_y c) = Complex_Matrix.inner_prod flg_t (sem N (n * 3) flg_O c *\<^sub>v unit_vec flg_K 0)"
       unfolding yP .
     moreover have "Complex_Matrix.inner_prod flg_t (flg_y c) = \<langle>flg_t|flg_y c\<rangle>"

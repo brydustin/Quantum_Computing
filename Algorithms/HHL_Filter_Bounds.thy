@@ -283,15 +283,6 @@ proof -
   thus ?thesis unfolding vnorm_sq using U(1) by simp
 qed
 
-definition pflag_mat :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> bool) \<Rightarrow> complex Matrix.mat" where
-  "pflag_mat K d P = Matrix.mat K K (\<lambda>(r, s). if r = s \<and> P (r mod d) then 1 else 0)"
-
-lemma pflag_mat_carrier [simp]: "pflag_mat K d P \<in> carrier_mat K K"
-  by (simp add: pflag_mat_def)
-
-lemma pflag_mat_mult: "dim_vec v = K \<Longrightarrow> pflag_mat K d P *\<^sub>v v = pflag d P v"
-  by (intro eq_vecI) (auto simp: pflag_mat_def pflag_def scalar_prod_def if_distrib[of "\<lambda>x. x * _"] sum.delta cong: if_cong)
-
 lemma pflag_all: "pflag d (\<lambda>_. True) v = v"
   by (intro eq_vecI) (simp_all add: pflag_def)
 
@@ -400,15 +391,15 @@ proof -
     by (rule mult_carrier_mat[OF dagger_carrier[OF pe_unitary_carrier] mult_carrier_mat[OF ctrl_blocks_carrier pe_unitary_carrier]])
   have Ec: "?E \<in> carrier_mat ?K n" using lift3_carrier[of n ?\<psi>] by (simp add: flag_emb_def)
   have Ic: "?I \<in> carrier_mat ?K n" using lift3_carrier[of n ?\<psi>] by (simp add: flag_idl_def)
-  have Mc: "?M \<in> carrier_mat ?K n" by (rule mult_carrier_mat[OF pflag_mat_carrier minus_carrier_mat[OF Ic]])
-  have Qc: "?Q \<in> carrier_mat ?K n" by (rule mult_carrier_mat[OF pflag_mat_carrier Ic])
+  have Mc: "?M \<in> carrier_mat ?K n" by (rule mult_carrier_mat[OF proj_set_carrier minus_carrier_mat[OF Ic]])
+  have Qc: "?Q \<in> carrier_mat ?K n" by (rule mult_carrier_mat[OF proj_set_carrier Ic])
   have dCx: "dim_vec (?C *\<^sub>v tensor_vec ?\<psi> (tensor_vec v (unit_vec 3 0))) = ?K" for v using Cc by simp
   have dIv: "dim_vec (?I *\<^sub>v v) = ?K" for v using Ic by simp
   have Mv: "?M *\<^sub>v v = pflag 3 P (?C *\<^sub>v tensor_vec ?\<psi> (tensor_vec v (unit_vec 3 0))) - pflag 3 P (?I *\<^sub>v v)" if v: "dim_vec v = n" for v
   proof -
     have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF v])
     have MM: "?C * ?E - ?I \<in> carrier_mat ?K n" by (rule minus_carrier_mat[OF Ic])
-    have "?M *\<^sub>v v = ?Pm *\<^sub>v ((?C * ?E - ?I) *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF pflag_mat_carrier MM vc])
+    have "?M *\<^sub>v v = ?Pm *\<^sub>v ((?C * ?E - ?I) *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF proj_set_carrier MM vc])
     also have "(?C * ?E - ?I) *\<^sub>v v = (?C * ?E) *\<^sub>v v - ?I *\<^sub>v v" by (rule minus_mult_distrib_mat_vec[OF mult_carrier_mat[OF Cc Ec] Ic vc])
     also have "(?C * ?E) *\<^sub>v v = ?C *\<^sub>v (?E *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF Cc Ec vc])
     also have "?Pm *\<^sub>v (?C *\<^sub>v (?E *\<^sub>v v) - ?I *\<^sub>v v) = pflag 3 P (?C *\<^sub>v (?E *\<^sub>v v) - ?I *\<^sub>v v)"
@@ -416,7 +407,7 @@ proof -
     finally show ?thesis unfolding flag_emb_mult[OF v] by (simp only: pflag_minus dCx dIv)
   qed
   have Qv: "?Q *\<^sub>v v = pflag 3 P (?I *\<^sub>v v)" if v: "dim_vec v = n" for v
-    using assoc_mult_mat_vec[OF pflag_mat_carrier Ic carrier_vecI[OF v]] pflag_mat_mult[OF dIv] by simp
+    using assoc_mult_mat_vec[OF proj_set_carrier Ic carrier_vecI[OF v]] pflag_mat_mult[OF dIv] by simp
   have col: "dim_vec (Matrix.col U j) = n" "A *\<^sub>v Matrix.col U j = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j"
             "\<bar>t0 * D ! j\<bar> \<le> pi / 2" if j: "j < n" for j
   proof -

@@ -17,25 +17,25 @@ proof (rule eq_matI)
   fix i j assume "i < dim_row (outer_prod (unit_vec K 0) (unit_vec K 0))" "j < dim_col (outer_prod (unit_vec K 0) (unit_vec K 0))"
   hence ij: "i < K" "j < K" by (simp_all add: carrier_matD[OF outer_prod_dim[OF unit_vec_carrier unit_vec_carrier]])
   show "proj_basis K 0 $$ (i, j) = outer_prod (unit_vec K 0) (unit_vec K 0) $$ (i, j)"
-    unfolding index_outer_prod[OF unit_vec_carrier unit_vec_carrier ij] using ij by (simp add: proj_basis_def)
-qed (simp_all add: proj_basis_def carrier_matD[OF outer_prod_dim[OF unit_vec_carrier unit_vec_carrier]])
+    unfolding index_outer_prod[OF unit_vec_carrier unit_vec_carrier ij] using ij by (simp add: proj_set_index)
+qed (simp_all add: proj_set_index carrier_matD[OF outer_prod_dim[OF unit_vec_carrier unit_vec_carrier]])
 
 lemma swap0_proj:
   assumes k: "k < K"
   shows "swap0 K k * proj_basis K k * adjoint (swap0 K k) = proj_basis K 0"
 proof -
-  have P: "swap0 K k * proj_basis K k \<in> carrier_mat K K" by (rule mult_carrier_mat[OF swap0_carrier proj_basis_carrier])
+  have P: "swap0 K k * proj_basis K k \<in> carrier_mat K K" by (rule mult_carrier_mat[OF swap0_carrier proj_set_carrier])
   show ?thesis unfolding swap0_adjoint[OF k]
   proof (rule eq_matI)
     fix i j assume "i < dim_row (proj_basis K 0)" "j < dim_col (proj_basis K 0)"
-    hence ij: "i < K" "j < K" by (auto simp: proj_basis_def)
+    hence ij: "i < K" "j < K" by (auto simp: proj_set_index)
     have "(swap0 K k * proj_basis K k * swap0 K k) $$ (i, j) = (swap0 K k * proj_basis K k) $$ (i, swap_idx k j)"
       by (rule swap0_right[OF P k ij])
     also have "\<dots> = proj_basis K k $$ (swap_idx k i, swap_idx k j)"
-      by (rule swap0_left[OF proj_basis_carrier k ij(1) swap_idx_lt[OF k ij(2)]])
-    also have "\<dots> = proj_basis K 0 $$ (i, j)" using ij swap_idx_lt[OF k] by (auto simp: proj_basis_def swap_idx_def)
+      by (rule swap0_left[OF proj_set_carrier k ij(1) swap_idx_lt[OF k ij(2)]])
+    also have "\<dots> = proj_basis K 0 $$ (i, j)" using ij swap_idx_lt[OF k] by (auto simp: proj_set_index swap_idx_def)
     finally show "(swap0 K k * proj_basis K k * swap0 K k) $$ (i, j) = proj_basis K 0 $$ (i, j)" .
-  qed (auto simp: proj_basis_def swap0_def)
+  qed (auto simp: proj_set_index swap0_def)
 qed
 
 lemma matrix_sum_scalar:
@@ -66,15 +66,15 @@ proof -
     fix k assume k: "k < d"
     have "denote (map (\<lambda>k. Utrans (swap0 d k)) [0..<d] ! k) (proj_basis d k * \<rho> * adjoint (proj_basis d k))
           = swap0 d k * (\<rho> $$ (k, k) \<cdot>\<^sub>m proj_basis d k) * adjoint (swap0 d k)"
-      using k by (simp add: proj_basis_adjoint proj_basis_sandwich[OF r k])
+      using k by (simp add: proj_set_adjoint proj_basis_sandwich[OF r k])
     also have "\<dots> = \<rho> $$ (k, k) \<cdot>\<^sub>m (swap0 d k * proj_basis d k * adjoint (swap0 d k))"
-      by (simp only: mult_smult_distrib[OF swap0_carrier proj_basis_carrier]
-            mult_smult_assoc_mat[OF mult_carrier_mat[OF swap0_carrier proj_basis_carrier] adjoint_dim[OF swap0_carrier]])
+      by (simp only: mult_smult_distrib[OF swap0_carrier proj_set_carrier]
+            mult_smult_assoc_mat[OF mult_carrier_mat[OF swap0_carrier proj_set_carrier] adjoint_dim[OF swap0_carrier]])
     finally show "denote (map (\<lambda>k. Utrans (swap0 d k)) [0..<d] ! k) (proj_basis d k * \<rho> * adjoint (proj_basis d k))
                   = \<rho> $$ (k, k) \<cdot>\<^sub>m proj_basis d 0" by (simp add: swap0_proj[OF k])
   qed
   also have "\<dots> = trace \<rho> \<cdot>\<^sub>m proj_basis d 0"
-    unfolding matrix_sum_scalar[OF proj_basis_carrier] trace_def using r by (simp add: atLeast0LessThan)
+    unfolding matrix_sum_scalar[OF proj_set_carrier] trace_def using r by (simp add: atLeast0LessThan)
   finally show ?thesis .
 qed
 
@@ -318,7 +318,7 @@ proof -
   show "partial_density_operator (outer_prod \<psi> \<psi>)"
     unfolding partial_density_operator_def tr1 using positive_same_outer_prod[OF \<psi>c] by simp
   have br: "anc_proj Dm j * outer_prod \<psi> \<psi> * adjoint (anc_proj Dm j) = outer_prod (anc_proj Dm j *\<^sub>v \<psi>) (anc_proj Dm j *\<^sub>v \<psi>)" for j
-    unfolding outer_prod_left_right_mat[OF \<psi>c \<psi>c anc_proj_carrier adjoint_dim[OF anc_proj_carrier]] adjoint_adjoint ..
+    unfolding outer_prod_left_right_mat[OF \<psi>c \<psi>c proj_set_carrier adjoint_dim[OF proj_set_carrier]] adjoint_adjoint ..
   have b0: "anc_proj Dm 0 *\<^sub>v \<psi> = ?w0" unfolding \<psi>_def Dm_def by (rule prog_branch(1)[OF A n0 k t0 spec Ub Cb])
   have b1: "anc_proj Dm 1 *\<^sub>v \<psi> = w1" unfolding \<psi>_def w1_def Dm_def by (rule prog_branch(2)[OF A n0 k t0 spec Ub Cb])
   note dA = carrier_matD[OF mat_fun_carrier[OF A]]

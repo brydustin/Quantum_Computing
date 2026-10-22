@@ -651,3 +651,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   import `vec_normalize` and `outer_prod` resolve to QHLProver's (write
   `Quantum_Computing_3_10.vec_normalize`); `private lemma` still exports the fact; editing a session
   theory makes `ev.sh` rebuild the heap, so test against the base session.
+- **No redundancies, batch 2** (2026-10-22): the diagonal matrices.  Part VI had seven hand-made
+  diagonal matrices, each with its own carrier/adjoint/square/action lemmas: `proj_set`, `anc_proj`,
+  `proj1`, `pflag_mat`, `proj_basis`, `clock_proj` (projectors), `parity` (a copy of `sign_diag`), plus
+  `dmat` and `diag_cmat`, and two copies of the flag filter on vectors (`post1`, `pflag`).  Now there
+  is one projector `proj_set n A` and one reflection `sign_diag n f`, both defined by JNF's
+  `mat_diag`; `anc_proj`, `pflag_mat`, `proj_basis` and `clock_proj` are abbreviations of `proj_set`,
+  `proj1` is `anc_proj K 1`, `parity` is an abbreviation of `sign_diag`, `post1` of `pflag`, and
+  `dmat`, `diag_cmat` are `mat_diag`.  About 30 per-projector lemmas are gone (one `qp_proj_set`
+  replaces `qp_anc_proj` and `qp_clock_proj`).  Detector and name check unchanged (only datatype
+  `size_gen`/`size` and the known benign clashes); 33 theories, 2 286 theorems, no oracles.  Part VI:
+  22 534 lines, 1 136 results.  Traps: JNF's `mat_diag n f` puts `f j` (the column) on the diagonal,
+  so the sums `simp` produces mention `f j` where the old definitions had `f i` (add `cong: if_cong`);
+  a generic lemma such as `sign_diag_carrier` does not fire through an abbreviation with a λ
+  argument (instantiate it); unfolding `pflag_mat_mult` needs `where P = … and d = …`.

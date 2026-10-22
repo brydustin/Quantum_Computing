@@ -200,7 +200,7 @@ qed
 subsection \<open>Diagonal unitaries\<close>
 
 definition dmat :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> complex Matrix.mat" where
-  "dmat N \<phi> = Matrix.mat N N (\<lambda>(r, t). if r = t then cis (\<phi> r) else 0)"
+  "dmat N \<phi> = mat_diag N (\<lambda>r. cis (\<phi> r))"
 
 definition Qm :: "complex Matrix.mat" where
   "Qm = Matrix.mat 2 2 (\<lambda>(i, j). complex_of_real (1 / sqrt 2) * (if i = 0 then 1 else if j = 0 then \<i> else - \<i>))"
@@ -226,58 +226,49 @@ proof -
     by (simp flip: of_real_mult)
   have s2: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2" by (simp flip: of_real_mult)
   show ?thesis
-    by (rule eq_matI) (auto simp: Qm_def Rot_def dmat_def dagger_def scalar_prod_def sum2 less_Suc_eq numeral_2_eq_2 s s2
+    by (rule eq_matI) (auto simp: Qm_def Rot_def dmat_def mat_diag_def dagger_def scalar_prod_def sum2 less_Suc_eq numeral_2_eq_2 s s2
         cis.ctr complex_eq_iff algebra_simps)
 qed
 
-lemma dmat_carrier [simp]: "dmat N \<phi> \<in> carrier_mat N N" by (simp add: dmat_def)
+lemma dmat_carrier [simp]: "dmat N \<phi> \<in> carrier_mat N N" by (simp add: dmat_def mat_diag_def)
 
 lemma dmat_mult: "dmat N f * dmat N g = dmat N (\<lambda>x. f x + g x)"
-proof (rule eq_matI)
-  fix r t assume "r < dim_row (dmat N (\<lambda>x. f x + g x))" "t < dim_col (dmat N (\<lambda>x. f x + g x))"
-  hence rt: "r < N" "t < N" by (simp_all add: dmat_def)
-  have "(dmat N f * dmat N g) $$ (r, t) = (\<Sum>u\<in>{0..<N}. (if r = u then cis (f r) else 0) * (if u = t then cis (g u) else 0))"
-    using rt by (simp add: dmat_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>u\<in>{0..<N}. if u = r then (if r = t then cis (f r) * cis (g r) else 0) else 0)"
-    by (rule sum.cong) auto
-  also have "\<dots> = (if r = t then cis (f r + g r) else 0)" using rt by (simp add: cis_mult)
-  finally show "(dmat N f * dmat N g) $$ (r, t) = dmat N (\<lambda>x. f x + g x) $$ (r, t)" using rt by (simp add: dmat_def)
-qed (simp_all add: dmat_def)
+  unfolding dmat_def mat_diag_diag by (simp add: cis_mult)
 
 lemma dmat_cong: "(\<And>x. x < N \<Longrightarrow> f x = g x) \<Longrightarrow> dmat N f = dmat N g"
-  by (rule eq_matI) (auto simp: dmat_def)
+  by (rule eq_matI) (auto simp: dmat_def mat_diag_def)
 
-lemma dmat_zero: "dmat N (\<lambda>_. 0) = 1\<^sub>m N" by (rule eq_matI) (auto simp: dmat_def)
+lemma dmat_zero: "dmat N (\<lambda>_. 0) = 1\<^sub>m N" by (simp add: dmat_def)
 
 lemma dmat_unitary: "Quantum.unitary (dmat N \<phi>)"
 proof -
-  have d: "(dmat N \<phi>)\<^sup>\<dagger> = dmat N (\<lambda>x. - \<phi> x)" by (rule eq_matI) (auto simp: dmat_def dagger_def cis_cnj)
-  show ?thesis unfolding Quantum.unitary_def d dmat_mult by (simp add: dmat_zero dmat_def)
+  have d: "(dmat N \<phi>)\<^sup>\<dagger> = dmat N (\<lambda>x. - \<phi> x)" by (rule eq_matI) (auto simp: dmat_def mat_diag_def dagger_def cis_cnj)
+  show ?thesis unfolding Quantum.unitary_def d dmat_mult by (simp add: dmat_zero dmat_def mat_diag_def)
 qed
 
 lemma dmat_tensor_one: "dmat N \<alpha> \<Otimes> 1\<^sub>m 2 = dmat (N * 2) (\<lambda>x. \<alpha> (x div 2))"
 proof (rule eq_matI)
   fix r t assume "r < dim_row (dmat (N * 2) (\<lambda>x. \<alpha> (x div 2)))" "t < dim_col (dmat (N * 2) (\<lambda>x. \<alpha> (x div 2)))"
-  hence rt: "r < N * 2" "t < N * 2" by (simp_all add: dmat_def)
+  hence rt: "r < N * 2" "t < N * 2" by (simp_all add: dmat_def mat_diag_def)
   have N0: "0 < N" using rt by (cases N) auto
   have q: "r = t \<longleftrightarrow> r div 2 = t div 2 \<and> r mod 2 = t mod 2"
     by (metis div_mult_mod_eq)
   have "(dmat N \<alpha> \<Otimes> 1\<^sub>m 2) $$ (r, t) = dmat N \<alpha> $$ (r div 2, t div 2) * 1\<^sub>m 2 $$ (r mod 2, t mod 2)"
-    using index_tensor_mat[of "dmat N \<alpha>" N N "1\<^sub>m 2" 2 2 r t] rt N0 by (simp add: Groups.mult_ac dmat_def)
+    using index_tensor_mat[of "dmat N \<alpha>" N N "1\<^sub>m 2" 2 2 r t] rt N0 by (simp add: Groups.mult_ac dmat_def mat_diag_def)
   also have "\<dots> = dmat (N * 2) (\<lambda>x. \<alpha> (x div 2)) $$ (r, t)"
-    using rt q by (simp add: dmat_def less_mult_imp_div_less)
+    using rt q by (simp add: dmat_def mat_diag_def less_mult_imp_div_less)
   finally show "(dmat N \<alpha> \<Otimes> 1\<^sub>m 2) $$ (r, t) = dmat (N * 2) (\<lambda>x. \<alpha> (x div 2)) $$ (r, t)" .
-qed (simp_all add: dmat_def)
+qed (simp_all add: dmat_def mat_diag_def)
 
 lemma ctrl_dmat: "ctrl_blocks N 2 (\<lambda>c. dmat 2 (\<psi> c)) = dmat (N * 2) (\<lambda>x. \<psi> (x div 2) (x mod 2))"
 proof (rule eq_matI)
   fix r t assume "r < dim_row (dmat (N * 2) (\<lambda>x. \<psi> (x div 2) (x mod 2)))" "t < dim_col (dmat (N * 2) (\<lambda>x. \<psi> (x div 2) (x mod 2)))"
-  hence rt: "r < N * 2" "t < N * 2" by (simp_all add: dmat_def)
+  hence rt: "r < N * 2" "t < N * 2" by (simp_all add: dmat_def mat_diag_def)
   have q: "r = t \<longleftrightarrow> r div 2 = t div 2 \<and> r mod 2 = t mod 2"
     by (metis div_mult_mod_eq)
   show "ctrl_blocks N 2 (\<lambda>c. dmat 2 (\<psi> c)) $$ (r, t) = dmat (N * 2) (\<lambda>x. \<psi> (x div 2) (x mod 2)) $$ (r, t)"
-    using rt q by (auto simp: ctrl_blocks_index dmat_def)
-qed (simp_all add: dmat_def)
+    using rt q by (auto simp: ctrl_blocks_index dmat_def mat_diag_def)
+qed (simp_all add: dmat_def mat_diag_def)
 
 definition ph_mean :: "(nat \<Rightarrow> real) \<Rightarrow> nat \<Rightarrow> real" where "ph_mean \<phi> c = (\<phi> (2 * c) + \<phi> (2 * c + 1)) / 2"
 definition ph_diff :: "(nat \<Rightarrow> real) \<Rightarrow> nat \<Rightarrow> real" where "ph_diff \<phi> c = (\<phi> (2 * c + 1) - \<phi> (2 * c)) / 2"
@@ -427,11 +418,11 @@ proof (rule eq_vecI)
   fix x assume v: "dim_vec v = N" and "x < dim_vec (Matrix.vec N (\<lambda>x. cis (\<phi> x) * v $ x))"
   hence x: "x < N" by simp
   have "(dmat N \<phi> *\<^sub>v v) $ x = (\<Sum>u\<in>{0..<N}. (if x = u then cis (\<phi> x) else 0) * v $ u)"
-    using x v by (simp add: dmat_def scalar_prod_def mult_mat_vec_def)
+    using x v by (simp add: dmat_def mat_diag_def scalar_prod_def mult_mat_vec_def cong: if_cong)
   also have "\<dots> = (\<Sum>u\<in>{0..<N}. if u = x then cis (\<phi> x) * v $ x else 0)" by (rule sum.cong) auto
   also have "\<dots> = cis (\<phi> x) * v $ x" using x by simp
   finally show "(dmat N \<phi> *\<^sub>v v) $ x = Matrix.vec N (\<lambda>x. cis (\<phi> x) * v $ x) $ x" using x by simp
-qed (simp add: dmat_def)
+qed (simp add: dmat_def mat_diag_def)
 
 text \<open>Any normalised $\ket b$ on $s\ge1$ qubits: the magnitudes by the rotation cascade, then the
 phases by a diagonal unitary.\<close>
@@ -704,7 +695,7 @@ lemma mult_dmat_index:
   shows "(Wm * dmat N \<phi>) $$ (i, l) = Wm $$ (i, l) * cis (\<phi> l)"
 proof -
   have "(Wm * dmat N \<phi>) $$ (i, l) = (\<Sum>u<N. Wm $$ (i, u) * (if u = l then cis (\<phi> u) else 0))"
-    using Wm i l by (simp add: dmat_def scalar_prod_def atLeast0LessThan)
+    using Wm i l by (simp add: dmat_def mat_diag_def scalar_prod_def atLeast0LessThan cong: if_cong)
   also have "\<dots> = (\<Sum>u<N. if u = l then Wm $$ (i, l) * cis (\<phi> l) else 0)" by (rule sum.cong) auto
   finally show ?thesis using l by simp
 qed
@@ -717,7 +708,7 @@ proof -
   let ?D = "dmat N (\<lambda>x. if x = k then \<theta> else 0)"
   have WD: "Wm * ?D \<in> carrier_mat N N" using Wm(1) by simp
   have "(Wm * ?D * (Wm\<^sup>\<dagger>)) $$ (i, j) = (\<Sum>l<N. (Wm * ?D) $$ (i, l) * Wm\<^sup>\<dagger> $$ (l, j))"
-    using WD Wm(1) i j by (simp add: scalar_prod_def dagger_def atLeast0LessThan Matrix.row_def dmat_def carrier_matD[OF WD] carrier_matD[OF Wm(1)])
+    using WD Wm(1) i j by (simp add: scalar_prod_def dagger_def atLeast0LessThan Matrix.row_def dmat_def mat_diag_def carrier_matD[OF WD] carrier_matD[OF Wm(1)])
   also have "\<dots> = (\<Sum>l<N. Wm $$ (i, l) * cnj (Wm $$ (j, l)) + (if l = k then (cis \<theta> - 1) * Wm $$ (i, k) * cnj (Wm $$ (j, k)) else 0))"
     by (rule sum.cong) (use Wm(1) i j in \<open>auto simp: mult_dmat_index dagger_def algebra_simps\<close>)
   also have "\<dots> = (\<Sum>l<N. Wm $$ (i, l) * cnj (Wm $$ (j, l))) + (cis \<theta> - 1) * Wm $$ (i, k) * cnj (Wm $$ (j, k))"
@@ -835,17 +826,17 @@ proof -
   have Bd: "B = dmat ?N \<theta>"
   proof (rule eq_matI)
     fix i j assume "i < dim_row (dmat ?N \<theta>)" "j < dim_col (dmat ?N \<theta>)"
-    hence ij: "i < ?N" "j < ?N" by (simp_all add: dmat_def)
+    hence ij: "i < ?N" "j < ?N" by (simp_all add: dmat_def mat_diag_def)
     show "B $$ (i, j) = dmat ?N \<theta> $$ (i, j)"
     proof (cases "i = j")
       case True
       have "B $$ (i, i) \<noteq> 0" using Bk[OF ij(1)] by auto
       hence "cis (\<theta> i) = B $$ (i, i)" unfolding \<theta>_def using Bk[OF ij(1)] by (simp add: cis_Arg sgn_div_norm)
-      thus ?thesis using True ij by (simp add: dmat_def)
+      thus ?thesis using True ij by (simp add: dmat_def mat_diag_def)
     next
-      case False thus ?thesis using dB Bc ij by (simp add: diagonal_mat_def dmat_def)
+      case False thus ?thesis using dB Bc ij by (simp add: diagonal_mat_def dmat_def mat_diag_def)
     qed
-  qed (use Bc in \<open>simp_all add: dmat_def\<close>)
+  qed (use Bc in \<open>simp_all add: dmat_def mat_diag_def\<close>)
   define Ds where "Ds = map (\<lambda>k. dmat ?N (\<lambda>x. if x = k then \<theta> k else 0)) [0..<?N]"
   have cDs: "circuit_mat ?N Ds = B"
   proof -

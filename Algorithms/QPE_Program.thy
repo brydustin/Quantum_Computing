@@ -8,8 +8,8 @@ text \<open>Registers: clock $\C^N$, $N=2^k$, and system $\C^m$.  The program in
 prepares the eigenvector $u=U_u\ket0$, and applies $H^{\otimes k}$, the controlled powers of $U$
 and $F_N^\dagger$.  The predicate $\Pi_J$ says that the clock holds a value in $Js$.\<close>
 
-definition clock_proj :: "nat \<Rightarrow> nat \<Rightarrow> nat set \<Rightarrow> complex Matrix.mat" where
-  "clock_proj N m Js = Matrix.mat (N * m) (N * m) (\<lambda>(r, s). if r = s \<and> r div m \<in> Js then 1 else 0)"
+abbreviation clock_proj :: "nat \<Rightarrow> nat \<Rightarrow> nat set \<Rightarrow> complex Matrix.mat" where
+  "clock_proj N m Js \<equiv> proj_set (N * m) {r. r div m \<in> Js}"
 
 definition qpe_gates :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat list" where
   "qpe_gates k U Uu = [1\<^sub>m (2 ^ k) \<Otimes> Uu, (Hadamard \<otimes>\<^bsup>k\<^esup>) \<Otimes> 1\<^sub>m (dim_row U), ctrl_pow (2 ^ k) (dim_row U) U,
@@ -29,40 +29,6 @@ definition qpe_elem_gates :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow>
 definition qpe_elem_program :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> com" where
   "qpe_elem_program k U Uu = init_com (2 ^ k * dim_row U) ;; utrans_seq (qpe_elem_gates k U Uu)"
 
-lemma clock_proj_carrier [simp]: "clock_proj N m Js \<in> carrier_mat (N * m) (N * m)"
-  by (simp add: clock_proj_def)
-
-lemma clock_proj_adjoint: "adjoint (clock_proj N m Js) = clock_proj N m Js"
-  by (rule eq_matI) (auto simp: clock_proj_def adjoint_eval)
-
-lemma clock_proj_square: "clock_proj N m Js * clock_proj N m Js = clock_proj N m Js"
-proof (rule eq_matI)
-  fix r s assume "r < dim_row (clock_proj N m Js)" "s < dim_col (clock_proj N m Js)"
-  hence rs: "r < N * m" "s < N * m" by (simp_all add: clock_proj_def)
-  have "(clock_proj N m Js * clock_proj N m Js) $$ (r, s)
-        = (\<Sum>l<N * m. (if r = l \<and> r div m \<in> Js then 1 else 0) * (if l = s \<and> l div m \<in> Js then 1 else 0))"
-    using rs by (simp add: clock_proj_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l\<in>{r}. (if r = l \<and> r div m \<in> Js then 1 else 0) * (if l = s \<and> l div m \<in> Js then 1 else 0))"
-    using rs by (intro sum.mono_neutral_cong_right) auto
-  finally show "(clock_proj N m Js * clock_proj N m Js) $$ (r, s) = clock_proj N m Js $$ (r, s)"
-    using rs by (simp add: clock_proj_def)
-qed (simp_all add: clock_proj_def)
-
-lemma clock_proj_compl: "1\<^sub>m (N * m) - clock_proj N m Js = clock_proj N m (- Js)"
-  by (rule eq_matI) (auto simp: clock_proj_def)
-
-lemma clock_proj_mult_vec:
-  assumes v: "dim_vec v = N * m"
-  shows "clock_proj N m Js *\<^sub>v v = Matrix.vec (N * m) (\<lambda>r. if r div m \<in> Js then v $ r else 0)"
-proof (rule eq_vecI)
-  fix r assume "r < dim_vec (Matrix.vec (N * m) (\<lambda>r. if r div m \<in> Js then v $ r else 0))"
-  hence r: "r < N * m" by simp
-  have "(clock_proj N m Js *\<^sub>v v) $ r = (\<Sum>s<N * m. (if r = s \<and> r div m \<in> Js then 1 else 0) * v $ s)"
-    using r v by (simp add: clock_proj_def scalar_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>s\<in>{r}. (if r = s \<and> r div m \<in> Js then 1 else 0) * v $ s)" using r by (intro sum.mono_neutral_cong_right) auto
-  finally show "(clock_proj N m Js *\<^sub>v v) $ r = Matrix.vec (N * m) (\<lambda>r. if r div m \<in> Js then v $ r else 0) $ r" using r by simp
-qed (simp add: clock_proj_def)
-
 text \<open>On $a\otimes u$ with $u$ a unit vector, $\Pi_J$ has the value $\sum_{j\in Js}|a_j|^2$.\<close>
 
 lemma clock_proj_value:
@@ -73,7 +39,7 @@ proof -
   let ?\<psi> = "tensor_vec a u"
   have d\<psi>: "dim_vec ?\<psi> = N * m" by (rule tensor_vec_dim[OF a u])
   have "inner_prod ?\<psi> (clock_proj N m Js *\<^sub>v ?\<psi>) = (\<Sum>r<N * m. (if r div m \<in> Js then ?\<psi> $ r else 0) * cnj (?\<psi> $ r))"
-    unfolding clock_proj_mult_vec[OF d\<psi>] using d\<psi> by (simp add: scalar_prod_def atLeast0LessThan)
+    unfolding proj_set_mult_vec[OF d\<psi>] using d\<psi> by (simp add: scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>k<N. \<Sum>i<m. (if k \<in> Js then complex_of_real ((cmod (a $ k))\<^sup>2) else 0) * complex_of_real ((cmod (u $ i))\<^sup>2))"
     unfolding sum_blocks
   proof (rule sum.cong[OF refl], rule sum.cong[OF refl])
@@ -107,17 +73,6 @@ qed
 
 context state_sig
 begin
-
-lemma qp_clock_proj:
-  assumes dd: "d = N * m"
-  shows "is_quantum_predicate (clock_proj N m Js)"
-proof -
-  have p: "positive (clock_proj N m Js')" for Js'
-    by (rule positive_if_decomp[OF clock_proj_carrier]) (rule exI[of _ "clock_proj N m Js'"], simp add: clock_proj_adjoint clock_proj_square)
-  have "positive (1\<^sub>m d - clock_proj N m Js)" unfolding dd clock_proj_compl by (rule p)
-  thus ?thesis using p unfolding is_quantum_predicate_def lowner_le_def dd by (simp add: clock_proj_def)
-qed
-
 
 text \<open>Triples of an initialised circuit depend only on its matrix.\<close>
 
@@ -230,7 +185,7 @@ proof -
   have h: "hoare_partial (inner_prod (circuit_mat d (qpe_gates k U Uu) *\<^sub>v unit_vec d 0)
               (clock_proj (2 ^ k) m Js *\<^sub>v (circuit_mat d (qpe_gates k U Uu) *\<^sub>v unit_vec d 0)) \<cdot>\<^sub>m 1\<^sub>m d)
              (init_com d ;; utrans_seq (qpe_gates k U Uu)) (clock_proj (2 ^ k) m Js)"
-    by (rule hoare_init_circuit[OF qp_clock_proj[OF dd] d0]) (use qpe_gates_ok dd in auto)
+    by (rule hoare_init_circuit[OF qp_proj_set[unfolded dd] d0]) (use qpe_gates_ok dd in auto)
   have v: "inner_prod (circuit_mat d (qpe_gates k U Uu) *\<^sub>v unit_vec d 0)
               (clock_proj (2 ^ k) m Js *\<^sub>v (circuit_mat d (qpe_gates k U Uu) *\<^sub>v unit_vec d 0))
            = complex_of_real (\<Sum>j | j < 2 ^ k \<and> j \<in> Js. (cmod (pe_amp (2 ^ k) \<phi> j))\<^sup>2)"
@@ -243,8 +198,7 @@ proof -
   have hp: "hoare_partial (complex_of_real (\<Sum>j | j < 2 ^ k \<and> j \<in> Js. (cmod (pe_amp (2 ^ k) \<phi> j))\<^sup>2) \<cdot>\<^sub>m 1\<^sub>m d)
              (qpe_program k U Uu) (clock_proj (2 ^ k) m Js)"
     using h[unfolded v] unfolding qpe_program_def qpe_dim dd .
-  show ?thesis unfolding dd[symmetric]
-    by (rule partial_to_total[OF hoare_partial_sound[OF hp qpe_well_com] qpe_while_free qpe_well_com])
+  show ?thesis using partial_to_total[OF hoare_partial_sound[OF hp qpe_well_com] qpe_while_free qpe_well_com] unfolding dd .
 qed
 
 
@@ -266,8 +220,8 @@ proof -
     unfolding qpe_program_def qpe_dim dd by simp
   have O: "outer_prod ?\<psi> ?\<psi> \<in> carrier_mat (2 ^ k * m) (2 ^ k * m)" by (rule outer_prod_dim[OF \<psi>c \<psi>c])
   have "trace (?P * denote (qpe_program k U Uu) \<rho>) = trace \<rho> * trace (?P * outer_prod ?\<psi> ?\<psi>)"
-    unfolding den by (simp add: mult_smult_distrib[OF clock_proj_carrier O] trace_smult[OF mult_carrier_mat[OF clock_proj_carrier O]])
-  also have "trace (?P * outer_prod ?\<psi> ?\<psi>) = inner_prod ?\<psi> (?P *\<^sub>v ?\<psi>)" by (rule trace_outer_prod_right[OF clock_proj_carrier \<psi>c \<psi>c])
+    unfolding den by (simp add: mult_smult_distrib[OF proj_set_carrier O] trace_smult[OF mult_carrier_mat[OF proj_set_carrier O]])
+  also have "trace (?P * outer_prod ?\<psi> ?\<psi>) = inner_prod ?\<psi> (?P *\<^sub>v ?\<psi>)" by (rule trace_outer_prod_right[OF proj_set_carrier \<psi>c \<psi>c])
   also have "\<dots> = complex_of_real (\<Sum>j | j < 2 ^ k \<and> j \<in> Js. (cmod (pe_amp (2 ^ k) \<phi> j))\<^sup>2)"
   proof -
     have "(\<Sum>j | j < 2 ^ k \<and> j \<in> Js. (cmod (Matrix.vec (2 ^ k) (pe_amp (2 ^ k) \<phi>) $ j))\<^sup>2)

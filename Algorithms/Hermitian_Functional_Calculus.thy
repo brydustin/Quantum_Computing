@@ -10,16 +10,16 @@ eigenvectors span $\C^n$, so this determines $g(A)$; for a spectral decompositio
 $A=U\,\mathrm{diag}(D)\,U^*$ it is $U\,\mathrm{diag}(g\circ D)\,U^*$.\<close>
 
 definition diag_cmat :: "complex list \<Rightarrow> complex Matrix.mat" where
-  "diag_cmat xs = Matrix.mat (length xs) (length xs) (\<lambda>(i,j). if i = j then xs ! i else 0)"
+  "diag_cmat xs = mat_diag (length xs) (\<lambda>i. xs ! i)"
 
 lemma diag_cmat_carrier [simp]: "diag_cmat xs \<in> carrier_mat (length xs) (length xs)"
-  by (simp add: diag_cmat_def)
+  by (simp add: diag_cmat_def mat_diag_def)
 
 lemma dim_diag_cmat [simp]: "dim_row (diag_cmat xs) = length xs" "dim_col (diag_cmat xs) = length xs"
-  by (simp_all add: diag_cmat_def)
+  by (simp_all add: diag_cmat_def mat_diag_def)
 
 lemma diag_mat_of_real_cmat: "diag_mat_of_real D = diag_cmat (map complex_of_real D)"
-  by (rule eq_matI) (auto simp: diag_mat_of_real_def diag_cmat_def)
+  by (rule eq_matI) (auto simp: diag_mat_of_real_def diag_cmat_def mat_diag_def)
 
 lemma diag_cmat_mult_vec:
   assumes "dim_vec w = length xs"
@@ -28,7 +28,7 @@ proof (rule eq_vecI)
   fix i assume "i < dim_vec (Matrix.vec (length xs) (\<lambda>i. xs ! i * w $ i))"
   hence i: "i < length xs" by simp
   have "(diag_cmat xs *\<^sub>v w) $ i = (\<Sum>k = 0..<length xs. (if i = k then xs ! i else 0) * w $ k)"
-    using i assms by (simp add: diag_cmat_def mult_mat_vec_def scalar_prod_def)
+    using i assms by (simp add: diag_cmat_def mat_diag_def mult_mat_vec_def scalar_prod_def cong: if_cong)
   also have "\<dots> = (\<Sum>k = 0..<length xs. if k = i then xs ! i * w $ i else 0)"
     by (rule sum.cong) auto
   also have "\<dots> = xs ! i * w $ i" using i by simp
@@ -43,7 +43,7 @@ proof (rule eq_vecI)
   fix i assume "i < dim_vec (xs ! j \<cdot>\<^sub>v Matrix.col M j)"
   hence i: "i < n" using M by simp
   have "Matrix.col (M * diag_cmat xs) j $ i = (\<Sum>k = 0..<length xs. M $$ (i, k) * (if k = j then xs ! k else 0))"
-    using M i j by (simp add: diag_cmat_def scalar_prod_def atLeast0LessThan)
+    using M i j by (simp add: diag_cmat_def mat_diag_def scalar_prod_def atLeast0LessThan cong: if_cong)
   also have "\<dots> = (\<Sum>k = 0..<length xs. if k = j then M $$ (i, j) * xs ! j else 0)"
     by (rule sum.cong) auto
   also have "\<dots> = M $$ (i, j) * xs ! j" using j by simp
@@ -52,7 +52,7 @@ proof (rule eq_vecI)
 qed (use M in simp)
 
 lemma diag_cmat_dagger: "(diag_cmat xs)\<^sup>\<dagger> = diag_cmat (map cnj xs)"
-  by (rule eq_matI) (auto simp: diag_cmat_def dagger_def)
+  by (rule eq_matI) (auto simp: diag_cmat_def mat_diag_def dagger_def)
 
 lemma diag_conj_carrier:
   assumes U: "U \<in> carrier_mat n n" and xs: "length xs = n"
