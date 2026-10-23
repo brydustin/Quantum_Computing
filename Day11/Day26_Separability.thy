@@ -1,13 +1,11 @@
-(*  Title:   Day24_Separability.thy
+(*  Title:   Day26_Separability.thy
     Author:  Dustin Bryant, after Vern Paulsen's lectures of 28 October - 2 November 2011
              (Days 26-28).  The proofs are in Lmat/Separable_Cone.thy; this theory restates
              the results lecture by lecture.
 *)
 
-theory Day24_Separability
-  imports
-    Quantum_Computing11
-    Quantum_Computing_by_VP_3_10_Lmat.Separable_Cone
+theory Day26_Separability
+  imports Quantum_Computing_by_VP_3_10_Lmat.Separable_Cone
 begin
 
 section \<open>Days 26--28 (28 October -- 2 November 2011): separability and entanglement witnesses\<close>
