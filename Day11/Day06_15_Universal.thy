@@ -1,5 +1,5 @@
 theory Day06_15_Universal
-  imports Quantum_Computing11
+  imports Day02_11_Supplement
 begin
 
 section \<open>Day 6 and Day 15: the universal properties in the Kronecker model\<close>
@@ -282,13 +282,10 @@ definition linear_mat_on :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix
      (\<forall>x y. x \<in> carrier_mat K1 K2 \<longrightarrow> y \<in> carrier_mat K1 K2 \<longrightarrow> \<Phi> (x + y) = \<Phi> x + \<Phi> y)
    \<and> (\<forall>c x. x \<in> carrier_mat K1 K2 \<longrightarrow> \<Phi> (c \<cdot>\<^sub>m x) = c \<cdot>\<^sub>m \<Phi> x)"
 
-definition unflat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
-  "unflat K1 K2 x = Matrix.mat K1 K2 (\<lambda>(a, b). x $ (a * K2 + b))"
-
 definition flat_mat :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
   "flat_mat K2 c = Matrix.vec (dim_row c * K2) (\<lambda>k. c $$ (k div K2, k mod K2))"
 
-lemma unflat_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> unflat K1 K2 (flat_mat K2 c) = c"
+lemma vec_to_mat_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> vec_to_mat K1 K2 (flat_mat K2 c) = c"
 proof (rule eq_matI)
   fix i j assume c: "c \<in> carrier_mat K1 K2" and ij: "i < dim_row c" "j < dim_col c"
   have j: "j < K2" using c ij by simp
@@ -299,14 +296,14 @@ proof (rule eq_matI)
     also have "\<dots> \<le> K1 * K2" using c ij by (intro mult_le_mono1) simp
     finally show ?thesis .
   qed
-  thus "unflat K1 K2 (flat_mat K2 c) $$ (i, j) = c $$ (i, j)" using c ij j by (simp add: unflat_def flat_mat_def)
-qed (auto simp: unflat_def)
+  thus "vec_to_mat K1 K2 (flat_mat K2 c) $$ (i, j) = c $$ (i, j)" using c ij j by (simp add: vec_to_mat_def flat_mat_def)
+qed (auto simp: vec_to_mat_def)
 
 lemma dim_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> dim_vec (flat_mat K2 c) = K1 * K2" by (simp add: flat_mat_def)
 
-lemma unflat_unit:
+lemma vec_to_mat_unit:
   assumes k: "k < K1 * K2"
-  shows "unflat K1 K2 (unit_vec (K1 * K2) k) = unit_mat K1 K2 (k div K2) (k mod K2)"
+  shows "vec_to_mat K1 K2 (unit_vec (K1 * K2) k) = unit_mat K1 K2 (k div K2) (k mod K2)"
 proof (rule eq_matI)
   fix i j assume ij: "i < dim_row (unit_mat K1 K2 (k div K2) (k mod K2))" "j < dim_col (unit_mat K1 K2 (k div K2) (k mod K2))"
   hence i: "i < K1" and j: "j < K2" by (simp_all add: unit_mat_def)
@@ -322,9 +319,9 @@ proof (rule eq_matI)
   next
     assume "i = k div K2 \<and> j = k mod K2" thus "i * K2 + j = k" by (simp add: div_mult_mod_eq)
   qed
-  thus "unflat K1 K2 (unit_vec (K1 * K2) k) $$ (i, j) = unit_mat K1 K2 (k div K2) (k mod K2) $$ (i, j)"
-    using i j lt by (simp add: unflat_def unit_mat_def unit_vec_def)
-qed (simp_all add: unflat_def unit_mat_def)
+  thus "vec_to_mat K1 K2 (unit_vec (K1 * K2) k) $$ (i, j) = unit_mat K1 K2 (k div K2) (k mod K2) $$ (i, j)"
+    using i j lt by (simp add: vec_to_mat_def unit_mat_def unit_vec_def)
+qed (simp_all add: vec_to_mat_def unit_mat_def)
 
 lemma linear_mat_unique:
   assumes l1: "linear_mat_on K1 K2 \<Phi>" and l2: "linear_mat_on K1 K2 \<Psi>"
@@ -334,35 +331,35 @@ lemma linear_mat_unique:
   shows "\<Phi> c = \<Psi> c"
 proof (rule eq_matI)
   have K20: "K2 = 0 \<or> 0 < K2" by auto
-  have uc: "unflat K1 K2 x \<in> carrier_mat K1 K2" for x by (simp add: unflat_def)
-  have lin: "linear_on (K1 * K2) (\<lambda>x. F (unflat K1 K2 x) $$ (r, s))" if l: "linear_mat_on K1 K2 F"
+  have uc: "vec_to_mat K1 K2 x \<in> carrier_mat K1 K2" for x by (simp add: vec_to_mat_def)
+  have lin: "linear_on (K1 * K2) (\<lambda>x. F (vec_to_mat K1 K2 x) $$ (r, s))" if l: "linear_mat_on K1 K2 F"
     and rs: "\<And>x. x \<in> carrier_mat K1 K2 \<Longrightarrow> r < dim_row (F x) \<and> s < dim_col (F x)" for F r s
   proof -
-    have add: "unflat K1 K2 (x + y) = unflat K1 K2 x + unflat K1 K2 y" if "dim_vec x = K1 * K2" "dim_vec y = K1 * K2" for x y
+    have add: "vec_to_mat K1 K2 (x + y) = vec_to_mat K1 K2 x + vec_to_mat K1 K2 y" if "dim_vec x = K1 * K2" "dim_vec y = K1 * K2" for x y
     proof (rule eq_matI)
-      fix i j assume "i < dim_row (unflat K1 K2 x + unflat K1 K2 y)" "j < dim_col (unflat K1 K2 x + unflat K1 K2 y)"
-      hence i: "i < K1" and j: "j < K2" by (simp_all add: unflat_def)
+      fix i j assume "i < dim_row (vec_to_mat K1 K2 x + vec_to_mat K1 K2 y)" "j < dim_col (vec_to_mat K1 K2 x + vec_to_mat K1 K2 y)"
+      hence i: "i < K1" and j: "j < K2" by (simp_all add: vec_to_mat_def)
       have "i * K2 + j < K1 * K2"
       proof -
         have "i * K2 + j < Suc i * K2" using j by simp
         also have "\<dots> \<le> K1 * K2" using i by (intro mult_le_mono1) simp
         finally show ?thesis .
       qed
-      thus "unflat K1 K2 (x + y) $$ (i, j) = (unflat K1 K2 x + unflat K1 K2 y) $$ (i, j)" using i j that by (simp add: unflat_def)
-    qed (simp_all add: unflat_def)
-    have sm: "unflat K1 K2 (a \<cdot>\<^sub>v x) = a \<cdot>\<^sub>m unflat K1 K2 x" if "dim_vec x = K1 * K2" for a x
-      by (rule eq_matI) (use that mult_index_lt in \<open>simp_all add: unflat_def\<close>)
+      thus "vec_to_mat K1 K2 (x + y) $$ (i, j) = (vec_to_mat K1 K2 x + vec_to_mat K1 K2 y) $$ (i, j)" using i j that by (simp add: vec_to_mat_def)
+    qed (simp_all add: vec_to_mat_def)
+    have sm: "vec_to_mat K1 K2 (a \<cdot>\<^sub>v x) = a \<cdot>\<^sub>m vec_to_mat K1 K2 x" if "dim_vec x = K1 * K2" for a x
+      by (rule eq_matI) (use that mult_index_lt in \<open>simp_all add: vec_to_mat_def\<close>)
     show ?thesis unfolding linear_on_def
     proof (intro conjI allI impI)
       fix x y :: "complex Matrix.vec" assume x: "dim_vec x = K1 * K2" and y: "dim_vec y = K1 * K2"
-      have rs': "r < dim_row (F (unflat K1 K2 x))" "s < dim_col (F (unflat K1 K2 x))"
-        "r < dim_row (F (unflat K1 K2 y))" "s < dim_col (F (unflat K1 K2 y))" using rs uc by auto
-      show "F (unflat K1 K2 (x + y)) $$ (r, s) = F (unflat K1 K2 x) $$ (r, s) + F (unflat K1 K2 y) $$ (r, s)"
+      have rs': "r < dim_row (F (vec_to_mat K1 K2 x))" "s < dim_col (F (vec_to_mat K1 K2 x))"
+        "r < dim_row (F (vec_to_mat K1 K2 y))" "s < dim_col (F (vec_to_mat K1 K2 y))" using rs uc by auto
+      show "F (vec_to_mat K1 K2 (x + y)) $$ (r, s) = F (vec_to_mat K1 K2 x) $$ (r, s) + F (vec_to_mat K1 K2 y) $$ (r, s)"
         unfolding add[OF x y] using l uc rs' unfolding linear_mat_on_def by simp
     next
       fix a and x :: "complex Matrix.vec" assume x: "dim_vec x = K1 * K2"
-      have rs': "r < dim_row (F (unflat K1 K2 x))" "s < dim_col (F (unflat K1 K2 x))" using rs uc by auto
-      show "F (unflat K1 K2 (a \<cdot>\<^sub>v x)) $$ (r, s) = a * F (unflat K1 K2 x) $$ (r, s)"
+      have rs': "r < dim_row (F (vec_to_mat K1 K2 x))" "s < dim_col (F (vec_to_mat K1 K2 x))" using rs uc by auto
+      show "F (vec_to_mat K1 K2 (a \<cdot>\<^sub>v x)) $$ (r, s) = a * F (vec_to_mat K1 K2 x) $$ (r, s)"
         unfolding sm[OF x] using l uc rs' unfolding linear_mat_on_def by simp
     qed
   qed
@@ -373,21 +370,21 @@ proof (rule eq_matI)
   have r2: "\<And>x. x \<in> carrier_mat K1 K2 \<Longrightarrow> r < dim_row (\<Psi> x) \<and> s < dim_col (\<Psi> x)" using dims rs by auto
   let ?x = "flat_mat K2 c"
   have x: "dim_vec ?x = K1 * K2" by (rule dim_flat[OF c])
-  have "\<Phi> c $$ (r, s) = \<Phi> (unflat K1 K2 ?x) $$ (r, s)" unfolding unflat_flat[OF c] ..
-  also have "\<dots> = (\<Sum>k<K1 * K2. ?x $ k * \<Phi> (unflat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s))"
+  have "\<Phi> c $$ (r, s) = \<Phi> (vec_to_mat K1 K2 ?x) $$ (r, s)" unfolding vec_to_mat_flat[OF c] ..
+  also have "\<dots> = (\<Sum>k<K1 * K2. ?x $ k * \<Phi> (vec_to_mat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s))"
     by (rule linear_on_expand[OF lin[where F = \<Phi> and r = r and s = s, OF l1 r1] x])
-  also have "\<dots> = (\<Sum>k<K1 * K2. ?x $ k * \<Psi> (unflat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s))"
+  also have "\<dots> = (\<Sum>k<K1 * K2. ?x $ k * \<Psi> (vec_to_mat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s))"
   proof (rule sum.cong[OF refl])
     fix k assume "k \<in> {..<K1 * K2}"
     hence k: "k < K1 * K2" by simp
     have K2: "0 < K2" using k by (cases K2) auto
     have "k div K2 < K1" "k mod K2 < K2" using k K2 by (simp_all add: less_mult_imp_div_less)
-    thus "?x $ k * \<Phi> (unflat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s) = ?x $ k * \<Psi> (unflat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s)"
-      unfolding unflat_unit[OF k] using e by simp
+    thus "?x $ k * \<Phi> (vec_to_mat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s) = ?x $ k * \<Psi> (vec_to_mat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s)"
+      unfolding vec_to_mat_unit[OF k] using e by simp
   qed
-  also have "\<dots> = \<Psi> (unflat K1 K2 ?x) $$ (r, s)"
+  also have "\<dots> = \<Psi> (vec_to_mat K1 K2 ?x) $$ (r, s)"
     by (rule linear_on_expand[OF lin[where F = \<Psi> and r = r and s = s, OF l2 r2] x, symmetric])
-  finally show "\<Phi> c $$ (r, s) = \<Psi> c $$ (r, s)" unfolding unflat_flat[OF c] .
+  finally show "\<Phi> c $$ (r, s) = \<Psi> c $$ (r, s)" unfolding vec_to_mat_flat[OF c] .
 qed
 
 theorem gamma_unique:

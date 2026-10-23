@@ -866,3 +866,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   main session, since that entry sits on Complex_Bounded_Operators, Hermite_Lindemann and four
   more).  The capstone `QC_Notes_Overview` now imports every lecture theory in lecture order
   (Basic_Math, Day02, Quantum_Computing_3_10, Day04, …, Day34), and the ROOT theory list follows.
+- **One reshape** (2026-10-23): `vec_to_mat k m u` (Day02_11_Supplement), the k×m matrix of a
+  vector of C^k ⊗ C^m, replaces Day 16's `vcomp` (now `Matrix.col (vec_to_mat m p v) i`) and Day
+  6/15's `unflat` (same body; the checker's DEFINNER found it); `right_coord`/`left_coord` are
+  `vec_to_mat k m u *v row G j` and its transpose version.  Trap: unqualified `col`/`row` mean
+  Matrix_Legacy's list versions here; write `Matrix.col`, `Matrix.row`.

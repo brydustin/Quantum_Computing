@@ -123,11 +123,40 @@ qed
 text \<open>A basis $f_1,\dots,f_m$ of $\C^m$ is a list whose column matrix $F$ is invertible; the
 coordinates use $G=F^{-1}$.\<close>
 
+text \<open>A vector of $\C^k\otimes\C^m$ as a $k\times m$ matrix: entry $(i,l)$ is the coefficient of
+$e_i\otimes e_l$.\<close>
+
+definition vec_to_mat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
+  "vec_to_mat k m u = Matrix.mat k m (\<lambda>(i, l). u $ (i * m + l))"
+
+lemma vec_to_mat_carrier [simp]: "vec_to_mat k m u \<in> carrier_mat k m"
+  by (simp add: vec_to_mat_def)
+
+lemma vec_to_mat_dims [simp]: "dim_row (vec_to_mat k m u) = k" "dim_col (vec_to_mat k m u) = m"
+  by (simp_all add: vec_to_mat_def)
+
+lemma col_vec_to_mat: "l < m \<Longrightarrow> Matrix.col (vec_to_mat k m u) l = Matrix.vec k (\<lambda>i. u $ (i * m + l))"
+  by (auto simp: vec_to_mat_def)
+
 definition right_coord :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where
-  "right_coord k m G u j = Matrix.vec k (\<lambda>i. \<Sum>l<m. u $ (i * m + l) * G $$ (j,l))"
+  "right_coord k m G u j = vec_to_mat k m u *\<^sub>v Matrix.row G j"
 
 definition left_coord :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where
-  "left_coord k m Hm u i = Matrix.vec m (\<lambda>l. \<Sum>r<k. Hm $$ (i,r) * u $ (r * m + l))"
+  "left_coord k m Hm u i = (vec_to_mat k m u)\<^sup>T *\<^sub>v Matrix.row Hm i"
+
+lemma right_coord_dim [simp]: "dim_vec (right_coord k m G u j) = k"
+  by (simp add: right_coord_def)
+
+lemma left_coord_dim [simp]: "dim_vec (left_coord k m Hm u i) = m"
+  by (simp add: left_coord_def)
+
+lemma right_coord_index:
+  "G \<in> carrier_mat m m \<Longrightarrow> i < k \<Longrightarrow> right_coord k m G u j $ i = (\<Sum>l<m. u $ (i * m + l) * G $$ (j,l))"
+  by (simp add: right_coord_def scalar_prod_def Matrix.row_def vec_to_mat_def atLeast0LessThan)
+
+lemma left_coord_index:
+  "Hm \<in> carrier_mat k k \<Longrightarrow> l < m \<Longrightarrow> left_coord k m Hm u i $ l = (\<Sum>r<k. Hm $$ (i,r) * u $ (r * m + l))"
+  by (simp add: left_coord_def scalar_prod_def Matrix.row_def vec_to_mat_def atLeast0LessThan mult.commute)
 
 lemma basis_inverse:
   fixes fs :: "complex Matrix.vec list"
@@ -174,12 +203,12 @@ lemma right_coord_unique:
 proof (rule eq_vecI)
   have xd: "dim_vec (xs ! j) = k" using xs j by simp
   show "dim_vec (right_coord k m G (tensor_combination (k * m) xs fs) j) = dim_vec (xs ! j)"
-    by (simp add: right_coord_def xd)
+    by (simp add: xd)
   fix i assume "i < dim_vec (xs ! j)"
   hence i: "i < k" using xd by simp
   have "right_coord k m G (tensor_combination (k * m) xs fs) j $ i
       = (\<Sum>l<m. (\<Sum>j'<m. xs ! j' $ i * fs ! j' $ l) * G $$ (j,l))"
-    unfolding right_coord_def using i
+    unfolding right_coord_index[OF G i] using i
     by (simp add: tensor_combination_index[OF xs(2) fd(1)] xs(1) fd(2) mult_index_lt mult_index_div_mod)
   also have "\<dots> = (\<Sum>j'<m. xs ! j' $ i * (\<Sum>l<m. fs ! j' $ l * G $$ (j,l)))"
     unfolding sum_distrib_left sum_distrib_right by (subst sum.swap) (simp add: mult_ac)
@@ -194,7 +223,7 @@ lemma right_coord_exists:
       and FG: "mat_of_cols m fs * G = 1\<^sub>m m" and u: "dim_vec u = k * m"
   shows "tensor_combination (k * m) (map (right_coord k m G u) [0..<m]) fs = u"
 proof (rule eq_vecI)
-  have cd: "\<forall>x \<in> set (map (right_coord k m G u) [0..<m]). dim_vec x = k" by (auto simp: right_coord_def)
+  have cd: "\<forall>x \<in> set (map (right_coord k m G u) [0..<m]). dim_vec x = k" by auto
   fix p assume "p < dim_vec u"
   hence p: "p < k * m" using u by simp
   hence m0: "0 < m" by (cases m) auto
@@ -203,7 +232,7 @@ proof (rule eq_vecI)
   have r: "?r < m" using m0 by simp
   have "tensor_combination (k * m) (map (right_coord k m G u) [0..<m]) fs $ p
       = (\<Sum>j<m. (\<Sum>l<m. u $ (?i * m + l) * G $$ (j,l)) * fs ! j $ ?r)"
-    using tensor_combination_index[OF cd fd(1) _ p] fd(2) i by (simp add: right_coord_def)
+    using tensor_combination_index[OF cd fd(1) _ p] fd(2) i by (simp add: right_coord_index[OF G i])
   also have "\<dots> = (\<Sum>l<m. u $ (?i * m + l) * (\<Sum>j<m. fs ! j $ ?r * G $$ (j,l)))"
     unfolding sum_distrib_left sum_distrib_right by (subst sum.swap) (simp add: mult_ac)
   also have "\<dots> = (\<Sum>l<m. if l = ?r then u $ (?i * m + l) else 0)"
@@ -228,7 +257,7 @@ proof -
     show "length (map (right_coord k m G u) [0..<m]) = m \<and>
           (\<forall>x \<in> set (map (right_coord k m G u) [0..<m]). dim_vec x = k) \<and>
           u = tensor_combination (k * m) (map (right_coord k m G u) [0..<m]) fs"
-      using right_coord_exists[OF fd G FG u] by (auto simp: right_coord_def)
+      using right_coord_exists[OF fd G FG u] by auto
     fix xs assume xs: "length xs = m \<and> (\<forall>x \<in> set xs. dim_vec x = k) \<and> u = tensor_combination (k * m) xs fs"
     show "xs = map (right_coord k m G u) [0..<m]"
       by (rule nth_equalityI) (use xs right_coord_unique[OF fd G GF, of xs k] in auto)
@@ -243,12 +272,12 @@ lemma left_coord_unique:
 proof (rule eq_vecI)
   have yd: "dim_vec (ys ! i) = m" using ys i by simp
   show "dim_vec (left_coord k m Hm (tensor_combination (k * m) es ys) i) = dim_vec (ys ! i)"
-    by (simp add: left_coord_def yd)
+    by (simp add: yd)
   fix l assume "l < dim_vec (ys ! i)"
   hence l: "l < m" using yd by simp
   have "left_coord k m Hm (tensor_combination (k * m) es ys) i $ l
       = (\<Sum>r<k. Hm $$ (i,r) * (\<Sum>i'<k. es ! i' $ r * ys ! i' $ l))"
-    unfolding left_coord_def using l
+    unfolding left_coord_index[OF Hm l] using l
     by (simp add: tensor_combination_index[OF ed(1) ys(2)] ys(1) ed(2) mult_index_lt mult_index_div_mod)
   also have "\<dots> = (\<Sum>i'<k. ys ! i' $ l * (\<Sum>r<k. es ! i' $ r * Hm $$ (i,r)))"
     unfolding sum_distrib_left sum_distrib_right by (subst sum.swap) (simp add: mult_ac)
@@ -263,7 +292,7 @@ lemma left_coord_exists:
       and EH: "mat_of_cols k es * Hm = 1\<^sub>m k" and u: "dim_vec u = k * m"
   shows "tensor_combination (k * m) es (map (left_coord k m Hm u) [0..<k]) = u"
 proof (rule eq_vecI)
-  have cd: "\<forall>y \<in> set (map (left_coord k m Hm u) [0..<k]). dim_vec y = m" by (auto simp: left_coord_def)
+  have cd: "\<forall>y \<in> set (map (left_coord k m Hm u) [0..<k]). dim_vec y = m" by auto
   fix p assume "p < dim_vec u"
   hence p: "p < k * m" using u by simp
   hence m0: "0 < m" by (cases m) auto
@@ -272,7 +301,7 @@ proof (rule eq_vecI)
   have r: "?r < m" using m0 by simp
   have "tensor_combination (k * m) es (map (left_coord k m Hm u) [0..<k]) $ p
       = (\<Sum>j<k. es ! j $ ?i * (\<Sum>r'<k. Hm $$ (j,r') * u $ (r' * m + ?r)))"
-    using tensor_combination_index[OF ed(1) cd _ p] ed(2) r by (simp add: left_coord_def)
+    using tensor_combination_index[OF ed(1) cd _ p] ed(2) r by (simp add: left_coord_index[OF Hm r])
   also have "\<dots> = (\<Sum>r'<k. u $ (r' * m + ?r) * (\<Sum>j<k. es ! j $ ?i * Hm $$ (j,r')))"
     unfolding sum_distrib_left sum_distrib_right by (subst sum.swap) (simp add: mult_ac)
   also have "\<dots> = (\<Sum>r'<k. if r' = ?i then u $ (r' * m + ?r) else 0)"
@@ -296,7 +325,7 @@ proof -
     show "length (map (left_coord k m Hm u) [0..<k]) = k \<and>
           (\<forall>y \<in> set (map (left_coord k m Hm u) [0..<k]). dim_vec y = m) \<and>
           u = tensor_combination (k * m) es (map (left_coord k m Hm u) [0..<k])"
-      using left_coord_exists[OF ed Hm EH u] by (auto simp: left_coord_def)
+      using left_coord_exists[OF ed Hm EH u] by auto
     fix ys assume ys: "length ys = k \<and> (\<forall>y \<in> set ys. dim_vec y = m) \<and> u = tensor_combination (k * m) es ys"
     show "ys = map (left_coord k m Hm u) [0..<k]"
       by (rule nth_equalityI) (use ys left_coord_unique[OF ed Hm HE, of ys m] in auto)

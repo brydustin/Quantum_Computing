@@ -189,7 +189,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | id | notes | formal | status |
 |---|---|---|---|
 | D16-1 | tr_B((X_{ij})) = Σ X_{ii}, tr_A((X_{ij})) = (Tr X_{ij}) | these are the formal definitions `partial_trace_B/A` (A-major Kronecker indexing) | ✓ |
-| D16-2 | H_A ⊗ H_B ≅ H_A^{(p)}, L(H_A⊗H_B) ≅ M_p(L(H_A)) | BF `vcomp_expansion` (v = Σ h_i ⊗ e_i with h_i = `vcomp`), `vcomp_inner_prod` (⟨v\|w⟩ = Σ ⟨h_i\|k_i⟩: the identification is isometric), `tensor_block_decomposition` (X = Σ X_ij ⊗ E_ij with blocks `bblock`) and `tensor_block_decomposition_unique`, `bblock_action` ((Xv)_i = Σ_j X_ij h_j), `partial_trace_B_blocks`, `partial_trace_A_blocks`; f_i = e_i, A-major indices | ✓ |
+| D16-2 | H_A ⊗ H_B ≅ H_A^{(p)}, L(H_A⊗H_B) ≅ M_p(L(H_A)) | BF `vec_to_mat_cols_expansion` (v = Σ h_i ⊗ e_i with h_i the i-th column of `vec_to_mat m p v`), `vec_to_mat_cols_inner_prod` (⟨v\|w⟩ = Σ ⟨h_i\|k_i⟩: the identification is isometric), `tensor_block_decomposition` (X = Σ X_ij ⊗ E_ij with blocks `bblock`) and `tensor_block_decomposition_unique`, `bblock_action` ((Xv)_i = Σ_j X_ij h_j), `partial_trace_B_blocks`, `partial_trace_A_blocks`; f_i = e_i, A-major indices | ✓ |
 | D16-3 | Postulates 1′ (density matrices), 2′ (UρU*), 3′ (p_α = Tr(M*Mρ)) | QC11 `density_matrix`; `unitary_conj_channel_preserves_density_matrix`, `conjugation_channel`; `ensemble_prob_trace`, `meas_map_density` | ✓ |
 | D16-4 | Postulate 4′: ρ₁ ⊗ ρ₂ is a density matrix | QC11 `psd_tensor`, `density_matrix_tensor` | ✓ |
 

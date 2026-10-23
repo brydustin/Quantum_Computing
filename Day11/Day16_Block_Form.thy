@@ -11,11 +11,8 @@ $X=\sum_{i,j}X_{ij}\otimes E_{ij}$, $\tr_B(X)=X_{11}+\dots+X_{pp}$ and $\tr_A(X)
 $f_i=e_i$, and indices are A-major as everywhere in the development.\<close>
 
 text \<open>With $H_A=\C^m$, $H_B=\C^p$ and A-major indices $a p+i$, the coordinates of $v$ along $e_i$ form
-$h_i=(v_{ap+i})_a\in H_A$, and an operator $X$ has the blocks
+$h_i=(v_{ap+i})_a\in H_A$, the $i$-th column of \<^term>\<open>vec_to_mat m p v\<close>, and an operator $X$ has the blocks
 $X_{ij}=(X_{ap+i,\,bp+j})_{a,b}\in L(H_A)$.\<close>
-
-definition vcomp :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where
-  "vcomp m p v i = Matrix.vec m (\<lambda>a. v $ (a * p + i))"
 
 definition bblock :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "bblock m p X i j = Matrix.mat m m (\<lambda>(a, b). X $$ (a * p + i, b * p + j))"
@@ -25,9 +22,6 @@ lemma bblock_carrier [simp]: "bblock m p X i j \<in> carrier_mat m m"
 
 lemma bblock_dims [simp]: "dim_row (bblock m p X i j) = m" "dim_col (bblock m p X i j) = m"
   by (simp_all add: bblock_def)
-
-lemma vcomp_dim [simp]: "dim_vec (vcomp m p v i) = m"
-  by (simp add: vcomp_def)
 
 lemma sum_mp_reindex:
   fixes f :: "nat \<Rightarrow> complex"
@@ -55,55 +49,55 @@ qed
 
 text \<open>$H_A\otimes H_B\cong H_A^{(p)}$ isometrically: $\langle v|w\rangle=\sum_i\langle h_i|k_i\rangle$.\<close>
 
-theorem vcomp_inner_prod:
+theorem vec_to_mat_cols_inner_prod:
   assumes v: "dim_vec v = m * p" and w: "dim_vec w = m * p"
-  shows "Quantum.inner_prod v w = (\<Sum>i<p. Quantum.inner_prod (vcomp m p v i) (vcomp m p w i))"
+  shows "Quantum.inner_prod v w = (\<Sum>i<p. Quantum.inner_prod (Matrix.col (vec_to_mat m p v) i) (Matrix.col (vec_to_mat m p w) i))"
 proof -
   have "Quantum.inner_prod v w = (\<Sum>r<m * p. cnj (v $ r) * w $ r)" using w by (simp add: Quantum.inner_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>b<m. \<Sum>i<p. cnj (v $ (b * p + i)) * w $ (b * p + i))" by (rule sum_mp_reindex)
   also have "\<dots> = (\<Sum>i<p. \<Sum>b<m. cnj (v $ (b * p + i)) * w $ (b * p + i))" by (rule sum.swap)
-  also have "\<dots> = (\<Sum>i<p. Quantum.inner_prod (vcomp m p v i) (vcomp m p w i))"
-    by (simp add: Quantum.inner_prod_def vcomp_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>i<p. Quantum.inner_prod (Matrix.col (vec_to_mat m p v) i) (Matrix.col (vec_to_mat m p w) i))"
+    by (rule sum.cong) (simp_all add: Quantum.inner_prod_def col_vec_to_mat atLeast0LessThan)
   finally show ?thesis .
 qed
 
 text \<open>$v=\sum_ih_i\otimes e_i$.\<close>
 
-theorem vcomp_expansion:
+theorem vec_to_mat_cols_expansion:
   assumes v: "dim_vec v = m * p"
-  shows "v = tensor_combination (m * p) (map (vcomp m p v) [0..<p]) (map (unit_vec p) [0..<p])"
+  shows "v = tensor_combination (m * p) (map (Matrix.col (vec_to_mat m p v)) [0..<p]) (map (unit_vec p) [0..<p])"
 proof (rule eq_vecI)
-  have xs: "\<forall>x \<in> set (map (vcomp m p v) [0..<p]). dim_vec x = m" by simp
+  have xs: "\<forall>x \<in> set (map (Matrix.col (vec_to_mat m p v)) [0..<p]). dim_vec x = m" by simp
   have ys: "\<forall>y \<in> set (map (unit_vec p) [0..<p] :: complex Matrix.vec list). dim_vec y = p" by simp
-  fix r assume "r < dim_vec (tensor_combination (m * p) (map (vcomp m p v) [0..<p]) (map (unit_vec p) [0..<p]))"
+  fix r assume "r < dim_vec (tensor_combination (m * p) (map (Matrix.col (vec_to_mat m p v)) [0..<p]) (map (unit_vec p) [0..<p]))"
   hence r: "r < m * p" by simp
   have p: "0 < p" using r by (cases p) auto
   have rd: "r div p < m" using r by (simp add: less_mult_imp_div_less mult.commute)
-  have "tensor_combination (m * p) (map (vcomp m p v) [0..<p]) (map (unit_vec p) [0..<p]) $ r
-        = (\<Sum>j<p. vcomp m p v j $ (r div p) * unit_vec p j $ (r mod p))"
+  have "tensor_combination (m * p) (map (Matrix.col (vec_to_mat m p v)) [0..<p]) (map (unit_vec p) [0..<p]) $ r
+        = (\<Sum>j<p. Matrix.col (vec_to_mat m p v) j $ (r div p) * unit_vec p j $ (r mod p))"
     using tensor_combination_index[OF xs ys _ r] by simp
   also have "\<dots> = (\<Sum>j<p. if j = r mod p then v $ (r div p * p + j) else 0)"
-    by (rule sum.cong) (use p rd in \<open>auto simp: vcomp_def unit_vec_def\<close>)
+    by (rule sum.cong) (use p rd in \<open>auto simp: col_vec_to_mat unit_vec_def\<close>)
   also have "\<dots> = v $ r" using p by simp
-  finally show "v $ r = tensor_combination (m * p) (map (vcomp m p v) [0..<p]) (map (unit_vec p) [0..<p]) $ r" ..
+  finally show "v $ r = tensor_combination (m * p) (map (Matrix.col (vec_to_mat m p v)) [0..<p]) (map (unit_vec p) [0..<p]) $ r" ..
 qed (use v in simp)
 
 text \<open>The block action: the $i$-th coordinate of $Xv$ is $\sum_jX_{ij}h_j$.\<close>
 
 theorem bblock_action:
   assumes X: "X \<in> carrier_mat (m * p) (m * p)" and v: "dim_vec v = m * p" and i: "i < p"
-  shows "vcomp m p (X *\<^sub>v v) i = Matrix.vec m (\<lambda>a. \<Sum>j<p. (bblock m p X i j *\<^sub>v vcomp m p v j) $ a)"
+  shows "Matrix.col (vec_to_mat m p (X *\<^sub>v v)) i = Matrix.vec m (\<lambda>a. \<Sum>j<p. (bblock m p X i j *\<^sub>v Matrix.col (vec_to_mat m p v) j) $ a)"
 proof (rule eq_vecI)
-  fix a assume "a < dim_vec (Matrix.vec m (\<lambda>a. \<Sum>j<p. (bblock m p X i j *\<^sub>v vcomp m p v j) $ a))"
+  fix a assume "a < dim_vec (Matrix.vec m (\<lambda>a. \<Sum>j<p. (bblock m p X i j *\<^sub>v Matrix.col (vec_to_mat m p v) j) $ a))"
   hence a: "a < m" by simp
   have r: "a * p + i < m * p" by (rule mult_index_lt[OF a i])
-  have "vcomp m p (X *\<^sub>v v) i $ a = (\<Sum>s<m * p. X $$ (a * p + i, s) * v $ s)"
-    using X v r a by (simp add: vcomp_def scalar_prod_def atLeast0LessThan)
+  have "Matrix.col (vec_to_mat m p (X *\<^sub>v v)) i $ a = (\<Sum>s<m * p. X $$ (a * p + i, s) * v $ s)"
+    using X v r a by (simp add: col_vec_to_mat[OF i] scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>b<m. \<Sum>j<p. X $$ (a * p + i, b * p + j) * v $ (b * p + j))" by (rule sum_mp_reindex)
   also have "\<dots> = (\<Sum>j<p. \<Sum>b<m. X $$ (a * p + i, b * p + j) * v $ (b * p + j))" by (rule sum.swap)
-  also have "\<dots> = (\<Sum>j<p. (bblock m p X i j *\<^sub>v vcomp m p v j) $ a)"
-    using a by (simp add: bblock_def vcomp_def scalar_prod_def atLeast0LessThan)
-  finally show "vcomp m p (X *\<^sub>v v) i $ a = Matrix.vec m (\<lambda>a. \<Sum>j<p. (bblock m p X i j *\<^sub>v vcomp m p v j) $ a) $ a"
+  also have "\<dots> = (\<Sum>j<p. (bblock m p X i j *\<^sub>v Matrix.col (vec_to_mat m p v) j) $ a)"
+    using a by (intro sum.cong[OF refl]) (simp add: bblock_def col_vec_to_mat scalar_prod_def atLeast0LessThan)
+  finally show "Matrix.col (vec_to_mat m p (X *\<^sub>v v)) i $ a = Matrix.vec m (\<lambda>a. \<Sum>j<p. (bblock m p X i j *\<^sub>v Matrix.col (vec_to_mat m p v) j) $ a) $ a"
     using a by simp
 qed simp
 
