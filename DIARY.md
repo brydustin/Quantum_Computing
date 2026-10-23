@@ -805,4 +805,21 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   check now also covers facts proved inside locales; it caught a reproved `sum_wdag_w_append`.
   Traps: `S`, `W`, `X` are constants in the merged context (IMD's gates, Part VI); simp would not
   use a fact `adjoint U * U = 1` stated next to the conjunctive premise, auto did.  Paper: §8
-  paragraph "Programs are channels" (Listing 13); the conclusion now names loops as the next step.
+  paragraph "Programs are channels" (listing `lst:channels`); the conclusion now names loops as the next step.
+- **Suzuki's higher-order formulas** (2026-10-22): `Suzuki_Order` and `HHL_Suzuki` in Part VI close
+  the run-time gap left by first-order Trotter.  A formula is a list of (coefficient, H) pairs
+  (`strang`, `suzuki` with `suz_rs q = [u,u,1−4u,u,u]`, u = 1/(4 − root q 4)); its Taylor
+  coefficients are convolutions (`sconv`, `fcoef`).  Algebra: palindromes have odd order
+  (`sym_order`, via the inverse product), five scaled copies kill degree q when Σc^q = 0
+  (`scaled_copies`), hence `suzuki_order` (degree ≤ 2k+2).  Analysis: `exp_tail`,
+  `evolution_taylor` (functional calculus), coefficient bounds `fcoef_obnd`, and `sprod_approx`
+  (product vs truncated coefficient polynomial, by induction on the list with `peval_mult`).
+  Result `suzuki_error`: r steps within r(2|F|+1)(Λ|t|/r)^{2k+3}e^{Λ|t|/r}/(2k+3)!, |F| = 2·5^k m,
+  Λ ≥ mL; `sparse_suzuki` for the colouring's 2s parts; `hhl_suzuki_window_error`.  Matrix level
+  only: the verified circuit stays first order.  `pow_mat_add` moved from `HHL_Gates` to
+  `Hermitian_Functional_Calculus`.  Traps: `hermitian`/`unitary` resolve to QHLProver's
+  `Complex_Matrix` versions once `QHLProver.Matrix_Limit` is imported (qualify
+  `Quantum_Computing_3_10.hermitian`, `Quantum.unitary`); `[symmetric, of …]` reorders the
+  variables (instantiate before `symmetric`); OF with a ⋀-premise needs `where K = … and p = …`.
+  Paper: paragraph "Higher order" in the sparse-simulation subsection, Listing `lst:suzuki`;
+  limitations updated.

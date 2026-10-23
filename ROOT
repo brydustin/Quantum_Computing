@@ -79,6 +79,7 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     QHLProver
   theories
     Hermitian_Functional_Calculus
+    Matrix_Sums
     Phase_Estimation
     QFT_Fourier
     HHL
@@ -107,6 +108,8 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL_Sparse_Split
     HHL_Sparse_Circuit
     HHL_All_Elementary
+    Suzuki_Order
+    HHL_Suzuki
     QPE_Precision
     QPE_Program
 
@@ -227,6 +230,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day21_Average_Conjecture
     Vern_Paulsen_QC.Day21_Average_Two
     Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
+    Vern_Paulsen_QC_Algorithms.Matrix_Sums
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
     Vern_Paulsen_QC_Algorithms.HHL
@@ -255,6 +259,8 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Split
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
     Vern_Paulsen_QC_Algorithms.HHL_All_Elementary
+    Vern_Paulsen_QC_Algorithms.Suzuki_Order
+    Vern_Paulsen_QC_Algorithms.HHL_Suzuki
     Vern_Paulsen_QC_Algorithms.QPE_Precision
     Vern_Paulsen_QC_Algorithms.QPE_Program
   document_files

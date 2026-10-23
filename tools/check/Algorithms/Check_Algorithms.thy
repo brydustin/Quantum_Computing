@@ -1,6 +1,7 @@
 theory Check_Algorithms
   imports Vern_Paulsen_QC_Algorithms.HHL_All_Elementary Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
     Vern_Paulsen_QC_Algorithms.HHL_Optimality Vern_Paulsen_QC_Algorithms.QPE_Program
+    Vern_Paulsen_QC_Algorithms.HHL_Suzuki
 begin
 
 ML_file "../project_checks.ML"

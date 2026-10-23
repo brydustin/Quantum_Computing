@@ -8,7 +8,7 @@ inv = {
  r'\longrightarrow':'\\<longrightarrow>', r'\Rightarrow':'\\<Rightarrow>', r'\longleftrightarrow':'\\<longleftrightarrow>',
  r'\in':'\\<in>', r'\notin':'\\<notin>', r'\le':'\\<le>', r'\ge':'\\<ge>', r'\neq':'\\<noteq>', r'\wedge':'\\<and>',
  r'\vee':'\\<or>', r'\neg':'\\<not>', r'\lambda':'\\<lambda>', r'\sum':'\\<Sum>', r'\|':'\\<parallel>', r'|':'\\<bar>',
- r'\langle':'\\<langle>', r'\rangle':'\\<rangle>', r'\cdot':'\\<cdot>', r'\otimes':'\\<Otimes>', r'\dagger':'\\<dagger>',
+ r'\langle':'\\<langle>', r'\rangle':'\\<rangle>', r'\cdot':'\\<cdot>', r'\otimes':'\\<Otimes>', r'\dagger':'\\<dagger>', r'\times':'\\<times>',
  r'\theta':'\\<theta>', r'\kappa':'\\<kappa>', r'\eta':'\\<eta>', r'\varepsilon':'\\<epsilon>', r'\delta':'\\<delta>',
  r'\rho':'\\<rho>', r'\sigma':'\\<sigma>', r'\varphi':'\\<phi>', r'\psi':'\\<psi>', r'\Phi':'\\<Phi>', r'\Psi':'\\<Psi>',
  r'\vdash':'\\<turnstile>', r'\models':'\\<Turnstile>', r'\equiv':'\\<equiv>', r'\Delta':'\\<Delta>', r'\lceil':'\\<lceil>', r'\rceil':'\\<rceil>',

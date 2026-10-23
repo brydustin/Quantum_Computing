@@ -66,6 +66,7 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC_Algorithms.HHL_State_Preparation
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
     Vern_Paulsen_QC_Algorithms.HHL_All_Elementary
+    Vern_Paulsen_QC_Algorithms.HHL_Suzuki
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
     Vern_Paulsen_QC_Algorithms.QPE_Precision
     Vern_Paulsen_QC_Algorithms.QPE_Program
@@ -157,6 +158,8 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & an $s$-sparse Hermitian matrix as its diagonal plus $2s-1$ one-sparse parts; sparse Trotter error $8(sLt)^2/r$ & \texttt{HHL\_Sparse\_Split}\\
 --     & the sparse simulation oracle as a verified circuit with $r(6s-2)$ queries, plugged into the HHL error bound & \texttt{HHL\_Sparse\_Circuit}\\
 --     & for $n=2^s$ every gate of HHL elementary or an oracle call; every $\ket b$ prepared in elementary gates; exact universality & \texttt{HHL\_All\_Elementary}\\
+--     & order conditions for product formulas: palindromes have odd order, Suzuki's recursion $S_{2k+2}$ agrees with $e^{itH}$ to degree $2k+2$ & \texttt{Suzuki\_Order}\\
+--     & Suzuki's formula over $r$ steps within $r(2|F|+1)(\Lambda|t|/r)^{2k+3}e^{\Lambda|t|/r}/(2k+3)!$ of $e^{itH}$; plugged into the HHL error bound & \texttt{HHL\_Suzuki}\\
 --     & the textbook precision of phase estimation: outcomes more than $e/N$ from $\varphi$ have probability $\le1/(2(e-1))$; $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits give $n$ bits with probability $\ge1-\varepsilon$ & \texttt{QPE\_Precision}\\
 --     & phase estimation as a program of quantum Hoare logic: the exact weakest precondition of every clock outcome; exact phases, the $4/\pi^2$ bound, the tail and the precision as triples; the same in elementary gates & \texttt{QPE\_Program}\\
 \end{tabular}

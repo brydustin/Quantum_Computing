@@ -26,16 +26,6 @@ lemma swap0_proj:
   unfolding swap0_adjoint swap0_conj[OF proj_set_carrier k]
   by (rule eq_matI) (use k in \<open>auto simp: proj_set_index\<close>)
 
-lemma matrix_sum_scalar:
-  assumes B: "B \<in> carrier_mat d d"
-  shows "matrix_sum d (\<lambda>k. f k \<cdot>\<^sub>m B) m = (\<Sum>k<m. f k) \<cdot>\<^sub>m B"
-proof (induction m)
-  case 0 show ?case by (rule eq_matI) (use B in auto)
-next
-  case (Suc m)
-  show ?case unfolding matrix_sum.simps Suc.IH using B by (intro eq_matI) (auto simp: algebra_simps)
-qed
-
 context state_sig
 begin
 

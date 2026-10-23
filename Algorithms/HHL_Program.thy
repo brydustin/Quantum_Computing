@@ -1,5 +1,5 @@
 theory HHL_Program
-  imports HHL_Trajectory QHLProver.Quantum_Hoare
+  imports HHL_Trajectory Matrix_Sums QHLProver.Quantum_Hoare
 begin
 
 text \<open>The HHL algorithm as a program of the quantum while-language of the AFP entry
@@ -112,18 +112,6 @@ proof -
 qed
 
 end
-
-lemma matrix_sum_index:
-  assumes f: "\<And>k. k < n \<Longrightarrow> f k \<in> carrier_mat K K" and ij: "i < K" "j < K"
-  shows "matrix_sum K f n $$ (i, j) = (\<Sum>k<n. f k $$ (i, j))"
-  using f
-proof (induction n)
-  case (Suc n)
-  have c: "matrix_sum K f n \<in> carrier_mat K K" by (rule matrix_sum_dim) (use Suc.prems in auto)
-  have "matrix_sum K f (Suc n) $$ (i, j) = f n $$ (i, j) + matrix_sum K f n $$ (i, j)"
-    using c Suc.prems[of n] ij by simp
-  thus ?case using Suc by (simp add: add_ac)
-qed (use ij in simp)
 
 text \<open>The transposition $\ket0\leftrightarrow\ket k$ is JNF's row swap.\<close>
 

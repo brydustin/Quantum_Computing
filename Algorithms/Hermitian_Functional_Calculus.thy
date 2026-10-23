@@ -352,6 +352,17 @@ proof -
     using c mat_fun_mult[OF A] mat_fun_dagger[OF A] carrier_matD[OF mat_fun_carrier[OF A, of g]] by simp
 qed
 
+lemma pow_mat_add: "G \<in> carrier_mat m m \<Longrightarrow> G ^\<^sub>m (i + j) = G ^\<^sub>m i * G ^\<^sub>m j"
+proof (induction j)
+  case 0
+  show ?case using 0 by simp
+next
+  case (Suc j)
+  have "G ^\<^sub>m (i + Suc j) = G ^\<^sub>m i * G ^\<^sub>m j * G" using Suc by simp
+  also have "\<dots> = G ^\<^sub>m i * (G ^\<^sub>m j * G)" by (rule assoc_mult_mat) (use Suc.prems in auto)
+  finally show ?case by simp
+qed
+
 subsection \<open>Time evolution\<close>
 
 text \<open>$e^{itA}$, the evolution under the Hamiltonian $A$ (phase estimation uses $U=e^{itA}$).\<close>

@@ -3,13 +3,13 @@
 import os, re
 P = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEVELS = [
-  ('Mathematics', 'Algorithms', ['Hermitian_Functional_Calculus', 'Phase_Estimation', 'QPE_Precision', 'QFT_Fourier', 'QPE_Register']),
+  ('Mathematics', 'Algorithms', ['Hermitian_Functional_Calculus', 'Matrix_Sums', 'Phase_Estimation', 'QPE_Precision', 'QFT_Fourier', 'QPE_Register']),
   ('Algorithm', 'Algorithms', ['HHL', 'HHL_Trajectory', 'HHL_Approximate', 'HHL_Window', 'HHL_Simulation', 'HHL_Complete',
     'HHL_Filter', 'HHL_Filter_Bounds', 'HHL_Runtime', 'HHL_Reduction', 'HHL_Rectangular', 'HHL_Discussion', 'HHL_Optimality']),
   ('Program', 'Algorithms', ['QPE_Program', 'HHL_Program', 'HHL_Termination', 'HHL_Paper_Program', 'HHL_Gate_Refinements',
     'HHL_Preconditioned']),
   ('Circuit', 'Algorithms', ['HHL_Gates', 'HHL_Uniform_Rotation', 'HHL_State_Preparation', 'HHL_All_Elementary', 'HHL_Trotter',
-    'HHL_Sparse_Split', 'HHL_Sparse_Circuit']),
+    'HHL_Sparse_Split', 'HHL_Sparse_Circuit', 'Suzuki_Order', 'HHL_Suzuki']),
 ]
 EXTRA = [('Search bound', 'Search', ['HHL_Search_Bound']), ('Example run', 'Demo', ['HHL_Demo'])]
 
