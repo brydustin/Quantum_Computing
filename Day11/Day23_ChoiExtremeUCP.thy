@@ -46,16 +46,10 @@ Day23\_Extremality\_Examples and the UCP form in Day23\_Choi3\_UCP.\<close>
 
 subsection \<open>UCP-Kraus representation\<close>
 
-text \<open>A \<^emph>\<open>UCP Kraus representation\<close> for a map \<open>\<Phi> : M\<^sub>n \<rightarrow> M\<^sub>d\<close> is a
-list \<open>Vs\<close> of \<open>d \<times> n\<close> matrices such that
-  \<^item> each \<open>V \<in> Vs\<close> is \<open>d \<times> n\<close>;
-  \<^item> the unitality identity \<open>\<Sum>\<^sub>i V\<^sub>i V\<^sub>i\<^sup>\<dagger> = I\<^sub>d\<close> holds;
-  \<^item> \<open>\<Phi> X = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close> for every \<open>X \<in> M\<^sub>n\<close>.
-
-Note that the standard \<open>kraus_operators\<close> predicate of Day 17 uses
-the \<^emph>\<open>trace-preserving\<close> identity \<open>\<Sum> V\<^sub>i\<^sup>\<dagger> V\<^sub>i = I\<^sub>n\<close>; the
-\<^emph>\<open>unital\<close> form \<open>\<Sum> V\<^sub>i V\<^sub>i\<^sup>\<dagger> = I\<^sub>d\<close> is the Heisenberg-dual
-condition appropriate for \<open>UCP\<close>.\<close>
+text \<open>A UCP Kraus representation of $\Phi:M_n\to M_d$ is a list of $d\times n$ matrices with
+\[ \Phi(X)=\sum_iV_iXV_i^*\quad(X\in M_n),\qquad \sum_iV_iV_i^*=I_d. \]
+The Kraus operators of Day 17 satisfy the trace-preserving condition $\sum_iV_i^*V_i=I_n$
+instead; the unital condition is its dual.\<close>
 
 definition ucp_kraus_rep ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow>
@@ -66,8 +60,7 @@ where
      foldr (\<lambda>V acc. V * (V\<^sup>\<dagger>) + acc) Vs (0\<^sub>m d d) = 1\<^sub>m d \<and>
      (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
 
-text \<open>The \<^emph>\<open>products set\<close> of a Kraus list \<open>Vs\<close> is the list of
-\<open>n \<times> n\<close> matrices \<open>V\<^sub>j\<^sup>\<dagger> V\<^sub>i\<close> for all pairs of indices \<open>(i,j)\<close>.\<close>
+text \<open>The products of a Kraus list are the $n\times n$ matrices $V_j^*V_i$, for all pairs $(i,j)$.\<close>
 
 definition kraus_products ::
   "complex Matrix.mat list \<Rightarrow> complex Matrix.mat list"
@@ -90,11 +83,7 @@ where
 
 subsection \<open>Unital condition from the Kraus list\<close>
 
-text \<open>If \<open>Ws\<close> is a list of \<open>d \<times> n\<close> matrices, then evaluating the
-Kraus map at the identity \<open>1\<^sub>m n\<close> gives exactly the sum
-\<open>\<Sum> W W\<^sup>\<dagger>\<close>.  Combined with unitality, this gives the
-\<open>\<Sum> W W\<^sup>\<dagger> = 1\<^sub>m d\<close> identity that distinguishes UCP from
-plain CP.\<close>
+text \<open>At the identity a Kraus map gives $\sum_iW_iW_i^*$; so unitality is $\sum_iW_iW_i^*=I_d$.\<close>
 
 lemma kraus_map_dim_one:
   assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
@@ -131,11 +120,8 @@ qed
 
 subsection \<open>UCP-Kraus existence\<close>
 
-text \<open>Every linear UCP map admits a UCP Kraus representation
-of length \<open>n d\<close>.  Linearity, scalar-multiplication and range
-hypotheses match those of \<open>kraus_rep_of_psd_choi\<close>; the unital
-condition \<open>\<Sum> V V\<^sup>\<dagger> = 1\<^sub>m d\<close> is supplied by
-\<open>\<Phi> (1\<^sub>m n) = 1\<^sub>m d\<close> + \<open>kraus_map_dim_one\<close>.\<close>
+text \<open>Every linear UCP map has a UCP Kraus representation with $nd$ operators: Choi's theorem gives
+a Kraus list, and $\Phi(I_n)=I_d$ supplies $\sum_iV_iV_i^*=I_d$.\<close>
 
 lemma ucp_has_kraus_rep:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -200,15 +186,11 @@ qed
 
 subsection \<open>Quadratic Kraus map (perturbation primitive)\<close>
 
-text \<open>For a Kraus list \<open>Vs\<close> of \<open>d \<times> n\<close> matrices and a coefficient
-matrix \<open>T \<in> M\<^sub>k\<close> (where \<open>k = length Vs\<close>), the \<^emph>\<open>quadratic
-Kraus map\<close> is
-  \<open>(kraus_quad_map d Vs T) X = \<Sum>\<^sub>{i,j} T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>.
-When \<open>T = I\<^sub>k\<close> this reduces to the ordinary Kraus map
-\<open>kraus_map_dim d Vs X = \<Sum> V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close>; for PSD \<open>T\<close> the
-result is again a Kraus map (Lemma A below).  The perturbations
-\<open>T\<^sub>\<plusminus> = I \<plusminus> \<epsilon> A\<close> for small \<open>\<epsilon>\<close> and hermitian \<open>A\<close>
-will provide the \<^emph>\<open>splittings\<close> witnessing non-extremity.\<close>
+text \<open>The quadratic Kraus map of a list $V_1,\dots,V_k$ and a matrix $T\in M_k$ is
+\[ \psi_T(X)=\sum_{i,j}T_{ij}\,V_iXV_j^*. \]
+For $T=I$ it is the Kraus map of the list, for $T\ge0$ it is again a Kraus map (Lemma A), and
+the perturbations $T_\pm=I\pm\epsilon A$, $A$ Hermitian and $\epsilon$ small, give the midpoint
+decompositions witnessing non-extremality.\<close>
 
 definition kraus_quad_row ::
   "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
@@ -226,8 +208,7 @@ where
      foldr (\<lambda>i acc. kraus_quad_row d Vs Tm rho i + acc)
            [0..<length Vs] (0\<^sub>m d d)"
 
-text \<open>Generic carrier-preservation lemma for accumulating folds over
-\<open>[0..<N]\<close>: if each per-index term lies in \<open>M\<^sub>d\<close>, so does the fold.\<close>
+text \<open>A sum of $d\times d$ matrices is a $d\times d$ matrix.\<close>
 
 lemma foldr_upt_add_carrier:
   fixes f :: "nat \<Rightarrow> complex Matrix.mat"
@@ -422,9 +403,7 @@ lemma foldr_add_carrier_dn:
   shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m d n) \<in> carrier_mat d n"
   using assms by (induction xs) (auto intro!: add_carrier_mat)
 
-text \<open>Linear combination of Kraus operators with complex coefficients.
-\<open>kraus_combo d n Vs u\<close> is \<open>\<Sum>\<^sub>i u\<^sub>i V\<^sub>i\<close>, a
-\<open>d \<times> n\<close> matrix.\<close>
+text \<open>The combination $W_u=\sum_iu_iV_i$ of the Kraus operators, a $d\times n$ matrix.\<close>
 
 definition kraus_combo ::
   "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.vec \<Rightarrow>
@@ -601,8 +580,7 @@ proof -
   finally show ?thesis .
 qed
 
-text \<open>The full quadratic per-entry formula:
-\<open>(W rho W\<^sup>\<dagger>) $$ (r,c) = \<Sum>\<^sub>{i,j} u\<^sub>i \<bar>u\<^sub>j\<bar> (V\<^sub>i rho V\<^sub>j\<^sup>\<dagger>) $$ (r,c)\<close>.\<close>
+text \<open>Entrywise, $W_u\rho W_u^*=\sum_{i,j}u_i\overline{u_j}\,V_i\rho V_j^*$.\<close>
 
 lemma kraus_combo_quad_index:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -908,9 +886,7 @@ proof (rule eq_matI)
     using eqL eqR1 eqR2 R1_c R2_c i_lt j_lt by simp
 qed
 
-text \<open>Rank-1 identity:
-\<open>kraus_quad_map d Vs (outer_sum k [u]) rho = W rho W\<^sup>\<dagger>\<close>
-where \<open>W = kraus_combo d n Vs u\<close>.\<close>
+text \<open>So for a rank-one coefficient matrix, $\psi_{uu^*}(\rho)=W_u\rho W_u^*$.\<close>
 
 lemma kraus_quad_map_outer_singleton:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -1125,15 +1101,8 @@ proof -
     by (simp add: completely_positive_def p_positive_def)
 qed
 
-text \<open>\<^bold>\<open>Lemma A\<close>: if \<open>T\<close> is PSD then
-\<open>kraus_quad_map d Vs T\<close> is completely positive.
-
-\<^bold>\<open>Proof sketch.\<close> Use @{thm psd_kraus_decomp} to write
-\<open>T = outer_sum k us\<close>. Then by
-@{thm kraus_quad_map_outer_sum_eq_kraus_map_dim},
-\<open>kraus_quad_map d Vs T\<close> agrees on @{term \<open>carrier_mat n n\<close>}
-with \<open>kraus_map_dim d Ws\<close>, where \<open>Ws := map (kraus_combo d n Vs) us\<close>.
-Apply @{thm kraus_cp_no_tp}.\<close>
+text \<open>Lemma A: for $T\ge0$, $\psi_T$ is completely positive.  Write $T=\sum_lu_lu_l^*$; then
+$\psi_T(X)=\sum_lW_{u_l}XW_{u_l}^*$ is a Kraus map.\<close>
 
 lemma kraus_perturbation_cp:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -1177,11 +1146,8 @@ qed
 
 subsection \<open>Small-\<open>\<epsilon>\<close> PSD perturbation of the identity\<close>
 
-text \<open>For any hermitian \<open>A : k \<times> k\<close>, the matrix \<open>1\<^sub>m k + \<delta> \<cdot>\<^sub>m A\<close>
-is PSD whenever \<open>\<bar>\<delta>\<bar>\<close> is small enough. The bound uses the
-entry-wise sum
-\<open>S := \<Sum>\<^sub>{i,j} \<bar>A\<^sub>{ij}\<bar>\<close>, taking \<open>\<epsilon> := 1/(1 + S)\<close>; this avoids any
-operator-norm computation and just uses Cauchy-Schwarz on entries.\<close>
+text \<open>For Hermitian $A\in M_k$, $I+\delta A\ge0$ when $|\delta|$ is small: with $S=\sum_{i,j}|A_{ij}|$,
+$|\braket x{Ax}|\le S\norm x^2$, so $\epsilon=1/(1+S)$ works.\<close>
 
 text \<open>Bilinearity of the inner product in the right slot.\<close>
 
@@ -1379,7 +1345,7 @@ proof -
   finally show ?thesis .
 qed
 
-text \<open>The main lemma: small \<open>\<epsilon>\<close> keeps the perturbation PSD.\<close>
+text \<open>So for small $\epsilon>0$ both $I\pm\epsilon A$ are positive.\<close>
 
 lemma small_eps_psd:
   fixes A :: "complex Matrix.mat"
@@ -1516,10 +1482,8 @@ qed
 
 subsection \<open>Symmetric / anti-hermitian split of the coefficient matrix\<close>
 
-text \<open>The \<^emph>\<open>dual\<close> linear combination
-\<open>kraus_pair_sum n Vs A = \<Sum>\<^sub>{i,j} A\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i\<close>
-is an \<open>n \<times> n\<close> matrix. A dependence among the products is a
-non-zero coefficient matrix $A$ for which this sum vanishes.\<close>
+text \<open>The pair sum $\sum_{i,j}A_{ij}V_j^*V_i\in M_n$.  A dependence among the products is a non-zero
+coefficient matrix $A$ for which it vanishes.\<close>
 
 definition kraus_pair_row ::
   "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
@@ -1878,8 +1842,7 @@ next
   qed
 qed
 
-text \<open>\<open>kraus_products Vs\<close> has length \<open>k\<^sup>2\<close> with
-\<open>kraus_products Vs ! (i*k + j) = (V\<^sub>j)\<^sup>\<dagger> V\<^sub>i\<close>.\<close>
+text \<open>There are $k^2$ products, the one at position $ik+j$ being $V_j^*V_i$.\<close>
 
 lemma length_kraus_products:
   "length (kraus_products Vs) = length Vs * length Vs"
@@ -1917,7 +1880,7 @@ proof -
   finally show ?thesis .
 qed
 
-text \<open>Per-entry of the foldr that mat\_lin\_indep\_real builds.\<close>
+text \<open>Entries of a combination $\sum_kc_kB_k$.\<close>
 
 lemma foldr_smult_nth_index:
   fixes c :: "nat \<Rightarrow> real" and Bs :: "complex Matrix.mat list"
@@ -1954,7 +1917,7 @@ proof -
   finally show ?thesis .
 qed
 
-text \<open>Reindex \<open>\<Sum>\<^sub>{\<kappa> = 0..<n\<cdot>k}\<close> via \<open>\<kappa> = i*k + j\<close>.\<close>
+text \<open>Reindexing $\kappa=ik+j$.\<close>
 
 lemma sum_split_prod_atLeastLessThan:
   fixes f :: "nat \<Rightarrow> 'a::comm_monoid_add"
@@ -2283,8 +2246,7 @@ proof (rule eq_matI)
     using L_idx R_idx collapse by simp
 qed
 
-text \<open>The identity-coefficient case: @{const kraus_quad_map} with \<open>1\<^sub>m k\<close>
-reduces to the ordinary @{const kraus_map_dim}.\<close>
+text \<open>For $T=I$ the quadratic Kraus map is the Kraus map of the list.\<close>
 
 lemma kraus_quad_map_one_eq_kraus_map_dim:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -2462,19 +2424,9 @@ qed
 
 subsection \<open>Minimality and the distinctness lemma (Lemma B)\<close>
 
-text \<open>Linear independence of a complex-matrix list (over \<open>\<complex>\<close>).
-This is the \<^emph>\<open>minimality\<close> assumption needed to make the reverse direction
-of Choi's Theorem 3 go through: without it, perturbations of a non-minimal
-Kraus list can produce the same map.\<close>
 
-text \<open>\<^bold>\<open>Lemma B\<close>: under minimality of \<open>Vs\<close>, a non-zero coefficient matrix
-gives a non-vanishing quadratic Kraus map for some \<open>\<rho>\<close>.
 
-The witness \<open>\<rho> := mat_unit p q n n\<close> (a single 1 at \<open>(p,q)\<close>) makes
-\<open>(V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>) $$ (r,c) = V\<^sub>i $$ (r,p) \<bar>V\<^sub>j $$ (c,q)\<bar>\<close>, so
-universal vanishing of @{const kraus_quad_map} on all \<open>(p,q,r,c)\<close>
-combined with linear independence of \<open>Vs\<close> (applied twice, separated
-by conjugation) forces \<open>A = 0\<close>.\<close>
+
 
 text \<open>A convenient form of minimality: if the per-entry sum vanishes for
 all \<open>(r,p)\<close>, then all coefficients are zero.\<close>
@@ -2617,8 +2569,9 @@ proof -
                   = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))" by simp
 qed
 
-text \<open>\<^bold>\<open>Lemma B.\<close> Under minimality, a non-zero coefficient matrix
-gives a non-vanishing quadratic Kraus map for some rank-1 \<open>\<rho>\<close>.\<close>
+text \<open>Lemma B: if the $V_i$ are linearly independent and $A\ne0$, then $\psi_A\ne0$.  With
+$\rho=E_{pq}$, $(V_iE_{pq}V_j^*)_{rc}=(V_i)_{rp}\overline{(V_j)_{cq}}$; if $\psi_A(E_{pq})=0$ for all $p,q$,
+independence of the $V_i$, used once for each index, forces $A=0$.\<close>
 
 lemma kraus_quad_map_nonzero_witness:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -2757,13 +2710,9 @@ proof (rule ccontr)
   thus False using A_nz by simp
 qed
 
-text \<open>Trace-preservation lemma for @{const kraus_quad_map}.
-
-The proof shows
-\<open>Tr (kraus_quad_map d Vs T \<rho>) = Tr (kraus_pair_sum n Vs T * \<rho>)\<close>
-by per-entry sum manipulation and one application of @{thm Tr_cyclic}
-to flip \<open>V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>\<close> into \<open>V\<^sub>j\<^sup>\<dagger> V\<^sub>i \<rho>\<close>; the
-TP conclusion follows when the pair-sum equals \<open>1\<^sub>m n\<close>.\<close>
+text \<open>Trace of the quadratic Kraus map: by cyclicity $\Tr(V_i\rho V_j^*)=\Tr(V_j^*V_i\rho)$, so
+\[ \Tr\psi_T(\rho)=\Tr\Bigl(\bigl(\textstyle\sum_{i,j}T_{ij}V_j^*V_i\bigr)\rho\Bigr), \]
+and $\psi_T$ is trace preserving when the pair sum is $I_n$.\<close>
 
 lemma Tr_kraus_quad_map_eq:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -3082,9 +3031,8 @@ where
 
 subsection \<open>Vectorisation of Kraus operators\<close>
 
-text \<open>The \<^emph>\<open>vectorisation\<close> of a \<open>d \<times> n\<close> matrix \<open>V\<close> is the length-\<open>n*d\<close>
-vector with \<open>r\<close>-th entry \<open>V(r mod d, r div d)\<close>.  This is the column-stacking
-isomorphism \<open>M\<^sub>{d\<times>n} \<cong> \<complex>\<^sup>{nd}\<close> used in the Choi/Stinespring picture.\<close>
+text \<open>The vectorisation of $V\in M_{d,n}$ stacks its columns: the vector in $\C^{nd}$ with entry
+$V_{r\bmod d,\;r\div d}$ at position $r$.\<close>
 
 definition vec_of_kraus :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec"
   where
@@ -3098,8 +3046,7 @@ lemma vec_of_kraus_index:
   shows "vec_of_kraus d n V $ r = V $$ (r mod d, r div d)"
   using r_lt by (simp add: vec_of_kraus_def)
 
-text \<open>For \<open>i < d\<close> and \<open>a < n\<close>, indexing the vectorisation at the
-\<^emph>\<open>combined\<close> index \<open>a*d + i\<close> recovers the matrix entry \<open>V(i, a)\<close>.\<close>
+text \<open>At position $ad+i$ it holds $V_{ia}$.\<close>
 
 lemma vec_of_kraus_combined_index:
   assumes V_c: "V \<in> carrier_mat d n"
@@ -3122,10 +3069,9 @@ qed
 
 subsection \<open>Choi matrix of a Kraus map\<close>
 
-text \<open>\<^bold>\<open>Key structural identity\<close>: the Choi matrix of a Kraus map
-\<open>\<Phi>(X) = \<Sum>\<^sub>i V\<^sub>i X V\<^sub>i\<^sup>\<dagger>\<close> equals the outer sum
-\<open>\<Sum>\<^sub>i v\<^sub>i v\<^sub>i\<^sup>\<dagger>\<close> where \<open>v\<^sub>i = vec_of_kraus(V\<^sub>i)\<close>.  In particular,
-its range is the linear span of the vectorisations of \<open>Vs\<close>.\<close>
+text \<open>The Choi matrix of a Kraus map is the outer sum of the vectorised Kraus operators:
+\[ \Phi(X)=\sum_iV_iXV_i^*\quad\Longrightarrow\quad P_\Phi=\sum_iv_iv_i^*,\qquad v_i=\mathrm{vec}(V_i), \]
+so its range is spanned by the $v_i$.\<close>
 
 lemma kraus_map_dim_mat_unit_entry:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -3307,9 +3253,7 @@ qed
 
 subsection \<open>Choi matrix is linear in the map\<close>
 
-text \<open>The Choi matrix is a linear function of the underlying map
-(evaluated on the basis @{const mat_unit}'s).  In particular,
-\<open>P\<^sub>{\<Phi> - \<Psi>} = P\<^sub>\<Phi> - P\<^sub>\<Psi>\<close>.\<close>
+text \<open>The Choi matrix depends linearly on the map: $P_{\Phi-\Psi}=P_\Phi-P_\Psi$.\<close>
 
 lemma choi_matrix_carrier [simp]:
   "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
@@ -3389,11 +3333,8 @@ qed
 
 subsection \<open>The Choi matrix of a @{const kraus_quad_map}\<close>
 
-text \<open>The Choi matrix of \<open>X \<mapsto> \<Sum>\<^sub>{ij} T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>
-equals \<open>V T V\<^sup>\<dagger>\<close> where \<open>V = mat_of_cols (n*d) (map vec_of_kraus Vs)\<close>.
-
-This is the bridge from the classical dominated-PSD parametrisation
-back to a Kraus quadratic form.\<close>
+text \<open>More generally $P_{\psi_T}=VTV^*$, where the columns of $V$ are the vectorised $V_i$: the bridge from
+a factorisation of Choi matrices back to quadratic Kraus maps.\<close>
 
 definition kraus_vec_mat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat"
   where "kraus_vec_mat d n Vs = mat_of_cols (n*d) (map (vec_of_kraus d n) Vs)"
@@ -3430,8 +3371,7 @@ proof -
   finally show ?thesis .
 qed
 
-text \<open>The Choi matrix of \<open>kraus_quad_map d Vs T\<close> is the sandwich
-\<open>V T V\<^sup>\<dagger>\<close>, where \<open>V = kraus_vec_mat d n Vs\<close>.\<close>
+text \<open>In the notation of \<open>kraus_vec_mat\<close>: $P_{\psi_T}=VTV^*$.\<close>
 
 lemma choi_matrix_kraus_quad_eq:
   fixes Tmat :: "complex Matrix.mat"
@@ -3594,35 +3534,11 @@ qed
 
 subsection \<open>CP Radon--Nikodym --- the dominated-PSD kernel\<close>
 
-text \<open>\<^bold>\<open>Dominated PSD parametrisation\<close>.  This is the genuinely
-classical fact behind CP Radon--Nikodym: any PSD matrix \<open>B\<close>
-dominated by the outer sum \<open>\<Sum> v\<^sub>i v\<^sub>i\<^sup>\<dagger>\<close> can be
-sandwiched as \<open>V T V\<^sup>\<dagger>\<close> for some PSD \<open>T\<close>, where
-\<open>V = mat_of_cols k vs\<close>.
 
-Geometric content: \<open>range(B) \<subseteq> range(outer_sum k vs)\<close>
-(equivalent to B being Loewner-below outer\_sum k vs after PSD),
-and that range is spanned by the columns of \<open>V\<close>.  Pulling B back
-through that span gives \<open>T\<close>.
 
-Proved below as @{text dominated_outer_sum_param} through the
-Moore--Penrose pseudoinverse of the outer sum (no axioms).\<close>
-
-text \<open>\<^bold>\<open>Loewner--kernel inclusion.\<close>  If \<open>A \<ge> B \<ge> 0\<close>
-in Loewner order, then every vector annihilated by \<open>A\<close> is also
-annihilated by \<open>B\<close>.  Used to derive the range inclusion
-\<open>range(B) \<subseteq> range(A)\<close>.
-
-Proof structure:
-\<^enum> \<open>\<langle>x | A x\<rangle> = 0\<close> from \<open>A x = 0\<close>.
-\<^enum> Linearity of the inner product:
-   \<open>\<langle>x | A x\<rangle> = \<langle>x | B x\<rangle> + \<langle>x | (A-B) x\<rangle>\<close>.
-\<^enum> Both summands have non-negative real part (PSD); the sum is 0,
-   so each is 0.
-\<^enum> Hermiticity of \<open>B\<close> makes \<open>\<langle>x | B x\<rangle>\<close> real, so it equals 0.
-\<^enum> Decompose \<open>B = N N\<^sup>\<dagger>\<close> via @{thm psd_kraus_decomp}, then
-   \<open>\<langle>x | B x\<rangle> = \<langle>N\<^sup>\<dagger> x | N\<^sup>\<dagger> x\<rangle> = 0\<close>
-   forces \<open>N\<^sup>\<dagger> x = 0\<close>, hence \<open>B x = N (N\<^sup>\<dagger> x) = 0\<close>.\<close>
+text \<open>If $A\ge B\ge0$ then $\ker A\subseteq\ker B$: for $Ax=0$,
+$0=\braket x{Ax}=\braket x{Bx}+\braket x{(A-B)x}$ with both terms $\ge0$, so $\braket x{Bx}=0$; writing
+$B=NN^*$ this is $\norm{N^*x}^2=0$, hence $Bx=N(N^*x)=0$.\<close>
 
 lemma loewner_ker_subset:
   fixes A B :: "complex Matrix.mat" and x :: "complex Matrix.vec"
@@ -3739,10 +3655,8 @@ proof -
 qed
 
 
-text \<open>\<^bold>\<open>PSD congruence.\<close>  If \<open>P\<close> is PSD and \<open>M\<close> is any
-matrix of compatible shape, then \<open>M\<^sup>\<dagger> P M\<close> is PSD.
-This is the standard ``sandwich'' fact, generalising @{thm psd_MdagM}
-(the case \<open>P = 1\<^sub>m\<close>).\<close>
+text \<open>Congruence preserves positivity: $P\ge0$ implies $M^*PM\ge0$, since
+$\braket x{M^*PMx}=\braket{Mx}{P\,Mx}$.\<close>
 
 lemma psd_conjugate:
   fixes P :: "complex Matrix.mat" and M :: "complex Matrix.mat"
@@ -3822,9 +3736,7 @@ qed
 
 subsubsection \<open>Diagonal pseudo-inverse list and its identity\<close>
 
-text \<open>\<^bold>\<open>Pseudo-inverse of a real list (interpreted as a diagonal).\<close>
-Zero entries are kept at zero; non-zero entries are reciprocated.
-This is the diagonal Moore--Penrose pseudoinverse.\<close>
+text \<open>The pseudoinverse of a real diagonal: $d_i^+=1/d_i$ for $d_i\ne0$ and $d_i^+=0$ otherwise.\<close>
 
 definition pinv_list :: "real list \<Rightarrow> real list" where
   "pinv_list D = map (\<lambda>d. if d = 0 then 0 else 1/d) D"
@@ -3846,11 +3758,7 @@ proof -
     using assms[OF i] by (simp add: pinv_list_index[OF i])
 qed
 
-text \<open>The central identity: \<open>D \<cdot> D\<^sup>+ \<cdot> D = D\<close> entrywise on the
-diagonal.  For \<open>D\<^sub>i = 0\<close> the left-hand side is \<open>0 \<cdot> 0 \<cdot> 0 = 0 = D\<^sub>i\<close>;
-for \<open>D\<^sub>i \<noteq> 0\<close> it is \<open>D\<^sub>i \<cdot> (1/D\<^sub>i) \<cdot> D\<^sub>i = D\<^sub>i\<close>.  This is the
-core diagonal pseudoinverse identity that lifts to operator level
-through unitary conjugation.\<close>
+text \<open>$DD^+D=D$, entry by entry: $0\cdot0\cdot0=0$ and $d_i\cdot d_i^{-1}\cdot d_i=d_i$.\<close>
 
 lemma diag_pinv_diag_eq:
   fixes D :: "real list"
@@ -3952,10 +3860,7 @@ proof (rule eq_matI)
 qed
 
 
-text \<open>\<^bold>\<open>Pseudoinverse identity at operator level.\<close>  Given a hermitian
-spectral decomposition \<open>A = U D U\<^sup>\<dagger>\<close>, define the Moore--Penrose
-pseudoinverse via \<open>A\<^sup>+ = U D\<^sup>+ U\<^sup>\<dagger>\<close>.  Then \<open>A A\<^sup>+ A = A\<close>.
-This is the unitary-conjugation lift of @{thm diag_pinv_diag_eq}.\<close>
+text \<open>For Hermitian $A=UDU^*$ set $A^+=UD^+U^*$; then $AA^+A=UDD^+DU^*=A$.\<close>
 
 lemma A_Aplus_A_eq:
   fixes U :: "complex Matrix.mat" and D :: "real list"
@@ -4079,9 +3984,8 @@ proof (rule eq_matI)
   finally show "M $$ (i, j) = N $$ (i, j)" .
 qed
 
-text \<open>Loewner-implied pseudoinverse identity, proved at operator level:
-with \<open>Q = A\<^sup>+ A\<close> one has \<open>A Q = A\<close>, so \<open>x - Q x \<in> ker A \<subseteq> ker B\<close>, whence
-\<open>B = B Q\<close>; taking adjoints gives \<open>B = A A\<^sup>+ B\<close>.\<close>
+text \<open>If $0\le B\le A$ then $B=AA^+B$: with $Q=A^+A$, $AQ=A$, so $x-Qx\in\ker A\subseteq\ker B$, whence
+$B=BQ$, and taking adjoints $B=QB=AA^+B$.\<close>
 
 lemma A_Aplus_B_eq_B:
   fixes U :: "complex Matrix.mat" and D :: "real list" and B :: "complex Matrix.mat"
@@ -4206,9 +4110,8 @@ qed
 
 text \<open>Spectral decomposition of a psd matrix with non-negative diagonal.\<close>
 
-text \<open>Dominated psd matrices are parametrised through the dominating
-frame: if \<open>0 \<le> B \<le> V V\<^sup>\<dagger>\<close> then \<open>B = V T V\<^sup>\<dagger>\<close> with \<open>T = V\<^sup>\<dagger> A\<^sup>+ B A\<^sup>+ V \<ge> 0\<close>,
-\<open>A = V V\<^sup>\<dagger>\<close>, \<open>A\<^sup>+\<close> the Moore--Penrose pseudoinverse.\<close>
+text \<open>Dominated positive matrices factor through the dominating frame: if $0\le B\le VV^*$ then
+\[ B=VTV^*,\qquad T=V^*A^+BA^+V\ge0,\quad A=VV^*. \]\<close>
 
 lemma dominated_outer_sum_param:
   fixes vs :: "complex Matrix.vec list"
@@ -4354,8 +4257,7 @@ qed
 
 subsection \<open>Linearity of @{const kraus_quad_map} in its matrix argument\<close>
 
-text \<open>Per-entry computation shows \<open>kraus_quad_map d Vs Tm\<close> is linear in
-its third (matrix) argument: \<open>\<rho> \<mapsto> \<Sum>\<^sub>{ij} T\<^sub>{ij} V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>\<close>.\<close>
+text \<open>$\psi_T(\rho)=\sum_{i,j}T_{ij}V_i\rho V_j^*$ is linear in $\rho$.\<close>
 
 lemma kraus_quad_map_add_rho:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -4658,14 +4560,8 @@ qed
 
 subsection \<open>CP Radon--Nikodym\<close>
 
-text \<open>\<^bold>\<open>CP Radon--Nikodym (Choi level)\<close>.  At the Choi-matrix level,
-the parametrisation falls out from
-@{thm dominated_outer_sum_param} composed with the structural identities
-@{thm choi_matrix_kraus_eq} and @{thm choi_matrix_kraus_quad_eq}.  This
-proves what is needed at the matrix level; passing to the
-\<open>\<forall>X\<close>-quantified form requires linearity of \<open>\<Psi>\<close>, which is
-the project's @{const completely_positive} does \<^emph>\<open>not\<close>
-include (see the lemma after).\<close>
+text \<open>CP Radon--Nikodym at the level of Choi matrices: if $0\le_{cp}\Psi\le_{cp}\Phi$ with
+$P_\Phi=VV^*$, the factorisation above gives $P_\Psi=VTV^*=P_{\psi_T}$ with $T\ge0$.\<close>
 
 lemma cp_radon_nikodym_choi:
   fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -4730,22 +4626,11 @@ proof -
     using Tm_c' Tm_psd P_match by blast
 qed
 
-text \<open>\<^bold>\<open>CP Radon--Nikodym (operator level)\<close>.  With \<open>\<Psi>\<close> linear
-on \<open>carrier_mat n n\<close>, the Choi-level parametrisation gives the
-pointwise equality \<open>\<Psi>(X) = \<Sum> T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close>.
 
-Linearity of \<open>\<Psi>\<close> is supplied as an explicit hypothesis: the
-project's @{const completely_positive} predicate does \<^emph>\<open>not\<close>
-imply linearity (it constrains only positivity under amplification).
-This corresponds to the classical fact that ``CP map'' standardly
-includes linearity; we make it explicit so the consumer can supply it.\<close>
 
-text \<open>\<^bold>\<open>Operator-level CP Radon--Nikodym, with linearity assumption.\<close>
-This version is fully discharged via @{thm cp_radon_nikodym_choi} +
-@{thm map_eq_from_choi_when_linear}, which rest on
-@{thm dominated_outer_sum_param}.  It requires @{term Psi} to be
-linear on @{term \<open>carrier_mat n n\<close>}, which is not implied by the
-project's @{const completely_positive} predicate.\<close>
+text \<open>CP Radon--Nikodym for maps: if $\Psi$ is moreover linear on $M_n$, equal Choi matrices give equal maps,
+so $\Psi(X)=\sum_{i,j}T_{ij}V_iXV_j^*$.  (Linearity is a hypothesis, as \<open>completely_positive\<close>
+only constrains amplifications.)\<close>
 
 lemma cp_radon_nikodym_linear:
   fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -4788,12 +4673,7 @@ proof -
     using Tm_c Tm_psd ptwise by blast
 qed
 
-text \<open>The use site \<open>choi_theorem_3_cptp_forward_complex\<close> obtains
-linearity of its \<open>\<Psi>\<close> through the strengthened \<open>cptp_pair_mid\<close>
-predicate (which carries \<open>lin_on_carrier\<close> for both midpoint
-witnesses) and dispatches to @{thm cp_radon_nikodym_linear}.  No
-operator-level \<open>cp_radon_nikodym\<close> without linearity is needed
-any more.\<close>
+
 
 
 subsection \<open>Choi's Theorem 3 --- reverse direction\<close>
@@ -5210,8 +5090,7 @@ qed
 
 subsection \<open>Trace pairing duality and TP-converse\<close>
 
-text \<open>If \<open>Tr (M * \<rho>) = Tr (N * \<rho>)\<close> for every \<open>\<rho>\<close> in carrier,
-then \<open>M = N\<close>. Used to invert @{thm kraus_quad_map_is_TP}.\<close>
+text \<open>If $\Tr(M\rho)=\Tr(N\rho)$ for every $\rho\in M_n$ then $M=N$ (take $\rho=E_{ab}$).\<close>
 
 lemma Tr_mat_unit_mult:
   fixes M :: "complex Matrix.mat"
@@ -5793,38 +5672,12 @@ qed
 
 subsection \<open>Choi's Theorem 3 (statement)\<close>
 
-text \<open>\<^bold>\<open>NOTE on conventions.\<close>  Choi (1975, Theorem 3) gives an
-extreme-point characterisation in terms of \<^emph>\<open>linear independence
-of certain products of Kraus operators\<close>.  Which products appear
-depends on which of the two natural normalisations the underlying
-convex set uses:
-
-  \<^item> \<^bold>\<open>CPTP\<close> (\<open>\<Sum> V\<^sub>i\<^sup>\<dagger> V\<^sub>i = I\<^sub>n\<close>): products are
-    \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> in \<open>M\<^sub>n\<close>.  The perturbation
-    \<open>\<Phi>\<^sub>\<epsilon>(X) = \<Sum>(\<delta>\<^sub>{ij} + \<epsilon> a\<^sub>{ij}) V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> stays
-    trace-preserving iff \<open>\<Sum> a\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i = 0\<close>.
-  \<^item> \<^bold>\<open>UCP\<close>  (\<open>\<Sum> V\<^sub>i V\<^sub>i\<^sup>\<dagger> = I\<^sub>d\<close>): products are
-    \<open>{V\<^sub>i V\<^sub>j\<^sup>\<dagger>}\<close> in \<open>M\<^sub>d\<close>.  Same perturbation stays
-    unital iff \<open>\<Sum> a\<^sub>{ij} V\<^sub>i V\<^sub>j\<^sup>\<dagger> = 0\<close>.
-
-The two are interchanged by the Hilbert--Schmidt adjoint
-\<open>\<Phi> \<mapsto> \<Phi>\<^sup>*\<close>; this provides a UCP \<open>\<leftrightarrow>\<close> CPTP bijection.
-
-We state both versions, parametrised by a fixed Kraus
-representation; the "any/every" character follows from the
-unitary-freedom of Kraus reps (Day 22 / "Kraus uniqueness"),
-which is not yet formalised in this development.
-
-\<^bold>\<open>Reverse direction (extreme \<open>\<Rightarrow>\<close> lin. indep.)\<close>: contrapositive.
-For the CPTP version: if \<open>\<Sum> a\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i = 0\<close> non-trivially,
-define \<open>\<Phi>\<^sub>\<epsilon>\<close> as above; for small hermitian \<open>a\<close>, both
-\<open>\<Phi>\<^sub>\<plusminus>\<epsilon>\<close> are CPTP and distinct, giving a non-trivial midpoint
-of \<open>\<Phi>\<close>.
-
-\<^bold>\<open>Forward direction (lin. indep. \<open>\<Rightarrow>\<close> extreme)\<close>: requires
-Radon--Nikodym for CP maps (every CP \<open>\<Psi> \<le>\<^sub>{cp} \<lambda>\<Phi>\<close> has
-\<open>\<Psi>(X) = \<Sum> T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> for a PSD matrix \<open>T\<close>) which
-is itself a substantial development.\<close>
+text \<open>Conventions.  For CPTP maps ($\sum_iV_i^*V_i=I_n$) the products are $V_j^*V_i\in M_n$: the
+perturbation $\Phi_\epsilon(X)=\sum_{i,j}(\delta_{ij}+\epsilon a_{ij})V_iXV_j^*$ stays trace preserving iff
+$\sum_{i,j}a_{ij}V_j^*V_i=0$.  For UCP maps ($\sum_iV_iV_i^*=I_d$) they are $V_iV_j^*\in M_d$, and
+$\Phi\mapsto\Phi^*$ exchanges the two.  The statement is for a fixed linearly independent Kraus
+list; by unitary freedom (\<open>choi_2_unitary_freedom\<close>) any two such lists of $\Phi$ differ by a
+unitary, so the condition does not depend on the list.\<close>
 
 text \<open>Choi's Theorem 3, CPTP form: for a linearly independent Kraus list,
 \[ \Phi\ \text{extreme in}\ \mathrm{CPTP}(M_n,M_d)\iff\{V_j^*V_i\}_{i,j}\ \text{linearly independent}. \]\<close>
