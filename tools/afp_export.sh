@@ -1,10 +1,11 @@
 #!/bin/bash
 # Assemble the three AFP entries from the tracked sources, with ROOT files in AFP form
 # (repo-only options dropped), and with -b build them from the export alone: a fresh build of
-# every entry session with the AFP's document options.  Each entry is also packed as .tar.gz.
-# Usage: tools/afp_export.sh [-b] [DIR]   (default DIR: afp_export, ignored by git)
+# entry session with the AFP's document options (-f: fresh, also unchanged sessions; note that it
+# rebuilds the ancestors too).  Each entry is also packed as .tar.gz.
+# Usage: tools/afp_export.sh [-b [-f]] [DIR]   (default DIR: afp_export, ignored by git)
 . "$(dirname "$0")/env.sh"
-B=0; [ "$1" = -b ] && { B=1; shift; }
+B=0; F=; [ "$1" = -b ] && { B=1; shift; }; [ "$1" = -f ] && { F=-f; shift; }
 OUT=$(realpath -m "${1:-$P/afp_export}")
 cd "$P"
 rm -rf "${OUT:?}"; mkdir -p "$OUT"
@@ -34,6 +35,6 @@ for e in Hermitian_Functional_Calculus Vern_Paulsen_QC HHL_Algorithm; do
   tar -C "$OUT" -czf "$OUT/$e.tar.gz" "$e"
 done
 [ $B = 1 ] || exit 0
-"$ISABELLE" build -f -o document=pdf -o "document_variants=document:outline=/proof,/ML" -o browser_info \
+"$ISABELLE" build $F -o document=pdf -o "document_variants=document:outline=/proof,/ML" -o browser_info \
   -d "$AFP" -d "$OUT/Hermitian_Functional_Calculus" -d "$OUT/Vern_Paulsen_QC" -d "$OUT/HHL_Algorithm" \
   -D "$OUT/Hermitian_Functional_Calculus" -D "$OUT/Vern_Paulsen_QC" -D "$OUT/HHL_Algorithm"

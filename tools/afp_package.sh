@@ -1,11 +1,12 @@
 #!/bin/bash
 # The three submission folders: export, fresh build from the export alone, then per entry the
 # archive, the unpacked entry, its metadata (tools/afp_meta) and the generated PDFs.
-# Usage: tools/afp_package.sh [DIR]   (default ../AFP_Submissions)
+# Usage: tools/afp_package.sh [-f] [DIR]   (default ../AFP_Submissions; -f: fresh build)
 . "$(dirname "$0")/env.sh"
+F=; [ "$1" = -f ] && { F=-f; shift; }
 DST=$(realpath -m "${1:-$P/../AFP_Submissions}")
 EXP="$P/afp_export"
-"$P/tools/afp_export.sh" -b "$EXP" > "$EXP.log" 2>&1; rc=$?
+"$P/tools/afp_export.sh" -b $F "$EXP" > "$EXP.log" 2>&1; rc=$?
 grep -v "^  " "$EXP.log" | tail -25
 [ $rc = 0 ] || { echo "build from the export failed (see $EXP.log)"; exit 1; }
 BI=$("$ISABELLE" getenv -b ISABELLE_BROWSER_INFO)

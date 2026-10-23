@@ -151,7 +151,7 @@ proof -
 
   from n have n0: "0 < n" and n1: "1 < n" by auto
 
-  \<comment> \<open>Arithmetic facts about @{term r}.\<close>
+  \<comment> \<open>Arithmetic facts about \<open>r\<close>.\<close>
   have sqrt2_pos: "(0::real) < sqrt 2" by simp
   have sqrt2_sq: "sqrt 2 * sqrt 2 = 2"
     using sqrt2_pos
@@ -168,12 +168,12 @@ proof -
   have r_ne_1: "r \<noteq> 1"
     using r_sq by fastforce
  
-  \<comment> \<open>@{term \<psi>\<^sub>1} is a quantum state.\<close>
+  \<comment> \<open>\<open>\<psi>\<^sub>1\<close> is a quantum state.\<close>
   have \<psi>\<^sub>1_dim: "dim_vec \<psi>\<^sub>1 = n" by (simp add: \<psi>\<^sub>1_def)
   have \<psi>\<^sub>1_qs: "quantum_state n \<psi>\<^sub>1"
     unfolding quantum_state_def using n0 by (simp add: \<psi>\<^sub>1_def)
 
-  \<comment> \<open>Compute @{term "\<langle>\<psi>\<^sub>2 | \<psi>\<^sub>2\<rangle> = 1"} by splitting the sum at indices 0 and 1.\<close>
+  \<comment> \<open>Compute \<open>\<langle>\<psi>\<^sub>2 | \<psi>\<^sub>2\<rangle> = 1\<close> by splitting the sum at indices 0 and 1.\<close>
   have \<psi>\<^sub>2_dim: "dim_vec \<psi>\<^sub>2 = n" by (simp add: \<psi>\<^sub>2_def)
   have \<psi>\<^sub>2_entry: "\<And>i. i < n \<Longrightarrow> \<psi>\<^sub>2 $ i = (if i = 0 \<or> i = 1 then r else 0)"
     by (simp add: \<psi>\<^sub>2_def)
@@ -205,8 +205,8 @@ proof -
     finally show ?thesis by simp
   qed
 
-  \<comment> \<open>@{term "\<parallel>\<psi>\<^sub>2\<parallel> = 1"} follows from @{term "\<langle>\<psi>\<^sub>2|\<psi>\<^sub>2\<rangle> = 1"} via
-      @{thm cpx_vec_length_inner_prod} and non-negativity of the norm.\<close>
+  \<comment> \<open>\<open>\<parallel>\<psi>\<^sub>2\<parallel> = 1\<close> follows from \<open>\<langle>\<psi>\<^sub>2|\<psi>\<^sub>2\<rangle> = 1\<close> via
+      \<open>cpx_vec_length_inner_prod\<close> and non-negativity of the norm.\<close>
   have \<psi>\<^sub>2_norm_sq: "\<parallel>\<psi>\<^sub>2\<parallel>\<^sup>2 = 1"
     using inner_\<psi>\<^sub>2_self
     by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
@@ -216,7 +216,7 @@ proof -
   have \<psi>\<^sub>2_qs: "quantum_state n \<psi>\<^sub>2"
     unfolding quantum_state_def using \<psi>\<^sub>2_dim \<psi>\<^sub>2_norm by simp
 
-  \<comment> \<open>Compute @{term "\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> = r"}.\<close>
+  \<comment> \<open>Compute \<open>\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> = r\<close>.\<close>
   have inner_\<psi>\<^sub>1_\<psi>\<^sub>2: "\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> = r"
   proof -
     have "\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> = (\<Sum>i = 0..<n. cnj (\<psi>\<^sub>1 $ i) * \<psi>\<^sub>2 $ i)"
@@ -252,8 +252,8 @@ proof
     unfolding is_cloner_def by auto
   from U_carr have U_dc: "dim_col U = n^2" by simp
 
-  \<comment> \<open>Pick two unit vectors @{term \<psi>\<^sub>1}, @{term \<psi>\<^sub>2} whose inner product
-      @{term c} is neither 0 nor 1.\<close>
+  \<comment> \<open>Pick two unit vectors \<open>\<psi>\<^sub>1\<close>, \<open>\<psi>\<^sub>2\<close> whose inner product
+      \<open>c\<close> is neither 0 nor 1.\<close>
   obtain \<psi>\<^sub>1 \<psi>\<^sub>2 :: "complex Matrix.vec"
     where \<psi>\<^sub>1_qs: "quantum_state n \<psi>\<^sub>1"
       and \<psi>\<^sub>2_qs: "quantum_state n \<psi>\<^sub>2"
@@ -271,9 +271,9 @@ proof
     using \<psi>\<^sub>1_qs
     by (metis cpx_vec_length_inner_prod of_real_1 one_power2 quantum_state_norm1)
 
-  \<comment> \<open>Step 1: derive that @{term \<phi>} is itself a unit vector.  Apply the
-      cloner identity to @{term \<psi>\<^sub>1}, take the inner product with itself,
-      and use unitarity plus @{thm tensor_inner_prod}.\<close>
+  \<comment> \<open>Step 1: derive that \<open>\<phi>\<close> is itself a unit vector.  Apply the
+      cloner identity to \<open>\<psi>\<^sub>1\<close>, take the inner product with itself,
+      and use unitarity plus \<open>tensor_inner_prod\<close>.\<close>
   have \<phi>_unit: "\<langle>\<phi> | \<phi>\<rangle> = 1"
   proof -
     have tv1_dim: "dim_vec (tensor_vec \<psi>\<^sub>1 \<phi>) = n^2"
@@ -298,9 +298,9 @@ proof
       using inner_self_\<psi>\<^sub>1 by simp
   qed
 
-  \<comment> \<open>Step 2: apply the cloner identity to @{term \<psi>\<^sub>1} and @{term \<psi>\<^sub>2}, chain
-      inner-product equalities via unitarity and @{thm tensor_inner_prod},
-      obtaining @{term "c = c*c"}.\<close>
+  \<comment> \<open>Step 2: apply the cloner identity to \<open>\<psi>\<^sub>1\<close> and \<open>\<psi>\<^sub>2\<close>, chain
+      inner-product equalities via unitarity and \<open>tensor_inner_prod\<close>,
+      obtaining \<open>c = c*c\<close>.\<close>
   have tv1_dim: "dim_vec (tensor_vec \<psi>\<^sub>1 \<phi>) = n^2"
     using \<psi>\<^sub>1_dim \<phi>_dim by (simp add: tensor_vec_dim power2_eq_square)
   have tv2_dim: "dim_vec (tensor_vec \<psi>\<^sub>2 \<phi>) = n^2"
@@ -324,8 +324,8 @@ proof
   also have "\<dots> = c * c" by (simp add: c_def)
   finally have c_eq_sq: "c = c * c".
 
-  \<comment> \<open>Step 3: @{term "c = c * c"} forces @{term "c \<in> {0, 1}"}, contradicting
-      the choice of @{term \<psi>\<^sub>1}, @{term \<psi>\<^sub>2}.\<close>
+  \<comment> \<open>Step 3: \<open>c = c * c\<close> forces \<open>c \<in> {0, 1}\<close>, contradicting
+      the choice of \<open>\<psi>\<^sub>1\<close>, \<open>\<psi>\<^sub>2\<close>.\<close>
   have "c * (c - 1) = 0"
     using c_eq_sq by (simp add: algebra_simps)
   hence "c = 0 \<or> c = 1" by auto
@@ -387,11 +387,11 @@ proof -
   have d_pos: "0 < d" by (simp add: d_def)
 
   \<comment> \<open>The oracle permutes basis indices by flipping bit 0 (target qubit) when
-      {term "f (l div 2) = 1"}.  We express it as a function @{term \<sigma>}.\<close>
+      \<open>f (l div 2) = 1\<close>.  We express it as a function \<open>\<sigma>\<close>.\<close>
   define \<sigma> :: "nat \<Rightarrow> nat" where
     "\<sigma> l = (l div 2) * 2 + ((l mod 2) + f (l div 2)) mod 2" for l
 
-  \<comment> \<open>The function @{term \<sigma>} stays inside the index range.\<close>
+  \<comment> \<open>The function \<open>\<sigma>\<close> stays inside the index range.\<close>
   have \<sigma>_bound: "\<And>l. l < d \<Longrightarrow> \<sigma> l < d"
   proof -
     fix l :: nat assume l: "l < d"
@@ -408,7 +408,7 @@ proof -
     finally show "\<sigma> l < d" .
   qed
 
-  \<comment> \<open>The function @{term \<sigma>} is an involution: @{term "\<sigma> \<circ> \<sigma> = id"}.\<close>
+  \<comment> \<open>The function \<open>\<sigma>\<close> is an involution: \<open>\<sigma> \<circ> \<sigma> = id\<close>.\<close>
   have \<sigma>_invol: "\<And>l. l < d \<Longrightarrow> \<sigma> (\<sigma> l) = l"
   proof -
     fix l :: nat assume l: "l < d"
@@ -420,13 +420,13 @@ proof -
       using J_def i_def by (metis mult_div_mod_eq mult.commute)
     have fJ_lt: "f J < 2" using f_range J_lt d0_def by blast
 
-    \<comment> \<open>Compute @{term "\<sigma> l"}.\<close>      
+    \<comment> \<open>Compute \<open>\<sigma> l\<close>.\<close>      
     have s1: "\<sigma> l = J * 2 + (i + f J) mod 2"
       unfolding \<sigma>_def J_def[symmetric] i_def[symmetric] by simp
     let ?i1 = "(i + f J) mod 2"
     have i1_lt: "?i1 < 2" by simp
 
-    \<comment> \<open>Decompose @{term "\<sigma> l"} in the same div/mod form.\<close>
+    \<comment> \<open>Decompose \<open>\<sigma> l\<close> in the same div/mod form.\<close>
     have div_sub: "(J * 2 + ?i1) div 2 = J"
       using i1_lt by simp
     have mod_sub: "(J * 2 + ?i1) mod 2 = ?i1"
@@ -442,7 +442,7 @@ proof -
     finally show "\<sigma> (\<sigma> l) = l" using l_eq by simp
   qed
 
-  \<comment> \<open>Define the oracle matrix as the permutation matrix for @{term \<sigma>}.\<close>
+  \<comment> \<open>Define the oracle matrix as the permutation matrix for \<open>\<sigma>\<close>.\<close>
   define U :: "complex Matrix.mat" where
     "U = Matrix.mat d d (\<lambda>(k, l). if k = \<sigma> l then 1 else 0)"
   have U_dr: "dim_row U = d" by (simp add: U_def)
@@ -470,9 +470,9 @@ proof -
         by simp
     next
       assume kne: "k \<noteq> \<sigma> m"
-      \<comment> \<open>We also cannot have @{term "m = \<sigma> k"}, since otherwise
-          @{term "\<sigma> m"} would equal @{term "\<sigma> (\<sigma> k)"}, which by
-          involution equals @{term k}, contradicting @{term kne}.\<close>
+      \<comment> \<open>We also cannot have \<open>m = \<sigma> k\<close>, since otherwise
+          \<open>\<sigma> m\<close> would equal \<open>\<sigma> (\<sigma> k)\<close>, which by
+          involution equals \<open>k\<close>, contradicting \<open>kne\<close>.\<close>
       have "m \<noteq> \<sigma> k"
       proof
         assume "m = \<sigma> k"
@@ -485,7 +485,7 @@ proof -
     qed
   qed
 
-  \<comment> \<open>Unitarity of \<open>U\<close>: @{term "U\<^sup>\<dagger> = U"} and @{term "U * U = 1\<^sub>m d"}.\<close>
+  \<comment> \<open>Unitarity of \<open>U\<close>: \<open>U\<^sup>\<dagger> = U\<close> and \<open>U * U = 1\<^sub>m d\<close>.\<close>
   have U_dagger: "U\<^sup>\<dagger> = U"
   proof (rule eq_matI)
     show "dim_row (U\<^sup>\<dagger>) = dim_row U" by (simp add: U_def dagger_def)
@@ -597,7 +597,7 @@ proof -
     have w_dim: "dim_vec ?w = d"
       using tensor_vec_dim d_eq by simp
 
-    \<comment> \<open>Entries of @{term ?v}: 1 at index @{term "J * 2 + i"}, 0 elsewhere.\<close>
+    \<comment> \<open>Entries of \<open>?v\<close>: 1 at index \<open>J * 2 + i\<close>, 0 elsewhere.\<close>
     have v_entry: "\<And>k. k < d \<Longrightarrow> ?v $ k = (if k = J * 2 + i then 1 else 0)"
     proof -
       fix k assume k: "k < d"
@@ -626,7 +626,7 @@ proof -
       finally show "?w $ k = (if k = J * 2 + ?i1 then 1 else 0)".
     qed
 
-    \<comment> \<open>@{term "\<sigma> (J * 2 + i) = J * 2 + ?i1"}.\<close>
+    \<comment> \<open>\<open>\<sigma> (J * 2 + i) = J * 2 + ?i1\<close>.\<close>
     have \<sigma>_at: "\<sigma> (J * 2 + i) = J * 2 + ?i1"
       unfolding \<sigma>_def using i by simp
 
@@ -1325,7 +1325,7 @@ proof -
   have rho_carr: "\<rho> \<in> carrier_mat n n" using dm by (auto simp: density_matrix_def)
   have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
 
-  \<comment> \<open>Take a PSD square root of @{term \<rho>}.\<close>
+  \<comment> \<open>Take a PSD square root of \<open>\<rho>\<close>.\<close>
   obtain Q where Qc: "Q \<in> carrier_mat n n" and Qpsd: "psd Q" and QQ: "Q * Q = \<rho>"
     using psd_sqrt_exists[OF rho_carr rho_psd] by blast
   have Qdag: "(Q\<^sup>\<dagger>) = Q" using Qpsd by (simp add: psd_def hermitian_def)
@@ -1341,7 +1341,7 @@ proof -
     ultimately show ?thesis using dr dc by auto
   qed
 
-  \<comment> \<open>Key identity: @{term "(M*Q)\<^sup>\<dagger> * (M*Q) = Q * (M\<^sup>\<dagger>) * M * Q"}.\<close>
+  \<comment> \<open>Key identity: \<open>(M*Q)\<^sup>\<dagger> * (M*Q) = Q * (M\<^sup>\<dagger>) * M * Q\<close>.\<close>
   have expand: "((M * Q)\<^sup>\<dagger>) * (M * Q) = Q * ((M\<^sup>\<dagger>) * M) * Q"
   proof -
     have "((M * Q)\<^sup>\<dagger>) * (M * Q) = ((Q\<^sup>\<dagger>) * (M\<^sup>\<dagger>)) * (M * Q)"
@@ -1356,7 +1356,7 @@ proof -
     finally show ?thesis by simp
   qed
 
-  \<comment> \<open>Key identity 2: @{term "Tr (A*Q*Q) = Tr (Q * A * Q)"} for \<open>A = M\<^sup>\<dagger>*M\<close>.\<close>
+  \<comment> \<open>Key identity 2: \<open>Tr (A*Q*Q) = Tr (Q * A * Q)\<close> for \<open>A = M\<^sup>\<dagger>*M\<close>.\<close>
   have Tr_eq: "Tr ((M\<^sup>\<dagger>) * M * \<rho>) = Tr (((M * Q)\<^sup>\<dagger>) * (M * Q))"
   proof -
     have "Tr ((M\<^sup>\<dagger>) * M * \<rho>) = Tr ((M\<^sup>\<dagger>) * M * (Q * Q))"
@@ -1550,7 +1550,7 @@ proof -
     qed
   qed
 
-  \<comment> \<open>Each column of U is an eigenvector of \<rho> with eigenvalue \<open>D ! i\<close>.\<close>
+  \<comment> \<open>Each column of U is an eigenvector of \<open>\<rho>\<close> with eigenvalue \<open>D ! i\<close>.\<close>
   have eig: "\<And>i. i < n \<Longrightarrow>
                \<rho> *\<^sub>v Matrix.col U i = complex_of_real (D!i) \<cdot>\<^sub>v Matrix.col U i"
   proof -
@@ -1584,7 +1584,7 @@ proof -
     qed
   qed
 
-  \<comment> \<open>Eigenvalues are non-negative (\<rho> is PSD).\<close>
+  \<comment> \<open>Eigenvalues are non-negative (\<open>\<rho>\<close> is PSD).\<close>
   have eig_nn:
     "\<forall>mu::complex. \<forall>v::complex Matrix.vec.
        v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> \<rho> *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> Re mu \<ge> 0"
@@ -1677,7 +1677,7 @@ proof -
       finally show ?thesis.
     qed
 
-    \<comment> \<open>RHS: expand \<rho> = U * diag_mat_of_real D * U-dagger entry-wise.\<close>
+    \<comment> \<open>RHS: expand \<open>\<rho>\<close> = U * \<open>diag_mat_of_real\<close> D * U-dagger entry-wise.\<close>
     let ?UD = "U * diag_mat_of_real D"
     have diag_car: "diag_mat_of_real D \<in> carrier_mat n n"
       using Dlen by force
@@ -1978,7 +1978,7 @@ next
     finally show ?thesis using of_real_eq_1_iff by blast
   qed
 
-  \<comment> \<open>Idempotence of \<rho> forces (D!i) squared = D!i for each i, so D!i in {0,1}.\<close>
+  \<comment> \<open>Idempotence of \<open>\<rho>\<close> forces (D!i) squared = D!i for each i, so D!i in \<open>{0,1}\<close>.\<close>
   have DD_eq_D: "diag_mat_of_real D * diag_mat_of_real D = diag_mat_of_real D"
   proof -
     have "diag_mat_of_real D * diag_mat_of_real D
@@ -2058,7 +2058,7 @@ next
   have D_others: "\<And>i. i < n \<Longrightarrow> i \<noteq> j \<Longrightarrow> D!i = 0"
     using D_binary D_unique by blast
 
-  \<comment> \<open>Then \<rho> = pure_density (col U j).\<close>
+  \<comment> \<open>Then \<open>\<rho>\<close> = \<open>pure_density\<close> (col U j).\<close>
   let ?\<psi> = "Matrix.col U j"
   have psi_qs: "quantum_state n ?\<psi>" using col_qs[OF j_lt] .
 
@@ -2314,7 +2314,7 @@ theorem pure_ensemble_parallel:
       and ppos: "0 < p"
   shows "\<exists>\<beta>. \<psi>\<^sub>i = \<beta> \<cdot>\<^sub>v \<psi>"
 proof -
-  \<comment> \<open>Basic facts about psi, psi_i, and E.\<close>
+  \<comment> \<open>Basic facts about psi, \<open>psi_i\<close>, and E.\<close>
   have \<psi>_dim: "dim_vec \<psi> = n" using st by (simp add: quantum_state_def)
   have \<psi>_norm: "\<parallel>\<psi>\<parallel> = 1" using st by (simp add: quantum_state_def)
   have \<psi>_inner: "\<langle>\<psi>|\<psi>\<rangle> = 1"
@@ -2332,7 +2332,7 @@ proof -
   have \<psi>\<^sub>i_dim: "dim_vec \<psi>\<^sub>i = n"
     using \<psi>\<^sub>i_qs by (simp add: quantum_state_def)
 
-  \<comment> \<open>Define beta = inner psi psi_i and w = psi_i - beta * psi.\<close>
+  \<comment> \<open>Define beta = inner psi \<open>psi_i\<close> and w = \<open>psi_i\<close> - beta * psi.\<close>
   define \<beta> where "\<beta> = \<langle>\<psi>|\<psi>\<^sub>i\<rangle>"
   define w where "w = \<psi>\<^sub>i - \<beta> \<cdot>\<^sub>v \<psi>"
   have w_dim: "dim_vec w = n"
@@ -2340,7 +2340,7 @@ proof -
   have \<psi>_\<beta>\<psi>_dim: "dim_vec (\<beta> \<cdot>\<^sub>v \<psi>) = dim_vec \<psi>\<^sub>i"
     using \<psi>_dim \<psi>\<^sub>i_dim by simp
 
-  \<comment> \<open>Step 1: w \<perp> \<psi>, i.e. \<langle>\<psi>|w\<rangle> = 0.\<close>
+  \<comment> \<open>Step 1: w is orthogonal to \<open>\<psi>\<close>, i.e. \<open>\<langle>\<psi>|w\<rangle>\<close> = 0.\<close>
   have \<psi>_perp_w: "\<langle>\<psi>|w\<rangle> = 0"
   proof -
     have "\<langle>\<psi>|w\<rangle> = \<langle>\<psi>|\<psi>\<^sub>i\<rangle> - \<langle>\<psi>|\<beta> \<cdot>\<^sub>v \<psi>\<rangle>"
@@ -2376,7 +2376,7 @@ proof -
     finally show ?thesis .
   qed
 
-  \<comment> \<open>Step 4: expand via quad_form, extract real sum, show each term is 0.\<close>
+  \<comment> \<open>Step 4: expand via \<open>quad_form\<close>, extract real sum, show each term is 0.\<close>
   have sum_cplx_zero:
     "(\<Sum>(q, \<phi>) \<leftarrow> E. complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>) = 0"
     using ensemble_density_quad_form[OF E_dim w_dim] quad_zero by simp
@@ -2432,7 +2432,7 @@ proof -
     thus ?thesis by (auto simp: case_prod_beta)
   qed
 
-  \<comment> \<open>Step 5: for our (p, psi_i), p > 0 and the term is 0, so inner psi_i w = 0.\<close>
+  \<comment> \<open>Step 5: for our (p, \<open>psi_i\<close>), p > 0 and the term is 0, so inner \<open>psi_i\<close> w = 0.\<close>
   have \<psi>\<^sub>i_perp_w: "\<langle>\<psi>\<^sub>i|w\<rangle> = 0"
   proof -
     have "p * (cmod \<langle>\<psi>\<^sub>i|w\<rangle>)\<^sup>2 = 0"
@@ -2442,7 +2442,7 @@ proof -
     thus ?thesis by simp
   qed
 
-  \<comment> \<open>Step 6: compute inner psi_i w = inner psi_i psi_i minus beta cnj beta.\<close>
+  \<comment> \<open>Step 6: compute inner \<open>psi_i\<close> w = inner \<open>psi_i\<close> \<open>psi_i\<close> minus beta cnj beta.\<close>
   have \<psi>\<^sub>i\<psi>_cnj: "\<langle>\<psi>\<^sub>i|\<psi>\<rangle> = cnj \<beta>"
     unfolding \<beta>_def using inner_prod_cnj[of \<psi> \<psi>\<^sub>i] \<psi>_dim \<psi>\<^sub>i_dim by simp
 
@@ -2460,7 +2460,7 @@ proof -
     finally show ?thesis by simp
   qed
 
-  \<comment> \<open>Step 7: \<langle>w|w\<rangle> = 0.\<close>
+  \<comment> \<open>Step 7: \<open>\<langle>w|w\<rangle>\<close> = 0.\<close>
   have w_inner_zero: "\<langle>w|w\<rangle> = 0"
   proof -
     have dim_eq: "dim_vec (\<beta> \<cdot>\<^sub>v \<psi>) = dim_vec \<psi>\<^sub>i" using \<psi>_dim \<psi>\<^sub>i_dim by simp
@@ -2491,7 +2491,7 @@ proof -
       using w_dim cpx_vec_length_zero_iff by metis
   qed
 
-  \<comment> \<open>Conclusion: psi_i = beta * psi.\<close>
+  \<comment> \<open>Conclusion: \<open>psi_i\<close> = beta * psi.\<close>
   have "\<psi>\<^sub>i = \<beta> \<cdot>\<^sub>v \<psi>"
   proof (rule eq_vecI)
     show "dim_vec \<psi>\<^sub>i = dim_vec (\<beta> \<cdot>\<^sub>v \<psi>)" using \<psi>_dim \<psi>\<^sub>i_dim by simp
@@ -2571,7 +2571,7 @@ proof -
                     = \<psi> $ ?r1 * \<phi> $ ?r2 * (cnj (\<psi> $ ?c1) * cnj (\<phi> $ ?c2))"
       using lhs_ent T_r T_c by simp
 
-    \<comment> \<open>RHS entry via index_tensor_mat.\<close>
+    \<comment> \<open>RHS entry via \<open>index_tensor_mat\<close>.\<close>
     have AB_ent: "(?A \<Otimes> ?B) $$ (r, c) = ?A $$ (?r1, ?c1) * ?B $$ (?r2, ?c2)"
     proof -
       have drA: "dim_row ?A = m" using A_car by auto
@@ -2702,7 +2702,7 @@ proof -
   have RT_car: "R \<Otimes> T \<in> carrier_mat (m*p) (m*p)"
     using Rsq Tsq by auto
 
-  \<comment> \<open>Diagonal entries factor via index_tensor_mat.\<close>
+  \<comment> \<open>Diagonal entries factor via \<open>index_tensor_mat\<close>.\<close>
   have ent: "\<And>i k. i < m \<Longrightarrow> k < p \<Longrightarrow>
              (R \<Otimes> T) $$ (i * p + k, i * p + k) = R $$ (i, i) * T $$ (k, k)"
   proof -
@@ -2728,7 +2728,7 @@ proof -
     finally show "(R \<Otimes> T) $$ (i * p + k, i * p + k) = R $$ (i, i) * T $$ (k, k)" .
   qed
 
-  \<comment> \<open>Bijection {..<m} x {..<p} -> {..<m*p} via (i, k) |-> i*p + k.\<close>
+  \<comment> \<open>Bijection \<open>{..<m}\<close> x \<open>{..<p}\<close> -> \<open>{..<m*p}\<close> via (i, k) |-> i*p + k.\<close>
   have bij: "bij_betw (\<lambda>(i, k). i * p + k) ({..<m} \<times> {..<p}) {..<m*p}"
   proof (rule bij_betwI[where g = "\<lambda>r. (r div p, r mod p)"])
     show "(\<lambda>(i, k). i * p + k) \<in> {..<m} \<times> {..<p} \<rightarrow> {..<m*p}"
@@ -6842,7 +6842,7 @@ proof
   have Ws_sum: "sum_wdag_w n Ws = 1\<^sub>m n"
     using Ws_kraus by (simp add: kraus_operators_altdef)
 
-  \<comment> \<open>CP: transport from @{thm kraus_is_cp} through the agreement on \<open>M\<^sub>n\<close>.\<close>
+  \<comment> \<open>CP: transport from \<open>kraus_is_cp\<close> through the agreement on \<open>M\<^sub>n\<close>.\<close>
   have kmd_cp: "completely_positive n d (kraus_map_dim d Ws)"
     using kraus_is_cp[OF Ws_kraus npos dpos] .
   have cp_\<Phi>: "completely_positive n d \<Phi>"
@@ -6914,7 +6914,7 @@ next
       and phi_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
     using kraus_rep_of_psd_choi[OF linear smult range npos dpos psdP]
     by blast
-  \<comment> \<open>Step 3: trace preservation forces sum_wdag_w n Ws = 1_n.\<close>
+  \<comment> \<open>Step 3: trace preservation forces \<open>sum_wdag_w\<close> n Ws = \<open>1_n\<close>.\<close>
   have sum_is_one: "sum_wdag_w n Ws = 1\<^sub>m n"
   proof (rule eq_matI)
     have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
@@ -6933,7 +6933,7 @@ next
     have sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
       using sum_wdag_w_carrier[OF Ws_c].
     have one_c: "1\<^sub>m n \<in> carrier_mat n n" by simp
-    \<comment> \<open>Pair both sides with the mat_unit (b,a) and compare through Tr.\<close>
+    \<comment> \<open>Pair both sides with the \<open>mat_unit\<close> (b,a) and compare through Tr.\<close>
     have lhs: "sum_wdag_w n Ws $$ (a, b) = Tr (sum_wdag_w n Ws * ?E)"
       using Tr_mult_mat_unit[OF sum_c b_lt a_lt] by simp
     have rhs: "1\<^sub>m n $$ (a, b) = Tr (1\<^sub>m n * ?E)"

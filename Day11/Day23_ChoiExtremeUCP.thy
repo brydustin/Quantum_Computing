@@ -1109,7 +1109,7 @@ lemma kraus_quad_map_outer_sum_eq_kraus_map_dim:
   using us_dim
 proof (induction us)
   case Nil
-  \<comment> \<open>Base case: empty list. outer_sum reduces to the zero matrix.\<close>
+  \<comment> \<open>Base case: empty list. \<open>outer_sum\<close> reduces to the zero matrix.\<close>
   have outer_nil: "outer_sum (length Vs) ([] :: complex Matrix.vec list)
                     = 0\<^sub>m (length Vs) (length Vs)"
   proof (rule eq_matI)
@@ -2367,7 +2367,7 @@ proof -
     fix r c1 assume r_a: "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)"
                 and c_a: "c1 < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
     hence r_lt: "r < n" and c_lt: "c1 < n" by auto
-    \<comment> \<open>LHS via @{thm kraus_pair_sum_index}.\<close>
+    \<comment> \<open>LHS via \<open>kraus_pair_sum_index\<close>.\<close>
     have lhs_idx: "?S $$ (r, c1)
                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
                           A_orig $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
@@ -2406,7 +2406,7 @@ proof -
                           complex_of_real (c (i * ?k + j))
                             * (?B!(i * ?k + j)) $$ (r, c1))"
       by (rule sum_split_prod_atLeastLessThan)
-    \<comment> \<open>Substitute the formula for kraus_products at index \<open>i*k+j\<close>.\<close>
+    \<comment> \<open>Substitute the formula for \<open>kraus_products\<close> at index \<open>i*k+j\<close>.\<close>
     have inner_eq: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
                       (?B!(i * ?k + j)) $$ (r, c1)
                       = ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1)"
@@ -2797,7 +2797,7 @@ proof (rule eq_matI)
     qed
     finally show ?thesis .
   qed
-  \<comment> \<open>RHS via list-induction on Vs (uses outer_sum_entry_sum_list-like reasoning).\<close>
+  \<comment> \<open>RHS via list-induction on Vs (uses \<open>outer_sum_entry_sum_list-like\<close> reasoning).\<close>
   have R_idx: "?R $$ (r, c)
                  = sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs)"
     using Vs_c rho_c r_lt c_lt
@@ -3958,8 +3958,8 @@ next
   have j_lt: "c mod d < d" using dpos by simp
   let ?E = "mat_unit (r div d) (c div d) n n"
   have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
-  \<comment> \<open>LHS entry via @{thm kraus_quad_map_index} and
-      @{thm kraus_quad_map_mat_unit_index}.\<close>
+  \<comment> \<open>LHS entry via \<open>kraus_quad_map_index\<close> and
+      \<open>kraus_quad_map_mat_unit_index\<close>.\<close>
   have lhs_entry: "choi_matrix n d (kraus_quad_map d Vs Tmat) $$ (r, c)
                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
                           Tmat $$ (i, j)
@@ -3998,7 +3998,7 @@ next
     qed
     finally show ?thesis .
   qed
-  \<comment> \<open>RHS entry via @{thm mat_mult_index_sum} applied to the
+  \<comment> \<open>RHS entry via \<open>mat_mult_index_sum\<close> applied to the
       sandwich \<open>M Tmat M\<^sup>\<dagger>\<close>.\<close>
   have rhs_entry: "(?M * Tmat * ?Mdag) $$ (r, c)
                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
@@ -6058,7 +6058,7 @@ proof -
     qed
     thus False using rho_qz by simp
   qed
-  \<comment> \<open>By symmetry argument with @{thm midpoint} (as in reverse direction).\<close>
+  \<comment> \<open>By symmetry argument with \<open>midpoint\<close> (as in reverse direction).\<close>
   have Phim_ne_at_rho: "\<Phi> rho \<noteq> Phim rho"
   proof
     assume eq: "\<Phi> rho = Phim rho"
@@ -6342,17 +6342,17 @@ proof (rule ccontr)
   have \<Phi>1_tp: "trace_preserving n \<Phi>\<^sub>1" using \<Phi>1_in by (simp add: CPTP_def)
   have \<Phi>2_cp: "completely_positive n d \<Phi>\<^sub>2" using \<Phi>2_in by (simp add: CPTP_def)
   have \<Phi>2_tp: "trace_preserving n \<Phi>\<^sub>2" using \<Phi>2_in by (simp add: CPTP_def)
-  \<comment> \<open>Define the half-map and apply CP Radon\<dash>Nikodym.\<close>
+  \<comment> \<open>Define the half-map and apply CP Radon-Nikodym.\<close>
   define \<Psi> where "\<Psi> = (\<lambda>X. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
   \<comment> \<open>Step A: \<open>\<Psi>\<close> is CP, has the right range, and \<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier is CP.\<close>
   \<comment> \<open>\<open>\<Phi>\<^sub>1\<close>, \<open>\<Phi>\<^sub>2\<close> have range \<open>carrier_mat d d\<close> on carrier inputs:
-      provided directly by the (strengthened) @{const extreme_CPTP_carrier}
+      provided directly by the (strengthened) \<open>extreme_CPTP_carrier\<close>
       definition, which makes the range condition explicit (since the
-      project's @{const CPTP} doesn't enforce it).\<close>
+      project's \<open>CPTP\<close> doesn't enforce it).\<close>
   \<comment> \<open>From these, \<open>\<Psi>\<close>'s range is in \<open>carrier_mat d d\<close>.\<close>
   have psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Psi> X \<in> carrier_mat d d"
     unfolding \<Psi>_def using \<Phi>1_range by auto
-  \<comment> \<open>\<open>\<Psi>\<close> is CP via @{thm amplification_smult} + @{thm psd_smult_nonneg}.\<close>
+  \<comment> \<open>\<open>\<Psi>\<close> is CP via \<open>amplification_smult\<close> + \<open>psd_smult_nonneg\<close>.\<close>
   have psi_cp: "completely_positive n d \<Psi>"
     unfolding \<Psi>_def completely_positive_def p_positive_def
   proof (intro allI impI)
@@ -6383,7 +6383,7 @@ proof (rule ccontr)
       using amp_eq by simp
   qed
   \<comment> \<open>\<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier (from midpoint), so CP via the
-      same chain (with @{thm completely_positive_cong} to bridge).\<close>
+      same chain (with \<open>completely_positive_cong\<close> to bridge).\<close>
   define halfPhi2 :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
     where "halfPhi2 = (\<lambda>X. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
   have halfPhi2_cp: "completely_positive n d halfPhi2"
@@ -6559,7 +6559,7 @@ proof (rule ccontr)
     proof -
       fix rho :: "complex Matrix.mat" assume rho_c: "rho \<in> carrier_mat n n"
       \<comment> \<open>LHS: \<open>Tr (M * \<rho>) = Tr (kraus_quad_map d Vs T\<^sub>1 \<rho>)\<close>
-          via @{thm Tr_kraus_quad_map_eq} reversed.\<close>
+          via \<open>Tr_kraus_quad_map_eq\<close> reversed.\<close>
       have "Tr (?M * rho) = Tr (kraus_quad_map d Vs T\<^sub>1 rho)"
         using Tr_kraus_quad_map_eq[OF Vs_c T1_c rho_c] by simp
       also have "\<dots> = Tr (\<Phi>\<^sub>1 rho)"
@@ -6575,7 +6575,7 @@ proof (rule ccontr)
   qed
   \<comment> \<open>Step E: \<open>S := T\<^sub>1 - 1\<^sub>m k\<close> is non-zero, with
       \<open>kraus_pair_sum n Vs S = 0\<^sub>m n n\<close>; this yields a complex relation
-      contradicting @{thm lin_indep}.\<close>
+      contradicting \<open>lin_indep\<close>.\<close>
   let ?I = "(1\<^sub>m ?k :: complex Matrix.mat)"
   let ?negI = "(-1 :: complex) \<cdot>\<^sub>m ?I"
   let ?S = "T\<^sub>1 + ?negI"
@@ -6691,7 +6691,7 @@ proof (rule ccontr)
     using c_eval[of \<kappa>\<^sub>0] k0_lt k0_div k0_mod by simp
   have c_k0_nz: "c \<kappa>\<^sub>0 \<noteq> 0" using c_k0 S_nz_at by simp
   \<comment> \<open>The foldr-sum of \<open>c\<close> on \<open>kraus_products Vs\<close> vanishes (per-entry argument
-      parallel to @{thm mat_lin_indep_real_neg_witness}).\<close>
+      parallel to \<open>mat_lin_indep_real_neg_witness\<close>).\<close>
   have foldr_zero: "foldr (\<lambda>\<kappa> acc. c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>) + acc)
                           [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
   proof (rule eq_matI)
@@ -6772,7 +6772,7 @@ proof (rule ccontr)
       using ps_S_zero by simp
     finally show "?fs $$ (r, p) = (0\<^sub>m n n :: complex Matrix.mat) $$ (r, p)" .
   qed
-  \<comment> \<open>Apply lin\_indep to get \<open>c \<kappa>\<^sub>0 = 0\<close>, contradicting \<open>c_k0_nz\<close>.\<close>
+  \<comment> \<open>Apply \<open>lin_indep\<close> to get \<open>c \<kappa>\<^sub>0 = 0\<close>, contradicting \<open>c_k0_nz\<close>.\<close>
   have all_c_zero: "\<forall>\<kappa> < length ?B. c \<kappa> = 0"
     using lin_indep foldr_zero
     unfolding mat_lin_indep_complex_def by blast
