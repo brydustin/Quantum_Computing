@@ -146,6 +146,11 @@ lemma notes_P2_hermitian: "hermitian notes_P2"
   unfolding hermitian_def
   by (rule mat3_eqI) (auto simp: notes_P2_def mat_of_rows_list_def dagger_def)
 
+text \<open>First step: the first column is $c=(4,2,3)^t$ and $p_{11}=4$, and subtracting $\tfrac14cc^t$
+clears the first row and column:
+\[ P_2-\frac14\begin{pmatrix}4\\2\\3\end{pmatrix}\begin{pmatrix}4&2&3\end{pmatrix}
+   =\begin{pmatrix}0&0&0\\0&4&9/2\\0&9/2&23/4\end{pmatrix}. \]\<close>
+
 lemma notes_P2_R: "chol_R notes_P2 = (1/4) \<cdot>\<^sub>m mat_of_rows_list 3 [[16, 8, 12], [8, 4, 6], [12, 6, 9]]"
   by (rule mat3_eqI) (auto simp: chol_R_def notes_P2_def mat_of_rows_list_def)
 
@@ -164,6 +169,11 @@ lemma notes_Q2_carrier: "notes_Q2 \<in> carrier_mat 2 2"
 lemma notes_Q2_hermitian: "hermitian notes_Q2"
   unfolding hermitian_def
   by (rule mat2_eqI) (auto simp: notes_Q2_def mat_of_rows_list_def dagger_def)
+
+text \<open>Second step, on the remaining block $Q_2$:
+\[ Q_2-\frac14\begin{pmatrix}4\\9/2\end{pmatrix}\begin{pmatrix}4&9/2\end{pmatrix}
+   =\begin{pmatrix}0&0\\0&11/16\end{pmatrix}, \]
+and the last pivot $11/16$ is positive.\<close>
 
 lemma notes_Q2_R: "chol_R notes_Q2 = (1/4) \<cdot>\<^sub>m mat_of_rows_list 2 [[16, 18], [18, 81/4]]"
   by (rule mat2_eqI) (auto simp: chol_R_def notes_Q2_def mat_of_rows_list_def)

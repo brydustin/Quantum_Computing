@@ -79,6 +79,11 @@ next
     using term_c rec_c by simp
 qed
 
+text \<open>If the outcome of a measurement is not recorded, $\rho\mapsto\sum_iM_i\rho M_i^*$.  Each term is
+positive, $\braket x{M\rho M^*x}=\braket{M^*x}{\rho\,M^*x}\ge0$, and cyclicity of the trace gives
+\[ \Tr\sum_iM_i\rho M_i^*=\Tr\Bigl(\bigl(\sum_iM_i^*M_i\bigr)\rho\Bigr)=\Tr\rho, \]
+so densities go to densities.\<close>
+
 lemma meas_map_psd:
   assumes Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
       and \<rho>_c: "\<rho> \<in> carrier_mat n n"
@@ -305,6 +310,9 @@ next
     using term_c rec_c by simp
 qed
 
+text \<open>The same computation shows that every Kraus map $\Phi(\rho)=\sum_iW_i\rho W_i^*$, with
+$W_i\in M_{d,n}$, sends positive matrices to positive matrices.\<close>
+
 lemma kraus_map_dim_psd:
   assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
       and \<rho>_c: "\<rho> \<in> carrier_mat n n"
@@ -394,6 +402,10 @@ definition trace_preserving :: "nat \<Rightarrow> (complex Matrix.mat \<Rightarr
 definition unital_map :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
   "unital_map n d \<Phi> \<equiv> \<Phi> (1\<^sub>m n) = 1\<^sub>m d"
 
+text \<open>A $pn\times pn$ matrix is a $p\times p$ matrix of $n\times n$ blocks, $(X_{ab})_{rc}=X_{an+r,\,bn+c}$:
+\[ X=\begin{pmatrix}X_{00}&\cdots&X_{0,p-1}\\ \vdots&&\vdots\\ X_{p-1,0}&\cdots&X_{p-1,p-1}\end{pmatrix}. \]
+These blocks are contiguous; the blocks of Day 16 (\<open>block\<close>) are interleaved.\<close>
+
 definition block_of_mat :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "block_of_mat n x a b \<equiv>
      Matrix.mat n n (\<lambda>(r,c). x $$ (a*n + r, b*n + c))"
@@ -423,6 +435,10 @@ next
   thus "block_of_mat n X 0 0 $$ (i,j) = X $$ (i,j)"
     by (simp add: block_of_mat_index)
 qed
+
+text \<open>The amplification $\Phi^{(p)}=\mathrm{id}_p\otimes\Phi$ applies $\Phi$ block by block,
+$\Phi^{(p)}\bigl((X_{ab})\bigr)=\bigl(\Phi(X_{ab})\bigr)$.  $\Phi$ is \emph{$p$-positive} if $\Phi^{(p)}$ is
+positive, and \emph{completely positive} if it is $p$-positive for every $p$.\<close>
 
 definition amplification :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow>
     (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
@@ -473,6 +489,11 @@ next
     using block_of_mat_single[OF X] by simp
   finally show "amplification n d 1 \<Phi> X $$ (i,j) = \<Phi> X $$ (i,j)".
 qed
+
+text \<open>The amplification of a Kraus map is a Kraus map, with operators $I_p\otimes W_i$:
+\[ \Phi^{(p)}(X)=\sum_i(I_p\otimes W_i)\,X\,(I_p\otimes W_i)^*, \]
+since $(I_p\otimes W)X(I_p\otimes W)^*$ has the blocks $WX_{ab}W^*$.  The index computations below
+check this entry by entry.\<close>
 
 lemma tensor_id_kraus_carrier:
   assumes W: "W \<in> carrier_mat d n"
@@ -1020,6 +1041,8 @@ definition p_positive :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 
 
 definition completely_positive :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
   "completely_positive n d \<Phi> \<equiv> \<forall>p > 0. p_positive n d p \<Phi>"
+
+text \<open>So every $\Phi^{(p)}$ is a Kraus map, hence positive: Kraus maps are completely positive.\<close>
 
 theorem kraus_is_cp:
   assumes Ws: "kraus_operators n d Ws"

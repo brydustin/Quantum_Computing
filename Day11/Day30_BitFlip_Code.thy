@@ -23,6 +23,13 @@ abbreviation "X\<^sub>1 \<equiv> flip_bit_mat 2"
 abbreviation "X\<^sub>2 \<equiv> flip_bit_mat 1"
 abbreviation "X\<^sub>3 \<equiv> flip_bit_mat 0"
 
+text \<open>The code space is $\spn\{\ket{000},\ket{111}\}$.  A flip of qubit $j$ moves it into the span of
+the two words with bit $j$ flipped, so the syndrome projections are the projections onto
+\[ P_0:\ \{\ket{000},\ket{111}\},\quad P_1:\ \{\ket{100},\ket{011}\},\quad
+   P_2:\ \{\ket{010},\ket{101}\},\quad P_3:\ \{\ket{001},\ket{110}\}, \]
+and $X_j$ flips qubit $j$ (e.g.\ $X_1=X\otimes I\otimes I$).  Recovery measures
+$P_0,\dots,P_3$ and applies $X_j$ after outcome $j$.\<close>
+
 lemma syndrome_proj_carrier [simp]: "syndrome_proj K \<in> carrier_mat 8 8"
   by (simp add: syndrome_proj_def)
 

@@ -24,6 +24,11 @@ lemma tensor_pow_vec_dim:
   shows "dim_vec (tensor_pow_vec v k) = 2^k"
   using assms by (induction k) (auto simp: tensor_vec_dim)
 
+text \<open>By the mixed-product rule $(A\otimes B)(v\otimes w)=Av\otimes Bw$, applied $k$ times,
+$A^{\otimes k}v^{\otimes k}=(Av)^{\otimes k}$.  With $H\ket0=\tfrac1{\sqrt2}(1,1)$, and since
+$(c,c)^{\otimes N}$ is the constant vector with entries $c^N$,
+\[ H^{\otimes N}\ket{0\cdots0}=\frac1{\sqrt{2^N}}\sum_{J<2^N}\ket J. \]\<close>
+
 lemma tensor_pow_mat_vec:
   assumes Ac: "A \<in> carrier_mat 2 2" and vd: "dim_vec v = 2"
   shows "tensor_pow_mat A k *\<^sub>v tensor_pow_vec v k = tensor_pow_vec (A *\<^sub>v v) k"
@@ -89,6 +94,9 @@ proof -
     using inner_prod_unit_vec_right[of "unit_vec 2 0" 2 k] assms by simp
   thus ?thesis using assms by simp
 qed
+
+text \<open>Every basis state has amplitude $2^{-N/2}$ in the uniform state, which therefore has norm
+$\sqrt{2^N\cdot2^{-N}}=1$.\<close>
 
 lemma inner_prod_uniform_unit:
   assumes "J < 2^N"

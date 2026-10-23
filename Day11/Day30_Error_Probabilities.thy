@@ -50,6 +50,11 @@ definition Pauli_Z :: "complex Matrix.mat" where
        (\<lambda>(i,j). if i = 0 \<and> j = 0 then 1
                 else if i = 1 \<and> j = 1 then -1 else 0)"
 
+text \<open>\[ X=\begin{pmatrix}0&1\\1&0\end{pmatrix},\qquad Y=\begin{pmatrix}0&i\\-i&0\end{pmatrix},\qquad
+   Z=\begin{pmatrix}1&0\\0&-1\end{pmatrix}. \]
+(The notes' $Y$ is the negative of the physicists' $\sigma_y$.)  Each is Hermitian and squares
+to $I$, so each is unitary: $U^*U=U^2=I$.\<close>
+
 lemma Pauli_X_carrier [simp]: "Pauli_X \<in> carrier_mat 2 2"
   by (auto simp: Pauli_X_def)
 

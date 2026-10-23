@@ -51,6 +51,9 @@ definition pure_density :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat"
      let n = dim_vec \<psi> in
      outer_sum n [\<psi>]"
 
+text \<open>$\Tr\ketbra\psi\psi=\sum_i\psi_i\overline{\psi_i}=\norm\psi^2$, so a unit vector gives a
+density matrix.\<close>
+
 lemma Tr_outer_sum_single:
   assumes dim: "dim_vec \<psi> = n"
   shows "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
@@ -88,6 +91,10 @@ proof -
     using dim psd tr by fastforce
 qed
 
+
+text \<open>An ensemble $\{p_i,\psi_i\}$ has $\rho=\sum_ip_i\ketbra{\psi_i}{\psi_i}$.  It is positive, as a
+non-negative combination of the positive $\ketbra{\psi_i}{\psi_i}$, and
+$\Tr\rho=\sum_ip_i\norm{\psi_i}^2=\sum_ip_i=1$.\<close>
 
 definition ensemble_density :: "nat \<Rightarrow> (real \<times> complex Matrix.vec) list \<Rightarrow> complex Matrix.mat" where
   "ensemble_density n E \<equiv>

@@ -35,6 +35,12 @@ lemma tensor_zero_left: "dim_vec w = 2 \<Longrightarrow> tensor_vec (0\<^sub>v 2
 lemma tensor_zero_right: "dim_vec v = 2 \<Longrightarrow> tensor_vec v (0\<^sub>v 2) = 0\<^sub>v 4"
   by (rule eq_vecI) (simp_all add: tensor_vec_index tensor_vec_dim)
 
+text \<open>Measuring the first qubit of $\beta=\tfrac1{\sqrt2}(\ket{00}+\ket{11})$ with
+$P_0=\ketbra00$, $P_1=\ketbra11$:
+\[ (P_0\otimes I)\beta=\tfrac1{\sqrt2}\ket{00},\qquad (P_1\otimes I)\beta=\tfrac1{\sqrt2}\ket{11}, \]
+so each outcome has probability $\tfrac12$ and leaves the second qubit in the same basis
+state as the first.\<close>
+
 lemma A_meas_bell:
   "(proj0 \<Otimes> 1\<^sub>m 2) *\<^sub>v bell_state = (1 / csqrt 2) \<cdot>\<^sub>v tensor_vec e0 e0"
   "(proj1 \<Otimes> 1\<^sub>m 2) *\<^sub>v bell_state = (1 / csqrt 2) \<cdot>\<^sub>v tensor_vec e1 e1"

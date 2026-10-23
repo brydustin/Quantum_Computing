@@ -186,6 +186,9 @@ with explicit inverse.\<close>
 text \<open>Postulate 4$'$ (Day 16) and the composite ensembles of Day 14: tensor products of positive
 matrices are positive, and tensor products of density matrices are density matrices.\<close>
 
+text \<open>Products of densities are densities: if $A=\sum_ia_ia_i^*$ and $B=\sum_jb_jb_j^*$ then
+\[ A\otimes B=\sum_{i,j}(a_i\otimes b_j)(a_i\otimes b_j)^*\ge0,\qquad \Tr(A\otimes B)=\Tr A\,\Tr B. \]\<close>
+
 lemma psd_tensor:
   fixes A B :: "complex Matrix.mat"
   assumes A: "A \<in> carrier_mat m m" and B: "B \<in> carrier_mat p p"
@@ -240,6 +243,13 @@ definition operator_tensor_iso_map :: "nat \<Rightarrow> nat \<Rightarrow> compl
   "operator_tensor_iso_map m p c \<equiv>
      Matrix.mat (m*p) (m*p)
        (\<lambda>(r,s). c $$ ((r div p) * m + (s div p), (r mod p) * p + (s mod p)))"
+
+text \<open>The coordinate model: $L(\Hil_A)\otimes L(\Hil_B)$ is $M_{m^2,p^2}$, the entry in row $(i,i')$ and
+column $(k,k')$ being the coefficient of $E_{ii'}\otimes E_{kk'}$.  $\Gamma$ moves it to position
+$((i,k),(i',k'))$ of an $mp\times mp$ matrix,
+\[ \Gamma(c)_{ip+k,\;i'p+k'}=c_{im+i',\;kp+k'}, \]
+so $\Gamma(\sum c\,E_{ii'}\otimes E_{kk'})$ is the same sum with $\otimes$ the Kronecker product.
+Being a reindexing, it is linear and bijective.\<close>
 
 lemma operator_tensor_iso_map_carrier [simp]:
   "operator_tensor_iso_map m p c \<in> carrier_mat (m*p) (m*p)"
@@ -666,6 +676,10 @@ lemma partial_trace_A_carrier [simp]:
   "partial_trace_A m p x \<in> carrier_mat p p"
   by auto
 
+
+text \<open>On product operators the partial traces keep one factor and trace out the other:
+\[ \tr_B(R\otimes T)=\Tr(T)\,R,\qquad \tr_A(R\otimes T)=\Tr(R)\,T, \]
+entrywise $\sum_kR_{ij}T_{kk}=R_{ij}\Tr T$.\<close>
 
 lemma partial_trace_B_tensor:
   fixes R T :: "complex Matrix.mat"

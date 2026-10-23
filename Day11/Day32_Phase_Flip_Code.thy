@@ -69,6 +69,11 @@ lemma ket_minus_index_0: "ket_minus $ 0 = 1 / sqrt 2"
 lemma ket_minus_index_1: "ket_minus $ 1 = - 1 / sqrt 2"
   by (simp add: ket_minus_def)
 
+text \<open>$\ket\pm=\tfrac1{\sqrt2}(\ket0\pm\ket1)$ is an orthonormal basis in which $X$ and $Z$ exchange roles:
+\[ Z\ket+=\ket-,\quad Z\ket-=\ket+,\qquad X\ket+=\ket+,\quad X\ket-=-\ket-. \]
+A phase flip acts on $\ket\pm$ as a bit flip acts on $\ket0,\ket1$, so the phase-flip code is
+the bit-flip code in the basis $\ket\pm$.\<close>
+
 lemma ket_plus_unit: "\<parallel>ket_plus\<parallel> = 1"
 proof -
   have inner: "\<langle>ket_plus | ket_plus\<rangle> = 1"
