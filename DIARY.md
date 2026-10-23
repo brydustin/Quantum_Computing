@@ -848,3 +848,14 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   too.  `tools/afp_export.sh` assembles the entries with AFP-style ROOTs and rebuilds them fresh
   from the export; `tools/afp_package.sh` makes the submission folders with metadata from
   `tools/afp_meta/`.
+- **AFP packaging** (2026-10-23): `tools/afp_package.sh` builds the three entries from the export
+  alone with the AFP's options (`document=pdf`, variants `document:outline=/proof,/ML`,
+  `browser_info`) and writes `../AFP_Submissions/{1_Hermitian_Functional_Calculus,2_Vern_Paulsen_QC,
+  3_HHL_Algorithm}` (archive, unpacked entry, session PDFs with proofs: 70, 603, 390 pp, and
+  `SUBMISSION.md` with the form fields).  The full variant typesets proofs, where comments are
+  emitted raw: 56 comments with underscores, symbols or antiquotations broke the notes' document
+  (`tools/fix_comments.py` wraps such words in cartouches); `\<perp>` and `\<dash>` have no LaTeX
+  macro.  Traps: the AFP options change the ancestors' build options, so the first export build
+  rebuilds HOL, HOL-Analysis, JNF etc. (about an hour); `-f` also rebuilds ancestors; editing a
+  running bash script corrupts it (bash reads it incrementally).  `isabelle document -o
+  document_variants=document SESSION` regenerates a document from the build database in minutes.
