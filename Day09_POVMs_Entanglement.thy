@@ -24,6 +24,9 @@ definition povm :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool
      foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
 
 
+text \<open>Every measurement gives a POVM: $P_i=M_i^*M_i$ is positive because
+$\braket x{M_i^*M_ix}=\norm{M_ix}^2\ge0$, and $\sum_iP_i=I$.\<close>
+
 lemma measurement_induces_povm:
   assumes ms: "measurement_system n Ms"
   shows "povm n (map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms)"
@@ -97,6 +100,9 @@ proof -
     unfolding povm_def using P_carrier P_psd id_sum by auto
 qed
 
+
+text \<open>Conversely, every POVM comes from a measurement: $P_i\ge0$ has the positive square root
+$M_i=P_i^{1/2}$, with $M_i^*M_i=P_i$, and $\sum_iP_i=I$ is the measurement condition.\<close>
 
 lemma psd_sqrt_measurement_factor:
   assumes Pcar: "P \<in> carrier_mat n n"
@@ -403,7 +409,7 @@ text \<open>A state $\psi\in\Hil_A\otimes\Hil_B$ is \emph{entangled} if it is no
 state $u\otimes v$.  The Bell state $\gamma=\tfrac1{\sqrt2}(\ket{00}+\ket{11})$ is
 entangled.  The notes' first application of entanglement (A and B share $\gamma$; A measures
 $\ketbra00,\ketbra11$ and gets each outcome with probability $\tfrac12$, after which B's
-measurement is determined) is \<open>bell_measurement\<close> in theory Day02\_11\_Supplement.\<close>
+measurement is determined) is \<open>bell_measurement\<close> in theory Day09\_Bell\_Measurement.\<close>
 
 definition entangled :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> bool" where
   "entangled n m \<psi> \<equiv>

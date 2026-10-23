@@ -25,6 +25,8 @@ definition mat_unit :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> na
 
 notation mat_unit ("E\<lbrakk>_,_ ; _,_\<rbrakk>" [1000, 1000, 1000, 1000] 999)
 
+text \<open>Entrywise, $(E_{ij})_{rc}=\delta_{ri}\,\delta_{cj}$.\<close>
+
 lemma mat_unit_carrier [simp]: "E\<lbrakk>i,j ; m,n\<rbrakk> \<in> carrier_mat m n"
   by (simp add: mat_unit_def)
 
@@ -260,6 +262,9 @@ next
     using False by simp
 qed
 
+text \<open>So $\Tr E_{ij}=\delta_{ij}$, and since $\langle E_{rr}|X\rangle=x_{rr}$,
+\[ \Tr X=\sum_r x_{rr}=\sum_r\langle E_{rr}|X\rangle. \]\<close>
+
 corollary Tr_mat_unit_diag:
   assumes "i < n"
   shows "Tr (E\<lbrakk>i,i ; n,n\<rbrakk>) = 1"
@@ -400,6 +405,9 @@ proof -
 qed
 
 
+text \<open>Writing $A=\sum_{i,j}a_{ij}E_{ij}$ and $B=\sum_{k,l}b_{kl}E_{kl}$, the product rule for matrix
+units gives $\Tr(AB)=\sum_{i,j}a_{ij}b_{ji}$, which is symmetric in $A$ and $B$:\<close>
+
 lemma Tr_cyclic:
   assumes AB: "dim_col A = dim_row B"
       and BA: "dim_row A = dim_col B"
@@ -431,6 +439,10 @@ proof -
     using AB BA by (simp add: Tr_def)
   finally show ?thesis.
 qed
+
+text \<open>Hence the trace is invariant under unitary conjugation,
+$\Tr(U^*AU)=\Tr(AUU^*)=\Tr A$, and the Hilbert--Schmidt inner product is a trace:
+$\langle A|B\rangle=\sum_{i,j}\overline{a_{ij}}\,b_{ij}=\Tr(A^*B)$.\<close>
 
 lemma Tr_unitary_conjugation:
   assumes Uu: "unitary U"
@@ -504,8 +516,8 @@ $P=\sum_i\ketbra{v_i}{v_i}=VV^\dagger$ is \<^term>\<open>outer_sum n vs\<close>.
 projection formula, $V^\dagger V=I_k$, the completeness relation $VV^\dagger=I_n$ for a full
 basis, $P=P^\dagger$, $P^2=P$, Parseval, the orthogonality of the residual, and the uniqueness
 of the decomposition.  Independence of $P$ from the basis is \<open>outer_sum_basis_independent\<close> in
-theory Day02\_11\_Supplement; the characterisation of Hermitian idempotents as orthogonal projections is
-\<open>projection_annihilates_orthogonal\<close> in theory Quantum\_Computing11.\<close>
+theory Day02\_Projection\_Basis; the characterisation of Hermitian idempotents as orthogonal projections is
+\<open>projection_annihilates_orthogonal\<close> in theory Day32\_Phase\_Flip\_Code.\<close>
 
 
 
@@ -541,6 +553,9 @@ lemma outer_sum_dim_row [simp]: "dim_row (outer_sum n vs) = n"
 
 lemma outer_sum_dim_col [simp]: "dim_col (outer_sum n vs) = n"
   by (simp add: outer_sum_def)
+
+text \<open>$P=VV^*$ is Hermitian, and orthonormality of the columns is $V^*V=I_k$, entry by
+entry $(V^*V)_{ij}=\braket{v_i}{v_j}=\delta_{ij}$.\<close>
 
 lemma outer_sum_hermitian:
   shows "(outer_sum n vs)\<^sup>\<dagger> = outer_sum n vs"
@@ -599,6 +614,10 @@ qed
 
 
 
+text \<open>For a full basis ($k=n$) $V$ is square, so $V^*V=I$ forces $VV^*=I$ as well.  Entrywise
+this is the completeness relation
+\[ \sum_{l}(v_l)_i\,\overline{(v_l)_j}=\delta_{ij}. \]\<close>
+
 lemma completeness_relation:
   assumes orth: "orthonormal_list n vs"
       and full: "length vs = n"
@@ -642,6 +661,8 @@ proof -
 qed
 
 
+
+text \<open>$P$ acts by $Px=\sum_l\braket{v_l}{x}\,v_l$, and $P^2=V(V^*V)V^*=VV^*=P$.\<close>
 
 lemma outer_sum_apply:
   assumes orth: "orthonormal_list n vs"
@@ -695,6 +716,9 @@ proof -
 qed
 
 
+
+text \<open>For a full basis $P=I$, so each vector is its own expansion $v=\sum_l\braket{v_l}{v}\,v_l$;
+taking $\braket{v}{\cdot}$ gives Parseval, $\norm{v}^2=\sum_l|\braket{v_l}{v}|^2$.\<close>
 
 lemma parseval:
   assumes orth: "orthonormal_list n vs"

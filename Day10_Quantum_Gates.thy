@@ -95,10 +95,14 @@ NOT acts by $\ket{a,b}\mapsto\ket{a,b\oplus a}$:
 \]
 which is unitary, and Toffoli's CCNOT (identity on the first six basis vectors, swapping
 $\ket{110}$ and $\ket{111}$) is a reversible gate generating all Boolean operations; it is
-defined in theory Quantum\_Computing11.\<close>
+defined in theory Day11\_Gates\_No\_Cloning.\<close>
 
 lemma CNOT_unitary: "unitary CNOT"
   using CNOT_is_gate gate.unitary by blast
+
+text \<open>CNOT flips the target qubit when the control is $1$, $\ket{ab}\mapsto\ket{a,\,a\oplus b}$:
+\[ \ket{00}\mapsto\ket{00},\quad \ket{01}\mapsto\ket{01},\quad \ket{10}\mapsto\ket{11},\quad
+   \ket{11}\mapsto\ket{10}. \]\<close>
 
 lemma CNOT_00:
   "CNOT *\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0)) =
@@ -172,6 +176,8 @@ next
         dim_vec (tensor_vec (unit_vec 2 1) (unit_vec 2 0))"
     by (simp add: CNOT_def tensor_vec_dim)
 qed
+
+text \<open>In the Kronecker model $\ket{ab}=e_a\otimes e_b=e_{2a+b}\in\C^4$:\<close>
 
 lemma tensor_unit_vec_2_00:
   "tensor_vec (unit_vec 2 0) (unit_vec 2 0) = unit_vec 4 0"

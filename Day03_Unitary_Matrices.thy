@@ -113,6 +113,9 @@ lemma bra_vec_index_0:
   shows "bra_vec w $$ (0,j) = cnj (w $ j)"
   using j by (simp add: bra_vec_def row_vec_def cpx_mat_cnj_def)
 
+text \<open>$\ketbra vw=v\,w^*$ has entries $v_i\overline{w_j}$ and sends every vector to a multiple of
+$v$: $\ketbra vw\,x=\braket wx\,v$.\<close>
+
 lemma outer_prod_index:
   fixes v w :: "complex Matrix.vec"
   assumes i: "i < dim_vec v"
@@ -283,6 +286,10 @@ proof -
   finally show ?thesis .
 qed
 
+text \<open>The vector inner product is linear on the right,
+$\braket u{av+w}=a\braket uv+\braket uw$, and conjugate-linear on the left; correspondingly
+$(\gamma U)^*=\overline\gamma\,U^*$.\<close>
+
 lemma inner_prod_right_smult':
   fixes u v :: "complex Matrix.vec"
   shows "\<langle>u | a \<cdot>\<^sub>v v\<rangle> = a * \<langle>u | v\<rangle>"
@@ -416,6 +423,11 @@ next
         (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w)) $$ (i,j)" .
 qed
 
+
+text \<open>For a unit vector $w$, $U_H=I-2\ketbra ww$ is the reflection in the hyperplane $w^\perp$:
+$U_Hx=x-2\braket wx\,w$ fixes $w^\perp$ and sends $w$ to $-w$.  It is Hermitian, and
+\[ U_H^2=I-4\ketbra ww+4\,\ketbra ww\ketbra ww=I-4\ketbra ww+4\braket ww\ketbra ww=I, \]
+so it is unitary.\<close>
 
 lemma householder_hermitian:
   shows "(householder w)\<^sup>\<dagger> = householder w"
@@ -1262,6 +1274,13 @@ proof -
     using schur_decomposition_exists[OF sq cp] by blast
 qed
 
+text \<open>The induction works with $2\times2$ block matrices, whose adjoints and products are
+computed blockwise:
+\[ \begin{pmatrix}A&B\\C&D\end{pmatrix}^*=\begin{pmatrix}A^*&C^*\\B^*&D^*\end{pmatrix},\qquad
+   \begin{pmatrix}A&0\\0&D\end{pmatrix}\begin{pmatrix}B&0\\0&E\end{pmatrix}
+   =\begin{pmatrix}AB&0\\0&DE\end{pmatrix}; \]
+in particular $U\oplus V$ is unitary when $U$ and $V$ are.\<close>
+
 lemma cpx_mat_cnj_four_block:
   assumes A: "A \<in> carrier_mat nr1 nc1"
       and B: "B \<in> carrier_mat nr1 nc2"
@@ -1631,6 +1650,11 @@ proof -
     unfolding unitary_def
     using left_mult right_mult U V by auto
 qed
+
+text \<open>The inductive step.  Over $\C$ the characteristic polynomial has a root, so $A$ has an
+eigenvector, normalised to a unit vector $v$.  A unitary $W$ with first column $v$ gives
+\[ W^*AW=\begin{pmatrix}\lambda&*\\0&A'\end{pmatrix}, \]
+and if $V^*A'V=T'$ is upper triangular then so is $U^*AU$ for $U=W(1\oplus V)$.\<close>
 
 lemma complex_matrix_has_eigenvector:
   fixes A :: "complex Matrix.mat"

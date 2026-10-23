@@ -380,6 +380,9 @@ lemma quantum_state_dim:
   by (simp add: quantum_state_def)
 
 
+text \<open>A state is a unit vector, and evolution is $\psi\mapsto U\psi$ with $U$ unitary; it stays a state
+since $\norm{U\psi}^2=\braket{\psi}{U^*U\psi}=\norm\psi^2=1$.\<close>
+
 definition evolve :: "complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
   "evolve U \<psi> \<equiv> U *\<^sub>v \<psi>"
 
@@ -397,6 +400,10 @@ proof
   finally show "\<parallel>U *\<^sub>v \<psi>\<parallel> = 1".
 qed
 
+
+text \<open>A measurement is a list $M_1,\dots,M_k$ with $\sum_iM_i^*M_i=I$.  Outcome $i$ has probability
+\[ p_i=\norm{M_i\psi}^2=\braket{\psi}{M_i^*M_i\,\psi}, \]
+and these add up to $\braket{\psi}{(\sum_iM_i^*M_i)\psi}=\norm\psi^2=1$.\<close>
 
 definition measurement_system :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool" where
   "measurement_system n Ms \<equiv>

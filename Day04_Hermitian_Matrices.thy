@@ -51,6 +51,12 @@ proof -
 qed
 
 
+text \<open>A matrix is determined by its quadratic form.  In coordinates
+$\braket u{Tv}=\sum_{k,l}\overline{u_k}\,T_{kl}\,v_l$, so $\braket{e_p}{Te_q}=T_{pq}$; and with
+$q(z)=\braket z{Tz}$ the polarization identity
+\[ 4\braket x{Ty}=\sum_{k=0}^{3}i^{-k}\,q(x+i^ky) \]
+recovers every entry from the values of $q$.  This is how $q$ real-valued forces $T=T^*$.\<close>
+
 lemma inner_T_double_sum:
   fixes T :: "complex Matrix.mat" and u v :: "complex Matrix.vec"
   assumes T_carr: "T \<in> carrier_mat n n"
@@ -705,6 +711,9 @@ proof -
   finally show ?thesis.
 qed
 
+text \<open>For a real diagonal $D=\diag(\lambda_1,\dots,\lambda_n)$,
+$\braket y{Dy}=\sum_i\lambda_i|y_i|^2$, which is $\ge0$ when every $\lambda_i\ge0$.\<close>
+
 lemma diag_mat_of_real_quad_Re_nonneg:
   fixes y :: "complex Matrix.vec"
   assumes ydim: "dim_vec y = length D"
@@ -794,6 +803,12 @@ proof -
   thus "0 \<le> Re \<langle>y | diag_mat_of_real D *\<^sub>v y\<rangle>"
     using Re_expand by simp
 qed
+
+text \<open>The spectral theorem.  If $U^*HU=T$ is a Schur form of a Hermitian $H$, then
+$T^*=U^*H^*U=T$; an upper triangular matrix equal to its adjoint is diagonal with real
+diagonal.  Hence
+\[ H=UDU^*,\qquad D=\diag(\lambda_1,\dots,\lambda_n),\ \lambda_i\in\R, \]
+and the columns of $U$ are an orthonormal basis of eigenvectors, $Hu_i=\lambda_iu_i$.\<close>
 
 theorem hermitian_spectral_decomp:
   fixes H :: "complex Matrix.mat"

@@ -23,7 +23,7 @@ hide_const (open) Function_Norm.continuous
 section \<open>Overview (Days 27--28 of the notes)\<close>
 
 text \<open>This theory proves the results restated lecture by lecture in theory
-Day24\_Separability.  The notes argue in the real vector space of Hermitian matrices with a
+Day26\_Separability.  The notes argue in the real vector space of Hermitian matrices with a
 closed-cone separation theorem; formally we work in the typed matrix space
 \<open>(complex, 'm \<times> 'p, 'm \<times> 'p) lmat\<close>, a real inner-product space (Lmat\_Euclidean), and use
 HOL-Analysis' \<open>separating_hyperplane_closed_point\<close>.  Steps: the positive matrices form a

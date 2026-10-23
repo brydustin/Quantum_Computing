@@ -14,7 +14,7 @@ truth tables of CNOT ($\ket{a,b}\mapsto\ket{a,b+a}$, arithmetic in $\Z_2$) and o
 ($\ket{a,b,c}\mapsto\ket{a,b,c+ab}$).  Circuit diagrams are introduced; the CNOT with
 control on the second wire has matrix $\begin{pmatrix}1&0&0&0\\0&0&0&1\\0&0&1&0\\0&1&0&0\end{pmatrix}$,
 and three alternating CNOTs compose to the swap of the two wires (\<open>SWAP_three_CNOTs\<close> in
-theory Day02\_11\_Supplement).
+theory Day11\_SWAP\_Circuit).
 
 \begin{notesdef}
 The Toffoli gate CCNOT is the $8\times8$ permutation matrix that fixes the first six basis

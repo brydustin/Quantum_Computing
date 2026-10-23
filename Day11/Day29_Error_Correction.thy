@@ -8,10 +8,7 @@ begin
 
 section \<open>Day 29 (7 November 2011): classical error detection and correction\<close>
 
-text \<open>Days 23--28 are formalised in the theories Day23\_ChoiExtremeUCP, Separable\_Cone and
-Day24\_Separability.
-
-To transmit $v\in\Z_2^n$ through a channel that may flip bits ($+1$ in $\Z_2$), one encodes
+text \<open>To transmit $v\in\Z_2^n$ through a channel that may flip bits ($+1$ in $\Z_2$), one encodes
 $v\mapsto\phi(v)\in\Z_2^{n+k}$, transmits, and decodes.  Examples: repetition $v\mapsto(v,v)$
 detects one error but corrects none and doubles the cost; the parity check
 $(a_1,\dots,a_n)\mapsto(a_1,\dots,a_n;a_1+\cdots+a_n)$ detects one error cheaply; the Hamming

@@ -68,6 +68,8 @@ lemma is_isomorphism_betweenD_inverse:
     and "\<And>y. y \<in> ls_carrier W \<Longrightarrow> f (g y) = y"
   using assms by (auto simp: is_isomorphism_between_def)
 
+text \<open>The example used throughout: $M_{m,n}$ with entrywise addition and scaling.\<close>
+
 definition mat_linear_structure :: "nat \<Rightarrow> nat \<Rightarrow> (complex, complex Matrix.mat) linear_structure" where
   "mat_linear_structure m n \<equiv>
      \<lparr> ls_carrier = carrier_mat m n,
@@ -164,6 +166,10 @@ qed
 
 
 
+text \<open>Linear in the right slot, conjugate-linear in the left:
+\[ \langle Y|X_1+X_2\rangle=\langle Y|X_1\rangle+\langle Y|X_2\rangle,\qquad
+   \langle Y|cX\rangle=c\,\langle Y|X\rangle,\qquad \langle cY|X\rangle=\overline c\,\langle Y|X\rangle. \]\<close>
+
 lemma hs_inner_prod_right_add:
   assumes "dim_row X1 = dim_row y" and "dim_col X1 = dim_col y"
       and "dim_row X2 = dim_row y" and "dim_col X2 = dim_col y"
@@ -190,6 +196,9 @@ lemma hs_inner_prod_left_smult:
   by (auto simp: mult.assoc sum_distrib_left intro!: sum.cong)
 
 
+
+text \<open>Positive definiteness: $\langle X|X\rangle=\sum_{i,j}|x_{ij}|^2$ is real, non-negative,
+and $0$ only if every entry is $0$.\<close>
 
 lemma hs_inner_prod_self_real:
   shows "\<langle>\<langle> x | x \<rangle>\<rangle> \<in> \<real>"

@@ -22,7 +22,7 @@ Case II, $\psi_1\not\perp\psi_2$: write $\psi_2=\alpha\psi_1+\beta\gamma$ with
 $\gamma\perp\psi_1$ a unit vector, so $\alpha\neq 0$; any measurement system with
 $\norm{M_1\psi_1}=1$ satisfies $|\alpha|^2\le\norm{M_1\psi_2}^2$, so outcome $1$ also
 occurs with probability at least $|\alpha|^2$ when $\psi_2$ is sent
-(\<open>nonorthogonal_outcome_prob\<close> in theory Day02\_11\_Supplement).
+(\<open>nonorthogonal_outcome_prob\<close> in theory Day08\_Indistinguishable\_States).
 
 \begin{notestheorem}
 Given linearly independent states $\psi_1,\dots,\psi_n$ there is a measurement system
@@ -882,6 +882,9 @@ outcomes $\lambda_m$ attached to the measurement operators $M_m$ is
 $H=\sum_m\lambda_mM_m^*M_m$, which is Hermitian, and the expected outcome
 $\sum_m\lambda_mp_m(\psi)$ equals $\braket{\psi}{H\psi}$.\<close>
 
+text \<open>For the rank-one operator $M=\ketbra\gamma\gamma$ of a unit vector $\gamma$,
+$M\psi=\braket\gamma\psi\,\gamma$ and so $p=|\braket\gamma\psi|^2$.\<close>
+
 lemma rank_one_meas_prob:
   fixes \<gamma> \<psi> :: "complex Matrix.vec"
   assumes g: "quantum_state n \<gamma>" and \<psi>: "dim_vec \<psi> = n"
@@ -894,6 +897,10 @@ proof -
     by (simp add: cpx_vec_length_smult)
   thus ?thesis unfolding meas_prob_def using gn by (simp add: power_mult_distrib)
 qed
+
+text \<open>An observable assigns a real value $\lambda_i$ to each outcome.  Its operator
+$A=\sum_i\lambda_iM_i^*M_i$ is Hermitian, and the expected value is its quadratic form:
+\[ \sum_i\lambda_i\,p_i=\sum_i\lambda_i\braket{\psi}{M_i^*M_i\psi}=\braket{\psi}{A\psi}. \]\<close>
 
 definition observable :: "nat \<Rightarrow> (real \<times> complex Matrix.mat) list \<Rightarrow> complex Matrix.mat" where
   "observable n lMs \<equiv>

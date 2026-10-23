@@ -34,7 +34,7 @@ The formalisation uses the concrete model: $\C^n\otimes\C^m=\C^{nm}$ with
 $(v\otimes w)_{im+j}=v_iw_j$ (\<open>tensor_vec v w\<close> from the library).  The three key
 relations are the bilinearity lemmas below; the product basis theorem is \<open>tensor_onb\<close>
 (Day 7); the unique decomposition along a basis of $Y$ is not stated for vectors (its
-operator analogue is in theory Quantum\_Computing11).\<close>
+operator analogue is in theory Day15\_Partial\_Traces).\<close>
 
 
 lemma tensor_vec_dim:
@@ -88,6 +88,11 @@ proof -
   finally show ?thesis .
 qed
 
+
+text \<open>In coordinates $(v\otimes w)_{im+j}=v_i\,w_j$, the first factor giving the major index; for
+$v,w\in\C^2$,
+\[ v\otimes w=(v_0w_0,\;v_0w_1,\;v_1w_0,\;v_1w_1). \]
+Each entry is a product of one coordinate of each factor, so $\otimes$ is bilinear:\<close>
 
 lemma tensor_vec_bilinear_left:
   assumes vd: "dim_vec v1 = n" "dim_vec v2 = n" "dim_vec w = m"
