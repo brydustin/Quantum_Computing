@@ -640,7 +640,7 @@ qed
 
 context
   fixes A Ub :: "complex Matrix.mat" and n k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and n0: "0 < n" and k: "1 \<le> k"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and n0: "0 < n" and k: "1 \<le> k"
     and Ub: "Ub \<in> carrier_mat n n"
 begin
 
@@ -711,7 +711,7 @@ subsection \<open>The program in elementary gates\<close>
 
 context
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
     and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>j. 0 < j \<and> j < 2 ^ k \<and> l = reg_eig t0 (2 ^ k) j"
     and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"

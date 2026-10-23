@@ -70,16 +70,29 @@ session Vern_Paulsen_QC in Day11 = Vern_Paulsen_QC_3_10_Lmat +
     Day21_Average_Conjecture
     Day21_Average_Two
 
-session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
+session Hermitian_Functional_Calculus in "Hermitian_Functional_Calculus" = Isabelle_Marries_Dirac +
   description "
-    Part VI: Quantum Algorithms, beyond the notes: functional calculus,
-    phase estimation and the HHL algorithm."
+    The functional calculus of Hermitian matrices, time evolution, and the
+    Lie-Trotter and Suzuki product formulas with explicit error bounds."
   options [quick_and_dirty = false, timeout = 3600]
   sessions
+    "HOL-Analysis"
     QHLProver
   theories
     Hermitian_Functional_Calculus
     Matrix_Sums
+    Trotter_Product_Formula
+    Suzuki_Order
+    Suzuki_Error
+
+session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
+  description "
+    Part VI: Quantum Algorithms, beyond the notes: phase estimation and the HHL algorithm."
+  options [quick_and_dirty = false, timeout = 3600]
+  sessions
+    QHLProver
+    Hermitian_Functional_Calculus
+  theories
     Phase_Estimation
     QFT_Fourier
     HHL
@@ -104,11 +117,9 @@ session Vern_Paulsen_QC_Algorithms in "Algorithms" = Vern_Paulsen_QC_3_10 +
     HHL_Gate_Refinements
     HHL_Uniform_Rotation
     HHL_State_Preparation
-    HHL_Trotter
     HHL_Sparse_Split
     HHL_Sparse_Circuit
     HHL_All_Elementary
-    Suzuki_Order
     HHL_Suzuki
     QPE_Precision
     QPE_Program
@@ -176,6 +187,7 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
            document_variants = "document=/proof,/ML",
            quick_and_dirty = false, timeout = 3600]
   sessions
+    Hermitian_Functional_Calculus
     Vern_Paulsen_QC_Algorithms
   theories
     QC_Notes_Overview
@@ -229,8 +241,11 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC.Day06_15_Universal
     Vern_Paulsen_QC.Day21_Average_Conjecture
     Vern_Paulsen_QC.Day21_Average_Two
-    Vern_Paulsen_QC_Algorithms.Hermitian_Functional_Calculus
-    Vern_Paulsen_QC_Algorithms.Matrix_Sums
+    Hermitian_Functional_Calculus.Hermitian_Functional_Calculus
+    Hermitian_Functional_Calculus.Matrix_Sums
+    Hermitian_Functional_Calculus.Trotter_Product_Formula
+    Hermitian_Functional_Calculus.Suzuki_Order
+    Hermitian_Functional_Calculus.Suzuki_Error
     Vern_Paulsen_QC_Algorithms.Phase_Estimation
     Vern_Paulsen_QC_Algorithms.QFT_Fourier
     Vern_Paulsen_QC_Algorithms.HHL
@@ -255,11 +270,9 @@ session Vern_Paulsen_QC_Notes in "notes_doc" = Vern_Paulsen_QC +
     Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
     Vern_Paulsen_QC_Algorithms.HHL_Uniform_Rotation
     Vern_Paulsen_QC_Algorithms.HHL_State_Preparation
-    Vern_Paulsen_QC_Algorithms.HHL_Trotter
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Split
     Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
     Vern_Paulsen_QC_Algorithms.HHL_All_Elementary
-    Vern_Paulsen_QC_Algorithms.Suzuki_Order
     Vern_Paulsen_QC_Algorithms.HHL_Suzuki
     Vern_Paulsen_QC_Algorithms.QPE_Precision
     Vern_Paulsen_QC_Algorithms.QPE_Program

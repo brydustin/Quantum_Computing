@@ -1,0 +1,52 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{isabelle,isabellesym}
+\usepackage{amsmath,amssymb}
+\usepackage{pdfsetup}
+
+\isabellestyle{it}
+\renewcommand{\isastyletext}{\normalsize\normalfont}
+\renewcommand{\isastyletxt}{\normalfont}
+
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator{\diag}{diag}
+
+\begin{document}
+
+\title{The Functional Calculus of Hermitian Matrices and Product Formulas}
+\author{Dustin Bryant}
+\maketitle
+
+\begin{abstract}
+For a Hermitian matrix $A$ and a function $g:\R\to\C$ we define $g(A)$ as the matrix
+that multiplies every eigenvector of $A$ with eigenvalue $\lambda$ by $g(\lambda)$, and
+derive the algebra of this functional calculus: $g(A)h(A)=(gh)(A)$, $g(A)^*=\bar g(A)$,
+unitarity for $|g|=1$ on the spectrum, the time evolution $e^{itA}$ and the inverse.
+On top of it we verify the Lie--Trotter product formula
+$\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le 2(mLt)^2/r$ and
+Suzuki's higher-order formulas: Suzuki's recursion $S_{2k+2}$ agrees with
+$e^{itH}$ up to degree $2k+2$ of the Taylor expansion, and $r$ steps of it are within
+$r(2|F|+1)(\Lambda|t|/r)^{2k+3}e^{\Lambda|t|/r}/(2k+3)!$ of $e^{itH}$.  The matrices are
+those of the AFP entry \emph{Jordan Normal Form} \cite{thiemann2015jnf}; the spectral
+theorem comes from the Schur decomposition of the AFP entry \emph{Quantum Hoare Logic}
+\cite{liu2019afp}, the adjoint, unitarity and the vector norm from
+\emph{Isabelle Marries Dirac} \cite{bordg2020afp}.  The product formulas are due to
+Trotter \cite{trotter1959} and Suzuki \cite{suzuki1991}; they are the basis of quantum
+simulation \cite{lloyd1996,berry2007}.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\parindent 0pt\parskip 0.5ex
+
+\input{session}
+
+\bibliographystyle{abbrv}
+\bibliography{root}
+
+\end{document}

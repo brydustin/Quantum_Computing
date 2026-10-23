@@ -63,8 +63,8 @@ lemma demo_A_dim [simp]: "dim_row demo_A = 2" "dim_col demo_A = 2"
 lemma demo_A_index: "i < 2 \<Longrightarrow> j < 2 \<Longrightarrow> demo_A $$ (i, j) = (if i = j then 2 else 1)"
   by (simp add: demo_A_def)
 
-lemma demo_A_hermitian: "Quantum_Computing_3_10.hermitian demo_A"
-  unfolding Quantum_Computing_3_10.hermitian_def by (rule eq_matI) (auto simp: dagger_def demo_A_index)
+lemma demo_A_hermitian: "hermitian demo_A"
+  unfolding hermitian_dagger by (rule eq_matI) (auto simp: dagger_def demo_A_index)
 
 lemma Hadamard_index:
   "i < 2 \<Longrightarrow> j < 2 \<Longrightarrow> Hadamard $$ (i, j) = (if i = 1 \<and> j = 1 then - 1 else 1) / complex_of_real (sqrt 2)"
@@ -94,10 +94,10 @@ lemma sqrt2_sq: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2"
 lemma demo_decomp: "spectral_decomp demo_A Hadamard [3, 1]"
 proof -
   have HA: "Hadamard * demo_A \<in> carrier_mat 2 2" by (rule mult_carrier_mat[OF Hadamard_carrier demo_A_carrier])
-  have "Hadamard\<^sup>\<dagger> * demo_A * Hadamard = diag_mat_of_real [3, 1]"
+  have "Hadamard\<^sup>\<dagger> * demo_A * Hadamard = diag_cmat (map complex_of_real [3, 1])"
     unfolding Hadamard_dagger
     by (rule eq_matI) (auto simp: mult2_index[OF HA Hadamard_carrier] mult2_index[OF Hadamard_carrier demo_A_carrier]
-        Hadamard_index demo_A_index diag_mat_of_real_def mat_diag_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
+        Hadamard_index demo_A_index diag_cmat_def mat_diag_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
   moreover have "Quantum.unitary Hadamard" using H_is_gate unfolding Hadamard_def gate_def by simp
   ultimately show ?thesis unfolding spectral_decomp_def by simp
 qed

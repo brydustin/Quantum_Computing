@@ -781,7 +781,7 @@ definition hhl_fine_rus :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat 
 
 context
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
     and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>j. 0 < j \<and> j < 2 ^ k \<and> l = reg_eig t0 (2 ^ k) j"
     and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
@@ -973,7 +973,7 @@ lemma rot_stage_ucr:
 
 theorem hhl_apx_fine2:
   fixes A V Prep :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C \<theta> lmin \<epsilon> \<eta> :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and t0: "0 < t0" and k: "1 \<le> k"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and k: "1 \<le> k"
       and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1" and lmin: "2 * C / \<theta> \<le> lmin"
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"

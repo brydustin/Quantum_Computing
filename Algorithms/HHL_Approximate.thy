@@ -11,81 +11,6 @@ register to the uniform state.  The output is compared with the ideal output
 $u\otimes R(C/\lambda)\ket0$ of the exact case; the squared distance is
 $\sum_j|\alpha_j|^2\,\norm{R(C/\lambda_j)\ket0-R(C/\lambda)\ket0}^2$.\<close>
 
-subsection \<open>Vector norms\<close>
-
-lemma vnorm_L2: "\<parallel>v\<parallel> = L2_set (\<lambda>i. cmod (v $ i)) {..<dim_vec v}"
-  by (simp add: cpx_vec_length_def L2_set_def)
-
-lemma vnorm_ge0: "0 \<le> \<parallel>v\<parallel>"
-  by (simp add: cpx_vec_length_def sum_nonneg)
-
-lemma vnorm_pos: "dim_vec v = n \<Longrightarrow> v \<noteq> 0\<^sub>v n \<Longrightarrow> 0 < \<parallel>v\<parallel>"
-  using cpx_vec_length_zero_iff[of v] vnorm_ge0[of v] by (auto simp: order_less_le)
-
-lemma vnorm_sq: "\<parallel>v\<parallel>\<^sup>2 = (\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2)"
-  by (simp add: cpx_vec_length_def sum_nonneg)
-
-lemma vnorm_Re_inner: "Re \<langle>v|v\<rangle> = \<parallel>v\<parallel>\<^sup>2"
-  unfolding cpx_vec_length_inner_prod[symmetric] by simp
-
-lemma vnorm_add_le:
-  assumes "dim_vec a = dim_vec b"
-  shows "\<parallel>a + b\<parallel> \<le> \<parallel>a\<parallel> + \<parallel>b\<parallel>"
-proof -
-  have "\<parallel>a + b\<parallel> = L2_set (\<lambda>i. cmod (a $ i + b $ i)) {..<dim_vec b}"
-    unfolding vnorm_L2 using assms by (intro L2_set_cong) simp_all
-  also have "\<dots> \<le> L2_set (\<lambda>i. cmod (a $ i) + cmod (b $ i)) {..<dim_vec b}"
-    by (rule L2_set_mono) (simp_all add: norm_triangle_ineq)
-  also have "\<dots> \<le> L2_set (\<lambda>i. cmod (a $ i)) {..<dim_vec b} + L2_set (\<lambda>i. cmod (b $ i)) {..<dim_vec b}"
-    by (rule L2_set_triangle_ineq)
-  finally show ?thesis unfolding vnorm_L2 assms .
-qed
-
-lemma vnorm_minus_commute:
-  assumes "dim_vec a = dim_vec b"
-  shows "\<parallel>a - b\<parallel> = \<parallel>b - a\<parallel>"
-  using assms by (simp add: cpx_vec_length_def norm_minus_commute)
-
-lemma vnorm_diff_le:
-  assumes a: "dim_vec a = n" and b: "dim_vec b = n" and c: "dim_vec c = n"
-  shows "\<parallel>a - c\<parallel> \<le> \<parallel>a - b\<parallel> + \<parallel>b - c\<parallel>"
-proof -
-  have "a - c = (a - b) + (b - c)" using a b c by (intro eq_vecI) simp_all
-  thus ?thesis using vnorm_add_le[of "a - b" "b - c"] a b c by simp
-qed
-
-lemma vnorm_le_diff_add:
-  assumes "dim_vec a = dim_vec b"
-  shows "\<parallel>a\<parallel> \<le> \<parallel>a - b\<parallel> + \<parallel>b\<parallel>"
-proof -
-  have "(a - b) + b = a" using assms by (intro eq_vecI) simp_all
-  thus ?thesis using vnorm_add_le[of "a - b" b] assms by simp
-qed
-
-lemma vnorm_reverse:
-  assumes "dim_vec a = dim_vec b"
-  shows "\<bar>\<parallel>a\<parallel> - \<parallel>b\<parallel>\<bar> \<le> \<parallel>a - b\<parallel>"
-  using vnorm_le_diff_add[OF assms] vnorm_le_diff_add[of b a] assms vnorm_minus_commute[OF assms] by simp
-
-lemma vnorm_zero_vec: "\<parallel>0\<^sub>v m\<parallel> = 0"
-  by (simp add: cpx_vec_length_def)
-
-text \<open>For a unit vector $b$ and invertible $A$ the solution $A^{-1}b$ is not zero.\<close>
-
-lemma herm_inv_sol_pos:
-  assumes A: "A \<in> carrier_mat n n" "hermitian A" and z: "0 \<notin> herm_spectrum A" and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1"
-  shows "0 < \<parallel>herm_inv A *\<^sub>v b\<parallel>"
-proof (rule vnorm_pos)
-  have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
-  thus "dim_vec (herm_inv A *\<^sub>v b) = n" by simp
-  show "herm_inv A *\<^sub>v b \<noteq> 0\<^sub>v n"
-  proof
-    assume "herm_inv A *\<^sub>v b = 0\<^sub>v n"
-    hence "b = 0\<^sub>v n" using herm_inv_solves[OF A z b(1)] mult_zero_vec_right[OF A(1)] by simp
-    thus False using b(2) vnorm_zero_vec by simp
-  qed
-qed
-
 lemma unitary_inner_self:
   assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
   shows "\<langle>W\<^sup>\<dagger> *\<^sub>v y|W\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>y|y\<rangle>"
@@ -99,17 +24,6 @@ proof -
     unfolding dagger_of_dagger_is_id by (rule assoc_mult_mat_vec[OF W(1) Wd yc, symmetric])
   also have "W * (W\<^sup>\<dagger>) = 1\<^sub>m K" using W unfolding unitary_def by auto
   finally show ?thesis using yc by simp
-qed
-
-lemma unitary_vnorm:
-  assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
-  shows "\<parallel>W *\<^sub>v y\<parallel> = \<parallel>y\<parallel>"
-proof -
-  have Wd: "W\<^sup>\<dagger> \<in> carrier_mat K K" by (rule dagger_carrier[OF W(1)])
-  have "\<langle>(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v y|(W\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v y\<rangle> = \<langle>y|y\<rangle>"
-    by (rule unitary_inner_self[OF Wd unitary_dagger[OF W(2)] y])
-  hence "\<parallel>W *\<^sub>v y\<parallel>\<^sup>2 = \<parallel>y\<parallel>\<^sup>2" unfolding dagger_of_dagger_is_id cpx_vec_length_inner_prod[symmetric] of_real_power[symmetric] of_real_eq_iff .
-  thus ?thesis using vnorm_ge0 by (metis power2_eq_iff_nonneg)
 qed
 
 subsection \<open>Register sums\<close>

@@ -1,6 +1,8 @@
 theory Hermitian_Functional_Calculus
-  imports Vern_Paulsen_QC_3_10.Quantum_Computing_3_10
+  imports "HOL-Analysis.L2_Norm" QHLProver.Complex_Matrix Isabelle_Marries_Dirac.Quantum
 begin
+
+hide_const (open) Quantum.X Quantum.Y Quantum.Z Quantum.H Quantum.S Quantum.T
 
 section \<open>Functional calculus for Hermitian matrices\<close>
 
@@ -17,9 +19,6 @@ lemma diag_cmat_carrier [simp]: "diag_cmat xs \<in> carrier_mat (length xs) (len
 
 lemma dim_diag_cmat [simp]: "dim_row (diag_cmat xs) = length xs" "dim_col (diag_cmat xs) = length xs"
   by (simp_all add: diag_cmat_def mat_diag_def)
-
-lemma diag_mat_of_real_cmat: "diag_mat_of_real D = diag_cmat (map complex_of_real D)"
-  by (rule eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def diag_cmat_def mat_diag_def)
 
 lemma diag_cmat_mult_vec:
   assumes "dim_vec w = length xs"
@@ -54,6 +53,31 @@ qed (use M in simp)
 lemma diag_cmat_dagger: "(diag_cmat xs)\<^sup>\<dagger> = diag_cmat (map cnj xs)"
   by (rule eq_matI) (auto simp: diag_cmat_def mat_diag_def dagger_def)
 
+subsection \<open>Adjoints\<close>
+
+text \<open>QHLProver's \<^const>\<open>hermitian\<close> and Schur decomposition, with IMD's adjoint $M^\dagger$,
+\<^const>\<open>unitary\<close> and norm $\norm v$.\<close>
+
+lemma dagger_adjoint: "M\<^sup>\<dagger> = Complex_Matrix.adjoint M"
+  by (rule eq_matI) (simp_all add: dagger_def adjoint_eval)
+
+lemma hermitian_dagger: "hermitian A \<longleftrightarrow> A\<^sup>\<dagger> = A"
+  by (simp add: hermitian_def dagger_adjoint)
+
+lemma dagger_carrier: "M \<in> carrier_mat m n \<Longrightarrow> M\<^sup>\<dagger> \<in> carrier_mat n m"
+  by (simp add: dagger_def)
+
+lemma unitary_dagger: "unitary A \<Longrightarrow> unitary (A\<^sup>\<dagger>)"
+  unfolding unitary_def by (simp add: dagger_of_dagger_is_id)
+
+lemma unitary_of_unitary:
+  assumes "P \<in> carrier_mat n n" "Complex_Matrix.unitary P"
+  shows "unitary P"
+  using assms unfolding unitary_def dagger_adjoint by simp
+
+lemma one_smult_mat: "(1::complex) \<cdot>\<^sub>m M = M"
+  by (rule eq_matI) simp_all
+
 lemma diag_conj_carrier:
   assumes U: "U \<in> carrier_mat n n" and xs: "length xs = n"
   shows "U * diag_cmat xs * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
@@ -62,30 +86,176 @@ proof -
   thus ?thesis using mult_carrier_mat[OF mult_carrier_mat[OF U] dagger_carrier[OF U]] by blast
 qed
 
+subsection \<open>Vector norms\<close>
+
+lemma cpx_vec_length_smult: "\<parallel>a \<cdot>\<^sub>v v\<parallel> = cmod a * \<parallel>v\<parallel>"
+proof -
+  have "(\<Sum>i<dim_vec v. (cmod (a * v $ i))\<^sup>2) = (cmod a)\<^sup>2 * (\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2)"
+    by (simp add: norm_mult power_mult_distrib sum_distrib_left)
+  thus ?thesis by (simp add: cpx_vec_length_def real_sqrt_mult)
+qed
+
+lemma vnorm_L2: "\<parallel>v\<parallel> = L2_set (\<lambda>i. cmod (v $ i)) {..<dim_vec v}"
+  by (simp add: cpx_vec_length_def L2_set_def)
+
+lemma vnorm_ge0: "0 \<le> \<parallel>v\<parallel>"
+  by (simp add: cpx_vec_length_def sum_nonneg)
+
+lemma vnorm_pos:
+  assumes v: "dim_vec v = n" "v \<noteq> 0\<^sub>v n"
+  shows "0 < \<parallel>v\<parallel>"
+proof -
+  obtain i where i: "i < n" "v $ i \<noteq> 0"
+  proof (rule ccontr)
+    assume "\<not> thesis"
+    hence "v = 0\<^sub>v n" using that v(1) by (intro eq_vecI) auto
+    thus False using v(2) by simp
+  qed
+  have "0 < (cmod (v $ i))\<^sup>2" using i by simp
+  also have "\<dots> \<le> (\<Sum>j<dim_vec v. (cmod (v $ j))\<^sup>2)" using i v by (intro member_le_sum) auto
+  finally show ?thesis by (simp add: cpx_vec_length_def)
+qed
+
+lemma vnorm_sq: "\<parallel>v\<parallel>\<^sup>2 = (\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2)"
+  by (simp add: cpx_vec_length_def sum_nonneg)
+
+lemma vnorm_Re_inner: "Re \<langle>v|v\<rangle> = \<parallel>v\<parallel>\<^sup>2"
+  unfolding cpx_vec_length_inner_prod[symmetric] by simp
+
+lemma vnorm_add_le:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<parallel>a + b\<parallel> \<le> \<parallel>a\<parallel> + \<parallel>b\<parallel>"
+proof -
+  have "\<parallel>a + b\<parallel> = L2_set (\<lambda>i. cmod (a $ i + b $ i)) {..<dim_vec b}"
+    unfolding vnorm_L2 using assms by (intro L2_set_cong) simp_all
+  also have "\<dots> \<le> L2_set (\<lambda>i. cmod (a $ i) + cmod (b $ i)) {..<dim_vec b}"
+    by (rule L2_set_mono) (simp_all add: norm_triangle_ineq)
+  also have "\<dots> \<le> L2_set (\<lambda>i. cmod (a $ i)) {..<dim_vec b} + L2_set (\<lambda>i. cmod (b $ i)) {..<dim_vec b}"
+    by (rule L2_set_triangle_ineq)
+  finally show ?thesis unfolding vnorm_L2 assms .
+qed
+
+lemma vnorm_minus_commute:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<parallel>a - b\<parallel> = \<parallel>b - a\<parallel>"
+  using assms by (simp add: cpx_vec_length_def norm_minus_commute)
+
+lemma vnorm_diff_le:
+  assumes a: "dim_vec a = n" and b: "dim_vec b = n" and c: "dim_vec c = n"
+  shows "\<parallel>a - c\<parallel> \<le> \<parallel>a - b\<parallel> + \<parallel>b - c\<parallel>"
+proof -
+  have "a - c = (a - b) + (b - c)" using a b c by (intro eq_vecI) simp_all
+  thus ?thesis using vnorm_add_le[of "a - b" "b - c"] a b c by simp
+qed
+
+lemma vnorm_le_diff_add:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<parallel>a\<parallel> \<le> \<parallel>a - b\<parallel> + \<parallel>b\<parallel>"
+proof -
+  have "(a - b) + b = a" using assms by (intro eq_vecI) simp_all
+  thus ?thesis using vnorm_add_le[of "a - b" b] assms by simp
+qed
+
+lemma vnorm_reverse:
+  assumes "dim_vec a = dim_vec b"
+  shows "\<bar>\<parallel>a\<parallel> - \<parallel>b\<parallel>\<bar> \<le> \<parallel>a - b\<parallel>"
+  using vnorm_le_diff_add[OF assms] vnorm_le_diff_add[of b a] assms vnorm_minus_commute[OF assms] by simp
+
+lemma vnorm_zero_vec: "\<parallel>0\<^sub>v m\<parallel> = 0"
+  by (simp add: cpx_vec_length_def)
+
+lemma unitary_vnorm:
+  assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
+  shows "\<parallel>W *\<^sub>v y\<parallel> = \<parallel>y\<parallel>"
+proof -
+  have "Matrix.col (W * |y\<rangle>) 0 = W *\<^sub>v y"
+    using W(1) y by (intro eq_vecI) (auto simp: ket_vec_def scalar_prod_def)
+  thus ?thesis using unitary_is_length_preserving[OF W(2), of y] W(1) y by simp
+qed
+
+lemma unitary_mult:
+  assumes "unitary A" "unitary B" "A \<in> carrier_mat n n" "B \<in> carrier_mat n n"
+  shows "unitary (A * B)"
+proof -
+  have d: "A\<^sup>\<dagger> \<in> carrier_mat n n" "B\<^sup>\<dagger> \<in> carrier_mat n n" using assms(3,4) by (simp_all add: dagger_carrier)
+  have u: "A\<^sup>\<dagger> * A = 1\<^sub>m n" "A * (A\<^sup>\<dagger>) = 1\<^sub>m n" "B\<^sup>\<dagger> * B = 1\<^sub>m n" "B * (B\<^sup>\<dagger>) = 1\<^sub>m n"
+    using assms unfolding unitary_def by auto
+  have "(A * B)\<^sup>\<dagger> = (B\<^sup>\<dagger>) * (A\<^sup>\<dagger>)" using assms(3,4) by (simp add: dagger_of_prod)
+  moreover have "(B\<^sup>\<dagger>) * (A\<^sup>\<dagger>) * (A * B) = (B\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * A) * B"
+      "A * B * ((B\<^sup>\<dagger>) * (A\<^sup>\<dagger>)) = A * (B * (B\<^sup>\<dagger>)) * (A\<^sup>\<dagger>)"
+    using assms(3,4) d by (mat_assoc n)+
+  ultimately show ?thesis unfolding unitary_def using u assms(3,4) d by simp
+qed
+
+lemma unitary_pow:
+  assumes U: "U \<in> carrier_mat m m" and u: "unitary U"
+  shows "unitary (U ^\<^sub>m k)"
+proof (induction k)
+  case 0
+  show ?case by (simp add: id_is_unitary)
+next
+  case (Suc k)
+  have "unitary (U ^\<^sub>m k * U)" by (rule unitary_mult[OF Suc u pow_carrier_mat[OF U] U])
+  thus ?case by simp
+qed
+
 subsection \<open>Spectral decompositions\<close>
 
 text \<open>\<open>spectral_decomp A U D\<close>: $U$ unitary and $U^*AU=\mathrm{diag}(D)$.\<close>
 
 definition spectral_decomp :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> real list \<Rightarrow> bool" where
   "spectral_decomp A U D \<longleftrightarrow> U \<in> carrier_mat (dim_row A) (dim_row A) \<and> unitary U \<and>
-     length D = dim_row A \<and> U\<^sup>\<dagger> * A * U = diag_mat_of_real D"
+     length D = dim_row A \<and> U\<^sup>\<dagger> * A * U = diag_cmat (map complex_of_real D)"
+
+text \<open>The spectral theorem, from QHLProver's Schur decomposition of Hermitian matrices.\<close>
 
 lemma spectral_decomp_exists:
-  assumes "A \<in> carrier_mat n n" "hermitian A"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
   shows "\<exists>U D. spectral_decomp A U D"
-  using hermitian_spectral_decomp[OF assms] assms(1) unfolding spectral_decomp_def by auto
+proof -
+  obtain es where c: "char_poly A = (\<Prod>e\<leftarrow>es. [:- e, 1:])"
+    using complex_mat_char_poly_factorizable[OF A(1)] by blast
+  obtain B P Q where s: "unitary_schur_decomposition A es = (B, P, Q)"
+    by (cases "unitary_schur_decomposition A es") auto
+  have h: "similar_mat_wit A B P (Complex_Matrix.adjoint P)" "diagonal_mat B" "Complex_Matrix.unitary P"
+      "\<forall>i<n. B $$ (i, i) \<in> \<real>"
+    using hermitian_eigenvalue_real[OF A c s] by auto
+  have P: "P \<in> carrier_mat n n" "B \<in> carrier_mat n n" "A = P * B * Complex_Matrix.adjoint P"
+    using h(1) A(1) unfolding similar_mat_wit_def Let_def by auto
+  have u: "unitary P" by (rule unitary_of_unitary[OF P(1) h(3)])
+  hence PP: "P\<^sup>\<dagger> * P = 1\<^sub>m n" using P(1) unfolding unitary_def by simp
+  define D where "D = map (\<lambda>i. Re (B $$ (i, i))) [0..<n]"
+  have BD: "B = diag_cmat (map complex_of_real D)"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row (diag_cmat (map complex_of_real D))" "j < dim_col (diag_cmat (map complex_of_real D))"
+    hence ij: "i < n" "j < n" by (simp_all add: D_def)
+    show "B $$ (i, j) = diag_cmat (map complex_of_real D) $$ (i, j)"
+      using h(2,4) ij P(2) by (cases "i = j") (auto simp: diag_cmat_def mat_diag_def D_def diagonal_mat_def)
+  qed (use P(2) in \<open>simp_all add: D_def\<close>)
+  have Pd: "P\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF P(1)])
+  have "P\<^sup>\<dagger> * A * P = (P\<^sup>\<dagger> * P) * B * (P\<^sup>\<dagger> * P)"
+    unfolding P(3) dagger_adjoint[symmetric] using P(1,2) Pd by (mat_assoc n)
+  hence "P\<^sup>\<dagger> * A * P = B" unfolding PP using P(2) by simp
+  hence "spectral_decomp A P D" unfolding spectral_decomp_def BD using P(1) A(1) u by (simp add: D_def)
+  thus ?thesis by blast
+qed
 
 lemma spectral_decompD:
   assumes A: "A \<in> carrier_mat n n" and sd: "spectral_decomp A U D"
   shows "U \<in> carrier_mat n n" "unitary U" "length D = n" "U\<^sup>\<dagger> * U = 1\<^sub>m n" "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
-    "A = U * diag_mat_of_real D * (U\<^sup>\<dagger>)" "A * U = U * diag_mat_of_real D"
+    "A = U * diag_cmat (map complex_of_real D) * (U\<^sup>\<dagger>)" "A * U = U * diag_cmat (map complex_of_real D)"
 proof -
   show U: "U \<in> carrier_mat n n" and u: "unitary U" and D: "length D = n"
     using sd A unfolding spectral_decomp_def by auto
-  show "U\<^sup>\<dagger> * U = 1\<^sub>m n" "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using u U unfolding unitary_def by auto
-  have e: "U\<^sup>\<dagger> * A * U = diag_mat_of_real D" using sd unfolding spectral_decomp_def by auto
-  show "A = U * diag_mat_of_real D * (U\<^sup>\<dagger>)" by (rule hermitian_spectral_decomp_eq[OF U A u e])
-  show "A * U = U * diag_mat_of_real D" by (rule hermitian_spectral_decomp_right[OF U A u e])
+  show UU: "U\<^sup>\<dagger> * U = 1\<^sub>m n" and UU': "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using u U unfolding unitary_def by auto
+  have e: "U\<^sup>\<dagger> * A * U = diag_cmat (map complex_of_real D)" using sd unfolding spectral_decomp_def by auto
+  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U])
+  have "U * diag_cmat (map complex_of_real D) * (U\<^sup>\<dagger>) = (U * (U\<^sup>\<dagger>)) * A * (U * (U\<^sup>\<dagger>))"
+    unfolding e[symmetric] using U Ud A by (mat_assoc n)
+  thus "A = U * diag_cmat (map complex_of_real D) * (U\<^sup>\<dagger>)" unfolding UU' using A by simp
+  have "U * diag_cmat (map complex_of_real D) = (U * (U\<^sup>\<dagger>)) * A * U"
+    unfolding e[symmetric] using U Ud A by (mat_assoc n)
+  thus "A * U = U * diag_cmat (map complex_of_real D)" unfolding UU' using A by simp
 qed
 
 text \<open>The columns of $U$ are eigenvectors: $Au_j=D_ju_j$.\<close>
@@ -96,8 +266,7 @@ lemma spectral_decomp_col:
 proof -
   note d = spectral_decompD[OF A sd]
   have "A *\<^sub>v Matrix.col U j = Matrix.col (A * U) j" by (rule col_mult2[OF A d(1) j, symmetric])
-  also have "\<dots> = Matrix.col (U * diag_cmat (map complex_of_real D)) j"
-    using d(7) by (simp add: diag_mat_of_real_cmat)
+  also have "\<dots> = Matrix.col (U * diag_cmat (map complex_of_real D)) j" using d(7) by simp
   also have "\<dots> = complex_of_real (D ! j) \<cdot>\<^sub>v Matrix.col U j"
     using col_mult_diag[of U n "map complex_of_real D" j] d(1,3) j by simp
   finally show ?thesis .
@@ -121,6 +290,24 @@ lemma herm_spectrum_iff:
   "l \<in> herm_spectrum A \<longleftrightarrow> (\<exists>v. dim_vec v = dim_row A \<and> v \<noteq> 0\<^sub>v (dim_row A) \<and> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v)"
   unfolding herm_spectrum_def mem_Collect_eq eigenvalue_def eigenvector_def carrier_vec_def by simp
 
+lemma spectral_decomp_eig_in_spectrum:
+  assumes A: "A \<in> carrier_mat n n" and sd: "spectral_decomp A U D" and j: "j < n"
+  shows "D ! j \<in> herm_spectrum A"
+proof -
+  note d = spectral_decompD[OF A sd]
+  have cd: "dim_vec (Matrix.col U j) = n" using d(1) by simp
+  have nz: "Matrix.col U j \<noteq> 0\<^sub>v n"
+  proof
+    assume z: "Matrix.col U j = 0\<^sub>v n"
+    have "(U\<^sup>\<dagger> * U) $$ (j, j) = Matrix.row (U\<^sup>\<dagger>) j \<bullet> Matrix.col U j"
+      by (rule index_mult_mat(1)) (use d(1) j in simp_all)
+    also have "\<dots> = 0" unfolding z by (rule scalar_prod_right_zero) (use d(1) j in \<open>simp add: dagger_def\<close>)
+    finally show False using d(4) j by simp
+  qed
+  show ?thesis unfolding herm_spectrum_iff
+    using spectral_decomp_col[OF A sd j] cd nz A by (intro exI[of _ "Matrix.col U j"]) simp
+qed
+
 lemma fun_on_eigenD:
   "fun_on_eigen A g B \<Longrightarrow> dim_vec v = dim_row A \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow>
    B *\<^sub>v v = g l \<cdot>\<^sub>v v"
@@ -142,18 +329,17 @@ proof (intro allI impI)
   have wc: "w \<in> carrier_vec n" unfolding w_def using Uc vc by simp
   have Uw: "U *\<^sub>v w = v"
     unfolding w_def using assoc_mult_mat_vec[OF d(1) Uc vc, symmetric] d(5) vc by simp
-  have "diag_mat_of_real D *\<^sub>v w = (U\<^sup>\<dagger> * A * U) *\<^sub>v w"
+  have "diag_cmat (map complex_of_real D) *\<^sub>v w = (U\<^sup>\<dagger> * A * U) *\<^sub>v w"
     using sd unfolding spectral_decomp_def by simp
   also have "\<dots> = U\<^sup>\<dagger> *\<^sub>v (A *\<^sub>v (U *\<^sub>v w))"
     using Uc A d(1) wc by (simp add: assoc_mult_mat_vec[of _ n n _ n])
   also have "\<dots> = complex_of_real l \<cdot>\<^sub>v w"
     unfolding Uw ev unfolding w_def by (rule mult_mat_vec[OF Uc vc])
-  finally have Dw: "diag_mat_of_real D *\<^sub>v w = complex_of_real l \<cdot>\<^sub>v w" .
+  finally have Dw: "diag_cmat (map complex_of_real D) *\<^sub>v w = complex_of_real l \<cdot>\<^sub>v w" .
   have wi: "w $ i = 0 \<or> D ! i = l" if i: "i < n" for i
   proof -
-    have "(diag_mat_of_real D *\<^sub>v w) $ i = complex_of_real (D ! i) * w $ i"
-      using diag_cmat_mult_vec[of w "map complex_of_real D"] wc d(3) i
-      by (simp add: diag_mat_of_real_cmat)
+    have "(diag_cmat (map complex_of_real D) *\<^sub>v w) $ i = complex_of_real (D ! i) * w $ i"
+      using diag_cmat_mult_vec[of w "map complex_of_real D"] wc d(3) i by simp
     hence "complex_of_real (D ! i) * w $ i = complex_of_real l * w $ i"
       using Dw i wc by (metis carrier_vecD index_smult_vec(1))
     thus ?thesis by auto
@@ -279,7 +465,7 @@ lemma mat_fun_const:
   shows "mat_fun (\<lambda>_. c) A = c \<cdot>\<^sub>m 1\<^sub>m n"
 proof (rule mat_fun_eqI[OF A])
   show "fun_on_eigen A (\<lambda>_. c) (c \<cdot>\<^sub>m 1\<^sub>m n)" unfolding fun_on_eigen_def
-    using A(1) by (auto simp: smult_mat_mult_vec[of "1\<^sub>m n" n n])
+    using A(1) by (auto simp: smult_mat_mult_mat_vec_assoc[of "1\<^sub>m n" n n])
 qed simp
 
 lemma mat_fun_one: "A \<in> carrier_mat n n \<Longrightarrow> hermitian A \<Longrightarrow> mat_fun (\<lambda>_. 1) A = 1\<^sub>m n"
@@ -329,7 +515,7 @@ qed
 lemma mat_fun_hermitian:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
   shows "hermitian (mat_fun (\<lambda>x. complex_of_real (f x)) A)"
-  unfolding hermitian_def by (simp add: mat_fun_dagger[OF A])
+  unfolding hermitian_dagger by (simp add: mat_fun_dagger[OF A])
 
 theorem mat_fun_unitary:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
@@ -363,9 +549,27 @@ next
   finally show ?case by simp
 qed
 
+lemma pow_eigen:
+  fixes U :: "complex Matrix.mat"
+  assumes U: "U \<in> carrier_mat m m" and u: "dim_vec u = m" and ev: "U *\<^sub>v u = z \<cdot>\<^sub>v u"
+  shows "(U ^\<^sub>m k) *\<^sub>v u = z ^ k \<cdot>\<^sub>v u"
+proof (induction k)
+  case 0
+  have "u \<in> carrier_vec m" using u by (rule carrier_vecI)
+  thus ?case using carrier_matD(1)[OF U] by (auto intro!: eq_vecI)
+next
+  case (Suc k)
+  have uc: "u \<in> carrier_vec m" using u by (rule carrier_vecI)
+  have "(U ^\<^sub>m Suc k) *\<^sub>v u = (U ^\<^sub>m k) *\<^sub>v (U *\<^sub>v u)"
+    using assoc_mult_mat_vec[OF pow_carrier_mat[OF U] U uc, of k] by simp
+  also have "\<dots> = z \<cdot>\<^sub>v ((U ^\<^sub>m k) *\<^sub>v u)" unfolding ev by (rule mult_mat_vec[OF pow_carrier_mat[OF U] uc])
+  also have "\<dots> = z ^ Suc k \<cdot>\<^sub>v u" unfolding Suc by (simp add: smult_smult_assoc)
+  finally show ?case .
+qed
+
 subsection \<open>Time evolution\<close>
 
-text \<open>$e^{itA}$, the evolution under the Hamiltonian $A$ (phase estimation uses $U=e^{itA}$).\<close>
+text \<open>$e^{itA}$, the evolution under the Hamiltonian $A$.\<close>
 
 definition evolution :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> complex Matrix.mat" where
   "evolution A t = mat_fun (\<lambda>x. cis (t * x)) A"
@@ -440,5 +644,24 @@ lemma herm_inv_eigen:
 
 lemma herm_inv_hermitian: "A \<in> carrier_mat n n \<Longrightarrow> hermitian A \<Longrightarrow> hermitian (herm_inv A)"
   unfolding herm_inv_def by (rule mat_fun_hermitian)
+
+lemma mult_zero_vec_right: "B \<in> carrier_mat K n \<Longrightarrow> B *\<^sub>v 0\<^sub>v n = 0\<^sub>v K"
+  by (rule eq_vecI) (auto simp: scalar_prod_def)
+
+text \<open>For a unit vector $b$ and invertible $A$ the solution $A^{-1}b$ is not zero.\<close>
+
+lemma herm_inv_sol_pos:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and z: "0 \<notin> herm_spectrum A" and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1"
+  shows "0 < \<parallel>herm_inv A *\<^sub>v b\<parallel>"
+proof (rule vnorm_pos)
+  have Hc: "herm_inv A \<in> carrier_mat n n" unfolding herm_inv_def by (rule mat_fun_carrier[OF A])
+  thus "dim_vec (herm_inv A *\<^sub>v b) = n" by simp
+  show "herm_inv A *\<^sub>v b \<noteq> 0\<^sub>v n"
+  proof
+    assume "herm_inv A *\<^sub>v b = 0\<^sub>v n"
+    hence "b = 0\<^sub>v n" using herm_inv_solves[OF A z b(1)] mult_zero_vec_right[OF A(1)] by simp
+    thus False using b(2) vnorm_zero_vec by simp
+  qed
+qed
 
 end

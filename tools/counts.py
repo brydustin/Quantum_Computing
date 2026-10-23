@@ -3,13 +3,15 @@
 import os, re
 P = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEVELS = [
-  ('Mathematics', 'Algorithms', ['Hermitian_Functional_Calculus', 'Matrix_Sums', 'Phase_Estimation', 'QPE_Precision', 'QFT_Fourier', 'QPE_Register']),
+  ('Functional calculus', 'Hermitian_Functional_Calculus', ['Hermitian_Functional_Calculus', 'Matrix_Sums',
+    'Trotter_Product_Formula', 'Suzuki_Order', 'Suzuki_Error']),
+  ('Mathematics', 'Algorithms', ['Phase_Estimation', 'QPE_Precision', 'QFT_Fourier', 'QPE_Register']),
   ('Algorithm', 'Algorithms', ['HHL', 'HHL_Trajectory', 'HHL_Approximate', 'HHL_Window', 'HHL_Simulation', 'HHL_Complete',
     'HHL_Filter', 'HHL_Filter_Bounds', 'HHL_Runtime', 'HHL_Reduction', 'HHL_Rectangular', 'HHL_Discussion', 'HHL_Optimality']),
   ('Program', 'Algorithms', ['QPE_Program', 'HHL_Program', 'HHL_Termination', 'HHL_Paper_Program', 'HHL_Gate_Refinements',
     'HHL_Preconditioned']),
-  ('Circuit', 'Algorithms', ['HHL_Gates', 'HHL_Uniform_Rotation', 'HHL_State_Preparation', 'HHL_All_Elementary', 'HHL_Trotter',
-    'HHL_Sparse_Split', 'HHL_Sparse_Circuit', 'Suzuki_Order', 'HHL_Suzuki']),
+  ('Circuit', 'Algorithms', ['HHL_Gates', 'HHL_Uniform_Rotation', 'HHL_State_Preparation', 'HHL_All_Elementary',
+    'HHL_Sparse_Split', 'HHL_Sparse_Circuit', 'HHL_Suzuki']),
 ]
 EXTRA = [('Search bound', 'Search', ['HHL_Search_Bound']), ('Example run', 'Demo', ['HHL_Demo'])]
 
@@ -28,5 +30,6 @@ for name, d, ts in LEVELS + EXTRA:
     if (name, d, ts) in LEVELS:
         tot[0] += len(ts); tot[1] += l; tot[2] += r
 print('%-34s %6d %5d  (%d theories)' % ('Part VI', tot[1], tot[2], tot[0]))
-missing = sorted(f[:-4] for f in os.listdir(os.path.join(P, 'Algorithms')) if f.endswith('.thy') and f[:-4] not in listed)
+missing = sorted(f[:-4] for d in ['Algorithms', 'Hermitian_Functional_Calculus'] for f in os.listdir(os.path.join(P, d))
+                 if f.endswith('.thy') and f[:-4] not in listed)
 if missing: print('NOT IN ANY LEVEL:', ', '.join(missing))

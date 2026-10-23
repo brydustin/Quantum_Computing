@@ -346,7 +346,7 @@ $\ket t = \ket{\Psi_0}\otimes\hat x\otimes\ket1$.\<close>
 
 context
   fixes A V Prep :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n N :: nat and t0 C \<theta> lmin \<epsilon> \<eta> :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and t0: "0 < t0" and N: "2 \<le> N"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "2 \<le> N"
       and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1" and lmin: "2 * C / \<theta> \<le> lmin"
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"
@@ -603,7 +603,7 @@ lemma pflag_unit3: "pflag 3 P (unit_vec 3 1) = (if P 1 then unit_vec 3 1 else 0\
 context
   fixes A Prep :: "complex Matrix.mat" and G :: "nat \<Rightarrow> complex Matrix.mat" and b :: "complex Matrix.vec"
     and n N :: nat and \<kappa> t0 \<epsilon> :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and n0: "0 < n" and k1: "1 \<le> \<kappa>"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and n0: "0 < n" and k1: "1 \<le> \<kappa>"
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> 1 / \<kappa> \<le> l \<and> l \<le> 1"
       and t0: "0 < t0" "t0 \<le> pi / 2" and N: "2 \<le> N"
       and G: "\<And>k. k < N \<Longrightarrow> G k \<in> carrier_mat 3 3 \<and> Quantum.unitary (G k)"

@@ -74,7 +74,7 @@ proof (induction n)
     thus "B \<in> carrier_mat d d" unfolding B using Suc.prems(1)[of k] k by simp
   qed
   have "kraus_map_dim d (map (\<lambda>B. B * M n) (Ks ! n)) r = kraus_map_dim d (Ks ! n) (M n * r * adjoint (M n))"
-    using kraus_map_dim_map_mult_right[of "Ks ! n" d d "M n" d r] Suc.prems(1)[of n] Suc.prems(2)[of n] r by (simp add: dagger_eq_adjoint)
+    using kraus_map_dim_map_mult_right[of "Ks ! n" d d "M n" d r] Suc.prems(1)[of n] Suc.prems(2)[of n] r by (simp add: dagger_adjoint)
   moreover have "kraus_map_dim d (meas_kraus n M Ks) r = matrix_sum d (\<lambda>k. kraus_map_dim d (Ks ! k) (M k * r * adjoint (M k))) n"
     by (rule Suc.IH) (use Suc.prems less_SucI in blast)+
   ultimately show ?case by (simp add: kraus_map_dim_append[OF c1 c2 r])
@@ -88,7 +88,7 @@ proof (induction c arbitrary: r)
 next
   case (Utrans U)
   hence "U * r * adjoint U \<in> carrier_mat d d" by auto
-  thus ?case by (simp add: dagger_eq_adjoint)
+  thus ?case by (simp add: dagger_adjoint)
 next
   case (Seq c1 c2)
   have k1: "\<forall>w \<in> set (kraus_of d c1). w \<in> carrier_mat d d" and k2: "\<forall>w \<in> set (kraus_of d c2). w \<in> carrier_mat d d"
@@ -137,7 +137,7 @@ proof (induction n)
     thus "B \<in> carrier_mat d d" unfolding B using Suc.prems(1)[of j] j by simp
   qed
   have "sum_wdag_w d (map (\<lambda>B. B * M n) (Ks ! n)) = adjoint (M n) * M n"
-    using sum_wdag_w_map_mult_right[OF Kn(1) Suc.prems(1)[of n]] Kn(2) Suc.prems(1)[of n] by (simp add: dagger_eq_adjoint)
+    using sum_wdag_w_map_mult_right[OF Kn(1) Suc.prems(1)[of n]] Kn(2) Suc.prems(1)[of n] by (simp add: dagger_adjoint)
   moreover have "sum_wdag_w d (meas_kraus n M Ks) = matrix_sum d (\<lambda>j. adjoint (M j) * M j) n"
     by (rule Suc.IH) (use Suc.prems less_SucI in blast)+
   ultimately show ?case by (simp add: sum_wdag_w_append[OF c1 c2])
@@ -150,7 +150,7 @@ proof (induction c)
 next
   case (Utrans U)
   hence a: "Complex_Matrix.adjoint U * U = 1\<^sub>m d" using unitary_simps by auto
-  show ?case using Utrans.prems a by (auto simp: kraus_operators_def dagger_eq_adjoint)
+  show ?case using Utrans.prems a by (auto simp: kraus_operators_def dagger_adjoint)
 next
   case (Seq c1 c2)
   thus ?case by (auto intro: kraus_operators_compose)
@@ -193,7 +193,7 @@ text \<open>The HHL program of Part VI is a channel on the clock, system and anc
 
 theorem hhl_program_channel:
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
+  assumes A: "A \<in> carrier_mat n n" "Complex_Matrix.hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
     and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>j. 0 < j \<and> j < 2 ^ k \<and> l = reg_eig t0 (2 ^ k) j"
     and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"

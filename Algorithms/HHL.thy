@@ -175,18 +175,6 @@ proof -
   show ?thesis unfolding unitary_def using l r by simp
 qed
 
-lemma unitary_pow:
-  assumes U: "U \<in> carrier_mat m m" and u: "unitary U"
-  shows "unitary (U ^\<^sub>m k)"
-proof (induction k)
-  case 0
-  show ?case by (simp add: id_is_unitary)
-next
-  case (Suc k)
-  have "unitary (U ^\<^sub>m k * U)" by (rule unitary_mult[OF Suc u pow_carrier_mat[OF U] U])
-  thus ?case by simp
-qed
-
 subsection \<open>The circuit\<close>
 
 text \<open>The ancilla rotation $R(c)\ket0=\sqrt{1-c^2}\ket0+c\ket1$.\<close>
@@ -396,9 +384,6 @@ corollary hhl_eigen:
   by (rule fun_circuit_eigen[OF A t0 N k u ev, where h = "\<lambda>x. C / x"])
 
 subsection \<open>All right-hand sides\<close>
-
-lemma mult_zero_vec_right: "B \<in> carrier_mat K n \<Longrightarrow> B *\<^sub>v 0\<^sub>v n = 0\<^sub>v K"
-  by (rule eq_vecI) (auto simp: scalar_prod_def)
 
 text \<open>$b\mapsto a\otimes\sum_{c<d}H_c\,b\otimes\ket c$ as an $(\dim a\cdot nd)\times n$ matrix.\<close>
 
@@ -692,24 +677,6 @@ subsection \<open>The success probability\<close>
 
 text \<open>The diagonal of a spectral decomposition consists of eigenvalues.\<close>
 
-lemma spectral_decomp_eig_in_spectrum:
-  assumes A: "A \<in> carrier_mat n n" and sd: "spectral_decomp A U D" and j: "j < n"
-  shows "D ! j \<in> herm_spectrum A"
-proof -
-  note d = spectral_decompD[OF A sd]
-  have cd: "dim_vec (Matrix.col U j) = n" using d(1) by simp
-  have nz: "Matrix.col U j \<noteq> 0\<^sub>v n"
-  proof
-    assume z: "Matrix.col U j = 0\<^sub>v n"
-    have "(U\<^sup>\<dagger> * U) $$ (j, j) = Matrix.row (U\<^sup>\<dagger>) j \<bullet> Matrix.col U j"
-      by (rule index_mult_mat(1)) (use d(1) j in simp_all)
-    also have "\<dots> = 0" unfolding z by (rule scalar_prod_right_zero) (use d(1) j in \<open>simp add: dagger_def\<close>)
-    finally show False using d(4) j by simp
-  qed
-  show ?thesis unfolding herm_spectrum_iff
-    using spectral_decomp_col[OF A sd j] cd nz A by (intro exI[of _ "Matrix.col U j"]) simp
-qed
-
 text \<open>A real function non-negative on the spectrum gives a positive matrix.\<close>
 
 lemma mat_fun_psd:
@@ -776,7 +743,7 @@ proof -
     ultimately show "0 \<le> 1 / l\<^sup>2 - 1 / \<Lambda>\<^sup>2" by (simp add: frac_le)
   qed
   have "\<langle>?Ai *\<^sub>v b|?Ai *\<^sub>v b\<rangle> = \<langle>b|?Ai *\<^sub>v (?Ai *\<^sub>v b)\<rangle>"
-    using inner_prod_adjoint_swap[OF Ai b Ad] herm_inv_hermitian[OF A] unfolding hermitian_def by simp
+    using inner_prod_adjoint_swap[OF Ai b Ad] herm_inv_hermitian[OF A] unfolding hermitian_dagger by simp
   also have "?Ai *\<^sub>v (?Ai *\<^sub>v b) = (?Ai * ?Ai) *\<^sub>v b" by (rule assoc_mult_mat_vec[OF Ai Ai bc, symmetric])
   also have "?Ai * ?Ai = mat_fun (\<lambda>x. complex_of_real (inverse x) * complex_of_real (inverse x)) A"
     unfolding herm_inv_def by (rule mat_fun_mult[OF A])
@@ -817,7 +784,7 @@ proof -
     unfolding herm_embed_def using A
     by (simp add: dagger_four_block_mat_complex[OF zero_carrier_mat A dagger_carrier[OF A] zero_carrier_mat])
   also have "\<dots> = herm_embed A" using A by (simp add: herm_embed_def dagger_zero_mat dagger_of_dagger_is_id)
-  finally show ?thesis unfolding hermitian_def .
+  finally show ?thesis unfolding hermitian_dagger .
 qed
 
 lemma zero_mat_mult_vec: "dim_vec v = n \<Longrightarrow> 0\<^sub>m K n *\<^sub>v v = 0\<^sub>v K"

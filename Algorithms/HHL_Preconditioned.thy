@@ -59,7 +59,7 @@ begin
 
 lemma pc_M: "B * A \<in> carrier_mat n n" using A B by simp
 
-lemma pc_H: "herm_embed (B * A) \<in> carrier_mat (n + n) (n + n)" "Quantum_Computing_3_10.hermitian (herm_embed (B * A))"
+lemma pc_H: "herm_embed (B * A) \<in> carrier_mat (n + n) (n + n)" "hermitian (herm_embed (B * A))"
   using herm_embed_carrier[OF pc_M] herm_embed_hermitian[OF pc_M] by auto
 
 lemma pc_n: "0 < n + n" using n0 by simp

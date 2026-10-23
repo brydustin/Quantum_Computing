@@ -480,7 +480,7 @@ proof -
       using c unfolding Complex_Matrix.unitary_def inverts_mat_def by simp
     have l: "Complex_Matrix.adjoint (win_prep_mat k n Ub) * win_prep_mat k n Ub = 1\<^sub>m ?K"
       by (rule mat_mult_left_right_inverse[OF c adjoint_dim[OF c] r])
-    show ?thesis using c r l unfolding Quantum.unitary_def dagger_eq_adjoint by simp
+    show ?thesis using c r l unfolding Quantum.unitary_def dagger_adjoint by simp
   qed
   have wc: "\<And>G. G \<in> set (prep_gates k (win_coef (2 ^ k))) \<Longrightarrow> G \<in> carrier_mat (2 ^ k) (2 ^ k)"
     using wp(2) elementary_unitary(1) by blast
@@ -679,7 +679,7 @@ controlled by the last clock qubit, the preparation of $\ket b$, or an oracle ca
 
 theorem hhl_apx_fine3:
   fixes A V Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C \<theta> lmin \<epsilon> \<eta> :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and t0: "0 < t0" and k: "1 \<le> k"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and k: "1 \<le> k"
       and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1" and lmin: "2 * C / \<theta> \<le> lmin"
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"

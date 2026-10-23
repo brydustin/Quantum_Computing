@@ -50,3 +50,6 @@ Sylvester/output/
 # check reports
 tools/check/output/
 tools/check/output.log
+
+# AFP export (tools/afp_export.sh)
+afp_export/

@@ -89,66 +89,6 @@ proof -
   qed
 qed
 
-text \<open>$\eta$-closeness of two operators: $\norm{Uv-Vv}\le\eta\norm v$ for every $v$.\<close>
-
-definition op_close :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
-  "op_close n \<eta> U V \<longleftrightarrow> (\<forall>v. dim_vec v = n \<longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>)"
-
-lemma op_closeD: "op_close n \<eta> U V \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>"
-  by (simp add: op_close_def)
-
-lemma op_close_refl:
-  assumes e: "0 \<le> \<eta>" and U: "U \<in> carrier_mat n n"
-  shows "op_close n \<eta> U U"
-proof -
-  have z: "U *\<^sub>v v - U *\<^sub>v v = 0\<^sub>v n" if "dim_vec v = n" for v :: "complex Matrix.vec"
-    using that U by (intro eq_vecI) simp_all
-  show ?thesis unfolding op_close_def
-  proof (intro allI impI)
-    fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
-    have "\<parallel>U *\<^sub>v v - U *\<^sub>v v\<parallel> = 0" unfolding z[OF v] by (simp add: cpx_vec_length_def)
-    thus "\<parallel>U *\<^sub>v v - U *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" using e vnorm_ge0[of v] by simp
-  qed
-qed
-
-lemma op_close_sym:
-  assumes "op_close n \<eta> U V" "U \<in> carrier_mat n n" "V \<in> carrier_mat n n"
-  shows "op_close n \<eta> V U"
-  unfolding op_close_def
-proof (intro allI impI)
-  fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
-  have "\<parallel>V *\<^sub>v v - U *\<^sub>v v\<parallel> = \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel>" by (rule vnorm_minus_commute) (use assms in simp)
-  thus "\<parallel>V *\<^sub>v v - U *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" using op_closeD[OF assms(1) v] by simp
-qed
-
-lemma op_close_dagger:
-  assumes U: "U \<in> carrier_mat n n" "unitary U" and V: "V \<in> carrier_mat n n" "unitary V"
-      and c: "op_close n \<eta> U V"
-  shows "op_close n \<eta> (U\<^sup>\<dagger>) (V\<^sup>\<dagger>)"
-  unfolding op_close_def
-proof (intro allI impI)
-  fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
-  have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
-  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" and Vd: "V\<^sup>\<dagger> \<in> carrier_mat n n" using U V by (simp_all add: dagger_carrier)
-  have UU: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" and VV: "V * (V\<^sup>\<dagger>) = 1\<^sub>m n" using U V unfolding unitary_def by auto
-  let ?w = "V\<^sup>\<dagger> *\<^sub>v v"
-  have w: "dim_vec ?w = n" using V(1) by simp
-  have dd: "dim_vec (U\<^sup>\<dagger> *\<^sub>v v - ?w) = n" using U(1) V(1) by simp
-  have uv: "U *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v v) = v" using assoc_mult_mat_vec[OF U(1) Ud vc, symmetric] UU vc by simp
-  have vw: "V *\<^sub>v ?w = v" using assoc_mult_mat_vec[OF V(1) Vd vc, symmetric] VV vc by simp
-  have e: "U *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v v - ?w) = V *\<^sub>v ?w - U *\<^sub>v ?w"
-  proof -
-    have "U *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v v - ?w) = U *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v v) - U *\<^sub>v ?w"
-      by (rule mult_minus_distrib_mat_vec[OF U(1)]) (use Ud Vd vc in simp_all)
-    thus ?thesis unfolding uv vw .
-  qed
-  have "\<parallel>U\<^sup>\<dagger> *\<^sub>v v - ?w\<parallel> = \<parallel>U *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v v - ?w)\<parallel>" by (rule unitary_vnorm[OF U dd, symmetric])
-  also have "\<dots> = \<parallel>U *\<^sub>v ?w - V *\<^sub>v ?w\<parallel>" unfolding e by (rule vnorm_minus_commute) (use U V in simp)
-  also have "\<dots> \<le> \<eta> * \<parallel>?w\<parallel>" by (rule op_closeD[OF c w])
-  also have "\<parallel>?w\<parallel> = \<parallel>v\<parallel>" by (rule unitary_vnorm[OF Vd unitary_dagger[OF V(2)] v])
-  finally show "\<parallel>U\<^sup>\<dagger> *\<^sub>v v - V\<^sup>\<dagger> *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" .
-qed
-
 subsection \<open>Tensoring with the ancilla\<close>
 
 definition half :: "complex Matrix.vec \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where

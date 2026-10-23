@@ -1,5 +1,5 @@
 theory Suzuki_Order
-  imports HHL_Trotter Matrix_Sums
+  imports Trotter_Product_Formula Matrix_Sums
 begin
 
 section \<open>Order conditions for product formulas\<close>

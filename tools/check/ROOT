@@ -1,5 +1,14 @@
 (* Check sessions: build with tools/check_all.sh (needs the heaps of the project sessions). *)
 
+session VP_Check_HFC in "HFC" = Hermitian_Functional_Calculus +
+  options [document = false]
+  theories Check_HFC
+
+session VP_Check_HFC_AFP in "HFC_AFP" = Two_Hermitian_Results +
+  options [document = false]
+  sessions Hermitian_Functional_Calculus Commuting_Hermitian Projective_Measurements
+  theories Check_HFC_AFP
+
 session VP_Check_Algorithms in "Algorithms" = Vern_Paulsen_QC_Algorithms +
   options [document = false]
   theories Check_Algorithms

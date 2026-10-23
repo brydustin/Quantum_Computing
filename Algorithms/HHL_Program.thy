@@ -1,5 +1,5 @@
 theory HHL_Program
-  imports HHL_Trajectory Matrix_Sums QHLProver.Quantum_Hoare
+  imports HHL_Trajectory Hermitian_Functional_Calculus.Matrix_Sums QHLProver.Quantum_Hoare
 begin
 
 text \<open>The HHL algorithm as a program of the quantum while-language of the AFP entry
@@ -273,13 +273,10 @@ end
 
 section \<open>Bridges to the library of the notes\<close>
 
-lemma dagger_eq_adjoint: "Quantum.dagger A = mat_adjoint A"
-  by (simp add: Quantum.dagger_def Complex_Matrix.adjoint_def conjugate_complex_def)
-
 lemma unitary_bridge:
   assumes U: "U \<in> carrier_mat K K" and u: "Quantum.unitary U"
   shows "Complex_Matrix.unitary U"
-  using U u unfolding Complex_Matrix.unitary_def Quantum.unitary_def inverts_mat_def dagger_eq_adjoint by auto
+  using U u unfolding Complex_Matrix.unitary_def Quantum.unitary_def inverts_mat_def dagger_adjoint by auto
 
 lemma inner_bridge: "dim_vec v = dim_vec w \<Longrightarrow> Complex_Matrix.inner_prod v w = Quantum.inner_prod v w"
   by (simp add: Quantum.inner_prod_def scalar_prod_def conjugate_vec_def mult.commute)
@@ -576,7 +573,7 @@ definition hhl_target :: "complex Matrix.mat \<Rightarrow> nat \<Rightarrow> com
 
 context
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
     and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>j. 0 < j \<and> j < 2 ^ k \<and> l = reg_eig t0 (2 ^ k) j"
     and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
@@ -1099,7 +1096,7 @@ end
 
 context
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat n n" "Quantum_Computing_3_10.hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
+  assumes A: "A \<in> carrier_mat n n" "hermitian A" and n0: "0 < n" and k: "1 \<le> k" and t0: "0 < t0"
     and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>j. 0 < j \<and> j < 2 ^ k \<and> l = reg_eig t0 (2 ^ k) j"
     and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"

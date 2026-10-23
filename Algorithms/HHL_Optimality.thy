@@ -248,7 +248,7 @@ lemma perm_conj_hermitian:
   assumes G: "G \<in> carrier_mat n n" "hermitian G"
   shows "hermitian (perm_conj n \<sigma> G)"
 proof -
-  have Hd: "G\<^sup>\<dagger> = G" using G(2) by (simp add: hermitian_def)
+  have Hd: "G\<^sup>\<dagger> = G" using G(2) by (simp add: hermitian_dagger)
   have "(perm_conj n \<sigma> G)\<^sup>\<dagger> = perm_conj n \<sigma> G"
   proof (rule eq_matI)
     fix i j assume "i < dim_row (perm_conj n \<sigma> G)" "j < dim_col (perm_conj n \<sigma> G)"
@@ -258,7 +258,7 @@ proof -
     thus "(perm_conj n \<sigma> G)\<^sup>\<dagger> $$ (i, j) = perm_conj n \<sigma> G $$ (i, j)"
       unfolding Hd using ij by (simp add: perm_conj_def dagger_def)
   qed (simp_all add: perm_conj_def)
-  thus ?thesis by (simp add: hermitian_def)
+  thus ?thesis by (simp add: hermitian_dagger)
 qed
 
 lemma perm_vec_surj:

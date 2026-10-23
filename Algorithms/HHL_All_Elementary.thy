@@ -421,7 +421,7 @@ proof -
     using c unfolding Complex_Matrix.unitary_def inverts_mat_def by simp
   have l: "Complex_Matrix.adjoint (circuit_mat K Us) * circuit_mat K Us = 1\<^sub>m K"
     by (rule mat_mult_left_right_inverse[OF c adjoint_dim[OF c] r])
-  show "Quantum.unitary (circuit_mat K Us)" using c r l unfolding Quantum.unitary_def dagger_eq_adjoint by simp
+  show "Quantum.unitary (circuit_mat K Us)" using c r l unfolding Quantum.unitary_def dagger_adjoint by simp
 qed
 
 lemma dmat_mult_vec: "dim_vec v = N \<Longrightarrow> dmat N \<phi> *\<^sub>v v = Matrix.vec N (\<lambda>x. cis (\<phi> x) * v $ x)"
@@ -577,7 +577,7 @@ program every gate is elementary or a controlled $U^{\pm2^j}$.\<close>
 
 theorem hhl_elementary:
   fixes A :: "complex Matrix.mat" and b :: "complex Matrix.vec" and s k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum_Computing_3_10.hermitian A" and s: "1 \<le> s" and k: "1 \<le> k" and t0: "0 < t0"
+  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "hermitian A" and s: "1 \<le> s" and k: "1 \<le> k" and t0: "0 < t0"
     and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>j. 0 < j \<and> j < 2 ^ k \<and> l = reg_eig t0 (2 ^ k) j"
     and b: "dim_vec b = 2 ^ s" "\<parallel>b\<parallel> = 1"
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
@@ -638,7 +638,7 @@ text \<open>The paper's regime: every gate is elementary or a call of the simula
 
 theorem hhl_apx_elementary:
   fixes A V :: "complex Matrix.mat" and b :: "complex Matrix.vec" and s k :: nat and t0 C \<theta> lmin \<epsilon> \<eta> :: real
-  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum_Computing_3_10.hermitian A" and s: "1 \<le> s" and t0: "0 < t0" and k: "1 \<le> k"
+  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "hermitian A" and s: "1 \<le> s" and t0: "0 < t0" and k: "1 \<le> k"
       and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1" and lmin: "2 * C / \<theta> \<le> lmin"
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = 2 ^ s" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"
@@ -867,7 +867,7 @@ proof -
     qed
     finally show ?thesis using Bd by simp
   qed
-  have Pd: "P\<^sup>\<dagger> = adjoint P" by (simp add: dagger_eq_adjoint)
+  have Pd: "P\<^sup>\<dagger> = adjoint P" by (simp add: dagger_adjoint)
   have Uc: "U = circuit_mat ?N (map (\<lambda>D. P * D * (P\<^sup>\<dagger>)) Ds)"
   proof -
     have "U = P * circuit_mat ?N Ds * (P\<^sup>\<dagger>)" using UPB cDs Pd by simp
@@ -923,7 +923,7 @@ proof -
   have "Complex_Matrix.unitary ?C" using circuit_mat_unitary[of Us] Us unfolding dd by blast
   hence r: "?C * Complex_Matrix.adjoint ?C = 1\<^sub>m ?K" using c unfolding Complex_Matrix.unitary_def inverts_mat_def by simp
   have l: "Complex_Matrix.adjoint ?C * ?C = 1\<^sub>m ?K" by (rule mat_mult_left_right_inverse[OF c adjoint_dim[OF c] r])
-  have "Quantum.unitary ?C" using c r l unfolding Quantum.unitary_def dagger_eq_adjoint by simp
+  have "Quantum.unitary ?C" using c r l unfolding Quantum.unitary_def dagger_adjoint by simp
   thus ?thesis using exact_universality[OF c _ q] by blast
 qed
 
@@ -933,7 +933,7 @@ the cost statements.\<close>
 
 theorem hhl_compiled:
   fixes A :: "complex Matrix.mat" and b :: "complex Matrix.vec" and s k :: nat and t0 C :: real
-  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum_Computing_3_10.hermitian A" and s: "1 \<le> s" and k: "1 \<le> k" and t0: "0 < t0"
+  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "hermitian A" and s: "1 \<le> s" and k: "1 \<le> k" and t0: "0 < t0"
     and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> \<exists>j. 0 < j \<and> j < 2 ^ k \<and> l = reg_eig t0 (2 ^ k) j"
     and b: "dim_vec b = 2 ^ s" "\<parallel>b\<parallel> = 1"
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
@@ -978,7 +978,7 @@ qed
 
 theorem hhl_apx_compiled:
   fixes A V :: "complex Matrix.mat" and b :: "complex Matrix.vec" and s k :: nat and t0 C \<theta> lmin \<epsilon> \<eta> :: real
-  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum_Computing_3_10.hermitian A" and s: "1 \<le> s" and t0: "0 < t0" and k: "1 \<le> k"
+  assumes A: "A \<in> carrier_mat (2 ^ s) (2 ^ s)" "hermitian A" and s: "1 \<le> s" and t0: "0 < t0" and k: "1 \<le> k"
       and C: "0 < C" and th: "0 < \<theta>" "\<theta> < 1" and lmin: "2 * C / \<theta> \<le> lmin"
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = 2 ^ s" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"

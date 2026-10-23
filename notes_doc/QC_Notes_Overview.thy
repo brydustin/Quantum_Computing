@@ -130,6 +130,9 @@ reuse earlier infrastructure.  The table gives the correspondence.
 26     & CP maps as $V^*\psi(X)V$ with $\psi$ UCP and as $\psi(VXV^*)$ with $\psi$ CPTP & \texttt{Day26\_CP\_Factorization}\\
 27     & the transpose detects $\left(\begin{smallmatrix}E_{ii}&E_{ij}\\ E_{ji}&E_{jj}\end{smallmatrix}\right)$ and $(E_{ij})$ as entangled & \texttt{Day27\_Entangled\_Examples}\\\hline
 --     & functional calculus $g(A)$ for Hermitian $A$; $e^{itA}$, $A^{-1}$ & \texttt{Hermitian\_Functional\_Calculus}\\
+--     & the Lie--Trotter formula with error $2(mLt)^2/r$ & \texttt{Trotter\_Product\_Formula}\\
+--     & order conditions for product formulas: palindromes have odd order, Suzuki's recursion $S_{2k+2}$ agrees with $e^{itH}$ to degree $2k+2$ & \texttt{Suzuki\_Order}\\
+--     & Suzuki's formula over $r$ steps within $r(2|F|+1)(\Lambda|t|/r)^{2k+3}e^{\Lambda|t|/r}/(2k+3)!$ of $e^{itH}$ & \texttt{Suzuki\_Error}\\
 --     & Fourier matrix, phase kickback, phase estimation (exact; $\ge4/\pi^2$) & \texttt{Phase\_Estimation}\\
 --     & the AFP circuit \<open>ordered_QFT\<close> is the Fourier matrix $F_{2^n}$ & \texttt{QFT\_Fourier}\\
 --     & the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
@@ -154,12 +157,10 @@ reuse earlier infrastructure.  The table gives the correspondence.
 --     & the rotation as one ancilla rotation per clock value; window state by one reflection; elementary Fourier gates in the amplified circuit & \texttt{HHL\_Gate\_Refinements}\\
 --     & the rotation stage as a uniformly controlled rotation: Walsh--Hadamard angles, parity chains of nearest-neighbour CNOT/SWAP gates; the program and the paper-regime circuits with only elementary gates, oracle calls, $U_b$ and rotations controlled by the last clock qubit & \texttt{HHL\_Uniform\_Rotation}\\
 --     & state preparation by $k$ levels of uniformly controlled rotations, all gates elementary; the sine window; the paper-regime programs with only elementary gates, controlled ancilla rotations, $U_b$ and oracle calls & \texttt{HHL\_State\_Preparation}\\
---     & the Lie--Trotter formula with error $2(mLt)^2/r$ & \texttt{HHL\_Trotter}\\
 --     & an $s$-sparse Hermitian matrix as its diagonal plus $2s-1$ one-sparse parts; sparse Trotter error $8(sLt)^2/r$ & \texttt{HHL\_Sparse\_Split}\\
 --     & the sparse simulation oracle as a verified circuit with $r(6s-2)$ queries, plugged into the HHL error bound & \texttt{HHL\_Sparse\_Circuit}\\
 --     & for $n=2^s$ every gate of HHL elementary or an oracle call; every $\ket b$ prepared in elementary gates; exact universality & \texttt{HHL\_All\_Elementary}\\
---     & order conditions for product formulas: palindromes have odd order, Suzuki's recursion $S_{2k+2}$ agrees with $e^{itH}$ to degree $2k+2$ & \texttt{Suzuki\_Order}\\
---     & Suzuki's formula over $r$ steps within $r(2|F|+1)(\Lambda|t|/r)^{2k+3}e^{\Lambda|t|/r}/(2k+3)!$ of $e^{itH}$; plugged into the HHL error bound & \texttt{HHL\_Suzuki}\\
+--     & Suzuki's formula plugged into the HHL error bound; for $s$-sparse $A$ over the one-sparse parts & \texttt{HHL\_Suzuki}\\
 --     & the textbook precision of phase estimation: outcomes more than $e/N$ from $\varphi$ have probability $\le1/(2(e-1))$; $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits give $n$ bits with probability $\ge1-\varepsilon$ & \texttt{QPE\_Precision}\\
 --     & phase estimation as a program of quantum Hoare logic: the exact weakest precondition of every clock outcome; exact phases, the $4/\pi^2$ bound, the tail and the precision as triples; the same in elementary gates & \texttt{QPE\_Program}\\
 \end{tabular}

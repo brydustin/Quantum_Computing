@@ -1,5 +1,6 @@
 theory Phase_Estimation
-  imports Hermitian_Functional_Calculus "HOL-Analysis.Convex"
+  imports Vern_Paulsen_QC_3_10.Quantum_Computing_3_10 Hermitian_Functional_Calculus.Trotter_Product_Formula
+    "HOL-Analysis.Convex"
 begin
 
 section \<open>Phase estimation\<close>
@@ -8,6 +9,26 @@ text \<open>The Fourier matrix $F_N$, $(F_N)_{jk}=\omega^{jk}/\sqrt N$ with $\om
 estimation: for $Uu=e^{2\pi i\varphi}u$, the circuit
 $(F_N^*\otimes I)\,\mathrm{C}U\,(\tfrac1{\sqrt N}\sum_k\ket k\otimes u)$ leaves the register in
 $\sum_j\alpha_j\ket j$ with $\alpha_j=\frac1N\sum_k e^{2\pi ik(\varphi-j/N)}$.\<close>
+
+subsection \<open>Conventions\<close>
+
+text \<open>Part VI uses QHLProver's \<^const>\<open>hermitian\<close>, as the functional calculus does, and otherwise
+the notes' and IMD's names (\<^const>\<open>unitary\<close>, inner and outer products).\<close>
+
+hide_const (open) Complex_Matrix.unitary Complex_Matrix.inner_prod Complex_Matrix.outer_prod
+  Complex_Matrix.vec_normalize Linear_Algebra.adjoint Quantum_Computing_3_10.hermitian
+hide_fact (open) Complex_Matrix.unitary_def Complex_Matrix.outer_prod_def Complex_Matrix.vec_normalize_def
+  Complex_Matrix.inner_prod_distrib_left Complex_Matrix.inner_prod_distrib_right
+  Complex_Matrix.normalized_vec_norm Complex_Matrix.outer_prod_mult_vec Quantum_Computing_3_10.hermitian_def
+  Linear_Algebra.adjoint_adjoint
+
+lemma hermitian_notes: "Quantum_Computing_3_10.hermitian A \<longleftrightarrow> hermitian A"
+  by (simp add: Quantum_Computing_3_10.hermitian_def hermitian_dagger)
+
+lemmas hermitian_index_cnj = Quantum_Computing_3_10.hermitian_index[unfolded hermitian_notes]
+
+lemma diag_mat_of_real_cmat: "diag_mat_of_real D = diag_cmat (map complex_of_real D)"
+  by (rule eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def diag_cmat_def)
 
 subsection \<open>Sums of roots of unity\<close>
 
@@ -144,24 +165,6 @@ proof -
   have "(\<Sum>c\<in>{k * m..<k * m + m}. f c) = (\<Sum>i<m. f (k * m + i))" for k
     using sum.shift_bounds_nat_ivl[of f 0 "k * m" m] by (simp add: atLeast0LessThan add.commute)
   thus ?thesis unfolding sum.nat_group[symmetric] by simp
-qed
-
-lemma pow_eigen:
-  fixes U :: "complex Matrix.mat"
-  assumes U: "U \<in> carrier_mat m m" and u: "dim_vec u = m" and ev: "U *\<^sub>v u = z \<cdot>\<^sub>v u"
-  shows "(U ^\<^sub>m k) *\<^sub>v u = z ^ k \<cdot>\<^sub>v u"
-proof (induction k)
-  case 0
-  have "u \<in> carrier_vec m" using u by (rule carrier_vecI)
-  thus ?case using carrier_matD(1)[OF U] by (auto intro!: eq_vecI)
-next
-  case (Suc k)
-  have uc: "u \<in> carrier_vec m" using u by (rule carrier_vecI)
-  have "(U ^\<^sub>m Suc k) *\<^sub>v u = (U ^\<^sub>m k) *\<^sub>v (U *\<^sub>v u)"
-    using assoc_mult_mat_vec[OF pow_carrier_mat[OF U] U uc, of k] by simp
-  also have "\<dots> = z \<cdot>\<^sub>v ((U ^\<^sub>m k) *\<^sub>v u)" unfolding ev by (rule mult_mat_vec[OF pow_carrier_mat[OF U] uc])
-  also have "\<dots> = z ^ Suc k \<cdot>\<^sub>v u" unfolding Suc by (simp add: smult_smult_assoc)
-  finally show ?case .
 qed
 
 text \<open>Phase kickback: if $Uu=zu$ then $\mathrm{C}U(a\otimes u)=(\sum_k z^ka_k\ket k)\otimes u$.\<close>
