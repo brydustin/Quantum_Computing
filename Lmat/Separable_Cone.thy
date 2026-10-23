@@ -487,9 +487,8 @@ qed
 
 section \<open>Compactness of the unit-trace PSD slice\<close>
 
-text \<open>For PSD \<open>\<sigma>\<close> with \<open>Tr \<sigma> = 1\<close>:
-\<open>‖\<sigma>‖\<^sup>2\<^sub>H\<^sub>S = \<Sum>\<lambda>\<^sub>i\<^sup>2 \<le> (\<Sum>\<lambda>\<^sub>i)\<^sup>2 = 1\<close>
-where \<open>\<lambda>\<^sub>i\<close> are the (nonneg) eigenvalues.\<close>
+text \<open>For $\sigma\ge0$ with $\Tr\sigma=1$ and eigenvalues $\lambda_i\ge0$,
+$\norm\sigma_{HS}^2=\sum_i\lambda_i^2\le\bigl(\sum_i\lambda_i\bigr)^2=1$.\<close>
 
 lemma psd_entry_bound_by_diag:
   fixes M :: "complex Matrix.mat"
@@ -1009,75 +1008,24 @@ qed
 
 section \<open>Closedness of the separable cone\<close>
 
-text \<open>
-Proof strategy (uses the typeclass tower from \<open>Lmat_Euclidean\<close>):
-
-Let \<open>S' = {tensor_lmat \<sigma> \<tau> | \<sigma> \<tau>. psd_lmat \<sigma> \<and> psd_lmat \<tau> \<and>
-                                Tr (unwrap_lm \<sigma>) = 1 \<and> Tr (unwrap_lm \<tau>) = 1}\<close>
-be the unit-trace product slice.
-
+text \<open>Why the separable cone is closed.  Let $S'=\{\sigma\otimes\tau:\ \sigma,\tau\ge0,\ \Tr\sigma=\Tr\tau=1\}$.
 \begin{enumerate}
-\item \textbf{S' is compact.}
-  \begin{itemize}
-  \item \<open>{\<sigma> :: lmat. psd_lmat \<sigma>}\<close> is closed (entry-wise lift of the
-        Hermitian condition + entry-wise lift of the quadratic-form
-        nonnegativity, both via \<open>tendsto_unwrap_lm_index\<close>).
-  \item \<open>{\<sigma> :: lmat. Re (Tr (unwrap_lm \<sigma>)) = 1}\<close> is closed (trace is
-        continuous in entries, via \<open>tendsto_unwrap_lm_index\<close>).
-  \item PSD + unit-trace is bounded: \<open>norm \<sigma>\<^sup>2 = Re Tr (\<sigma>\<^sup>\<dagger> \<sigma>) \<le> Tr \<sigma> \<cdot> \<lambda>\<^sub>m\<^sub>a\<^sub>x \<le> 1\<close>.
-  \item Closed + bounded in finite-dimensional \<open>real_inner\<close> = compact
-        (\<open>bounded_closed_imp_seq_compact\<close> + heine\_borel).
-  \item \<open>tensor_lmat\<close> is continuous (entries are bilinear in
-        the entries of the factors, lifts via the typeclass).
-  \item \<open>S'\<close> is the image of (compact) \<open>\<times>\<close> (compact) under
-        \<open>tensor_lmat\<close>, hence compact.
-  \end{itemize}
-
-\item \textbf{convex hull S' is compact} via \<open>compact_convex_hull\<close>
-  (applies because every euclidean\_space is a real\_inner finite-dimensional
-  space).
-
-\item \textbf{0 \<open>\<notin>\<close> convex hull S'.} Every element of \<open>convex hull S'\<close> has
-  trace 1 (linear combinations of trace-1 matrices with nonneg
-  coefficients summing to 1), while 0 has trace 0.
-
-\item \textbf{separable\_lmat\_gen = conic hull S'.} Each \<open>tensor_lmat \<sigma> \<tau>\<close>
-  with \<open>\<sigma>, \<tau>\<close> PSD equals \<open>(Tr \<sigma> \<cdot> Tr \<tau>) \<cdot> tensor_lmat (\<sigma>/Tr \<sigma>) (\<tau>/Tr \<tau>)\<close>
-  when traces are positive, and equals \<open>0\<close> when one trace is 0
-  (in which case the corresponding factor is itself 0 because
-  PSD + Tr = 0 \<open>\<Rightarrow>\<close> 0).
-
-\item \textbf{Putting it together.}
-  \<open>separable_cone_lmat = convex_cone hull separable_lmat_gen
-                       = convex_cone hull (conic hull S')
-                       = convex_cone hull S'
-                       = conic hull (convex hull S')\<close>
-  (the last by \<open>convex_cone_hull_separate_nonempty\<close>).
-  Apply \<open>closed_conic_hull\<close> with the (compact, \<open>0 \<notin> \<dots>\<close>) clause.
-\end{enumerate}
-
-The infrastructure for all of these steps is now available
-(\<open>norm\<close>, \<open>inner\<close>, \<open>dist\<close>, \<open>compact\<close>,
-\<open>convex\<close>, \<open>convex_cone\<close>, etc. all defined for typed lmat
-via the euclidean\_space + heine\_borel instances).
-\<close>
+\item $S'$ is compact: the positive matrices of trace $1$ form a closed and bounded set
+  ($\norm\sigma_{HS}\le\Tr\sigma=1$), and $\otimes$ is continuous.
+\item Its convex hull $K$ is compact, and $0\notin K$ since every element of $K$ has trace $1$.
+\item For $\sigma,\tau\ge0$, $\sigma\otimes\tau=\Tr\sigma\,\Tr\tau\cdot\frac{\sigma}{\Tr\sigma}\otimes\frac{\tau}{\Tr\tau}$ if both traces are
+  positive, and $\sigma\otimes\tau=0$ otherwise (a positive matrix of trace $0$ is $0$).
+\item So the separable cone is $\{t\,k:\ t\ge0,\ k\in K\}$, and the cone over a compact convex set
+  not containing $0$ is closed.
+\end{enumerate}\<close>
 
 text \<open>The convex cone hulls of \<open>separable_lmat_gen\<close> and \<open>Sprime\<close>
 coincide: every \<open>tensor_lmat \<sigma> \<tau>\<close> with \<open>\<sigma>, \<tau>\<close> PSD can be rescaled
 into \<open>Sprime\<close> by dividing by traces (when nonzero) or replaced by
 0 when a trace is zero.\<close>
 
-text \<open>The hard direction depends on three facts that each lift a
-spectral / bilinearity property:
-
-  psd\_lmat\_scaleR     – PSD preserved under nonneg real scaling
-  psd\_lmat\_zero\_trace\_zero  – PSD with Tr = 0 is the zero matrix
-  tensor\_lmat\_scaleR\_{left,right}  – tensor is bilinear over real scaling
-  psd\_lmat\_Tr\_real\_nonneg   – Tr of PSD is a real nonneg complex.
-
-These reduce \<open>tensor \<sigma> \<tau>\<close> with \<open>\<sigma>, \<tau>\<close> PSD to
-\<open>(Tr \<sigma> * Tr \<tau>) *\<^sub>R tensor (\<sigma>/Tr \<sigma>) (\<tau>/Tr \<tau>)\<close> when traces are positive,
-or to 0 when one is zero — both forms in \<open>convex_cone hull Sprime\<close>.\<close>
+text \<open>The hard inclusion uses step 3 above: positivity is preserved by non-negative scaling, a
+positive matrix of trace $0$ is $0$, and $\otimes$ is bilinear.\<close>
 
 lemma Sprime_subset_separable_lmat_gen:
   "(Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)
@@ -1676,13 +1624,10 @@ qed
 
 section \<open>Separating hyperplane for non-separable states\<close>
 
-text \<open>The closedness of the separable cone, combined with HOL-Analysis
-\<open>separating_hyperplane_closed_point\<close>, yields the geometric Hahn-Banach
-witness:  for every \<open>\<rho>\<close> outside the separable cone there is a linear
-functional (an HS inner product against some matrix \<open>a\<close>) that is strictly
-negative on \<open>\<rho>\<close> and nonneg on every separable element.  Because the
-separable set is a CONE, the strict inequality \<open>inner a x > b\<close> on the
-cone forces \<open>b < 0\<close> and \<open>inner a x \<ge> 0\<close> on the cone.\<close>
+text \<open>Separation.  The separable cone $C$ is closed and convex, so a point $\rho\notin C$ is strictly
+separated from it by a linear functional $x\mapsto\langle a,x\rangle$ and a constant $b$:
+$\langle a,\rho\rangle<b<\langle a,x\rangle$ for $x\in C$.  Since $C$ is a cone, $b<0$ and
+$\langle a,x\rangle\ge0$ on $C$.\<close>
 
 theorem separable_cone_lmat_separating_hyperplane:
   fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
@@ -1735,10 +1680,8 @@ qed
 
 section \<open>Entanglement witness in real-trace form\<close>
 
-text \<open>Reformulating the separating hyperplane via the
-\<open>inner = Re Tr\<close> identity gives a JNF matrix \<open>W\<close> whose adjoint
-times \<open>\<rho>\<close> has strictly negative real trace, while \<open>W\<^sup>\<dagger> * \<sigma>\<close>
-has nonneg real trace for every \<open>\<sigma>\<close> in the separable cone.\<close>
+text \<open>Since $\langle a,x\rangle=\mathrm{Re}\Tr(a^*x)$, the separating functional is a matrix $W$ with
+$\mathrm{Re}\Tr(W^*\rho)<0\le\mathrm{Re}\Tr(W^*\sigma)$ for every separable $\sigma$.\<close>
 
 theorem entanglement_witness_re_tr:
   fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
@@ -1788,10 +1731,8 @@ qed
 
 section \<open>Hermitian entanglement witness\<close>
 
-text \<open>For \<open>\<rho>\<close> outside the separable cone with hermitian unwrap, the
-witness can be chosen hermitian.  Direct entrywise construction of
-\<open>W = (A + A\<^sup>\<dagger>)/2\<close> using \<open>Matrix.mat\<close>; we avoid lemmas about
-\<open>dagger\<close> distributing over sums or scalar multiplication.\<close>
+text \<open>If $\rho$ is Hermitian the witness can be taken Hermitian: replace $W$ by $\tfrac12(W+W^*)$,
+which leaves $\mathrm{Re}\Tr(W^*\sigma)$ unchanged for Hermitian $\sigma$.\<close>
 
 theorem entanglement_witness_hermitian:
   fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"

@@ -417,8 +417,7 @@ next
     by auto
 qed
 
-text \<open>Generic pair-indexed linear combination of \<open>f (E\<^sub>a\<^sub>b)\<close> contributions,
-  weighted by the entries of \<open>A\<close>.\<close>
+text \<open>The combination $\sum_{a,b}A_{ab}\,f(E_{ab})$.\<close>
 
 primrec pair_comb ::
   "(complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat \<Rightarrow>
@@ -551,8 +550,7 @@ next
     by simp
 qed
 
-text \<open>For a linear map \<open>f : M\<^sub>n \<rightarrow> M\<^sub>d\<close>, applying \<open>f\<close> to \<open>A\<close> equals the
-  pair combination of \<open>f\<close> evaluated on the basis.\<close>
+text \<open>For linear $f:M_n\to M_d$, $f(A)=\sum_{a,b}A_{ab}\,f(E_{ab})$.\<close>
 
 lemma linear_eq_pair_comb:
   fixes f :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -640,7 +638,7 @@ proof -
   finally show ?thesis.
 qed
 
-text \<open>Conjugation \<open>W E\<^sub>a\<^sub>b W\<^sup>\<dagger>\<close> has entry \<open>W\<^sub>i\<^sub>a\<cdot>\<^sup>\<dagger>W\<^sub>j\<^sub>b\<close>.\<close>
+text \<open>$(WE_{ab}W^*)_{ij}=W_{ia}\,\overline{W_{jb}}$.\<close>
 
 lemma conjugation_mat_unit_entry:
   assumes Wc: "W \<in> carrier_mat d n"
@@ -774,9 +772,8 @@ next
     using IH WrW_c rec_c i_lt j_lt by simp
 qed
 
-text \<open>Kraus representation extracted from a psd Choi matrix: reshape each
-  column of a psd factorization of \<open>P\<^sub>\<Phi>\<close> into a Kraus operator, and the
-  resulting list agrees with \<open>\<Phi>\<close> on all of \<open>M\<^sub>n\<close>.\<close>
+text \<open>From a positive Choi matrix to Kraus operators: factor $P_\Phi=VV^*$ and reshape each column of
+$V$ into a $d\times n$ matrix $W_k$; then $\Phi(X)=\sum_kW_kXW_k^*$ on all of $M_n$.\<close>
 
 lemma kraus_rep_of_psd_choi:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -1190,7 +1187,7 @@ next
   qed
 qed
 
-text \<open>Accumulated \<open>\<Sum>\<^sub>i W\<^sub>i\<^sup>\<dagger> W\<^sub>i\<close> over a Kraus list.\<close>
+text \<open>The sum $\sum_iW_i^*W_i$ over a Kraus list.\<close>
 
 definition sum_wdag_w :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
   "sum_wdag_w n Ws \<equiv>
@@ -1287,8 +1284,8 @@ next
   finally show ?case .
 qed
 
-text \<open>The \<open>\<Sum>\<^sub>i W\<^sub>i\<^sup>\<dagger> W\<^sub>i\<close> matrix entry equals a sum-list of
-  \<open>cnj(W\<^sub>i\<^sub>k\<^sub>a)\<cdot>W\<^sub>i\<^sub>k\<^sub>b\<close> contributions (needed to recover \<open>1\<^sub>n\<close> from trace preservation).\<close>
+text \<open>Its entries are $\bigl(\sum_iW_i^*W_i\bigr)_{ab}=\sum_i\sum_k\overline{(W_i)_{ka}}\,(W_i)_{kb}$; trace
+preservation then gives $\sum_iW_i^*W_i=I_n$.\<close>
 
 lemma sum_wdag_w_entry:
   assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
@@ -1320,7 +1317,7 @@ next
   finally show ?case by simp
 qed
 
-text \<open>Pairing with \<open>E\<^sub>a\<^sub>b\<close> extracts the \<open>(b,a)\<close> entry under the trace.\<close>
+text \<open>Pairing with a matrix unit picks out an entry: $\Tr(XE_{ab})=x_{ba}$.\<close>
 
 lemma Tr_mult_mat_unit:
   assumes M_c: "M \<in> carrier_mat n n"

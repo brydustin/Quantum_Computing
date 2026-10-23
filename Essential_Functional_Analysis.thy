@@ -509,9 +509,8 @@ qed
 
 section \<open>HS-norm convergence vs entry-wise convergence\<close>
 
-text \<open>HS-norm convergence implies entry-wise convergence:
-if \<open>(M\<^sub>n)\<close> converges to \<open>L\<close> in HS-norm then for every
-\<open>(i, j)\<close> the entry sequence \<open>M\<^sub>n $$ (i, j)\<close> tends to \<open>L $$ (i, j)\<close>.\<close>
+text \<open>HS-norm convergence implies entry-wise convergence: if $\norm{M_k-L}_{HS}\to0$ then
+$(M_k)_{ij}\to L_{ij}$ for all $i,j$, since $|x_{ij}|\le\norm X_{HS}$.\<close>
 
 lemma HS_lim_entry_lim:
   fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and r :: nat
@@ -1282,9 +1281,8 @@ proof -
   thus ?thesis using xs_eq by simp
 qed
 
-text \<open>Linearity of \<open>cone_list_sum\<close> in the weight.  Two lists with
-matching matrix parts but weights related by
-\<open>w\<^sub>k = w\<^sub>k\<^sup>1 + \<mu> * r\<^sub>k\<close> satisfy the corresponding sum-equation.\<close>
+text \<open>\<open>cone_list_sum\<close> is linear in the weights: if $w_k=w'_k+\mu r_k$ then
+$\sum_kw_k\,\sigma_k\otimes\tau_k=\sum_kw'_k\,\sigma_k\otimes\tau_k+\mu\sum_kr_k\,\sigma_k\otimes\tau_k$.\<close>
 
 lemma cone_list_sum_weight_split:
   fixes f g h :: "nat \<Rightarrow> real"
@@ -1495,7 +1493,7 @@ next
   show ?case using step1 shift t_proj by simp
 qed
 
-text \<open>An entry-wise zero criterion: if every entry is 0, the matrix is \<open>0\<^sub>m\<close>.\<close>
+text \<open>A matrix whose entries all vanish is $0$.\<close>
 
 lemma matrix_eq_zero_via_entries:
   fixes M :: "complex Matrix.mat"
@@ -1514,15 +1512,8 @@ next
 qed
 
 
-text \<open>Top-level linear-algebra core.  A list of more than \<open>2 (m p)\<^sup>2\<close>
-complex \<open>(m p) \<times> (m p)\<close> matrix pairs admits a non-trivial real
-linear combination of their tensor products that vanishes.
-
-The proof is the standard JNF \<open>vec_space TYPE(real) (2 (m p)\<^sup>2)\<close>
-\<open>li_le_dim\<close> contrapositive applied to a real-flatten of the tensor
-products.  Admitted here as a single named lemma so it can be
-discharged independently of the cone Carath\'eodory reduction
-machinery (which is fully proved below modulo this one lemma).\<close>
+text \<open>The complex $mp\times mp$ matrices form a real vector space of dimension $2(mp)^2$, so more than
+$2(mp)^2$ products $\sigma_k\otimes\tau_k$ are linearly dependent over $\R$.\<close>
 
 lemma cone_list_real_lin_dep:
   fixes m p :: nat
@@ -1972,17 +1963,10 @@ proof -
 qed
 
 
-text \<open>One reduction step: a length-\<open>L\<close> cone list with
-\<open>L > (m p)\<^sup>2 + 1\<close> admits a length-\<open>(L-1)\<close> list with the same cone
-sum, weights non-negative, and matrix pairs inherited from the
-original list.
-
-NOTE on the conclusion: the standard Carath\'eodory reduction
-\<^emph>\<open>reweights\<close> rather than \<^emph>\<open>selects\<close>, so we require only that the
-\<^emph>\<open>matrix pair\<close> \<open>(\<sigma>, \<tau>)\<close> of each new entry occurs in the original
-list — the weight may differ.  This is what the downstream
-closedness argument actually needs (typing + non-negativity
-inherited from the original cone).\<close>
+text \<open>Carath\'eodory's step.  If $L>2(mp)^2+1$, a dependence $\sum_kr_k\,\sigma_k\otimes\tau_k=0$ lets one
+shift the weights, $w_k\mapsto w_k-t\,r_k$, until one of them reaches $0$ while all stay
+non-negative.  The sum is unchanged and has $L-1$ terms; the pairs $(\sigma_k,\tau_k)$ are kept,
+the weights change.\<close>
 
 lemma caratheodory_matrix_cone_step:
   fixes m p :: nat
