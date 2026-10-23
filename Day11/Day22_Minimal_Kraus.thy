@@ -28,6 +28,10 @@ proof
   thus "W \<in> carrier_mat d n" using assms by (auto intro!: foldr_add_carrier_dn)
 qed
 
+text \<open>Mixing a Kraus list by a matrix $U=(u_{lj})$ gives $W_l=\sum_ju_{lj}V_j$.  When $U^*U=I$ the two lists
+define the same map:
+\[ \sum_lW_lXW_l^*=\sum_{j,j'}\Bigl(\sum_l\overline{u_{lj'}}\,u_{lj}\Bigr)V_jXV_{j'}^*=\sum_jV_jXV_j^*. \]\<close>
+
 lemma kraus_mix_entry:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n" and l: "l < dim_row U" and i: "i < d" and a: "a < n"
   shows "kraus_mix d n U Vs ! l $$ (i,a) = (\<Sum>j = 0..<length Vs. U $$ (l,j) * Vs ! j $$ (i,a))"

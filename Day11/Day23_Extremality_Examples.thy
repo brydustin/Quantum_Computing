@@ -170,6 +170,9 @@ lemma smult_triple:
   using mult_smult_assoc_mat[OF assms(1,2)] smult_prod[OF mult_carrier_mat[OF assms(1,2)] assms(3), of a b]
   by simp
 
+text \<open>The average of two unitary conjugations has the Kraus operators $W_k=\tfrac1{\sqrt2}U_k$:
+$\sum_kW_kXW_k^*=\tfrac12(U_1XU_1^*+U_2XU_2^*)$, and $\sum_kW_k^*W_k=\tfrac12(I+I)=I$.\<close>
+
 lemma avg2_products:
   assumes U1: "U1 \<in> carrier_mat n n" "unitary U1" and U2: "U2 \<in> carrier_mat n n" "unitary U2"
   shows "(avg2 U1 U2 ! 0)\<^sup>\<dagger> * avg2 U1 U2 ! 0 = (1/2) \<cdot>\<^sub>m 1\<^sub>m n"
@@ -318,6 +321,10 @@ definition diag_kraus :: "nat \<Rightarrow> complex Matrix.mat list" where
 
 lemma diag_kraus_carrier: "\<forall>W \<in> set (diag_kraus n). W \<in> carrier_mat n n"
   by (auto simp: diag_kraus_def mat_unit_def)
+
+text \<open>The diagonal map has the Kraus operators $E_{ii}$, and $\sum_iE_{ii}XE_{ii}=\diag(x_{11},\dots,x_{nn})$.
+The $E_{ii}$ are independent, but for $n\ge2$ the products $E_{ii}^*E_{jj}=\delta_{ij}E_{ii}$ include
+$0$, so they are dependent and the map is not extreme.\<close>
 
 lemma diag_kraus_map:
   assumes M: "M \<in> carrier_mat n n"
@@ -513,6 +520,9 @@ proof (intro conjI)
       using r s by simp
   qed (use foldr_add_mat_carrier_rect[OF c] in auto)
 qed
+
+text \<open>$X\mapsto\frac{\Tr X}{d}I_d$ has the $dn$ Kraus operators $\frac1{\sqrt d}E_{ab}$:
+\[ \frac1d\sum_{a,b}E_{ab}XE_{ba}=\frac1d\sum_a\Bigl(\sum_bx_{bb}\Bigr)E_{aa}=\frac{\Tr X}{d}\,I_d. \]\<close>
 
 lemma tr_kraus_map:
   assumes d: "0 < d" and M: "M \<in> carrier_mat n n"

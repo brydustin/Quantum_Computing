@@ -33,6 +33,10 @@ nonzero code word.\<close>
 definition zero_word :: "nat \<Rightarrow> nat list" where
   "zero_word m = replicate m 0"
 
+text \<open>Words add coordinatewise mod $2$: $v+v=0$, $v+0=v$, and $v+w=0$ iff $v=w$.  For a code closed
+under $+$ the distance is therefore the least weight of a non-zero code word,
+\[ d(S)=\min_{v\ne w\in S}\mathrm{wt}(v+w)=\min_{0\ne u\in S}\mathrm{wt}(u). \]\<close>
+
 lemma xor_word_self: "xor_word v v = zero_word (length v)"
   by (induction v) (simp_all add: xor_word_def zero_word_def)
 

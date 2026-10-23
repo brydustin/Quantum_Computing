@@ -30,6 +30,10 @@ lemma Y_ub: "Pauli_Y *\<^sub>v ub s = ub (\<not> s)"
 lemma inner2: "dim_vec u = 2 \<Longrightarrow> dim_vec v = 2 \<Longrightarrow> \<langle>u|v\<rangle> = cnj (u $ 0) * v $ 0 + cnj (u $ 1) * v $ 1"
   by (subst inner_prod_sum[of _ 2]) (simp_all add: numeral_2_eq_2)
 
+text \<open>\[ \beta=Y\ket+=\frac{i}{\sqrt2}\begin{pmatrix}1\\-1\end{pmatrix},\qquad Y\beta=\ket+,\qquad
+   \braket{+}{\beta}=0, \]
+so $\{\ket+,\beta\}$ is an orthonormal basis that $Y$ swaps, as $X$ swaps $\ket0$ and $\ket1$.\<close>
+
 lemma ub_inner: "\<langle>ub s | ub t\<rangle> = (if s = t then 1 else 0)"
 proof -
   have r: "cnj (complex_of_real (sqrt 2)) = complex_of_real (sqrt 2)" by simp
@@ -169,6 +173,10 @@ definition y_codewords :: "complex Matrix.vec list" where
 
 lemma tv2_dim [simp]: "dim_vec (tv2 a b c) = 8"
   unfolding tv2_def by (simp add: tensor_vec_dim)
+
+text \<open>The code $\ket0\mapsto\ket{{+}{+}{+}}$, $\ket1\mapsto\ket{\beta\beta\beta}$ is the bit-flip code in the basis
+$\{\ket+,\beta\}$.  The eight products of $\ket+$ and $\beta$ are orthonormal and $Y$ on qubit $s$
+swaps the factor $s$, so the images of the code under $I,Y_0,Y_1,Y_2$ are mutually orthogonal.\<close>
 
 lemma tv2_inner: "\<langle>tv2 a b c | tv2 a' b' c'\<rangle> = (if a = a' \<and> b = b' \<and> c = c' then 1 else 0)"
 proof -

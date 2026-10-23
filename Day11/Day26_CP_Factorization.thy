@@ -30,6 +30,9 @@ next
   show "x div n = i \<and> x mod n = y" unfolding x using y n by simp
 qed
 
+text \<open>$J_i=e_i\otimes I_n:\C^n\to\C^k\otimes\C^n$ embeds $\C^n$ as the $i$-th block, and the blocks fill
+the space: $\sum_iJ_iJ_i^*=I_{kn}$.\<close>
+
 lemma blk_emb_gram_entry:
   assumes x: "x < k * n" and y: "y < k * n"
   shows "(blk_emb k n i * ((blk_emb k n i)\<^sup>\<dagger>)) $$ (x, y) =

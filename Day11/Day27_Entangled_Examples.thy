@@ -30,6 +30,8 @@ qed (simp_all add: block_of_mat_def mat_unit_def)
 definition unit_blocks_vec :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.vec" where
   "unit_blocks_vec r n f = Matrix.vec (r * n) (\<lambda>x. if x mod n = f (x div n) then 1 else 0)"
 
+text \<open>The matrix with blocks $E_{f(a)f(b)}$ is $\ketbra uu$ for $u=\sum_ae_a\otimes e_{f(a)}$, hence positive.\<close>
+
 lemma unit_blocks_outer: "unit_blocks r n f = unit_blocks_vec r n f \<oslash> unit_blocks_vec r n f"
 proof (rule eq_matI)
   let ?v = "unit_blocks_vec r n f"

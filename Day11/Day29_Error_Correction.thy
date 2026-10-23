@@ -50,6 +50,9 @@ lemma hamming_dist_Cons:
         else hamming_dist v w)"
   by (simp add: hamming_dist_def hamming_weight_Cons)
 
+text \<open>The weight counts the ones, and $d(v,w)=\mathrm{wt}(v+w)$ counts the positions where $v$ and $w$
+differ: $d(0110,1100)=\mathrm{wt}(1010)=2$.\<close>
+
 lemma hamming_dist_symm:
   assumes "length v = length w"
   shows "hamming_dist v w = hamming_dist w v"
@@ -151,6 +154,9 @@ lemma parity_check_encode_binary:
   by (auto simp: parity_check_encode_def)
 
 
+text \<open>The parity check $v\mapsto(v,\sum_iv_i)$ produces words of even weight; one flipped bit makes
+the weight odd, so a single error is detected, though not located.\<close>
+
 lemma parity_check_detects_one_error:
   assumes lenE:   "length e = length v + 1"
       and bits_v: "\<forall>x \<in> set v. x < 2"
@@ -197,6 +203,8 @@ qed
 
 definition repetition_encode :: "nat list \<Rightarrow> nat list" where
   "repetition_encode v \<equiv> v @ v"
+
+text \<open>Repetition $v\mapsto(v,v)$ doubles every distance, $d((v,v),(w,w))=2\,d(v,w)$.\<close>
 
 lemma length_repetition_encode [simp]:
   "length (repetition_encode v) = 2 * length v"

@@ -221,6 +221,9 @@ definition word_prob :: "real \<Rightarrow> nat \<Rightarrow> nat list \<Rightar
 definition err_prob :: "real \<Rightarrow> nat \<Rightarrow> nat list set \<Rightarrow> real" where
   "err_prob p n ES = (\<Sum>e \<in> ES. word_prob p n e)"
 
+text \<open>Bits flip independently with probability $p$, so an error pattern of weight $k$ in $n$ bits has
+probability $p^k(1-p)^{n-k}$, and a set of patterns the sum of these.\<close>
+
 lemma err_prob_list: "distinct es \<Longrightarrow> err_prob p n (set es) = (\<Sum>e\<leftarrow>es. word_prob p n e)"
   unfolding err_prob_def by (simp add: sum_list_distinct_conv_sum_set)
 

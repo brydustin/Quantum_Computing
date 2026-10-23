@@ -29,6 +29,10 @@ definition cp_on :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat set 
 lemma block_of_mat_dims [simp]: "dim_row (block_of_mat n A a b) = n" "dim_col (block_of_mat n A a b) = n"
   by (simp_all add: block_of_mat_def)
 
+text \<open>An operator system is a subspace $S\subseteq M_n$ with $I\in S$ and $S^*=S$.  $M_p(S)$ consists of
+the $p\times p$ block matrices with every block in $S$, and $\Phi$ is $p$-positive on $S$ if
+$\Phi^{(p)}$ sends the positive elements of $M_p(S)$ to positive matrices.\<close>
+
 lemma operator_systemD:
   assumes "operator_system n OS"
   shows "OS \<subseteq> carrier_mat n n" "1\<^sub>m n \<in> OS" "\<And>A. A \<in> OS \<Longrightarrow> A\<^sup>\<dagger> \<in> OS"
@@ -53,6 +57,8 @@ proof -
   moreover have "A + (-1) \<cdot>\<^sub>m B = A - B" using Ac Bc by (intro eq_matI) auto
   ultimately show ?thesis by simp
 qed
+
+text \<open>For $S=M_n$ these are the notions of Days 17--18:\<close>
 
 lemma operator_system_full: "operator_system n (carrier_mat n n)"
   unfolding operator_system_def by auto

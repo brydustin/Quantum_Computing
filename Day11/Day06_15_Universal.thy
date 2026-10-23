@@ -59,6 +59,10 @@ qed
 
 text \<open>A bilinear map is determined by its values on pairs of unit vectors.\<close>
 
+text \<open>A bilinear $\beta$ is determined by its values on pairs of basis vectors:
+\[ \beta(v,w)=\sum_{i,j}v_iw_j\,\beta(e_i,e_j)=\sum_{i,j}(v\otimes w)_{im+j}\,\beta(e_i,e_j), \]
+so $L(x)=\sum_kx_k\,\beta(e_{k\div m},e_{k\bmod m})$ is the unique linear map with $L(v\otimes w)=\beta(v,w)$.\<close>
+
 lemma bilinear_on_expand:
   assumes b: "bilinear_on n m \<beta>" and v: "dim_vec v = n" and w: "dim_vec w = m"
   shows "\<beta> v w = (\<Sum>i<n. \<Sum>j<m. (v $ i * w $ j) * \<beta> (unit_vec n i) (unit_vec m j))"
