@@ -57,7 +57,7 @@
 % Links to the formal sources at a fixed commit.  The repository is private at the time of
 % writing; replace \isalink by \isalogo to drop the links.
 \newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
-\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/ec36b2019a17da0b8a5b3770ef9682cd01540981}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/9cbadcfc7b2a3d74548d985d32c3d008fb0dc29e}
 \newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
 
 \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
@@ -196,7 +196,8 @@ counterparts of the exact triples (Table~\ref{tab:exact-inexact}).
 until every gate is a one- or two-qubit unitary on adjacent wires. This covers the Fourier
 transform; the controlled rotation, as a uniformly controlled rotation with Walsh--Hadamard angles; the
 preparation of the clock and of an arbitrary $\ket b$; and, for $s$-sparse $A$, a Trotter circuit for
-$e^{iAt}$ obtained from a graph colouring, with error $8(sLt)^2/r$ after $r(6s-2)$ queries.
+$e^{iAt}$ obtained from a graph colouring, with error $8(sLt)^2/r$ after $r(6s-2)$ queries. Suzuki's
+higher-order product formulas are verified with error of order $|t|^{2k+3}/r^{2k+2}$.
 \item \emph{Errata} (Section~\ref{sec:errata}). Mechanising the appendix exposed several false
 statements in the HHL paper, among them the constant in Lemma~3, which must be $\pi^2$ rather than
 $\pi^2/2$. Each erratum reported here is backed by a formal counterexample or a corrected theorem.
@@ -216,7 +217,7 @@ meaning~\cite{ying2016book}.
 \node[box, fill=teal!6] (L4) {\textbf{Circuit:} every gate a one- or two-qubit unitary on adjacent wires
   (\S\ref{sec:gates})\\[1pt]
   \isa{HHL\_Gates}, \isa{HHL\_Uniform\_Rotation}, \isa{HHL\_State\_Preparation}, \isa{HHL\_All\_Elementary},
-  \isa{HHL\_Trotter}, \isa{HHL\_Sparse\_Split}, \isa{HHL\_Sparse\_Circuit}};
+  \isa{HHL\_Trotter}, \isa{HHL\_Sparse\_Split}, \isa{HHL\_Sparse\_Circuit}, \isa{Suzuki\_Order}, \isa{HHL\_Suzuki}};
 \node[box, fill=blue!5, below=of L4] (L3) {\textbf{Program:} QHLProver programs and their Hoare triples
   (\S\ref{sec:qhl}, \S\ref{sec:qpe-program}, \S\ref{sec:exact}, \S\ref{sec:approx})\\[1pt]
   \isa{QPE\_Program}, \isa{HHL\_Program}, \isa{HHL\_Termination}, \isa{HHL\_Paper\_Program},
@@ -228,7 +229,7 @@ meaning~\cite{ying2016book}.
   \isa{HHL\_Reduction}, \isa{HHL\_Rectangular}, \isa{HHL\_Discussion}, \isa{HHL\_Optimality}};
 \node[box, fill=orange!6, below=of L2] (L1) {\textbf{Mathematics:} functional calculus, phase estimation
   and its precision (\S\ref{sec:math})\\[1pt]
-  \isa{Hermitian\_Functional\_Calculus}, \isa{Phase\_Estimation}, \isa{QPE\_Precision}, \isa{QFT\_Fourier},
+  \isa{Hermitian\_Functional\_Calculus}, \isa{Matrix\_Sums}, \isa{Phase\_Estimation}, \isa{QPE\_Precision}, \isa{QFT\_Fourier},
   \isa{QPE\_Register}};
 \node[box, fill=gray!8, below=of L1] (L0) {\textbf{Foundation:} Paulsen's lectures, formalised and audited
   (\S\ref{sec:paulsen}): spectral theorem, positivity, tensor products, measurement (Lectures 1--10);
@@ -238,7 +239,7 @@ meaning~\cite{ying2016book}.
 \foreach \a/\b in {L0/L1, L1/L2, L2/L3, L3/L4} \draw[arr] (\a.north) -- (\b.south);
 \end{tikzpicture}
 \caption{The four levels of the HHL development and the theories at each level. Part VI of the
-development has 31 theories; the foundation has 50.}\label{fig:layers}
+development has 34 theories; the foundation has 50.}\label{fig:layers}
 \end{figure}
 
 All results are checked by Isabelle2025-2 with \texttt{quick\_and\_dirty = false}, so no
@@ -365,7 +366,7 @@ $\hoaret{q\cdot I}{S}{\ketbra tt}$ & the output has fidelity at least $q$ with $
 \paragraph{Initialisation.} QHLProver has no statement that prepares a fixed state. We build one from
 a measurement in the computational basis followed by a permutation that moves the outcome~$k$
 to~$0$. Its rule says that after \isa{init\_com} the probability of $Q$ is $\bra0Q\ket0$, whatever the
-input.\isalink{Algorithms/HHL_Program.thy}{142}
+input.\isalink{Algorithms/HHL_Program.thy}{130}
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Initialisation: a measurement and $K$ swaps, and its proof rule},label={lst:init}]
 definition init_com :: "nat ~$\Rightarrow$~ com" where
@@ -691,7 +692,7 @@ every~$b$. Phase estimation leaves $\sum_j\ket j\otimes\Pi_jb\otimes\ket0$, wher
 indicator $g_j$ of $\{\lambda_j\}$. With the unitary rule and the rule of consequence, each line
 becomes a triple $\{\ketbra{\psi_i}{\psi_i}\}\,U_i\,\{\ketbra{\psi_{i+1}}{\psi_{i+1}}\}$
 (\isa{hhl\_step\_triples}). The program initialises all registers, runs the gates and measures the
-ancilla (Listing~\ref{lst:prog}).\isalink{Algorithms/HHL_Program.thy}{565}
+ancilla (Listing~\ref{lst:prog}).\isalink{Algorithms/HHL_Program.thy}{553}
 
 \begin{lstlisting}[float=tp,caption={The programs for a gate list and a two-outcome measurement: one run, and repeat until the outcome is $1$. HHL measures the ancilla},label={lst:prog}]
 definition prog_meas :: "nat ~$\Rightarrow$~ (nat ~$\Rightarrow$~ complex mat) ~$\Rightarrow$~ complex mat list
@@ -726,7 +727,7 @@ $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$. Then
 By Table~\ref{tab:readings}, a single run succeeds with probability at least~$p$, and on success the
 state is exactly~$\ket t$. The hypothesis on $C$ makes the rotation gate unitary, as the program
 semantics requires. Listing~\ref{lst:progthm} shows the formal statement, including the context that
-fixes the hypotheses.\isalink{Algorithms/HHL_Program.thy}{1192}
+fixes the hypotheses.\isalink{Algorithms/HHL_Program.thy}{1180}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Theorem~\ref{thm:prog} (\isa{state\_sig.hoare\_total\_correct dims} is $\models_t$ on the registers \isa{dims})},label={lst:progthm}]
@@ -778,7 +779,7 @@ semantics is then $(1-p)^m$ times the exit of one round, and the loop is a geome
 Let $M$ be a two-outcome measurement and $S$ a body with $\sem S\rho=(\Tr\rho)\,\sigma$ for every
 partial density operator $\rho$, where $\Tr\sigma=1$, $\Tr(M_1\sigma M_1^\dagger)=1-p$ and $0<p\le1$.
 Let $Q$ be a predicate and $v=\Tr(QM_0\sigma M_0^\dagger)$. Then
-$\Tr\bigl(Q\,\sem{\mathbf{while}\ M\ \mathbf{do}\ S}(c\sigma)\bigr)\ge cv/p$ for $0\le c\le1$.\isalink{Algorithms/HHL_Termination.thy}{220}
+$\Tr\bigl(Q\,\sem{\mathbf{while}\ M\ \mathbf{do}\ S}(c\sigma)\bigr)\ge cv/p$ for $0\le c\le1$.\isalink{Algorithms/HHL_Termination.thy}{210}
 \end{lemma}
 
 \noindent\begin{minipage}{\linewidth}
@@ -809,7 +810,7 @@ Under the hypotheses of Theorem~\ref{thm:prog} and $C\neq0$:
 \item $\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$, i.e.\ the loop terminates with probability one in~$\ket t$;
 \item after exactly $m$ failed rounds the loop exits with probability $(1-p)^mp$, in the state $\ket t$,
 and is still running with probability $(1-p)^m$;
-\item the expected number of rounds is $\sum_m(m+1)p(1-p)^m=1/p$.\isalink{Algorithms/HHL_Termination.thy}{466}
+\item the expected number of rounds is $\sum_m(m+1)p(1-p)^m=1/p$.\isalink{Algorithms/HHL_Termination.thy}{456}
 \end{enumerate}
 \end{theorem}
 
@@ -1202,7 +1203,7 @@ Hadamards, controlled phase rotations and swaps (\isa{qft\_circuit}). It has $(k
 is cubic because its controlled rotations are routed through nearest-neighbour swaps. The resulting
 circuit for HHL has $(2k^3+16k+6)/3$ gates (\isa{length\_hhl\_elem\_gates}), and every gate is
 elementary except the oracle calls $C_j(U^{\pm2^j})$, the preparation $U_b$ and the rotation stage
-(\isa{hhl\_elem\_gate\_kinds}).\isalink{Algorithms/HHL_Gates.thy}{84}
+(\isa{hhl\_elem\_gate\_kinds}).\isalink{Algorithms/HHL_Gates.thy}{73}
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Elementary gates, the Fourier circuit, and the gate count},label={lst:elem}]
@@ -1411,8 +1412,41 @@ theorem sparse_simulation_circuit:
 The circuit acts on inputs with both ancilla registers zero as a unitary $V$ on the system
 (\isa{emb} embeds the system). $V$ is within $8(sLt)^2/r$ of $e^{itA}$, where $L$ bounds the entries of~$A$.
 Plugged into the error bound of Section~\ref{sec:approx}, this gives the output error
-$(\varepsilon+16(N-1)(sLt_0)^2/r)\norm b$ (\isa{hhl\_sparse\_window\_error}). The higher-order formulas
-behind the paper's cited cost, and the reversible arithmetic inside the oracles, are not formalised.
+$(\varepsilon+16(N-1)(sLt_0)^2/r)\norm b$ (\isa{hhl\_sparse\_window\_error}).
+
+\paragraph{Higher order.} The cost the paper cites~\cite{berry2007} rests on Suzuki's symmetric
+formulas $S_2(\delta)=e^{i\delta H_1/2}\cdots e^{i\delta H_m/2}e^{i\delta H_m/2}\cdots e^{i\delta H_1/2}$ and
+$S_{2k+2}(\delta)=S_{2k}(u\delta)^2\,S_{2k}((1-4u)\delta)\,S_{2k}(u\delta)^2$ with $u=1/(4-4^{1/(2k+3)})$.
+A formula is a list $F$ of factors $e^{ia\delta H_j}$, written as pairs $(a,H_j)$ (\isa{suzuki},
+Listing~\ref{lst:suzuki}), and $S_{2k+2}$ has $|F|=2\cdot5^km$ of them. We prove
+\[
+\bigl\|S_{2k+2}(t/r)^r-e^{itH}\bigr\|\le r\,(2|F|+1)\,\frac{(\Lambda|t|/r)^{2k+3}}{(2k+3)!}\,e^{\Lambda|t|/r}
+\]
+with $\Lambda=L\sum_{(a,H)\in F}|a|\ge mL$ (\isa{suzuki\_error}), so $r\sim|t|^{1+1/(2k+2)}$ steps suffice, against $r\sim t^2$ at first order.
+The proof works with the Taylor coefficients of products, which are convolutions of matrix sequences.
+A palindromic product that agrees with $e^{tX}$ below an even degree also agrees in that degree, and
+the five-fold recursion cancels the next odd degree because $4u^q+(1-4u)^q=0$; so $S_{2k+2}$ agrees
+with $e^{itH}$ up to degree $2k+2$ (\isa{suzuki\_order}). Both sides are then compared with their
+common Taylor polynomial: $e^{itH}$ through $|e^z-\sum_{q\le P}z^q/q!|\le|z|^{P+1}e^{|z|}/(P+1)!$ on
+the spectrum, and the product through a bound on the coefficients of each factor. For $s$-sparse $A$
+the factors are the $2s$ parts of the colouring (\isa{sparse\_suzuki}), and the bound enters the HHL
+error bound as before (\isa{hhl\_suzuki\_window\_error}). These theorems are about products of part
+evolutions: the circuit of Fig.~\ref{fig:sparse} realises the first-order product, a higher-order
+circuit would chain the same 1-sparse circuits with step lengths $a\delta$, and the reversible
+arithmetic inside the oracles is not formalised.
+
+\begin{lstlisting}[float=tp,caption={Suzuki's formulas and their error},label={lst:suzuki}]
+fun suzuki :: "nat ~$\Rightarrow$~ complex Matrix.mat list ~$\Rightarrow$~ (real ~$\times$~ complex Matrix.mat) list" where
+  "suzuki 0 Hs = strang Hs"
+| "suzuki (Suc k) Hs = concat (map (~$\lambda$~c. map (~$\lambda$~x. (c * fst x, snd x)) (suzuki k Hs)) (suz_rs (2 * k + 3)))"
+theorem suzuki_error:
+  fixes k :: nat and t :: real
+  assumes Hs: "~$\forall$~H ~$\in$~ set Hs. herm_bounded n L H" and L: "0 ~$\le$~ L" and r: "0 < r"
+  defines "F ~$\equiv$~ suzuki k Hs" and "q ~$\equiv$~ 2 * k + 3"
+  shows "op_close n (real r * ((2 * real (length F) + 1) * (lam L F * ~$|$~t~$|$~ / real r) ^ q
+             * exp (lam L F * ~$|$~t~$|$~ / real r) / fact q))
+           (sprod n (t / real r) F ^~$_{m}$~ r) (evolution (hsum n Hs) t)"
+\end{lstlisting}
 \section{What the Formalisation Found}\label{sec:errata}
 
 The HHL paper is a carefully written letter with a long appendix, and its main claims survive
@@ -1555,7 +1589,7 @@ obtained from a singular value decomposition, which we build from the spectral t
 reformulation in the notes turned out to be false (Section~\ref{sec:errata}).
 
 \paragraph{Size.} The formalisation of the notes has 50 theories with 51\,101 lines and 1\,551 results
-(lemmas, theorems, corollaries and propositions). Part VI has 31 theories with 21\,397 lines and 1\,084
+(lemmas, theorems, corollaries and propositions). Part VI has 34 theories with 22\,946 lines and 1\,180
 results, plus an 80-line bridge to the AFP's quantum search bound in a separate session
 (Table~\ref{tab:stats}).
 \section{Related Work}\label{sec:related}
@@ -1606,9 +1640,9 @@ the AFP's semantics can check that the theorems say what this paper claims.
 
 \paragraph{Assumptions and limitations.} The preparation of $\ket b$ is a hypothesis
 ($U_b\ket0=b$) in Sections~\ref{sec:exact}--\ref{sec:approx} and a circuit in Section~\ref{sec:gates}. The
-colour oracles of the sparse simulation are hypotheses about their action on basis states. The
-reversible arithmetic that would implement them, and the higher-order product formulas behind the
-paper's cost, are not formalised. Universality is exact but gives no gate count, and the routing of the
+colour oracles of the sparse simulation are hypotheses about their action on basis states, and the
+reversible arithmetic that would implement them is not formalised. Suzuki's higher-order formulas are
+verified for products of part evolutions; only the first-order product is verified as a circuit. Universality is exact but gives no gate count, and the routing of the
 controlled rotation assumes $n=2^s$. Costs are stated as numbers of gates, oracle calls and rounds,
 not as membership in complexity classes. The optimality theorems are formalised up to the
 complexity-theoretic facts they cite.
@@ -1620,12 +1654,12 @@ complexity-theoretic facts they cite.
 \toprule
 Part & Theories & Lines & Results\\
 \midrule
-Mathematics (functional calculus, phase estimation) & 5 & 1\,504 & 93\\
+Mathematics (functional calculus, phase estimation) & 6 & 1\,545 & 96\\
 Algorithm (circuits, error analysis, rest of the paper) & 13 & 10\,320 & 496\\
-Program (QHLProver programs and triples) & 6 & 3\,768 & 185\\
-Circuit (elementary gates, sparse simulation) & 7 & 5\,805 & 310\\
+Program (QHLProver programs and triples) & 6 & 3\,746 & 183\\
+Circuit (elementary gates, simulation) & 9 & 7\,335 & 405\\
 \midrule
-Part VI, HHL & 31 & 21\,397 & 1\,084\\
+Part VI, HHL & 34 & 22\,946 & 1\,180\\
 Bridge to the AFP search bound (separate session) & 1 & 80 & 4\\
 The example run of Section~\ref{sec:run} (separate session) & 1 & 313 & 34\\
 Programs are channels (separate session) & 1 & 208 & 9\\
@@ -1667,7 +1701,7 @@ notes supplied the spectral theorem and the positivity theory that HHL needs. Th
 supply the completely positive maps and Choi--Kraus representations that are the semantics of quantum
 programs, and for programs without loops the two halves of the development now meet in one theorem:
 QHLProver's denotations are the channels of Lecture~19. Programs with loops, whose meaning is a limit,
-are the next step. Higher-order simulation with
+are the next step. Higher-order simulation circuits with
 verified arithmetic oracles, gate-count bounds for compilation, and the later linear-systems algorithms
 are further natural continuations.
 
@@ -1692,7 +1726,8 @@ imports \emph{Real\_Impl}.}\label{tab:theories}
 Theory & Content & Lines & Results\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Mathematics}}\\
-\isa{Hermitian\_Functional\_Calculus} & $g(A)$, $e^{itA}$, $A^{-1}$ & 434 & 36\\
+\isa{Hermitian\_Functional\_Calculus} & $g(A)$, $e^{itA}$, $A^{-1}$ & 445 & 37\\
+\isa{Matrix\_Sums} & entries of QHLProver's matrix sums & 30 & 2\\
 \isa{Phase\_Estimation} & Fourier matrix, phase estimation, $4/\pi^2$ & 521 & 29\\
 \isa{QPE\_Precision} & tail bound, number of clock qubits & 341 & 17\\
 \isa{QFT\_Fourier} & the AFP QFT circuit is $F_{2^n}$ & 104 & 4\\
@@ -1715,20 +1750,22 @@ Theory & Content & Lines & Results\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Program}}\\
 \isa{QPE\_Program} & phase estimation as a program & 364 & 20\\
-\isa{HHL\_Program} & initialisation, programs, triples & 1\,284 & 73\\
-\isa{HHL\_Termination} & repeat until success: total correctness & 490 & 19\\
+\isa{HHL\_Program} & initialisation, programs, triples & 1\,272 & 72\\
+\isa{HHL\_Termination} & repeat until success: total correctness & 480 & 18\\
 \isa{HHL\_Paper\_Program} & the paper's regime as programs & 839 & 28\\
 \isa{HHL\_Gate\_Refinements} & rotation split, window reflection & 616 & 27\\
 \isa{HHL\_Preconditioned} & preconditioned systems & 175 & 18\\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Circuit}}\\
-\isa{HHL\_Gates} & elementary gates, QFT circuit, count & 854 & 70\\
+\isa{HHL\_Gates} & elementary gates, QFT circuit, count & 843 & 69\\
 \isa{HHL\_Uniform\_Rotation} & uniformly controlled rotation & 1\,067 & 63\\
 \isa{HHL\_State\_Preparation} & state preparation, window & 778 & 29\\
 \isa{HHL\_All\_Elementary} & $\ket b$, routing, exact universality & 1\,037 & 44\\
 \isa{HHL\_Trotter} & Lie--Trotter with explicit error & 533 & 24\\
 \isa{HHL\_Sparse\_Split} & sparse $A$ as $2s$ 1-sparse parts & 446 & 18\\
 \isa{HHL\_Sparse\_Circuit} & the sparse simulation circuit & 1\,090 & 62\\
+\isa{Suzuki\_Order} & order conditions, Suzuki's recursion & 735 & 53\\
+\isa{HHL\_Suzuki} & Suzuki's formulas with explicit error & 806 & 43\\
 \bottomrule
 \end{tabular}
 \end{table}
