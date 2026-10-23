@@ -282,10 +282,15 @@ definition linear_mat_on :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix
      (\<forall>x y. x \<in> carrier_mat K1 K2 \<longrightarrow> y \<in> carrier_mat K1 K2 \<longrightarrow> \<Phi> (x + y) = \<Phi> x + \<Phi> y)
    \<and> (\<forall>c x. x \<in> carrier_mat K1 K2 \<longrightarrow> \<Phi> (c \<cdot>\<^sub>m x) = c \<cdot>\<^sub>m \<Phi> x)"
 
-definition flat_mat :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
-  "flat_mat K2 c = Matrix.vec (dim_row c * K2) (\<lambda>k. c $$ (k div K2, k mod K2))"
+text \<open>Reading a matrix row by row gives a vector, and \<^const>\<open>vec_to_mat\<close> undoes this:
+\[
+  \begin{pmatrix}a&b&c\\ d&e&f\end{pmatrix}\quad\longmapsto\quad(a,b,c,d,e,f).
+\]\<close>
 
-lemma vec_to_mat_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> vec_to_mat K1 K2 (flat_mat K2 c) = c"
+definition mat_to_vec :: "complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
+  "mat_to_vec c = Matrix.vec (dim_row c * dim_col c) (\<lambda>k. c $$ (k div dim_col c, k mod dim_col c))"
+
+lemma vec_to_mat_mat_to_vec: "c \<in> carrier_mat K1 K2 \<Longrightarrow> vec_to_mat K1 K2 (mat_to_vec c) = c"
 proof (rule eq_matI)
   fix i j assume c: "c \<in> carrier_mat K1 K2" and ij: "i < dim_row c" "j < dim_col c"
   have j: "j < K2" using c ij by simp
@@ -296,10 +301,10 @@ proof (rule eq_matI)
     also have "\<dots> \<le> K1 * K2" using c ij by (intro mult_le_mono1) simp
     finally show ?thesis .
   qed
-  thus "vec_to_mat K1 K2 (flat_mat K2 c) $$ (i, j) = c $$ (i, j)" using c ij j by (simp add: vec_to_mat_def flat_mat_def)
+  thus "vec_to_mat K1 K2 (mat_to_vec c) $$ (i, j) = c $$ (i, j)" using c ij j by (simp add: vec_to_mat_def mat_to_vec_def carrier_matD[OF c])
 qed (auto simp: vec_to_mat_def)
 
-lemma dim_flat: "c \<in> carrier_mat K1 K2 \<Longrightarrow> dim_vec (flat_mat K2 c) = K1 * K2" by (simp add: flat_mat_def)
+lemma dim_mat_to_vec: "c \<in> carrier_mat K1 K2 \<Longrightarrow> dim_vec (mat_to_vec c) = K1 * K2" by (simp add: mat_to_vec_def carrier_matD)
 
 lemma vec_to_mat_unit:
   assumes k: "k < K1 * K2"
@@ -368,9 +373,9 @@ proof (rule eq_matI)
   hence rs: "r < Q1" "s < Q2" using dims[OF c] by simp_all
   have r1: "\<And>x. x \<in> carrier_mat K1 K2 \<Longrightarrow> r < dim_row (\<Phi> x) \<and> s < dim_col (\<Phi> x)" using dims rs by auto
   have r2: "\<And>x. x \<in> carrier_mat K1 K2 \<Longrightarrow> r < dim_row (\<Psi> x) \<and> s < dim_col (\<Psi> x)" using dims rs by auto
-  let ?x = "flat_mat K2 c"
-  have x: "dim_vec ?x = K1 * K2" by (rule dim_flat[OF c])
-  have "\<Phi> c $$ (r, s) = \<Phi> (vec_to_mat K1 K2 ?x) $$ (r, s)" unfolding vec_to_mat_flat[OF c] ..
+  let ?x = "mat_to_vec c"
+  have x: "dim_vec ?x = K1 * K2" by (rule dim_mat_to_vec[OF c])
+  have "\<Phi> c $$ (r, s) = \<Phi> (vec_to_mat K1 K2 ?x) $$ (r, s)" unfolding vec_to_mat_mat_to_vec[OF c] ..
   also have "\<dots> = (\<Sum>k<K1 * K2. ?x $ k * \<Phi> (vec_to_mat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s))"
     by (rule linear_on_expand[OF lin[where F = \<Phi> and r = r and s = s, OF l1 r1] x])
   also have "\<dots> = (\<Sum>k<K1 * K2. ?x $ k * \<Psi> (vec_to_mat K1 K2 (unit_vec (K1 * K2) k)) $$ (r, s))"
@@ -384,7 +389,7 @@ proof (rule eq_matI)
   qed
   also have "\<dots> = \<Psi> (vec_to_mat K1 K2 ?x) $$ (r, s)"
     by (rule linear_on_expand[OF lin[where F = \<Psi> and r = r and s = s, OF l2 r2] x, symmetric])
-  finally show "\<Phi> c $$ (r, s) = \<Psi> c $$ (r, s)" unfolding vec_to_mat_flat[OF c] .
+  finally show "\<Phi> c $$ (r, s) = \<Psi> c $$ (r, s)" unfolding vec_to_mat_mat_to_vec[OF c] .
 qed
 
 theorem gamma_unique:

@@ -871,3 +871,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   6/15's `unflat` (same body; the checker's DEFINNER found it); `right_coord`/`left_coord` are
   `vec_to_mat k m u *v row G j` and its transpose version.  Trap: unqualified `col`/`row` mean
   Matrix_Legacy's list versions here; write `Matrix.col`, `Matrix.row`.
+- **Natural names, printed examples** (2026-10-23): `bblock` → `block`, `flat_mat` → `mat_to_vec`
+  (one argument, inverse of `vec_to_mat`); `right_coord`/`left_coord` removed: the coordinates
+  along a basis are `cols (vec_to_mat k m u * G\<^sup>T)` and `rows (H * vec_to_mat k m u)`
+  (lemmas `right_coordinates_{index,unique,exist}`, `left_…`).  Each definition has its worked
+  example as printed text (2×3 vector table, 4×4 interleaved blocks, row-by-row flattening).
