@@ -1,0 +1,21 @@
+chapter AFP
+
+session Hermitian_Functional_Calculus = Isabelle_Marries_Dirac +
+  description "
+    The functional calculus of Hermitian matrices, time evolution, and the
+    Lie-Trotter and Suzuki product formulas with explicit error bounds."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    "HOL-Analysis"
+    QHLProver
+  theories
+    Hermitian_Functional_Calculus
+    Matrix_Sums
+    Trotter_Product_Formula
+    Suzuki_Order
+    Suzuki_Error
+  document_files
+    "root.bib"
+    "root.tex"

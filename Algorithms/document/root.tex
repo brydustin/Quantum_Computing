@@ -1,0 +1,148 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{isabelle,isabellesym}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{stmaryrd}
+\usepackage{wasysym}
+\usepackage{textcomp}
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable}
+\usepackage{pdfsetup}
+
+\isabellestyle{it}
+\renewcommand{\isastyletext}{\normalsize\normalfont}
+\renewcommand{\isastyletxt}{\normalfont}
+
+% bra-ket macros used in the commentary
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle #1|}
+\newcommand{\braket}[2]{\langle #1|#2\rangle}
+\newcommand{\ketbra}[2]{|#1\rangle\langle #2|}
+\newcommand{\norm}[1]{\|#1\|}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\range}{range}
+\DeclareMathOperator{\spn}{span}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\crk}{cr}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Hil}{\mathcal{H}}
+\newcommand{\Kil}{\mathcal{K}}
+
+\theoremstyle{definition}
+\newtheorem*{notestheorem}{Theorem (notes)}
+\newtheorem*{notesdef}{Definition (notes)}
+\newtheorem*{notesprop}{Proposition (notes)}
+\newtheorem*{notescor}{Corollary (notes)}
+\newtheorem*{noteslemma}{Lemma (notes)}
+\newtheorem*{notespost}{Postulate (notes)}
+\newtheorem*{notesremark}{Remark}
+
+% math in section titles: plain-text forms for PDF bookmarks
+\pdfstringdefDisableCommands{\def\rangle{>}\def\langle{<}\def\otimes{x}\def\cdots{...}%
+  \def\le{<=}\def\ge{>=}\def\to{->}\def\mapsto{|->}\def\oplus{+}\def\kappa{kappa}\def\pi{pi}}
+\begin{document}
+
+\title{Quantum Phase Estimation and the HHL Algorithm}
+\author{Dustin Bryant}
+\maketitle
+
+\begin{abstract}
+We verify quantum phase estimation and the algorithm of Harrow, Hassidim and Lloyd (HHL)
+\cite{hhl2009} for linear systems $Ax=b$.  Phase estimation is verified exactly, with the
+$4/\pi^2$ bound for every phase, with the textbook precision bound, and as a program of quantum
+Hoare logic.  For HHL we verify the output state and the success probability, the inexact case
+with explicit error bounds for every right-hand side, the sine-window register, the paper's
+filter functions and Theorem~1, the run time, the reduction from circuits to matrix inversion,
+rectangular and non-Hermitian systems, and the optimality results.  The algorithm is a program of
+the quantum while-language of the AFP entry \emph{Quantum Hoare Logic} \cite{liu2019afp}, verified
+for partial and total correctness, and compiled to elementary gates, with the Hamiltonian
+simulation done by Trotter and Suzuki product formulas \cite{berry2007}.  The development builds
+on the AFP entries \emph{Hermitian Functional Calculus} (functional calculus, product formulas) and
+\emph{Vern Paulsen's lecture notes} \cite{paulsen2011notes}; separate sessions run the algorithm on
+a $2\times2$ example with exact arithmetic \cite{thiemann2014realimpl}, show that loop-free programs
+are quantum channels, and import the search lower bound \cite{unruh2025co} behind the optimality
+theorem.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\parindent 0pt\parskip 0.5ex
+
+\section*{Overview}
+
+{\small
+\begin{longtable}{p{0.68\textwidth}l}
+\textbf{Content} & \textbf{Theory}\\\hline\endhead
+Fourier matrix, phase kickback, phase estimation (exact; $\ge4/\pi^2$) & \texttt{Phase\_Estimation}\\
+the AFP circuit \texttt{ordered\_QFT} is the Fourier matrix $F_{2^n}$ & \texttt{QFT\_Fourier}\\
+the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
+inexact phase estimation: the error identity; for the clamped circuit and every $b$, $\norm{\text{output}-\text{ideal}}^2\le\frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda_{\min}^2}\bigr)\norm b^2$ & \texttt{HHL\_Approximate}\\
+sine-window register: amplitudes decay like $1/(N\delta)^2$; for every $b$, $\norm{\text{output}-\text{ideal}}^2\le\bigl(\frac{8\pi^2(2+\pi^2)\theta^4}{N^2t_0^2C^2(1-\theta^2)}+\frac{512\pi^6}{N^3t_0^4\lambda_{\min}^4}\bigr)\norm b^2$, so $N\sim1/\varepsilon$ suffices & \texttt{HHL\_Window}\\
+circuits with oracle calls: HHL makes $2(N-1)$ calls of $e^{iAt_0}$; an oracle $V$ with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most (calls)$\cdot\eta$; end to end $\norm{\text{output}-\text{ideal}}\le(\varepsilon+2(N-1)\eta)\norm b$ & \texttt{HHL\_Simulation}\\
+readout by post-selection, stable to $2\delta/(C\norm{A^{-1}b})$; amplitude amplification ($k$ rounds give $\sin^2((2k+1)\theta)$); the complete algorithm: success $\ge1-p$ with $k\le\pi^2/(4Ct_0)$ rounds and $(2k+1)\cdot2(N-1)$ oracle calls & \texttt{HHL\_Complete}\\
+the paper's filter functions and flag register; Lemma 2; Lemma 3 with the corrected constant $\pi^2$ & \texttt{HHL\_Filter}\\
+Theorem 1 of the HHL paper for every $b$: errors $O(\kappa/t)$, $t$ the total evolution time & \texttt{HHL\_Filter\_Bounds}\\
+(A32), BHMT averaging, run time in the paper's normalisation: $t=O(\kappa/\varepsilon)$, $O(\kappa)$ rounds & \texttt{HHL\_Runtime}\\
+the reduction from circuits to matrix inversion (Section III): $A^{-1}$, $\kappa\le2T+1$, post-selection probability $\ge1/10$ & \texttt{HHL\_Reduction}\\
+rectangular $A$ (App.~A4): $\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$, its pseudo-inverse gives the minimum-norm and the least-squares solution & \texttt{HHL\_Rectangular}\\
+Section IV: $f(A)\ket b$, stability of $\langle x|M|x\rangle$, sampling, $k$ copies, the SWAP test, estimation with $3/\varepsilon^2$ samples, preconditioning & \texttt{HHL\_Discussion}\\
+Theorems 4--6 (App.~A5): the $M_0$ measurement, the Hermitian dilation, the first-qubit embedding, the speedup iteration and the exponent bounds; the search lower bound is imported from the AFP (separate session) & \texttt{HHL\_Optimality}\\
+the clock register: $H^{\otimes n}\ket{0\cdots0}$ and $F\ket0$ are uniform (AFP \texttt{Isabelle\_Marries\_Dirac}), and $H^{\otimes n}$ resets it & \texttt{QPE\_Register}\\
+the HHL circuit gate by gate: the state after each of the eight gates, for every $\ket b$ & \texttt{HHL\_Trajectory}\\
+HHL as a program of quantum Hoare logic (AFP \texttt{QHLProver}): initialisation, state preparation, circuit, measurement, repeat-until-success; success probability, correctness, termination & \texttt{HHL\_Program}\\
+the program in elementary gates: $H^{\otimes k}$ as $k$ Hadamards, one controlled $U^{2^j}$ per clock qubit, $F$ as the AFP gate-level Fourier circuit; same theorems; $(2k^3+16k+6)/3$ gates & \texttt{HHL\_Gates}\\
+the program on a preconditioned system $BAx=Bb$ via the Hermitian dilation of $BA$: output $\hat x$ for $Ax=b$, success probability $\ge(C/\norm{BA})^2$ & \texttt{HHL\_Preconditioned}\\
+the repeat-until-success loop terminates with probability one (total correctness); it exits after $m$ failed rounds with probability $(1-p)^mp$ in the target state; expected rounds $1/p$, $p=C^2\norm{A^{-1}b}^2$ & \texttt{HHL\_Termination}\\
+the paper's regime as programs: window register, inexact eigenvalues, approximate oracle, filtered version; fidelity triples, termination, amplitude amplification as a program & \texttt{HHL\_Paper\_Program}\\
+the rotation as one ancilla rotation per clock value; window state by one reflection; elementary Fourier gates in the amplified circuit & \texttt{HHL\_Gate\_Refinements}\\
+the rotation stage as a uniformly controlled rotation: Walsh--Hadamard angles, parity chains of nearest-neighbour CNOT/SWAP gates; the program and the paper-regime circuits with only elementary gates, oracle calls, $U_b$ and rotations controlled by the last clock qubit & \texttt{HHL\_Uniform\_Rotation}\\
+state preparation by $k$ levels of uniformly controlled rotations, all gates elementary; the sine window; the paper-regime programs with only elementary gates, controlled ancilla rotations, $U_b$ and oracle calls & \texttt{HHL\_State\_Preparation}\\
+an $s$-sparse Hermitian matrix as its diagonal plus $2s-1$ one-sparse parts; sparse Trotter error $8(sLt)^2/r$ & \texttt{HHL\_Sparse\_Split}\\
+the sparse simulation oracle as a verified circuit with $r(6s-2)$ queries, plugged into the HHL error bound & \texttt{HHL\_Sparse\_Circuit}\\
+for $n=2^s$ every gate of HHL elementary or an oracle call; every $\ket b$ prepared in elementary gates; exact universality & \texttt{HHL\_All\_Elementary}\\
+Suzuki's formula plugged into the HHL error bound; for $s$-sparse $A$ over the one-sparse parts & \texttt{HHL\_Suzuki}\\
+the textbook precision of phase estimation: outcomes more than $e/N$ from $\varphi$ have probability $\le1/(2(e-1))$; $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits give $n$ bits with probability $\ge1-\varepsilon$ & \texttt{QPE\_Precision}\\
+phase estimation as a program of quantum Hoare logic: the exact weakest precondition of every clock outcome; exact phases, the $4/\pi^2$ bound, the tail and the precision as triples; the same in elementary gates & \texttt{QPE\_Program}\\
+\end{longtable}}
+
+\input{Phase_Estimation}
+\input{QFT_Fourier}
+\input{HHL}
+\input{HHL_Approximate}
+\input{QPE_Precision}
+\input{HHL_Window}
+\input{HHL_Simulation}
+\input{HHL_Complete}
+\input{HHL_Filter}
+\input{HHL_Filter_Bounds}
+\input{HHL_Runtime}
+\input{HHL_Reduction}
+\input{HHL_Rectangular}
+\input{HHL_Discussion}
+\input{HHL_Optimality}
+\input{QPE_Register}
+\input{HHL_Trajectory}
+\input{HHL_Program}
+\input{HHL_Gates}
+\input{HHL_Preconditioned}
+\input{HHL_Termination}
+\input{QPE_Program}
+\input{HHL_Paper_Program}
+\input{HHL_Gate_Refinements}
+\input{HHL_Uniform_Rotation}
+\input{HHL_State_Preparation}
+\input{HHL_Sparse_Split}
+\input{HHL_Sparse_Circuit}
+\input{HHL_All_Elementary}
+\input{HHL_Suzuki}
+
+\bibliographystyle{abbrv}
+\bibliography{root}
+
+\end{document}

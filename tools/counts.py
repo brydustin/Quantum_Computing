@@ -13,7 +13,7 @@ LEVELS = [
   ('Circuit', 'Algorithms', ['HHL_Gates', 'HHL_Uniform_Rotation', 'HHL_State_Preparation', 'HHL_All_Elementary',
     'HHL_Sparse_Split', 'HHL_Sparse_Circuit', 'HHL_Suzuki']),
 ]
-EXTRA = [('Search bound', 'Search', ['HHL_Search_Bound']), ('Example run', 'Demo', ['HHL_Demo'])]
+EXTRA = [('Search bound', 'Algorithms/Search', ['HHL_Search_Bound']), ('Example run', 'Algorithms/Demo', ['HHL_Demo'])]
 
 def count(d, t):
     s = open(os.path.join(P, d, t + '.thy')).read()

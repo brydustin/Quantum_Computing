@@ -12,7 +12,7 @@ $\sum_j\alpha_j\ket j$ with $\alpha_j=\frac1N\sum_k e^{2\pi ik(\varphi-j/N)}$.\<
 
 subsection \<open>Conventions\<close>
 
-text \<open>Part VI uses QHLProver's \<^const>\<open>hermitian\<close>, as the functional calculus does, and otherwise
+text \<open>This entry uses QHLProver's \<^const>\<open>hermitian\<close>, as the functional calculus does, and otherwise
 the notes' and IMD's names (\<^const>\<open>unitary\<close>, inner and outer products).\<close>
 
 hide_const (open) Complex_Matrix.unitary Complex_Matrix.inner_prod Complex_Matrix.outer_prod

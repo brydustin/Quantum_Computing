@@ -3,7 +3,7 @@
 # from the isa_agentic_cli_tools component); prints errors and the slowest commands.
 # Usage: tools/eval.sh FILE [LINE|-] [LOGIC]   (TO=timeout seconds, default 60; XD=extra -d dir)
 . "$(dirname "$0")/env.sh"
-F=$(realpath "$1"); L=${2:--}; [ "$L" = - ] && L=$(wc -l < "$F"); LG=${3:-Vern_Paulsen_QC_Algorithms}
+F=$(realpath "$1"); L=${2:--}; [ "$L" = - ] && L=$(wc -l < "$F"); LG=${3:-HHL_Algorithm}
 O=$(mktemp)
 cd "$(dirname "$F")"
 before=$(pgrep -x poly | sort)

@@ -1,0 +1,87 @@
+chapter AFP
+
+session HHL_Algorithm = Vern_Paulsen_QC_3_10 +
+  description "
+    Quantum phase estimation and the HHL algorithm for linear systems: exact and inexact
+    analysis, approximate Hamiltonian simulation, programs of quantum Hoare logic, circuits."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    QHLProver
+    Hermitian_Functional_Calculus
+  theories
+    Phase_Estimation
+    QFT_Fourier
+    HHL
+    HHL_Approximate
+    HHL_Window
+    HHL_Simulation
+    HHL_Complete
+    HHL_Filter
+    HHL_Filter_Bounds
+    HHL_Runtime
+    HHL_Reduction
+    HHL_Rectangular
+    HHL_Discussion
+    HHL_Optimality
+    QPE_Register
+    HHL_Trajectory
+    HHL_Program
+    HHL_Gates
+    HHL_Preconditioned
+    HHL_Termination
+    HHL_Paper_Program
+    HHL_Gate_Refinements
+    HHL_Uniform_Rotation
+    HHL_State_Preparation
+    HHL_Sparse_Split
+    HHL_Sparse_Circuit
+    HHL_All_Elementary
+    HHL_Suzuki
+    QPE_Precision
+    QPE_Program
+  document_files
+    "root.bib"
+    "root.tex"
+
+session HHL_Algorithm_Demo in "Demo" = HHL_Algorithm +
+  description "
+    The HHL circuit executed on a 2x2 system with exact arithmetic in Q(sqrt 2)
+    (separate session: the AFP entry Real_Impl replaces the code setup of the reals)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    Real_Impl
+  theories
+    HHL_Demo
+  document_files
+    "root.tex"
+
+session HHL_Algorithm_Channels in "Channels" = Vern_Paulsen_QC +
+  description "
+    Loop-free QHLProver programs are channels: Kraus operators read off the program,
+    the meaning is their Kraus map, completely positive and trace preserving (the notes'
+    Lectures 19-33 applied to the programs of Part VI)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    HHL_Algorithm
+  theories
+    Program_Channels
+  document_files
+    "root.tex"
+
+session HHL_Algorithm_Search in "Search" = Compressed_Oracles +
+  description "
+    H-20: the quantum search lower bound behind HHL's Theorem 4(2), imported from the AFP entry
+    Compressed_Oracles (separate session: that entry builds on Complex_Bounded_Operators)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  theories
+    HHL_Search_Bound
+  document_files
+    "root.tex"

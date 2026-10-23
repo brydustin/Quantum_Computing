@@ -9,7 +9,7 @@ it cites are not in the AFP (\<open>Cook_Levin\<close> has only P and NP), so ea
 up to the external fact it invokes: the reduction, the measurement it needs, the speedup
 iteration, and the exponent arithmetic, with the cited lower bound as a hypothesis in the form
 the proof uses.  The quantum search bound for Theorem 4(2) is the AFP's
-\<open>Compressed_Oracles\<close> result, restated in the separate session \<open>Vern_Paulsen_QC_Search\<close>.\<close>
+\<open>Compressed_Oracles\<close> result, restated in the separate session \<open>HHL_Algorithm_Search\<close>.\<close>
 
 subsection \<open>The measurement $M_0$\<close>
 
@@ -737,7 +737,7 @@ qed
 subsection \<open>Theorem 4(2) and 4(3)\<close>
 
 text \<open>Relativised, the iteration yields a zero-finding program with polynomially many queries
-for $N=2^n$; the AFP bound $sN\le(5q+11)^2$ (session \<open>Vern_Paulsen_QC_Search\<close>, with
+for $N=2^n$; the AFP bound $sN\le(5q+11)^2$ (session \<open>HHL_Algorithm_Search\<close>, with
 $s\ge1/2-1/100$ for exhaustive search) rules this out.  The paper argues with OR; search is
 what the simulated exhaustive computation solves.\<close>
 

@@ -823,3 +823,28 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   variables (instantiate before `symmetric`); OF with a ⋀-premise needs `where K = … and p = …`.
   Paper: paragraph "Higher order" in the sparse-simulation subsection, Listing `lst:suzuki`;
   limitations updated.
+- **Three AFP entries** (2026-10-22/23; user: "(1) Functional calculus for Hermitian matrices
+  (+ product formulas (required! not optional!)) (2) Paulsen's notes, and (3) Quantum phase
+  estimation and the HHL algorithm", then "prepare each of these 3 for splitting").
+  (1) `Hermitian_Functional_Calculus/` (own ROOT, session of the same name, 5 theories): the
+  functional calculus, `Matrix_Sums`, `Trotter_Product_Formula` (was `HHL_Trotter`), `Suzuki_Order`,
+  `Suzuki_Error` (the generic part of `HHL_Suzuki`).  It builds on the AFP alone: QHLProver's
+  `hermitian` and Schur decomposition (`hermitian_eigenvalue_real`) give the spectral theorem;
+  IMD's dagger, `unitary`, norm.  Moved down from Part VI: vector norms, `op_close`, `unitary_pow`,
+  `pow_eigen`, `mult_zero_vec_right`, `spectral_decomp_eig_in_spectrum`.  Five one-line lemmas exist
+  in both this entry and the notes (`dagger_carrier`, `unitary_dagger`, `unitary_mult`,
+  `cpx_vec_length_smult`, `one_smult_mat`), reported by the check `HFC_Notes`; against the AFP
+  (`VP_Check_HFC_AFP`: Commuting_Hermitian, Projective_Measurements, Two_Hermitian_Results) one
+  duplicate, `dagger_adjoint`.  (2) Root ROOT: the notes; session `Vern_Paulsen_QC` now carries
+  the document (overview and root.tex moved from `notes_doc/` to `Day11/`; the notes PDF no longer
+  contains Part VI); `Vern_Paulsen_QC_Notes` removed; auxiliary sessions `document = false`.
+  (3) `Algorithms/ROOT`: sessions `HHL_Algorithm` (with its own document and overview table),
+  `HHL_Algorithm_Demo`, `_Channels`, `_Search` (Demo, Channels, Search moved under `Algorithms/`).
+  `ROOTS` lists the two subdirectories.  Part VI uses QHLProver's `hermitian` (bridge
+  `hermitian_notes`, `hermitian_index_cnj`); `Phase_Estimation` hides QHLProver's clashing names.
+  Traps: a `hide_const` is undone when a later theory merges a theory where the name is visible,
+  so the hides sit in the one theory that imports the new entry; the import order decides which
+  of two same-named constants an unqualified name means; `adjoint_adjoint` exists in HOL-Analysis
+  too.  `tools/afp_export.sh` assembles the entries with AFP-style ROOTs and rebuilds them fresh
+  from the export; `tools/afp_package.sh` makes the submission folders with metadata from
+  `tools/afp_meta/`.

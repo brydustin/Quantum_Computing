@@ -9,7 +9,7 @@ session VP_Check_HFC_AFP in "HFC_AFP" = Two_Hermitian_Results +
   sessions Hermitian_Functional_Calculus Commuting_Hermitian Projective_Measurements
   theories Check_HFC_AFP
 
-session VP_Check_Algorithms in "Algorithms" = Vern_Paulsen_QC_Algorithms +
+session VP_Check_Algorithms in "Algorithms" = HHL_Algorithm +
   options [document = false]
   theories Check_Algorithms
 
@@ -21,14 +21,14 @@ session VP_Check_Sylvester in "Sylvester" = Vern_Paulsen_QC_Sylvester +
   options [document = false]
   theories Check_Sylvester
 
-session VP_Check_Search in "Search" = Vern_Paulsen_QC_Search +
+session VP_Check_Search in "Search" = HHL_Algorithm_Search +
   options [document = false]
   theories Check_Search
 
-session VP_Check_Demo in "Demo" = Vern_Paulsen_QC_Demo +
+session VP_Check_Demo in "Demo" = HHL_Algorithm_Demo +
   options [document = false]
   theories Check_Demo
 
-session VP_Check_Channels in "Channels" = Vern_Paulsen_QC_Channels +
+session VP_Check_Channels in "Channels" = HHL_Algorithm_Channels +
   options [document = false]
   theories Check_Channels

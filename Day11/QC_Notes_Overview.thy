@@ -43,33 +43,6 @@ theory QC_Notes_Overview
     Vern_Paulsen_QC.Day06_15_Universal
     Vern_Paulsen_QC.Day21_Average_Conjecture
     Vern_Paulsen_QC.Day21_Average_Two
-    Vern_Paulsen_QC_Algorithms.HHL_Approximate
-    Vern_Paulsen_QC_Algorithms.HHL_Window
-    Vern_Paulsen_QC_Algorithms.HHL_Simulation
-    Vern_Paulsen_QC_Algorithms.HHL_Complete
-    Vern_Paulsen_QC_Algorithms.HHL_Filter
-    Vern_Paulsen_QC_Algorithms.HHL_Filter_Bounds
-    Vern_Paulsen_QC_Algorithms.HHL_Runtime
-    Vern_Paulsen_QC_Algorithms.HHL_Reduction
-    Vern_Paulsen_QC_Algorithms.HHL_Rectangular
-    Vern_Paulsen_QC_Algorithms.HHL_Discussion
-    Vern_Paulsen_QC_Algorithms.HHL_Optimality
-    Vern_Paulsen_QC_Algorithms.QPE_Register
-    Vern_Paulsen_QC_Algorithms.HHL_Trajectory
-    Vern_Paulsen_QC_Algorithms.HHL_Program
-    Vern_Paulsen_QC_Algorithms.HHL_Gates
-    Vern_Paulsen_QC_Algorithms.HHL_Preconditioned
-    Vern_Paulsen_QC_Algorithms.HHL_Termination
-    Vern_Paulsen_QC_Algorithms.HHL_Paper_Program
-    Vern_Paulsen_QC_Algorithms.HHL_Gate_Refinements
-    Vern_Paulsen_QC_Algorithms.HHL_Uniform_Rotation
-    Vern_Paulsen_QC_Algorithms.HHL_State_Preparation
-    Vern_Paulsen_QC_Algorithms.HHL_Sparse_Circuit
-    Vern_Paulsen_QC_Algorithms.HHL_All_Elementary
-    Vern_Paulsen_QC_Algorithms.HHL_Suzuki
-    Vern_Paulsen_QC_Algorithms.QFT_Fourier
-    Vern_Paulsen_QC_Algorithms.QPE_Precision
-    Vern_Paulsen_QC_Algorithms.QPE_Program
 begin
 
 section \<open>Reading guide\<close>
@@ -128,48 +101,15 @@ reuse earlier infrastructure.  The table gives the correspondence.
 4--29  & converse Hermitian tests, composite ensembles, Choi's four conditions, subspace codes & \texttt{Day04\_29\_Supplement}\\
 4, 21  & $0\le ww^*\le P\Rightarrow w\in R(P)$; $R(\sum w_lw_l^*)=\operatorname{span}\{w_l\}$; $\sum v_iv_i^*>0$ iff the $v_i$ span & \texttt{Day21\_Ranges}\\
 26     & CP maps as $V^*\psi(X)V$ with $\psi$ UCP and as $\psi(VXV^*)$ with $\psi$ CPTP & \texttt{Day26\_CP\_Factorization}\\
-27     & the transpose detects $\left(\begin{smallmatrix}E_{ii}&E_{ij}\\ E_{ji}&E_{jj}\end{smallmatrix}\right)$ and $(E_{ij})$ as entangled & \texttt{Day27\_Entangled\_Examples}\\\hline
---     & functional calculus $g(A)$ for Hermitian $A$; $e^{itA}$, $A^{-1}$ & \texttt{Hermitian\_Functional\_Calculus}\\
---     & the Lie--Trotter formula with error $2(mLt)^2/r$ & \texttt{Trotter\_Product\_Formula}\\
---     & order conditions for product formulas: palindromes have odd order, Suzuki's recursion $S_{2k+2}$ agrees with $e^{itH}$ to degree $2k+2$ & \texttt{Suzuki\_Order}\\
---     & Suzuki's formula over $r$ steps within $r(2|F|+1)(\Lambda|t|/r)^{2k+3}e^{\Lambda|t|/r}/(2k+3)!$ of $e^{itH}$ & \texttt{Suzuki\_Error}\\
---     & Fourier matrix, phase kickback, phase estimation (exact; $\ge4/\pi^2$) & \texttt{Phase\_Estimation}\\
---     & the AFP circuit \<open>ordered_QFT\<close> is the Fourier matrix $F_{2^n}$ & \texttt{QFT\_Fourier}\\
---     & the HHL algorithm: output state, $Ax=b$, success $\ge1/\kappa^2$, non-Hermitian $A$ & \texttt{HHL}\\
---     & inexact phase estimation: the error identity; for the clamped circuit and every $b$, $\norm{\text{output}-\text{ideal}}^2\le\frac{\pi^2}{Nt_0^2}\bigl(\frac{\theta^4}{C^2(1-\theta^2)}+\frac{16}{\lambda_{\min}^2}\bigr)\norm b^2$ & \texttt{HHL\_Approximate}\\
---     & sine-window register: amplitudes decay like $1/(N\delta)^2$; for every $b$, $\norm{\text{output}-\text{ideal}}^2\le\bigl(\frac{8\pi^2(2+\pi^2)\theta^4}{N^2t_0^2C^2(1-\theta^2)}+\frac{512\pi^6}{N^3t_0^4\lambda_{\min}^4}\bigr)\norm b^2$, so $N\sim1/\varepsilon$ suffices & \texttt{HHL\_Window}\\
---     & circuits with oracle calls: HHL makes $2(N-1)$ calls of $e^{iAt_0}$; an oracle $V$ with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most (calls)$\cdot\eta$; end to end $\norm{\text{output}-\text{ideal}}\le(\varepsilon+2(N-1)\eta)\norm b$ & \texttt{HHL\_Simulation}\\
---     & readout by post-selection, stable to $2\delta/(C\norm{A^{-1}b})$; amplitude amplification ($k$ rounds give $\sin^2((2k+1)\theta)$); the complete algorithm: success $\ge1-p$ with $k\le\pi^2/(4Ct_0)$ rounds and $(2k+1)\cdot2(N-1)$ oracle calls & \texttt{HHL\_Complete}\\
---     & the paper's filter functions and flag register; Lemma 2; Lemma 3 with the corrected constant $\pi^2$ & \texttt{HHL\_Filter}\\
---     & Theorem 1 of the HHL paper for every $b$: errors $O(\kappa/t)$, $t$ the total evolution time & \texttt{HHL\_Filter\_Bounds}\\
---     & (A32), BHMT averaging, run time in the paper's normalisation: $t=O(\kappa/\varepsilon)$, $O(\kappa)$ rounds & \texttt{HHL\_Runtime}\\
---     & the reduction from circuits to matrix inversion (Section III): $A^{-1}$, $\kappa\le2T+1$, post-selection probability $\ge1/10$ & \texttt{HHL\_Reduction}\\
---     & rectangular $A$ (App.~A4): $\left(\begin{smallmatrix}0&A\\A^*&0\end{smallmatrix}\right)$, its pseudo-inverse gives the minimum-norm and the least-squares solution & \texttt{HHL\_Rectangular}\\
---     & Section IV: $f(A)\ket b$, stability of $\langle x|M|x\rangle$, sampling, $k$ copies, the SWAP test, estimation with $3/\varepsilon^2$ samples, preconditioning & \texttt{HHL\_Discussion}\\
---     & Theorems 4--6 (App.~A5): the $M_0$ measurement, the Hermitian dilation, the first-qubit embedding, the speedup iteration and the exponent bounds; the search lower bound is imported from the AFP (separate session) & \texttt{HHL\_Optimality}\\
---     & the clock register: $H^{\otimes n}\ket{0\cdots0}$ and $F\ket0$ are uniform (AFP \texttt{Isabelle\_Marries\_Dirac}), and $H^{\otimes n}$ resets it & \texttt{QPE\_Register}\\
---     & the HHL circuit gate by gate: the state after each of the eight gates, for every $\ket b$ & \texttt{HHL\_Trajectory}\\
---     & HHL as a program of quantum Hoare logic (AFP \texttt{QHLProver}): initialisation, state preparation, circuit, measurement, repeat-until-success; success probability, correctness, termination & \texttt{HHL\_Program}\\
---     & the program in elementary gates: $H^{\otimes k}$ as $k$ Hadamards, one controlled $U^{2^j}$ per clock qubit, $F$ as the AFP gate-level Fourier circuit; same theorems; $(2k^3+16k+6)/3$ gates & \texttt{HHL\_Gates}\\
---     & the program on a preconditioned system $BAx=Bb$ via the Hermitian dilation of $BA$: output $\hat x$ for $Ax=b$, success probability $\ge(C/\norm{BA})^2$ & \texttt{HHL\_Preconditioned}\\
---     & the repeat-until-success loop terminates with probability one (total correctness); it exits after $m$ failed rounds with probability $(1-p)^mp$ in the target state; expected rounds $1/p$, $p=C^2\norm{A^{-1}b}^2$ & \texttt{HHL\_Termination}\\
---     & the paper's regime as programs: window register, inexact eigenvalues, approximate oracle, filtered version; fidelity triples, termination, amplitude amplification as a program & \texttt{HHL\_Paper\_Program}\\
---     & the rotation as one ancilla rotation per clock value; window state by one reflection; elementary Fourier gates in the amplified circuit & \texttt{HHL\_Gate\_Refinements}\\
---     & the rotation stage as a uniformly controlled rotation: Walsh--Hadamard angles, parity chains of nearest-neighbour CNOT/SWAP gates; the program and the paper-regime circuits with only elementary gates, oracle calls, $U_b$ and rotations controlled by the last clock qubit & \texttt{HHL\_Uniform\_Rotation}\\
---     & state preparation by $k$ levels of uniformly controlled rotations, all gates elementary; the sine window; the paper-regime programs with only elementary gates, controlled ancilla rotations, $U_b$ and oracle calls & \texttt{HHL\_State\_Preparation}\\
---     & an $s$-sparse Hermitian matrix as its diagonal plus $2s-1$ one-sparse parts; sparse Trotter error $8(sLt)^2/r$ & \texttt{HHL\_Sparse\_Split}\\
---     & the sparse simulation oracle as a verified circuit with $r(6s-2)$ queries, plugged into the HHL error bound & \texttt{HHL\_Sparse\_Circuit}\\
---     & for $n=2^s$ every gate of HHL elementary or an oracle call; every $\ket b$ prepared in elementary gates; exact universality & \texttt{HHL\_All\_Elementary}\\
---     & Suzuki's formula plugged into the HHL error bound; for $s$-sparse $A$ over the one-sparse parts & \texttt{HHL\_Suzuki}\\
---     & the textbook precision of phase estimation: outcomes more than $e/N$ from $\varphi$ have probability $\le1/(2(e-1))$; $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits give $n$ bits with probability $\ge1-\varepsilon$ & \texttt{QPE\_Precision}\\
---     & phase estimation as a program of quantum Hoare logic: the exact weakest precondition of every clock outcome; exact phases, the $4/\pi^2$ bound, the tail and the precision as triples; the same in elementary gates & \texttt{QPE\_Program}\\
+27     & the transpose detects $\left(\begin{smallmatrix}E_{ii}&E_{ij}\\ E_{ji}&E_{jj}\end{smallmatrix}\right)$ and $(E_{ij})$ as entangled & \texttt{Day27\_Entangled\_Examples}\\
 \end{tabular}
 \end{center}
 
 The theories of the second and third blocks (shared lemmas in \texttt{QC\_Prelims}) close
 the gaps recorded by the first and second audits; the remaining unformalised items are listed in
-\texttt{NOTES\_AUDIT.md}.  The last block, Part~VI, goes beyond the notes (session
-\texttt{Vern\_Paulsen\_QC\_Algorithms}).
+\texttt{NOTES\_AUDIT.md}.  The companion AFP entries \emph{Hermitian Functional Calculus} and
+\emph{HHL Algorithm} go beyond the notes: the functional calculus and product formulas, quantum
+phase estimation and the HHL algorithm.
 \<close>
 
 section \<open>Conventions\<close>

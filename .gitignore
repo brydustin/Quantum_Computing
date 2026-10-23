@@ -45,6 +45,10 @@ Applied_Math_Formalization/
 
 # generated notes document
 notes_doc/output/
+Day11/output/
+Hermitian_Functional_Calculus/output/
+Algorithms/output/
+Algorithms/*/output/
 Sylvester/output/
 
 # check reports

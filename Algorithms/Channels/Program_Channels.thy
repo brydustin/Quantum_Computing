@@ -1,11 +1,11 @@
 theory Program_Channels
   imports Vern_Paulsen_QC.Day32_Recovery_Proposition Vern_Paulsen_QC.Day23_ChoiExtremeUCP
-    Vern_Paulsen_QC.Day22_Adjoint_Maps Vern_Paulsen_QC_Algorithms.HHL_Program
+    Vern_Paulsen_QC.Day22_Adjoint_Maps HHL_Algorithm.HHL_Program
 begin
 
 section \<open>Loop-free programs are channels\<close>
 
-text \<open>The programs of Part VI are commands of the quantum while-language of AFP \<open>QHLProver\<close>, whose
+text \<open>The programs of \<open>HHL_Algorithm\<close> are commands of the quantum while-language of AFP \<open>QHLProver\<close>, whose
 meaning is a map on density matrices.  For a program without loops this map is the Kraus map
 $\rho\mapsto\sum_i K_i\rho K_i^*$ of the lectures (Lecture 19), with Kraus operators read off the
 program: a gate $U$ gives $U$; a sequence gives the products $BA$ (\<^const>\<open>kraus_compose\<close> of
@@ -189,7 +189,7 @@ qed
 
 end
 
-text \<open>The HHL program of Part VI is a channel on the clock, system and ancilla registers.\<close>
+text \<open>The HHL program is a channel on the clock, system and ancilla registers.\<close>
 
 theorem hhl_program_channel:
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k :: nat and t0 C :: real

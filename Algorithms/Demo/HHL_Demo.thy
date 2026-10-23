@@ -1,5 +1,5 @@
 theory HHL_Demo
-  imports Vern_Paulsen_QC_Algorithms.HHL_Program Jordan_Normal_Form.Matrix_IArray_Impl Real_Impl.Real_Unique_Impl
+  imports HHL_Algorithm.HHL_Program Jordan_Normal_Form.Matrix_IArray_Impl Real_Impl.Real_Unique_Impl
 begin
 
 section \<open>Running HHL on a $2\times2$ system\<close>
