@@ -20,7 +20,8 @@ Submitting: https://isa-afp.org/submission/ — entries 1 and 2 are independent 
 (or together with 3); entry 3 needs both, so mention in its comment that they were submitted at
 the same time.  Before submitting, decide the open points:
 
-- entry names (`Vern_Paulsen_QC`, `HHL_Algorithm`) and titles are suggestions;
+- entry names (`Vern_Paulsen_QC`, `HHL_Algorithm`) are suggestions; the title of entry 2 is fixed
+  ("Lectures on Quantum Computing and Completely Positive Maps"), those of entries 1 and 3 are suggestions;
 - ask Vern Paulsen whether he agrees with an entry built on, and named after, his notes;
 - the topics are suggestions from the AFP's topic list;
 - the license is BSD in all three (the AFP's default; LGPL is the other option).
