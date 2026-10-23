@@ -8,11 +8,11 @@ text \<open>The notes state Choi's Theorem 3 for UCP maps; @{thm [source] choi_t
 the CPTP form.  The UCP form follows by the duality of Day 22: $\Gamma(\Phi)=\Phi^*$ maps midpoint
 decompositions of a UCP map to midpoint decompositions of its adjoint and back
 (\<open>extreme_UCP_iff_adjoint\<close>), and the Kraus operators of $\Phi^*$ are the adjoints $W_i^*$,
-which are linearly independent with the $W_i$.  Extremality is the carrier-point notion used for
-CPTP maps.\<close>
+which are linearly independent with the $W_i$.  As for CPTP maps,
+extremality compares maps on $M_n$.\<close>
 
 text \<open>The UCP-side midpoint relation and extremality, mirroring \<^const>\<open>cptp_pair_mid\<close> and
-\<^const>\<open>extreme_CPTP_carrier\<close>.\<close>
+\<^const>\<open>extreme_CPTP\<close>.\<close>
 
 definition ucp_pair_mid ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat)
@@ -26,8 +26,8 @@ definition ucp_pair_mid ::
      (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
      (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
 
-definition extreme_UCP_carrier :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
-  "extreme_UCP_carrier n d \<Phi> \<equiv> \<Phi> \<in> UCP n d \<and> \<not> (\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. ucp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2)"
+definition extreme_UCP :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
+  "extreme_UCP n d \<Phi> \<equiv> \<Phi> \<in> UCP n d \<and> \<not> (\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. ucp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2)"
 
 lemma lin_on_from_carrier:
   assumes "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X \<in> carrier_mat d d" "lin_on_carrier n \<Phi>"
@@ -145,8 +145,8 @@ qed
 
 theorem extreme_UCP_iff_adjoint:
   assumes L: "lin_on n d (carrier_mat n n) \<Phi>" and U: "\<Phi> \<in> UCP n d" and n: "0 < n" and d: "0 < d"
-  shows "extreme_UCP_carrier n d \<Phi> \<longleftrightarrow> extreme_CPTP_carrier d n (map_adjoint n d \<Phi>)"
-  unfolding extreme_UCP_carrier_def extreme_CPTP_carrier_def
+  shows "extreme_UCP n d \<Phi> \<longleftrightarrow> extreme_CPTP d n (map_adjoint n d \<Phi>)"
+  unfolding extreme_UCP_def extreme_CPTP_def
   using U adjoint_ucp_imp_cptp[OF L U n d] ucp_mid_imp_cptp_mid[OF L _ n d] cptp_mid_imp_ucp_mid[OF L _ n d] by blast
 
 text \<open>Linear independence passes to the adjoints: $\sum_kc_kW_k^*=0$ gives $\sum_k\bar c_kW_k=0$.\<close>
@@ -227,7 +227,7 @@ theorem choi_theorem_3_ucp:
       and Wc: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
       and rep: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = kraus_map_dim d Ws X"
       and li: "lin_indep_complex_mat d n Ws"
-  shows "extreme_UCP_carrier n d \<Phi> \<longleftrightarrow> mat_lin_indep_complex d (kraus_products (map (\<lambda>W. W\<^sup>\<dagger>) Ws))"
+  shows "extreme_UCP n d \<Phi> \<longleftrightarrow> lin_indep_complex_mat d d (kraus_products (map (\<lambda>W. W\<^sup>\<dagger>) Ws))"
 proof -
   have L: "lin_on n d (carrier_mat n n) \<Phi>"
     using kraus_lin_on[OF Wc] rep unfolding lin_on_def by (simp add: add_carrier_mat smult_carrier_mat)
@@ -242,7 +242,7 @@ proof -
   have un: "kraus_map_dim d Ws (1\<^sub>m n) = 1\<^sub>m d" using U rep[of "1\<^sub>m n"] by (simp add: UCP_def unital_map_def)
   have krep: "cptp_kraus_rep d n ?A ?Vs"
     unfolding cptp_kraus_rep_def using kraus_operators_dagger_of_unital[OF Wc un] adj by blast
-  have "extreme_CPTP_carrier d n ?A \<longleftrightarrow> mat_lin_indep_complex d (kraus_products ?Vs)"
+  have "extreme_CPTP d n ?A \<longleftrightarrow> lin_indep_complex_mat d d (kraus_products ?Vs)"
     by (rule choi_theorem_3_cptp_iff[OF d n adjoint_ucp_imp_cptp[OF L U n d] krep lin_indep_complex_mat_dagger[OF li]])
   thus ?thesis using extreme_UCP_iff_adjoint[OF L U n d] by simp
 qed

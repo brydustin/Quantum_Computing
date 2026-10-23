@@ -34,53 +34,14 @@ and $X\mapsto\diag(X)$ are not.
 
 What is formalised here is the corollary, i.e. the CPTP form, for a fixed Kraus list
 \<open>Vs\<close> of linearly independent operators (the consequence of $r=\crk(\Phi)$ proved on
-Day 22): extremality (in the carrier sense \<open>extreme_CPTP_carrier\<close>) holds if and only if
+Day 22): extremality (\<open>extreme_CPTP\<close>, comparing maps on $M_n$) holds if and only if
 the products $V_j^\dagger V_i$ are linearly independent over $\C$
 (\<open>choi_theorem_3_cptp_iff\<close>).  The direction ($\Rightarrow$) follows the notes' perturbation argument
 (\<open>kraus_quad_map\<close>, \<open>small_eps_psd\<close>); the direction ($\Leftarrow$) replaces Choi 2 by a
 CP Radon--Nikodym theorem proved below from the Moore--Penrose pseudoinverse of the Choi
 matrix.  Unitary freedom itself is \<open>choi_2_unitary_freedom\<close> in \<open>Day21_Unitary_Freedom\<close>,
 proved afterwards and independently of this theory; the examples are in theory
-Day23\_Extremality\_Examples (the UCP form is not formalised).\<close>
-
-
-subsection \<open>Extreme UCP maps\<close>
-
-text \<open>An \<^emph>\<open>extreme UCP map\<close> is one that cannot be written as a
-proper convex combination of two distinct UCP maps.  Following
-Day-22's \<open>extreme_point_mat\<close>, we use the half-half mid-point
-formulation; this is equivalent to the standard definition for
-convex sets.\<close>
-
-definition extreme_UCP ::
-  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
-where
-  "extreme_UCP n d \<Phi> \<equiv>
-     \<Phi> \<in> UCP n d \<and>
-     \<not> (\<exists>\<Phi>\<^sub>1 \<in> UCP n d. \<exists>\<Phi>\<^sub>2 \<in> UCP n d.
-           \<Phi>\<^sub>1 \<noteq> \<Phi> \<and> \<Phi> \<noteq> \<Phi>\<^sub>2 \<and>
-           (\<forall>X. X \<in> carrier_mat n n
-                  \<longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
-                            + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X))"
-
-lemma extreme_UCP_member:
-  assumes "extreme_UCP n d \<Phi>"
-  shows "\<Phi> \<in> UCP n d"
-  using assms unfolding extreme_UCP_def by simp
-
-text \<open>An extreme UCP map has no non-trivial midpoint decomposition.\<close>
-
-lemma extreme_UCP_no_split:
-  assumes ext: "extreme_UCP n d \<Phi>"
-      and \<Phi>1_in: "\<Phi>\<^sub>1 \<in> UCP n d"
-      and \<Phi>2_in: "\<Phi>\<^sub>2 \<in> UCP n d"
-      and \<Phi>1_neq: "\<Phi>\<^sub>1 \<noteq> \<Phi>"
-      and \<Phi>2_neq: "\<Phi> \<noteq> \<Phi>\<^sub>2"
-  shows "\<exists>X \<in> carrier_mat n n.
-            \<Phi> X \<noteq> (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
-                  + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X"
-  using ext \<Phi>1_in \<Phi>2_in \<Phi>1_neq \<Phi>2_neq
-  unfolding extreme_UCP_def by blast
+Day23\_Extremality\_Examples and the UCP form in Day23\_Choi3\_UCP.\<close>
 
 
 subsection \<open>UCP-Kraus representation\<close>
@@ -115,74 +76,17 @@ where
      concat (map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<length Vs])
                  [0..<length Vs])"
 
-text \<open>Real linear independence for a list of complex matrices.
-A list \<open>Bs\<close> is independent over \<open>\<real>\<close> iff the only \<open>\<real>\<close>-coefficients
-making \<open>\<Sum>\<^sub>k c\<^sub>k B\<^sub>k = 0\<close> are all zero.  We use the real-coefficient
-form because Choi's perturbation argument constructs real
-combinations of hermitian generators.\<close>
+text \<open>Linear independence over $\C$ of a list of $d\times n$ matrices.\<close>
 
-definition mat_lin_indep_real ::
-  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
+definition lin_indep_complex_mat ::
+  "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
 where
-  "mat_lin_indep_real n Bs \<equiv>
-     (\<forall>B \<in> set Bs. B \<in> carrier_mat n n) \<and>
-     (\<forall>c :: nat \<Rightarrow> real.
-        foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs!k) + acc)
-              [0..<length Bs] (0\<^sub>m n n)
-          = 0\<^sub>m n n
-        \<longrightarrow> (\<forall>k < length Bs. c k = 0))"
-
-text \<open>Complex linear independence: the classical Choi statement uses
-\<^bold>\<open>complex\<close>-coefficient linear independence. This is strictly stronger
-than @{const mat_lin_indep_real}.\<close>
-
-definition mat_lin_indep_complex ::
-  "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
-where
-  "mat_lin_indep_complex n Bs \<equiv>
-     (\<forall>B \<in> set Bs. B \<in> carrier_mat n n) \<and>
+  "lin_indep_complex_mat d n Ws \<equiv>
+     (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
      (\<forall>c :: nat \<Rightarrow> complex.
-        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs!k) + acc)
-              [0..<length Bs] (0\<^sub>m n n)
-          = 0\<^sub>m n n
-        \<longrightarrow> (\<forall>k < length Bs. c k = 0))"
-
-text \<open>Complex linear independence implies real.\<close>
-
-lemma mat_lin_indep_complex_imp_real:
-  assumes "mat_lin_indep_complex n Bs"
-  shows "mat_lin_indep_real n Bs"
-proof -
-  have carr: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n"
-    using assms unfolding mat_lin_indep_complex_def by simp
-  have body: "\<And>c :: nat \<Rightarrow> real.
-                foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs!k) + acc)
-                      [0..<length Bs] (0\<^sub>m n n)
-                  = 0\<^sub>m n n
-                \<Longrightarrow> (\<forall>k < length Bs. c k = 0)"
-  proof -
-    fix c :: "nat \<Rightarrow> real"
-    assume foldr_zero: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs!k) + acc)
-                              [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n"
-    let ?c_complex = "\<lambda>k. complex_of_real (c k)"
-    have foldr_complex: "foldr (\<lambda>k acc. ?c_complex k \<cdot>\<^sub>m (Bs!k) + acc)
-                                 [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n"
-      using foldr_zero by simp
-    have univ: "\<forall>c :: nat \<Rightarrow> complex.
-                  foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs!k) + acc)
-                        [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n
-                  \<longrightarrow> (\<forall>k < length Bs. c k = 0)"
-      using assms unfolding mat_lin_indep_complex_def by simp
-    have all_zero: "\<forall>k < length Bs. complex_of_real (c k) = 0"
-      using spec[OF univ, where x = "\<lambda>k. complex_of_real (c k)"]
-            foldr_complex by blast
-    show "\<forall>k < length Bs. c k = 0"
-      using all_zero by (metis of_real_eq_0_iff)
-  qed
-  show ?thesis
-    unfolding mat_lin_indep_real_def using carr body by metis
-qed
-
+        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Ws!k) + acc) [0..<length Ws] (0\<^sub>m d n)
+            = 0\<^sub>m d n
+        \<longrightarrow> (\<forall>k < length Ws. c k = 0))"
 
 subsection \<open>Unital condition from the Kraus list\<close>
 
@@ -1614,9 +1518,8 @@ subsection \<open>Symmetric / anti-hermitian split of the coefficient matrix\<cl
 
 text \<open>The \<^emph>\<open>dual\<close> linear combination
 \<open>kraus_pair_sum n Vs A = \<Sum>\<^sub>{i,j} A\<^sub>{ij} V\<^sub>j\<^sup>\<dagger> V\<^sub>i\<close>
-is an \<open>n \<times> n\<close> matrix. The dependence assumption
-\<open>\<not> mat_lin_indep_real n (kraus_products Vs)\<close> says that some real-coefficient
-\<open>A\<close> makes this sum vanish.\<close>
+is an \<open>n \<times> n\<close> matrix. A dependence among the products is a
+non-zero coefficient matrix $A$ for which this sum vanishes.\<close>
 
 definition kraus_pair_row ::
   "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
@@ -1936,221 +1839,7 @@ proof (rule eq_matI)
 qed
 
 
-text \<open>Existence of a hermitian witness: if \<open>A_orig\<close> (with real entries)
-gives \<open>kraus_pair_sum n Vs A_orig = 0\<close> and \<open>A_orig \<noteq> 0\<close>, then either
-the symmetric or the anti-hermitian part yields a non-zero hermitian
-matrix with the same property.\<close>
-
-lemma sym_or_antisym_witness:
-  fixes A_orig :: "complex Matrix.mat"
-  assumes Vs_c:  "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and A_c:   "A_orig \<in> carrier_mat (length Vs) (length Vs)"
-      and A_real: "\<And>i j. i < length Vs \<Longrightarrow> j < length Vs \<Longrightarrow>
-                      cnj (A_orig $$ (i, j)) = A_orig $$ (i, j)"
-      and A_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-      and A_nontriv: "A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)"
-  shows "\<exists>H. H \<in> carrier_mat (length Vs) (length Vs)
-           \<and> hermitian H
-           \<and> H \<noteq> 0\<^sub>m (length Vs) (length Vs)
-           \<and> kraus_pair_sum n Vs H = 0\<^sub>m n n"
-proof -
-  let ?k = "length Vs"
-  let ?Atr = "Matrix.mat ?k ?k (\<lambda>(i,j). cnj (A_orig $$ (j, i)))"
-  have Atr_c: "?Atr \<in> carrier_mat ?k ?k" by simp
-  \<comment> \<open>For real \<open>A_orig\<close>, \<open>?Atr\<close> coincides with the transpose.\<close>
-  have Atr_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                   ?Atr $$ (i, j) = A_orig $$ (j, i)"
-    using A_real by auto
-  \<comment> \<open>By the dagger identity, the pair-sum of \<open>?Atr\<close> also vanishes.\<close>
-  have pairsum_Atr: "kraus_pair_sum n Vs ?Atr = 0\<^sub>m n n"
-  proof -
-    have "kraus_pair_sum n Vs ?Atr = (kraus_pair_sum n Vs A_orig)\<^sup>\<dagger>"
-      using kraus_pair_sum_dagger[OF Vs_c A_c] by simp
-    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)\<^sup>\<dagger>"
-      using A_zero by simp
-    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)"
-      by (rule eq_matI) (auto simp: dagger_def)
-    finally show ?thesis .
-  qed
-  define Asym  where "Asym  = A_orig + ?Atr"
-  define Askew where "Askew = A_orig + (-1) \<cdot>\<^sub>m ?Atr"
-  define Hskew where "Hskew = \<i> \<cdot>\<^sub>m Askew"
-  have Asym_c:  "Asym  \<in> carrier_mat ?k ?k" unfolding Asym_def using A_c Atr_c by auto
-  have nAtr_c: "(-1::complex) \<cdot>\<^sub>m ?Atr \<in> carrier_mat ?k ?k" using Atr_c by auto
-  have Askew_c: "Askew \<in> carrier_mat ?k ?k" unfolding Askew_def using A_c nAtr_c by auto
-  have Hskew_c: "Hskew \<in> carrier_mat ?k ?k" unfolding Hskew_def using Askew_c by auto
-  \<comment> \<open>Pair-sum of \<open>Asym\<close> and \<open>Askew\<close> vanish.\<close>
-  have ps_Asym: "kraus_pair_sum n Vs Asym = 0\<^sub>m n n"
-  proof -
-    have "kraus_pair_sum n Vs Asym
-            = kraus_pair_sum n Vs A_orig + kraus_pair_sum n Vs ?Atr"
-      unfolding Asym_def by (rule kraus_pair_sum_add_A[OF Vs_c A_c Atr_c])
-    also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n"
-      using A_zero pairsum_Atr by simp
-    also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n"
-      by (rule eq_matI) auto
-    finally show ?thesis .
-  qed
-  have ps_Hskew: "kraus_pair_sum n Vs Hskew = 0\<^sub>m n n"
-  proof -
-    have ps_nAtr: "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr) = 0\<^sub>m n n"
-    proof -
-      have "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr)
-              = (-1::complex) \<cdot>\<^sub>m kraus_pair_sum n Vs ?Atr"
-        by (rule kraus_pair_sum_smult_A[OF Vs_c Atr_c])
-      also have "\<dots> = (-1::complex) \<cdot>\<^sub>m 0\<^sub>m n n"
-        using pairsum_Atr by simp
-      also have "\<dots> = 0\<^sub>m n n"
-        by (rule eq_matI) auto
-      finally show ?thesis .
-    qed
-    have ps_Askew: "kraus_pair_sum n Vs Askew = 0\<^sub>m n n"
-    proof -
-      have "kraus_pair_sum n Vs Askew
-              = kraus_pair_sum n Vs A_orig
-                + kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr)"
-        unfolding Askew_def
-        by (rule kraus_pair_sum_add_A[OF Vs_c A_c nAtr_c])
-      also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n"
-        using A_zero ps_nAtr by simp
-      also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n"
-        by (rule eq_matI) auto
-      finally show ?thesis .
-    qed
-    have "kraus_pair_sum n Vs Hskew
-            = \<i> \<cdot>\<^sub>m kraus_pair_sum n Vs Askew"
-      unfolding Hskew_def
-      by (rule kraus_pair_sum_smult_A[OF Vs_c Askew_c])
-    also have "\<dots> = \<i> \<cdot>\<^sub>m 0\<^sub>m n n"
-      using ps_Askew by simp
-    also have "\<dots> = 0\<^sub>m n n"
-      by (rule eq_matI) auto
-    finally show ?thesis .
-  qed
-  \<comment> \<open>Hermitian-ness.\<close>
-  have herm_Asym: "hermitian Asym"
-    unfolding hermitian_def
-  proof (rule eq_matI)
-    show "dim_row (Asym\<^sup>\<dagger>) = dim_row Asym" using Asym_c by simp
-    show "dim_col (Asym\<^sup>\<dagger>) = dim_col Asym" using Asym_c by simp
-    fix i j assume "i < dim_row Asym" "j < dim_col Asym"
-    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Asym_c by auto
-    have Atr_ij: "?Atr $$ (i, j) = cnj (A_orig $$ (j, i))"
-      using i_lt j_lt by simp
-    have Atr_ji: "?Atr $$ (j, i) = cnj (A_orig $$ (i, j))"
-      using i_lt j_lt by simp
-    have Asym_ij: "Asym $$ (i, j) = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))"
-      unfolding Asym_def using i_lt j_lt A_c Atr_c Atr_ij by simp
-    have Asym_ji: "Asym $$ (j, i) = A_orig $$ (j, i) + cnj (A_orig $$ (i, j))"
-      unfolding Asym_def using i_lt j_lt A_c Atr_c Atr_ji by simp
-    have "Asym\<^sup>\<dagger> $$ (i, j) = cnj (Asym $$ (j, i))"
-      using i_lt j_lt Asym_c by (simp add: dagger_def)
-    also have "\<dots> = cnj (A_orig $$ (j, i) + cnj (A_orig $$ (i, j)))"
-      using Asym_ji by simp
-    also have "\<dots> = cnj (A_orig $$ (j, i)) + A_orig $$ (i, j)"
-      by simp
-    also have "\<dots> = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))"
-      by simp
-    also have "\<dots> = Asym $$ (i, j)"
-      using Asym_ij by simp
-    finally show "Asym\<^sup>\<dagger> $$ (i, j) = Asym $$ (i, j)" .
-  qed
-  have herm_Hskew: "hermitian Hskew"
-    unfolding hermitian_def
-  proof (rule eq_matI)
-    show "dim_row (Hskew\<^sup>\<dagger>) = dim_row Hskew" using Hskew_c by simp
-    show "dim_col (Hskew\<^sup>\<dagger>) = dim_col Hskew" using Hskew_c by simp
-    fix i j assume "i < dim_row Hskew" "j < dim_col Hskew"
-    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Hskew_c by auto
-    have As_idx: "Askew $$ (i, j) = A_orig $$ (i, j) - A_orig $$ (j, i)"
-      unfolding Askew_def using i_lt j_lt A_c Atr_c Atr_idx by simp
-    have As_idx_swap: "Askew $$ (j, i) = A_orig $$ (j, i) - A_orig $$ (i, j)"
-      unfolding Askew_def using i_lt j_lt A_c Atr_c Atr_idx by simp
-    have "Hskew\<^sup>\<dagger> $$ (i, j) = cnj (Hskew $$ (j, i))"
-      using i_lt j_lt Hskew_c by (simp add: dagger_def)
-    also have "\<dots> = cnj (\<i> * Askew $$ (j, i))"
-      unfolding Hskew_def using i_lt j_lt Askew_c by simp
-    also have "\<dots> = - \<i> * cnj (Askew $$ (j, i))"
-      by (simp add: complex_cnj_mult)
-    also have "\<dots> = - \<i> * (A_orig $$ (j, i) - A_orig $$ (i, j))"
-      using As_idx_swap A_real[OF i_lt j_lt] A_real[OF j_lt i_lt] by simp
-    also have "\<dots> = \<i> * (A_orig $$ (i, j) - A_orig $$ (j, i))"
-      by (simp add: algebra_simps)
-    also have "\<dots> = \<i> * Askew $$ (i, j)"
-      using As_idx by simp
-    also have "\<dots> = Hskew $$ (i, j)"
-      unfolding Hskew_def using i_lt j_lt Askew_c by simp
-    finally show "Hskew\<^sup>\<dagger> $$ (i, j) = Hskew $$ (i, j)" .
-  qed
-  \<comment> \<open>At least one is non-zero.\<close>
-  show ?thesis
-  proof (cases "Asym = 0\<^sub>m ?k ?k")
-    case False
-    \<comment> \<open>Use the symmetric part.\<close>
-    show ?thesis using Asym_c herm_Asym False ps_Asym by blast
-  next
-    case True
-    \<comment> \<open>\<open>Asym = 0\<close> means \<open>A_orig + transpose A_orig = 0\<close>, so \<open>A_orig\<close> is skew.
-        Then \<open>Hskew = \<i> \<cdot> 2A_orig \<noteq> 0\<close>.\<close>
-    have At_eq_neg: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                      A_orig $$ (j, i) = - A_orig $$ (i, j)"
-    proof -
-      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
-      have "Asym $$ (i, j) = 0"
-        using True i_lt j_lt by simp
-      hence "A_orig $$ (i, j) + ?Atr $$ (i, j) = 0"
-        unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
-      hence eq0: "A_orig $$ (i, j) + A_orig $$ (j, i) = 0"
-        using Atr_idx[OF i_lt j_lt] by simp
-      hence "- A_orig $$ (i, j) = A_orig $$ (j, i)"
-        by (rule minus_unique)
-      thus "A_orig $$ (j, i) = - A_orig $$ (i, j)" by simp
-    qed
-    have Askew_eq_2A: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                         Askew $$ (i, j) = 2 * A_orig $$ (i, j)"
-    proof -
-      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
-      have "Askew $$ (i, j) = A_orig $$ (i, j) - A_orig $$ (j, i)"
-        unfolding Askew_def using i_lt j_lt A_c Atr_c Atr_idx by simp
-      also have "\<dots> = A_orig $$ (i, j) - (- A_orig $$ (i, j))"
-        using At_eq_neg[OF i_lt j_lt] by simp
-      also have "\<dots> = 2 * A_orig $$ (i, j)" by simp
-      finally show "Askew $$ (i, j) = 2 * A_orig $$ (i, j)" .
-    qed
-    have Hskew_nz: "Hskew \<noteq> 0\<^sub>m ?k ?k"
-    proof
-      assume Hzero: "Hskew = 0\<^sub>m ?k ?k"
-      have all_zero: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A_orig $$ (i, j) = 0"
-      proof -
-        fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
-        have "Hskew $$ (i, j) = 0"
-          using Hzero i_lt j_lt by simp
-        hence "\<i> * Askew $$ (i, j) = 0"
-          unfolding Hskew_def using i_lt j_lt Askew_c by simp
-        hence "\<i> * (2 * A_orig $$ (i, j)) = 0"
-          using Askew_eq_2A[OF i_lt j_lt] by simp
-        thus "A_orig $$ (i, j) = 0" by simp
-      qed
-      have "A_orig = 0\<^sub>m ?k ?k"
-      proof (rule eq_matI)
-        show "dim_row A_orig = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
-          using A_c by simp
-        show "dim_col A_orig = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
-          using A_c by simp
-        fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
-                       "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
-        hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
-        show "A_orig $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
-          using all_zero[OF i_lt j_lt] i_lt j_lt by simp
-      qed
-      thus False using A_nontriv by simp
-    qed
-    show ?thesis using Hskew_c herm_Hskew Hskew_nz ps_Hskew by blast
-  qed
-qed
-
-
-subsection \<open>Bridge: \<open>\<not> mat_lin_indep_real\<close> gives a real \<open>A_orig\<close> witness\<close>
+subsection \<open>From a dependence among the products to a Hermitian coefficient matrix\<close>
 
 text \<open>Generic concat-nth for uniform-length rows.\<close>
 
@@ -2288,157 +1977,14 @@ proof -
   thus ?thesis by (simp add: atLeast0LessThan)
 qed
 
-text \<open>The main bridge: a non-trivial real dependence yields a real,
-non-zero matrix \<open>A_orig\<close> for which @{const kraus_pair_sum} vanishes.\<close>
-
-lemma mat_lin_indep_real_neg_witness:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and npos: "0 < n"
-      and dep: "\<not> mat_lin_indep_real n (kraus_products Vs)"
-  shows "\<exists>A_orig :: complex Matrix.mat.
-            A_orig \<in> carrier_mat (length Vs) (length Vs)
-          \<and> (\<forall>i j. i < length Vs \<longrightarrow> j < length Vs \<longrightarrow>
-                cnj (A_orig $$ (i, j)) = A_orig $$ (i, j))
-          \<and> A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)
-          \<and> kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-proof -
-  let ?k = "length Vs"
-  let ?L = "?k * ?k"
-  let ?B = "kraus_products Vs"
-  have B_c: "\<forall>B \<in> set ?B. B \<in> carrier_mat n n"
-    by (rule kraus_products_carrier[OF Vs_c])
-  have B_len: "length ?B = ?L"
-    by (simp add: length_kraus_products)
-  \<comment> \<open>From the negation, extract coefficients.\<close>
-  from dep have "\<not> ((\<forall>B \<in> set ?B. B \<in> carrier_mat n n) \<and>
-                    (\<forall>c :: nat \<Rightarrow> real.
-                       foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
-                             [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n
-                       \<longrightarrow> (\<forall>k < length ?B. c k = 0)))"
-    unfolding mat_lin_indep_real_def .
-  with B_c obtain c :: "nat \<Rightarrow> real" where
-        c_fold: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
-                       [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
-    and c_nontriv: "\<exists>k < length ?B. c k \<noteq> 0"
-    by blast
-  obtain k0 where k0_lt: "k0 < ?L" and c_k0: "c k0 \<noteq> 0"
-    using c_nontriv B_len by auto
-  define i0 where "i0 = k0 div ?k"
-  define j0 where "j0 = k0 mod ?k"
-  have k_pos: "0 < ?k"
-    using k0_lt by (cases ?k) auto
-  have i0_lt: "i0 < ?k"
-    unfolding i0_def using k0_lt k_pos by (simp add: less_mult_imp_div_less)
-  have j0_lt: "j0 < ?k"
-    unfolding j0_def using k_pos by simp
-  have k0_decomp: "k0 = i0 * ?k + j0"
-    unfolding i0_def j0_def by simp
-  \<comment> \<open>Build the real matrix.\<close>
-  define A_orig where
-    "A_orig = Matrix.mat ?k ?k (\<lambda>(i, j). complex_of_real (c (i * ?k + j)))"
-  have A_c: "A_orig \<in> carrier_mat ?k ?k"
-    unfolding A_orig_def by simp
-  have A_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                  A_orig $$ (i, j) = complex_of_real (c (i * ?k + j))"
-    unfolding A_orig_def by simp
-  have A_real: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                   cnj (A_orig $$ (i, j)) = A_orig $$ (i, j)"
-    using A_idx by simp
-  \<comment> \<open>\<open>A_orig\<close> is non-zero at \<open>(i0, j0)\<close>.\<close>
-  have A_nontriv: "A_orig \<noteq> 0\<^sub>m ?k ?k"
-  proof
-    assume "A_orig = 0\<^sub>m ?k ?k"
-    hence "A_orig $$ (i0, j0) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i0, j0)"
-      by simp
-    hence "complex_of_real (c k0) = 0"
-      using A_idx[OF i0_lt j0_lt] k0_decomp i0_lt j0_lt by simp
-    hence "c k0 = 0" by simp
-    thus False using c_k0 by simp
-  qed
-  \<comment> \<open>The crucial per-entry equality.\<close>
-  have pair_sum_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-  proof (rule eq_matI)
-    let ?S = "kraus_pair_sum n Vs A_orig"
-    have S_c: "?S \<in> carrier_mat n n"
-      by (rule kraus_pair_sum_carrier[OF Vs_c])
-    show "dim_row ?S = dim_row (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
-    show "dim_col ?S = dim_col (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
-    fix r c1 assume r_a: "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)"
-                and c_a: "c1 < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
-    hence r_lt: "r < n" and c_lt: "c1 < n" by auto
-    \<comment> \<open>LHS via \<open>kraus_pair_sum_index\<close>.\<close>
-    have lhs_idx: "?S $$ (r, c1)
-                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                          A_orig $$ (i, j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
-      using kraus_pair_sum_index[OF Vs_c r_lt c_lt] .
-    \<comment> \<open>Substitute the def of \<open>A_orig\<close>.\<close>
-    have lhs_idx': "?S $$ (r, c1)
-                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                           complex_of_real (c (i * ?k + j))
-                             * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
-      using lhs_idx by (auto intro!: sum.cong simp: A_idx)
-    \<comment> \<open>Reindex the foldr to a double sum.\<close>
-    have foldr_idx: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
-                            [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
-                     = (\<Sum>\<kappa> = 0..<?L.
-                          complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1))"
-    proof -
-      have step: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
-                         [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
-                    = (\<Sum>k = 0..<length ?B.
-                         complex_of_real (c k) * (?B!k) $$ (r, c1))"
-        using foldr_smult_nth_index[OF B_c r_lt c_lt] .
-      show ?thesis using step B_len by simp
-    qed
-    \<comment> \<open>The foldr equals zero by \<open>c_fold\<close>.\<close>
-    have foldr_zero: "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (?B!k) + acc)
-                              [0..<length ?B] (0\<^sub>m n n) $$ (r, c1) = 0"
-      using c_fold r_lt c_lt by simp
-    \<comment> \<open>So the sum vanishes.\<close>
-    have sum_kappa_zero: "(\<Sum>\<kappa> = 0..<?L.
-                            complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1)) = 0"
-      using foldr_idx foldr_zero by simp
-    \<comment> \<open>Apply reindex.\<close>
-    have sum_decomp: "(\<Sum>\<kappa> = 0..<?L.
-                         complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1))
-                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                          complex_of_real (c (i * ?k + j))
-                            * (?B!(i * ?k + j)) $$ (r, c1))"
-      by (rule sum_split_prod_atLeastLessThan)
-    \<comment> \<open>Substitute the formula for \<open>kraus_products\<close> at index \<open>i*k+j\<close>.\<close>
-    have inner_eq: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                      (?B!(i * ?k + j)) $$ (r, c1)
-                      = ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1)"
-      using kraus_products_nth by metis
-    have sum_decomp': "(\<Sum>\<kappa> = 0..<?L.
-                          complex_of_real (c \<kappa>) * (?B!\<kappa>) $$ (r, c1))
-                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                          complex_of_real (c (i * ?k + j))
-                            * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
-      using sum_decomp by (auto intro!: sum.cong simp: inner_eq)
-    \<comment> \<open>Conclude.\<close>
-    have "?S $$ (r, c1) = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                            complex_of_real (c (i * ?k + j))
-                              * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
-      using lhs_idx' .
-    also have "\<dots> = 0"
-      using sum_decomp' sum_kappa_zero by simp
-    finally show "?S $$ (r, c1) = (0\<^sub>m n n :: complex Matrix.mat) $$ (r, c1)"
-      using r_lt c_lt by simp
-  qed
-  show ?thesis
-    using A_c A_real A_nontriv pair_sum_zero by blast
-qed
-
-
-text \<open>The same with complex coefficients: a non-trivial complex relation among the products
+text \<open>A non-trivial complex relation among the products
 $V_j^\dagger V_i$ gives a non-zero complex coefficient matrix with vanishing pair sum, and
 then (closure of the family under adjoints) a non-zero \emph{Hermitian} one.\<close>
 
 lemma mat_lin_indep_complex_neg_witness:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
       and npos: "0 < n"
-      and dep: "\<not> mat_lin_indep_complex n (kraus_products Vs)"
+      and dep: "\<not> lin_indep_complex_mat n n (kraus_products Vs)"
   shows "\<exists>A_orig :: complex Matrix.mat.
             A_orig \<in> carrier_mat (length Vs) (length Vs)
           \<and> A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)
@@ -2453,7 +1999,7 @@ proof -
                     (\<forall>c :: nat \<Rightarrow> complex.
                        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n
                        \<longrightarrow> (\<forall>k < length ?B. c k = 0)))"
-    unfolding mat_lin_indep_complex_def .
+    unfolding lin_indep_complex_mat_def .
   with B_c obtain c :: "nat \<Rightarrow> complex" where
         c_fold: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
     and c_nontriv: "\<exists>k < length ?B. c k \<noteq> 0"
@@ -2920,16 +2466,6 @@ text \<open>Linear independence of a complex-matrix list (over \<open>\<complex>
 This is the \<^emph>\<open>minimality\<close> assumption needed to make the reverse direction
 of Choi's Theorem 3 go through: without it, perturbations of a non-minimal
 Kraus list can produce the same map.\<close>
-
-definition lin_indep_complex_mat ::
-  "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
-where
-  "lin_indep_complex_mat d n Ws \<equiv>
-     (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
-     (\<forall>c :: nat \<Rightarrow> complex.
-        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Ws!k) + acc) [0..<length Ws] (0\<^sub>m d n)
-            = 0\<^sub>m d n
-        \<longrightarrow> (\<forall>k < length Ws. c k = 0))"
 
 text \<open>\<^bold>\<open>Lemma B\<close>: under minimality of \<open>Vs\<close>, a non-zero coefficient matrix
 gives a non-vanishing quadratic Kraus map for some \<open>\<rho>\<close>.
@@ -3543,20 +3079,6 @@ where
   "cptp_kraus_rep n d \<Phi> Vs \<equiv>
      kraus_operators n d Vs \<and>
      (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
-
-text \<open>Extreme points of \<open>CPTP(n,d)\<close>: analog of @{const extreme_UCP}.\<close>
-
-definition extreme_CPTP ::
-  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
-where
-  "extreme_CPTP n d \<Phi> \<equiv>
-     \<Phi> \<in> CPTP n d \<and>
-     \<not> (\<exists>\<Phi>\<^sub>1 \<in> CPTP n d. \<exists>\<Phi>\<^sub>2 \<in> CPTP n d.
-           \<Phi>\<^sub>1 \<noteq> \<Phi> \<and> \<Phi> \<noteq> \<Phi>\<^sub>2 \<and>
-           (\<forall>X. X \<in> carrier_mat n n
-                  \<longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
-                            + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X))"
-
 
 subsection \<open>Vectorisation of Kraus operators\<close>
 
@@ -5277,452 +4799,9 @@ any more.\<close>
 subsection \<open>Choi's Theorem 3 --- reverse direction\<close>
 
 
-text \<open>\<^bold>\<open>Reverse direction of Choi's Theorem 3 (CPTP form).\<close>
-Under minimality of the Kraus list \<open>Vs\<close>, the non-linear-independence of
-the products \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> forces \<open>\<Phi>\<close> to fail to be an extreme
-point of \<open>CPTP n d\<close>.
-
-The witness uses the explicit perturbation \<open>\<Phi>\<^sub>\<plusminus>(\<rho>) := \<Sum>(I\<^sub>{ij} \<plusminus> \<epsilon> H\<^sub>{ij}) V\<^sub>i \<rho> V\<^sub>j\<^sup>\<dagger>\<close>
-for a hermitian \<open>H\<close> (from @{thm sym_or_antisym_witness}) and a small
-\<open>\<epsilon>\<close> (from @{thm small_eps_psd}). Distinctness uses
-@{thm kraus_quad_map_nonzero_witness} (Lemma B).\<close>
-
-theorem choi_theorem_3_cptp_reverse:
-  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes npos: "0 < n" and dpos: "0 < d"
-      and \<Phi>_in: "\<Phi> \<in> CPTP n d"
-      and rep:  "cptp_kraus_rep n d \<Phi> Vs"
-      and minimal: "lin_indep_complex_mat d n Vs"
-      and dep: "\<not> mat_lin_indep_real n (kraus_products Vs)"
-  shows "\<not> extreme_CPTP n d \<Phi>"
-proof -
-  let ?k = "length Vs"
-  \<comment> \<open>Unpack the Kraus representation.\<close>
-  have Vs_kops: "kraus_operators n d Vs"
-    using rep by (simp add: cptp_kraus_rep_def)
-  have Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-    using Vs_kops by (simp add: kraus_operators_def)
-  have Vs_sum_one: "sum_wdag_w n Vs = 1\<^sub>m n"
-    using Vs_kops by (simp add: kraus_operators_altdef)
-  have \<Phi>_eq: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = kraus_map_dim d Vs X"
-    using rep by (simp add: cptp_kraus_rep_def)
-  \<comment> \<open>Step 1: extract a real, non-zero coefficient matrix.\<close>
-  obtain A_orig :: "complex Matrix.mat"
-    where A_c:    "A_orig \<in> carrier_mat ?k ?k"
-      and A_real: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                      cnj (A_orig $$ (i, j)) = A_orig $$ (i, j)"
-      and A_nz:   "A_orig \<noteq> 0\<^sub>m ?k ?k"
-      and A_pair: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-    using mat_lin_indep_real_neg_witness[OF Vs_c npos dep] by blast
-  \<comment> \<open>Step 2: symmetric / anti-hermitian split to a hermitian witness.\<close>
-  obtain H :: "complex Matrix.mat"
-    where H_c:    "H \<in> carrier_mat ?k ?k"
-      and H_herm: "hermitian H"
-      and H_nz:   "H \<noteq> 0\<^sub>m ?k ?k"
-      and H_pair: "kraus_pair_sum n Vs H = 0\<^sub>m n n"
-    using sym_or_antisym_witness[OF Vs_c A_c A_real A_pair A_nz] by blast
-  \<comment> \<open>Step 3: small-\<open>\<epsilon>\<close> PSD perturbation.\<close>
-  obtain \<epsilon> :: real
-    where \<epsilon>_pos: "\<epsilon> > 0"
-      and \<epsilon>_psd: "\<And>d_real. \<bar>d_real\<bar> \<le> \<epsilon> \<Longrightarrow>
-                     psd (1\<^sub>m ?k + complex_of_real d_real \<cdot>\<^sub>m H)"
-    using small_eps_psd[OF H_c H_herm] by blast
-  define Tp where "Tp = 1\<^sub>m ?k + complex_of_real \<epsilon> \<cdot>\<^sub>m H"
-  define Tm where "Tm = 1\<^sub>m ?k + complex_of_real (-\<epsilon>) \<cdot>\<^sub>m H"
-  have Tp_c: "Tp \<in> carrier_mat ?k ?k" unfolding Tp_def using H_c by auto
-  have Tm_c: "Tm \<in> carrier_mat ?k ?k" unfolding Tm_def using H_c by auto
-  have Tp_psd: "psd Tp" unfolding Tp_def by (rule \<epsilon>_psd) (use \<epsilon>_pos in auto)
-  have Tm_psd: "psd Tm" unfolding Tm_def by (rule \<epsilon>_psd) (use \<epsilon>_pos in auto)
-  \<comment> \<open>Step 4: pair-sum identity \<open>kraus_pair_sum n Vs T_\<plusminus> = I\<close>.\<close>
-  have pair_sum_eps: "\<And>d_real :: real.
-                          kraus_pair_sum n Vs (1\<^sub>m ?k
-                              + complex_of_real d_real \<cdot>\<^sub>m H) = 1\<^sub>m n"
-  proof -
-    fix d_real :: real
-    have I_c: "(1\<^sub>m ?k :: complex Matrix.mat) \<in> carrier_mat ?k ?k" by simp
-    have dH_c: "complex_of_real d_real \<cdot>\<^sub>m H \<in> carrier_mat ?k ?k"
-      using H_c by simp
-    have "kraus_pair_sum n Vs (1\<^sub>m ?k + complex_of_real d_real \<cdot>\<^sub>m H)
-            = kraus_pair_sum n Vs (1\<^sub>m ?k)
-              + kraus_pair_sum n Vs (complex_of_real d_real \<cdot>\<^sub>m H)"
-      by (rule kraus_pair_sum_add_A[OF Vs_c I_c dH_c])
-    also have "kraus_pair_sum n Vs (1\<^sub>m ?k) = sum_wdag_w n Vs"
-      by (rule kraus_pair_sum_one_eq_sum_wdag_w[OF Vs_c])
-    also have "\<dots> = 1\<^sub>m n" using Vs_sum_one .
-    also have "kraus_pair_sum n Vs (complex_of_real d_real \<cdot>\<^sub>m H)
-                 = complex_of_real d_real \<cdot>\<^sub>m kraus_pair_sum n Vs H"
-      by (rule kraus_pair_sum_smult_A[OF Vs_c H_c])
-    also have "\<dots> = complex_of_real d_real \<cdot>\<^sub>m 0\<^sub>m n n"
-      using H_pair by simp
-    also have "(complex_of_real d_real \<cdot>\<^sub>m 0\<^sub>m n n :: complex Matrix.mat) = 0\<^sub>m n n"
-      by (rule eq_matI) auto
-    finally have "kraus_pair_sum n Vs (1\<^sub>m ?k + complex_of_real d_real \<cdot>\<^sub>m H)
-                    = (1\<^sub>m n :: complex Matrix.mat) + 0\<^sub>m n n" by simp
-    also have "(1\<^sub>m n :: complex Matrix.mat) + 0\<^sub>m n n = 1\<^sub>m n"
-      by (rule eq_matI) auto
-    finally show "kraus_pair_sum n Vs (1\<^sub>m ?k + complex_of_real d_real \<cdot>\<^sub>m H)
-                    = 1\<^sub>m n" .
-  qed
-  have ps_Tp: "kraus_pair_sum n Vs Tp = 1\<^sub>m n"
-    unfolding Tp_def by (rule pair_sum_eps)
-  have ps_Tm: "kraus_pair_sum n Vs Tm = 1\<^sub>m n"
-    unfolding Tm_def by (rule pair_sum_eps)
-  \<comment> \<open>Step 5: define \<open>\<Phi>\<^sub>\<plusminus>\<close>.\<close>
-  define Phip where "Phip = (\<lambda>rho. kraus_quad_map d Vs Tp rho)"
-  define Phim where "Phim = (\<lambda>rho. kraus_quad_map d Vs Tm rho)"
-  have Phip_in_CPTP: "Phip \<in> CPTP n d"
-    unfolding CPTP_def
-  proof (intro CollectI conjI)
-    show "completely_positive n d Phip"
-      unfolding Phip_def
-      by (rule kraus_perturbation_cp[OF Vs_c Tp_c Tp_psd npos dpos])
-    show "trace_preserving n Phip"
-      unfolding Phip_def
-      by (rule kraus_quad_map_is_TP[OF Vs_c Tp_c ps_Tp npos])
-  qed
-  have Phim_in_CPTP: "Phim \<in> CPTP n d"
-    unfolding CPTP_def
-  proof (intro CollectI conjI)
-    show "completely_positive n d Phim"
-      unfolding Phim_def
-      by (rule kraus_perturbation_cp[OF Vs_c Tm_c Tm_psd npos dpos])
-    show "trace_preserving n Phim"
-      unfolding Phim_def
-      by (rule kraus_quad_map_is_TP[OF Vs_c Tm_c ps_Tm npos])
-  qed
-  \<comment> \<open>Step 6: midpoint identity.\<close>
-  have midpoint: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow>
-                     \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m Phip X
-                         + (1/2 :: complex) \<cdot>\<^sub>m Phim X"
-  proof -
-    fix X :: "complex Matrix.mat" assume X_c: "X \<in> carrier_mat n n"
-    have I_c: "(1\<^sub>m ?k :: complex Matrix.mat) \<in> carrier_mat ?k ?k" by simp
-    have epsH_c: "complex_of_real \<epsilon> \<cdot>\<^sub>m H \<in> carrier_mat ?k ?k" using H_c by simp
-    have negepsH_c: "complex_of_real (-\<epsilon>) \<cdot>\<^sub>m H \<in> carrier_mat ?k ?k" using H_c by simp
-    \<comment> \<open>Add \<open>Phip\<close> and \<open>Phim\<close> via linearity.\<close>
-    have sum_eq: "Phip X + Phim X = kraus_quad_map d Vs (Tp + Tm) X"
-      unfolding Phip_def Phim_def
-      using kraus_quad_map_add_Tm[OF Vs_c X_c Tp_c Tm_c] by simp
-    \<comment> \<open>\<open>Tp + Tm = 2 \<cdot> I\<close>.\<close>
-    have TpT: "Tp + Tm = (2 :: complex) \<cdot>\<^sub>m 1\<^sub>m ?k"
-    proof (rule eq_matI)
-      show "dim_row (Tp + Tm) = dim_row ((2 :: complex) \<cdot>\<^sub>m 1\<^sub>m ?k)"
-        using Tp_c Tm_c by simp
-      show "dim_col (Tp + Tm) = dim_col ((2 :: complex) \<cdot>\<^sub>m 1\<^sub>m ?k)"
-        using Tp_c Tm_c by simp
-      fix i j assume "i < dim_row ((2 :: complex) \<cdot>\<^sub>m 1\<^sub>m ?k)"
-                     "j < dim_col ((2 :: complex) \<cdot>\<^sub>m 1\<^sub>m ?k)"
-      hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
-      have "(Tp + Tm) $$ (i, j)
-              = Tp $$ (i, j) + Tm $$ (i, j)"
-        using Tp_c Tm_c i_lt j_lt by auto
-      also have "Tp $$ (i, j) = (1\<^sub>m ?k :: complex Matrix.mat) $$ (i,j)
-                                + complex_of_real \<epsilon> * H $$ (i, j)"
-        unfolding Tp_def using I_c epsH_c i_lt j_lt H_c by auto
-      also have "Tm $$ (i, j) = (1\<^sub>m ?k :: complex Matrix.mat) $$ (i,j)
-                                + complex_of_real (-\<epsilon>) * H $$ (i, j)"
-        unfolding Tm_def using I_c negepsH_c i_lt j_lt H_c by auto
-      also have "((1\<^sub>m ?k :: complex Matrix.mat) $$ (i,j) + complex_of_real \<epsilon> * H $$ (i, j))
-                  + ((1\<^sub>m ?k :: complex Matrix.mat) $$ (i,j) + complex_of_real (-\<epsilon>) * H $$ (i, j))
-                  = 2 * (1\<^sub>m ?k :: complex Matrix.mat) $$ (i,j)"
-        by (simp add: algebra_simps)
-      also have "\<dots> = ((2 :: complex) \<cdot>\<^sub>m 1\<^sub>m ?k) $$ (i, j)"
-        using i_lt j_lt by simp
-      finally show "(Tp + Tm) $$ (i, j)
-                      = ((2 :: complex) \<cdot>\<^sub>m 1\<^sub>m ?k) $$ (i, j)" .
-    qed
-    have sum_eq2: "Phip X + Phim X
-                     = kraus_quad_map d Vs ((2::complex) \<cdot>\<^sub>m 1\<^sub>m ?k) X"
-      using sum_eq TpT by simp
-    have sum_eq3: "Phip X + Phim X
-                     = (2::complex) \<cdot>\<^sub>m kraus_quad_map d Vs (1\<^sub>m ?k) X"
-      using sum_eq2 kraus_quad_map_smult_Tm[OF Vs_c X_c I_c, of "(2::complex)"]
-      by simp
-    have sum_eq4: "Phip X + Phim X = (2::complex) \<cdot>\<^sub>m kraus_map_dim d Vs X"
-      using sum_eq3 kraus_quad_map_one_eq_kraus_map_dim[OF Vs_c X_c] by simp
-    have sum_eq5: "Phip X + Phim X = (2::complex) \<cdot>\<^sub>m \<Phi> X"
-      using sum_eq4 \<Phi>_eq[OF X_c] by simp
-    have \<Phi>X_c: "\<Phi> X \<in> carrier_mat d d"
-      using \<Phi>_eq[OF X_c] kraus_map_dim_carrier[OF Vs_c X_c] by simp
-    have \<Phi>p_c: "Phip X \<in> carrier_mat d d"
-      unfolding Phip_def using kraus_quad_map_carrier[OF Vs_c X_c] .
-    have \<Phi>m_c: "Phim X \<in> carrier_mat d d"
-      unfolding Phim_def using kraus_quad_map_carrier[OF Vs_c X_c] .
-    show "\<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m Phip X + (1/2 :: complex) \<cdot>\<^sub>m Phim X"
-    proof (rule eq_matI)
-      let ?L = "\<Phi> X"
-      let ?R = "(1/2 :: complex) \<cdot>\<^sub>m Phip X + (1/2 :: complex) \<cdot>\<^sub>m Phim X"
-      have R_c: "?R \<in> carrier_mat d d" using \<Phi>p_c \<Phi>m_c by auto
-      show "dim_row ?L = dim_row ?R" using \<Phi>X_c R_c by auto
-      show "dim_col ?L = dim_col ?R" using \<Phi>X_c R_c by auto
-      fix r c assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
-      hence r_lt: "r < d" and c_lt: "c < d" using R_c by auto
-      have ent_p: "(1/2 :: complex) \<cdot>\<^sub>m Phip X \<in> carrier_mat d d"
-        using \<Phi>p_c by auto
-      have ent_m: "(1/2 :: complex) \<cdot>\<^sub>m Phim X \<in> carrier_mat d d"
-        using \<Phi>m_c by auto
-      have R_idx: "?R $$ (r, c)
-                     = (1/2 :: complex) * Phip X $$ (r, c)
-                     + (1/2 :: complex) * Phim X $$ (r, c)"
-        using ent_p ent_m r_lt c_lt \<Phi>p_c \<Phi>m_c by auto
-      have sum_idx: "(Phip X + Phim X) $$ (r, c)
-                       = Phip X $$ (r, c) + Phim X $$ (r, c)"
-        using \<Phi>p_c \<Phi>m_c r_lt c_lt by auto
-      have rhs_2Phi_idx: "((2::complex) \<cdot>\<^sub>m \<Phi> X) $$ (r, c) = 2 * \<Phi> X $$ (r, c)"
-        using \<Phi>X_c r_lt c_lt by auto
-      have phi_sum: "Phip X $$ (r, c) + Phim X $$ (r, c) = 2 * \<Phi> X $$ (r, c)"
-        using sum_eq5 sum_idx rhs_2Phi_idx by simp
-      have "?R $$ (r, c) = (1/2 :: complex) * (Phip X $$ (r, c) + Phim X $$ (r, c))"
-        using R_idx by (simp add: field_simps)
-      also have "\<dots> = (1/2 :: complex) * (2 * \<Phi> X $$ (r, c))"
-        using phi_sum by simp
-      also have "\<dots> = \<Phi> X $$ (r, c)" by simp
-      finally show "?L $$ (r, c) = ?R $$ (r, c)" by simp
-    qed
-  qed
-  \<comment> \<open>Step 7: distinctness \<open>Phip \<noteq> \<Phi>\<close>.\<close>
-  obtain rho :: "complex Matrix.mat"
-    where rho_c: "rho \<in> carrier_mat n n"
-      and rho_qz: "kraus_quad_map d Vs H rho \<noteq> 0\<^sub>m d d"
-    using kraus_quad_map_nonzero_witness[OF Vs_c minimal H_c H_nz npos dpos] by blast
-  have epsH_c': "complex_of_real \<epsilon> \<cdot>\<^sub>m H \<in> carrier_mat ?k ?k" using H_c by simp
-  have I_c': "(1\<^sub>m ?k :: complex Matrix.mat) \<in> carrier_mat ?k ?k" by simp
-  \<comment> \<open>Express \<open>Phip rho\<close> as \<open>\<Phi> rho + \<epsilon> \<cdot> kraus_quad_map d Vs H rho\<close>.\<close>
-  have phi_plus_rho: "Phip rho = \<Phi> rho
-                                + complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho"
-  proof -
-    have lin: "kraus_quad_map d Vs Tp rho
-                 = kraus_quad_map d Vs (1\<^sub>m ?k) rho
-                   + kraus_quad_map d Vs (complex_of_real \<epsilon> \<cdot>\<^sub>m H) rho"
-      unfolding Tp_def
-      by (rule kraus_quad_map_add_Tm[OF Vs_c rho_c I_c' epsH_c'])
-    have smult_lin: "kraus_quad_map d Vs (complex_of_real \<epsilon> \<cdot>\<^sub>m H) rho
-                       = complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho"
-      by (rule kraus_quad_map_smult_Tm[OF Vs_c rho_c H_c])
-    have one_eq: "kraus_quad_map d Vs (1\<^sub>m ?k) rho = \<Phi> rho"
-      using kraus_quad_map_one_eq_kraus_map_dim[OF Vs_c rho_c] \<Phi>_eq[OF rho_c] by simp
-    show ?thesis
-      unfolding Phip_def using lin smult_lin one_eq by simp
-  qed
-  \<comment> \<open>Carrier facts for the cancellation.\<close>
-  have \<Phi>_rho_c: "\<Phi> rho \<in> carrier_mat d d"
-    using \<Phi>_eq[OF rho_c] kraus_map_dim_carrier[OF Vs_c rho_c] by simp
-  have qmap_rho_c: "kraus_quad_map d Vs H rho \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have eps_qmap_c: "complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho \<in> carrier_mat d d"
-    using qmap_rho_c by auto
-  \<comment> \<open>Distinctness via the \<open>rho\<close>-witness.\<close>
-  have Phip_ne_\<Phi>: "Phip \<noteq> \<Phi>"
-  proof
-    assume "Phip = \<Phi>"
-    hence eq_at_rho: "Phip rho = \<Phi> rho" by simp
-    have sm_zero: "complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho = 0\<^sub>m d d"
-    proof -
-      have sum_eq: "\<Phi> rho
-                     + complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho = \<Phi> rho"
-        using phi_plus_rho eq_at_rho by simp
-      \<comment> \<open>Subtract \<open>\<Phi> rho\<close> from both sides.\<close>
-      show ?thesis
-      proof (rule eq_matI)
-        show "dim_row (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)
-                = dim_row (0\<^sub>m d d :: complex Matrix.mat)"
-          using eps_qmap_c by auto
-        show "dim_col (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)
-                = dim_col (0\<^sub>m d d :: complex Matrix.mat)"
-          using eps_qmap_c by auto
-        fix i j assume "i < dim_row (0\<^sub>m d d :: complex Matrix.mat)"
-                       "j < dim_col (0\<^sub>m d d :: complex Matrix.mat)"
-        hence i_lt: "i < d" and j_lt: "j < d" by auto
-        have i_dim: "i < dim_row (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)"
-          using eps_qmap_c i_lt by auto
-        have j_dim: "j < dim_col (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)"
-          using eps_qmap_c j_lt by auto
-        have "(\<Phi> rho + complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                = \<Phi> rho $$ (i, j)
-                  + (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)"
-          using index_add_mat(1)[OF i_dim j_dim] .
-        moreover have "\<Phi> rho $$ (i, j) = \<Phi> rho $$ (i, j)" by simp
-        ultimately have "\<Phi> rho $$ (i, j)
-                          + (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                          = \<Phi> rho $$ (i, j)"
-          using sum_eq \<Phi>_rho_c i_lt j_lt by auto
-        hence "(complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j) = 0"
-          by simp
-        thus "(complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                = (0\<^sub>m d d :: complex Matrix.mat) $$ (i, j)"
-          using i_lt j_lt by simp
-      qed
-    qed
-    \<comment> \<open>\<open>\<epsilon> \<cdot> M = 0 \<and> \<epsilon> \<noteq> 0 \<Longrightarrow> M = 0\<close>.\<close>
-    have eps_ne: "complex_of_real \<epsilon> \<noteq> 0" using \<epsilon>_pos by simp
-    have qmap_zero: "kraus_quad_map d Vs H rho = 0\<^sub>m d d"
-    proof (rule eq_matI)
-      show "dim_row (kraus_quad_map d Vs H rho)
-              = dim_row (0\<^sub>m d d :: complex Matrix.mat)" using qmap_rho_c by auto
-      show "dim_col (kraus_quad_map d Vs H rho)
-              = dim_col (0\<^sub>m d d :: complex Matrix.mat)" using qmap_rho_c by auto
-      fix i j assume "i < dim_row (0\<^sub>m d d :: complex Matrix.mat)"
-                     "j < dim_col (0\<^sub>m d d :: complex Matrix.mat)"
-      hence i_lt: "i < d" and j_lt: "j < d" by auto
-      have idx_eq: "(complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                      = complex_of_real \<epsilon> * kraus_quad_map d Vs H rho $$ (i, j)"
-        using qmap_rho_c i_lt j_lt by auto
-      have "complex_of_real \<epsilon> * kraus_quad_map d Vs H rho $$ (i, j) = 0"
-        using sm_zero idx_eq i_lt j_lt by simp
-      hence "kraus_quad_map d Vs H rho $$ (i, j) = 0"
-        using eps_ne by simp
-      thus "kraus_quad_map d Vs H rho $$ (i, j)
-              = (0\<^sub>m d d :: complex Matrix.mat) $$ (i, j)"
-        using i_lt j_lt by simp
-    qed
-    thus False using rho_qz by simp
-  qed
-  \<comment> \<open>\<open>Phim \<noteq> \<Phi>\<close> follows from \<open>Phip \<noteq> \<Phi>\<close> and the midpoint identity:
-      if \<open>Phim = \<Phi>\<close>, then \<open>\<Phi> X = (1/2)Phip X + (1/2)\<Phi> X\<close>, so
-      \<open>(1/2)\<Phi> X = (1/2)Phip X\<close>, hence \<open>Phip X = \<Phi> X\<close> for all carrier \<open>X\<close>.
-      Then \<open>Phip\<close> would agree with \<open>\<Phi>\<close> on \<open>rho\<close>, contradicting \<open>Phip \<noteq> \<Phi>\<close>
-      at \<open>rho\<close>.\<close>
-  have Phim_ne_\<Phi>: "\<Phi> \<noteq> Phim"
-  proof
-    assume eq: "\<Phi> = Phim"
-    \<comment> \<open>Then the midpoint identity collapses to \<open>\<Phi> = Phip\<close> on carrier inputs.\<close>
-    have collapse: "\<And>X :: complex Matrix.mat.
-                       X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = Phip X"
-    proof -
-      fix X :: "complex Matrix.mat" assume X_c': "X \<in> carrier_mat n n"
-      have mid: "\<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m Phip X
-                       + (1/2 :: complex) \<cdot>\<^sub>m Phim X"
-        using midpoint[OF X_c'] .
-      have Phip_X_c: "Phip X \<in> carrier_mat d d"
-        unfolding Phip_def using kraus_quad_map_carrier[OF Vs_c X_c'] .
-      have Phim_X_c: "Phim X \<in> carrier_mat d d"
-        unfolding Phim_def using kraus_quad_map_carrier[OF Vs_c X_c'] .
-      have \<Phi>X_c': "\<Phi> X \<in> carrier_mat d d"
-        using \<Phi>_eq[OF X_c'] kraus_map_dim_carrier[OF Vs_c X_c'] by simp
-      \<comment> \<open>From \<open>\<Phi> = Phim\<close>: \<open>\<Phi> X = Phim X\<close>.\<close>
-      have phim_eq: "Phim X = \<Phi> X" using eq by simp
-      \<comment> \<open>Plug into the midpoint and solve for \<open>Phip X\<close>.\<close>
-      show "\<Phi> X = Phip X"
-      proof (rule eq_matI)
-        show "dim_row (\<Phi> X) = dim_row (Phip X)" using \<Phi>X_c' Phip_X_c by auto
-        show "dim_col (\<Phi> X) = dim_col (Phip X)" using \<Phi>X_c' Phip_X_c by auto
-        fix r c assume "r < dim_row (Phip X)" "c < dim_col (Phip X)"
-        hence r_lt: "r < d" and c_lt: "c < d" using Phip_X_c by auto
-        have idx_eq: "(\<Phi> X) $$ (r, c)
-                       = (1/2 :: complex) * Phip X $$ (r, c)
-                         + (1/2 :: complex) * Phim X $$ (r, c)"
-        proof -
-          have half_m_c: "(1/2 :: complex) \<cdot>\<^sub>m Phim X \<in> carrier_mat d d"
-            using Phim_X_c by auto
-          have r_dim_m: "r < dim_row ((1/2 :: complex) \<cdot>\<^sub>m Phim X)"
-            using half_m_c r_lt by auto
-          have c_dim_m: "c < dim_col ((1/2 :: complex) \<cdot>\<^sub>m Phim X)"
-            using half_m_c c_lt by auto
-          have rhs_idx: "((1/2 :: complex) \<cdot>\<^sub>m Phip X
-                              + (1/2 :: complex) \<cdot>\<^sub>m Phim X) $$ (r, c)
-                          = ((1/2 :: complex) \<cdot>\<^sub>m Phip X) $$ (r, c)
-                          + ((1/2 :: complex) \<cdot>\<^sub>m Phim X) $$ (r, c)"
-            using index_add_mat(1)[OF r_dim_m c_dim_m] .
-          have p_idx: "((1/2 :: complex) \<cdot>\<^sub>m Phip X) $$ (r, c)
-                         = (1/2 :: complex) * Phip X $$ (r, c)"
-            using Phip_X_c r_lt c_lt by auto
-          have m_idx: "((1/2 :: complex) \<cdot>\<^sub>m Phim X) $$ (r, c)
-                         = (1/2 :: complex) * Phim X $$ (r, c)"
-            using Phim_X_c r_lt c_lt by auto
-          show ?thesis using mid rhs_idx p_idx m_idx by simp
-        qed
-        have phim_idx: "Phim X $$ (r, c) = \<Phi> X $$ (r, c)" using phim_eq by simp
-        have "\<Phi> X $$ (r, c) = (1/2 :: complex) * Phip X $$ (r, c)
-                              + (1/2 :: complex) * \<Phi> X $$ (r, c)"
-          using idx_eq phim_idx by simp
-        hence "(1/2 :: complex) * Phip X $$ (r, c) = (1/2 :: complex) * \<Phi> X $$ (r, c)"
-          by (simp add: field_simps)
-        hence "Phip X $$ (r, c) = \<Phi> X $$ (r, c)"
-          by simp
-        thus "\<Phi> X $$ (r, c) = Phip X $$ (r, c)" by simp
-      qed
-    qed
-    have "Phip rho = \<Phi> rho" using collapse[OF rho_c] by simp
-    \<comment> \<open>But we showed \<open>Phip rho \<noteq> \<Phi> rho\<close> at \<open>rho\<close>.\<close>
-    moreover have "Phip rho \<noteq> \<Phi> rho"
-    proof
-      assume eq_at: "Phip rho = \<Phi> rho"
-      \<comment> \<open>This is the same argument as in \<open>Phip_ne_\<Phi>\<close>.\<close>
-      have "complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho = 0\<^sub>m d d"
-      proof -
-        have sum_eq': "\<Phi> rho
-                       + complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho = \<Phi> rho"
-          using phi_plus_rho eq_at by simp
-        show ?thesis
-        proof (rule eq_matI)
-          show "dim_row (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)
-                  = dim_row (0\<^sub>m d d :: complex Matrix.mat)"
-            using eps_qmap_c by auto
-          show "dim_col (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)
-                  = dim_col (0\<^sub>m d d :: complex Matrix.mat)"
-            using eps_qmap_c by auto
-          fix i j assume "i < dim_row (0\<^sub>m d d :: complex Matrix.mat)"
-                         "j < dim_col (0\<^sub>m d d :: complex Matrix.mat)"
-          hence i_lt: "i < d" and j_lt: "j < d" by auto
-          have i_dim: "i < dim_row (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)"
-            using eps_qmap_c i_lt by auto
-          have j_dim: "j < dim_col (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho)"
-            using eps_qmap_c j_lt by auto
-          have "(\<Phi> rho + complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                  = \<Phi> rho $$ (i, j)
-                    + (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)"
-            using index_add_mat(1)[OF i_dim j_dim] .
-          hence "\<Phi> rho $$ (i, j)
-                  + (complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                    = \<Phi> rho $$ (i, j)"
-            using sum_eq' \<Phi>_rho_c i_lt j_lt by auto
-          hence "(complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j) = 0"
-            by simp
-          thus "(complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                  = (0\<^sub>m d d :: complex Matrix.mat) $$ (i, j)"
-            using i_lt j_lt by simp
-        qed
-      qed
-      have eps_ne: "complex_of_real \<epsilon> \<noteq> 0" using \<epsilon>_pos by simp
-      have "kraus_quad_map d Vs H rho = 0\<^sub>m d d"
-      proof (rule eq_matI)
-        show "dim_row (kraus_quad_map d Vs H rho)
-                = dim_row (0\<^sub>m d d :: complex Matrix.mat)" using qmap_rho_c by auto
-        show "dim_col (kraus_quad_map d Vs H rho)
-                = dim_col (0\<^sub>m d d :: complex Matrix.mat)" using qmap_rho_c by auto
-        fix i j assume "i < dim_row (0\<^sub>m d d :: complex Matrix.mat)"
-                       "j < dim_col (0\<^sub>m d d :: complex Matrix.mat)"
-        hence i_lt: "i < d" and j_lt: "j < d" by auto
-        have idx_eq: "(complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho) $$ (i, j)
-                        = complex_of_real \<epsilon> * kraus_quad_map d Vs H rho $$ (i, j)"
-          using qmap_rho_c i_lt j_lt by auto
-        have "complex_of_real \<epsilon> * kraus_quad_map d Vs H rho $$ (i, j) = 0"
-          using \<open>complex_of_real \<epsilon> \<cdot>\<^sub>m kraus_quad_map d Vs H rho = 0\<^sub>m d d\<close>
-                idx_eq i_lt j_lt by simp
-        hence "kraus_quad_map d Vs H rho $$ (i, j) = 0"
-          using eps_ne by simp
-        thus "kraus_quad_map d Vs H rho $$ (i, j)
-                = (0\<^sub>m d d :: complex Matrix.mat) $$ (i, j)"
-          using i_lt j_lt by simp
-      qed
-      thus False using rho_qz by simp
-    qed
-    ultimately show False by simp
-  qed
-  \<comment> \<open>Final assembly: \<open>Phip \<noteq> \<Phi>\<close>, \<open>\<Phi> \<noteq> Phim\<close>, midpoint give non-extremity.\<close>
-  show "\<not> extreme_CPTP n d \<Phi>"
-    unfolding extreme_CPTP_def
-    using \<Phi>_in Phip_in_CPTP Phim_in_CPTP Phip_ne_\<Phi> Phim_ne_\<Phi> midpoint
-    by blast
-qed
-
-text \<open>\<^bold>\<open>Caveat on @{const extreme_CPTP} (forward shadow).\<close>  Because
-both @{const completely_positive} and @{const trace_preserving} only
-constrain behaviour on @{term \<open>carrier_mat n n\<close>}, the raw function
-inequality \<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close> in @{const extreme_CPTP} is trivially
-satisfiable.  We therefore introduce a \<^emph>\<open>carrier\<close>-point
-non-extremity notion below.\<close>
+text \<open>Extremality is a property of maps on $M_n$: maps that agree on $M_n$ are the same point of
+$\mathrm{CPTP}(M_n,M_d)$.  A midpoint decomposition $\Phi=\tfrac12(\Phi_1+\Phi_2)$ is therefore witnessed
+by maps that are CPTP and linear on $M_n$ and differ from $\Phi$ at some matrix.\<close>
 
 text \<open>\<open>cptp_pair_mid\<close> collects the data of a midpoint pair witnessing non-extremality: both maps
 CPTP and linear on $M_n$, different at some matrix, with $\Phi=\tfrac12(\Phi_1+\Phi_2)$.\<close>
@@ -5767,19 +4846,19 @@ where
      (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
          \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
 
-definition extreme_CPTP_carrier ::
+definition extreme_CPTP ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
 where
-  "extreme_CPTP_carrier n d \<Phi> \<equiv>
+  "extreme_CPTP n d \<Phi> \<equiv>
      \<Phi> \<in> CPTP n d \<and> \<not> (\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2)"
 
-text \<open>The same construction as in @{thm choi_theorem_3_cptp_reverse}
-yields the stronger fact that \<open>\<Phi>\<close> fails the
-@{const extreme_CPTP_carrier} test: the perturbed maps
-@{term Phip}, @{term Phim} are CPTP, have range \<open>carrier_mat d d\<close>, and
-disagree with \<open>\<Phi>\<close> at the carrier-point @{term rho}.\<close>
+text \<open>The reverse direction of Choi's Theorem 3.  For a Hermitian $H\ne0$ with
+$\sum_{i,j}H_{ij}V_j^*V_i=0$ and small $\epsilon>0$, the maps
+\[ \Phi_\pm(X)=\sum_{i,j}(\delta_{ij}\pm\epsilon H_{ij})\,V_iXV_j^* \]
+are CPTP (\<open>small_eps_psd\<close>), differ from $\Phi$ (\<open>kraus_quad_map_nonzero_witness\<close>), and have
+$\Phi=\tfrac12(\Phi_++\Phi_-)$; so $\Phi$ is not extreme.\<close>
 
-lemma not_extreme_CPTP_carrier_of_herm_witness:
+lemma not_extreme_CPTP_of_herm_witness:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
     and Vs :: "complex Matrix.mat list" and H :: "complex Matrix.mat"
   assumes npos: "0 < n" and dpos: "0 < d"
@@ -5790,7 +4869,7 @@ lemma not_extreme_CPTP_carrier_of_herm_witness:
       and H_herm: "hermitian H"
       and H_nz:   "H \<noteq> 0\<^sub>m (length Vs) (length Vs)"
       and H_pair: "kraus_pair_sum n Vs H = 0\<^sub>m n n"
-  shows "\<not> extreme_CPTP_carrier n d \<Phi>"
+  shows "\<not> extreme_CPTP n d \<Phi>"
 proof -
   let ?k = "length Vs"
   have Vs_kops: "kraus_operators n d Vs"
@@ -6100,49 +5179,19 @@ proof -
                     allI impI ne1 ne2)
        (use Phip_range Phim_range midpoint in blast)+
   show ?thesis
-    unfolding extreme_CPTP_carrier_def
+    unfolding extreme_CPTP_def
     using \<Phi>_in pair_witness by blast
 qed
 
-text \<open>Immediate contrapositive: extreme-in-carrier-sense forces
-linear independence of the products.\<close>
-
-theorem choi_theorem_3_cptp_reverse_carrier:
+theorem choi_theorem_3_cptp_reverse:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
     and Vs :: "complex Matrix.mat list"
   assumes npos: "0 < n" and dpos: "0 < d"
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
       and minimal: "lin_indep_complex_mat d n Vs"
-      and dep: "\<not> mat_lin_indep_real n (kraus_products Vs)"
-  shows "\<not> extreme_CPTP_carrier n d \<Phi>"
-proof -
-  have Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-    using rep by (simp add: cptp_kraus_rep_def kraus_operators_def)
-  obtain A_orig :: "complex Matrix.mat"
-    where A_c: "A_orig \<in> carrier_mat (length Vs) (length Vs)"
-      and A_real: "\<And>i j. i < length Vs \<Longrightarrow> j < length Vs \<Longrightarrow>
-                      cnj (A_orig $$ (i, j)) = A_orig $$ (i, j)"
-      and A_nz: "A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)"
-      and A_pair: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-    using mat_lin_indep_real_neg_witness[OF Vs_c npos dep] by blast
-  obtain H :: "complex Matrix.mat"
-    where H: "H \<in> carrier_mat (length Vs) (length Vs)" "hermitian H"
-             "H \<noteq> 0\<^sub>m (length Vs) (length Vs)" "kraus_pair_sum n Vs H = 0\<^sub>m n n"
-    using sym_or_antisym_witness[OF Vs_c A_c A_real A_pair A_nz] by blast
-  show ?thesis
-    by (rule not_extreme_CPTP_carrier_of_herm_witness[OF npos dpos \<Phi>_in rep minimal H])
-qed
-
-theorem choi_theorem_3_cptp_reverse_carrier_complex:
-  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes npos: "0 < n" and dpos: "0 < d"
-      and \<Phi>_in: "\<Phi> \<in> CPTP n d"
-      and rep:  "cptp_kraus_rep n d \<Phi> Vs"
-      and minimal: "lin_indep_complex_mat d n Vs"
-      and dep: "\<not> mat_lin_indep_complex n (kraus_products Vs)"
-  shows "\<not> extreme_CPTP_carrier n d \<Phi>"
+      and dep: "\<not> lin_indep_complex_mat n n (kraus_products Vs)"
+  shows "\<not> extreme_CPTP n d \<Phi>"
 proof -
   have Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
     using rep by (simp add: cptp_kraus_rep_def kraus_operators_def)
@@ -6156,26 +5205,8 @@ proof -
              "H \<noteq> 0\<^sub>m (length Vs) (length Vs)" "kraus_pair_sum n Vs H = 0\<^sub>m n n"
     using herm_witness_of_complex[OF Vs_c A_c A_pair A_nz] by blast
   show ?thesis
-    by (rule not_extreme_CPTP_carrier_of_herm_witness[OF npos dpos \<Phi>_in rep minimal H])
+    by (rule not_extreme_CPTP_of_herm_witness[OF npos dpos \<Phi>_in rep minimal H])
 qed
-
-corollary choi_theorem_3_cptp_carrier_forward:
-  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes npos: "0 < n" and dpos: "0 < d"
-      and \<Phi>_in: "\<Phi> \<in> CPTP n d"
-      and rep:  "cptp_kraus_rep n d \<Phi> Vs"
-      and minimal: "lin_indep_complex_mat d n Vs"
-      and ext: "extreme_CPTP_carrier n d \<Phi>"
-  shows "mat_lin_indep_real n (kraus_products Vs)"
-proof (rule ccontr)
-  assume "\<not> mat_lin_indep_real n (kraus_products Vs)"
-  hence "\<not> extreme_CPTP_carrier n d \<Phi>"
-    by (rule choi_theorem_3_cptp_reverse_carrier
-          [OF npos dpos \<Phi>_in rep minimal])
-  thus False using ext by simp
-qed
-
 
 subsection \<open>Trace pairing duality and TP-converse\<close>
 
@@ -6266,25 +5297,10 @@ qed
 
 subsection \<open>Choi's Theorem 3 --- forward direction\<close>
 
-text \<open>\<^bold>\<open>Important caveat on @{const extreme_CPTP}.\<close>  The current
-definition uses raw function inequality \<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close>, but both
-@{const completely_positive} and @{const trace_preserving} only
-constrain behaviour on @{term \<open>carrier_mat n n\<close>}.  Hence for
-\<^emph>\<open>any\<close> CPTP \<open>\<Phi>\<close> one can construct \<open>\<Phi>\<^sub>1\<close> that agrees
-with \<open>\<Phi>\<close> on the carrier but disagrees on (say) a \<open>1\<times>1\<close> matrix;
-this \<open>\<Phi>\<^sub>1\<close> is itself in CPTP, so the negation of
-@{const extreme_CPTP} is vacuously satisfied.  Consequently
-\<^bold>\<open>@{const extreme_CPTP} as currently defined is always false\<close>,
-and Choi's Theorem 3 as stated (an iff with @{const mat_lin_indep_real})
-does not hold.
-
-The fix is to use a \<^emph>\<open>carrier\<close>-point notion of inequality
-(defined above as @{const extreme_CPTP_carrier}).\<close>
-
-text \<open>The forward direction targets the \<^emph>\<open>carrier\<close>-flavoured version:
-\<open>mat_lin_indep_complex \<Longrightarrow> extreme_CPTP_carrier\<close>.  Proof uses
-@{thm cp_radon_nikodym_linear}, obtaining linearity of \<open>\<Psi>\<close> from the
-@{const lin_on_carrier} conjuncts carried by @{const cptp_pair_mid}.\<close>
+text \<open>The forward direction: if the products $V_j^*V_i$ are linearly independent, $\Phi$ is extreme.
+If $\Phi=\tfrac12(\Phi_1+\Phi_2)$, then $\tfrac12\Phi_1\le_{cp}\Phi$, and the CP Radon--Nikodym theorem
+(\<open>cp_radon_nikodym_linear\<close>) writes $\Phi_1(X)=\sum_{i,j}T_{ij}V_iXV_j^*$ with $T\ge0$; trace
+preservation and independence force $T=I$, i.e.\ $\Phi_1=\Phi$.\<close>
 
 theorem choi_theorem_3_cptp_forward_complex:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -6292,8 +5308,8 @@ theorem choi_theorem_3_cptp_forward_complex:
   assumes npos: "0 < n" and dpos: "0 < d"
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
-      and lin_indep: "mat_lin_indep_complex n (kraus_products Vs)"
-  shows "extreme_CPTP_carrier n d \<Phi>"
+      and lin_indep: "lin_indep_complex_mat n n (kraus_products Vs)"
+  shows "extreme_CPTP n d \<Phi>"
 proof (rule ccontr)
   let ?k = "length Vs"
   have Vs_kops: "kraus_operators n d Vs"
@@ -6304,9 +5320,9 @@ proof (rule ccontr)
     using Vs_kops by (simp add: kraus_operators_altdef)
   have \<Phi>_eq: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = kraus_map_dim d Vs X"
     using rep by (simp add: cptp_kraus_rep_def)
-  assume "\<not> extreme_CPTP_carrier n d \<Phi>"
+  assume "\<not> extreme_CPTP n d \<Phi>"
   with \<Phi>_in have ex_pair: "\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2"
-    unfolding extreme_CPTP_carrier_def by simp
+    unfolding extreme_CPTP_def by simp
   obtain \<Phi>\<^sub>1 \<Phi>\<^sub>2 X\<^sub>0
     where \<Phi>1_in: "\<Phi>\<^sub>1 \<in> CPTP n d"
       and \<Phi>2_in: "\<Phi>\<^sub>2 \<in> CPTP n d"
@@ -6341,7 +5357,7 @@ proof (rule ccontr)
   define \<Psi> where "\<Psi> = (\<lambda>X. (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X)"
   \<comment> \<open>Step A: \<open>\<Psi>\<close> is CP, has the right range, and \<open>\<Phi> - \<Psi> = (1/2) \<cdot>\<^sub>m \<Phi>\<^sub>2\<close> on carrier is CP.\<close>
   \<comment> \<open>\<open>\<Phi>\<^sub>1\<close>, \<open>\<Phi>\<^sub>2\<close> have range \<open>carrier_mat d d\<close> on carrier inputs:
-      provided directly by the (strengthened) \<open>extreme_CPTP_carrier\<close>
+      provided directly by the (strengthened) \<open>extreme_CPTP\<close>
       definition, which makes the range condition explicit (since the
       project's \<open>CPTP\<close> doesn't enforce it).\<close>
   \<comment> \<open>From these, \<open>\<Psi>\<close>'s range is in \<open>carrier_mat d d\<close>.\<close>
@@ -6685,8 +5701,7 @@ proof (rule ccontr)
   have c_k0: "c \<kappa>\<^sub>0 = ?S $$ (i\<^sub>0, j\<^sub>0)"
     using c_eval[of \<kappa>\<^sub>0] k0_lt k0_div k0_mod by simp
   have c_k0_nz: "c \<kappa>\<^sub>0 \<noteq> 0" using c_k0 S_nz_at by simp
-  \<comment> \<open>The foldr-sum of \<open>c\<close> on \<open>kraus_products Vs\<close> vanishes (per-entry argument
-      parallel to \<open>mat_lin_indep_real_neg_witness\<close>).\<close>
+  \<comment> \<open>The foldr-sum of \<open>c\<close> on \<open>kraus_products Vs\<close> vanishes (entrywise).\<close>
   have foldr_zero: "foldr (\<lambda>\<kappa> acc. c \<kappa> \<cdot>\<^sub>m (?B!\<kappa>) + acc)
                           [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
   proof (rule eq_matI)
@@ -6770,7 +5785,7 @@ proof (rule ccontr)
   \<comment> \<open>Apply \<open>lin_indep\<close> to get \<open>c \<kappa>\<^sub>0 = 0\<close>, contradicting \<open>c_k0_nz\<close>.\<close>
   have all_c_zero: "\<forall>\<kappa> < length ?B. c \<kappa> = 0"
     using lin_indep foldr_zero
-    unfolding mat_lin_indep_complex_def by blast
+    unfolding lin_indep_complex_mat_def by blast
   hence "c \<kappa>\<^sub>0 = 0" using k0_lt B_len by simp
   thus False using c_k0_nz by simp
 qed
@@ -6811,54 +5826,8 @@ Radon--Nikodym for CP maps (every CP \<open>\<Psi> \<le>\<^sub>{cp} \<lambda>\<P
 \<open>\<Psi>(X) = \<Sum> T\<^sub>{ij} V\<^sub>i X V\<^sub>j\<^sup>\<dagger>\<close> for a PSD matrix \<open>T\<close>) which
 is itself a substantial development.\<close>
 
-text \<open>\<^bold>\<open>The CPTP form of Choi's Theorem 3 (carrier-flavoured).\<close>
-\<open>\<Phi>\<close> is extreme in CPTP iff the products \<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close> are
-linearly independent in \<open>M\<^sub>n\<close>.
-
-The project's @{const extreme_CPTP} uses a raw function inequality
-\<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close>; since @{const completely_positive} and
-@{const trace_preserving} only constrain behaviour on
-@{term \<open>carrier_mat n n\<close>}, this is technically vacuous (every
-CPTP map admits a CPTP \<open>\<Phi>\<^sub>1\<close> that agrees with it on carrier but
-disagrees off carrier).  The theorem is therefore stated in terms of
-@{const extreme_CPTP_carrier}, the carrier-point variant.
-
-The first biconditional below uses different lin-indep notions on each
-direction (the historical form); \<open>choi_theorem_3_cptp_iff\<close> states the genuine iff:
-\<^item> \<open>extreme_CPTP_carrier \<Longrightarrow> mat_lin_indep_real\<close>
-   (contrapositive of @{thm choi_theorem_3_cptp_reverse_carrier});
-\<^item> \<open>mat_lin_indep_complex \<Longrightarrow> extreme_CPTP_carrier\<close>
-   (the strengthened Choi forward direction
-   @{thm choi_theorem_3_cptp_forward_complex}, modulo CP Radon--Nikodym).
-
-The complex-coefficient witness \<open>herm_witness_of_complex\<close> bridges the two notions, so
-the direction ``extreme $\Rightarrow$ independent'' also holds over $\C$.\<close>
-
-theorem choi_theorem_3_cptp:
-  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes npos: "0 < n" and dpos: "0 < d"
-      and \<Phi>_in: "\<Phi> \<in> CPTP n d"
-      and rep:  "cptp_kraus_rep n d \<Phi> Vs"
-      and minimal: "lin_indep_complex_mat d n Vs"
-  shows "(extreme_CPTP_carrier n d \<Phi>
-            \<longrightarrow> mat_lin_indep_real n (kraus_products Vs))
-       \<and> (mat_lin_indep_complex n (kraus_products Vs)
-            \<longrightarrow> extreme_CPTP_carrier n d \<Phi>)"
-proof (intro conjI impI)
-  assume ext: "extreme_CPTP_carrier n d \<Phi>"
-  show "mat_lin_indep_real n (kraus_products Vs)"
-    by (rule choi_theorem_3_cptp_carrier_forward
-          [OF npos dpos \<Phi>_in rep minimal ext])
-next
-  assume li: "mat_lin_indep_complex n (kraus_products Vs)"
-  show "extreme_CPTP_carrier n d \<Phi>"
-    by (rule choi_theorem_3_cptp_forward_complex
-          [OF npos dpos \<Phi>_in rep li])
-qed
-
-text \<open>With the complex-coefficient witness, the two directions use the same notion of linear
-independence: Choi's Theorem 3 in the form of the notes' corollary.\<close>
+text \<open>Choi's Theorem 3, CPTP form: for a linearly independent Kraus list,
+\[ \Phi\ \text{extreme in}\ \mathrm{CPTP}(M_n,M_d)\iff\{V_j^*V_i\}_{i,j}\ \text{linearly independent}. \]\<close>
 
 theorem choi_theorem_3_cptp_iff:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -6867,69 +5836,13 @@ theorem choi_theorem_3_cptp_iff:
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
       and minimal: "lin_indep_complex_mat d n Vs"
-  shows "extreme_CPTP_carrier n d \<Phi> \<longleftrightarrow> mat_lin_indep_complex n (kraus_products Vs)"
-  using choi_theorem_3_cptp_reverse_carrier_complex[OF npos dpos \<Phi>_in rep minimal]
+  shows "extreme_CPTP n d \<Phi> \<longleftrightarrow> lin_indep_complex_mat n n (kraus_products Vs)"
+  using choi_theorem_3_cptp_reverse[OF npos dpos \<Phi>_in rep minimal]
         choi_theorem_3_cptp_forward_complex[OF npos dpos \<Phi>_in rep]
   by blast
 
-text \<open>\<^bold>\<open>The UCP form of Choi's Theorem 3.\<close>  In the UCP / Heisenberg
-convention, the relevant products live in \<open>M\<^sub>d\<close> with the
-\<^emph>\<open>opposite\<close> order \<open>{V\<^sub>i V\<^sub>j\<^sup>\<dagger>}\<close>.
-
-The project's @{const kraus_products} uses the CPTP-side convention
-\<open>{V\<^sub>j\<^sup>\<dagger> V\<^sub>i}\<close>, and there is no UCP-side carrier-extreme notion
-or analogue of @{thm choi_theorem_3_cptp_reverse_carrier} in this
-development.  A proper UCP form of Choi's theorem requires either:
-\<^item> a parallel @{term \<open>kraus_products_ucp\<close>} (\<open>V\<^sub>i V\<^sub>j\<^sup>\<dagger>\<close>),
-   an \<open>extreme_UCP_carrier\<close> predicate, and full UCP-side analogues
-   of the carrier-flavoured lemmas; or
-\<^item> a Hilbert--Schmidt duality between @{const extreme_UCP} and
-   @{const extreme_CPTP} that transports the CPTP theorem above.
-
-The second route is taken in theory Day23\_Choi3\_UCP, which states the UCP form.\<close>
-
-
-subsection \<open>Sanity / easy facts about extreme UCP\<close>
-
-text \<open>If a UCP map has a non-trivial mid-point representation by two
-distinct UCP maps, it is not extreme \<^emph>\<open>by definition\<close>.\<close>
-
-lemma not_extreme_UCP_if_midpoint:
-  assumes "\<Phi>\<^sub>1 \<in> UCP n d" "\<Phi>\<^sub>2 \<in> UCP n d"
-      and "\<Phi>\<^sub>1 \<noteq> \<Phi>" and "\<Phi> \<noteq> \<Phi>\<^sub>2"
-      and "\<Phi> \<in> UCP n d"
-      and "\<And>X. X \<in> carrier_mat n n
-                \<Longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
-                          + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X"
-  shows "\<not> extreme_UCP n d \<Phi>"
-  using assms unfolding extreme_UCP_def by blast
-
-text \<open>The contrapositive: every extreme UCP map, when written as a
-mid-point of two UCP maps, must have those maps coincide with itself
-on every \<open>X \<in> carrier_mat n n\<close>.\<close>
-
-lemma extreme_UCP_midpoint_collapses:
-  assumes ext: "extreme_UCP n d \<Phi>"
-      and \<Phi>1_in: "\<Phi>\<^sub>1 \<in> UCP n d"
-      and \<Phi>2_in: "\<Phi>\<^sub>2 \<in> UCP n d"
-      and mid: "\<And>X. X \<in> carrier_mat n n
-                       \<Longrightarrow> \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X
-                                 + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X"
-  shows "\<Phi>\<^sub>1 = \<Phi> \<or> \<Phi> = \<Phi>\<^sub>2"
-proof (rule ccontr)
-  assume neq: "\<not> (\<Phi>\<^sub>1 = \<Phi> \<or> \<Phi> = \<Phi>\<^sub>2)"
-  hence neq1: "\<Phi>\<^sub>1 \<noteq> \<Phi>" and neq2: "\<Phi> \<noteq> \<Phi>\<^sub>2" by simp_all
-  have "\<not> extreme_UCP n d \<Phi>"
-    using \<Phi>1_in \<Phi>2_in neq1 neq2
-          extreme_UCP_member [OF ext] mid
-    by (rule not_extreme_UCP_if_midpoint)
-  thus False using ext by simp
-qed
-
-
-text \<open>This closes the Day-23 stub.  The full content of Choi's
-Theorem 3 awaits a Kraus-list formalisation; the definitions
-collected above will plug into that proof once available.\<close>
+text \<open>The UCP form, by duality with this one, is \<open>choi_theorem_3_ucp\<close> in theory
+Day23\_Choi3\_UCP.\<close>
 
 
 end

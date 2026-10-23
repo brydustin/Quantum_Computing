@@ -64,7 +64,7 @@ proof -
   thus ?thesis using V.dim_is_n distinct_card[OF dist] by simp
 qed
 
-text \<open>Flattening a matrix into a vector carries \<open>mat_lin_indep_complex\<close> to
+text \<open>Flattening a matrix into a vector carries linear independence of matrices to
 \<open>lin_indep_vecs\<close>, so a linearly independent family in $M_n$ has at most $n^2$ members.\<close>
 
 definition flatten_mat :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
@@ -83,7 +83,7 @@ proof -
 qed
 
 lemma mat_lin_indep_complex_flatten:
-  assumes li: "mat_lin_indep_complex n Bs"
+  assumes li: "lin_indep_complex_mat n n Bs"
   shows "lin_indep_vecs (n*n) (map (flatten_mat n) Bs)"
 proof (unfold lin_indep_vecs_def, intro conjI allI impI)
   show "\<forall>v \<in> set (map (flatten_mat n) Bs). dim_vec v = n*n" by simp
@@ -92,7 +92,7 @@ next
   let ?m = "length (map (flatten_mat n) Bs)"
   let ?A = "mat_of_cols (n*n) (map (flatten_mat n) Bs)"
   assume xc: "x \<in> carrier_vec ?m" and Ax: "?A *\<^sub>v x = 0\<^sub>v (n*n)"
-  have Bc: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" using li by (simp add: mat_lin_indep_complex_def)
+  have Bc: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" using li by (simp add: lin_indep_complex_mat_def)
   have len: "?m = length Bs" by simp
   let ?f = "\<lambda>k. x $ k \<cdot>\<^sub>m (Bs!k)"
   have fc: "\<forall>k \<in> set [0..<length Bs]. ?f k \<in> carrier_mat n n" using Bc by auto
@@ -129,12 +129,12 @@ next
     finally show "foldr (\<lambda>k acc. ?f k + acc) [0..<length Bs] (0\<^sub>m n n) $$ (i,j) = (0\<^sub>m n n :: complex Matrix.mat) $$ (i,j)"
       using i j by simp
   qed (use foldr_add_mat_carrier[OF fc] in auto)
-  have "\<forall>k < length Bs. x $ k = 0" using li comb0 by (simp add: mat_lin_indep_complex_def)
+  have "\<forall>k < length Bs. x $ k = 0" using li comb0 by (simp add: lin_indep_complex_mat_def)
   thus "x = 0\<^sub>v ?m" using xc by (intro eq_vecI) auto
 qed
 
 lemma mat_lin_indep_complex_length_le:
-  assumes "mat_lin_indep_complex n Bs"
+  assumes "lin_indep_complex_mat n n Bs"
   shows "length Bs \<le> n*n"
   using lin_indep_vecs_length_le[OF mat_lin_indep_complex_flatten[OF assms]] by simp
 
@@ -146,10 +146,10 @@ corollary extreme_CPTP_kraus_length_le:
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep: "cptp_kraus_rep n d \<Phi> Vs"
       and minimal: "lin_indep_complex_mat d n Vs"
-      and ext: "extreme_CPTP_carrier n d \<Phi>"
+      and ext: "extreme_CPTP n d \<Phi>"
   shows "length Vs \<le> n"
 proof -
-  have "mat_lin_indep_complex n (kraus_products Vs)"
+  have "lin_indep_complex_mat n n (kraus_products Vs)"
     using choi_theorem_3_cptp_iff[OF npos dpos \<Phi>_in rep minimal] ext by simp
   hence "length Vs * length Vs \<le> n * n"
     using mat_lin_indep_complex_length_le length_kraus_products by metis
@@ -161,7 +161,7 @@ corollary extreme_CPTP_choi_rank_le:
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep: "cptp_kraus_rep n d \<Phi> Vs"
       and minimal: "lin_indep_complex_mat d n Vs"
-      and ext: "extreme_CPTP_carrier n d \<Phi>"
+      and ext: "extreme_CPTP n d \<Phi>"
   shows "choi_rank n d \<Phi> \<le> n"
 proof -
   have Vc: "\<forall>A \<in> set Vs. A \<in> carrier_mat d n" and Vr: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X"

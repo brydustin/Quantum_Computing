@@ -30,10 +30,10 @@ qed
 
 lemma not_indep_of_dup:
   assumes a: "a < length Bs" and b: "b < length Bs" and ab: "a \<noteq> b" and eq: "Bs ! a = Bs ! b"
-  shows "\<not> mat_lin_indep_complex n Bs"
+  shows "\<not> lin_indep_complex_mat n n Bs"
 proof
-  assume ind: "mat_lin_indep_complex n Bs"
-  hence Bs: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" unfolding mat_lin_indep_complex_def by simp
+  assume ind: "lin_indep_complex_mat n n Bs"
+  hence Bs: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" unfolding lin_indep_complex_mat_def by simp
   let ?c = "\<lambda>k. if k = a then 1 else if k = b then -1 else (0::complex)"
   have z: "foldr (\<lambda>k acc. ?c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n"
   proof (rule eq_matI)
@@ -50,16 +50,16 @@ proof
       "dim_col (foldr (\<lambda>k acc. ?c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n n)) = dim_col (0\<^sub>m n n :: complex Matrix.mat)"
       using foldr_add_mat_carrier_rect[of "[0..<length Bs]" "\<lambda>k. ?c k \<cdot>\<^sub>m (Bs ! k)" n n] Bs by auto
   qed
-  have "?c a = 0" by (rule conjunct2[OF ind[unfolded mat_lin_indep_complex_def], rule_format, OF z a])
+  have "?c a = 0" by (rule conjunct2[OF ind[unfolded lin_indep_complex_mat_def], rule_format, OF z a])
   thus False by simp
 qed
 
 lemma not_indep_of_zero:
   assumes a: "a < length Bs" and z: "Bs ! a = 0\<^sub>m n n"
-  shows "\<not> mat_lin_indep_complex n Bs"
+  shows "\<not> lin_indep_complex_mat n n Bs"
 proof
-  assume ind: "mat_lin_indep_complex n Bs"
-  hence Bs: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" unfolding mat_lin_indep_complex_def by simp
+  assume ind: "lin_indep_complex_mat n n Bs"
+  hence Bs: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" unfolding lin_indep_complex_mat_def by simp
   let ?c = "\<lambda>k. if k = a then 1 else (0::complex)"
   have z: "foldr (\<lambda>k acc. ?c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n"
   proof (rule eq_matI)
@@ -75,7 +75,7 @@ proof
       "dim_col (foldr (\<lambda>k acc. ?c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n n)) = dim_col (0\<^sub>m n n :: complex Matrix.mat)"
       using foldr_add_mat_carrier_rect[of "[0..<length Bs]" "\<lambda>k. ?c k \<cdot>\<^sub>m (Bs ! k)" n n] Bs by auto
   qed
-  have "?c a = 0" by (rule conjunct2[OF ind[unfolded mat_lin_indep_complex_def], rule_format, OF z a])
+  have "?c a = 0" by (rule conjunct2[OF ind[unfolded lin_indep_complex_mat_def], rule_format, OF z a])
   thus False by simp
 qed
 
@@ -94,8 +94,8 @@ qed
 
 lemma single_mat_lin_indep:
   assumes B: "B \<in> carrier_mat n n" and r: "r < n" and s: "s < n" and nz: "B $$ (r,s) \<noteq> 0"
-  shows "mat_lin_indep_complex n [B]"
-  unfolding mat_lin_indep_complex_def
+  shows "lin_indep_complex_mat n n [B]"
+  unfolding lin_indep_complex_mat_def
 proof (intro conjI allI impI)
   show "\<forall>A \<in> set [B]. A \<in> carrier_mat n n" using B by simp
   fix c :: "nat \<Rightarrow> complex" and k
@@ -123,7 +123,7 @@ subsection \<open>Example 1: unitary conjugation is extreme\<close>
 
 theorem unitary_conjugation_extreme:
   assumes U: "U \<in> carrier_mat n n" and Uu: "unitary U" and n: "0 < n"
-  shows "extreme_CPTP_carrier n n (kraus_map_dim n [U])"
+  shows "extreme_CPTP n n (kraus_map_dim n [U])"
 proof -
   have UdU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n" using Uu U unfolding unitary_def by simp
   have K: "kraus_operators n n [U]" unfolding kraus_operators_def using U UdU by simp
@@ -138,7 +138,7 @@ proof -
   then obtain r s where rs: "r < n" "s < n" "U $$ (r,s) \<noteq> 0" by (rule nonzero_entry[OF U])
   have min: "lin_indep_complex_mat n n [U]" by (rule single_lin_indep[OF U rs])
   have kp: "kraus_products [U] = [1\<^sub>m n]" unfolding kraus_products_def using UdU by simp
-  have ind: "mat_lin_indep_complex n (kraus_products [U])"
+  have ind: "lin_indep_complex_mat n n (kraus_products [U])"
     unfolding kp by (rule single_mat_lin_indep[of _ n 0 0]) (use n in simp_all)
   have rep: "cptp_kraus_rep n n (kraus_map_dim n [U]) [U]" unfolding cptp_kraus_rep_def using K by simp
   show ?thesis
@@ -228,7 +228,7 @@ $V_i^*V_j$ contain $\tfrac12I$ twice and $\Phi$ is not extreme.\<close>
 theorem avg2_not_extreme:
   assumes U1: "U1 \<in> carrier_mat n n" "unitary U1" and U2: "U2 \<in> carrier_mat n n" "unitary U2"
       and n: "0 < n" and ind: "lin_indep_complex_mat n n (avg2 U1 U2)"
-  shows "\<not> extreme_CPTP_carrier n n (kraus_map_dim n (avg2 U1 U2))"
+  shows "\<not> extreme_CPTP n n (kraus_map_dim n (avg2 U1 U2))"
 proof -
   have K: "kraus_operators n n (avg2 U1 U2)" by (rule avg2_kraus[OF U1 U2])
   have rep: "cptp_kraus_rep n n (kraus_map_dim n (avg2 U1 U2)) (avg2 U1 U2)"
@@ -238,7 +238,7 @@ proof -
            "kraus_products (avg2 U1 U2) ! 3 = (avg2 U1 U2 ! 1)\<^sup>\<dagger> * avg2 U1 U2 ! 1"
            "length (kraus_products (avg2 U1 U2)) = 4"
     unfolding kraus_products_def l by (simp_all add: upt_rec)
-  have "\<not> mat_lin_indep_complex n (kraus_products (avg2 U1 U2))"
+  have "\<not> lin_indep_complex_mat n n (kraus_products (avg2 U1 U2))"
     by (rule not_indep_of_dup[of 0 _ 3]) (use kp avg2_products[OF U1 U2] in simp_all)
   thus ?thesis using choi_theorem_3_cptp_iff[OF n n kraus_is_cptp[OF K n n] rep ind] by simp
 qed
@@ -248,7 +248,7 @@ $X\mapsto U_1XU_1^*$, which is extreme.\<close>
 
 theorem avg2_proportional_extreme:
   assumes U1: "U1 \<in> carrier_mat n n" "unitary U1" and lam: "cmod z = 1" and n: "0 < n"
-  shows "extreme_CPTP_carrier n n (kraus_map_dim n (avg2 U1 (z \<cdot>\<^sub>m U1)))"
+  shows "extreme_CPTP n n (kraus_map_dim n (avg2 U1 (z \<cdot>\<^sub>m U1)))"
 proof -
   have U2: "z \<cdot>\<^sub>m U1 \<in> carrier_mat n n" using U1 by simp
   have ll: "cnj z * z = 1" using lam by (metis complex_norm_square mult.commute of_real_1 power_one)
@@ -287,7 +287,7 @@ proof -
   then obtain r s where rs: "r < n" "s < n" "U1 $$ (r,s) \<noteq> 0" by (rule nonzero_entry[OF U1(1)])
   have min: "lin_indep_complex_mat n n [U1]" by (rule single_lin_indep[OF U1(1) rs])
   have kp: "kraus_products [U1] = [1\<^sub>m n]" unfolding kraus_products_def using UdU by simp
-  have ind: "mat_lin_indep_complex n (kraus_products [U1])"
+  have ind: "lin_indep_complex_mat n n (kraus_products [U1])"
     unfolding kp by (rule single_mat_lin_indep[of _ n 0 0]) (use n in simp_all)
   show ?thesis using choi_theorem_3_cptp_iff[OF n n kraus_is_cptp[OF K n n] rep min] ind by simp
 qed
@@ -423,7 +423,7 @@ qed
 
 theorem diag_not_extreme:
   assumes n: "2 \<le> n"
-  shows "\<not> extreme_CPTP_carrier n n (kraus_map_dim n (diag_kraus n))"
+  shows "\<not> extreme_CPTP n n (kraus_map_dim n (diag_kraus n))"
 proof -
   have n0: "0 < n" using n by simp
   have K: "kraus_operators n n (diag_kraus n)" by (rule diag_kraus_operators)
@@ -447,7 +447,7 @@ proof -
   hence z: "kraus_products (diag_kraus n) ! 1 = 0\<^sub>m n n" using k1 by simp
   have "1 < length (kraus_products (diag_kraus n))" using n l length_kraus_products[of "diag_kraus n"]
     using mult_le_mono[OF n n] by simp
-  hence "\<not> mat_lin_indep_complex n (kraus_products (diag_kraus n))" by (rule not_indep_of_zero[OF _ z])
+  hence "\<not> lin_indep_complex_mat n n (kraus_products (diag_kraus n))" by (rule not_indep_of_zero[OF _ z])
   thus ?thesis using choi_theorem_3_cptp_iff[OF n0 n0 kraus_is_cptp[OF K n0 n0] rep diag_kraus_lin_indep] by simp
 qed
 
@@ -631,9 +631,9 @@ qed
 
 theorem tr_map_not_extreme:
   assumes n: "0 < n" and d: "2 \<le> d"
-  shows "\<not> extreme_CPTP_carrier n d (kraus_map_dim d (tr_kraus n d))"
+  shows "\<not> extreme_CPTP n d (kraus_map_dim d (tr_kraus n d))"
 proof
-  assume ext: "extreme_CPTP_carrier n d (kraus_map_dim d (tr_kraus n d))"
+  assume ext: "extreme_CPTP n d (kraus_map_dim d (tr_kraus n d))"
   have d0: "0 < d" using d by simp
   have K: "kraus_operators n d (tr_kraus n d)" by (rule tr_kraus_operators[OF d0])
   have rep: "cptp_kraus_rep n d (kraus_map_dim d (tr_kraus n d)) (tr_kraus n d)"

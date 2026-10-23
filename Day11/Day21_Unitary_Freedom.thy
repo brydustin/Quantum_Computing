@@ -136,7 +136,7 @@ lemma inner_prod_cnj_delta:
 
 proposition outer_prods_lin_indep:
   assumes li: "lin_indep_vecs n vs"
-  shows "mat_lin_indep_complex n (outer_prods vs)"
+  shows "lin_indep_complex_mat n n (outer_prods vs)"
 proof -
   let ?r = "length vs"
   have vsd: "\<forall>v \<in> set vs. dim_vec v = n" using li by (simp add: lin_indep_vecs_def)
@@ -157,7 +157,7 @@ proof -
     ultimately show "B \<in> carrier_mat n n" unfolding B by (intro outer_prod_carrier vd)
   qed
   show ?thesis
-  proof (unfold mat_lin_indep_complex_def, intro conjI allI impI)
+  proof (unfold lin_indep_complex_mat_def, intro conjI allI impI)
     show "\<forall>B \<in> set (outer_prods vs). B \<in> carrier_mat n n" by (rule Bc)
   next
     fix c :: "nat \<Rightarrow> complex"

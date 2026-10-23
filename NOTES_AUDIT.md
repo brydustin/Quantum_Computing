@@ -251,8 +251,8 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 ### Day 23 (19 Oct): proof of Choi's Theorem 3, examples
 | id | notes | formal | status |
 |---|---|---|---|
-| D23-1 | Choi 3: Φ UCP with minimal Kraus rep (V_i) is extreme iff {V_i*V_j} linearly independent | C3U `choi_theorem_3_ucp`: for Φ ∈ UCP with Φ(X) = Σ W_i X W_i* (W_i = V_i* in the notes' notation) and the W_i linearly independent, `extreme_UCP_carrier` ⟺ linear independence of the products W_j W_i* (= V_j* V_i); from D23 `choi_theorem_3_cptp_iff` (the CPTP form) through the duality of D22-5 (`extreme_UCP_iff_adjoint`: Γ maps midpoint decompositions both ways; `lin_indep_complex_mat_dagger`, `kraus_operators_dagger_of_unital`).  "Minimal" is replaced by linear independence, which minimal representations have (D22M `minimal_kraus_rep_lin_indep`); extremality is the carrier-point notion (functions on `complex Matrix.mat` are only constrained on `carrier_mat n n`) | ✓ |
-| D23-2 | forward direction via perturbation ψ_± | D23 `choi_theorem_3_cptp_reverse_carrier` (perturbation `kraus_quad_map`, `small_eps_psd`, `sym_or_antisym_witness`) | ✓ |
+| D23-1 | Choi 3: Φ UCP with minimal Kraus rep (V_i) is extreme iff {V_i*V_j} linearly independent | C3U `choi_theorem_3_ucp`: for Φ ∈ UCP with Φ(X) = Σ W_i X W_i* (W_i = V_i* in the notes' notation) and the W_i linearly independent, `extreme_UCP` ⟺ linear independence of the products W_j W_i* (= V_j* V_i); from D23 `choi_theorem_3_cptp_iff` (the CPTP form) through the duality of D22-5 (`extreme_UCP_iff_adjoint`: Γ maps midpoint decompositions both ways; `lin_indep_complex_mat_dagger`, `kraus_operators_dagger_of_unital`).  "Minimal" is replaced by linear independence, which minimal representations have (D22M `minimal_kraus_rep_lin_indep`); extremality compares maps on M_n (functions on `complex Matrix.mat` are only constrained on `carrier_mat n n`) | ✓ |
+| D23-2 | forward direction via perturbation ψ_± | D23 `choi_theorem_3_cptp_reverse` (perturbation `kraus_quad_map`, `small_eps_psd`, `herm_witness_of_complex`) | ✓ |
 | D23-3 | reverse direction via Choi 2 | D23 `choi_theorem_3_cptp_forward_complex` via CP Radon–Nikodym (`cp_radon_nikodym_linear`, `dominated_outer_sum_param`) instead of Choi 2 | ~ |
 | D23-4 | Examples: U*XU extreme; ½(U₁*XU₁+U₂*XU₂) not; Tr(X)I not; diag not | EE `unitary_conjugation_extreme`, `avg2_not_extreme` (needs U₁, U₂ linearly independent; `avg2_proportional_extreme` otherwise), `tr_map_not_extreme` (the map is X ↦ Tr(X)I_d/d), `diag_not_extreme` | ~ |
 
@@ -445,8 +445,8 @@ in a variant (stated), ✗ not yet, – out of scope (reason given).
 2. `cholesky_reduction` assumes p₁₁ > 0 (D5-2); the notes' statement is false without it (take p₁₁ = 0).
 3. The notes claim H² = X on Day 10 and correct it on Day 11; the formalisation proves H² = I.
 4. Partial traces are defined by the block formulas of Day 16 with A-major Kronecker indexing; `partial_trace_B_tensor` and `partial_trace_A_tensor` show they agree with the Day 15 definition on elementary tensors.
-5. Choi's Theorem 3 is formalised in the CPTP form with a fixed linearly independent Kraus list and the carrier-point notion of extremality (D23-1).
-6. `extreme_CPTP` (raw function inequality) is provably vacuous; use `extreme_CPTP_carrier` (documented inside D23).
+5. Choi's Theorem 3 is formalised in the CPTP form with a fixed linearly independent Kraus list; extremality compares maps on M_n (D23-1).
+6. An earlier `extreme_CPTP`/`extreme_UCP` compared maps as functions on all matrices, which made them vacuous; they now compare maps on M_n (D23).
 7. The entanglement theory is formalised in witness form (SC) and, through the Arveson correspondence, also in the notes' positive-map form (D28-3, `Day27_Positive_Map_Criterion`).
 8. The three-qubit phase-flip code words were called `shor_zero`/`shor_one`; renamed `phase_code_zero`/`phase_code_one` (D32-1).
 9. `psd_sqrt` was a placeholder constant equal to the zero matrix; now defined via `SOME` with `psd_sqrt_props` (D8-4).

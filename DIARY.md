@@ -889,3 +889,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   (a few early completions use later lectures, e.g. `Day04_Hermitian_Converse` a Day 18 lemma).
   The document, the ROOT lists and the capstone imports run Day 1 → Day 34, supporting
   theories last; the reading guide is a per-lecture table.  NOTES_AUDIT: Ln = lecture n.
+- **Extremality fixed** (2026-10-23): `extreme_CPTP`/`extreme_UCP` compared maps as functions on all
+  matrices; CPTP/UCP only constrain them on M_n, so every map had a non-trivial midpoint and the
+  notions were empty (the printed "caveat").  They now mean what `extreme_CPTP_carrier`/
+  `extreme_UCP_carrier` meant (maps compared on M_n, midpoints linear on M_n); the vacuous
+  theorems, the "historical" biconditional, and the real-coefficient reverse direction (the
+  complex one is stronger) are gone, and `mat_lin_indep_complex n` is `lin_indep_complex_mat n n`.
+  Day 23 lost about 1100 lines.  Also: printed commentary with displayed equations across the
+  notes, process remarks out of printed text, LaTeX instead of Isabelle symbols in texts.
