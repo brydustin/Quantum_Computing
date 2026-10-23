@@ -716,9 +716,7 @@ proof -
     by (rule power2_le_imp_le[OF hs_sq_le' rd_nn])
 qed
 
-text \<open>Entry-wise convergence implies HS-norm convergence.  This is
-the slow half of HS-completeness; we use the entry-bound helper to
-keep it tractable.\<close>
+text \<open>Entry-wise convergence implies HS-norm convergence.\<close>
 
 lemma entry_lim_imp_HS_lim:
   fixes M_seq :: "nat \<Rightarrow> complex Matrix.mat" and M_lim :: "complex Matrix.mat"
@@ -2062,7 +2060,7 @@ proof -
   have c_nontriv_L: "\<exists>k<L. c k \<noteq> 0" using c_nontriv pairs_length by simp
   have c_outside_L: "\<forall>k\<ge>L. c k = 0" using c_outside pairs_length by simp
 
-  text \<open>Rewrite \<open>c_sum\<close> with \<open>pairs ! k\<close> unfolded.\<close>
+  \<comment> \<open>\<open>c_sum\<close> with \<open>pairs ! k\<close> unfolded\<close>
   have pairs_nth: "\<And>k. k < L \<Longrightarrow>
                        pairs ! k = (fst (snd (ts ! k)), snd (snd (ts ! k)))"
     unfolding pairs_def by simp

@@ -15,8 +15,7 @@ this one must not import Isabelle\_Marries\_Dirac directly, as that undoes the h
 
 hide_const (open) Quantum.X Quantum.Y Quantum.Z Quantum.H Quantum.S Quantum.T
 
-text \<open>\<open>No_Cloning\<close> is imported for \<open>cauchy_schwarz_ineq\<close>; its simp rules (e.g.\ \<open>v = w\<close> from
-inner products) slow simp on every vector equation.\<close>
+(* No_Cloning is imported for cauchy_schwarz_ineq; its simp rules slow down every vector equation. *)
 
 declare cauchy_schwarz_eq [simp del] cauchy_schwarz_col [simp del] eq_from_inner_prod [simp del]
 

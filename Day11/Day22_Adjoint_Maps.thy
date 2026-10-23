@@ -20,6 +20,11 @@ $\Phi^*(Y)_{ij}=\langle\Phi(E_{ij})|Y\rangle$.\<close>
 definition map_adjoint :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "map_adjoint n d \<Phi> Y = Matrix.mat n n (\<lambda>(i, j). \<langle>\<langle> \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) | Y \<rangle>\<rangle>)"
 
+text \<open>$\Phi^*:M_d\to M_n$ is determined by $\langle\Phi^*(Y)|X\rangle=\langle Y|\Phi(X)\rangle$.  Since
+$\Phi(X)=\sum_{i,j}x_{ij}\Phi(E_{ij})$ for linear $\Phi$, it suffices that
+\[ \Phi^*(Y)_{ij}=\langle\Phi(E_{ij})|Y\rangle, \]
+which is the definition.\<close>
+
 lemma map_adjoint_carrier [simp]: "map_adjoint n d \<Phi> Y \<in> carrier_mat n n"
   by (simp add: map_adjoint_def)
 

@@ -118,6 +118,11 @@ definition bop :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Ma
 definition blk :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "blk b M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (8^b)) M) (1\<^sub>m (8^(2-b)))"
 
+text \<open>$\tilde U_i=I_{2^i}\otimes U\otimes I_{2^{8-i}}$ applies $U$ to qubit $i$.  In three blocks of three
+qubits, qubit $3b+s$ is qubit $s$ of block $b$:
+\[ \tilde U_{3b+s}=I_{8^b}\otimes\bigl(I_{2^s}\otimes U\otimes I_{2^{2-s}}\bigr)\otimes I_{8^{2-b}}, \]
+so every computation on $\C^{512}$ reduces to one on $\C^8$.\<close>
+
 lemma qubit_op_carrier:
   assumes U: "U \<in> carrier_mat 2 2" and i: "i < 9"
   shows "qubit_op i U \<in> carrier_mat 512 512"
@@ -215,6 +220,11 @@ definition pm :: "bool \<Rightarrow> complex" where "pm p = (if p then 1 else -1
 
 definition gvec :: "bool \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where
   "gvec p m = unit_vec 8 m + pm p \<cdot>\<^sub>v unit_vec 8 (7 - m)"
+
+text \<open>On a block, with $m=2^{2-s}$ for qubit $s$,
+\[ X_s(\ket{000}\pm\ket{111})=\ket m\pm\ket{7-m},\qquad Z_s(\ket{000}\pm\ket{111})=\ket{000}\mp\ket{111}, \]
+and $Y_s$ does both, with the factor $-i$.  The eight vectors $\ket m\pm\ket{7-m}$, $m\in\{0,1,2,4\}$,
+are orthogonal with norm $\sqrt2$.\<close>
 
 lemma gvec_dim [simp]: "dim_vec (gvec p m) = 8"
   by (simp add: gvec_def)
@@ -434,7 +444,8 @@ qed
 
 subsection \<open>The 22 correctable errors\<close>
 
-text \<open>$I$, $X_1,\dots,X_9$, $Y_1,\dots,Y_9$, $Z_1,Z_4,Z_7$ (positions counted from $0$ here).\<close>
+text \<open>In the notes' numbering $I,X_1,\dots,X_9,Y_1,\dots,Y_9,Z_1,Z_4,Z_7$.  Here qubits are counted
+from $0$: $I$, $X_i$ and $Y_i$ ($i<9$), and $Z_0,Z_3,Z_6$.\<close>
 
 definition shor_errors :: "complex Matrix.mat list" where
   "shor_errors = 1\<^sub>m 512 # map (\<lambda>i. qubit_op i Pauli_X) [0..<9] @ map (\<lambda>i. qubit_op i Pauli_Y) [0..<9]
@@ -451,6 +462,12 @@ definition shor_kappa :: "complex list" where
 
 lemma shor_lengths [simp]: "length shor_errors = 22" "length (shor_labels p) = 22" "length shor_kappa = 22"
   by (simp_all add: shor_errors_def shor_labels_def shor_kappa_def)
+
+text \<open>One $Z$ per block suffices, since $Z_i$ and $Z_j$ agree on the code when $i$ and $j$ share a
+block.  Each error sends a code word
+to a multiple of a labelled product vector,
+\[ E_j\ket{c_p}=\kappa_j\,8^{-1/2}\,\ket{\ell_j(p)}, \]
+and distinct errors give distinct labels, hence orthogonal images.\<close>
 
 lemma shor_errors_cases:
   assumes j: "j < 22"

@@ -43,6 +43,12 @@ lemma choi_seed_carrier [simp]:
   "choi_seed n \<in> carrier_mat (n*n) (n*n)"
   by (simp add: choi_seed_def)
 
+text \<open>The seed $\sum_{a,b}E_{ab}\otimes E_{ab}\in M_n(M_n)$ has the matrix unit $E_{ab}$ as its $(a,b)$
+block, so the Choi matrix is the amplification of $\Phi$ applied to it:
+\[ P_\Phi=\bigl(\Phi(E_{ab})\bigr)_{a,b}=\Phi^{(n)}\Bigl(\sum_{a,b}E_{ab}\otimes E_{ab}\Bigr). \]
+The seed is $\ketbra\xi\xi$ with $\xi=\sum_ae_a\otimes e_a$, hence positive; so $P_\Phi\ge0$ when
+$\Phi$ is completely positive.\<close>
+
 lemma choi_seed_block:
   assumes npos: "n > 0"
       and a: "a < n"

@@ -158,7 +158,7 @@ lemma unitary_mult2:
   by (metis UA UB dims unitary_carrier_square_row unitary_mult)
 
 
-section \<open>Tensor product infrastructure\<close>
+section \<open>Kronecker products\<close>
 
 text \<open>Kronecker products of matrices, \<^term>\<open>A \<Otimes> B\<close>: the tensor of identities, the
 adjoint $(R\otimes T)^*=R^*\otimes T^*$, the mixed-product property

@@ -84,7 +84,7 @@ proof
 qed
 
 
-section \<open>Auxiliary: pointwise unwrapping (used by later instances)\<close>
+section \<open>Entries of sums and differences\<close>
 
 lemma unwrap_lm_plus_index [simp]:
   fixes M N :: "('a :: plus, 'm :: finite, 'n :: finite) lmat"

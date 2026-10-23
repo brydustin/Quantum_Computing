@@ -68,8 +68,7 @@ lemma extreme_UCP_member:
   shows "\<Phi> \<in> UCP n d"
   using assms unfolding extreme_UCP_def by simp
 
-text \<open>Trivial unfolding: an extreme UCP map satisfies no non-trivial
-mid-point decomposition.\<close>
+text \<open>An extreme UCP map has no non-trivial midpoint decomposition.\<close>
 
 lemma extreme_UCP_no_split:
   assumes ext: "extreme_UCP n d \<Phi>"
@@ -2675,7 +2674,7 @@ proof -
   qed
 qed
 
-subsection \<open>Auxiliary lemmas for the assembly\<close>
+subsection \<open>The quadratic Kraus map: scaling, and $T=I$\<close>
 
 text \<open>Scalar-multiplication linearity of @{const kraus_quad_map} in \<open>T\<close>.\<close>
 
@@ -5725,12 +5724,8 @@ inequality \<open>\<Phi>\<^sub>1 \<noteq> \<Phi>\<close> in @{const extreme_CPTP
 satisfiable.  We therefore introduce a \<^emph>\<open>carrier\<close>-point
 non-extremity notion below.\<close>
 
-text \<open>To keep @{term \<open>extreme_CPTP_carrier\<close>}'s definition manageable
-for automated proofs, we factor it through a helper predicate
-@{term \<open>cptp_pair_mid\<close>}: the data of a CPTP midpoint pair witnessing
-non-extremity (range, linearity on carrier, off-equal at some
-carrier-point, and the midpoint identity).  Unfolding only the outer
-definition keeps the goal small.\<close>
+text \<open>\<open>cptp_pair_mid\<close> collects the data of a midpoint pair witnessing non-extremality: both maps
+CPTP and linear on $M_n$, different at some matrix, with $\Phi=\tfrac12(\Phi_1+\Phi_2)$.\<close>
 
 definition lin_on_carrier ::
   "nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"

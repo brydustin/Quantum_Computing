@@ -161,6 +161,11 @@ definition lin_fun_on :: "complex Matrix.mat set \<Rightarrow> (complex Matrix.m
 definition positive_fun_on :: "complex Matrix.mat set \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex) \<Rightarrow> bool" where
   "positive_fun_on TS f \<longleftrightarrow> (\<forall>A \<in> TS. psd A \<longrightarrow> 0 \<le> f A)"
 
+text \<open>For $A=(A_{ij})\in M_d(S)$, the functional of a map $\Phi:S\to M_d$ and the map of a functional
+$f$ on $M_d(S)$ are
+\[ S_\Phi(A)=\frac1d\sum_{i,j<d}\Phi(A_{ij})_{ij},\qquad \Phi_f(M)_{ij}=d\,f(E_{ij}\otimes M), \]
+and they are mutually inverse (\<open>arveson_functional_of_map\<close>, \<open>arveson_map_of_functional\<close>).\<close>
+
 lemma amplification_idx:
   assumes r: "r < q" and s: "s < q" and i: "i < d" and j: "j < d"
   shows "amplification n d q \<Phi> A $$ (r * d + i, s * d + j) = \<Phi> (block_of_mat n A r s) $$ (i,j)"

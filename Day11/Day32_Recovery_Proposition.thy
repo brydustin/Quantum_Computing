@@ -124,6 +124,12 @@ lemma kraus_compose_Cons: "kraus_compose As (E # Es) = map (\<lambda>A. A * E) A
 lemma length_kraus_compose [simp]: "length (kraus_compose As Es) = length Es * length As"
   by (induction Es) (simp_all add: kraus_compose_Cons)
 
+text \<open>Composing Kraus maps multiplies their operators: for $\mathcal E(X)=\sum_iE_iXE_i^*$ and
+$\mathcal A(Y)=\sum_lA_lYA_l^*$,
+\[ (\mathcal A\circ\mathcal E)(X)=\sum_{i,l}(A_lE_i)\,X\,(A_lE_i)^*, \]
+and if both are trace preserving then
+$\sum_{i,l}(A_lE_i)^*(A_lE_i)=\sum_iE_i^*\bigl(\sum_lA_l^*A_l\bigr)E_i=\sum_iE_i^*E_i=I$.\<close>
+
 lemma kraus_compose_nth:
   assumes i: "i < length Es" and l: "l < length As"
   shows "kraus_compose As Es ! (i * length As + l) = As ! l * Es ! i"
@@ -422,6 +428,12 @@ lemma rec_Pi_c:
   assumes S: "recovery_setting n P Us" and i: "i < length Us"
   shows "Us ! i * P * ((Us ! i)\<^sup>\<dagger>) \<in> carrier_mat n n"
   by (rule mult_carrier_mat[OF mult_carrier_mat[OF rec_Uc[OF S i] rec_Pc[OF S]] dagger_carrier[OF rec_Uc[OF S i]]])
+
+text \<open>Under $PU_i^*U_jP=\delta_{ij}P$ the images $P_i=U_iPU_i^*$ of the code projection are mutually
+orthogonal projections,
+\[ P_iP_j=U_i\,(PU_i^*U_jP)\,U_j^*=\delta_{ij}\,U_iPU_i^*, \]
+so $Q=\sum_iP_i$ is a projection.  The recovery operators $I-Q$ and $PU_i^*$ then satisfy
+$(I-Q)^*(I-Q)+\sum_i(PU_i^*)^*(PU_i^*)=(I-Q)+Q=I$.\<close>
 
 lemma rec_Pi_mult:
   assumes S: "recovery_setting n P Us" and i: "i < length Us" and j: "j < length Us"

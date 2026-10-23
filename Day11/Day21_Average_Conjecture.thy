@@ -38,6 +38,10 @@ text \<open>Characters of $\mathbb Z_n$.\<close>
 definition om :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex" where
   "om n l m = cis (2 * pi * real l * real m / real n)"
 
+text \<open>With $\omega=e^{2\pi i/n}$, \<open>om n l m\<close> is $\omega^{lm}$.  The characters are orthogonal,
+\[ \sum_{l<n}\omega^{lm}\,\overline{\omega^{lm'}}=n\,\delta_{mm'}, \]
+so the Fourier mixing $x\mapsto\bigl(\sum_m\omega^{lm}x_m\bigr)_l$ multiplies inner products by $n$.\<close>
+
 lemma om_norm [simp]: "om n l m * cnj (om n l m) = 1"
   by (simp add: om_def cis_cnj cis_mult)
 

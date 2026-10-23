@@ -107,7 +107,7 @@ lemma zero_in_separable_cone_lmat:
   using convex_cone_hull_contains_0 by blast
 
 
-section \<open>Step 1: PSD set is closed\<close>
+section \<open>The positive matrices form a closed set\<close>
 
 text \<open>Sub-lemmas for the closedness of PSD: the Hermitian half and the
 nonneg-quadratic-form half.\<close>

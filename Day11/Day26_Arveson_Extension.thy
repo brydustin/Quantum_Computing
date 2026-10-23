@@ -12,7 +12,7 @@ $M_d(M_n)$ directly, by separating the positive definite cone from the kernel of
 $X\mapsto\operatorname{Tr}(DX)$ with $D\ge0$.  Dimensions are cardinalities of finite types,
 as in \<open>Separable_Cone\<close>.\<close>
 
-subsection \<open>Auxiliary facts\<close>
+subsection \<open>Hermitian parts and traces of products\<close>
 
 lemma operator_system_herm_parts:
   assumes OS: "operator_system n OS" and A: "A \<in> OS"

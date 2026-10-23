@@ -948,6 +948,11 @@ lemma bit_phase_flip_channel_eq:
   "bit_phase_flip_channel p = unitary_conj_channel Pauli_Y p"
   by (rule ext) (simp add: bit_phase_flip_channel_def)
 
+text \<open>All three are unitary-conjugation channels $\rho\mapsto(1-p)\rho+pU\rho U^*$ with $U=X,Z,Y$, whose
+Kraus operators $\sqrt{1-p}\,I$, $\sqrt p\,U$ satisfy
+\[ (1-p)I+p\,U^*U=I=(1-p)I+p\,UU^*, \]
+so each is both unital and trace preserving.\<close>
+
 lemma bit_flip_channel_UCP:
   fixes p :: real
   assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"

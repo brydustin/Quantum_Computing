@@ -65,6 +65,10 @@ lemma vnorm_zero_iff: "dim_vec v = n \<Longrightarrow> \<parallel>v\<parallel> =
 
 subsection \<open>The operator norm\<close>
 
+text \<open>The operator norm $\norm A=\sup\{\norm{Av}:\norm v\le1\}$ is finite because
+$\norm{Av}\le\bigl(\sum_{i,k}|a_{ik}|\bigr)\norm v$.  It satisfies $\norm{Av}\le\norm A\,\norm v$,
+$\norm I=1$ and $\norm{cA}\le|c|\,\norm A$, and vanishes only at $A=0$.\<close>
+
 lemma mult_vec_norm_bound:
   assumes A: "A \<in> carrier_mat n n" and v: "dim_vec v = n"
   shows "\<parallel>A *\<^sub>v v\<parallel> \<le> (\<Sum>i<n. \<Sum>k<n. cmod (A $$ (i,k))) * \<parallel>v\<parallel>"
