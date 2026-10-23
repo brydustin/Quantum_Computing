@@ -1,5 +1,5 @@
 theory Day05_Sylvester_Criterion
-  imports Vern_Paulsen_QC_3_10.Quantum_Computing_3_10 Two_Hermitian_Results.Sylvester_Criterion
+  imports Quantum_Computing_by_VP_3_10.Quantum_Computing_3_10 Two_Hermitian_Results.Sylvester_Criterion
 begin
 
 section \<open>Day 5: Sylvester's criterion (D5-1)\<close>

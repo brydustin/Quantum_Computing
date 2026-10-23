@@ -1,5 +1,5 @@
 theory Phase_Estimation
-  imports Vern_Paulsen_QC_3_10.Quantum_Computing_3_10 Hermitian_Functional_Calculus.Trotter_Product_Formula
+  imports Quantum_Computing_by_VP_3_10.Quantum_Computing_3_10 Hermitian_Functional_Calculus.Trotter_Product_Formula
     "HOL-Analysis.Convex"
 begin
 

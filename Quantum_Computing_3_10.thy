@@ -4598,8 +4598,8 @@ without proof.  It is not reproved in this development: it is imported from the 
 \emph{Two Hermitian Results} and restated for \<^const>\<open>pd\<close> and \<^const>\<open>hermitian\<close> as
 \texttt{pd\_iff\_leading\_minors\_pos} (for $P\in M_n$ Hermitian, \<^term>\<open>pd P\<close> iff
 $\det P_k>0$ for all $k\le n$) in the theory \texttt{Day05\_Sylvester\_Criterion}.  That theory
-forms the separate session \texttt{Vern\_Paulsen\_QC\_Sylvester} with its own document
-(\texttt{Sylvester\_Criterion.pdf}), because the AFP entry builds on HOL-Analysis,
+forms the separate session \texttt{Quantum\_Computing\_by\_VP\_Day05} with its own document
+(\texttt{Quantum\_Computing\_by\_VP\_Day05.pdf}), because the AFP entry builds on HOL-Analysis,
 HOL-Probability and QHLProver, which this document's sessions do not load.  (2) Cholesky's
 algorithm:
 \begin{notestheorem}

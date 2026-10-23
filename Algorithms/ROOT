@@ -1,6 +1,6 @@
 chapter AFP
 
-session HHL_Algorithm = Vern_Paulsen_QC_3_10 +
+session HHL_Algorithm = Quantum_Computing_by_VP_3_10 +
   description "
     Quantum phase estimation and the HHL algorithm for linear systems: exact and inexact
     analysis, approximate Hamiltonian simulation, programs of quantum Hoare logic, circuits."
@@ -59,7 +59,7 @@ session HHL_Algorithm_Demo in "Demo" = HHL_Algorithm +
   document_files
     "root.tex"
 
-session HHL_Algorithm_Channels in "Channels" = Vern_Paulsen_QC +
+session HHL_Algorithm_Channels in "Channels" = Quantum_Computing_by_VP +
   description "
     Loop-free QHLProver programs are channels: Kraus operators read off the program,
     the meaning is their Kraus map, completely positive and trace preserving (the notes'

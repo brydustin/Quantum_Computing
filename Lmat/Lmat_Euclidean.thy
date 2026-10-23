@@ -5,7 +5,7 @@
 
 theory Lmat_Euclidean
   imports
-    Vern_Paulsen_QC_3_10.Matrix_Typed
+    Quantum_Computing_by_VP_3_10.Matrix_Typed
     "HOL-Analysis.Euclidean_Space"
     "HOL-Analysis.L2_Norm"
     "HOL-Analysis.Elementary_Metric_Spaces"

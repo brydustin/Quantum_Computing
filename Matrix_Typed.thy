@@ -9,7 +9,7 @@ theory Matrix_Typed
     "HOL-Hahn_Banach.Hahn_Banach"
     "Jordan_Normal_Form.Matrix"
     "HOL-Library.Cardinality"
-    "Vern_Paulsen_QC_3_10.Basic_Math"
+    "Quantum_Computing_by_VP_3_10.Basic_Math"
 begin
 
 section \<open>Typed-dimension matrix wrapper\<close>

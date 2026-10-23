@@ -1,5 +1,5 @@
 theory Day26_Arveson_Extension
-  imports Day25_Arveson_Correspondence Vern_Paulsen_QC_3_10_Lmat.Separable_Cone
+  imports Day25_Arveson_Correspondence Quantum_Computing_by_VP_3_10_Lmat.Separable_Cone
 begin
 
 text \<open>Day 26: Arveson's extension theorem.  The notes extend the state $S_\Phi$ by Hahn--Banach

@@ -7,7 +7,7 @@
 theory Day24_Separability
   imports
     Quantum_Computing11
-    Vern_Paulsen_QC_3_10_Lmat.Separable_Cone
+    Quantum_Computing_by_VP_3_10_Lmat.Separable_Cone
 begin
 
 section \<open>Days 26--28 (28 October -- 2 November 2011): separability and entanglement witnesses\<close>

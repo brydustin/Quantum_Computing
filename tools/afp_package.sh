@@ -12,7 +12,7 @@ grep -v "^  " "$EXP.log" | tail -25
 BI=$("$ISABELLE" getenv -b ISABELLE_BROWSER_INFO)
 rm -rf "${DST:?}"; mkdir -p "$DST"
 n=1
-for e in Hermitian_Functional_Calculus Vern_Paulsen_QC HHL_Algorithm; do
+for e in Hermitian_Functional_Calculus Quantum_Computing_by_VP HHL_Algorithm; do
   d="$DST/${n}_$e"; mkdir -p "$d"
   cp -r "$EXP/$e" "$EXP/$e.tar.gz" "$d/"
   cp "$P/tools/afp_meta/$e.md" "$d/SUBMISSION.md"

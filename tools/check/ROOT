@@ -13,13 +13,13 @@ session VP_Check_Algorithms in "Algorithms" = HHL_Algorithm +
   options [document = false]
   theories Check_Algorithms
 
-session VP_Check_Notes in "Notes" = Vern_Paulsen_QC +
+session VP_Check_Notes in "Notes" = Quantum_Computing_by_VP +
   options [document = false]
   theories Check_Notes
 
-session VP_Check_Sylvester in "Sylvester" = Vern_Paulsen_QC_Sylvester +
+session VP_Check_Day05 in "Day05" = Quantum_Computing_by_VP_Day05 +
   options [document = false]
-  theories Check_Sylvester
+  theories Check_Day05
 
 session VP_Check_Search in "Search" = HHL_Algorithm_Search +
   options [document = false]

@@ -140,7 +140,7 @@ This repo is mirrored to https://github.com/brydustin/Quantum_Computing on branc
 
 ### When to commit
 - After each **logical unit of work** (e.g., "resolve sorrys of lemma X", "fix LaTeX page N", "add proof Y"). One commit per coherent task — not mega-commits spanning unrelated changes, not micro-commits per file.
-- **Only commit verified state.** For Isabelle theories, that means `isabelle build -d . Vern_Paulsen_QC` passes. For LaTeX, that means `pdflatex QC_Notes_overleaf.tex` compiles without errors. **Never commit broken state.** If you introduced new sorrys intentionally (as scaffolding), that's fine, but the theory must still build.
+- **Only commit verified state.** For Isabelle theories, that means `isabelle build -d . Quantum_Computing_by_VP` passes. For LaTeX, that means `pdflatex QC_Notes_overleaf.tex` compiles without errors. **Never commit broken state.** If you introduced new sorrys intentionally (as scaffolding), that's fine, but the theory must still build.
 - Before committing, run `git status` to confirm you're only committing intended files; use `git add <specific-files>` rather than `git add -A` or `git add .` to avoid sweeping in noise.
 
 ### When to push

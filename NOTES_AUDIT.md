@@ -3,7 +3,7 @@
 Source of truth: `QC_Notes.pdf` (Vern Paulsen, *Lectures on Quantum Computing and
 Completely Positive Maps*, Houston, Fall 2011; notes by Brandon Lee), transcribed in
 `QC_Notes_overleaf.tex`.  Formalisation: the nine theories of the sessions
-`Vern_Paulsen_QC_3_10`, `Vern_Paulsen_QC_3_10_Lmat`, `Vern_Paulsen_QC` (see `ROOT`).
+`Quantum_Computing_by_VP_3_10`, `Quantum_Computing_by_VP_3_10_Lmat`, `Quantum_Computing_by_VP` (see `ROOT`).
 
 Verification status (2026-10-19): all sessions build
 with `quick_and_dirty = false`; no `sorry`, no `axiomatization`, no `oops`; a
@@ -29,7 +29,7 @@ D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closur
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Average_Two`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Vern_Paulsen_QC_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`, BF = `Day16_Block_Form`, UC = `Day22_UCP_Compact`.
+D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Average_Two`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Sylvester/Day05_Sylvester_Criterion` (session `Quantum_Computing_by_VP_Sylvester`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`, BF = `Day16_Block_Form`, UC = `Day22_UCP_Compact`.
 
 ---
 
@@ -83,7 +83,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 ### Day 5 (7 Sep): tests for positivity, direct sums, block matrices
 | id | notes | formal | status |
 |---|---|---|---|
-| D5-1 | leading principal minors test (stated, no proof) | SYL `pd_iff_leading_minors_pos`: for Hermitian P ∈ M_n, pd P ⟺ det P_k > 0 for all k ≤ n (P_k = `lps P k`); `pd_iff_leading_minors_real_pos` (each minor real and positive).  Not reproved: imported from AFP `Two_Hermitian_Results` (`Sylvester_Criterion.sylvester_criterion`) via the bridges `hermitian_iff_Complex_Matrix_hermitian` and `pd_iff_positive_definite`.  Separate session `Vern_Paulsen_QC_Sylvester` with its own PDF (`notes_doc/Sylvester_Criterion.pdf`), since the entry loads HOL-Analysis, HOL-Probability and QHLProver; the criterion is stated in the Day 5 text of the main document | ✓ |
+| D5-1 | leading principal minors test (stated, no proof) | SYL `pd_iff_leading_minors_pos`: for Hermitian P ∈ M_n, pd P ⟺ det P_k > 0 for all k ≤ n (P_k = `lps P k`); `pd_iff_leading_minors_real_pos` (each minor real and positive).  Not reproved: imported from AFP `Two_Hermitian_Results` (`Sylvester_Criterion.sylvester_criterion`) via the bridges `hermitian_iff_Complex_Matrix_hermitian` and `pd_iff_positive_definite`.  Separate session `Quantum_Computing_by_VP_Sylvester` with its own PDF (`notes_doc/Sylvester_Criterion.pdf`), since the entry loads HOL-Analysis, HOL-Probability and QHLProver; the criterion is stated in the Day 5 text of the main document | ✓ |
 | D5-2 | Cholesky reduction: P ≥ 0 iff P − p_{i1}p_{1j}/p_{11} ≥ 0 | QC3 `cholesky_reduction` (adds the hypothesis p₁₁ > 0 that the notes leave implicit) | ~ |
 | D5-3 | two 3×3 numerical examples | CE `notes_example_1` ([[1,2,3],[2,4,5],[3,5,7]] is Hermitian and not ≥ 0) and `notes_example_2` ([[4,2,3],[2,5,6],[3,6,8]] ≥ 0), every intermediate matrix of the notes checked (`notes_P1_R`, `notes_P1_diff`, `notes_P1_next`, `notes_P2_R`, `notes_P2_diff`, `notes_Q2_R`, `notes_Q2_diff`, `notes_Q2_next`) through one Cholesky step `chol_R`/`chol_next` and the test `chol_test` (from `cholesky_reduction`); the remark on rank-one sums: `notes_P2_rank_one_sum` | ✓ |
 | D5-4 | direct sum V ⊕ W, inner product | QC3 `direct_sum_vec` (⊕ᵥ, JNF's `@v`), `direct_sum_inner_prod`; dimension: JNF `index_append_vec` | ✓ |
@@ -358,7 +358,7 @@ entries: `Hermitian_Functional_Calculus` (directory `Hermitian_Functional_Calcul
 calculus, `Matrix_Sums`, `Trotter_Product_Formula`, `Suzuki_Order`, `Suzuki_Error`; built on the AFP
 alone, with QHLProver's spectral theorem) and `HHL_Algorithm` (directory `Algorithms/`, with the
 sessions `HHL_Algorithm_Demo`, `_Channels`, `_Search`).  The notes form the third entry,
-`Vern_Paulsen_QC`.  `tools/afp_export.sh` assembles the three entries.
+`Quantum_Computing_by_VP`.  `tools/afp_export.sh` assembles the three entries.
 
 | Theory | Content |
 |---|---|

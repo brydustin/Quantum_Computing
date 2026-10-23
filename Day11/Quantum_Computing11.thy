@@ -5,8 +5,8 @@
 
 theory Quantum_Computing11
   imports
-    Vern_Paulsen_QC_3_10.Basic_Math
-    Vern_Paulsen_QC_3_10.Quantum_Computing_3_10
+    Quantum_Computing_by_VP_3_10.Basic_Math
+    Quantum_Computing_by_VP_3_10.Quantum_Computing_3_10
 begin
 
 section \<open>Day 11 (21 September 2011): gates revisited, circuit diagrams, no-cloning\<close>

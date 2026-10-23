@@ -6,7 +6,7 @@
 theory Separable_Cone
   imports
     Lmat_Euclidean
-    Vern_Paulsen_QC_3_10.Quantum_Computing_3_10
+    Quantum_Computing_by_VP_3_10.Quantum_Computing_3_10
     "HOL-Analysis.Convex"
     "HOL-Analysis.Convex_Euclidean_Space"
     "HOL-Analysis.Polytope"

@@ -859,3 +859,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   rebuilds HOL, HOL-Analysis, JNF etc. (about an hour); `-f` also rebuilds ancestors; editing a
   running bash script corrupts it (bash reads it incrementally).  `isabelle document -o
   document_variants=document SESSION` regenerates a document from the build database in minutes.
+- **Names and lecture order** (2026-10-23): the notes entry is `Quantum_Computing_by_VP`, titled
+  "Lectures on Quantum Computing and Completely Positive Maps"; sessions
+  `Quantum_Computing_by_VP_3_10`, `_3_10_Lmat`, `Quantum_Computing_by_VP` and `_Day05` (the
+  leading principal minors test from Two_Hermitian_Results, folder `Day05/`; it cannot join the
+  main session, since that entry sits on Complex_Bounded_Operators, Hermite_Lindemann and four
+  more).  The capstone `QC_Notes_Overview` now imports every lecture theory in lecture order
+  (Basic_Math, Day02, Quantum_Computing_3_10, Day04, …, Day34), and the ROOT theory list follows.
