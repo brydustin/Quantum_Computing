@@ -2,6 +2,8 @@ theory Day32_Y_Code
   imports Day33_Shor_Code
 begin
 
+section \<open>Day 32: the code for $Y$ flips\<close>
+
 text \<open>Day 32: the code for $Y$ flips.  With $\beta=Y\ket+$ one has $\ket+\perp\beta$,
 $Y\ket+=\beta$, $Y\beta=\ket+$, and the code $\ket0\mapsto\ket{+++}$, $\ket1\mapsto\ket{\beta\beta\beta}$
 corrects one $Y$ flip exactly as the bit-flip code corrects one $X$ flip.\<close>

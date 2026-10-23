@@ -1,6 +1,8 @@
 theory Day29_Classical_Codes
-  imports Quantum_Computing11
+  imports Day29_Error_Correction
 begin
+
+section \<open>Days 29--30: classical codes over $\mathbb Z_2$\<close>
 
 text \<open>Days 29--30: classical codes over $\mathbb Z_2$.  Words are lists over $\{0,1\}$; all
 finite checks are decided by \<open>code_simp\<close> (proof-producing evaluation, no oracle).\<close>

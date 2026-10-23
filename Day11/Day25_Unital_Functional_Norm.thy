@@ -3,6 +3,8 @@ theory Day25_Unital_Functional_Norm
     "HOL-Analysis.L2_Norm"
 begin
 
+section \<open>Day 25: a unital functional is positive iff it has norm one (D25-4)\<close>
+
 text \<open>Day 25 proposition (D25-4): for an operator system $S\subseteq M_n$ and a linear
 $f:S\to\C$ with $f(I)=1$, $f$ is positive iff $\norm f=1$.  The operator norm is
 $\norm A=\sup\{\norm{Av}:\norm v\le1\}$ and, as in the notes, $\norm f$ is defined for bounded $f$.

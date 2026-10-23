@@ -2,6 +2,8 @@ theory Day31_Code_Fidelity
   imports Day30_BitFlip_Code
 begin
 
+section \<open>Day 31: the three-qubit code against independent bit flips\<close>
+
 text \<open>Day 31: the three-qubit code against independent bit flips.  Each qubit flips with
 probability $p$, so $E(Y)=(1-p)^3Y+p(1-p)^2\sum_iX_iYX_i+p^2(1-p)\sum_{i<j}X_iX_jYX_jX_i+p^3\,X_1X_2X_3YX_3X_2X_1$.
 On an encoded state the recovery $R$ leaves

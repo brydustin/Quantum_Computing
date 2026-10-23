@@ -22,14 +22,14 @@ Day 34 = 18 Nov 2011).  Status codes:
 | ✗ | not formalised (gap) |
 | – | deliberately not formalised: narrative, history, numerical example, or classical aside |
 
-Theory abbreviations: BM = `Basic_Math`, QC3 = `Quantum_Computing_3_10`,
+Theory abbreviations: Ln = the theory of lecture n (`Day01_Inner_Product`, …, `Day10_Quantum_Gates` in the session directory; `Day11_Gates_No_Cloning`, …, `Day32_Phase_Flip_Code` in `Day11/`), UTA = `Unitary_Tensor_Algebra`, HB = `Day25_Hahn_Banach`, CH = `Day11/Quantum_Channels` (channels beyond the notes),
 MT = `Matrix_Typed`, EFA = `Essential_Functional_Analysis`, LE = `Lmat/Lmat_Euclidean`,
-SC = `Lmat/Separable_Cone`, QC11 = `Day11/Quantum_Computing11`,
-D23 = `Day11/Day23_ChoiExtremeUCP`, D24 = `Day11/Day24_Separability`; gap-closure theories
+SC = `Lmat/Separable_Cone`,
+D23 = `Day11/Day23_ChoiExtremeUCP`, D26 = `Day11/Day26_Separability`; gap-closure theories
 (2026-10-19, all in `Day11/`): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Average_Two`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: S211 = `Day02_11_Supplement`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Day05/Day05_Sylvester_Criterion` (session `Quantum_Computing_by_VP_Day05`), CE = `Day05_Cholesky_Examples`, S1015 = `Day10_15_Supplement`, S0429 = `Day04_29_Supplement`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`, BF = `Day16_Block_Form`, UC = `Day22_UCP_Compact`.
+D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Average_Two`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: PB = `Day02_Projection_Basis`, DSB = `Day05_Direct_Sum_Basis`, TC = `Day06_Tensor_Coordinates`, IS = `Day08_Indistinguishable_States`, BELL = `Day09_Bell_Measurement`, SW = `Day11_SWAP_Circuit`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Day05/Day05_Sylvester_Criterion` (session `Quantum_Computing_by_VP_Day05`), CE = `Day05_Cholesky_Examples`, SDC = `Day10_Superdense_Coding`, CCN = `Day11_CCNOT_Table`, PTA = `Day15_Partial_Trace_A`, HC = `Day04_Hermitian_Converse`, CEN = `Day14_Composite_Ensembles`, CPOS = `Day19_Choi_Positivity`, SUB = `Day29_Subspace_Codes`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`, BF = `Day16_Block_Form`, UC = `Day22_UCP_Compact`.
 
 ---
 
@@ -39,199 +39,199 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | id | notes | formal | status |
 |---|---|---|---|
 | D1-1 | computing overview, course overview, references | – | – |
-| D1-2 | inner product on ℂⁿ, sesquilinearity, positivity | library `inner_prod` (IMD); BM `inner_prod_sum`; QC3 `inner_prod_right_add'`, `_right_smult'`, `_left_smult'`, `_left_minus'`, `cpx_vec_length_zero_iff`, `cpx_vec_length_smult` | ✓ |
+| D1-2 | inner product on ℂⁿ, sesquilinearity, positivity | library `inner_prod` (IMD); L1 `inner_prod_sum`; L3 `inner_prod_right_add'`, `_right_smult'`, `_left_smult'`, `_left_minus'`, `cpx_vec_length_zero_iff`, `cpx_vec_length_smult` | ✓ |
 | D1-3 | Hilbert space (abstract definition) | not needed: all spaces are ℂⁿ or M_{n,k} | – |
-| D1-4 | M_{n,k} with ⟨Y\|X⟩ = Σ ȳ_{ij} x_{ij} ≅ ℂ^{nk} | BM `hs_inner_prod` (+ `hs_inner_prod_cnj`, `_right_add`, `_right_smult`, `_left_smult`, `_self_real`, `_self_nonneg`, `_eq_zero_imp`); isomorphism with ℂ^{nk} not stated | ✓ |
+| D1-4 | M_{n,k} with ⟨Y\|X⟩ = Σ ȳ_{ij} x_{ij} ≅ ℂ^{nk} | L1 `hs_inner_prod` (+ `hs_inner_prod_cnj`, `_right_add`, `_right_smult`, `_left_smult`, `_self_real`, `_self_nonneg`, `_eq_zero_imp`); isomorphism with ℂ^{nk} not stated | ✓ |
 
 ### Day 2 (24 Aug): bases, matrices, trace, bra-ket, projections, Parseval
 | id | notes | formal | status |
 |---|---|---|---|
-| D2-1 | x = Σ⟨e_i\|x⟩e_i | BM `parseval` (general ONB; e_i is the special case) | ✓ |
-| D2-2 | matrix units E_{ij} are an ONB of M_{n,m}; X = Σ⟨E_{ij}\|X⟩E_{ij} | BM `mat_unit_orthonormal`, `mat_unit_expansion`, `mat_unit_hs_expansion` | ✓ |
+| D2-1 | x = Σ⟨e_i\|x⟩e_i | L2 `parseval` (general ONB; e_i is the special case) | ✓ |
+| D2-2 | matrix units E_{ij} are an ONB of M_{n,m}; X = Σ⟨E_{ij}\|X⟩E_{ij} | L2 `mat_unit_orthonormal`, `mat_unit_expansion`, `mat_unit_hs_expansion` | ✓ |
 | D2-3 | conjugate, transpose, adjoint; matrix product | library (`dagger`, `transpose_mat`, `*`) | ✓ |
-| D2-4 | trace Tr | BM `Tr`, `Tr_add`, `Tr_smult`, `Tr_cyclic`, `Tr_unitary_conjugation`, `hs_inner_prod_as_trace` | ✓ |
-| D2-5 | bra-ket notation, \|x⟩⟨y\| = (x_i ȳ_j), Σ\|e_i⟩⟨e_i\| = I | QC3 `outer_prod` (⊘), `outer_prod_index`, `outer_prod_mult_vec`; BM `completeness_relation`, `cols_mat_dagger_right` | ✓ |
-| D2-6 | linear maps are matrices ⟨e_i\|Te_j⟩ | library; QC3 `inner_unit_T_unit` | ✓ |
-| D2-7 | P = Σ\|v_i⟩⟨v_i\| projects onto V; x − Px ⊥ V; unique decomposition | BM `outer_sum`, `outer_sum_apply`, `residual_orthogonal`, `orthogonal_decomposition`, `orthogonal_decomposition_unique`, `outer_sum_orthogonal_zero` | ✓ |
-| D2-8 | P does not depend on the ONB chosen for V | S211 `outer_sum_basis_independent`: two orthonormal lists with the same column span (`col_span`) have the same `outer_sum` | ✓ |
-| D2-9 | Parseval ‖v‖² = Σ\|⟨v_i\|v⟩\|² | BM `parseval_norm` | ✓ |
-| D2-10 | P² = P, P = P* | BM `outer_sum_idempotent`, `outer_sum_hermitian` | ✓ |
-| D2-11 | Theorem: P² = P = P* ⟹ P is the orthogonal projection onto range P | QC11 `projection`, `projection_fixes_range`, `projection_annihilates_orthogonal` | ✓ |
+| D2-4 | trace Tr | L2 `Tr`, `Tr_add`, `Tr_smult`, `Tr_cyclic`, `Tr_unitary_conjugation`, `hs_inner_prod_as_trace` | ✓ |
+| D2-5 | bra-ket notation, \|x⟩⟨y\| = (x_i ȳ_j), Σ\|e_i⟩⟨e_i\| = I | L3 `outer_prod` (⊘), `outer_prod_index`, `outer_prod_mult_vec`; L2 `completeness_relation`, `cols_mat_dagger_right` | ✓ |
+| D2-6 | linear maps are matrices ⟨e_i\|Te_j⟩ | library; L4 `inner_unit_T_unit` | ✓ |
+| D2-7 | P = Σ\|v_i⟩⟨v_i\| projects onto V; x − Px ⊥ V; unique decomposition | L2 `outer_sum`, `outer_sum_apply`, `residual_orthogonal`, `orthogonal_decomposition`, `orthogonal_decomposition_unique`, `outer_sum_orthogonal_zero` | ✓ |
+| D2-8 | P does not depend on the ONB chosen for V | PB `outer_sum_basis_independent`: two orthonormal lists with the same column span (`col_span`) have the same L2 `outer_sum` | ✓ |
+| D2-9 | Parseval ‖v‖² = Σ\|⟨v_i\|v⟩\|² | L2 `parseval_norm` | ✓ |
+| D2-10 | P² = P, P = P* | L2 `outer_sum_idempotent`, `outer_sum_hermitian` | ✓ |
+| D2-11 | Theorem: P² = P = P* ⟹ P is the orthogonal projection onto range P | L32 `projection`, `projection_fixes_range`, `projection_annihilates_orthogonal` | ✓ |
 
 ### Day 3 (31 Aug): unitaries, Householder, Schur
 | id | notes | formal | status |
 |---|---|---|---|
-| D3-1 | U unitary iff U*U = I | library `unitary` (bundles U*U = I and UU* = I); Basic_Math `unitary_inv_l_dimcol`, `unitary_inv_r_dimrow` | ✓ |
-| D3-2 | TFAE (a) unitary (b) invertible with U⁻¹ = U* (c) UU* = I (d) U* unitary (e) columns ONB (f) rows ONB (g) isometry (h) inner-product preserving | (a)⟹(b) `unitary_invertible`; (a)⟺(c) by definition; (a)⟹(d) `unitary_dagger` (converse by applying it to U*); (a)⟹(e) `unitary_cols_orthonormal`, (e)⟹(a) BM `orthonormal_mat_unitary`; (a)⟹(f) `unitary_rows_orthonormal`; (a)⟹(g) `unitary_isometry`; (a)⟹(h) `unitary_preserves_inner_prod`; (g)⟹(a) `unitary_of_isometry`, (h)⟹(a) `unitary_of_inner_prod_preserving` | ✓ |
-| D3-3 | Householder U_w = I − 2P_w is unitary (‖w‖ = 1) | QC3 `householder`, `householder_outer_prod`, `householder_hermitian`, `householder_unitary` | ✓ |
-| D3-4 | Schur's lemma: ‖x‖ = ‖y‖ ⟹ ∃w, θ. U_w x = e^{iθ} y | QC3 `schur_lemma` | ✓ |
-| D3-5 | Schur's theorem: U*AU upper triangular | QC3 `schur_theorem` | ✓ |
-| D3-6 | Tr A = Σ eigenvalues (roots of the characteristic polynomial) | QC3 `trace_eq_sum_eigenvalues` | ✓ |
+| D3-1 | U unitary iff U*U = I | library `unitary` (bundles U*U = I and UU* = I); UTA `unitary_inv_l_dimcol`, `unitary_inv_r_dimrow` | ✓ |
+| D3-2 | TFAE (a) unitary (b) invertible with U⁻¹ = U* (c) UU* = I (d) U* unitary (e) columns ONB (f) rows ONB (g) isometry (h) inner-product preserving | (a)⟹(b) `unitary_invertible`; (a)⟺(c) by definition; (a)⟹(d) `unitary_dagger` (converse by applying it to U*); (a)⟹(e) `unitary_cols_orthonormal`, (e)⟹(a) L3 `orthonormal_mat_unitary`; (a)⟹(f) `unitary_rows_orthonormal`; (a)⟹(g) `unitary_isometry`; (a)⟹(h) `unitary_preserves_inner_prod`; (g)⟹(a) L4 `unitary_of_isometry`, (h)⟹(a) `unitary_of_inner_prod_preserving` | ✓ |
+| D3-3 | Householder U_w = I − 2P_w is unitary (‖w‖ = 1) | L3 `householder`, `householder_outer_prod`, `householder_hermitian`, `householder_unitary` | ✓ |
+| D3-4 | Schur's lemma: ‖x‖ = ‖y‖ ⟹ ∃w, θ. U_w x = e^{iθ} y | L3 `schur_lemma` | ✓ |
+| D3-5 | Schur's theorem: U*AU upper triangular | L3 `schur_theorem` | ✓ |
+| D3-6 | Tr A = Σ eigenvalues (roots of the characteristic polynomial) | L3 `trace_eq_sum_eigenvalues` | ✓ |
 
 ### Day 4 (2 Sep): Hermitian and positive matrices
 | id | notes | formal | status |
 |---|---|---|---|
-| D4-1 | Hermitian TFAE (a) H = H* (b) U*HU = D real diagonal (c) ONB of eigenvectors, real eigenvalues (d) ⟨x\|Hx⟩ ∈ ℝ | (a)⟹(b) `hermitian_spectral_decomp`; (b)⟹(c) `hermitian_spectral_decomp_right` + `unitary_cols_orthonormal`; (a)⟺(d) `hermitian_iff_real_quad_form`; real eigenvalues `hermitian_real_eigenvalues`.  (b)⟹(a) S0429 `unitary_real_diag_imp_hermitian`; (c)⟹(a) S0429 `eigenbasis_real_imp_hermitian` | ✓ |
-| D4-2 | Lemma: ⟨x\|Tx⟩ = 0 ∀x ⟹ T = 0 (fails over ℝ) | QC3 `quadratic_form_zero` (remark on ℝ not needed) | ✓ |
-| D4-3 | P ≥ 0 iff ⟨x\|Px⟩ ≥ 0; P > 0 iff > 0 for x ≠ 0 | QC3 `psd`, `pd` (with `hermitian P` as an explicit conjunct); the notes' form is `psd_iff_quad_form_nonneg` | ✓ |
-| D4-4 | P ≥ 0 iff P = P* and all eigenvalues ≥ 0 | QC3 `psd_iff_nonneg_eigenvalues` | ✓ |
-| D4-5 | Corollary: P > 0 iff P = P* and all eigenvalues > 0 | QC3 `pd_iff_pos_eigenvalues` | ✓ |
-| D4-6 | P ≥ 0 iff P = Σ\|v_i⟩⟨v_i\| | QC3 `psd_kraus_decomp` (⟹), `outer_sum_psd` (⟸) | ✓ |
-| D4-7 | Key: ⟨x\|Px⟩ = Σ\|⟨v_i\|x⟩\|² | QC3 `inner_prod_outer_sum_general` (as ⟨V*x\|V*x⟩) | ✓ |
-| D4-8 | P = Σ\|v_i⟩⟨v_i\| > 0 iff span{v_i} = ℂⁿ | QC3 `pd_iff_spanning` (no nonzero x ⊥ all v_i); RG `pd_iff_span_all` (the notes' form: pd ⟺ `col_span n vs = carrier_vec n`) | ✓ |
+| D4-1 | Hermitian TFAE (a) H = H* (b) U*HU = D real diagonal (c) ONB of eigenvectors, real eigenvalues (d) ⟨x\|Hx⟩ ∈ ℝ | (a)⟹(b) `hermitian_spectral_decomp`; (b)⟹(c) `hermitian_spectral_decomp_right` + `unitary_cols_orthonormal`; (a)⟺(d) `hermitian_iff_real_quad_form`; real eigenvalues `hermitian_real_eigenvalues`.  (b)⟹(a) HC `unitary_real_diag_imp_hermitian`; (c)⟹(a) HC `eigenbasis_real_imp_hermitian` | ✓ |
+| D4-2 | Lemma: ⟨x\|Tx⟩ = 0 ∀x ⟹ T = 0 (fails over ℝ) | L4 `quadratic_form_zero` (remark on ℝ not needed) | ✓ |
+| D4-3 | P ≥ 0 iff ⟨x\|Px⟩ ≥ 0; P > 0 iff > 0 for x ≠ 0 | L4 `psd`, `pd` (with `hermitian P` as an explicit conjunct); the notes' form is `psd_iff_quad_form_nonneg` | ✓ |
+| D4-4 | P ≥ 0 iff P = P* and all eigenvalues ≥ 0 | L4 `psd_iff_nonneg_eigenvalues` | ✓ |
+| D4-5 | Corollary: P > 0 iff P = P* and all eigenvalues > 0 | L4 `pd_iff_pos_eigenvalues` | ✓ |
+| D4-6 | P ≥ 0 iff P = Σ\|v_i⟩⟨v_i\| | L4 `psd_kraus_decomp` (⟹), `outer_sum_psd` (⟸) | ✓ |
+| D4-7 | Key: ⟨x\|Px⟩ = Σ\|⟨v_i\|x⟩\|² | L4 `inner_prod_outer_sum_general` (as ⟨V*x\|V*x⟩) | ✓ |
+| D4-8 | P = Σ\|v_i⟩⟨v_i\| > 0 iff span{v_i} = ℂⁿ | L4 `pd_iff_spanning` (no nonzero x ⊥ all v_i); RG `pd_iff_span_all` (the notes' form: pd ⟺ `col_span n vs = carrier_vec n`) | ✓ |
 
 ### Day 5 (7 Sep): tests for positivity, direct sums, block matrices
 | id | notes | formal | status |
 |---|---|---|---|
 | D5-1 | leading principal minors test (stated, no proof) | SYL `pd_iff_leading_minors_pos`: for Hermitian P ∈ M_n, pd P ⟺ det P_k > 0 for all k ≤ n (P_k = `lps P k`); `pd_iff_leading_minors_real_pos` (each minor real and positive).  Not reproved: imported from AFP `Two_Hermitian_Results` (`Sylvester_Criterion.sylvester_criterion`) via the bridges `hermitian_iff_Complex_Matrix_hermitian` and `pd_iff_positive_definite`.  Separate session `Quantum_Computing_by_VP_Day05` with its own PDF (`notes_doc/Quantum_Computing_by_VP_Day05.pdf`), since the entry loads HOL-Analysis, HOL-Probability and QHLProver; the criterion is stated in the Day 5 text of the main document | ✓ |
-| D5-2 | Cholesky reduction: P ≥ 0 iff P − p_{i1}p_{1j}/p_{11} ≥ 0 | QC3 `cholesky_reduction` (adds the hypothesis p₁₁ > 0 that the notes leave implicit) | ~ |
+| D5-2 | Cholesky reduction: P ≥ 0 iff P − p_{i1}p_{1j}/p_{11} ≥ 0 | L5 `cholesky_reduction` (adds the hypothesis p₁₁ > 0 that the notes leave implicit) | ~ |
 | D5-3 | two 3×3 numerical examples | CE `notes_example_1` ([[1,2,3],[2,4,5],[3,5,7]] is Hermitian and not ≥ 0) and `notes_example_2` ([[4,2,3],[2,5,6],[3,6,8]] ≥ 0), every intermediate matrix of the notes checked (`notes_P1_R`, `notes_P1_diff`, `notes_P1_next`, `notes_P2_R`, `notes_P2_diff`, `notes_Q2_R`, `notes_Q2_diff`, `notes_Q2_next`) through one Cholesky step `chol_R`/`chol_next` and the test `chol_test` (from `cholesky_reduction`); the remark on rank-one sums: `notes_P2_rank_one_sum` | ✓ |
-| D5-4 | direct sum V ⊕ W, inner product | QC3 `direct_sum_vec` (⊕ᵥ, JNF's `@v`), `direct_sum_inner_prod`; dimension: JNF `index_append_vec` | ✓ |
-| D5-5 | basis of V ⊕ W, dim(V ⊕ W) = dim V + dim W | JNF `index_append_vec`; S211 `direct_sum_basis_is_basis` (bases of ℂⁿ and ℂᵏ, i.e. lists with invertible column matrix as in D6-3, give the basis (v_i,0), (0,w_j) of ℂⁿ ⊕ ℂᵏ with n + k elements; the column matrix is block diagonal, `direct_sum_basis_block`) | ✓ |
-| D5-6 | block matrices act on (v, w) | QC3 `block_mat_apply` | ✓ |
+| D5-4 | direct sum V ⊕ W, inner product | L5 `direct_sum_vec` (⊕ᵥ, JNF's `@v`), `direct_sum_inner_prod`; dimension: JNF `index_append_vec` | ✓ |
+| D5-5 | basis of V ⊕ W, dim(V ⊕ W) = dim V + dim W | JNF `index_append_vec`; DSB `direct_sum_basis_is_basis` (bases of ℂⁿ and ℂᵏ, i.e. lists with invertible column matrix as in D6-3, give the basis (v_i,0), (0,w_j) of ℂⁿ ⊕ ℂᵏ with n + k elements; the column matrix is block diagonal, `direct_sum_basis_block`) | ✓ |
+| D5-6 | block matrices act on (v, w) | L5 `block_mat_apply` | ✓ |
 
 ### Day 6 (9 Sep): tensor products
 | id | notes | formal | status |
 |---|---|---|---|
 | D6-1 | bilinear maps, universal property (axiom) | concrete Kronecker model `tensor_vec` with bilinearity `tensor_vec_bilinear_left/right`, `tensor_vec_smult_left/right`; the universal property: every bilinear β: ℂⁿ×ℂᵐ → ℂᵖ is L(v⊗w) for a unique linear L (`tensor_universal_property_vec`; forms: `tensor_universal_property`) in `Day06_15_Universal` | ✓ |
-| D6-2 | {e_i ⊗ f_j} basis; dim(X ⊗ Y) = dim X · dim Y | QC3 `tensor_vec_dim`, `tensor_onb` (ONB version, Day 7) | ✓ |
-| D6-3 | unique x_j with u = Σ x_j ⊗ f_j; X ⊗ Y ≅ X ⊕ ⋯ ⊕ X | S211 `tensor_right_coordinates`, `tensor_left_coordinates` (any basis: the column matrix is invertible; Σ x_j ⊗ f_j is `tensor_combination`, the sum form of `schmidt_rank`); the isomorphism is `tensor_iso_direct_sum` (bijection) with `tensor_combination_add_left`, `tensor_combination_smult_left` (linearity) | ✓ |
-| D6-4 | Schmidt rank | QC3 `schmidt_rank` (the least length of a representation by elementary tensors; corrected from `Min` to `LEAST`, since `Min` of the infinite set of lengths is unspecified); SR `schmidt_repr_exists` (a representation of length n exists), `schmidt_rank_zero_iff`, `schmidt_rank_one_iff_product` (for u ≠ 0: rank 1 iff a product), `schmidt_rank_bell_state` (= 2) | ✓ |
+| D6-2 | {e_i ⊗ f_j} basis; dim(X ⊗ Y) = dim X · dim Y | L6 `tensor_vec_dim`, L7 `tensor_onb` (ONB version, Day 7) | ✓ |
+| D6-3 | unique x_j with u = Σ x_j ⊗ f_j; X ⊗ Y ≅ X ⊕ ⋯ ⊕ X | TC `tensor_right_coordinates`, `tensor_left_coordinates` (any basis: the column matrix is invertible; Σ x_j ⊗ f_j is `tensor_combination`, the sum form of L6 `schmidt_rank`); the isomorphism is TC `tensor_iso_direct_sum` (bijection) with `tensor_combination_add_left`, `tensor_combination_smult_left` (linearity) | ✓ |
+| D6-4 | Schmidt rank | L6 `schmidt_rank` (the least length of a representation by elementary tensors; corrected from `Min` to `LEAST`, since `Min` of the infinite set of lengths is unspecified); SR `schmidt_repr_exists` (a representation of length n exists), `schmidt_rank_zero_iff`, `schmidt_rank_one_iff_product` (for u ≠ 0: rank 1 iff a product), `schmidt_rank_bell_state` (= 2) | ✓ |
 
 ### Day 7 (12 Sep): tensor products of Hilbert spaces; postulates 1–3
 | id | notes | formal | status |
 |---|---|---|---|
-| D7-1 | ⟨h₁⊗k₁\|h₂⊗k₂⟩ = ⟨h₁\|h₂⟩⟨k₁\|k₂⟩ | QC3 `tensor_inner_prod` | ✓ |
-| D7-2 | tensor of ONBs is an ONB | QC3 `tensor_onb` | ✓ |
-| D7-3 | Postulate 1: states are unit vectors | QC3 `quantum_state` | ✓ |
-| D7-4 | Postulate 2: unitary evolution | QC3 `evolve`, `unitary_preserves_state` | ✓ |
-| D7-5 | Postulate 3: measurement operators, p_m(ψ) = ‖M_mψ‖², Σ M_m*M_m = I, post-measurement state | QC3 `measurement_system`, `meas_prob`, `measurement_probs_sum_one`, `post_meas_state` | ✓ |
+| D7-1 | ⟨h₁⊗k₁\|h₂⊗k₂⟩ = ⟨h₁\|h₂⟩⟨k₁\|k₂⟩ | L7 `tensor_inner_prod` | ✓ |
+| D7-2 | tensor of ONBs is an ONB | L7 `tensor_onb` | ✓ |
+| D7-3 | Postulate 1: states are unit vectors | L7 `quantum_state` | ✓ |
+| D7-4 | Postulate 2: unitary evolution | L7 `evolve`, `unitary_preserves_state` | ✓ |
+| D7-5 | Postulate 3: measurement operators, p_m(ψ) = ‖M_mψ‖², Σ M_m*M_m = I, post-measurement state | L7 `measurement_system`, `meas_prob`, `measurement_probs_sum_one`, `post_meas_state` | ✓ |
 
 ## Part II: Introduction to quantum computing (Days 8–17)
 
 ### Day 8 (14 Sep): distinguishing states, expected values
 | id | notes | formal | status |
 |---|---|---|---|
-| D8-1 | orthogonal states are perfectly distinguishable | QC3 `orthogonal_states_distinguishable` | ✓ |
-| D8-2 | non-orthogonal states cannot be: p₁(ψ₂) ≥ \|α\|² > 0 | S211 `nonorthogonal_outcome_prob` (\|⟨ψ₁\|ψ₂⟩\|² ≤ p_i(ψ₂) whenever p_i(ψ₁) = 1), `nonorthogonal_not_distinguishable`; via `meas_sum_norm` (Σ‖M_l v‖² = ‖v‖²) | ✓ |
-| D8-3 | Theorem: linearly independent states admit unambiguous discrimination (M₀,…,M_n) | QC3 `lin_indep_states_unambiguous` (replaces a commented-out attempt that contained a `sorry`); linear independence is `lin_indep_vecs`; the inconclusive outcome is listed last | ✓ |
-| D8-4 | P^{1/2} for P ≥ 0 | QC3 `psd_sqrt_exists`; `psd_sqrt` is now defined as a choice of square root with `psd_sqrt_props` (carrier, psd, Q·Q = P) | ✓ |
-| D8-5 | expected value E = ⟨ψ\|Hψ⟩ with H = Σ λ_m M_m*M_m Hermitian | QC3 `observable`, `observable_hermitian`, `expected_value_eq_quad_form` | ✓ |
+| D8-1 | orthogonal states are perfectly distinguishable | L8 `orthogonal_states_distinguishable` | ✓ |
+| D8-2 | non-orthogonal states cannot be: p₁(ψ₂) ≥ \|α\|² > 0 | IS `nonorthogonal_outcome_prob` (\|⟨ψ₁\|ψ₂⟩\|² ≤ p_i(ψ₂) whenever p_i(ψ₁) = 1), `nonorthogonal_not_distinguishable`; via `meas_sum_norm` (Σ‖M_l v‖² = ‖v‖²) | ✓ |
+| D8-3 | Theorem: linearly independent states admit unambiguous discrimination (M₀,…,M_n) | L8 `lin_indep_states_unambiguous` (replaces a commented-out attempt that contained a `sorry`); linear independence is `lin_indep_vecs`; the inconclusive outcome is listed last | ✓ |
+| D8-4 | P^{1/2} for P ≥ 0 | L4 `psd_sqrt_exists`; `psd_sqrt` is now defined as a choice of square root with `psd_sqrt_props` (carrier, psd, Q·Q = P) | ✓ |
+| D8-5 | expected value E = ⟨ψ\|Hψ⟩ with H = Σ λ_m M_m*M_m Hermitian | L8 `observable`, `observable_hermitian`, `expected_value_eq_quad_form` | ✓ |
 
 ### Day 9 (16 Sep): POVMs, composite systems, entanglement
 | id | notes | formal | status |
 |---|---|---|---|
-| D9-1 | POVM {P_m}, P_m ≥ 0, Σ P_m = I; M_m = P_m^{1/2} is a measurement system | QC3 `povm`, `measurement_induces_povm`, `povm_from_sqrt`, `povm_prob` | ✓ |
-| D9-2 | Postulate 4: composite state ψ₁ ⊗ ψ₂ | QC3 `tensor_of_states_is_state` | ✓ |
-| D9-3 | two-photon example; entangled iff Schmidt rank > 1 | QC3 `entangled` (defined as "not a product"), `bell_state_entangled`; SR `entangled_iff_schmidt_rank` (for u ≠ 0) | ✓ |
-| D9-4 | R ⊗ T exists uniquely; (R₁⊗T₁)(R₂⊗T₂) = R₁R₂ ⊗ T₁T₂; (R⊗T)* = R*⊗T* | library `tensor_mat`; BM `tensor_mat_mult`, `tensor_mat_unitary`; (R⊗T)* = R*⊗T* is IMD's `hermite_cnj_of_tensor` | ✓ |
-| D9-5 | p^{AB}_m(ψ⊗φ) = p^A_m(ψ) | QC3 `composite_measurement_prob`, `tensor_mat_vec_mult` | ✓ |
-| D9-6 | eavesdropping example p₀(γ) = ½ with Bell state | S211 `bell_measurement` (p₀ = p₁ = ½, post-measurement states e₀⊗e₀, e₁⊗e₁, then B's outcome has probability 1), `proj_measurement_system` | ✓ |
+| D9-1 | POVM {P_m}, P_m ≥ 0, Σ P_m = I; M_m = P_m^{1/2} is a measurement system | L9 `povm`, `measurement_induces_povm`, `povm_from_sqrt`, `povm_prob` | ✓ |
+| D9-2 | Postulate 4: composite state ψ₁ ⊗ ψ₂ | L7 `tensor_of_states_is_state` | ✓ |
+| D9-3 | two-photon example; entangled iff Schmidt rank > 1 | L9 `entangled` (defined as "not a product"), `bell_state_entangled`; SR `entangled_iff_schmidt_rank` (for u ≠ 0) | ✓ |
+| D9-4 | R ⊗ T exists uniquely; (R₁⊗T₁)(R₂⊗T₂) = R₁R₂ ⊗ T₁T₂; (R⊗T)* = R*⊗T* | library `tensor_mat`; UTA `tensor_mat_mult`, `tensor_mat_unitary`; (R⊗T)* = R*⊗T* is IMD's `hermite_cnj_of_tensor` | ✓ |
+| D9-5 | p^{AB}_m(ψ⊗φ) = p^A_m(ψ) | L9 `composite_measurement_prob`, `tensor_mat_vec_mult` | ✓ |
+| D9-6 | eavesdropping example p₀(γ) = ½ with Bell state | BELL `bell_measurement` (p₀ = p₁ = ½, post-measurement states e₀⊗e₀, e₁⊗e₁, then B's outcome has probability 1), `proj_measurement_system` | ✓ |
 
 ### Day 10 (19 Sep): superdense coding, gates
 | id | notes | formal | status |
 |---|---|---|---|
-| D10-1 | superdense coding: the four Bell states from γ by I, Z, X, XZ | S1015 `superdense_coding` ((M_k ⊗ I)γ = k-th Bell state for the notes' four matrices `sd_op k`: I, diag(1,−1), [[0,1],[1,0]], [[0,1],[−1,0]]; these are I, Z, X and ZX by `sd_op_paulis`, so the audit's "XZ" is ZX), `superdense_coding_orthonormal` (the four results are orthonormal) | ✓ |
-| D10-2 | one-qubit gates X, Z, Y, H, S | QC11 `Pauli_X/Y/Z` (+ unitary, involution, products), QC3 `Hadamard`, `hadamard_e0/e1`, `Phase_S`, `Phase_S_unitary` | ✓ |
+| D10-1 | superdense coding: the four Bell states from γ by I, Z, X, XZ | SDC `superdense_coding` ((M_k ⊗ I)γ = k-th Bell state for the notes' four matrices `sd_op k`: I, diag(1,−1), [[0,1],[1,0]], [[0,1],[−1,0]]; these are I, Z, X and ZX by `sd_op_paulis`, so the audit's "XZ" is ZX), `superdense_coding_orthonormal` (the four results are orthonormal) | ✓ |
+| D10-2 | one-qubit gates X, Z, Y, H, S | L30 `Pauli_X/Y/Z` (+ unitary, involution, products), L10 `Hadamard`, `hadamard_e0/e1`, `Phase_S`, `Phase_S_unitary` | ✓ |
 | D10-3 | "H² = X" | the notes are wrong here (corrected on Day 11 to H² = I); formal `hadamard_squared` proves H² = I | ✓ |
 | D10-4 | classical gates AND/OR/XOR/NAND/NOR, Pierce/Sheffer remarks | – | – |
-| D10-5 | CNOT matrix, unitary | library `CNOT`; QC3 `CNOT_unitary`, `CNOT_00`, `CNOT_01`, `CNOT_10`, `CNOT_11` | ✓ |
-| D10-6 | Toffoli CCNOT, unitary | QC11 `CCNOT`, `CCNOT_unitary`, `CCNOT_inv` | ✓ |
+| D10-5 | CNOT matrix, unitary | library `CNOT`; L10 `CNOT_unitary`, `CNOT_00`, `CNOT_01`, `CNOT_10`, `CNOT_11` | ✓ |
+| D10-6 | Toffoli CCNOT, unitary | L11 `CCNOT`, `CCNOT_unitary`, `CCNOT_inv` | ✓ |
 
 ### Day 11 (21 Sep): corrections, circuits, no-cloning
 | id | notes | formal | status |
 |---|---|---|---|
-| D11-1 | H² = I, He₀, He₁, Xe₀, Xe₁ | QC3 `hadamard_squared`, `hadamard_e0`, `hadamard_e1`; X on basis vectors via `Pauli_X_ket_plus/minus` only | ✓ |
-| D11-2 | CNOT, CCNOT truth tables | QC3 `CNOT_00`, `CNOT_01`, `CNOT_10`, `CNOT_11` (the full CNOT table); S1015 `CCNOT_basis` (CCNOT\|a,b,c⟩ = \|a,b,c ⊕ ab⟩) and `CCNOT_truth_table` (the notes' eight rows) | ✓ |
-| D11-3 | circuit diagrams; SWAP = CNOT·CNOT′·CNOT | S211 `SWAP_three_CNOTs` (`SWAP` from the AFP entry Quantum_Fourier_Transform), `SWAP_basis`, `CNOT'_basis`; the diagrams themselves are notation | ✓ |
-| D11-4 | CNOT clones the computational basis | QC3 `CNOT_00`, `CNOT_10` | ✓ |
-| D11-5 | No-cloning theorem | QC11 `is_cloner`, `no_cloning` (proof via two non-orthogonal states, `two_states_nontrivial_inner_prod`; the notes use −ψ) | ✓ |
+| D11-1 | H² = I, He₀, He₁, Xe₀, Xe₁ | L10 `hadamard_squared`, `hadamard_e0`, `hadamard_e1`; X on basis vectors via `Pauli_X_ket_plus/minus` only | ✓ |
+| D11-2 | CNOT, CCNOT truth tables | L10 `CNOT_00`, `CNOT_01`, `CNOT_10`, `CNOT_11` (the full CNOT table); CCN `CCNOT_basis` (CCNOT\|a,b,c⟩ = \|a,b,c ⊕ ab⟩) and `CCNOT_truth_table` (the notes' eight rows) | ✓ |
+| D11-3 | circuit diagrams; SWAP = CNOT·CNOT′·CNOT | SW `SWAP_three_CNOTs` (`SWAP` from the AFP entry Quantum_Fourier_Transform), `SWAP_basis`, `CNOT'_basis`; the diagrams themselves are notation | ✓ |
+| D11-4 | CNOT clones the computational basis | L10 `CNOT_00`, `CNOT_10` | ✓ |
+| D11-5 | No-cloning theorem | L11 `is_cloner`, `no_cloning` (proof via two non-orthogonal states, `two_states_nontrivial_inner_prod`; the notes use −ψ) | ✓ |
 
 ### Day 12 (23 Sep): quantum parallelism
 | id | notes | formal | status |
 |---|---|---|---|
-| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | D12 `hadamard_uniform_N` (`tensor_pow_mat Hadamard N *v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N`), with `uniform_tensor_e0_as_sum` the Σ_J form; QC11 `hadamard_e0` is N = 1 | ✓ |
-| D12-2 | oracle U_f(e_J ⊗ e_i) = e_J ⊗ e_{i+f(J)} exists and is unitary | QC11 `oracle_unitary`, `oracle_exists` | ✓ |
-| D12-3 | Proposition: p₀(ψ) = \|⟨γ\|ψ⟩\|² for P₀ = \|γ⟩⟨γ\| | QC3 `rank_one_meas_prob`, `meas_prob_quad_form` | ✓ |
+| D12-1 | H^{⊗N}\|0…0⟩ = 2^{−N/2} Σ_J \|J⟩ | D12 `hadamard_uniform_N` (`tensor_pow_mat Hadamard N *v tensor_pow_vec (unit_vec 2 0) N = uniform_vec N`), with `uniform_tensor_e0_as_sum` the Σ_J form; L10 `hadamard_e0` is N = 1 | ✓ |
+| D12-2 | oracle U_f(e_J ⊗ e_i) = e_J ⊗ e_{i+f(J)} exists and is unitary | L12 `oracle_unitary`, `oracle_exists` | ✓ |
+| D12-3 | Proposition: p₀(ψ) = \|⟨γ\|ψ⟩\|² for P₀ = \|γ⟩⟨γ\| | L8 `rank_one_meas_prob`, L7 `meas_prob_quad_form` | ✓ |
 | D12-4 | counting: p₀(U_f(x⊗e₀)) = (M/2^N)² with M = #{J : f(J) = 0} | D12 `counting_probability`: for any unitary U acting as the oracle on the basis vectors e_J⊗e_i, `meas_prob (γ ⊘ γ) (U *v γ) = (count_zeros f N / 2^N)²` with γ = x⊗e₀ | ✓ |
 | D12-5 | Bernoulli-trial remark | – | – |
 
 ### Day 13 (26 Sep): ensembles, density matrices
 | id | notes | formal | status |
 |---|---|---|---|
-| D13-1 | ensemble {p_i, ψ_i} | QC11 `ensemble` | ✓ |
-| D13-2 | p_α(ensemble) = Σ p_i ‖M_α ψ_i‖² = Tr(M_α*M_α ρ) | QC11 `pure_state_prob_trace`, `ensemble_prob_trace_eq` | ✓ |
+| D13-1 | ensemble {p_i, ψ_i} | L13 `ensemble` | ✓ |
+| D13-2 | p_α(ensemble) = Σ p_i ‖M_α ψ_i‖² = Tr(M_α*M_α ρ) | L13 `pure_state_prob_trace`, `ensemble_prob_trace_eq` | ✓ |
 | D13-3 | a vector in H_A ⊗ H_E behaves like an ensemble (environment motivation) | ✗ (narrative; the partial-trace theorem D15-6 is the rigorous form) | – |
-| D13-4 | measurements see \|ψ⟩⟨ψ\| only: \|e^{iθ}ψ⟩⟨e^{iθ}ψ\| = \|ψ⟩⟨ψ\| | QC11 `pure_density_smult_unit` | ✓ |
-| D13-5 | ‖γ‖² = Tr\|γ⟩⟨γ\| | QC11 `Tr_outer_sum_single`, `Tr_outer_sum_single` | ✓ |
-| D13-6 | density matrix of an ensemble | QC11 `ensemble_density`, `density_matrix`, `ensemble_density_is_dm` | ✓ |
+| D13-4 | measurements see \|ψ⟩⟨ψ\| only: \|e^{iθ}ψ⟩⟨e^{iθ}ψ\| = \|ψ⟩⟨ψ\| | L14 `pure_density_smult_unit` | ✓ |
+| D13-5 | ‖γ‖² = Tr\|γ⟩⟨γ\| | L13 `Tr_outer_sum_single`, `Tr_outer_sum_single` | ✓ |
+| D13-6 | density matrix of an ensemble | L13 `ensemble_density`, `density_matrix`, `ensemble_density_is_dm` | ✓ |
 
 ### Day 14 (28 Sep): which matrices are density matrices; pure states; composite ensembles
 | id | notes | formal | status |
 |---|---|---|---|
-| D14-1 | ρ is the density matrix of some ensemble iff ρ ≥ 0, Tr ρ = 1; spectral ensemble | QC11 `density_matrix_iff_ensemble`, `spectral_ensemble_exists`, `density_matrix_characterisation` | ✓ |
+| D14-1 | ρ is the density matrix of some ensemble iff ρ ≥ 0, Tr ρ = 1; spectral ensemble | L14 `density_matrix_iff_ensemble`, `spectral_ensemble_exists`, `density_matrix_characterisation` | ✓ |
 | D14-2 | non-uniqueness remark (ρ = XX*) | – | – |
-| D14-3 | ensembles representing \|ψ⟩⟨ψ\| consist of multiples of ψ (pure states) | QC11 `pure_ensemble_parallel`, `pure_density_iff_idempotent` | ✓ |
-| D14-4 | \|ψ⊗φ⟩⟨ψ⊗φ\| = \|ψ⟩⟨ψ\| ⊗ \|φ⟩⟨φ\| | QC11 `tensor_pure_density` | ✓ |
-| D14-5 | composite ensemble density Σ p_i q_l (…⊗…) is a density matrix | QC11 `density_matrix_tensor` (product of two densities); S0429 `composite_density_is_dm`: for ensembles {p_i,ψ_i}, {q_j,φ_j}, Σ p_i q_j \|ψ_i⟩⟨ψ_i\| ⊗ \|φ_j⟩⟨φ_j\| (`composite_density`) is a density matrix, being the density of the ensemble {p_i q_j, ψ_i⊗φ_j} (`product_ensemble_ensemble`, `composite_density_eq`, via `outer_sum_tensor`) | ✓ |
+| D14-3 | ensembles representing \|ψ⟩⟨ψ\| consist of multiples of ψ (pure states) | L14 `pure_ensemble_parallel`, `pure_density_iff_idempotent` | ✓ |
+| D14-4 | \|ψ⊗φ⟩⟨ψ⊗φ\| = \|ψ⟩⟨ψ\| ⊗ \|φ⟩⟨φ\| | L14 `tensor_pure_density` | ✓ |
+| D14-5 | composite ensemble density Σ p_i q_l (…⊗…) is a density matrix | L15 `density_matrix_tensor` (product of two densities); CEN `composite_density_is_dm`: for ensembles {p_i,ψ_i}, {q_j,φ_j}, Σ p_i q_j \|ψ_i⟩⟨ψ_i\| ⊗ \|φ_j⟩⟨φ_j\| (`composite_density`) is a density matrix, being the density of the ensemble {p_i q_j, ψ_i⊗φ_j} (`product_ensemble_ensemble`, `composite_density_eq`, via `outer_sum_tensor`) | ✓ |
 
 ### Day 15 (30 Sep): traces, L(H_A)⊗L(H_B) ≅ L(H_A⊗H_B), partial trace
 | id | notes | formal | status |
 |---|---|---|---|
-| D15-1 | Tr A = Σ⟨u_i\|Au_i⟩ for any ONB | QC11 `trace_via_onb` | ✓ |
-| D15-2 | Tr(R ⊗ T) = Tr R · Tr T | QC11 `trace_tensor` | ✓ |
-| D15-3 | Γ : L(H_A) ⊗ L(H_B) → L(H_A ⊗ H_B) is an isomorphism | QC11 `operator_tensor_space_isomorphism` (coordinate model M_{m²,p²}); `Day06_15_Universal`: Γ(R⊗T) = R⊗T on elementary tensors (`gamma_elementary`), and Γ is the unique linear map with this property (`gamma_unique`, since the unit matrices are elementary tensors, `unit_mat_op_elem`) | ✓ |
-| D15-4 | partial traces tr_B(R⊗T) = Tr(T) R, tr_A(R⊗T) = Tr(R) T | QC11 `partial_trace_B`, `partial_trace_A` (block formulas of Day 16), `partial_trace_B_tensor`, `partial_trace_A_tensor` | ✓ |
-| D15-5 | p_α(ρ) = Tr((M*M ⊗ I)ρ) = Tr(M*M ρ^A) | QC11 `partial_trace_measurement` | ✓ |
-| D15-6 | Tr ρ^A = Tr ρ; ρ ≥ 0 ⟹ ρ^A ≥ 0 | QC11 `partial_trace_B_trace`, `partial_trace_B_hermitian`, `partial_trace_B_is_density`; S1015 `partial_trace_A_trace`, `partial_trace_A_hermitian`, `partial_trace_A_is_density`, from the B side through `partial_trace_A_as_B` (exchange of the factors by the index permutation `swap_index`; `perm_conj` preserves trace, Hermiticity and positivity) | ✓ |
+| D15-1 | Tr A = Σ⟨u_i\|Au_i⟩ for any ONB | L15 `trace_via_onb` | ✓ |
+| D15-2 | Tr(R ⊗ T) = Tr R · Tr T | L15 `trace_tensor` | ✓ |
+| D15-3 | Γ : L(H_A) ⊗ L(H_B) → L(H_A ⊗ H_B) is an isomorphism | L15 `operator_tensor_space_isomorphism` (coordinate model M_{m²,p²}); `Day06_15_Universal`: Γ(R⊗T) = R⊗T on elementary tensors (`gamma_elementary`), and Γ is the unique linear map with this property (`gamma_unique`, since the unit matrices are elementary tensors, `unit_mat_op_elem`) | ✓ |
+| D15-4 | partial traces tr_B(R⊗T) = Tr(T) R, tr_A(R⊗T) = Tr(R) T | L15 `partial_trace_B`, `partial_trace_A` (block formulas of Day 16), `partial_trace_B_tensor`, `partial_trace_A_tensor` | ✓ |
+| D15-5 | p_α(ρ) = Tr((M*M ⊗ I)ρ) = Tr(M*M ρ^A) | L16 `partial_trace_measurement` | ✓ |
+| D15-6 | Tr ρ^A = Tr ρ; ρ ≥ 0 ⟹ ρ^A ≥ 0 | L16 `partial_trace_B_trace`, `partial_trace_B_hermitian`, `partial_trace_B_is_density`; PTA `partial_trace_A_trace`, `partial_trace_A_hermitian`, `partial_trace_A_is_density`, from the B side through `partial_trace_A_as_B` (exchange of the factors by the index permutation `swap_index`; `perm_conj` preserves trace, Hermiticity and positivity) | ✓ |
 
 ### Day 16 (3 Oct): partial traces in block form; postulates 1′–4′
 | id | notes | formal | status |
 |---|---|---|---|
 | D16-1 | tr_B((X_{ij})) = Σ X_{ii}, tr_A((X_{ij})) = (Tr X_{ij}) | these are the formal definitions `partial_trace_B/A` (A-major Kronecker indexing) | ✓ |
 | D16-2 | H_A ⊗ H_B ≅ H_A^{(p)}, L(H_A⊗H_B) ≅ M_p(L(H_A)) | BF `vec_to_mat_cols_expansion` (v = Σ h_i ⊗ e_i with h_i the i-th column of `vec_to_mat m p v`), `vec_to_mat_cols_inner_prod` (⟨v\|w⟩ = Σ ⟨h_i\|k_i⟩: the identification is isometric), `tensor_block_decomposition` (X = Σ X_ij ⊗ E_ij with blocks `block`) and `tensor_block_decomposition_unique`, `block_action` ((Xv)_i = Σ_j X_ij h_j), `partial_trace_B_blocks`, `partial_trace_A_blocks`; f_i = e_i, A-major indices | ✓ |
-| D16-3 | Postulates 1′ (density matrices), 2′ (UρU*), 3′ (p_α = Tr(M*Mρ)) | QC11 `density_matrix`; `unitary_conj_channel_preserves_density_matrix`, `conjugation_channel`; `ensemble_prob_trace`, `meas_map_density` | ✓ |
-| D16-4 | Postulate 4′: ρ₁ ⊗ ρ₂ is a density matrix | QC11 `psd_tensor`, `density_matrix_tensor` | ✓ |
+| D16-3 | Postulates 1′ (density matrices), 2′ (UρU*), 3′ (p_α = Tr(M*Mρ)) | L13 `density_matrix`; CH `unitary_conj_channel_preserves_density_matrix`, `conjugation_channel`; L13 `ensemble_prob_trace`, L17 `meas_map_density` | ✓ |
+| D16-4 | Postulate 4′: ρ₁ ⊗ ρ₂ is a density matrix | L15 `psd_tensor`, `density_matrix_tensor` | ✓ |
 
 ### Day 17 (5 Oct): measurement maps, noise, axiomatic channels
 | id | notes | formal | status |
 |---|---|---|---|
-| D17-1 | measurement map M(ρ) = Σ M_α ρ M_α* maps densities to densities | QC11 `meas_map`, `meas_map_psd`, `meas_map_density` | ✓ |
+| D17-1 | measurement map M(ρ) = Σ M_α ρ M_α* maps densities to densities | L17 `meas_map`, `meas_map_psd`, `meas_map_density` | ✓ |
 | D17-2 | stochastic matrices, Markov chains | – | – |
 | D17-3 | environment model: tr_E(U(ρ ⊗ \|φ⟩⟨φ\|)U*) = Σ W_i ρ W_i*, Σ W_i*W_i = I | D17 `environment_model` (U unitary on ℂ^m⊗ℂ^p, ⟨φ\|φ⟩ = 1, tr_E = `partial_trace_B m p`, W_i = `env_kraus m p U φ i` with entries Σ_k U_{(a,i),(c,k)} φ_k; both the identity and `kraus_operators`) | ✓ |
 | D17-4 | Proposition: Φ maps densities to densities iff positive and trace-preserving | D18 `density_preserving_iff_positive_tp` (linear Φ, n > 0) | ✓ |
-| D17-5 | definition of completely positive | QC11 `p_positive`, `completely_positive` | ✓ |
-| D17-6 | Choi–Kraus: CPTP iff Φ(X) = Σ E_i X E_i*, Σ E_i*E_i = I | QC11 `choi_kraus_cptp` | ✓ |
+| D17-5 | definition of completely positive | L17 `p_positive`, `completely_positive` | ✓ |
+| D17-6 | Choi–Kraus: CPTP iff Φ(X) = Σ E_i X E_i*, Σ E_i*E_i = I | L19 `choi_kraus_cptp` | ✓ |
 
 ## Part III: Completely positive maps (Days 18–23)
 
 ### Day 18 (7 Oct): theory of CP maps
 | id | notes | formal | status |
 |---|---|---|---|
-| D18-1 | X = (P₁−P₂) + i(P₃−P₄) with P_i ≥ 0 | QC11 `hermitian_decomp_psd`, `matrix_decomp_psd` | ✓ |
+| D18-1 | X = (P₁−P₂) + i(P₃−P₄) with P_i ≥ 0 | L18 `hermitian_decomp_psd`, `matrix_decomp_psd` | ✓ |
 | D18-2 | positive maps; densities to densities iff positive and TP | `positive_map`; proposition = D17-4, D18 `density_preserving_iff_positive_tp` | ✓ |
-| D18-3 | p-positive, completely positive, Φ^{(p)}((X_{ij})) = (Φ(X_{ij})) | QC11 `p_positive`, `completely_positive`, `amplification`, `amplification_index` | ✓ |
+| D18-3 | p-positive, completely positive, Φ^{(p)}((X_{ij})) = (Φ(X_{ij})) | L17 `p_positive`, `completely_positive`, `amplification`, `amplification_index` | ✓ |
 | D18-4 | Example: transpose on M₂ is positive but not 2-positive | D18 `transpose_positive_map`, `transpose_not_2_positive` (witness (E_{ij}) = `choi_seed 2`, test vector (0,1,−1,0)), `transpose_not_completely_positive` | ✓ |
 
 ### Day 19 (10 Oct): Choi's theorem
 | id | notes | formal | status |
 |---|---|---|---|
-| D19-1 | Choi: (1) CP ⟺ (2) n-positive ⟺ (3) P_Φ = (Φ(E_{ij})) ≥ 0 ⟺ (4) Φ(X) = Σ B_i X B_i* | QC11 `choi_matrix`, `choi_theorem` ((1)⟺(3)), `choi_psd_if_cp`, `kraus_rep_of_psd_choi` ((3)⟹(4)), `kraus_is_cp`/`kraus_cp_no_tp` ((4)⟹(1)).  (2)⟹(3) S0429 `choi_psd_if_n_positive`; all four conditions together: S0429 `choi_four_conditions` | ✓ |
+| D19-1 | Choi: (1) CP ⟺ (2) n-positive ⟺ (3) P_Φ = (Φ(E_{ij})) ≥ 0 ⟺ (4) Φ(X) = Σ B_i X B_i* | L19 `choi_matrix`, `choi_theorem` ((1)⟺(3)), `choi_psd_if_cp`, `kraus_rep_of_psd_choi` ((3)⟹(4)), L17 `kraus_is_cp`/L19 `kraus_cp_no_tp` ((4)⟹(1)).  (2)⟹(3) CPOS `choi_psd_if_n_positive`; all four conditions together: CPOS `choi_four_conditions` | ✓ |
 | D19-2 | Notes: Choi–Kraus representation, Choi–Jamiołkowski matrix, CP ↔ M_n(M_d)⁺ | `choi_matrix_kraus_eq` (D23), `choi_theorem` | ✓ |
 | D19-3 | TP iff Tr(R_{ij}) = δ_{ij}; unital iff Σ R_{ii} = I (Choi-matrix form) | CTU `choi_trace_preserving_iff`, `choi_unital_iff` (blocks of the Choi matrix via `block_of_mat`; `choi_cptp_iff`, `choi_ucp_iff`) | ✓ |
 
 ### Day 20 (12 Oct): functionals, adjoints, Choi rank
 | id | notes | formal | status |
 |---|---|---|---|
-| D20-1 | φ : M_n → ℂ positive ⟺ CP ⟺ (φ(E_{ij})) ≥ 0 | QC11 `positive_scalar_is_cp` (positive ⟹ CP; the rest is `choi_theorem` with d = 1) | ✓ |
-| D20-2 | Φ* for Φ(X) = Σ A_i X A_i* is Y ↦ Σ A_i* Y A_i; Φ CP ⟺ Φ* CP; Φ UCP ⟺ Φ* CPTP | QC11 `kraus_adjoint_dim`, `kraus_adjoint_correct`, `adjoint_cp_from_kraus`, `cp_unital_iff_adjoint_tp` | ✓ |
-| D20-3 | Choi rank cr(Φ) | QC11 `choi_rank` | ✓ |
+| D20-1 | φ : M_n → ℂ positive ⟺ CP ⟺ (φ(E_{ij})) ≥ 0 | L20 `positive_scalar_is_cp` (positive ⟹ CP; the rest is L19 `choi_theorem` with d = 1) | ✓ |
+| D20-2 | Φ* for Φ(X) = Σ A_i X A_i* is Y ↦ Σ A_i* Y A_i; Φ CP ⟺ Φ* CP; Φ UCP ⟺ Φ* CPTP | L20 `kraus_adjoint_dim`, `kraus_adjoint_correct`, `adjoint_cp_from_kraus`, `cp_unital_iff_adjoint_tp` | ✓ |
+| D20-3 | Choi rank cr(Φ) | L20 `choi_rank` | ✓ |
 | D20-4 | Theorem: cr(Φ) = rank(P_Φ); Lemma rank((E_{ij})) = 1 | D20 `choi_rank_eq_rank` (`choi_rank n d Φ = vec_space.rank (n*d) (choi_matrix n d Φ)` for CP Φ, n d > 0), via `rank_outer_sum_le`, `rank_ge_indep_in_colspace` and the minimal-representation independence of D22-1; the rank-one lemma for (E_{ij}) is not stated separately | ✓ |
 
 ### Day 21 (14 Oct): Kraus rank bound, unitary freedom (Choi 2)
 | id | notes | formal | status |
 |---|---|---|---|
-| D21-1 | CP maps have Kraus representations with K ≤ nd terms | QC11 `kraus_rank_bound`, `choi_rank_le` | ✓ |
+| D21-1 | CP maps have Kraus representations with K ≤ nd terms | L21 `kraus_rank_bound`, `choi_rank_le` | ✓ |
 | D21-2 | conjecture on averages of UCP maps | RA `D21_2` states it for Kraus maps (every CP map is one): a unital Φ : M_n → M_d is the average of n unital maps with ≤ d Kraus operators each (`ra_split`).  It is the strong Ruskai–Audenaert conjecture for the dual channel M_d → M_n, open in general (Kumar–Wolf 2026 prove d = 2 by Borsuk–Ulam).  Proved: the case n = 2 (RA2 `ra_two`, after Bacon–Smolin–Wolf: off-diagonal Choi block R₁KR₂* with K a contraction, `wide_factor`, `bessel_rows`, and K = (U₁+U₂)/2 through a singular value decomposition, `svd_square`, `contraction_avg`); Fourier mixing B_{lj} = Σ_m ω^{lm} A_{mj} settles every map whose Kraus operators split into n groups with Σ_j A_{mj}A_{m'j}* = 0 (`fourier_split`); measurement maps X ↦ Σ_i X_ii Q_i (`ra_measurement`); Horn's lemma, every density matrix is the average of n pure states (`horn_lemma`, the case d = 1); maps with diagonal values (`ra_cq`).  The notes' form (i) is false as written (n = 2, d = 1: no trace-preserving M_2 → ℂ of Choi rank 1, `notes_form_i_false`); its correct dual form has the dimensions exchanged | ✓ (statement; open in general) |
 | D21-3 | T injective ⟹ T* onto; v_i independent ⟹ v_i v_j* independent | D21 `outer_prods_lin_indep` (v_i independent ⟹ the r² matrices v_i v_j* independent over ℂ, via dual vectors `dual_vectors_exist` from the Gram inverse); the T injective ⟹ T* onto remark is not used | ✓ |
 | D21-4 | 0 ≤ ww* ≤ P ⟹ w ∈ range P; range of Σ w_l w_l* | RG `dominated_rank_one_in_range` and `outer_sum_range` (R(Σ w_l w_l*) = `col_span`), both from `hermitian_perp_ker_in_range` (for Hermitian P, w ⊥ ker P ⟹ w ∈ R(P), via the spectral decomposition) and D23 `loewner_ker_subset` | ✓ |
@@ -242,10 +242,10 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | id | notes | formal | status |
 |---|---|---|---|
 | D22-1 | minimal (r = cr Φ) Kraus operators are linearly independent | D22M `minimal_kraus_rep_lin_indep` (a Kraus list of length cr Φ is `lin_indep_complex_mat`; proof: a dependence is rotated by a unitary with prescribed first row into a representation with a zero operator, `kraus_mix_same_map`) | ✓ |
-| D22-2 | convex sets, extreme points, convex hull, affine maps | QC11 `convex_set_mat`, `extreme_point_mat`, `affine_map_mat` | ✓ |
+| D22-2 | convex sets, extreme points, convex hull, affine maps | L22 `convex_set_mat`, `extreme_point_mat`, `affine_map_mat` | ✓ |
 | D22-3 | Krein–Milman (stated) | – (available as HOL-Analysis `Krein_Milman_Minkowski`) | – |
-| D22-4 | UCP(M_n,M_d) convex and compact | QC11 `UCP`, `UCP_convex`; UC `compact_ucp`: in Choi coordinates (the Choi matrix is a linear bijection L(M_n,M_d) → M_{nd}; `choi_inv` is its inverse) the linear UCP maps form exactly `ucp_choi_set` = {P ≥ 0 : Σ_i P_ii = I_d} (`ucp_choi_image`), which is compact (`compact_ucp_choi_set`: closed, and inside d times the compact unit-trace PSD set) | ✓ |
-| D22-5 | CPTP convex; Γ(Φ) = Φ* affine bijection UCP → CPTP | QC11 `CPTP`, `CPTP_convex`; AM `map_adjoint` (Φ*(Y)_ij = ⟨Φ(E_ij)\|Y⟩, `map_adjoint_correct`: ⟨Y\|Φ X⟩ = ⟨Φ*Y\|X⟩), `adjoint_ucp_imp_cptp`, `adjoint_cptp_imp_ucp`, `map_adjoint_adjoint` (Φ** = Φ, so Γ is bijective with Γ⁻¹ = Γ, up to agreement on M_n), `map_adjoint_affine`; linearity is assumed since `UCP` does not record it | ✓ |
+| D22-4 | UCP(M_n,M_d) convex and compact | L22 `UCP`, `UCP_convex`; UC `compact_ucp`: in Choi coordinates (the Choi matrix is a linear bijection L(M_n,M_d) → M_{nd}; `choi_inv` is its inverse) the linear UCP maps form exactly `ucp_choi_set` = {P ≥ 0 : Σ_i P_ii = I_d} (`ucp_choi_image`), which is compact (`compact_ucp_choi_set`: closed, and inside d times the compact unit-trace PSD set) | ✓ |
+| D22-5 | CPTP convex; Γ(Φ) = Φ* affine bijection UCP → CPTP | L22 `CPTP`, `CPTP_convex`; AM `map_adjoint` (Φ*(Y)_ij = ⟨Φ(E_ij)\|Y⟩, `map_adjoint_correct`: ⟨Y\|Φ X⟩ = ⟨Φ*Y\|X⟩), `adjoint_ucp_imp_cptp`, `adjoint_cptp_imp_ucp`, `map_adjoint_adjoint` (Φ** = Φ, so Γ is bijective with Γ⁻¹ = Γ, up to agreement on M_n), `map_adjoint_affine`; linearity is assumed since `UCP` does not record it | ✓ |
 | D22-6 | Choi 3 (statement) and corollaries: extreme ⟹ cr(Φ) ≤ d; CPTP version | see D23; corollary: D22 `extreme_CPTP_kraus_length_le` (r ≤ n for a Kraus representation with independent products) and `extreme_CPTP_choi_rank_le` (cr Φ ≤ n for extreme CPTP Φ: M_n → M_d, the notes' d) | ✓ |
 
 ### Day 23 (19 Oct): proof of Choi's Theorem 3, examples
@@ -261,7 +261,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 ### Day 24 (24 Oct): operator systems, Arveson's extension and correspondence
 | id | notes | formal | status |
 |---|---|---|---|
-| D24-1 | operator systems, M_p(S), CP maps on S | OS `operator_system`, `Mp`, `p_positive_on`, `cp_on` (ampliation = QC11 `amplification`), `Mp_operator_system` (the note: M_p(S) is an operator system), `cp_on_full` (S = M_n gives QC11 `completely_positive`) | ✓ |
+| D24-1 | operator systems, M_p(S), CP maps on S | OS `operator_system`, `Mp`, `p_positive_on`, `cp_on` (ampliation = L17 `amplification`), `Mp_operator_system` (the note: M_p(S) is an operator system), `cp_on_full` (S = M_n gives L17 `completely_positive`) | ✓ |
 | D24-2 | X ∈ S is a combination of four positives in S | OS `operator_system_four_positives` (via `herm_bound`: −cI ≤ H ≤ cI from the spectral decomposition) | ✓ |
 | D24-3 | Arveson's extension theorem (statement, corollary) | AE `arveson_extension` (CP Φ on S ⊆ M_n extends to a CP Ψ on M_n), corollary `arveson_kraus` (Φ(X) = Σ W_i X W_i* on S); n, d are cardinalities of finite types, as in SC | ✓ |
 | D24-4 | S_Φ and Arveson: CP ⟺ d-positive ⟺ S_Φ positive | AC `arveson_functional` (S_Φ), `arveson_cp_iff` (both equivalences; (3)⟹(1) by the congruence Y = A*XA with A = (v_r^t) ⊗ I, `conj_block`) | ✓ |
@@ -270,8 +270,8 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | id | notes | formal | status |
 |---|---|---|---|
 | D25-1 | f ↦ Φ_f, S_Φ ↔ Φ mutual inverses; CP(S,M_d) ≅ P(M_d(S),ℂ) affinely | AC `arveson_map` (Φ_f), `arveson_functional_of_map`, `arveson_map_of_functional`, `arveson_correspondence` (onto the positive functionals), `arveson_functional_affine`, `arveson_functional_unital` (unital ↦ state) | ✓ |
-| D25-2 | bounded functionals, ‖f‖ | MT `bounded_clinear_functional_on` | ✓ |
-| D25-3 | Hahn–Banach: norm-preserving extension of a bounded linear functional | MT `matrix_hahn_banach_lmat`, `matrix_hahn_banach_lmat_with_bound` (complex HB on matrix spaces, derived from HOL-Hahn_Banach via Bohnenblust–Sobczyk) | ✓ |
+| D25-2 | bounded functionals, ‖f‖ | HB `bounded_clinear_functional_on` | ✓ |
+| D25-3 | Hahn–Banach: norm-preserving extension of a bounded linear functional | HB `matrix_hahn_banach_lmat`, `matrix_hahn_banach_lmat_with_bound` (complex HB on matrix spaces, derived from HOL-Hahn_Banach via Bohnenblust–Sobczyk) | ✓ |
 | D25-4 | Proposition: f(I) = 1 ⟹ (f positive iff ‖f‖ = 1) | UFN `unital_positive_iff_norm_one` (operator norm `op_norm`, functional norm `fun_norm`; proved without the spectral theorem via P² ≤ ‖P‖P) | ✓ |
 
 ### Day 26 (28 Oct): Arveson extension proof; separability defined
@@ -279,7 +279,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 |---|---|---|---|
 | D26-1 | CP Φ with Φ(I) = P is V*ψ(X)V with ψ UCP; CP Φ = ψ(VXV*) with ψ CPTP | CPF `cp_unital_factor` (Φ CP on an operator system S ⊆ M_n: Φ(X) = V*ψ(X)V on S with ψ UCP on all of M_n and V*V = Φ(I)), `cp_tp_factor` (Φ CP on M_n: Φ(X) = ψ(VXV*) with ψ CPTP).  Proved from the Kraus form on S (AE `arveson_kraus`) with the block embeddings B_i (Σ B_iB_i* = I, `blk_emb_gram`) instead of compressing to the range of P and dualising | ✓ |
 | D26-2 | Arveson extension theorem (proof) | ~ : AE `arveson_extension` by a different route: S_Φ is extended to a positive functional on M_d(M_n) directly (`positive_functional_extension`: separate the positive definite cone from ker S_Φ with HOL-Analysis `separating_hyperplane_set_0` in the typed matrix space, giving X ↦ Tr(DX) with D ≥ 0), so neither the norm proposition D25-4 nor the reduction D26-1 to the unital case is needed | ~ |
-| D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D24 `separable_density_iff_in_convex_hull_Sprime` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
+| D26-3 | separable density matrix Σ p_l \|ψ_l⟩⟨ψ_l\| ⊗ \|φ_l⟩⟨φ_l\|; entangled otherwise | SC `separable_lmat_gen`, `separable_cone_lmat`, `Sprime`; D26 `separable_density_iff_in_convex_hull_Sprime` (= SC `separable_density_iff_in_convex_hull_Sprime`: for density matrices, cone membership ⟺ convex combination of product densities) | ✓ |
 
 ### Day 27 (31 Oct): positive maps detect entanglement; convex cones
 | id | notes | formal | status |
@@ -303,37 +303,37 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 ### Day 29 (7 Nov): classical codes
 | id | notes | formal | status |
 |---|---|---|---|
-| D29-1 | repetition code | QC11 `repetition_encode`, `hamming_dist_repetition_doubles`, `hamming_weight_repetition_encode` | ✓ |
-| D29-2 | parity check detects one error | QC11 `parity_check_encode`, `parity_check_detects_one_error` | ✓ |
+| D29-1 | repetition code | L29 `repetition_encode`, `hamming_dist_repetition_doubles`, L32 `hamming_weight_repetition_encode` | ✓ |
+| D29-2 | parity check detects one error | L29 `parity_check_encode`, `parity_check_detects_one_error` | ✓ |
 | D29-3 | Hamming [7,1,3] code | CC: the notes' code (`notes_hamming_encode`) detects one error (`notes_hamming_detects_one_error`) but has distance 2 and cannot correct one (`notes_hamming_ambiguous_word`, `notes_hamming_not_correcting`); the standard [7,4,3] code corrects one error (`hamming74_unique_decoding`, `hamming74_corrects_one_error`) | ✓ |
-| D29-4 | Hamming weight, distance of a code, subspace codes | QC11 `hamming_weight`, `hamming_dist`, `code_distance`, `corrects_errors`; S0429 `hamming_dist_triangle`, `subspace_code_distance` (for a code closed under addition mod 2 the distance is the least weight of a nonzero word), `corrects_errors_unique_decoding` (distance ≥ 2t+1: at most one code word within distance t of any received word) | ✓ |
+| D29-4 | Hamming weight, distance of a code, subspace codes | L29 `hamming_weight`, `hamming_dist`, `code_distance`, `corrects_errors`; SUB `hamming_dist_triangle`, `subspace_code_distance` (for a code closed under addition mod 2 the distance is the least weight of a nonzero word), `corrects_errors_unique_decoding` (distance ≥ 2t+1: at most one code word within distance t of any received word) | ✓ |
 | D29-5 | left inverses, cyclic codes | – | – |
 
 ### Day 30 (9 Nov): error probabilities; three-qubit bit-flip code
 | id | notes | formal | status |
 |---|---|---|---|
 | D30-1 | undetected-error probabilities, majority rule | CC `repetition_undetected_prob`, `parity_undetected_prob`, `repetition_better_than_parity` (all 0 < p < 1; the notes say p < ½), `majority_uncorrected_prob` | ✓ |
-| D30-2 | encoding a\|0⟩+b\|1⟩ ↦ a\|000⟩+b\|111⟩ | QC11 `encode_mat` | ✓ |
+| D30-2 | encoding a\|0⟩+b\|1⟩ ↦ a\|000⟩+b\|111⟩ | L31 `encode_mat` | ✓ |
 | D30-3 | syndrome projections P₀…P₃, Σ P_i = I | D30 `syndrome_proj`, `syndrome_proj_sum`, `syndrome_proj_idem`, `syndrome_proj_hermitian`; flips `flip_bit_mat` = the tensors X⊗I⊗I, … (`flips_as_tensors`) | ✓ |
 | D30-4 | recovery map R is CPTP and R(\|ψ_i⟩⟨ψ_i\|) = \|ψ⟩⟨ψ\| for ≤ 1 error | D30 `recovery_map_CPTP`, `bit_flip_code_recovery` (four statements: no error and a flip on each qubit) | ✓ |
 
 ### Day 31 (11 Nov): operator viewpoint, fidelity
 | id | notes | formal | status |
 |---|---|---|---|
-| D31-1 | error map E(Y) = (1−p)Y + pXYX is CPTP | QC11 `bit_flip_channel`, `_trace_preserving`, `_psd`, `_CPTP`, `_UCP` | ✓ |
+| D31-1 | error map E(Y) = (1−p)Y + pXYX is CPTP | L30 `bit_flip_channel`, `_trace_preserving`, `_psd`, `_CPTP`, `_UCP` | ✓ |
 | D31-2 | R∘E on the encoded state; code better iff p ≤ ½ | CF `three_bit_code_recovery` (R(E(ψψ*)) = c₁ψψ* + c₂φφ* for ψ in the code space), `three_bit_code_better_iff`; the notes' formula for a general Y fails off the code space | ✓ |
-| D31-3 | fidelity F = \|⟨ψ′\|ψ⟩\| = √Tr(ρρ′); F = √⟨ψ\|R∘E(\|ψ⟩⟨ψ\|)ψ⟩ | QC11 `fidelity`, `fidelity_pure_states`, `fidelity_self`, `fidelity_orthogonal` | ✓ |
+| D31-3 | fidelity F = \|⟨ψ′\|ψ⟩\| = √Tr(ρρ′); F = √⟨ψ\|R∘E(\|ψ⟩⟨ψ\|)ψ⟩ | L31 `fidelity`, `fidelity_pure_states`, `fidelity_self`, `fidelity_orthogonal` | ✓ |
 | D31-4 | min F = √(1−p) (do nothing) vs √((1−p)³+3p(1−p)²) (code) | CF `nothing_min_fidelity`, `code_min_fidelity` (lower bounds attained at e₀ resp. its encoding) | ✓ |
 
 ### Day 32 (14 Nov): phase-flip code, Shor code, Pauli magic
 | id | notes | formal | status |
 |---|---|---|---|
-| D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | QC11 `ket_plus`, `ket_minus`, `Pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
+| D32-1 | \|±⟩, Z\|+⟩ = \|−⟩, phase-flip code \|0⟩ ↦ \|+++⟩ | L32 `ket_plus`, `ket_minus`, `Pauli_Z_ket_plus/minus`, `ket_plus_minus_orthog`; the code words \|+++⟩, \|−−−⟩ are `phase_code_zero`/`phase_code_one` (renamed from `shor_zero`/`shor_one` in the audit pass) | ✓ |
 | D32-2 | Y-version with β = Y\|+⟩ | YC `y_code_corrects` (one CPTP map corrects every single Y flip on a\|+++⟩ + b\|βββ⟩), from the general `orthogonal_images_recovery` | ✓ |
 | D32-3 | Shor code \|0_L⟩, \|1_L⟩ ∈ ℂ^{2⁹}; Shor's theorem | D33 `shor_cw_notes` (the code words), `shor_code_theorem`: one CPTP R with R(Ũ\|ψ⟩⟨ψ\|Ũ*) = \|ψ⟩⟨ψ\| for every 2×2 unitary U, every position i < 9 (Ũ = `qubit_op i U` = I⊗…⊗U⊗…⊗I) and every ψ = a\|0_L⟩ + b\|1_L⟩; via `pauli_decomp`, D32 `pauli_expansion_unitary` and D32R `recovery_linear_combination` | ✓ |
 | D32-4 | Proposition: U_iV mutually orthogonal ⟹ CPTP recovery R exists | D32R `recovery_ops_kraus_operators`, `recovery_map_CPTP'`, `recovery_single_error` (hypotheses bundled as `recovery_setting n P Us`: P projection, PU_i*U_jP = δ_ij P; for unitaries this is the notes' hypothesis, `recovery_setting_unitaries`) | ✓ |
 | D32-5 | 1-Pauli operators; orthogonality of their images of V | false as stated: D33 `shor_notes_Z1_Z2` (Z₁ ≠ Z₂ but ⟨Z₁\|0_L⟩, Z₂\|0_L⟩⟩ = 1); the notes correct it on Day 33 (D33-1) | ~ |
-| D32-6 | Pauli magic: I, X, Y, Z orthogonal with norm √2 | QC11 `pauli_orthogonal`, `pauli_norm` | ✓ |
+| D32-6 | Pauli magic: I, X, Y, Z orthogonal with norm √2 | L30 `pauli_orthogonal`, `pauli_norm` | ✓ |
 | D32-7 | U = a₀I + a₁X + a₂Y + a₃Z unitary ⟹ Σ\|a_i\|² = 1 | D32 `pauli_expansion_unitary` | ✓ |
 
 ### Day 33 (16 Nov): Shor code recovery
@@ -434,7 +434,7 @@ in a variant (stated), ✗ not yet, – out of scope (reason given).
 | H-23 | §IV: estimating ⟨x\|M\|x⟩, k-copy polynomials, sampling, f(A)\|b⟩, SWAP test, preconditioning, ill-conditioned flagging | `HHL`: `fun_circuit_output` (f(A)\|b⟩); `HHL_Discussion`: `expect_stable`, `tpow_index` and `tpow_close` (k copies), `sample_dist_close` (sampling), `swap_test_output`/`swap_test_prob` (SWAP test), `precond_left`/`precond_right`; flagging is `flag_post_bound`. Paper errata: (AB)c = Bb is not a preconditioned system (`paper_precondition_wrong`: its unique solution c has Ac ≠ b and A(Bc) ≠ b; correct are BAx = Bb or ABc = b, x = Bc); the displayed flagged state swaps λ_j < 1/κ and λ_j ≥ 1/κ | ~ (paper wrong in details) |
 
 ## Infrastructure not in the notes (formalised to make the above possible)
-* BM: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_unitary`), unitary algebra.
+* UTA: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_unitary`), unitary algebra.
 * EFA: Hilbert–Schmidt norm, completeness of M_n in HS norm, closedness of the Hermitian and PSD sets, Carathéodory for conic combinations of product matrices.
 * MT, LE: typed-dimension matrices `lmat` with the HOL-Analysis `euclidean_space`/`heine_borel` tower, so that the HOL-Analysis separation and compactness theorems apply.
 * SC: compactness of the product-density slice, closedness of the separable cone.
@@ -470,12 +470,12 @@ A12 D32-1 rename `shor_zero/one` → `phase_code_zero/one`. DONE.
 Priority B (medium):
 B1 D8-3 unambiguous discrimination of linearly independent states. DONE (`lin_indep_states_unambiguous`, new proof via dual vectors).
 B2 D17-4/D18-2 density-preserving ⟺ positive ∧ trace-preserving. DONE (`Day18_Positive_Maps`).
-B3 D19-1 n-positive ⟹ Choi matrix psd (DONE, `Day04_29_Supplement`); D19-3 Choi-matrix form of TP/unital (DONE, `Day19_Choi_TP_Unital`).
+B3 D19-1 n-positive ⟹ Choi matrix psd (DONE, `Day19_Choi_Positivity`); D19-3 Choi-matrix form of TP/unital (DONE, `Day19_Choi_TP_Unital`).
 B4 D30-3/D30-4 three-qubit bit-flip code: syndrome projections, recovery map, correction of ≤ 1 error. DONE (`Day30_BitFlip_Code`).
 B5 D32-7 Pauli expansion identity for unitaries. DONE (`Day32_Pauli_Expansion`).
-B6 D11-3 SWAP from three CNOTs (DONE, `Day02_11_Supplement`); D10-1 superdense coding table (DONE, `Day10_15_Supplement`).
+B6 D11-3 SWAP from three CNOTs (DONE, `Day11_SWAP_Circuit`); D10-1 superdense coding table (DONE, `Day10_Superdense_Coding`).
 B7 D12-1/D12-4 N-fold Hadamard and the counting probability. DONE (`Day12_Counting_Probability`, proved directly with `tensor_pow_mat` rather than via AFP Deutsch_Jozsa).
-B8 D15-6 A-side partial-trace lemmas (DONE, `Day10_15_Supplement`).
+B8 D15-6 A-side partial-trace lemmas (DONE, `Day15_Partial_Trace_A`).
 B9 D22-6 corollary cr(Φ) ≤ d for extreme maps. DONE (`Day22_Kraus_Independence`, via JNF `vec_space.li_le_dim`).
 
 Priority C (substantial developments, recorded as open):

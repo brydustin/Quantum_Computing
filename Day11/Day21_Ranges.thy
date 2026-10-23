@@ -1,5 +1,5 @@
 theory Day21_Ranges
-  imports Day04_29_Supplement Day02_11_Supplement
+  imports Day02_Projection_Basis Day23_ChoiExtremeUCP
 begin
 
 section \<open>Day 21: ranges of positive matrices (D21-4)\<close>

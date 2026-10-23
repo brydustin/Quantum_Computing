@@ -1,5 +1,5 @@
 theory Day06_15_Universal
-  imports Day02_11_Supplement
+  imports Day06_Tensor_Coordinates Day15_Partial_Traces
 begin
 
 section \<open>Day 6 and Day 15: the universal properties in the Kronecker model\<close>

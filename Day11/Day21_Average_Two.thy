@@ -1,8 +1,8 @@
 theory Day21_Average_Two
-  imports Day21_Average_Conjecture
+  imports Day21_Average_Conjecture Quantum_Channels
 begin
 
-section \<open>D21-2 for $n=2$\<close>
+section \<open>Day 21: the conjecture D21-2 for $n=2$\<close>
 
 text \<open>Every unital completely positive $\Phi:M_2\to M_d$ is the average of two unital maps of Choi
 rank at most $d$ (\<open>ra_two\<close>; Bacon, Smolin and Wolf).  The off-diagonal block of the Choi matrix is

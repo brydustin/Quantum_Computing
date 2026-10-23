@@ -1,6 +1,8 @@
 theory Day23_Extremality_Examples
-  imports Day22_Kraus_Independence Day25_Arveson_Correspondence
+  imports Day22_Kraus_Independence Quantum_Channels Day25_Arveson_Correspondence
 begin
+
+section \<open>Day 23: extreme and non-extreme maps (D23-4)\<close>
 
 text \<open>Day 23, examples after Choi's Theorem 3, in the CPTP form and with the Kraus convention
 $\Phi(X)=\sum_iW_iXW_i^*$ of the formalisation (the notes write $U^*XU$; replace $U$ by $U^*$).\<close>

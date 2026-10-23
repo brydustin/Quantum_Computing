@@ -1,5 +1,5 @@
 theory Day21_Average_Conjecture
-  imports Quantum_Computing11
+  imports Day32_Phase_Flip_Code
 begin
 
 section \<open>Day 21: the conjecture on averages of unital maps (D21-2)\<close>

@@ -2,6 +2,8 @@ theory Day33_Shor_Code
   imports Day32_Recovery_Proposition Day32_Pauli_Expansion Day30_BitFlip_Code
 begin
 
+section \<open>Days 32--33: the nine-qubit Shor code\<close>
+
 text \<open>Days 32--33: the nine-qubit Shor code.  The $2^9$-dimensional space is never handled
 entrywise: nine qubits are three blocks of three, every single-qubit operator acts inside one
 block, and all inner products factor over the blocks (\<open>tensor_inner_prod\<close>).\<close>

@@ -2,6 +2,8 @@ theory Day24_Operator_Systems
   imports Day17_Environment_Model
 begin
 
+section \<open>Day 24 (24 October 2011): operator systems\<close>
+
 text \<open>Day 24: operator systems $S\subseteq M_n$ (subspaces containing $I$ and closed under
 adjoints), the matrices $M_p(S)$ over them, and completely positive maps on $S$.  An element of
 $M_p(M_n)$ is a $pn\times pn$ matrix whose $(a,b)$ block is \<open>block_of_mat n X a b\<close>; the

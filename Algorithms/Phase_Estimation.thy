@@ -1,5 +1,5 @@
 theory Phase_Estimation
-  imports Quantum_Computing_by_VP_3_10.Quantum_Computing_3_10 Hermitian_Functional_Calculus.Trotter_Product_Formula
+  imports Quantum_Computing_by_VP_3_10.Day10_Quantum_Gates Hermitian_Functional_Calculus.Trotter_Product_Formula
     "HOL-Analysis.Convex"
 begin
 
@@ -16,16 +16,16 @@ text \<open>This entry uses QHLProver's \<^const>\<open>hermitian\<close>, as th
 the notes' and IMD's names (\<^const>\<open>unitary\<close>, inner and outer products).\<close>
 
 hide_const (open) Complex_Matrix.unitary Complex_Matrix.inner_prod Complex_Matrix.outer_prod
-  Complex_Matrix.vec_normalize Linear_Algebra.adjoint Quantum_Computing_3_10.hermitian
+  Complex_Matrix.vec_normalize Linear_Algebra.adjoint Day04_Hermitian_Matrices.hermitian
 hide_fact (open) Complex_Matrix.unitary_def Complex_Matrix.outer_prod_def Complex_Matrix.vec_normalize_def
   Complex_Matrix.inner_prod_distrib_left Complex_Matrix.inner_prod_distrib_right
-  Complex_Matrix.normalized_vec_norm Complex_Matrix.outer_prod_mult_vec Quantum_Computing_3_10.hermitian_def
+  Complex_Matrix.normalized_vec_norm Complex_Matrix.outer_prod_mult_vec Day04_Hermitian_Matrices.hermitian_def
   Linear_Algebra.adjoint_adjoint
 
-lemma hermitian_notes: "Quantum_Computing_3_10.hermitian A \<longleftrightarrow> hermitian A"
-  by (simp add: Quantum_Computing_3_10.hermitian_def hermitian_dagger)
+lemma hermitian_notes: "Day04_Hermitian_Matrices.hermitian A \<longleftrightarrow> hermitian A"
+  by (simp add: Day04_Hermitian_Matrices.hermitian_def hermitian_dagger)
 
-lemmas hermitian_index_cnj = Quantum_Computing_3_10.hermitian_index[unfolded hermitian_notes]
+lemmas hermitian_index_cnj = Day04_Hermitian_Matrices.hermitian_index[unfolded hermitian_notes]
 
 lemma diag_mat_of_real_cmat: "diag_mat_of_real D = diag_cmat (map complex_of_real D)"
   by (rule eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def diag_cmat_def)

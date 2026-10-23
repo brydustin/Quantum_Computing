@@ -1,5 +1,5 @@
 theory Day30_BitFlip_Code
-  imports QC_Prelims
+  imports QC_Prelims Quantum_Channels
 begin
 
 section \<open>Day 30: the three-qubit bit-flip code and its recovery map (D30-3, D30-4)\<close>

@@ -1,5 +1,5 @@
 theory Day32_Pauli_Expansion
-  imports QC_Prelims
+  imports QC_Prelims Quantum_Channels
 begin
 
 section \<open>Day 32: the Pauli expansion identity for unitaries (D32-7)\<close>

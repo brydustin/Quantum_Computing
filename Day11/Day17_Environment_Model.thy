@@ -2,6 +2,8 @@ theory Day17_Environment_Model
   imports Day22_Minimal_Kraus
 begin
 
+section \<open>Day 17: the environment model of noise\<close>
+
 text \<open>Day 17, the environment model of noise: a state $\rho$ of lab $A$ meets an environment in
 the state $\ket\varphi$, the pair evolves by a unitary $U$ on $\C^m\otimes\C^p$, and lab $A$ sees
 $\operatorname{tr}_E(U(\rho\otimes\ketbra\varphi\varphi)U^*)=\sum_iW_i\rho W_i^*$ with

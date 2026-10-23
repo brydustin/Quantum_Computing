@@ -7,7 +7,7 @@
 theory Essential_Functional_Analysis
   imports
     Matrix_Typed
-    Quantum_Computing_3_10
+    Day10_Quantum_Gates
     "Jordan_Normal_Form.Schur_Decomposition"
     "Jordan_Normal_Form.DL_Rank"
 begin

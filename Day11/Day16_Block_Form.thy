@@ -1,5 +1,5 @@
 theory Day16_Block_Form
-  imports Day25_Arveson_Correspondence Day02_11_Supplement
+  imports Day25_Arveson_Correspondence Day06_Tensor_Coordinates
 begin
 
 section \<open>Day 16: $H_A\otimes H_B\cong H_A^{(p)}$ and $L(H_A\otimes H_B)\cong M_p(L(H_A))$ (D16-2)\<close>

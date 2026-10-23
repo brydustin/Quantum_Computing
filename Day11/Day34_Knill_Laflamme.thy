@@ -1,5 +1,5 @@
 theory Day34_Knill_Laflamme
-  imports Day22_Minimal_Kraus
+  imports Day22_Minimal_Kraus Quantum_Channels
 begin
 
 section \<open>Day 34: the Knill--Laflamme conditions (D34-1, D34-2, D34-3)\<close>

@@ -876,3 +876,16 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   along a basis are `cols (vec_to_mat k m u * G\<^sup>T)` and `rows (H * vec_to_mat k m u)`
   (lemmas `right_coordinates_{index,unique,exist}`, `left_…`).  Each definition has its worked
   example as printed text (2×3 vector table, 4×4 interleaved blocks, row-by-row flattening).
+- **One theory per lecture** (2026-10-23): Days 1–10 printed nothing (the parent session
+  `Quantum_Computing_by_VP_3_10` had `document = false`, so its theories' LaTeX was never
+  exported; `document = pdf` without document files exports it and builds no PDF).  The
+  multi-day theories were cut at the lecture sections: Basic_Math → `Day01_Inner_Product`,
+  `Day02_Trace_Projections`, `Unitary_Tensor_Algebra`; Quantum_Computing_3_10 → `Day03_…` to
+  `Day10_Quantum_Gates`; Quantum_Computing11 → `Day11_…` to `Day22_Convex_Sets`,
+  `Day29_Error_Correction` to `Day32_Phase_Flip_Code`, `Quantum_Channels` (the extensions); the
+  Hahn–Banach part of Matrix_Typed → `Day25_Hahn_Banach`; the mixed supplements → one theory per
+  lecture (`Day02_Projection_Basis`, `Day06_Tensor_Coordinates`, …, `Day29_Subspace_Codes`);
+  `Day24_Separability` → `Day26_Separability`.  Each new theory imports only what it uses
+  (a few early completions use later lectures, e.g. `Day04_Hermitian_Converse` a Day 18 lemma).
+  The document, the ROOT lists and the capstone imports run Day 1 → Day 34, supporting
+  theories last; the reading guide is a per-lecture table.  NOTES_AUDIT: Ln = lecture n.

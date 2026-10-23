@@ -2,6 +2,8 @@ theory Day19_Choi_TP_Unital
   imports Day25_Arveson_Correspondence
 begin
 
+section \<open>Day 19: trace preservation and unitality in Choi-matrix form (D19-3)\<close>
+
 text \<open>Day 19, notes (4) and (5) after Choi's theorem: write $P_\Phi=(R_{ij})$ with
 $R_{ij}=\Phi(E_{ij})\in M_d$.  Then $\Phi$ is trace preserving iff $\Tr R_{ij}=\delta_{ij}$, and
 unital iff $\sum_iR_{ii}=I_d$; with \<open>choi_theorem\<close> this characterises CPTP and UCP maps by

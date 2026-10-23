@@ -2,6 +2,8 @@ theory Day34_KL_Sufficiency
   imports Day34_Knill_Laflamme
 begin
 
+section \<open>Day 34: sufficiency of the Knill--Laflamme conditions (D34-2)\<close>
+
 text \<open>D34-2, sufficiency: if $PE_i^*E_jP=\alpha_{ij}P$ then a recovery channel exists.  Diagonalise
 $(\alpha_{ij})=u\,\mathrm{diag}(d)\,u^*$; the errors $F_k=\sum_iu_{ik}E_i$ give the same channel and
 satisfy $PF_k^*F_lP=\delta_{kl}d_kP$, so the $F_k/\sqrt{d_k}$ with $d_k>0$ satisfy the hypotheses of

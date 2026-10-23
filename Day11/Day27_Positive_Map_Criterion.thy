@@ -2,6 +2,8 @@ theory Day27_Positive_Map_Criterion
   imports Day26_Arveson_Extension Day34_Knill_Laflamme
 begin
 
+section \<open>Days 27--28: positive maps detect entanglement\<close>
+
 text \<open>Days 27--28: positive maps detect entanglement.  For $R\in M_r(M_n)$ (block size $n$),
 $\Phi^{(r)}(R)\ge0$ for every positive $\Phi$ when $R$ is separable (D27-1); a functional $f$ on
 $M_r(M_n)$ is nonnegative on the separable matrices iff $\Phi_f$ is positive (D27-3); and with

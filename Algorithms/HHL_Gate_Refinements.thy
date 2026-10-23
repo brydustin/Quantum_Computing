@@ -235,15 +235,15 @@ qed
 
 lemma win_reflection:
   assumes N: "2 \<le> N"
-  shows "householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) \<in> carrier_mat N N" "Quantum.unitary (householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)))"
-    "householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) *\<^sub>v unit_vec N 0 = win_state N"
+  shows "householder (Day03_Unitary_Matrices.vec_normalize (unit_vec N 0 - win_state N)) \<in> carrier_mat N N" "Quantum.unitary (householder (Day03_Unitary_Matrices.vec_normalize (unit_vec N 0 - win_state N)))"
+    "householder (Day03_Unitary_Matrices.vec_normalize (unit_vec N 0 - win_state N)) *\<^sub>v unit_vec N 0 = win_state N"
   using householder_props[OF dim_win_state win_state_norm[OF N] win_state_first win_state_first_lt[OF N]] N by auto
 
 text \<open>The full preparation: the reflection on the clock register, $U_b$ on the system, nothing on
 the ancilla or flag register of $e$ levels.\<close>
 
 definition win_prep :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "win_prep N Ub e = householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)"
+  "win_prep N Ub e = householder (Day03_Unitary_Matrices.vec_normalize (unit_vec N 0 - win_state N)) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)"
 
 lemma win_prep_ok:
   assumes N: "2 \<le> N" and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
@@ -262,8 +262,8 @@ proof -
   show "win_prep N Ub e *\<^sub>v unit_vec (N * (n * e)) 0 = tensor_vec (win_state N) (tensor_vec b (unit_vec e 0))"
   proof -
     have d1: "dim_vec (tensor_vec (unit_vec n 0) (unit_vec e 0) :: complex Matrix.vec) = n * e" by (simp add: tensor_vec_dim)
-    have "(householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)) *\<^sub>v tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec e 0))
-          = tensor_vec (householder (Quantum_Computing_3_10.vec_normalize (unit_vec N 0 - win_state N)) *\<^sub>v unit_vec N 0) ((Ub \<Otimes> 1\<^sub>m e) *\<^sub>v tensor_vec (unit_vec n 0) (unit_vec e 0))"
+    have "(householder (Day03_Unitary_Matrices.vec_normalize (unit_vec N 0 - win_state N)) \<Otimes> (Ub \<Otimes> 1\<^sub>m e)) *\<^sub>v tensor_vec (unit_vec N 0) (tensor_vec (unit_vec n 0) (unit_vec e 0))
+          = tensor_vec (householder (Day03_Unitary_Matrices.vec_normalize (unit_vec N 0 - win_state N)) *\<^sub>v unit_vec N 0) ((Ub \<Otimes> 1\<^sub>m e) *\<^sub>v tensor_vec (unit_vec n 0) (unit_vec e 0))"
       by (rule tensor_mat_vec_mult[OF W(1) I]) (simp_all add: d1)
     also have "(Ub \<Otimes> 1\<^sub>m e) *\<^sub>v tensor_vec (unit_vec n 0) (unit_vec e 0) = tensor_vec (Ub *\<^sub>v unit_vec n 0) (1\<^sub>m e *\<^sub>v unit_vec e 0)"
       by (rule tensor_mat_vec_mult[OF Ub(1) one_carrier_mat]) simp_all

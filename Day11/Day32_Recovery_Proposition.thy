@@ -1,5 +1,5 @@
 theory Day32_Recovery_Proposition
-  imports Day21_Unitary_Freedom
+  imports Day21_Unitary_Freedom Quantum_Channels
 begin
 
 section \<open>Days 32--33: composition of Kraus maps and the general recovery proposition (D32-4, D33-2)\<close>

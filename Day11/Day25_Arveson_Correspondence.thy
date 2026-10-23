@@ -2,6 +2,8 @@ theory Day25_Arveson_Correspondence
   imports Day24_Operator_Systems
 begin
 
+section \<open>Days 24--25: Arveson's correspondence between maps and functionals\<close>
+
 text \<open>Days 24--25: Arveson's correspondence between maps $\Phi:S\to M_d$ and functionals
 $S_\Phi:M_d(S)\to\C$, $S_\Phi((A_{ij}))=\frac1d\sum_{i,j}\Phi(A_{ij})_{ij}$, with inverse
 $f\mapsto\Phi_f$, $\Phi_f(M)=d\,(f(E_{ij}\otimes M))_{ij}$.\<close>

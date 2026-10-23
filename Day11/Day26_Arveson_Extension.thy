@@ -2,6 +2,8 @@ theory Day26_Arveson_Extension
   imports Day25_Arveson_Correspondence Quantum_Computing_by_VP_3_10_Lmat.Separable_Cone
 begin
 
+section \<open>Day 26: Arveson's extension theorem\<close>
+
 text \<open>Day 26: Arveson's extension theorem.  The notes extend the state $S_\Phi$ by Hahn--Banach
 (norm one) and use that a unital functional of norm one is positive.  Here the positive
 functional $S_\Phi$ on the operator system $M_d(S)$ is extended to a positive functional on

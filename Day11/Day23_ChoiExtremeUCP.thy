@@ -4,7 +4,7 @@
 
 theory Day23_ChoiExtremeUCP
   imports
-    Quantum_Computing11
+    Day22_Convex_Sets
 begin
 
 
