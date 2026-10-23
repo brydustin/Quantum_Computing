@@ -16,6 +16,9 @@ lemma perm_conj_carrier [simp]: "perm_conj N \<sigma> X \<in> carrier_mat N N"
 lemma perm_conj_dims [simp]: "dim_row (perm_conj N \<sigma> X) = N" "dim_col (perm_conj N \<sigma> X) = N"
   by (simp_all add: perm_conj_def)
 
+text \<open>Conjugation by a permutation, $X\mapsto(X_{\sigma(r)\sigma(s)})_{r,s}$, preserves the trace, Hermitian
+matrices and positivity.\<close>
+
 lemma perm_conj_trace:
   assumes \<sigma>: "bij_betw \<sigma> {..<N} {..<N}" and X: "X \<in> carrier_mat N N"
   shows "Tr (perm_conj N \<sigma> X) = Tr X"
@@ -117,6 +120,9 @@ next
   show "swap_index m p (swap_index p m r) = r"
     unfolding swap_index_def using d m p div_mult_mod_eq[of r p] by (simp add: mult.commute)
 qed
+
+text \<open>The index permutation $r\mapsto(r\bmod m)\,p+r\div m$ exchanges the two tensor factors and turns
+$\tr_A$ into $\tr_B$; the properties of $\tr_A$ follow from those of $\tr_B$.\<close>
 
 lemma partial_trace_A_as_B:
   assumes X: "X \<in> carrier_mat (m * p) (m * p)"

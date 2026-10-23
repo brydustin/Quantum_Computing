@@ -30,6 +30,9 @@ proof -
   ultimately show ?thesis by blast
 qed
 
+text \<open>Traces of products: $\Tr(WM)\in\R$ for Hermitian $W,M$; $\Tr(A\ketbra vv)=\braket v{Av}$; and for
+$D,P\ge0$, writing $P=\sum_kv_kv_k^*$, $\Tr(DP)=\sum_k\braket{v_k}{Dv_k}\ge0$.\<close>
+
 lemma Tr_herm_mult_real:
   assumes Wc: "W \<in> carrier_mat n n" and Mc: "M \<in> carrier_mat n n" and Wh: "hermitian W" and Mh: "hermitian M"
   shows "Tr (W * M) \<in> \<real>"
@@ -104,6 +107,9 @@ proof (rule eq_matI)
         = (complex_of_real u \<cdot>\<^sub>m A + complex_of_real v \<cdot>\<^sub>m B) $$ (i,j)"
     using herm_entry[OF Ac Ah i j] herm_entry[OF Bc Bh i j] i j Ac Bc by (simp add: dagger_def)
 qed (use Ac Bc in simp_all)
+
+text \<open>Two facts about real inequalities: if $c+tb\ge0$ for every $t\in\R$ then $b=0$; if
+$x+\epsilon y\ge0$ for every $\epsilon>0$ then $x\ge0$.\<close>
 
 lemma lin_t_zero:
   fixes b c :: real

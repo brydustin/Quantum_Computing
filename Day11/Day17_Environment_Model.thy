@@ -14,6 +14,10 @@ notes' $W_i=\sum_kU_{ik}\alpha_k$ for the blocks $U_{ik}$ of $U$.\<close>
 definition env_kraus :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "env_kraus m p U \<phi> i = Matrix.mat m m (\<lambda>(a,c). \<Sum>k<p. U $$ (a * p + i, c * p + k) * \<phi> $ k)"
 
+text \<open>The Kraus operators of the environment model are $W_i=(I\otimes\bra{e_i})\,U\,(I\otimes\ket\varphi)$,
+entrywise $(W_i)_{ac}=\sum_kU_{ap+i,\,cp+k}\,\varphi_k$, and
+\[ \tr_E\bigl(U(\rho\otimes\ketbra\varphi\varphi)U^*\bigr)=\sum_iW_i\rho W_i^*. \]\<close>
+
 lemma env_kraus_carrier [simp]: "env_kraus m p U \<phi> i \<in> carrier_mat m m"
   by (simp add: env_kraus_def)
 

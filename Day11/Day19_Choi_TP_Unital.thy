@@ -41,6 +41,9 @@ next
   thus ?case using Cons.IH[OF rest] by simp
 qed
 
+text \<open>In matrix units $A=\sum_{i,j}a_{ij}E_{ij}$ and $I=\sum_iE_{ii}$, so a linear $\Phi$ satisfies
+$\Phi(A)=\sum_{i,j}a_{ij}\,\Phi(E_{ij})=\sum_{i,j}a_{ij}R_{ij}$, the $R_{ij}$ being the blocks of $P_\Phi$.\<close>
+
 lemma unit_expansion:
   assumes A: "A \<in> carrier_mat n n"
   shows "A = msum n n (\<lambda>(i,j). A $$ (i,j) \<cdot>\<^sub>m E\<lbrakk>i,j ; n,n\<rbrakk>) (List.product [0..<n] [0..<n])"

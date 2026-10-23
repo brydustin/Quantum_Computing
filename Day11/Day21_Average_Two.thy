@@ -317,6 +317,11 @@ definition phase_diag :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarro
 
 lemma phase_diag_carrier [simp]: "phase_diag d \<theta> \<in> carrier_mat d d" by (simp add: phase_diag_def)
 
+text \<open>A contraction is the average of two unitaries.  Write $K=W\Sigma V^*$ with $W,V$ unitary and
+$\Sigma=\diag(\sigma_i)$, $0\le\sigma_i\le1$, and $\sigma_i=\cos\theta_i=\tfrac12(e^{i\theta_i}+e^{-i\theta_i})$.  Then
+\[ K=\tfrac12\bigl(WD_{\theta}V^*+WD_{-\theta}V^*\bigr),\qquad D_\theta=\diag(e^{i\theta_1},\dots,e^{i\theta_d}), \]
+and both $WD_{\pm\theta}V^*$ are unitary.\<close>
+
 lemma phase_diag_unitary: "(phase_diag d \<theta>)\<^sup>\<dagger> * phase_diag d \<theta> = 1\<^sub>m d"
 proof (rule eq_matI)
   fix i j assume "i < dim_row (1\<^sub>m d)" "j < dim_col (1\<^sub>m d)"

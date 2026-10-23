@@ -65,6 +65,8 @@ lemma rank1_carrier [simp]: "rank1 w \<in> carrier_mat (dim_vec w) (dim_vec w)"
 lemma rank1_dims [simp]: "dim_row (rank1 w) = dim_vec w" "dim_col (rank1 w) = dim_vec w"
   by (simp_all add: rank1_def)
 
+text \<open>\<open>rank1 w\<close> has entries $\overline{w_i}\,w_j$: it is $\ketbra uu$ for $u=\overline w$, hence positive.\<close>
+
 lemma rank1_outer: "rank1 (conjugate u) = u \<oslash> u"
 proof -
   define Ou where "Ou = u \<oslash> u"
