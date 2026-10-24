@@ -29,8 +29,8 @@ proof -
   note U = formula_product_carrier_unitary[OF Fh, of "t0 / real r"]
   have Vc: "V \<in> carrier_mat n n" unfolding V_def by (rule pow_carrier_mat[OF conjunct1[OF U]])
   have Vu: "Quantum.unitary V" unfolding V_def by (rule unitary_pow[OF conjunct1[OF U] conjunct2[OF U]])
-  have c: "op_close n \<eta> V (evolution A t0)"
-    using suzuki_error[OF Hs L r, of k t0] unfolding V_def \<eta>_def A_def abs_of_pos[OF t0] .
+  have c: "V \<approx>\<^bsub>\<eta>\<^esub> evolution A t0"
+    using suzuki_error[OF Hs L r, where k = k and t = t0] unfolding V_def \<eta>_def A_def abs_of_pos[OF t0] .
   have l: "0 \<le> total_weight L (suzuki k Hs) * t0 / real r" using total_weight_nonneg[OF L, of "suzuki k Hs"] t0 by simp
   have eta: "0 \<le> \<eta>" unfolding \<eta>_def using l by simp
   show ?thesis
@@ -45,9 +45,8 @@ theorem sparse_suzuki:
       and L: "0 \<le> L" and Lb: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> cmod (A $$ (i, j)) \<le> L"
       and cov: "edge_cover n (2 * s - 1) p (edges n A)" and r: "0 < r"
   defines "F \<equiv> suzuki k (sparse_parts n A (2 * s - 1) p)"
-  shows "op_close n (real r * ((4 * 5 ^ k * real (2 * s) + 1) * (total_weight L F * \<bar>t\<bar> / real r) ^ (2 * k + 3)
-             * exp (total_weight L F * \<bar>t\<bar> / real r) / fact (2 * k + 3)))
-           (formula_product n (t / real r) F ^\<^sub>m r) (evolution A t)"
+  shows "formula_product n (t / real r) F ^\<^sub>m r \<approx>\<^bsub>real r * ((4 * 5 ^ k * real (2 * s) + 1) * (total_weight L F * \<bar>t\<bar> / real r) ^ (2 * k + 3)
+             * exp (total_weight L F * \<bar>t\<bar> / real r) / fact (2 * k + 3))\<^esub> evolution A t"
     and "2 * real s * L \<le> total_weight L F"
 proof -
   have pinv: "\<And>c. c < 2 * s - 1 \<Longrightarrow> invol n (p c)" using cov unfolding edge_cover_def by blast
@@ -57,10 +56,9 @@ proof -
   have Hs: "\<forall>H \<in> set (sparse_parts n A (2 * s - 1) p). herm_bounded n L H"
     using sparse_parts_bounded[where K = "2 * s - 1" and p = p, OF A pinv L Lb] by blast
   have lF: "2 * real (length F) = 4 * 5 ^ k * real (2 * s)" unfolding F_def length_suzuki len by simp
-  show "op_close n (real r * ((4 * 5 ^ k * real (2 * s) + 1) * (total_weight L F * \<bar>t\<bar> / real r) ^ (2 * k + 3)
-             * exp (total_weight L F * \<bar>t\<bar> / real r) / fact (2 * k + 3)))
-           (formula_product n (t / real r) F ^\<^sub>m r) (evolution A t)"
-    using suzuki_error[OF Hs L r, of k t] unfolding F_def[symmetric] sum lF .
+  show "formula_product n (t / real r) F ^\<^sub>m r \<approx>\<^bsub>real r * ((4 * 5 ^ k * real (2 * s) + 1) * (total_weight L F * \<bar>t\<bar> / real r) ^ (2 * k + 3)
+             * exp (total_weight L F * \<bar>t\<bar> / real r) / fact (2 * k + 3))\<^esub> evolution A t"
+    using suzuki_error[OF Hs L r, where k = k and t = t] unfolding F_def[symmetric] sum lF .
   show "2 * real s * L \<le> total_weight L F" using total_weight_suzuki[OF L, of _ k] len unfolding F_def by (metis of_nat_mult of_nat_numeral)
 qed
 

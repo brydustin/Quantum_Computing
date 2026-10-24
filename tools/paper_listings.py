@@ -24,6 +24,10 @@ def unesc(t):
         x=x.replace('\\<^sup>\\<dagger>','\\<^sup>\\<dagger>')
         return x
     t=t.replace('~\\$\\$~','$$')
+    def close(m):
+        x=m.group(1).replace('\\textsuperscript{2}','\\<^sup>2').replace('\\textasciicircum{}','^').replace('$|$','\\<bar>').replace('\\_','_')
+        return '\\<approx>\\<^bsub>'+x+'\\<^esub>'
+    t=re.sub(r'~\\closeto(?:long)?\{(.*?)\}~', close, t)
     t=re.sub(r'~\$(.*?)\$~', rep, t)
     return t
 def norm(s):

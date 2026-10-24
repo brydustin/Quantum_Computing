@@ -643,7 +643,7 @@ theorem hhl_apx_elementary:
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = 2 ^ s" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"
       and NQ: "sqrt (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / (t0 ^ 4 * lmin ^ 4)) / \<epsilon> \<le> real (2 ^ k)"
-      and V: "V \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum.unitary V" and Vc: "op_close (2 ^ s) \<eta> V (evolution A t0)" and eta: "0 \<le> \<eta>"
+      and V: "V \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum.unitary V" and Vc: "V \<approx>\<^bsub>\<eta>\<^esub> evolution A t0" and eta: "0 \<le> \<eta>"
       and small: "\<epsilon> + 2 * real (2 ^ k - 1) * \<eta> \<le> C * t0 / pi"
   defines "K \<equiv> 2 ^ k * (2 ^ s * 2)"
     and "Gs \<equiv> elem_refine k s b (fine3_gates k (2 ^ s) (circuit_mat (2 ^ s) (bprep_gates s b)) (\<lambda>c. arcsin (clamp (C / reg_eig t0 (2 ^ k) c)))
@@ -983,7 +983,7 @@ theorem hhl_apx_compiled:
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = 2 ^ s" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"
       and NQ: "sqrt (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / (t0 ^ 4 * lmin ^ 4)) / \<epsilon> \<le> real (2 ^ k)"
-      and V: "V \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum.unitary V" and Vc: "op_close (2 ^ s) \<eta> V (evolution A t0)" and eta: "0 \<le> \<eta>"
+      and V: "V \<in> carrier_mat (2 ^ s) (2 ^ s)" "Quantum.unitary V" and Vc: "V \<approx>\<^bsub>\<eta>\<^esub> evolution A t0" and eta: "0 \<le> \<eta>"
       and small: "\<epsilon> + 2 * real (2 ^ k - 1) * \<eta> \<le> C * t0 / pi"
   defines "K \<equiv> 2 ^ k * (2 ^ s * 2)"
   shows "\<exists>Gs. (\<forall>G \<in> set Gs. elementary K G)

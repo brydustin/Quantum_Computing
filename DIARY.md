@@ -925,3 +925,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   inverse); one informal statement before each new result.  A statement-level search (ML,
   `Pattern.matches` against every library fact) finds no fact of the entry subsumed by
   Jordan_Normal_Form, Isabelle_Marries_Dirac, QHLProver or HOL-Analysis.
+- **Notation for the operator bounds** (2026-10-24): `acts_on_eigenvectors A g B` is written
+  `B acts_as g on_eigenvectors_of A` (syntax + translations, constant unchanged); `op_close` lost its
+  dimension argument and is written `U ≈⇘η⇙ V` (vectors of length `dim_col U`), with `op_closeI`,
+  `op_closeD`, `op_close_iff` taking `U ∈ carrier_mat m n`.  Trap: `of`-instantiations follow the
+  order of first occurrence of variables in a statement, so changing a statement's shape can
+  silently retarget them (use `where`).  Also `unitary_square_dim`, `unitary_vnorm` needs only the
+  column count, `obndD` → `op_boundD`; paper listings render `≈⇘η⇙` via `\closeto`, checked by
+  tools/paper_listings.py.

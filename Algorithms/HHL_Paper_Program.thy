@@ -351,7 +351,7 @@ context
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"
       and NQ: "sqrt (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / (t0 ^ 4 * lmin ^ 4)) / \<epsilon> \<le> real N"
-      and V: "V \<in> carrier_mat n n" "Quantum.unitary V" and Vc: "op_close n \<eta> V (evolution A t0)" and eta: "0 \<le> \<eta>"
+      and V: "V \<in> carrier_mat n n" "Quantum.unitary V" and Vc: "V \<approx>\<^bsub>\<eta>\<^esub> evolution A t0" and eta: "0 \<le> \<eta>"
       and Prep: "Prep \<in> carrier_mat (N * (n * 2)) (N * (n * 2))" "Quantum.unitary Prep"
         "Prep *\<^sub>v unit_vec (N * (n * 2)) 0 = tensor_vec (win_state N) (tensor_vec b (unit_vec 2 0))"
       and small: "\<epsilon> + 2 * real (N - 1) * \<eta> \<le> C * t0 / pi"

@@ -428,15 +428,13 @@ theorem sparse_trotter:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and s: "1 \<le> s"
       and L: "0 \<le> L" and Lb: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> cmod (A $$ (i, j)) \<le> L"
       and cov: "edge_cover n (2 * s - 1) p (edges n A)" and r: "0 < r"
-  shows "op_close n (8 * (real s * L * t)\<^sup>2 / real r)
-           (evolution_product n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r) (evolution A t)"
+  shows "evolution_product n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r \<approx>\<^bsub>8 * (real s * L * t)\<^sup>2 / real r\<^esub> evolution A t"
 proof -
   have pinv: "\<And>c. c < 2 * s - 1 \<Longrightarrow> invol n (p c)" using cov unfolding edge_cover_def by blast
   have len: "length (sparse_parts n A (2 * s - 1) p) = 2 * s" using s by (simp add: sparse_parts_def)
   have sum: "hamiltonian_sum n (sparse_parts n A (2 * s - 1) p) = A"
     by (rule sparse_parts_sum[OF A(1) hermitian_zero_sym[OF A] cov])
-  have c: "op_close n (2 * (real (length (sparse_parts n A (2 * s - 1) p)) * L * t)\<^sup>2 / real r)
-      (evolution_product n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r) (evolution (hamiltonian_sum n (sparse_parts n A (2 * s - 1) p)) t)"
+  have c: "evolution_product n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r \<approx>\<^bsub>2 * (real (length (sparse_parts n A (2 * s - 1) p)) * L * t)\<^sup>2 / real r\<^esub> evolution (hamiltonian_sum n (sparse_parts n A (2 * s - 1) p)) t"
     by (rule trotter[OF sparse_parts_bounded[OF A pinv L Lb] r])
   have e: "2 * (real (2 * s) * L * t)\<^sup>2 / real r = 8 * (real s * L * t)\<^sup>2 / real r"
     by (simp add: power2_eq_square algebra_simps)

@@ -913,7 +913,7 @@ theorem sparse_simulation_circuit:
   shows "sg_run n (t / real r) A Os (sim_gates (2 * s - 1) r) * emb n = emb n * sim_mat n (t / real r) A (2 * s - 1) p r"
     and "sim_mat n (t / real r) A (2 * s - 1) p r \<in> carrier_mat n n"
     and "unitary (sim_mat n (t / real r) A (2 * s - 1) p r)"
-    and "op_close n (8 * (real s * L * t)\<^sup>2 / real r) (sim_mat n (t / real r) A (2 * s - 1) p r) (evolution A t)"
+    and "sim_mat n (t / real r) A (2 * s - 1) p r \<approx>\<^bsub>8 * (real s * L * t)\<^sup>2 / real r\<^esub> evolution A t"
     and "length (filter is_query (sim_gates (2 * s - 1) r)) = r * (6 * s - 2)"
 proof -
   have pinv: "\<And>c. c < 2 * s - 1 \<Longrightarrow> invol n (p c)" using cov unfolding edge_cover_def by blast
@@ -925,7 +925,7 @@ proof -
     unfolding sim_mat_def by (rule pow_carrier_mat[OF evolution_product_carrier[OF herm_bounded_herm[OF hb]]])
   show "unitary (sim_mat n (t / real r) A (2 * s - 1) p r)"
     unfolding sim_mat_def by (rule unitary_pow[OF evolution_product_carrier[OF herm_bounded_herm[OF hb]] evolution_product_unitary[OF hb]])
-  show "op_close n (8 * (real s * L * t)\<^sup>2 / real r) (sim_mat n (t / real r) A (2 * s - 1) p r) (evolution A t)"
+  show "sim_mat n (t / real r) A (2 * s - 1) p r \<approx>\<^bsub>8 * (real s * L * t)\<^sup>2 / real r\<^esub> evolution A t"
     unfolding sim_mat_def by (rule sparse_trotter[OF A s L Lb cov r])
   have "3 * (2 * s - 1) + 1 = 6 * s - 2" using s by simp
   thus "length (filter is_query (sim_gates (2 * s - 1) r)) = r * (6 * s - 2)" by (simp add: sim_gates_queries)

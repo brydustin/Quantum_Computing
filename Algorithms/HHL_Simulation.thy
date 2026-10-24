@@ -162,10 +162,11 @@ proof (rule eq_vecI)
 qed
 
 lemma op_close_tensor_one2:
-  assumes U: "U \<in> carrier_mat n n" and V: "V \<in> carrier_mat n n" and c: "op_close n \<eta> U V" and e: "0 \<le> \<eta>"
-  shows "op_close (n * 2) \<eta> (U \<Otimes> 1\<^sub>m 2) (V \<Otimes> 1\<^sub>m 2)"
-  unfolding op_close_def
-proof (intro allI impI)
+  assumes U: "U \<in> carrier_mat n n" and V: "V \<in> carrier_mat n n" and c: "U \<approx>\<^bsub>\<eta>\<^esub> V" and e: "0 \<le> \<eta>"
+  shows "U \<Otimes> 1\<^sub>m 2 \<approx>\<^bsub>\<eta>\<^esub> V \<Otimes> 1\<^sub>m 2"
+proof (rule op_closeI[where m = "n * 2" and n = "n * 2"])
+  show "U \<Otimes> 1\<^sub>m 2 \<in> carrier_mat (n * 2) (n * 2)" using U by (intro carrier_matI) simp_all
+next
   fix x :: "complex Matrix.vec" assume x: "dim_vec x = n * 2"
   let ?d = "(U \<Otimes> 1\<^sub>m 2) *\<^sub>v x - (V \<Otimes> 1\<^sub>m 2) *\<^sub>v x"
   have dU: "dim_vec ((U \<Otimes> 1\<^sub>m 2) *\<^sub>v x) = n * 2" and dV: "dim_vec ((V \<Otimes> 1\<^sub>m 2) *\<^sub>v x) = n * 2" using U V by simp_all
@@ -177,7 +178,7 @@ proof (intro allI impI)
   proof -
     have h0: "half ?d 0 = U *\<^sub>v half x 0 - V *\<^sub>v half x 0" by (rule hb) simp
     have h1: "half ?d 1 = U *\<^sub>v half x 1 - V *\<^sub>v half x 1" by (rule hb) simp
-    show ?thesis unfolding h0 h1 by (intro add_mono power_mono op_closeD[OF c hx]) (simp_all add: vnorm_ge0)
+    show ?thesis unfolding h0 h1 by (intro add_mono power_mono op_closeD[OF c U hx]) (simp_all add: vnorm_ge0)
   qed
   also have "\<dots> = (\<eta> * \<parallel>x\<parallel>)\<^sup>2" unfolding power_mult_distrib distrib_left[symmetric] vnorm_half_sq[OF x] ..
   finally have "\<parallel>?d\<parallel>\<^sup>2 \<le> (\<eta> * \<parallel>x\<parallel>)\<^sup>2" .
@@ -410,17 +411,18 @@ subsection \<open>Robustness: each call adds at most $\eta$\<close>
 
 theorem sem_robust:
   assumes V: "V \<in> carrier_mat m m" "unitary V" and V': "V' \<in> carrier_mat m m" "unitary V'"
-      and c: "op_close m \<eta> V V'" and e: "0 \<le> \<eta>" and g: "gates_ok (N * m) q"
-  shows "op_close (N * m) (real (calls q) * \<eta>) (sem N m V q) (sem N m V' q)"
+      and c: "V \<approx>\<^bsub>\<eta>\<^esub> V'" and e: "0 \<le> \<eta>" and g: "gates_ok (N * m) q"
+  shows "sem N m V q \<approx>\<^bsub>real (calls q) * \<eta>\<^esub> sem N m V' q"
   using g
 proof (induction q)
   case (Gate M)
-  thus ?case by (simp add: op_close_refl)
+  thus ?case by (auto intro: op_close_refl[where n = "N * m"])
 next
   case (Call P d)
-  have cd: "op_close m \<eta> (V\<^sup>\<dagger>) (V'\<^sup>\<dagger>)" by (rule op_close_dagger[OF V V' c])
-  show ?case unfolding op_close_def sem.simps call_mat_def calls.simps
-  proof (intro allI impI)
+  have cd: "V\<^sup>\<dagger> \<approx>\<^bsub>\<eta>\<^esub> V'\<^sup>\<dagger>" by (rule op_close_dagger[OF V V' c])
+  note Cc = sem_carrier[OF V Call.prems, unfolded sem.simps call_mat_def]
+  show ?case unfolding sem.simps call_mat_def calls.simps
+  proof (rule op_closeI[OF Cc])
     fix x :: "complex Matrix.vec" assume x: "dim_vec x = N * m"
     show "\<parallel>ctrl_blocks N m (\<lambda>k. if P k then if d then V\<^sup>\<dagger> else V else 1\<^sub>m m) *\<^sub>v x -
            ctrl_blocks N m (\<lambda>k. if P k then if d then V'\<^sup>\<dagger> else V' else 1\<^sub>m m) *\<^sub>v x\<parallel> \<le> real 1 * \<eta> * \<parallel>x\<parallel>"
@@ -430,7 +432,7 @@ next
       proof (rule ctrl_blocks_close[OF _ _ _ x])
         fix k v assume v: "dim_vec (v :: complex Matrix.vec) = m"
         show "\<parallel>(if P k then if d then V\<^sup>\<dagger> else V else 1\<^sub>m m) *\<^sub>v v - (if P k then if d then V'\<^sup>\<dagger> else V' else 1\<^sub>m m) *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>"
-          using op_closeD[OF c v] op_closeD[OF cd v] op_closeD[OF op_close_refl[OF e one_carrier_mat] v] by auto
+          using op_closeD[OF c V(1) v] op_closeD[OF cd dagger_carrier[OF V(1)] v] op_closeD[OF op_close_refl[OF e one_carrier_mat] one_carrier_mat v] by auto
       qed (use V V' in \<open>simp_all add: dagger_carrier\<close>)
       thus ?thesis by simp
     qed
@@ -438,16 +440,16 @@ next
 next
   case (QSeq a b)
   hence a: "gates_ok (N * m) a" and b: "gates_ok (N * m) b" by simp_all
-  have ca: "op_close (N * m) (real (calls a) * \<eta>) (sem N m V a) (sem N m V' a)" using QSeq a by simp
-  have cb: "op_close (N * m) (real (calls b) * \<eta>) (sem N m V b) (sem N m V' b)" using QSeq b by simp
+  have ca: "sem N m V a \<approx>\<^bsub>real (calls a) * \<eta>\<^esub> sem N m V' a" using QSeq a by simp
+  have cb: "sem N m V b \<approx>\<^bsub>real (calls b) * \<eta>\<^esub> sem N m V' b" using QSeq b by simp
   have Aa: "sem N m V a \<in> carrier_mat (N * m) (N * m)" and Ab: "sem N m V b \<in> carrier_mat (N * m) (N * m)"
     using sem_carrier[OF V a] sem_carrier[OF V b] by simp_all
   have Ba: "sem N m V' a \<in> carrier_mat (N * m) (N * m)" and Bb: "sem N m V' b \<in> carrier_mat (N * m) (N * m)"
     using sem_carrier[OF V' a] sem_carrier[OF V' b] by simp_all
   have Ub: "unitary (sem N m V b)" and Ua': "unitary (sem N m V' a)"
     using sem_unitary[OF V b] sem_unitary[OF V' a] by simp_all
-  show ?case unfolding op_close_def
-  proof (intro allI impI)
+  show ?case
+  proof (rule op_closeI[OF sem_carrier[OF V QSeq.prems]])
     fix x :: "complex Matrix.vec" assume x: "dim_vec x = N * m"
     have xc: "x \<in> carrier_vec (N * m)" using x by (rule carrier_vecI)
     let ?y = "sem N m V a *\<^sub>v x" and ?y' = "sem N m V' a *\<^sub>v x"
@@ -460,8 +462,8 @@ next
     also have "sem N m V b *\<^sub>v ?y - sem N m V b *\<^sub>v ?y' = sem N m V b *\<^sub>v (?y - ?y')"
       by (rule mult_minus_distrib_mat_vec[OF Ab, symmetric]) (use y y' in \<open>simp_all add: carrier_vecI\<close>)
     also have "\<parallel>sem N m V b *\<^sub>v (?y - ?y')\<parallel> = \<parallel>?y - ?y'\<parallel>" by (rule unitary_vnorm[OF Ab Ub]) (use y' in simp)
-    also have "\<parallel>?y - ?y'\<parallel> \<le> real (calls a) * \<eta> * \<parallel>x\<parallel>" by (rule op_closeD[OF ca x])
-    also have "\<parallel>sem N m V b *\<^sub>v ?y' - sem N m V' b *\<^sub>v ?y'\<parallel> \<le> real (calls b) * \<eta> * \<parallel>?y'\<parallel>" by (rule op_closeD[OF cb y'])
+    also have "\<parallel>?y - ?y'\<parallel> \<le> real (calls a) * \<eta> * \<parallel>x\<parallel>" by (rule op_closeD[OF ca Aa x])
+    also have "\<parallel>sem N m V b *\<^sub>v ?y' - sem N m V' b *\<^sub>v ?y'\<parallel> \<le> real (calls b) * \<eta> * \<parallel>?y'\<parallel>" by (rule op_closeD[OF cb Ab y'])
     also have "\<parallel>?y'\<parallel> = \<parallel>x\<parallel>" by (rule unitary_vnorm[OF Ba Ua' x])
     finally show "\<parallel>sem N m V (QSeq a b) *\<^sub>v x - sem N m V' (QSeq a b) *\<^sub>v x\<parallel> \<le> real (calls (QSeq a b)) * \<eta> * \<parallel>x\<parallel>"
       unfolding e1 e2 by (simp add: algebra_simps)
@@ -591,8 +593,8 @@ qed
 
 theorem hhl_sim_robust:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and N: "0 < N"
-      and V: "V \<in> carrier_mat n n" "unitary V" and c: "op_close n \<eta> V (evolution A t0)" and e: "0 \<le> \<eta>"
-  shows "op_close (N * (n * 2)) (2 * real (N - 1) * \<eta>) (hhl_sim A t0 N C V) (hhl_circuit_clamped A t0 N C)"
+      and V: "V \<in> carrier_mat n n" "unitary V" and c: "V \<approx>\<^bsub>\<eta>\<^esub> evolution A t0" and e: "0 \<le> \<eta>"
+  shows "hhl_sim A t0 N C V \<approx>\<^bsub>2 * real (N - 1) * \<eta>\<^esub> hhl_circuit_clamped A t0 N C"
 proof -
   have nA: "dim_row A = n" using A(1) by simp
   have E: "evolution A t0 \<in> carrier_mat n n" using A mat_fun_carrier[of A n] by (simp add: evolution_def)
@@ -601,9 +603,7 @@ proof -
   have g: "gates_ok (N * (n * 2)) (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C))"
     using gates_ok_pe_prog[OF N, of "n * 2"] gates_ok_adj[OF gates_ok_pe_prog[OF N, of "n * 2"]] hhl_rot_stage_ok[of A t0 N C]
     unfolding hhl_prog_def nA by simp
-  have "op_close (N * (n * 2)) (real (calls (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C))) * \<eta>)
-          (sem N (n * 2) (V \<Otimes> 1\<^sub>m 2) (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C)))
-          (sem N (n * 2) (evolution A t0 \<Otimes> 1\<^sub>m 2) (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C)))"
+  have "sem N (n * 2) (V \<Otimes> 1\<^sub>m 2) (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C)) \<approx>\<^bsub>real (calls (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C))) * \<eta>\<^esub> sem N (n * 2) (evolution A t0 \<Otimes> 1\<^sub>m 2) (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C))"
     by (rule sem_robust[OF T[OF V(1)] tensor_mat_unitary_one_right[OF V(2)] T[OF E] tensor_mat_unitary_one_right[OF EU]
           op_close_tensor_one2[OF V(1) E c e] e g])
   moreover have "sem N (n * 2) (evolution A t0 \<Otimes> 1\<^sub>m 2) (hhl_prog N (n * 2) (hhl_rot_stage A t0 N C)) = hhl_circuit_clamped A t0 N C"
@@ -690,7 +690,7 @@ theorem hhl_sim_window_error:
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = n" and e: "0 < \<epsilon>"
       and NQ: "sqrt (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / (t0 ^ 4 * lmin ^ 4)) / \<epsilon> \<le> real N"
-      and V: "V \<in> carrier_mat n n" "unitary V" and Vc: "op_close n \<eta> V (evolution A t0)" and eta: "0 \<le> \<eta>"
+      and V: "V \<in> carrier_mat n n" "unitary V" and Vc: "V \<approx>\<^bsub>\<eta>\<^esub> evolution A t0" and eta: "0 \<le> \<eta>"
   shows "\<parallel>hhl_sim A t0 N C V *\<^sub>v tensor_vec (win_state N) (tensor_vec b (unit_vec 2 0)) -
            tensor_vec (win_state N)
              (tensor_vec (mat_fun (\<lambda>x. complex_of_real (sqrt (1 - (C / x)\<^sup>2))) A *\<^sub>v b) (unit_vec 2 0) +
@@ -734,7 +734,7 @@ proof -
     thus ?thesis using tensor_vec_dim[OF dim_win_state] by simp
   qed
   have d1: "\<parallel>?S *\<^sub>v ?x - ?H *\<^sub>v ?x\<parallel> \<le> 2 * real (N - 1) * \<eta> * \<parallel>b\<parallel>"
-    using op_closeD[OF hhl_sim_robust[OF A N0 V Vc eta, where C = C] dx] unfolding nx .
+    using op_closeD[OF hhl_sim_robust[OF A N0 V Vc eta, where C = C] Sc dx] unfolding nx .
   have d2: "\<parallel>?H *\<^sub>v ?x - ?I\<parallel> \<le> \<epsilon> * \<parallel>b\<parallel>"
   proof -
     have "Re \<langle>?H *\<^sub>v ?x - ?I|?H *\<^sub>v ?x - ?I\<rangle> \<le> \<epsilon>\<^sup>2 * Re \<langle>b|b\<rangle>"

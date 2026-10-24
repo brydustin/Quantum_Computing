@@ -34,6 +34,8 @@
 \newcommand{\braket}[2]{\langle #1|#2\rangle}
 \newcommand{\ketbra}[2]{|#1\rangle\langle #2|}
 \newcommand{\norm}[1]{\|#1\|}
+\newcommand{\closeto}[1]{$\approx_{\mbox{\scriptsize\ttfamily #1}}$}
+\newcommand{\closetolong}[1]{$\approx_{\parbox[t]{0.62\linewidth}{\raggedright\scriptsize\ttfamily #1}}$}
 \DeclareRobustCommand{\isa}[1]{\textsf{\def\_{\char95\allowbreak}#1}}
 \newcommand{\sem}[1]{\llbracket #1\rrbracket}
 \newcommand{\hoaret}[3]{\models_{t}\{#1\}\;#2\;\{#3\}}
@@ -426,7 +428,7 @@ definition acts_on_eigenvectors :: "complex mat ~$\Rightarrow$~ (real ~$\Rightar
 definition mat_fun :: "(real ~$\Rightarrow$~ complex) ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ complex
     mat" where
   "mat_fun g A = (SOME B. B ~$\in$~ carrier_mat (dim_row A) (dim_row A)
-      ~$\wedge$~ acts_on_eigenvectors A g B)"
+      ~$\wedge$~ B acts_as g on_eigenvectors_of A)"
 theorem mat_fun_eigen:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A"
       and v: "dim_vec v = n" and ev: "A *~$_{v}$~ v = complex_of_real l ~$\cdot_{v}$~
@@ -1383,9 +1385,8 @@ $r$ steps use $r(6s-2)$ oracle queries.}\label{fig:sparse}
 \begin{lstlisting}[float=tp,caption={Trotter, the colouring, and the sparse simulation circuit},label={lst:sparse}]
 theorem trotter:
   assumes Hs: "~$\bigwedge$~H. H ~$\in$~ set Hs ~$\Longrightarrow$~ herm_bounded n L H" and r: "0 < r"
-  shows "op_close n (2 * (real (length Hs) * L * t)~$^{2}$~ / real r)
-           (evolution_product n (t / real r) Hs ^~$_{m}$~ r) (evolution (hamiltonian_sum n Hs)
-               t)"
+  shows "evolution_product n (t / real r) Hs ^~$_{m}$~ r
+           ~\closeto{2 * (real (length Hs) * L * t)\textsuperscript{2} / real r}~ evolution (hamiltonian_sum n Hs) t"
 theorem sparse_split:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and sp: "sparse n
       s A" and s: "1 ~$\le$~ s"
@@ -1404,8 +1405,8 @@ theorem sparse_simulation_circuit:
     and "sim_mat n (t / real r) A (2 * s - 1) p r ~$\in$~ carrier_mat n
         n"
     and "unitary (sim_mat n (t / real r) A (2 * s - 1) p r)"
-    and "op_close n (8 * (real s * L * t)~$^{2}$~ / real r) (sim_mat n (t
-        / real r) A (2 * s - 1) p r) (evolution A t)"
+    and "sim_mat n (t / real r) A (2 * s - 1) p r
+        ~\closeto{8 * (real s * L * t)\textsuperscript{2} / real r}~ evolution A t"
     and "length (filter is_query (sim_gates (2 * s - 1) r)) = r *
         (6 * s - 2)"
 \end{lstlisting}
@@ -1444,9 +1445,9 @@ theorem suzuki_error:
   fixes k :: nat and t :: real
   assumes Hs: "~$\forall$~H ~$\in$~ set Hs. herm_bounded n L H" and L: "0 ~$\le$~ L" and r: "0 < r"
   defines "F ~$\equiv$~ suzuki k Hs" and "q ~$\equiv$~ 2 * k + 3"
-  shows "op_close n (real r * ((2 * real (length F) + 1) * (total_weight L F * ~$|$~t~$|$~ / real r) ^ q
-             * exp (total_weight L F * ~$|$~t~$|$~ / real r) / fact q))
-           (formula_product n (t / real r) F ^~$_{m}$~ r) (evolution (hamiltonian_sum n Hs) t)"
+  shows "formula_product n (t / real r) F ^~$_{m}$~ r
+           ~\closetolong{real r * ((2 * real (length F) + 1) * (total\_weight L F * $|$t$|$ / real r) \textasciicircum{} q * exp (total\_weight L F * $|$t$|$ / real r) / fact q)}~
+           evolution (hamiltonian_sum n Hs) t"
 \end{lstlisting}
 \section{What the Formalisation Found}\label{sec:errata}
 

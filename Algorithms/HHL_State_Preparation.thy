@@ -684,7 +684,7 @@ theorem hhl_apx_fine3:
       and spec: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> lmin \<le> l \<and> t0 * l \<le> pi / 2"
       and b: "dim_vec b = n" "\<parallel>b\<parallel> = 1" and e: "0 < \<epsilon>"
       and NQ: "sqrt (8 * pi\<^sup>2 * (2 + pi\<^sup>2) * \<theta> ^ 4 / (t0\<^sup>2 * C\<^sup>2 * (1 - \<theta>\<^sup>2)) + 512 * pi ^ 6 / (t0 ^ 4 * lmin ^ 4)) / \<epsilon> \<le> real (2 ^ k)"
-      and V: "V \<in> carrier_mat n n" "Quantum.unitary V" and Vc: "op_close n \<eta> V (evolution A t0)" and eta: "0 \<le> \<eta>"
+      and V: "V \<in> carrier_mat n n" "Quantum.unitary V" and Vc: "V \<approx>\<^bsub>\<eta>\<^esub> evolution A t0" and eta: "0 \<le> \<eta>"
       and Ub: "Ub \<in> carrier_mat n n" "Quantum.unitary Ub" "Ub *\<^sub>v unit_vec n 0 = b"
       and small: "\<epsilon> + 2 * real (2 ^ k - 1) * \<eta> \<le> C * t0 / pi"
   defines "K \<equiv> 2 ^ k * (n * 2)" and "\<theta>s \<equiv> \<lambda>c. arcsin (clamp (C / reg_eig t0 (2 ^ k) c))"

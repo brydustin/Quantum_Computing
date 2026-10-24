@@ -180,12 +180,27 @@ qed
 
 subsection \<open>Closeness of operators\<close>
 
-text \<open>$\eta$-closeness of two operators: $\norm{Uv-Vv}\le\eta\norm v$ for every $v$.\<close>
+text \<open>$U$ and $V$ are $\eta$-close, written \<open>U \<approx>\<^bsub>\<eta>\<^esub> V\<close>, if $\norm{Uv-Vv}\le\eta\norm v$ for every $v$:
+the operator norm of $U-V$ is at most $\eta$.\<close>
 
-definition op_close :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
-  "op_close n \<eta> U V \<longleftrightarrow> (\<forall>v. dim_vec v = n \<longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>)"
+definition op_close :: "complex Matrix.mat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> bool"
+    ("(_ \<approx>\<^bsub>_\<^esub>/ _)" [51, 0, 51] 50) where
+  "U \<approx>\<^bsub>\<eta>\<^esub> V \<longleftrightarrow> (\<forall>v. dim_vec v = dim_col U \<longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>)"
 
-lemma op_closeD: "op_close n \<eta> U V \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>"
+text \<open>For $U\in M_{m,n}$ closeness is a bound on the vectors of length $n$.\<close>
+
+lemma op_close_iff:
+  assumes "U \<in> carrier_mat m n"
+  shows "U \<approx>\<^bsub>\<eta>\<^esub> V \<longleftrightarrow> (\<forall>v. dim_vec v = n \<longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>)"
+  using assms by (simp add: op_close_def)
+
+lemma op_closeI:
+  assumes "U \<in> carrier_mat m n" and "\<And>v. dim_vec v = n \<Longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>"
+  shows "U \<approx>\<^bsub>\<eta>\<^esub> V"
+  using assms by (simp add: op_close_def)
+
+lemma op_closeD:
+  "U \<approx>\<^bsub>\<eta>\<^esub> V \<Longrightarrow> U \<in> carrier_mat m n \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>"
   by (simp add: op_close_def)
 
 text \<open>Closeness is reflexive and symmetric, and passes to adjoints of unitaries, since
@@ -193,12 +208,12 @@ $U^*-V^*=U^*(V-U)V^*$ and unitaries preserve norms.\<close>
 
 lemma op_close_refl:
   assumes e: "0 \<le> \<eta>" and U: "U \<in> carrier_mat n n"
-  shows "op_close n \<eta> U U"
+  shows "U \<approx>\<^bsub>\<eta>\<^esub> U"
 proof -
   have z: "U *\<^sub>v v - U *\<^sub>v v = 0\<^sub>v n" if "dim_vec v = n" for v :: "complex Matrix.vec"
     using that U by (intro eq_vecI) simp_all
-  show ?thesis unfolding op_close_def
-  proof (intro allI impI)
+  show ?thesis
+  proof (rule op_closeI[OF U])
     fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
     have "\<parallel>U *\<^sub>v v - U *\<^sub>v v\<parallel> = 0" unfolding z[OF v] by (simp add: cpx_vec_length_def)
     thus "\<parallel>U *\<^sub>v v - U *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" using e vnorm_ge0[of v] by simp
@@ -206,21 +221,19 @@ proof -
 qed
 
 lemma op_close_sym:
-  assumes "op_close n \<eta> U V" "U \<in> carrier_mat n n" "V \<in> carrier_mat n n"
-  shows "op_close n \<eta> V U"
-  unfolding op_close_def
-proof (intro allI impI)
+  assumes "U \<approx>\<^bsub>\<eta>\<^esub> V" "U \<in> carrier_mat n n" "V \<in> carrier_mat n n"
+  shows "V \<approx>\<^bsub>\<eta>\<^esub> U"
+proof (rule op_closeI[OF assms(3)])
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
   have "\<parallel>V *\<^sub>v v - U *\<^sub>v v\<parallel> = \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel>" by (rule vnorm_minus_commute) (use assms in simp)
-  thus "\<parallel>V *\<^sub>v v - U *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" using op_closeD[OF assms(1) v] by simp
+  thus "\<parallel>V *\<^sub>v v - U *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" using op_closeD[OF assms(1,2) v] by simp
 qed
 
 lemma op_close_dagger:
   assumes U: "U \<in> carrier_mat n n" "unitary U" and V: "V \<in> carrier_mat n n" "unitary V"
-      and c: "op_close n \<eta> U V"
-  shows "op_close n \<eta> (U\<^sup>\<dagger>) (V\<^sup>\<dagger>)"
-  unfolding op_close_def
-proof (intro allI impI)
+      and c: "U \<approx>\<^bsub>\<eta>\<^esub> V"
+  shows "U\<^sup>\<dagger> \<approx>\<^bsub>\<eta>\<^esub> V\<^sup>\<dagger>"
+proof (rule op_closeI[OF dagger_carrier[OF U(1)]])
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
   have vc: "v \<in> carrier_vec n" using v by (rule carrier_vecI)
   have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" and Vd: "V\<^sup>\<dagger> \<in> carrier_mat n n" using U V by (simp_all add: dagger_carrier)
@@ -238,7 +251,7 @@ proof (intro allI impI)
   qed
   have "\<parallel>U\<^sup>\<dagger> *\<^sub>v v - ?w\<parallel> = \<parallel>U *\<^sub>v (U\<^sup>\<dagger> *\<^sub>v v - ?w)\<parallel>" by (rule unitary_vnorm[OF U dd, symmetric])
   also have "\<dots> = \<parallel>U *\<^sub>v ?w - V *\<^sub>v ?w\<parallel>" unfolding e by (rule vnorm_minus_commute) (use U V in simp)
-  also have "\<dots> \<le> \<eta> * \<parallel>?w\<parallel>" by (rule op_closeD[OF c w])
+  also have "\<dots> \<le> \<eta> * \<parallel>?w\<parallel>" by (rule op_closeD[OF c U(1) w])
   also have "\<parallel>?w\<parallel> = \<parallel>v\<parallel>" by (rule unitary_vnorm[OF Vd unitary_dagger[OF V(2)] v])
   finally show "\<parallel>U\<^sup>\<dagger> *\<^sub>v v - V\<^sup>\<dagger> *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" .
 qed
@@ -531,9 +544,8 @@ text \<open>One Trotter step: $\norm{e^{idH_1}\cdots e^{idH_m}-e^{id(H_1+\dots+H
 
 lemma trotter_step:
   assumes Hs: "\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H"
-  shows "op_close n (2 * (d * L)\<^sup>2 * (real (length Hs))\<^sup>2) (evolution_product n d Hs) (evolution (hamiltonian_sum n Hs) d)"
-  unfolding op_close_def
-proof (intro allI impI)
+  shows "evolution_product n d Hs \<approx>\<^bsub>2 * (d * L)\<^sup>2 * (real (length Hs))\<^sup>2\<^esub> evolution (hamiltonian_sum n Hs) d"
+proof (rule op_closeI[OF evolution_product_carrier[OF herm_bounded_herm[OF Hs]]])
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
   have P: "evolution_product n d Hs \<in> carrier_mat n n" by (rule evolution_product_carrier[OF herm_bounded_herm[OF Hs]])
   have S: "hamiltonian_sum n Hs \<in> carrier_mat n n" "hermitian (hamiltonian_sum n Hs)"
@@ -558,20 +570,20 @@ text \<open>Errors of unitaries add up along powers.\<close>
 
 lemma op_close_pow:
   assumes U: "U \<in> carrier_mat n n" "unitary U" and V: "V \<in> carrier_mat n n" "unitary V"
-      and c: "op_close n \<eta> U V"
-  shows "op_close n (real k * \<eta>) (U ^\<^sub>m k) (V ^\<^sub>m k)"
+      and c: "U \<approx>\<^bsub>\<eta>\<^esub> V"
+  shows "U ^\<^sub>m k \<approx>\<^bsub>real k * \<eta>\<^esub> V ^\<^sub>m k"
 proof (induction k)
   case 0
-  show ?case unfolding op_close_def
-  proof (intro allI impI)
+  show ?case
+  proof (rule op_closeI[OF pow_carrier_mat[OF U(1)]])
     fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
     have "U ^\<^sub>m 0 *\<^sub>v v - V ^\<^sub>m 0 *\<^sub>v v = 0\<^sub>v n" using v carrier_matD[OF U(1)] carrier_matD[OF V(1)] carrier_vecI[OF v] by (intro eq_vecI) simp_all
     thus "\<parallel>U ^\<^sub>m 0 *\<^sub>v v - V ^\<^sub>m 0 *\<^sub>v v\<parallel> \<le> real 0 * \<eta> * \<parallel>v\<parallel>" by (simp add: vnorm_zero_vec)
   qed
 next
   case (Suc k)
-  show ?case unfolding op_close_def
-  proof (intro allI impI)
+  show ?case
+  proof (rule op_closeI[OF pow_carrier_mat[OF U(1)]])
     fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
     have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF v])
     have Uk: "U ^\<^sub>m k \<in> carrier_mat n n" and Vk: "V ^\<^sub>m k \<in> carrier_mat n n"
@@ -586,9 +598,9 @@ next
     also have "V ^\<^sub>m k *\<^sub>v ?x - V ^\<^sub>m k *\<^sub>v ?y = V ^\<^sub>m k *\<^sub>v (?x - ?y)"
       by (rule mult_minus_distrib_mat_vec[OF Vk, symmetric]) (use x y in \<open>simp_all add: carrier_vecI\<close>)
     also have "\<parallel>V ^\<^sub>m k *\<^sub>v (?x - ?y)\<parallel> = \<parallel>?x - ?y\<parallel>" by (rule unitary_vnorm[OF Vk uVk]) (use y in simp)
-    also have "\<parallel>U ^\<^sub>m k *\<^sub>v ?x - V ^\<^sub>m k *\<^sub>v ?x\<parallel> \<le> real k * \<eta> * \<parallel>?x\<parallel>" by (rule op_closeD[OF Suc x])
+    also have "\<parallel>U ^\<^sub>m k *\<^sub>v ?x - V ^\<^sub>m k *\<^sub>v ?x\<parallel> \<le> real k * \<eta> * \<parallel>?x\<parallel>" by (rule op_closeD[OF Suc pow_carrier_mat[OF U(1)] x])
     also have "\<parallel>?x\<parallel> = \<parallel>v\<parallel>" by (rule unitary_vnorm[OF U v])
-    also have "\<parallel>?x - ?y\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" by (rule op_closeD[OF c v])
+    also have "\<parallel>?x - ?y\<parallel> \<le> \<eta> * \<parallel>v\<parallel>" by (rule op_closeD[OF c U(1) v])
     finally show "\<parallel>U ^\<^sub>m Suc k *\<^sub>v v - V ^\<^sub>m Suc k *\<^sub>v v\<parallel> \<le> real (Suc k) * \<eta> * \<parallel>v\<parallel>"
       unfolding e1 e2 by (simp add: algebra_simps)
   qed
@@ -599,13 +611,11 @@ $\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le 2(mLt)^2/r$.\
 
 theorem trotter:
   assumes Hs: "\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H" and r: "0 < r"
-  shows "op_close n (2 * (real (length Hs) * L * t)\<^sup>2 / real r)
-           (evolution_product n (t / real r) Hs ^\<^sub>m r) (evolution (hamiltonian_sum n Hs) t)"
+  shows "evolution_product n (t / real r) Hs ^\<^sub>m r \<approx>\<^bsub>2 * (real (length Hs) * L * t)\<^sup>2 / real r\<^esub> evolution (hamiltonian_sum n Hs) t"
 proof -
   have S: "hamiltonian_sum n Hs \<in> carrier_mat n n" "hermitian (hamiltonian_sum n Hs)"
     using hamiltonian_sum_carrier[OF herm_boundedD(1)[OF Hs]] hamiltonian_sum_hermitian[OF Hs] by simp_all
-  have c: "op_close n (real r * (2 * (t / real r * L)\<^sup>2 * (real (length Hs))\<^sup>2))
-      (evolution_product n (t / real r) Hs ^\<^sub>m r) (evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r)"
+  have c: "evolution_product n (t / real r) Hs ^\<^sub>m r \<approx>\<^bsub>real r * (2 * (t / real r * L)\<^sup>2 * (real (length Hs))\<^sup>2)\<^esub> evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r"
     by (rule op_close_pow[OF evolution_product_carrier[OF herm_bounded_herm[OF Hs]] evolution_product_unitary[OF Hs] evolution_carrier[OF S]
           evolution_unitary[OF S] trotter_step[OF Hs]])
   have p: "evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r = evolution (hamiltonian_sum n Hs) t"

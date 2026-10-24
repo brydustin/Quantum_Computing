@@ -34,7 +34,7 @@ $g:\R\to\C$, \<open>mat_fun g A\<close> is $g(A)$.
   \<open>mat_fun_comp\<close>, \<open>mat_fun_dagger\<close>, \<open>mat_fun_hermitian\<close>, \<open>mat_fun_unitary\<close>, and
   \<open>mat_fun_cong\<close> (only the values on the spectrum matter).
 \<^item> \<open>evolution A t\<close> is $e^{itA}$ and \<open>herm_inv A\<close> is $A^{-1}$.
-\<^item> \<open>op_close n \<eta> U V\<close> says $\norm{Uv-Vv}\le\eta\norm v$ for all $v$; the product formulas
+\<^item> \<open>U \<approx>\<^bsub>\<eta>\<^esub> V\<close> says $\norm{Uv-Vv}\le\eta\norm v$ for all $v$; the product formulas
   (\<open>trotter\<close>, \<open>suzuki_error\<close>) are stated with it.\<close>
 
 text \<open>Matrices are those of Jordan\_Normal\_Form, with the adjoint $M^\dagger$ and \<open>unitary\<close> of

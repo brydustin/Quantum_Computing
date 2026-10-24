@@ -106,7 +106,7 @@ qed
 
 lemma evolution_taylor:
   assumes H: "herm_bounded n L H" and L: "0 \<le> L"
-  shows "op_close n ((\<bar>s\<bar> * L) ^ Suc P * exp (\<bar>s\<bar> * L) / fact (Suc P)) (evolution H s) (exp_taylor n H s P)"
+  shows "evolution H s \<approx>\<^bsub>(\<bar>s\<bar> * L) ^ Suc P * exp (\<bar>s\<bar> * L) / fact (Suc P)\<^esub> exp_taylor n H s P"
 proof -
   have Hc: "H \<in> carrier_mat n n" "hermitian H" using herm_boundedD[OF H] by simp_all
   let ?g = "\<lambda>x. cis (s * x) - (\<Sum>q\<le>P. (\<i> * complex_of_real (s * x)) ^ q / fact q)"
@@ -126,8 +126,8 @@ proof -
     qed
   qed
   have c0: "0 \<le> (\<bar>s\<bar> * L) ^ Suc P * exp (\<bar>s\<bar> * L) / fact (Suc P)" using L by simp
-  show ?thesis unfolding op_close_def
-  proof (intro allI impI)
+  show ?thesis
+  proof (rule op_closeI[OF evolution_carrier[OF Hc]])
     fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
     have "evolution H s *\<^sub>v v - exp_taylor n H s P *\<^sub>v v = ?B *\<^sub>v v"
       by (rule minus_mult_distrib_mat_vec[OF evolution_carrier[OF Hc] exp_taylor_carrier[OF Hc(1)] carrier_vecI[OF v], symmetric])
@@ -227,7 +227,7 @@ sums, and give $\norm{X^p/p!}\le a^p/p!$ and $\norm{(f\ast g)_p}\le\sum_{q\le p}
 definition op_bound :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "op_bound n c M \<longleftrightarrow> (\<forall>v. dim_vec v = n \<longrightarrow> \<parallel>M *\<^sub>v v\<parallel> \<le> c * \<parallel>v\<parallel>)"
 
-lemma obndD: "op_bound n c M \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>M *\<^sub>v v\<parallel> \<le> c * \<parallel>v\<parallel>"
+lemma op_boundD: "op_bound n c M \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>M *\<^sub>v v\<parallel> \<le> c * \<parallel>v\<parallel>"
   by (simp add: op_bound_def)
 
 lemma op_bound_zero: "op_bound n 0 (0\<^sub>m n n)"
@@ -244,8 +244,8 @@ lemma op_bound_mult:
 proof (intro allI impI)
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
   have "\<parallel>(A * B) *\<^sub>v v\<parallel> = \<parallel>A *\<^sub>v (B *\<^sub>v v)\<parallel>" using assoc_mult_mat_vec[OF A(1) B(1) carrier_vecI[OF v]] by simp
-  also have "\<dots> \<le> a * \<parallel>B *\<^sub>v v\<parallel>" by (rule obndD[OF A(2)]) (use B(1) in simp)
-  also have "\<dots> \<le> a * (b * \<parallel>v\<parallel>)" by (rule mult_left_mono[OF obndD[OF B(2) v] a])
+  also have "\<dots> \<le> a * \<parallel>B *\<^sub>v v\<parallel>" by (rule op_boundD[OF A(2)]) (use B(1) in simp)
+  also have "\<dots> \<le> a * (b * \<parallel>v\<parallel>)" by (rule mult_left_mono[OF op_boundD[OF B(2) v] a])
   finally show "\<parallel>(A * B) *\<^sub>v v\<parallel> \<le> a * b * \<parallel>v\<parallel>" by (simp add: mult_ac)
 qed
 
@@ -279,7 +279,7 @@ next
     hence "\<parallel>matrix_sum n F (Suc m) *\<^sub>v v\<parallel> \<le> \<parallel>F m *\<^sub>v v\<parallel> + \<parallel>matrix_sum n F m *\<^sub>v v\<parallel>"
       using vnorm_add_le[of "F m *\<^sub>v v" "matrix_sum n F m *\<^sub>v v"] Suc.prems(1)[of m] S by simp
     also have "\<dots> \<le> c m * \<parallel>v\<parallel> + (\<Sum>q<m. c q) * \<parallel>v\<parallel>"
-      using obndD[OF Suc.prems(2)[of m] v] obndD[OF IH v] by simp
+      using op_boundD[OF Suc.prems(2)[of m] v] op_boundD[OF IH v] by simp
     finally show "\<parallel>matrix_sum n F (Suc m) *\<^sub>v v\<parallel> \<le> (\<Sum>q<Suc m. c q) * \<parallel>v\<parallel>" by (simp add: algebra_simps)
   qed
 qed
@@ -489,13 +489,14 @@ text \<open>A formula is close to its own Taylor polynomial: with $|F|$ factors 
 
 theorem formula_product_approx:
   assumes F: "\<forall>x \<in> set F. herm_bounded n L (snd x)" and L: "0 \<le> L"
-  shows "op_close n (2 * real (length F) * (total_weight L F * \<bar>t\<bar>) ^ Suc P * exp (total_weight L F * \<bar>t\<bar>) / fact (Suc P))
-           (formula_product n t F) (poly_eval n (prod_coeff n (map factor_gen F)) P t)"
+  shows "formula_product n t F \<approx>\<^bsub>2 * real (length F) * (total_weight L F * \<bar>t\<bar>) ^ Suc P * exp (total_weight L F * \<bar>t\<bar>) / fact (Suc P)\<^esub> poly_eval n (prod_coeff n (map factor_gen F)) P t"
   using F
 proof (induction F)
   case Nil
-  show ?case unfolding op_close_def
-  proof (intro allI impI)
+  show ?case
+  proof (rule op_closeI[where m = n and n = n])
+    show "formula_product n t [] \<in> carrier_mat n n" by simp
+  next
     fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
     have "formula_product n t [] *\<^sub>v v - poly_eval n (prod_coeff n (map factor_gen [])) P t *\<^sub>v v = 0\<^sub>v n"
       using v by (intro eq_vecI) (simp_all add: poly_eval_seq_one)
@@ -539,7 +540,7 @@ next
     finally show ?thesis .
   qed
   \<comment> \<open>the three error terms\<close>
-  have rY: "op_close n ((?x0 * \<bar>t\<bar>) ^ ?P' * exp (?x0 * \<bar>t\<bar>) / fact ?P') E T"
+  have rY: "E \<approx>\<^bsub>(?x0 * \<bar>t\<bar>) ^ ?P' * exp (?x0 * \<bar>t\<bar>) / fact ?P'\<^esub> T"
   proof -
     have e: "\<bar>?a * t\<bar> * L = ?x0 * \<bar>t\<bar>" by (simp add: abs_mult mult_ac)
     show ?thesis using evolution_taylor[OF hx L, of "?a * t" P] unfolding E_def TE e .
@@ -585,9 +586,12 @@ next
     ultimately show ?thesis by (rule op_bound_mono)
   qed
   let ?rG = "2 * real (length G) * (?y0 * \<bar>t\<bar>) ^ ?P' * exp (?y0 * \<bar>t\<bar>) / fact ?P'"
-  have IH: "op_close n ?rG W SG" using Cons.IH[OF hG] by (simp add: W_def SG_def)
-  show ?case unfolding op_close_def lamx
-  proof (intro allI impI)
+  have IH: "W \<approx>\<^bsub>?rG\<^esub> SG" using Cons.IH[OF hG] by (simp add: W_def SG_def)
+  show ?case unfolding lamx
+  proof (rule op_closeI[where m = n and n = n])
+    show "formula_product n t (x # G) \<in> carrier_mat n n"
+      using formula_product_carrier_unitary[OF Cons.prems] by simp
+  next
     fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
     define w where "w = W *\<^sub>v v"
     have wn: "dim_vec w = n" and nw: "\<parallel>w\<parallel> = \<parallel>v\<parallel>" using Wcu v unitary_vnorm[OF Wcu v] by (simp_all add: w_def)
@@ -612,15 +616,15 @@ next
       thus ?thesis by (rule mult_minus_distrib_mat_vec[OF Tc carrier_vecI[OF wn], symmetric])
     qed
     have b1: "\<parallel>E *\<^sub>v w - T *\<^sub>v w\<parallel> \<le> (?x0 * \<bar>t\<bar>) ^ ?P' * exp (?x0 * \<bar>t\<bar>) / fact ?P' * \<parallel>v\<parallel>"
-      using op_closeD[OF rY wn] nw by simp
+      using op_closeD[OF rY Ec wn] nw by simp
     have b2: "\<parallel>T *\<^sub>v (w - SG *\<^sub>v v)\<parallel> \<le> exp (?x0 * \<bar>t\<bar>) * (?rG * \<parallel>v\<parallel>)"
     proof -
       have "\<parallel>T *\<^sub>v (w - SG *\<^sub>v v)\<parallel> \<le> exp (?x0 * \<bar>t\<bar>) * \<parallel>w - SG *\<^sub>v v\<parallel>"
-        by (rule obndD[OF cT]) (use wn SGc in simp)
-      also have "\<parallel>w - SG *\<^sub>v v\<parallel> \<le> ?rG * \<parallel>v\<parallel>" using op_closeD[OF IH v] by (simp add: w_def)
+        by (rule op_boundD[OF cT]) (use wn SGc in simp)
+      also have "\<parallel>w - SG *\<^sub>v v\<parallel> \<le> ?rG * \<parallel>v\<parallel>" using op_closeD[OF IH Wcu(1) v] by (simp add: w_def)
       finally show ?thesis by simp
     qed
-    have b3: "\<parallel>hi *\<^sub>v v\<parallel> \<le> ?z ^ ?P' * exp ?z / fact ?P' * \<parallel>v\<parallel>" by (rule obndD[OF hb v])
+    have b3: "\<parallel>hi *\<^sub>v v\<parallel> \<le> ?z ^ ?P' * exp ?z / fact ?P' * \<parallel>v\<parallel>" by (rule op_boundD[OF hb v])
     have "\<parallel>E *\<^sub>v w - ?pf *\<^sub>v v\<parallel> \<le> \<parallel>E *\<^sub>v w - T *\<^sub>v w\<parallel> + \<parallel>T *\<^sub>v w - ?pf *\<^sub>v v\<parallel>"
       by (rule vnorm_diff_le[where n = n]) (use Ec Tc pfc wn v in simp_all)
     also have "\<parallel>T *\<^sub>v w - ?pf *\<^sub>v v\<parallel> \<le> \<parallel>T *\<^sub>v w - T *\<^sub>v (SG *\<^sub>v v)\<parallel> + \<parallel>T *\<^sub>v (SG *\<^sub>v v) - ?pf *\<^sub>v v\<parallel>"
@@ -659,25 +663,24 @@ qed
 text \<open>Closeness is transitive, the errors adding up, and monotone in the error.\<close>
 
 lemma op_close_trans:
-  assumes "op_close n a U V" "op_close n b V W" "U \<in> carrier_mat n n" "V \<in> carrier_mat n n" "W \<in> carrier_mat n n"
-  shows "op_close n (a + b) U W"
-  unfolding op_close_def
-proof (intro allI impI)
+  assumes "U \<approx>\<^bsub>a\<^esub> V" "V \<approx>\<^bsub>b\<^esub> W" "U \<in> carrier_mat n n" "V \<in> carrier_mat n n" "W \<in> carrier_mat n n"
+  shows "U \<approx>\<^bsub>a + b\<^esub> W"
+proof (rule op_closeI[OF assms(3)])
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
   have "\<parallel>U *\<^sub>v v - W *\<^sub>v v\<parallel> \<le> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> + \<parallel>V *\<^sub>v v - W *\<^sub>v v\<parallel>"
     by (rule vnorm_diff_le[where n = n]) (use assms in simp_all)
-  also have "\<dots> \<le> a * \<parallel>v\<parallel> + b * \<parallel>v\<parallel>" using op_closeD[OF assms(1) v] op_closeD[OF assms(2) v] by simp
+  also have "\<dots> \<le> a * \<parallel>v\<parallel> + b * \<parallel>v\<parallel>" using op_closeD[OF assms(1,3) v] op_closeD[OF assms(2,4) v] by simp
   finally show "\<parallel>U *\<^sub>v v - W *\<^sub>v v\<parallel> \<le> (a + b) * \<parallel>v\<parallel>" by (simp add: algebra_simps)
 qed
 
 lemma op_close_mono:
-  assumes "op_close n a U V" "a \<le> b"
-  shows "op_close n b U V"
+  assumes "U \<approx>\<^bsub>a\<^esub> V" "a \<le> b"
+  shows "U \<approx>\<^bsub>b\<^esub> V"
   unfolding op_close_def
 proof (intro allI impI)
-  fix v :: "complex Matrix.vec" assume "dim_vec v = n"
+  fix v :: "complex Matrix.vec" assume "dim_vec v = dim_col U"
   thus "\<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> b * \<parallel>v\<parallel>"
-    using op_closeD[OF assms(1)] mult_right_mono[OF assms(2) vnorm_ge0[of v]] order_trans by blast
+    using assms(1)[unfolded op_close_def] mult_right_mono[OF assms(2) vnorm_ge0[of v]] order_trans by blast
 qed
 
 text \<open>For Suzuki's formula: the sum of $m$ Hamiltonians bounded by $L$ is bounded by $mL$, the formula has
@@ -710,8 +713,7 @@ lemma suzuki_step:
   fixes k :: nat and d :: real
   assumes Hs: "\<forall>H \<in> set Hs. herm_bounded n L H" and L: "0 \<le> L"
   defines "F \<equiv> suzuki k Hs" and "q \<equiv> 2 * k + 3"
-  shows "op_close n ((2 * real (length F) + 1) * (total_weight L F * \<bar>d\<bar>) ^ q * exp (total_weight L F * \<bar>d\<bar>) / fact q)
-           (formula_product n d F) (evolution (hamiltonian_sum n Hs) d)"
+  shows "formula_product n d F \<approx>\<^bsub>(2 * real (length F) + 1) * (total_weight L F * \<bar>d\<bar>) ^ q * exp (total_weight L F * \<bar>d\<bar>) / fact q\<^esub> evolution (hamiltonian_sum n Hs) d"
 proof -
   have F: "\<forall>x \<in> set F. herm_bounded n L (snd x)" using Hs suzuki_snd unfolding F_def by blast
   have C: "\<forall>H \<in> set Hs. H \<in> carrier_mat n n" using Hs herm_boundedD(1) by blast
@@ -727,16 +729,13 @@ proof -
     also have "\<dots> = exp_taylor n (hamiltonian_sum n Hs) d (2 * k + 2)" using exp_taylor_poly_eval[OF Hh(1), of 1 d] by simp
     finally show ?thesis .
   qed
-  have a: "op_close n (2 * real (length F) * (total_weight L F * \<bar>d\<bar>) ^ q * exp (total_weight L F * \<bar>d\<bar>) / fact q)
-      (formula_product n d F) (exp_taylor n (hamiltonian_sum n Hs) d (2 * k + 2))"
+  have a: "formula_product n d F \<approx>\<^bsub>2 * real (length F) * (total_weight L F * \<bar>d\<bar>) ^ q * exp (total_weight L F * \<bar>d\<bar>) / fact q\<^esub> exp_taylor n (hamiltonian_sum n Hs) d (2 * k + 2)"
     using formula_product_approx[OF F L, of d "2 * k + 2"] unfolding pe q .
-  have b0: "op_close n ((\<bar>d\<bar> * (real (length Hs) * L)) ^ q * exp (\<bar>d\<bar> * (real (length Hs) * L)) / fact q)
-      (exp_taylor n (hamiltonian_sum n Hs) d (2 * k + 2)) (evolution (hamiltonian_sum n Hs) d)"
+  have b0: "exp_taylor n (hamiltonian_sum n Hs) d (2 * k + 2) \<approx>\<^bsub>(\<bar>d\<bar> * (real (length Hs) * L)) ^ q * exp (\<bar>d\<bar> * (real (length Hs) * L)) / fact q\<^esub> evolution (hamiltonian_sum n Hs) d"
     unfolding q by (rule op_close_sym[OF evolution_taylor[OF Hb mL] evolution_carrier[OF Hh(1,2)] exp_taylor_carrier[OF Hh(1)]])
   have le: "\<bar>d\<bar> * (real (length Hs) * L) \<le> total_weight L F * \<bar>d\<bar>"
     using mult_left_mono[OF total_weight_suzuki[OF L, of Hs k] abs_ge_zero[of d]] unfolding F_def by (simp add: mult_ac)
-  have b: "op_close n ((total_weight L F * \<bar>d\<bar>) ^ q * exp (total_weight L F * \<bar>d\<bar>) / fact q)
-      (exp_taylor n (hamiltonian_sum n Hs) d (2 * k + 2)) (evolution (hamiltonian_sum n Hs) d)"
+  have b: "exp_taylor n (hamiltonian_sum n Hs) d (2 * k + 2) \<approx>\<^bsub>(total_weight L F * \<bar>d\<bar>) ^ q * exp (total_weight L F * \<bar>d\<bar>) / fact q\<^esub> evolution (hamiltonian_sum n Hs) d"
   proof (rule op_close_mono[OF b0])
     have x0: "0 \<le> \<bar>d\<bar> * (real (length Hs) * L)" using mL by simp
     have "(\<bar>d\<bar> * (real (length Hs) * L)) ^ q * exp (\<bar>d\<bar> * (real (length Hs) * L))
@@ -759,19 +758,17 @@ theorem suzuki_error:
   fixes k :: nat and t :: real
   assumes Hs: "\<forall>H \<in> set Hs. herm_bounded n L H" and L: "0 \<le> L" and r: "0 < r"
   defines "F \<equiv> suzuki k Hs" and "q \<equiv> 2 * k + 3"
-  shows "op_close n (real r * ((2 * real (length F) + 1) * (total_weight L F * \<bar>t\<bar> / real r) ^ q
-             * exp (total_weight L F * \<bar>t\<bar> / real r) / fact q))
-           (formula_product n (t / real r) F ^\<^sub>m r) (evolution (hamiltonian_sum n Hs) t)"
+  shows "formula_product n (t / real r) F ^\<^sub>m r \<approx>\<^bsub>real r * ((2 * real (length F) + 1) * (total_weight L F * \<bar>t\<bar> / real r) ^ q
+             * exp (total_weight L F * \<bar>t\<bar> / real r) / fact q)\<^esub> evolution (hamiltonian_sum n Hs) t"
 proof -
   have Fh: "\<forall>x \<in> set F. herm_bounded n L (snd x)" using Hs suzuki_snd unfolding F_def by blast
   note Hh = herm_boundedD[OF hamiltonian_sum_herm_bounded[OF Hs]]
   note U = formula_product_carrier_unitary[OF Fh, of "t / real r"]
   have d: "total_weight L F * \<bar>t / real r\<bar> = total_weight L F * \<bar>t\<bar> / real r" using r by simp
-  have c: "op_close n (real r * ((2 * real (length F) + 1) * (total_weight L F * \<bar>t / real r\<bar>) ^ q
-      * exp (total_weight L F * \<bar>t / real r\<bar>) / fact q))
-      (formula_product n (t / real r) F ^\<^sub>m r) (evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r)"
+  have c: "formula_product n (t / real r) F ^\<^sub>m r \<approx>\<^bsub>real r * ((2 * real (length F) + 1) * (total_weight L F * \<bar>t / real r\<bar>) ^ q
+      * exp (total_weight L F * \<bar>t / real r\<bar>) / fact q)\<^esub> evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r"
     by (rule op_close_pow[OF conjunct1[OF U] conjunct2[OF U] evolution_carrier[OF Hh(1,2)]
-          evolution_unitary[OF Hh(1,2)]]) (use suzuki_step[OF Hs L, of k "t / real r"] in \<open>simp add: F_def q_def\<close>)
+          evolution_unitary[OF Hh(1,2)]]) (use suzuki_step[OF Hs L, where k = k and d = "t / real r"] in \<open>simp add: F_def q_def\<close>)
   have p: "evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r = evolution (hamiltonian_sum n Hs) t"
     using evolution_pow[OF Hh(1,2), of "t / real r" r] r by simp
   show ?thesis using c unfolding p d .
