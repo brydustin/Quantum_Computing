@@ -502,8 +502,8 @@ proof (rule mat_fun_eqI)
   show H: "colour_part n A q \<in> carrier_mat n n" "hermitian (colour_part n A q)"
     by (simp add: colour_part_def, rule colour_part_hermitian[OF A q])
   show "pair_evo n q (colour_h A q) d \<in> carrier_mat n n" by simp
-  show "fun_on_eigen (colour_part n A q) (\<lambda>x. cis (d * x)) (pair_evo n q (colour_h A q) d)"
-    unfolding fun_on_eigen_def
+  show "acts_on_eigenvectors (colour_part n A q) (\<lambda>x. cis (d * x)) (pair_evo n q (colour_h A q) d)"
+    unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row (colour_part n A q)"
       and ev: "colour_part n A q *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
@@ -599,8 +599,8 @@ proof (rule mat_fun_eqI)
   show H: "diag_part n A \<in> carrier_mat n n" "hermitian (diag_part n A)"
     by (simp add: diag_part_def, rule diag_part_hermitian[OF A])
   show "dia_evo n d A \<in> carrier_mat n n" by (simp add: dia_evo_def)
-  show "fun_on_eigen (diag_part n A) (\<lambda>x. cis (d * x)) (dia_evo n d A)"
-    unfolding fun_on_eigen_def
+  show "acts_on_eigenvectors (diag_part n A) (\<lambda>x. cis (d * x)) (dia_evo n d A)"
+    unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row (diag_part n A)"
       and ev: "diag_part n A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
@@ -764,7 +764,7 @@ end
 subsection \<open>Correctness of the whole circuit\<close>
 
 definition sim_mat :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "sim_mat n d A K p r = tprod n d (sparse_parts n A K p) ^\<^sub>m r"
+  "sim_mat n d A K p r = evolution_product n d (sparse_parts n A K p) ^\<^sub>m r"
 
 context
   fixes n :: nat and A :: "complex Matrix.mat" and K :: nat and p :: "nat \<Rightarrow> nat \<Rightarrow> nat"
@@ -780,10 +780,10 @@ lemma Os_carrier: "c < K \<Longrightarrow> Os c \<in> carrier_mat (n * n * 2) (n
 lemma colour_part_ok: "c < K \<Longrightarrow> colour_part n A (p c) \<in> carrier_mat n n \<and> hermitian (colour_part n A (p c))"
   using colour_part_hermitian[OF A pinv] by (simp add: colour_part_def)
 
-lemma tprod_colours_carrier:
+lemma evolution_product_colours_carrier:
   assumes cs: "set cs \<subseteq> {..<K}"
-  shows "tprod n d (map (\<lambda>c. colour_part n A (p c)) cs) \<in> carrier_mat n n"
-proof (rule tprod_carrier)
+  shows "evolution_product n d (map (\<lambda>c. colour_part n A (p c)) cs) \<in> carrier_mat n n"
+proof (rule evolution_product_carrier)
   fix H assume "H \<in> set (map (\<lambda>c. colour_part n A (p c)) cs)"
   then obtain c where "c \<in> set cs" "H = colour_part n A (p c)" by auto
   thus "H \<in> carrier_mat n n \<and> hermitian H" using colour_part_ok cs by auto
@@ -791,7 +791,7 @@ qed
 
 lemma colours_intertwine:
   "set cs \<subseteq> {..<K} \<Longrightarrow>
-   sg_run n d A Os (concat (map colour_gates (rev cs))) * emb n = emb n * tprod n d (map (\<lambda>c. colour_part n A (p c)) cs)"
+   sg_run n d A Os (concat (map colour_gates (rev cs))) * emb n = emb n * evolution_product n d (map (\<lambda>c. colour_part n A (p c)) cs)"
 proof (induction cs)
   case Nil
   show ?case using left_mult_one_mat[OF emb_carrier, of n] right_mult_one_mat[OF emb_carrier, of n] by simp
@@ -803,10 +803,10 @@ next
     using cs by (auto simp: colour_gates_def)
   have okc: "\<And>g. g \<in> set (colour_gates c) \<Longrightarrow> gate_ok K g" using c by (auto simp: colour_gates_def)
   let ?R = "sg_run n d A Os (concat (map colour_gates (rev cs)))"
-  let ?T = "tprod n d (map (\<lambda>c. colour_part n A (p c)) cs)"
+  let ?T = "evolution_product n d (map (\<lambda>c. colour_part n A (p c)) cs)"
   have R: "?R \<in> carrier_mat ?N ?N" by (rule sg_run_carrier[where K = K]) (erule Os_carrier, erule ok)
   have Cc: "colour_circ n d A (Os c) \<in> carrier_mat ?N ?N" by (rule colour_circ_carrier[OF Os_carrier[OF c]])
-  have T: "?T \<in> carrier_mat n n" by (rule tprod_colours_carrier[OF cs])
+  have T: "?T \<in> carrier_mat n n" by (rule evolution_product_colours_carrier[OF cs])
   have Hc: "colour_part n A (p c) \<in> carrier_mat n n" "hermitian (colour_part n A (p c))"
     by (simp add: colour_part_def, rule colour_part_hermitian[OF A pinv[OF c]])
   have E: "evolution (colour_part n A (p c)) d \<in> carrier_mat n n" by (rule evolution_carrier[OF Hc])
@@ -832,14 +832,14 @@ next
 qed
 
 theorem step_intertwine:
-  "sg_run n d A Os (step_gates K) * emb n = emb n * tprod n d (sparse_parts n A K p)"
+  "sg_run n d A Os (step_gates K) * emb n = emb n * evolution_product n d (sparse_parts n A K p)"
 proof -
   let ?N = "n * n * 2"
   let ?X = "concat (map colour_gates (rev [0..<K]))"
-  let ?T = "tprod n d (map (\<lambda>c. colour_part n A (p c)) [0..<K])"
+  let ?T = "evolution_product n d (map (\<lambda>c. colour_part n A (p c)) [0..<K])"
   have ok: "\<And>g. g \<in> set ?X \<Longrightarrow> gate_ok K g" by (auto simp: colour_gates_def)
   have X: "sg_run n d A Os ?X \<in> carrier_mat ?N ?N" by (rule sg_run_carrier[where K = K]) (erule Os_carrier, erule ok)
-  have T: "?T \<in> carrier_mat n n" by (rule tprod_colours_carrier) auto
+  have T: "?T \<in> carrier_mat n n" by (rule evolution_product_colours_carrier) auto
   have Dc: "dia_gate n d A \<in> carrier_mat ?N ?N" by simp
   have Hd: "diag_part n A \<in> carrier_mat n n" "hermitian (diag_part n A)"
     by (simp add: diag_part_def, rule diag_part_hermitian[OF A])
@@ -857,12 +857,12 @@ proof -
   finally show ?thesis by (simp add: sparse_parts_def)
 qed
 
-lemma sparse_parts_tprod_carrier: "tprod n d (sparse_parts n A K p) \<in> carrier_mat n n"
+lemma sparse_parts_tprod_carrier: "evolution_product n d (sparse_parts n A K p) \<in> carrier_mat n n"
 proof -
   have Hd: "diag_part n A \<in> carrier_mat n n" "hermitian (diag_part n A)"
     by (simp add: diag_part_def, rule diag_part_hermitian[OF A])
-  have "evolution (diag_part n A) d * tprod n d (map (\<lambda>c. colour_part n A (p c)) [0..<K]) \<in> carrier_mat n n"
-    by (rule mult_carrier_mat[OF evolution_carrier[OF Hd] tprod_colours_carrier]) auto
+  have "evolution (diag_part n A) d * evolution_product n d (map (\<lambda>c. colour_part n A (p c)) [0..<K]) \<in> carrier_mat n n"
+    by (rule mult_carrier_mat[OF evolution_carrier[OF Hd] evolution_product_colours_carrier]) auto
   thus ?thesis by (simp add: sparse_parts_def)
 qed
 
@@ -872,7 +872,7 @@ theorem sim_intertwine:
   "sg_run n d A Os (sim_gates K r) * emb n = emb n * sim_mat n d A K p r"
 proof -
   let ?N = "n * n * 2"
-  let ?S = "sg_run n d A Os (step_gates K)" and ?T = "tprod n d (sparse_parts n A K p)"
+  let ?S = "sg_run n d A Os (step_gates K)" and ?T = "evolution_product n d (sparse_parts n A K p)"
   have S: "?S \<in> carrier_mat ?N ?N" by (rule sg_run_carrier[where K = K]) (erule Os_carrier, erule step_gates_ok)
   have T: "?T \<in> carrier_mat n n" by (rule sparse_parts_tprod_carrier)
   have run: "sg_run n d A Os (sim_gates K r) = ?S ^\<^sub>m r"
@@ -922,9 +922,9 @@ proof -
   show "sg_run n (t / real r) A Os (sim_gates (2 * s - 1) r) * emb n = emb n * sim_mat n (t / real r) A (2 * s - 1) p r"
     by (rule sim_intertwine[OF A pinv Os])
   show "sim_mat n (t / real r) A (2 * s - 1) p r \<in> carrier_mat n n"
-    unfolding sim_mat_def by (rule pow_carrier_mat[OF tprod_carrier[OF herm_bounded_herm[OF hb]]])
+    unfolding sim_mat_def by (rule pow_carrier_mat[OF evolution_product_carrier[OF herm_bounded_herm[OF hb]]])
   show "unitary (sim_mat n (t / real r) A (2 * s - 1) p r)"
-    unfolding sim_mat_def by (rule unitary_pow[OF tprod_carrier[OF herm_bounded_herm[OF hb]] tprod_unitary[OF hb]])
+    unfolding sim_mat_def by (rule unitary_pow[OF evolution_product_carrier[OF herm_bounded_herm[OF hb]] evolution_product_unitary[OF hb]])
   show "op_close n (8 * (real s * L * t)\<^sup>2 / real r) (sim_mat n (t / real r) A (2 * s - 1) p r) (evolution A t)"
     unfolding sim_mat_def by (rule sparse_trotter[OF A s L Lb cov r])
   have "3 * (2 * s - 1) + 1 = 6 * s - 2" using s by simp

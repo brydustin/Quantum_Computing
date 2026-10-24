@@ -419,14 +419,14 @@ right-hand sides~$b$ be proved for an eigenvector, without sums over an eigenbas
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={The functional calculus},label={lst:matfun}]
-definition fun_on_eigen :: "complex mat ~$\Rightarrow$~ (real ~$\Rightarrow$~ complex) ~$\Rightarrow$~
+definition acts_on_eigenvectors :: "complex mat ~$\Rightarrow$~ (real ~$\Rightarrow$~ complex) ~$\Rightarrow$~
     complex mat ~$\Rightarrow$~ bool" where
-  "fun_on_eigen A g B ~$\longleftrightarrow$~ (~$\forall$~v l. dim_vec v = dim_row A ~$\longrightarrow$~
+  "acts_on_eigenvectors A g B ~$\longleftrightarrow$~ (~$\forall$~v l. dim_vec v = dim_row A ~$\longrightarrow$~
      A *~$_{v}$~ v = complex_of_real l ~$\cdot_{v}$~ v ~$\longrightarrow$~ B *~$_{v}$~ v = g l ~$\cdot_{v}$~ v)"
 definition mat_fun :: "(real ~$\Rightarrow$~ complex) ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ complex
     mat" where
   "mat_fun g A = (SOME B. B ~$\in$~ carrier_mat (dim_row A) (dim_row A)
-      ~$\wedge$~ fun_on_eigen A g B)"
+      ~$\wedge$~ acts_on_eigenvectors A g B)"
 theorem mat_fun_eigen:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A"
       and v: "dim_vec v = n" and ev: "A *~$_{v}$~ v = complex_of_real l ~$\cdot_{v}$~
@@ -435,7 +435,7 @@ theorem mat_fun_eigen:
 theorem mat_fun_decomp:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and sd:
       "spectral_decomp A U D"
-  shows "mat_fun g A = U * diag_cmat (map g D) * (U~$^{\dagger}$~)"
+  shows "mat_fun g A = U * diag_matrix (map g D) * (U~$^{\dagger}$~)"
 \end{lstlisting}
 \end{minipage}
 
@@ -1384,13 +1384,13 @@ $r$ steps use $r(6s-2)$ oracle queries.}\label{fig:sparse}
 theorem trotter:
   assumes Hs: "~$\bigwedge$~H. H ~$\in$~ set Hs ~$\Longrightarrow$~ herm_bounded n L H" and r: "0 < r"
   shows "op_close n (2 * (real (length Hs) * L * t)~$^{2}$~ / real r)
-           (tprod n (t / real r) Hs ^~$_{m}$~ r) (evolution (hsum n Hs)
+           (evolution_product n (t / real r) Hs ^~$_{m}$~ r) (evolution (hamiltonian_sum n Hs)
                t)"
 theorem sparse_split:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and sp: "sparse n
       s A" and s: "1 ~$\le$~ s"
   shows "~$\exists$~p. edge_cover n (2 * s - 1) p (edges n A) ~$\wedge$~
-           length (sparse_parts n A (2 * s - 1) p) = 2 * s ~$\wedge$~ hsum
+           length (sparse_parts n A (2 * s - 1) p) = 2 * s ~$\wedge$~ hamiltonian_sum
                n (sparse_parts n A (2 * s - 1) p) = A"
 theorem sparse_simulation_circuit:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and s: "1 ~$\le$~ s"
@@ -1439,14 +1439,14 @@ arithmetic inside the oracles is not formalised.
 \begin{lstlisting}[float=tp,caption={Suzuki's formulas and their error},label={lst:suzuki}]
 fun suzuki :: "nat ~$\Rightarrow$~ complex Matrix.mat list ~$\Rightarrow$~ (real ~$\times$~ complex Matrix.mat) list" where
   "suzuki 0 Hs = strang Hs"
-| "suzuki (Suc k) Hs = concat (map (~$\lambda$~c. map (~$\lambda$~x. (c * fst x, snd x)) (suzuki k Hs)) (suz_rs (2 * k + 3)))"
+| "suzuki (Suc k) Hs = concat (map (~$\lambda$~c. map (~$\lambda$~x. (c * fst x, snd x)) (suzuki k Hs)) (suzuki_weights (2 * k + 3)))"
 theorem suzuki_error:
   fixes k :: nat and t :: real
   assumes Hs: "~$\forall$~H ~$\in$~ set Hs. herm_bounded n L H" and L: "0 ~$\le$~ L" and r: "0 < r"
   defines "F ~$\equiv$~ suzuki k Hs" and "q ~$\equiv$~ 2 * k + 3"
-  shows "op_close n (real r * ((2 * real (length F) + 1) * (lam L F * ~$|$~t~$|$~ / real r) ^ q
-             * exp (lam L F * ~$|$~t~$|$~ / real r) / fact q))
-           (sprod n (t / real r) F ^~$_{m}$~ r) (evolution (hsum n Hs) t)"
+  shows "op_close n (real r * ((2 * real (length F) + 1) * (total_weight L F * ~$|$~t~$|$~ / real r) ^ q
+             * exp (total_weight L F * ~$|$~t~$|$~ / real r) / fact q))
+           (formula_product n (t / real r) F ^~$_{m}$~ r) (evolution (hamiltonian_sum n Hs) t)"
 \end{lstlisting}
 \section{What the Formalisation Found}\label{sec:errata}
 

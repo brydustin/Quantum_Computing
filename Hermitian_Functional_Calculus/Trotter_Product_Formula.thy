@@ -11,6 +11,9 @@ calculus; the errors add along products and powers of unitaries.\<close>
 
 subsection \<open>Scalar bounds\<close>
 
+text \<open>Taylor remainders of first order:
+\[ |\sin x-x|\le\tfrac{x^2}{2},\qquad|\cos x-1|\le\tfrac{x^2}{2},\qquad|e^{ix}-1-ix|\le x^2,\qquad|e^{ix}-1|\le|x|. \]\<close>
+
 lemma sin_minus_x_bound: "\<bar>sin (x::real) - x\<bar> \<le> x\<^sup>2 / 2"
 proof (cases "\<bar>x\<bar> \<le> 3")
   case True
@@ -74,6 +77,9 @@ proof -
   thus ?thesis using vnorm_add_le[of a "(-1) \<cdot>\<^sub>v b"] assms cpx_vec_length_smult[of "-1" b] by simp
 qed
 
+text \<open>If $\norm{Av}\le L\norm v$ for all $v$, every eigenvalue satisfies $|\lambda|\le L$; and if $|g|\le c$ on
+the spectrum, $\norm{g(A)v}\le c\norm v$.\<close>
+
 lemma herm_spectrum_bound:
   assumes A: "A \<in> carrier_mat n n" and b: "\<And>v. dim_vec v = n \<Longrightarrow> \<parallel>A *\<^sub>v v\<parallel> \<le> L * \<parallel>v\<parallel>"
       and l: "l \<in> herm_spectrum A"
@@ -94,21 +100,21 @@ proof -
   obtain U Dl where sd: "spectral_decomp A U Dl" using spectral_decomp_exists[OF A] by blast
   note d = spectral_decompD[OF A(1) sd]
   have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF d(1)])
-  have gD: "diag_cmat (map g Dl) \<in> carrier_mat n n" using diag_cmat_carrier[of "map g Dl"] d(3) by simp
+  have gD: "diag_matrix (map g Dl) \<in> carrier_mat n n" using diag_matrix_carrier[of "map g Dl"] d(3) by simp
   define w where "w = U\<^sup>\<dagger> *\<^sub>v v"
   have w: "dim_vec w = n" using carrier_matD[OF d(1)] by (simp add: w_def)
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF v])
   have wc: "w \<in> carrier_vec n" by (rule carrier_vecI[OF w])
-  have "mat_fun g A *\<^sub>v v = (U * diag_cmat (map g Dl)) *\<^sub>v w"
+  have "mat_fun g A *\<^sub>v v = (U * diag_matrix (map g Dl)) *\<^sub>v w"
     unfolding mat_fun_decomp[OF A sd] w_def by (rule assoc_mult_mat_vec[OF mult_carrier_mat[OF d(1) gD] Ud vc])
-  also have "\<dots> = U *\<^sub>v (diag_cmat (map g Dl) *\<^sub>v w)" by (rule assoc_mult_mat_vec[OF d(1) gD wc])
-  finally have "\<parallel>mat_fun g A *\<^sub>v v\<parallel> = \<parallel>diag_cmat (map g Dl) *\<^sub>v w\<parallel>"
-    using unitary_vnorm[OF d(1,2), of "diag_cmat (map g Dl) *\<^sub>v w"] gD d(3) by simp
+  also have "\<dots> = U *\<^sub>v (diag_matrix (map g Dl) *\<^sub>v w)" by (rule assoc_mult_mat_vec[OF d(1) gD wc])
+  finally have "\<parallel>mat_fun g A *\<^sub>v v\<parallel> = \<parallel>diag_matrix (map g Dl) *\<^sub>v w\<parallel>"
+    using unitary_vnorm[OF d(1,2), of "diag_matrix (map g Dl) *\<^sub>v w"] gD d(3) by simp
   also have "\<dots> \<le> c * \<parallel>w\<parallel>"
   proof -
-    have dv: "diag_cmat (map g Dl) *\<^sub>v w = Matrix.vec n (\<lambda>i. g (Dl ! i) * w $ i)"
-      using diag_cmat_mult_vec[of w "map g Dl"] w d(3) by (auto intro!: eq_vecI)
-    have "\<parallel>diag_cmat (map g Dl) *\<^sub>v w\<parallel>\<^sup>2 = (\<Sum>i<n. (cmod (g (Dl ! i) * w $ i))\<^sup>2)"
+    have dv: "diag_matrix (map g Dl) *\<^sub>v w = Matrix.vec n (\<lambda>i. g (Dl ! i) * w $ i)"
+      using diag_matrix_mult_vec[of w "map g Dl"] w d(3) by (auto intro!: eq_vecI)
+    have "\<parallel>diag_matrix (map g Dl) *\<^sub>v w\<parallel>\<^sup>2 = (\<Sum>i<n. (cmod (g (Dl ! i) * w $ i))\<^sup>2)"
       unfolding dv vnorm_sq by simp
     also have "\<dots> \<le> (\<Sum>i<n. c\<^sup>2 * (cmod (w $ i))\<^sup>2)"
     proof (rule sum_mono)
@@ -125,13 +131,15 @@ proof -
   finally show ?thesis .
 qed
 
+text \<open>The functions $e^{idx}-1-idx$ and $e^{idx}-1$ applied to $A$ give $e^{idA}-I-idA$ and $e^{idA}-I$.\<close>
+
 lemma mat_fun_evolution_rem:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
   shows "mat_fun (\<lambda>x. cis (d * x) - 1 - \<i> * complex_of_real (d * x)) A =
     evolution A d - 1\<^sub>m n - (\<i> * complex_of_real d) \<cdot>\<^sub>m A" (is "_ = ?B")
 proof (rule mat_fun_eqI[OF A])
   show "?B \<in> carrier_mat n n" by (intro minus_carrier_mat smult_carrier_mat) (rule A(1))
-  show "fun_on_eigen A (\<lambda>x. cis (d * x) - 1 - \<i> * complex_of_real (d * x)) ?B" unfolding fun_on_eigen_def
+  show "acts_on_eigenvectors A (\<lambda>x. cis (d * x) - 1 - \<i> * complex_of_real (d * x)) ?B" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -157,7 +165,7 @@ lemma mat_fun_evolution_one:
   shows "mat_fun (\<lambda>x. cis (d * x) - 1) A = evolution A d - 1\<^sub>m n" (is "_ = ?B")
 proof (rule mat_fun_eqI[OF A])
   show "?B \<in> carrier_mat n n" by (rule minus_carrier_mat) simp
-  show "fun_on_eigen A (\<lambda>x. cis (d * x) - 1) ?B" unfolding fun_on_eigen_def
+  show "acts_on_eigenvectors A (\<lambda>x. cis (d * x) - 1) ?B" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -179,6 +187,9 @@ definition op_close :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat 
 
 lemma op_closeD: "op_close n \<eta> U V \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>U *\<^sub>v v - V *\<^sub>v v\<parallel> \<le> \<eta> * \<parallel>v\<parallel>"
   by (simp add: op_close_def)
+
+text \<open>Closeness is reflexive and symmetric, and passes to adjoints of unitaries, since
+$U^*-V^*=U^*(V-U)V^*$ and unitaries preserve norms.\<close>
 
 lemma op_close_refl:
   assumes e: "0 \<le> \<eta>" and U: "U \<in> carrier_mat n n"
@@ -239,6 +250,9 @@ context
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
       and Ab: "\<And>v. dim_vec v = n \<Longrightarrow> \<parallel>A *\<^sub>v v\<parallel> \<le> L * \<parallel>v\<parallel>"
 begin
+
+text \<open>For $\norm{Av}\le L\norm v$, the bounds above applied on the spectrum give
+\[ \norm{e^{idA}v-v-id\,Av}\le(dL)^2\norm v,\qquad \norm{e^{idA}v-v}\le|d|L\norm v. \]\<close>
 
 lemma evolution_first_order:
   assumes v: "dim_vec v = n"
@@ -308,15 +322,17 @@ end
 
 subsection \<open>Products of evolutions\<close>
 
-text \<open>\<open>tprod n d Hs\<close> is $e^{idH_1}\cdots e^{idH_m}$ and \<open>hsum n Hs\<close> is $H_1+\dots+H_m$.\<close>
+text \<open>\<open>evolution_product n d Hs\<close> is $e^{idH_1}\cdots e^{idH_m}$ and \<open>hamiltonian_sum n Hs\<close> is $H_1+\dots+H_m$.\<close>
 
-fun tprod :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
-  "tprod n d [] = 1\<^sub>m n"
-| "tprod n d (H # Hs) = evolution H d * tprod n d Hs"
+fun evolution_product :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
+  "evolution_product n d [] = 1\<^sub>m n"
+| "evolution_product n d (H # Hs) = evolution H d * evolution_product n d Hs"
 
-fun hsum :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
-  "hsum n [] = 0\<^sub>m n n"
-| "hsum n (H # Hs) = H + hsum n Hs"
+fun hamiltonian_sum :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
+  "hamiltonian_sum n [] = 0\<^sub>m n n"
+| "hamiltonian_sum n (H # Hs) = H + hamiltonian_sum n Hs"
+
+text \<open>\<open>herm_bounded n L H\<close>: $H$ is a Hermitian $n\times n$ matrix with $\norm{Hv}\le L\norm v$.\<close>
 
 definition herm_bounded :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "herm_bounded n L H \<longleftrightarrow> H \<in> carrier_mat n n \<and> hermitian H \<and>
@@ -330,110 +346,117 @@ lemma herm_boundedD:
 lemma herm_bounded_herm: "herm_bounded n L H \<Longrightarrow> H \<in> carrier_mat n n \<and> hermitian H"
   by (simp add: herm_bounded_def)
 
-lemma tprod_carrier:
-  "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n \<and> hermitian H) \<Longrightarrow> tprod n d Hs \<in> carrier_mat n n"
+lemma evolution_product_carrier:
+  "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n \<and> hermitian H) \<Longrightarrow> evolution_product n d Hs \<in> carrier_mat n n"
 proof (induction Hs)
   case (Cons H Hs)
   have h: "H \<in> carrier_mat n n" "hermitian H" using Cons.prems by auto
   show ?case using mult_carrier_mat[OF evolution_carrier[OF h] Cons.IH] Cons.prems by simp
 qed simp
 
-lemma hsum_carrier: "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n) \<Longrightarrow> hsum n Hs \<in> carrier_mat n n"
+lemma hamiltonian_sum_carrier: "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n) \<Longrightarrow> hamiltonian_sum n Hs \<in> carrier_mat n n"
   by (induction Hs) auto
 
 context
   fixes n :: nat and L :: real
 begin
 
-lemma tprod_unitary:
-  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> unitary (tprod n d Hs)"
+text \<open>For Hamiltonians bounded by $L$: the product of their evolutions is unitary, their sum is Hermitian
+with $\norm{\sum_jH_jv}\le mL\norm v$, and
+\[ \norm{e^{idH_1}\cdots e^{idH_m}v-v}\le m\,|d|L\,\norm v. \]\<close>
+
+lemma evolution_product_unitary:
+  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> unitary (evolution_product n d Hs)"
 proof (induction Hs)
   case Nil
   show ?case by (simp add: id_is_unitary)
 next
   case (Cons H Hs)
   note h = herm_boundedD[OF Cons.prems[of H, OF list.set_intros(1)]]
-  have "unitary (evolution H d * tprod n d Hs)"
-    by (rule unitary_mult[OF evolution_unitary[OF h(1,2)] Cons.IH evolution_carrier[OF h(1,2)] tprod_carrier])
+  have "unitary (evolution H d * evolution_product n d Hs)"
+    by (rule unitary_mult[OF evolution_unitary[OF h(1,2)] Cons.IH evolution_carrier[OF h(1,2)] evolution_product_carrier])
       (use Cons.prems in \<open>simp_all add: herm_bounded_def\<close>)
   thus ?case by simp
 qed
 
-lemma hsum_hermitian:
-  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> hermitian (hsum n Hs)"
+lemma hamiltonian_sum_hermitian:
+  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> hermitian (hamiltonian_sum n Hs)"
 proof (induction Hs)
   case Nil
   show ?case unfolding hermitian_def by (rule eq_matI) (simp_all add: adjoint_eval)
 next
   case (Cons H Hs)
   note h = herm_boundedD[OF Cons.prems[of H, OF list.set_intros(1)]]
-  have c: "hsum n Hs \<in> carrier_mat n n" by (rule hsum_carrier) (use Cons.prems in \<open>simp add: herm_bounded_def\<close>)
-  have ih: "hermitian (hsum n Hs)" by (rule Cons.IH) (use Cons.prems in simp)
-  have "hermitian (H + hsum n Hs)" using adjoint_add[OF h(1) c] h(2) ih unfolding hermitian_def by simp
+  have c: "hamiltonian_sum n Hs \<in> carrier_mat n n" by (rule hamiltonian_sum_carrier) (use Cons.prems in \<open>simp add: herm_bounded_def\<close>)
+  have ih: "hermitian (hamiltonian_sum n Hs)" by (rule Cons.IH) (use Cons.prems in simp)
+  have "hermitian (H + hamiltonian_sum n Hs)" using adjoint_add[OF h(1) c] h(2) ih unfolding hermitian_def by simp
   thus ?case by simp
 qed
 
-lemma hsum_bound:
+lemma hamiltonian_sum_bound:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> dim_vec v = n \<Longrightarrow>
-   \<parallel>hsum n Hs *\<^sub>v v\<parallel> \<le> real (length Hs) * L * \<parallel>v\<parallel>"
+   \<parallel>hamiltonian_sum n Hs *\<^sub>v v\<parallel> \<le> real (length Hs) * L * \<parallel>v\<parallel>"
 proof (induction Hs)
   case Nil
-  have "hsum n [] *\<^sub>v v = 0\<^sub>v n" using carrier_vecI[OF Nil.prems(2)] Nil.prems(2) by (intro eq_vecI) simp_all
+  have "hamiltonian_sum n [] *\<^sub>v v = 0\<^sub>v n" using carrier_vecI[OF Nil.prems(2)] Nil.prems(2) by (intro eq_vecI) simp_all
   thus ?case by (simp add: cpx_vec_length_def)
 next
   case (Cons H Hs)
   note h = herm_boundedD[OF Cons.prems(1)[of H, OF list.set_intros(1)]]
-  have S: "hsum n Hs \<in> carrier_mat n n" by (rule hsum_carrier) (use Cons.prems in \<open>simp add: herm_bounded_def\<close>)
+  have S: "hamiltonian_sum n Hs \<in> carrier_mat n n" by (rule hamiltonian_sum_carrier) (use Cons.prems in \<open>simp add: herm_bounded_def\<close>)
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF Cons.prems(2)])
-  have "hsum n (H # Hs) *\<^sub>v v = H *\<^sub>v v + hsum n Hs *\<^sub>v v"
+  have "hamiltonian_sum n (H # Hs) *\<^sub>v v = H *\<^sub>v v + hamiltonian_sum n Hs *\<^sub>v v"
     using add_mult_distrib_mat_vec[OF h(1) S vc] by simp
-  hence "\<parallel>hsum n (H # Hs) *\<^sub>v v\<parallel> \<le> \<parallel>H *\<^sub>v v\<parallel> + \<parallel>hsum n Hs *\<^sub>v v\<parallel>"
-    using vnorm_add_le[of "H *\<^sub>v v" "hsum n Hs *\<^sub>v v"] h(1) S by simp
+  hence "\<parallel>hamiltonian_sum n (H # Hs) *\<^sub>v v\<parallel> \<le> \<parallel>H *\<^sub>v v\<parallel> + \<parallel>hamiltonian_sum n Hs *\<^sub>v v\<parallel>"
+    using vnorm_add_le[of "H *\<^sub>v v" "hamiltonian_sum n Hs *\<^sub>v v"] h(1) S by simp
   also have "\<dots> \<le> L * \<parallel>v\<parallel> + real (length Hs) * L * \<parallel>v\<parallel>"
     using h(3)[OF Cons.prems(2)] Cons.IH Cons.prems by (intro add_mono) simp_all
   finally show ?case by (simp add: algebra_simps)
 qed
 
-lemma tprod_norm:
-  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>tprod n d Hs *\<^sub>v v\<parallel> = \<parallel>v\<parallel>"
-  by (rule unitary_vnorm[OF tprod_carrier[OF herm_bounded_herm] tprod_unitary])
+lemma evolution_product_norm:
+  "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> dim_vec v = n \<Longrightarrow> \<parallel>evolution_product n d Hs *\<^sub>v v\<parallel> = \<parallel>v\<parallel>"
+  by (rule unitary_vnorm[OF evolution_product_carrier[OF herm_bounded_herm] evolution_product_unitary])
 
-lemma tprod_step:
+lemma evolution_product_step:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> dim_vec v = n \<Longrightarrow>
-   \<parallel>tprod n d Hs *\<^sub>v v - v\<parallel> \<le> real (length Hs) * (\<bar>d\<bar> * L) * \<parallel>v\<parallel>"
+   \<parallel>evolution_product n d Hs *\<^sub>v v - v\<parallel> \<le> real (length Hs) * (\<bar>d\<bar> * L) * \<parallel>v\<parallel>"
 proof (induction Hs arbitrary: v)
   case Nil
-  have "tprod n d [] *\<^sub>v v - v = 0\<^sub>v n" using carrier_vecI[OF Nil.prems(2)] Nil.prems(2) by (intro eq_vecI) simp_all
+  have "evolution_product n d [] *\<^sub>v v - v = 0\<^sub>v n" using carrier_vecI[OF Nil.prems(2)] Nil.prems(2) by (intro eq_vecI) simp_all
   thus ?case by (simp add: cpx_vec_length_def)
 next
   case (Cons H Hs v)
   note h = herm_boundedD[OF Cons.prems(1)[of H, OF list.set_intros(1)]]
   have hs: "\<And>G. G \<in> set Hs \<Longrightarrow> herm_bounded n L G" using Cons.prems(1) by simp
-  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF herm_bounded_herm[OF hs]])
+  have P: "evolution_product n d Hs \<in> carrier_mat n n" by (rule evolution_product_carrier[OF herm_bounded_herm[OF hs]])
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF Cons.prems(2)])
-  let ?w = "tprod n d Hs *\<^sub>v v"
+  let ?w = "evolution_product n d Hs *\<^sub>v v"
   have w: "dim_vec ?w = n" using P by simp
-  have e: "tprod n d (H # Hs) *\<^sub>v v = evolution H d *\<^sub>v ?w"
+  have e: "evolution_product n d (H # Hs) *\<^sub>v v = evolution H d *\<^sub>v ?w"
     using assoc_mult_mat_vec[OF evolution_carrier[OF h(1,2)] P vc] by simp
   have "\<parallel>evolution H d *\<^sub>v ?w - v\<parallel> \<le> \<parallel>evolution H d *\<^sub>v ?w - ?w\<parallel> + \<parallel>?w - v\<parallel>"
     by (rule vnorm_diff_le[where n = n]) (use w Cons.prems(2) evolution_carrier[OF h(1,2), of d] in simp_all)
   also have "\<dots> \<le> \<bar>d\<bar> * L * \<parallel>?w\<parallel> + real (length Hs) * (\<bar>d\<bar> * L) * \<parallel>v\<parallel>"
     by (rule add_mono[OF evolution_step[OF h(1,2) h(3) w] Cons.IH[OF hs Cons.prems(2)]])
-  also have "\<parallel>?w\<parallel> = \<parallel>v\<parallel>" by (rule tprod_norm[OF hs Cons.prems(2)])
+  also have "\<parallel>?w\<parallel> = \<parallel>v\<parallel>" by (rule evolution_product_norm[OF hs Cons.prems(2)])
   finally show ?case unfolding e by (simp add: algebra_simps)
 qed
 
 end
 
-lemma tprod_first_order:
+text \<open>To first order the product of the evolutions is the evolution of the sum:
+\[ \Bigl\|e^{idH_1}\cdots e^{idH_m}v-v-id\sum_jH_jv\Bigr\|\le m^2(dL)^2\norm v. \]\<close>
+
+lemma evolution_product_first_order:
   fixes n :: nat and L :: real
   shows "(\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H) \<Longrightarrow> dim_vec v = n \<Longrightarrow>
-   \<parallel>tprod n d Hs *\<^sub>v v - v - (\<i> * complex_of_real d) \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)\<parallel>
+   \<parallel>evolution_product n d Hs *\<^sub>v v - v - (\<i> * complex_of_real d) \<cdot>\<^sub>v (hamiltonian_sum n Hs *\<^sub>v v)\<parallel>
      \<le> (d * L)\<^sup>2 * (real (length Hs))\<^sup>2 * \<parallel>v\<parallel>"
 proof (induction Hs arbitrary: v)
   case Nil
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF Nil.prems(2)])
-  have "tprod n d [] *\<^sub>v v - v - (\<i> * complex_of_real d) \<cdot>\<^sub>v (hsum n [] *\<^sub>v v) = 0\<^sub>v n"
+  have "evolution_product n d [] *\<^sub>v v - v - (\<i> * complex_of_real d) \<cdot>\<^sub>v (hamiltonian_sum n [] *\<^sub>v v) = 0\<^sub>v n"
     using vc Nil.prems(2) by (intro eq_vecI) simp_all
   thus ?case by (simp add: cpx_vec_length_def)
 next
@@ -442,25 +465,25 @@ next
   have hs: "\<And>G. G \<in> set Hs \<Longrightarrow> herm_bounded n L G" using Cons.prems(1) by simp
   have v: "dim_vec v = n" by (rule Cons.prems(2))
   have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF v])
-  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF herm_bounded_herm[OF hs]])
-  have S: "hsum n Hs \<in> carrier_mat n n" by (rule hsum_carrier[OF herm_boundedD(1)[OF hs]])
+  have P: "evolution_product n d Hs \<in> carrier_mat n n" by (rule evolution_product_carrier[OF herm_bounded_herm[OF hs]])
+  have S: "hamiltonian_sum n Hs \<in> carrier_mat n n" by (rule hamiltonian_sum_carrier[OF herm_boundedD(1)[OF hs]])
   have E: "evolution H d \<in> carrier_mat n n" by (rule evolution_carrier[OF h(1,2)])
   define c where "c = \<i> * complex_of_real d"
   define k where "k = real (length Hs)"
-  let ?w = "tprod n d Hs *\<^sub>v v"
+  let ?w = "evolution_product n d Hs *\<^sub>v v"
   have w: "dim_vec ?w = n" using P by simp
   have wc: "?w \<in> carrier_vec n" by (rule carrier_vecI[OF w])
-  have e1: "tprod n d (H # Hs) *\<^sub>v v = evolution H d *\<^sub>v ?w"
+  have e1: "evolution_product n d (H # Hs) *\<^sub>v v = evolution H d *\<^sub>v ?w"
     using assoc_mult_mat_vec[OF E P vc] by simp
-  have e2: "hsum n (H # Hs) *\<^sub>v v = H *\<^sub>v v + hsum n Hs *\<^sub>v v"
+  have e2: "hamiltonian_sum n (H # Hs) *\<^sub>v v = H *\<^sub>v v + hamiltonian_sum n Hs *\<^sub>v v"
     using add_mult_distrib_mat_vec[OF h(1) S vc] by simp
   have e3: "H *\<^sub>v (?w - v) = H *\<^sub>v ?w - H *\<^sub>v v" by (rule mult_minus_distrib_mat_vec[OF h(1) wc vc])
-  have split: "evolution H d *\<^sub>v ?w - v - c \<cdot>\<^sub>v (H *\<^sub>v v + hsum n Hs *\<^sub>v v) =
-      (evolution H d *\<^sub>v ?w - ?w - c \<cdot>\<^sub>v (H *\<^sub>v ?w)) + ((?w - v - c \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)) + c \<cdot>\<^sub>v (H *\<^sub>v (?w - v)))"
+  have split: "evolution H d *\<^sub>v ?w - v - c \<cdot>\<^sub>v (H *\<^sub>v v + hamiltonian_sum n Hs *\<^sub>v v) =
+      (evolution H d *\<^sub>v ?w - ?w - c \<cdot>\<^sub>v (H *\<^sub>v ?w)) + ((?w - v - c \<cdot>\<^sub>v (hamiltonian_sum n Hs *\<^sub>v v)) + c \<cdot>\<^sub>v (H *\<^sub>v (?w - v)))"
     unfolding e3 using E h(1) S w v by (intro eq_vecI) (simp_all add: algebra_simps)
   have b1: "\<parallel>evolution H d *\<^sub>v ?w - ?w - c \<cdot>\<^sub>v (H *\<^sub>v ?w)\<parallel> \<le> (d * L)\<^sup>2 * \<parallel>v\<parallel>"
-    using evolution_first_order[OF h(1,2) h(3) w, of d] tprod_norm[OF hs v] unfolding c_def by simp
-  have b2: "\<parallel>?w - v - c \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)\<parallel> \<le> (d * L)\<^sup>2 * k\<^sup>2 * \<parallel>v\<parallel>"
+    using evolution_first_order[OF h(1,2) h(3) w, of d] evolution_product_norm[OF hs v] unfolding c_def by simp
+  have b2: "\<parallel>?w - v - c \<cdot>\<^sub>v (hamiltonian_sum n Hs *\<^sub>v v)\<parallel> \<le> (d * L)\<^sup>2 * k\<^sup>2 * \<parallel>v\<parallel>"
     using Cons.IH[OF hs v] unfolding c_def k_def .
   have b3: "\<parallel>c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))\<parallel> \<le> (d * L)\<^sup>2 * k * \<parallel>v\<parallel>"
   proof -
@@ -479,17 +502,17 @@ next
         thus ?thesis using False vnorm_ge0[of "H *\<^sub>v unit_vec n 0"] by simp
       qed
       show ?thesis
-        using tprod_step[where d = d, OF hs v] L0 unfolding k_def by (intro mult_left_mono) simp_all
+        using evolution_product_step[where d = d, OF hs v] L0 unfolding k_def by (intro mult_left_mono) simp_all
     qed
     also have "\<dots> = (d * L)\<^sup>2 * k * \<parallel>v\<parallel>" by (simp add: power2_eq_square)
     finally show ?thesis .
   qed
   have nn: "0 \<le> (d * L)\<^sup>2 * \<parallel>v\<parallel>" using vnorm_ge0[of v] by simp
-  have "\<parallel>evolution H d *\<^sub>v ?w - v - c \<cdot>\<^sub>v (H *\<^sub>v v + hsum n Hs *\<^sub>v v)\<parallel>
-      \<le> \<parallel>evolution H d *\<^sub>v ?w - ?w - c \<cdot>\<^sub>v (H *\<^sub>v ?w)\<parallel> + (\<parallel>?w - v - c \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)\<parallel> + \<parallel>c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))\<parallel>)"
+  have "\<parallel>evolution H d *\<^sub>v ?w - v - c \<cdot>\<^sub>v (H *\<^sub>v v + hamiltonian_sum n Hs *\<^sub>v v)\<parallel>
+      \<le> \<parallel>evolution H d *\<^sub>v ?w - ?w - c \<cdot>\<^sub>v (H *\<^sub>v ?w)\<parallel> + (\<parallel>?w - v - c \<cdot>\<^sub>v (hamiltonian_sum n Hs *\<^sub>v v)\<parallel> + \<parallel>c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))\<parallel>)"
   proof -
     let ?X = "evolution H d *\<^sub>v ?w - ?w - c \<cdot>\<^sub>v (H *\<^sub>v ?w)"
-    let ?Y = "?w - v - c \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)" and ?Z = "c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))"
+    let ?Y = "?w - v - c \<cdot>\<^sub>v (hamiltonian_sum n Hs *\<^sub>v v)" and ?Z = "c \<cdot>\<^sub>v (H *\<^sub>v (?w - v))"
     have dX: "dim_vec ?X = n" and dY: "dim_vec ?Y = n" and dZ: "dim_vec ?Z = n"
       using E h(1) S w v by simp_all
     have "\<parallel>?X + (?Y + ?Z)\<parallel> \<le> \<parallel>?X\<parallel> + \<parallel>?Y + ?Z\<parallel>" by (rule vnorm_add_le) (use dX dY in simp)
@@ -508,27 +531,27 @@ text \<open>One Trotter step: $\norm{e^{idH_1}\cdots e^{idH_m}-e^{id(H_1+\dots+H
 
 lemma trotter_step:
   assumes Hs: "\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H"
-  shows "op_close n (2 * (d * L)\<^sup>2 * (real (length Hs))\<^sup>2) (tprod n d Hs) (evolution (hsum n Hs) d)"
+  shows "op_close n (2 * (d * L)\<^sup>2 * (real (length Hs))\<^sup>2) (evolution_product n d Hs) (evolution (hamiltonian_sum n Hs) d)"
   unfolding op_close_def
 proof (intro allI impI)
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
-  have P: "tprod n d Hs \<in> carrier_mat n n" by (rule tprod_carrier[OF herm_bounded_herm[OF Hs]])
-  have S: "hsum n Hs \<in> carrier_mat n n" "hermitian (hsum n Hs)"
-    using hsum_carrier[OF herm_boundedD(1)[OF Hs]] hsum_hermitian[OF Hs] by simp_all
-  have E: "evolution (hsum n Hs) d \<in> carrier_mat n n" by (rule evolution_carrier[OF S])
+  have P: "evolution_product n d Hs \<in> carrier_mat n n" by (rule evolution_product_carrier[OF herm_bounded_herm[OF Hs]])
+  have S: "hamiltonian_sum n Hs \<in> carrier_mat n n" "hermitian (hamiltonian_sum n Hs)"
+    using hamiltonian_sum_carrier[OF herm_boundedD(1)[OF Hs]] hamiltonian_sum_hermitian[OF Hs] by simp_all
+  have E: "evolution (hamiltonian_sum n Hs) d \<in> carrier_mat n n" by (rule evolution_carrier[OF S])
   let ?c = "\<i> * complex_of_real d" and ?m = "real (length Hs)"
-  let ?a = "tprod n d Hs *\<^sub>v v - v - ?c \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)"
-  let ?b = "evolution (hsum n Hs) d *\<^sub>v v - v - ?c \<cdot>\<^sub>v (hsum n Hs *\<^sub>v v)"
-  have a: "\<parallel>?a\<parallel> \<le> (d * L)\<^sup>2 * ?m\<^sup>2 * \<parallel>v\<parallel>" by (rule tprod_first_order[OF Hs v])
+  let ?a = "evolution_product n d Hs *\<^sub>v v - v - ?c \<cdot>\<^sub>v (hamiltonian_sum n Hs *\<^sub>v v)"
+  let ?b = "evolution (hamiltonian_sum n Hs) d *\<^sub>v v - v - ?c \<cdot>\<^sub>v (hamiltonian_sum n Hs *\<^sub>v v)"
+  have a: "\<parallel>?a\<parallel> \<le> (d * L)\<^sup>2 * ?m\<^sup>2 * \<parallel>v\<parallel>" by (rule evolution_product_first_order[OF Hs v])
   have b: "\<parallel>?b\<parallel> \<le> (d * (?m * L))\<^sup>2 * \<parallel>v\<parallel>"
-    by (rule evolution_first_order[OF S _ v]) (rule hsum_bound[OF Hs])
-  have "tprod n d Hs *\<^sub>v v - evolution (hsum n Hs) d *\<^sub>v v = ?a - ?b"
+    by (rule evolution_first_order[OF S _ v]) (rule hamiltonian_sum_bound[OF Hs])
+  have "evolution_product n d Hs *\<^sub>v v - evolution (hamiltonian_sum n Hs) d *\<^sub>v v = ?a - ?b"
     using P E S(1) v by (intro eq_vecI) simp_all
-  hence "\<parallel>tprod n d Hs *\<^sub>v v - evolution (hsum n Hs) d *\<^sub>v v\<parallel> \<le> \<parallel>?a\<parallel> + \<parallel>?b\<parallel>"
+  hence "\<parallel>evolution_product n d Hs *\<^sub>v v - evolution (hamiltonian_sum n Hs) d *\<^sub>v v\<parallel> \<le> \<parallel>?a\<parallel> + \<parallel>?b\<parallel>"
     using vnorm_minus_le[of ?a ?b] P E S(1) v by simp
   also have "\<dots> \<le> (d * L)\<^sup>2 * ?m\<^sup>2 * \<parallel>v\<parallel> + (d * (?m * L))\<^sup>2 * \<parallel>v\<parallel>" using a b by linarith
   also have "\<dots> = 2 * (d * L)\<^sup>2 * ?m\<^sup>2 * \<parallel>v\<parallel>" by (simp add: power_mult_distrib algebra_simps)
-  finally show "\<parallel>tprod n d Hs *\<^sub>v v - evolution (hsum n Hs) d *\<^sub>v v\<parallel> \<le> 2 * (d * L)\<^sup>2 * ?m\<^sup>2 * \<parallel>v\<parallel>" .
+  finally show "\<parallel>evolution_product n d Hs *\<^sub>v v - evolution (hamiltonian_sum n Hs) d *\<^sub>v v\<parallel> \<le> 2 * (d * L)\<^sup>2 * ?m\<^sup>2 * \<parallel>v\<parallel>" .
 qed
 
 text \<open>Errors of unitaries add up along powers.\<close>
@@ -577,15 +600,15 @@ $\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le 2(mLt)^2/r$.\
 theorem trotter:
   assumes Hs: "\<And>H. H \<in> set Hs \<Longrightarrow> herm_bounded n L H" and r: "0 < r"
   shows "op_close n (2 * (real (length Hs) * L * t)\<^sup>2 / real r)
-           (tprod n (t / real r) Hs ^\<^sub>m r) (evolution (hsum n Hs) t)"
+           (evolution_product n (t / real r) Hs ^\<^sub>m r) (evolution (hamiltonian_sum n Hs) t)"
 proof -
-  have S: "hsum n Hs \<in> carrier_mat n n" "hermitian (hsum n Hs)"
-    using hsum_carrier[OF herm_boundedD(1)[OF Hs]] hsum_hermitian[OF Hs] by simp_all
+  have S: "hamiltonian_sum n Hs \<in> carrier_mat n n" "hermitian (hamiltonian_sum n Hs)"
+    using hamiltonian_sum_carrier[OF herm_boundedD(1)[OF Hs]] hamiltonian_sum_hermitian[OF Hs] by simp_all
   have c: "op_close n (real r * (2 * (t / real r * L)\<^sup>2 * (real (length Hs))\<^sup>2))
-      (tprod n (t / real r) Hs ^\<^sub>m r) (evolution (hsum n Hs) (t / real r) ^\<^sub>m r)"
-    by (rule op_close_pow[OF tprod_carrier[OF herm_bounded_herm[OF Hs]] tprod_unitary[OF Hs] evolution_carrier[OF S]
+      (evolution_product n (t / real r) Hs ^\<^sub>m r) (evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r)"
+    by (rule op_close_pow[OF evolution_product_carrier[OF herm_bounded_herm[OF Hs]] evolution_product_unitary[OF Hs] evolution_carrier[OF S]
           evolution_unitary[OF S] trotter_step[OF Hs]])
-  have p: "evolution (hsum n Hs) (t / real r) ^\<^sub>m r = evolution (hsum n Hs) t"
+  have p: "evolution (hamiltonian_sum n Hs) (t / real r) ^\<^sub>m r = evolution (hamiltonian_sum n Hs) t"
     using evolution_pow[OF S, of "t / real r" r] r by simp
   have a: "real r * (2 * (t / real r * L)\<^sup>2 * (real (length Hs))\<^sup>2) = 2 * (real (length Hs) * L * t)\<^sup>2 / real r"
     using r by (simp add: power2_eq_square field_simps)

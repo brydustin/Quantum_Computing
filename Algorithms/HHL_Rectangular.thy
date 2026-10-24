@@ -132,7 +132,7 @@ proof (rule mat_fun_eqI[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
   let ?G = "mat_fun (\<lambda>l. g (- l)) Hd"
   have G: "?G \<in> carrier_mat (M + N) (M + N)" by (rule mat_fun_carrier[OF herm_embed_carrier[OF A] herm_embed_hermitian[OF A]])
   show "J * ?G * J \<in> carrier_mat (M + N) (M + N)" using G sign_diag_carrier[of "M + N" "\<lambda>i. M \<le> i"] by simp
-  show "fun_on_eigen Hd g (J * ?G * J)" unfolding fun_on_eigen_def
+  show "acts_on_eigenvectors Hd g (J * ?G * J)" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix u l assume u: "dim_vec u = dim_row Hd" and ev: "Hd *\<^sub>v u = complex_of_real l \<cdot>\<^sub>v u"
     have u': "dim_vec u = M + N" using u herm_embed_carrier[OF A] by simp

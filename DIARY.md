@@ -908,3 +908,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   (Lectures 1–10, typed matrices, Hahn–Banach) and `Quantum_Computing_by_VP_3_10_Lmat` →
   `Quantum_Computing_by_VP_Typed_Matrices` (now with a description); the old "3_10" was a leftover
   of the Days 3–10 theory.  Imports in HHL, Day05, the checks and the AFP metadata follow.
+- **Functional calculus, natural names and informal statements** (2026-10-23): capstone
+  `Functional_Calculus_Overview`.  Renamed: `diag_cmat`→`diag_matrix`, `fun_on_eigen`→
+  `acts_on_eigenvectors`, `unitary_of_unitary`→`unitary_from_complex_unitary`, `tprod`→
+  `evolution_product`, `hsum`→`hamiltonian_sum`, and in the Suzuki theories `sconv`→`cauchy_prod`,
+  `carr`→`seq_carrier`, `sunit`→`seq_one`, `sscale`→`seq_scale`, `texp`→`exp_coeff`, `fcoef`→
+  `prod_coeff`, `low`→`vanishes_below`, `tomat`→`factor_gen`, `suz_u`/`suz_rs`→`suzuki_weight(s)`,
+  `etay`→`exp_taylor`, `peval`→`poly_eval`, `trunc`→`truncate_seq`, `obnd`→`op_bound`, `lam`→
+  `total_weight`, `sprod`→`formula_product` (HHL and the paper follow).  75 informal statements
+  now precede the results, so the document alternates statement and formal result.

@@ -23,7 +23,7 @@ text \<open>
 \texttt{Matrix\_Sums} & finite sums of matrices\\
 \texttt{Trotter\_Product\_Formula} & the Lie--Trotter formula with error bound (\<open>trotter\<close>)\\
 \texttt{Suzuki\_Order} & Suzuki's recursion and its order conditions (\<open>suzuki_order\<close>)\\
-\texttt{Suzuki\_Error} & the error of a product formula (\<open>sprod_approx\<close>, \<open>suzuki_error\<close>)
+\texttt{Suzuki\_Error} & the error of a product formula (\<open>formula_product_approx\<close>, \<open>suzuki_error\<close>)
 \end{tabular}
 \end{center}
 \<close>

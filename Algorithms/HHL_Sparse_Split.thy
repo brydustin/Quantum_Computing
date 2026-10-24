@@ -326,13 +326,13 @@ proof -
   qed
 qed
 
-lemma hsum_index:
+lemma hamiltonian_sum_index:
   "(\<And>H. H \<in> set Hs \<Longrightarrow> H \<in> carrier_mat n n) \<Longrightarrow> i < n \<Longrightarrow> j < n \<Longrightarrow>
-   hsum n Hs $$ (i, j) = (\<Sum>H\<leftarrow>Hs. H $$ (i, j))"
+   hamiltonian_sum n Hs $$ (i, j) = (\<Sum>H\<leftarrow>Hs. H $$ (i, j))"
 proof (induction Hs)
   case (Cons H Hs)
-  have "H \<in> carrier_mat n n" "hsum n Hs \<in> carrier_mat n n"
-    using Cons.prems(1) hsum_carrier[of Hs n] by auto
+  have "H \<in> carrier_mat n n" "hamiltonian_sum n Hs \<in> carrier_mat n n"
+    using Cons.prems(1) hamiltonian_sum_carrier[of Hs n] by auto
   thus ?case using Cons by simp
 qed simp
 
@@ -343,20 +343,20 @@ lemma sparse_parts_sum:
   assumes A: "A \<in> carrier_mat n n"
       and sym: "\<And>x y. x < n \<Longrightarrow> y < n \<Longrightarrow> A $$ (x, y) = 0 \<longleftrightarrow> A $$ (y, x) = 0"
       and cov: "edge_cover n K p (edges n A)"
-  shows "hsum n (sparse_parts n A K p) = A"
+  shows "hamiltonian_sum n (sparse_parts n A K p) = A"
 proof (rule eq_matI)
   have pinv: "\<And>c. c < K \<Longrightarrow> invol n (p c)"
     and pone: "\<And>x y. (x, y) \<in> edges n A \<Longrightarrow> card {c. c < K \<and> p c x = y} = 1"
     using cov unfolding edge_cover_def by blast+
   have carr: "\<And>H. H \<in> set (sparse_parts n A K p) \<Longrightarrow> H \<in> carrier_mat n n"
     by (auto simp: sparse_parts_def colour_part_def diag_part_def)
-  have S: "hsum n (sparse_parts n A K p) \<in> carrier_mat n n" by (rule hsum_carrier[OF carr])
-  show "dim_row (hsum n (sparse_parts n A K p)) = dim_row A" "dim_col (hsum n (sparse_parts n A K p)) = dim_col A"
+  have S: "hamiltonian_sum n (sparse_parts n A K p) \<in> carrier_mat n n" by (rule hamiltonian_sum_carrier[OF carr])
+  show "dim_row (hamiltonian_sum n (sparse_parts n A K p)) = dim_row A" "dim_col (hamiltonian_sum n (sparse_parts n A K p)) = dim_col A"
     using S A by simp_all
   fix i j assume i: "i < dim_row A" and j: "j < dim_col A"
   hence i: "i < n" and j: "j < n" using A by auto
-  have "hsum n (sparse_parts n A K p) $$ (i, j) = (\<Sum>H\<leftarrow>sparse_parts n A K p. H $$ (i, j))"
-    by (rule hsum_index) (use carr i j in auto)
+  have "hamiltonian_sum n (sparse_parts n A K p) $$ (i, j) = (\<Sum>H\<leftarrow>sparse_parts n A K p. H $$ (i, j))"
+    by (rule hamiltonian_sum_index) (use carr i j in auto)
   also have "\<dots> = diag_part n A $$ (i, j) + (\<Sum>c\<leftarrow>[0..<K]. colour_part n A (p c) $$ (i, j))"
     by (simp add: sparse_parts_def o_def)
   also have "(\<Sum>c\<leftarrow>[0..<K]. colour_part n A (p c) $$ (i, j)) = (\<Sum>c\<in>{0..<K}. colour_part n A (p c) $$ (i, j))"
@@ -366,9 +366,9 @@ proof (rule eq_matI)
   also have "\<dots> = (\<Sum>c\<in>{c \<in> {0..<K}. p c i = j \<and> i \<noteq> j}. A $$ (i, j))"
     by (rule sum.inter_filter[symmetric]) simp
   also have "\<dots> = of_nat (card {c \<in> {0..<K}. p c i = j \<and> i \<noteq> j}) * A $$ (i, j)" by simp
-  finally have e: "hsum n (sparse_parts n A K p) $$ (i, j) =
+  finally have e: "hamiltonian_sum n (sparse_parts n A K p) $$ (i, j) =
       diag_part n A $$ (i, j) + of_nat (card {c \<in> {0..<K}. p c i = j \<and> i \<noteq> j}) * A $$ (i, j)" .
-  show "hsum n (sparse_parts n A K p) $$ (i, j) = A $$ (i, j)"
+  show "hamiltonian_sum n (sparse_parts n A K p) $$ (i, j) = A $$ (i, j)"
   proof (cases "i = j")
     case True
     thus ?thesis unfolding e using i by (simp add: diag_part_def one_sparse_index)
@@ -413,7 +413,7 @@ text \<open>Every $s$-sparse Hermitian matrix is the sum of its diagonal and $2s
 theorem sparse_split:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and sp: "sparse n s A" and s: "1 \<le> s"
   shows "\<exists>p. edge_cover n (2 * s - 1) p (edges n A) \<and>
-           length (sparse_parts n A (2 * s - 1) p) = 2 * s \<and> hsum n (sparse_parts n A (2 * s - 1) p) = A"
+           length (sparse_parts n A (2 * s - 1) p) = 2 * s \<and> hamiltonian_sum n (sparse_parts n A (2 * s - 1) p) = A"
 proof -
   obtain p where p: "edge_cover n (2 * s - 1) p (edges n A)"
     using greedy_cover[OF hermitian_zero_sym[OF A] sp _ subset_refl] s by force
@@ -429,14 +429,14 @@ theorem sparse_trotter:
       and L: "0 \<le> L" and Lb: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> cmod (A $$ (i, j)) \<le> L"
       and cov: "edge_cover n (2 * s - 1) p (edges n A)" and r: "0 < r"
   shows "op_close n (8 * (real s * L * t)\<^sup>2 / real r)
-           (tprod n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r) (evolution A t)"
+           (evolution_product n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r) (evolution A t)"
 proof -
   have pinv: "\<And>c. c < 2 * s - 1 \<Longrightarrow> invol n (p c)" using cov unfolding edge_cover_def by blast
   have len: "length (sparse_parts n A (2 * s - 1) p) = 2 * s" using s by (simp add: sparse_parts_def)
-  have sum: "hsum n (sparse_parts n A (2 * s - 1) p) = A"
+  have sum: "hamiltonian_sum n (sparse_parts n A (2 * s - 1) p) = A"
     by (rule sparse_parts_sum[OF A(1) hermitian_zero_sym[OF A] cov])
   have c: "op_close n (2 * (real (length (sparse_parts n A (2 * s - 1) p)) * L * t)\<^sup>2 / real r)
-      (tprod n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r) (evolution (hsum n (sparse_parts n A (2 * s - 1) p)) t)"
+      (evolution_product n (t / real r) (sparse_parts n A (2 * s - 1) p) ^\<^sub>m r) (evolution (hamiltonian_sum n (sparse_parts n A (2 * s - 1) p)) t)"
     by (rule trotter[OF sparse_parts_bounded[OF A pinv L Lb] r])
   have e: "2 * (real (2 * s) * L * t)\<^sup>2 / real r = 8 * (real s * L * t)\<^sup>2 / real r"
     by (simp add: power2_eq_square algebra_simps)

@@ -2,7 +2,11 @@ theory Matrix_Sums
   imports Hermitian_Functional_Calculus QHLProver.Matrix_Limit
 begin
 
-text \<open>Entries and scalar sums of QHLProver's finite matrix sums.\<close>
+section \<open>Finite sums of matrices\<close>
+
+text \<open>For QHLProver's sums $\sum_{k<n}F_k$ of $K\times K$ matrices: entries are sums of entries, and a sum
+of multiples of one matrix is a multiple of it,
+\[ \Bigl(\sum_kF_k\Bigr)_{ij}=\sum_k(F_k)_{ij},\qquad \sum_kf_k\,B=\Bigl(\sum_kf_k\Bigr)B. \]\<close>
 
 lemma matrix_sum_index:
   assumes f: "\<And>k. k < n \<Longrightarrow> f k \<in> carrier_mat K K" and ij: "i < K" "j < K"

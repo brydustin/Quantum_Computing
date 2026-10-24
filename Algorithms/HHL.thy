@@ -504,8 +504,8 @@ lemma herm_inv_scale:
 proof (rule mat_fun_eqI[OF A])
   have Hi: "herm_inv A \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
   show "complex_of_real C \<cdot>\<^sub>m herm_inv A \<in> carrier_mat n n" using Hi by simp
-  show "fun_on_eigen A (\<lambda>x. complex_of_real (C / x)) (complex_of_real C \<cdot>\<^sub>m herm_inv A)"
-    unfolding fun_on_eigen_def
+  show "acts_on_eigenvectors A (\<lambda>x. complex_of_real (C / x)) (complex_of_real C \<cdot>\<^sub>m herm_inv A)"
+    unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -685,9 +685,9 @@ lemma mat_fun_psd:
 proof -
   obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
   note d = spectral_decompD[OF A(1) sd]
-  have "mat_fun (\<lambda>x. complex_of_real (f x)) A = U * diag_cmat (map (\<lambda>x. complex_of_real (f x)) D) * (U\<^sup>\<dagger>)"
+  have "mat_fun (\<lambda>x. complex_of_real (f x)) A = U * diag_matrix (map (\<lambda>x. complex_of_real (f x)) D) * (U\<^sup>\<dagger>)"
     by (rule mat_fun_decomp[OF A sd])
-  also have "diag_cmat (map (\<lambda>x. complex_of_real (f x)) D) = diag_mat_of_real (map f D)"
+  also have "diag_matrix (map (\<lambda>x. complex_of_real (f x)) D) = diag_mat_of_real (map f D)"
     by (simp add: diag_mat_of_real_cmat o_def)
   finally have e: "mat_fun (\<lambda>x. complex_of_real (f x)) A = U * diag_mat_of_real (map f D) * (U\<^sup>\<dagger>)" .
   show ?thesis unfolding e
@@ -699,7 +699,7 @@ lemma mat_fun_add:
   shows "mat_fun (\<lambda>x. g x + h x) A = mat_fun g A + mat_fun h A"
 proof (rule mat_fun_eqI[OF A])
   show "mat_fun g A + mat_fun h A \<in> carrier_mat n n" using A by simp
-  show "fun_on_eigen A (\<lambda>x. g x + h x) (mat_fun g A + mat_fun h A)" unfolding fun_on_eigen_def
+  show "acts_on_eigenvectors A (\<lambda>x. g x + h x) (mat_fun g A + mat_fun h A)" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp

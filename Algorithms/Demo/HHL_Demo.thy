@@ -43,7 +43,7 @@ definition omega8 :: complex where
   "omega8 = Complex (sqrt 2 / 2) (sqrt 2 / 2)"
 
 definition demo_E :: "complex Matrix.mat" where
-  "demo_E = Hadamard * diag_cmat [omega8 ^ 3, omega8] * (Hadamard\<^sup>\<dagger>)"
+  "demo_E = Hadamard * diag_matrix [omega8 ^ 3, omega8] * (Hadamard\<^sup>\<dagger>)"
 
 definition demo_F :: "complex Matrix.mat" where
   "demo_F = Matrix.mat 8 8 (\<lambda>(j, k). omega8 ^ (j * k) / complex_of_real (sqrt 8))"
@@ -94,10 +94,10 @@ lemma sqrt2_sq: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2"
 lemma demo_decomp: "spectral_decomp demo_A Hadamard [3, 1]"
 proof -
   have HA: "Hadamard * demo_A \<in> carrier_mat 2 2" by (rule mult_carrier_mat[OF Hadamard_carrier demo_A_carrier])
-  have "Hadamard\<^sup>\<dagger> * demo_A * Hadamard = diag_cmat (map complex_of_real [3, 1])"
+  have "Hadamard\<^sup>\<dagger> * demo_A * Hadamard = diag_matrix (map complex_of_real [3, 1])"
     unfolding Hadamard_dagger
     by (rule eq_matI) (auto simp: mult2_index[OF HA Hadamard_carrier] mult2_index[OF Hadamard_carrier demo_A_carrier]
-        Hadamard_index demo_A_index diag_cmat_def mat_diag_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
+        Hadamard_index demo_A_index diag_matrix_def mat_diag_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
   moreover have "Quantum.unitary Hadamard" using H_is_gate unfolding Hadamard_def gate_def by simp
   ultimately show ?thesis unfolding spectral_decomp_def by simp
 qed
@@ -107,7 +107,7 @@ lemma omega8_cis: "omega8 = cis (pi / 4)"
 
 lemma demo_evolution: "evolution demo_A (pi / 4) = demo_E"
 proof -
-  have "evolution demo_A (pi / 4) = Hadamard * diag_cmat (map (\<lambda>x. cis (pi / 4 * x)) [3, 1]) * (Hadamard\<^sup>\<dagger>)"
+  have "evolution demo_A (pi / 4) = Hadamard * diag_matrix (map (\<lambda>x. cis (pi / 4 * x)) [3, 1]) * (Hadamard\<^sup>\<dagger>)"
     unfolding evolution_def by (rule mat_fun_decomp[OF demo_A_carrier demo_A_hermitian demo_decomp])
   also have "map (\<lambda>x. cis (pi / 4 * x)) [3, 1] = [omega8 ^ 3, omega8]"
     by (simp add: omega8_cis DeMoivre mult.commute)
@@ -193,14 +193,14 @@ proof -
 qed
 
 lemma had_diag_e0:
-  "(Hadamard * diag_cmat [a, b] * (Hadamard\<^sup>\<dagger>)) *\<^sub>v unit_vec 2 0 = vec_of_list [(a + b) / 2, (a - b) / 2]"
+  "(Hadamard * diag_matrix [a, b] * (Hadamard\<^sup>\<dagger>)) *\<^sub>v unit_vec 2 0 = vec_of_list [(a + b) / 2, (a - b) / 2]"
 proof -
-  have D: "diag_cmat [a, b] \<in> carrier_mat 2 2" using diag_cmat_carrier[of "[a, b]"] by (simp add: numeral_2_eq_2)
-  have HD: "Hadamard * diag_cmat [a, b] \<in> carrier_mat 2 2" by (rule mult_carrier_mat[OF Hadamard_carrier D])
+  have D: "diag_matrix [a, b] \<in> carrier_mat 2 2" using diag_matrix_carrier[of "[a, b]"] by (simp add: numeral_2_eq_2)
+  have HD: "Hadamard * diag_matrix [a, b] \<in> carrier_mat 2 2" by (rule mult_carrier_mat[OF Hadamard_carrier D])
   show ?thesis
     unfolding Hadamard_dagger
     by (rule eq_vecI) (auto simp: mult2_index[OF HD Hadamard_carrier] mult2_index[OF Hadamard_carrier D] Hadamard_index
-        diag_cmat_def mat_diag_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
+        diag_matrix_def mat_diag_def numeral_2_eq_2 less_Suc_eq field_simps sqrt2_sq)
 qed
 
 lemma sqrt_eight_ninths: "sqrt (1 - (1 / 3)\<^sup>2) = 2 * sqrt 2 / 3"

@@ -27,8 +27,8 @@ lemma hermitian_notes: "Day04_Hermitian_Matrices.hermitian A \<longleftrightarro
 
 lemmas hermitian_index_cnj = Day04_Hermitian_Matrices.hermitian_index[unfolded hermitian_notes]
 
-lemma diag_mat_of_real_cmat: "diag_mat_of_real D = diag_cmat (map complex_of_real D)"
-  by (rule eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def diag_cmat_def)
+lemma diag_mat_of_real_cmat: "diag_mat_of_real D = diag_matrix (map complex_of_real D)"
+  by (rule eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def diag_matrix_def)
 
 subsection \<open>Sums of roots of unity\<close>
 
