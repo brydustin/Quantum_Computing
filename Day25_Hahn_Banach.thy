@@ -473,7 +473,7 @@ proof -
   have nv: "normed_vectorspace UNIV hs_norm_lmat"
     by (rule normed_vectorspace_UNIV_lmat)
 
-  text \<open>Interpret HOL/Hahn_Banach's
+  text \<open>Interpret HOL/Hahn\_Banach's
 \<open>normed_vectorspace_with_fn_norm\<close> locale on our setting. Inside
 the interpretation we get \<open>fn_norm_le_cong\<close> (\<open>\<bar>F x\<bar> \<le>
 \<parallel>F\<parallel> \<cdot> \<parallel>x\<parallel>\<close>) and \<open>fn_norm_leastB\<close>
@@ -518,7 +518,7 @@ the interpretation we get \<open>fn_norm_le_cong\<close> (\<open>\<bar>F x\<bar>
   let ?B_re = "{0::real} \<union>
                 {\<bar>re_part_lmat g x\<bar> / hs_norm_lmat x | x. x \<noteq> 0 \<and> x \<in> V}"
 
-  text \<open>Bound the subspace-side fn_norm by \<open>C\<close>.\<close>
+  text \<open>Bound the subspace-side \<open>fn_norm\<close> by \<open>C\<close>.\<close>
   have re_fn_le_C: "\<Squnion>(?B_re) \<le> C"
   proof (rule nvfn_V.fn_norm_leastB[OF re_cont])
     fix b assume "b \<in> {0} \<union>
