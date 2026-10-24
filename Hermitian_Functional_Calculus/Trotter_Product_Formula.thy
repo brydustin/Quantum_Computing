@@ -139,7 +139,7 @@ lemma mat_fun_evolution_rem:
     evolution A d - 1\<^sub>m n - (\<i> * complex_of_real d) \<cdot>\<^sub>m A" (is "_ = ?B")
 proof (rule mat_fun_eqI[OF A])
   show "?B \<in> carrier_mat n n" by (intro minus_carrier_mat smult_carrier_mat) (rule A(1))
-  show "acts_on_eigenvectors A (\<lambda>x. cis (d * x) - 1 - \<i> * complex_of_real (d * x)) ?B" unfolding acts_on_eigenvectors_def
+  show "?B acts_as (\<lambda>x. cis (d * x) - 1 - \<i> * complex_of_real (d * x)) on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -165,7 +165,7 @@ lemma mat_fun_evolution_one:
   shows "mat_fun (\<lambda>x. cis (d * x) - 1) A = evolution A d - 1\<^sub>m n" (is "_ = ?B")
 proof (rule mat_fun_eqI[OF A])
   show "?B \<in> carrier_mat n n" by (rule minus_carrier_mat) simp
-  show "acts_on_eigenvectors A (\<lambda>x. cis (d * x) - 1) ?B" unfolding acts_on_eigenvectors_def
+  show "?B acts_as (\<lambda>x. cis (d * x) - 1) on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -173,7 +173,7 @@ proof (rule mat_fun_eqI[OF A])
     have e: "evolution A d *\<^sub>v v = cis (d * l) \<cdot>\<^sub>v v" by (rule evolution_eigen[OF A vn ev])
     have "?B *\<^sub>v v = evolution A d *\<^sub>v v - 1\<^sub>m n *\<^sub>v v"
       by (rule minus_mult_distrib_mat_vec[OF evolution_carrier[OF A] one_carrier_mat vc])
-    also have "\<dots> = (cis (d * l) - 1) \<cdot>\<^sub>v v" using e vc by (intro eq_vecI) (simp_all add: algebra_simps)
+    also have "\<dots> = (cis (d * l) - 1) \<cdot>\<^sub>v v" using e vc by (intro eq_vecI, simp_all add: algebra_simps)
     finally show "?B *\<^sub>v v = (cis (d * l) - 1) \<cdot>\<^sub>v v" .
   qed
 qed

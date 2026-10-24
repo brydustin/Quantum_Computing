@@ -504,7 +504,7 @@ lemma herm_inv_scale:
 proof (rule mat_fun_eqI[OF A])
   have Hi: "herm_inv A \<in> carrier_mat n n" using A unfolding herm_inv_def by simp
   show "complex_of_real C \<cdot>\<^sub>m herm_inv A \<in> carrier_mat n n" using Hi by simp
-  show "acts_on_eigenvectors A (\<lambda>x. complex_of_real (C / x)) (complex_of_real C \<cdot>\<^sub>m herm_inv A)"
+  show "complex_of_real C \<cdot>\<^sub>m herm_inv A acts_as (\<lambda>x. complex_of_real (C / x)) on_eigenvectors_of A"
     unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"

@@ -114,7 +114,7 @@ proof -
   have mf: "mat_fun ?g H = ?B"
   proof (rule mat_fun_eqI[OF Hc])
     show "?B \<in> carrier_mat n n" by (rule minus_carrier_mat[OF exp_taylor_carrier[OF Hc(1)]])
-    show "acts_on_eigenvectors H ?g ?B" unfolding acts_on_eigenvectors_def
+    show "?B acts_as ?g on_eigenvectors_of H" unfolding acts_on_eigenvectors_def
     proof (intro allI impI)
       fix v l assume v: "dim_vec v = dim_row H" and ev: "H *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
       have vn: "dim_vec v = n" using v Hc(1) by simp

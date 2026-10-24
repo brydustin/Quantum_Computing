@@ -319,15 +319,23 @@ qed
 
 subsection \<open>The definition\<close>
 
-text \<open>$B$ acts as $g$ on the eigenvectors of $A$ if $Av=\lambda v$ implies $Bv=g(\lambda)\,v$.  The matrix
+text \<open>$B$ acts as $g$ on the eigenvectors of $A$, written \<open>B acts_as g on_eigenvectors_of A\<close>, if
+$Av=\lambda v$ implies $Bv=g(\lambda)\,v$.  The matrix
 $g(A)$ is the $n\times n$ matrix with this property; it exists and is unique (below).\<close>
 
 definition acts_on_eigenvectors :: "complex Matrix.mat \<Rightarrow> (real \<Rightarrow> complex) \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "acts_on_eigenvectors A g B \<longleftrightarrow> (\<forall>v l. dim_vec v = dim_row A \<longrightarrow>
      A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<longrightarrow> B *\<^sub>v v = g l \<cdot>\<^sub>v v)"
 
+(*<*)
+syntax "_acts_on_eigenvectors" :: "complex Matrix.mat \<Rightarrow> (real \<Rightarrow> complex) \<Rightarrow> complex Matrix.mat \<Rightarrow> bool"
+  ("(_/ acts'_as _/ on'_eigenvectors'_of _)" [51, 51, 51] 50)
+syntax_consts "_acts_on_eigenvectors" \<rightleftharpoons> acts_on_eigenvectors
+translations "B acts_as g on_eigenvectors_of A" \<rightleftharpoons> "CONST acts_on_eigenvectors A g B"
+(*>*)
+
 definition mat_fun :: "(real \<Rightarrow> complex) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "mat_fun g A = (SOME B. B \<in> carrier_mat (dim_row A) (dim_row A) \<and> acts_on_eigenvectors A g B)"
+  "mat_fun g A = (SOME B. B \<in> carrier_mat (dim_row A) (dim_row A) \<and> B acts_as g on_eigenvectors_of A)"
 
 text \<open>The spectrum: the real eigenvalues (JNF's \<open>eigenvalue\<close>).\<close>
 
@@ -359,7 +367,7 @@ proof -
 qed
 
 lemma acts_on_eigenvectorsD:
-  "acts_on_eigenvectors A g B \<Longrightarrow> dim_vec v = dim_row A \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow>
+  "B acts_as g on_eigenvectors_of A \<Longrightarrow> dim_vec v = dim_row A \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow>
    B *\<^sub>v v = g l \<cdot>\<^sub>v v"
   unfolding acts_on_eigenvectors_def by blast
 
@@ -368,7 +376,7 @@ $w=U^*v$ has $D_iw_i=\lambda w_i$, so $g(D_i)w_i=g(\lambda)w_i$.\<close>
 
 lemma spectral_decomp_acts_on_eigenvectors:
   assumes A: "A \<in> carrier_mat n n" and sd: "spectral_decomp A U D"
-  shows "acts_on_eigenvectors A g (U * diag_matrix (map g D) * (U\<^sup>\<dagger>))"
+  shows "U * diag_matrix (map g D) * (U\<^sup>\<dagger>) acts_as g on_eigenvectors_of A"
   unfolding acts_on_eigenvectors_def
 proof (intro allI impI)
   fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
@@ -444,17 +452,17 @@ text \<open>Hence $g(A)$ is well defined: an $n\times n$ matrix acting as $g$ on
 lemma
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
   shows mat_fun_carrier [simp]: "mat_fun g A \<in> carrier_mat n n"
-    and mat_fun_acts_on_eigenvectors: "acts_on_eigenvectors A g (mat_fun g A)"
+    and mat_fun_acts_on_eigenvectors: "mat_fun g A acts_as g on_eigenvectors_of A"
 proof -
   obtain U D where sd: "spectral_decomp A U D" using spectral_decomp_exists[OF A] by blast
   note d = spectral_decompD[OF A(1) sd]
   have "U * diag_matrix (map g D) * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
     by (rule diag_conj_carrier) (use d(1,3) in simp_all)
-  hence ex: "\<exists>B. B \<in> carrier_mat (dim_row A) (dim_row A) \<and> acts_on_eigenvectors A g B"
+  hence ex: "\<exists>B. B \<in> carrier_mat (dim_row A) (dim_row A) \<and> B acts_as g on_eigenvectors_of A"
     using spectral_decomp_acts_on_eigenvectors[OF A(1) sd] A(1) by auto
-  have "mat_fun g A \<in> carrier_mat (dim_row A) (dim_row A) \<and> acts_on_eigenvectors A g (mat_fun g A)"
+  have "mat_fun g A \<in> carrier_mat (dim_row A) (dim_row A) \<and> mat_fun g A acts_as g on_eigenvectors_of A"
     unfolding mat_fun_def by (rule someI_ex[OF ex])
-  thus "mat_fun g A \<in> carrier_mat n n" "acts_on_eigenvectors A g (mat_fun g A)" using A(1) by auto
+  thus "mat_fun g A \<in> carrier_mat n n" "mat_fun g A acts_as g on_eigenvectors_of A" using A(1) by auto
 qed
 
 text \<open>In particular $g(A)$ has the dimensions of $A$.\<close>
@@ -476,7 +484,7 @@ text \<open>Uniqueness: every $n\times n$ matrix acting as $g$ on the eigenvecto
 
 lemma mat_fun_eqI:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
-      and B: "B \<in> carrier_mat n n" "acts_on_eigenvectors A g B"
+      and B: "B \<in> carrier_mat n n" "B acts_as g on_eigenvectors_of A"
   shows "mat_fun g A = B"
 proof (rule eigvec_mat_eqI[OF A mat_fun_carrier[OF A] B(1)])
   fix v l assume v: "dim_vec v = n" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
@@ -494,7 +502,7 @@ proof (rule mat_fun_eqI[OF A])
   note d = spectral_decompD[OF A(1) sd]
   show "U * diag_matrix (map g D) * (U\<^sup>\<dagger>) \<in> carrier_mat n n"
     by (rule diag_conj_carrier) (use d(1,3) in simp_all)
-  show "acts_on_eigenvectors A g (U * diag_matrix (map g D) * (U\<^sup>\<dagger>))"
+  show "U * diag_matrix (map g D) * (U\<^sup>\<dagger>) acts_as g on_eigenvectors_of A"
     by (rule spectral_decomp_acts_on_eigenvectors[OF A(1) sd])
 qed
 
@@ -505,7 +513,7 @@ lemma mat_fun_cong:
       and gh: "\<And>l. l \<in> herm_spectrum A \<Longrightarrow> g l = h l"
   shows "mat_fun g A = mat_fun h A"
 proof (rule mat_fun_eqI[OF A mat_fun_carrier[OF A]])
-  show "acts_on_eigenvectors A g (mat_fun h A)" unfolding acts_on_eigenvectors_def
+  show "mat_fun h A acts_as g on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have hv: "mat_fun h A *\<^sub>v v = h l \<cdot>\<^sub>v v" using mat_fun_eigen[OF A _ ev] v A(1) by simp
@@ -532,7 +540,7 @@ lemma mat_fun_const:
   assumes A: "A \<in> carrier_mat n n" "hermitian A"
   shows "mat_fun (\<lambda>_. c) A = c \<cdot>\<^sub>m 1\<^sub>m n"
 proof (rule mat_fun_eqI[OF A])
-  show "acts_on_eigenvectors A (\<lambda>_. c) (c \<cdot>\<^sub>m 1\<^sub>m n)" unfolding acts_on_eigenvectors_def
+  show "c \<cdot>\<^sub>m 1\<^sub>m n acts_as (\<lambda>_. c) on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
     using A(1) by (auto simp: smult_mat_mult_mat_vec_assoc[of "1\<^sub>m n" n n])
 qed simp
 
@@ -547,7 +555,7 @@ theorem mat_fun_mult:
   shows "mat_fun g A * mat_fun h A = mat_fun (\<lambda>x. g x * h x) A"
 proof (rule mat_fun_eqI[OF A, symmetric])
   show "mat_fun g A * mat_fun h A \<in> carrier_mat n n" by (rule mult_carrier_mat[OF mat_fun_carrier[OF A] mat_fun_carrier[OF A]])
-  show "acts_on_eigenvectors A (\<lambda>x. g x * h x) (mat_fun g A * mat_fun h A)" unfolding acts_on_eigenvectors_def
+  show "mat_fun g A * mat_fun h A acts_as (\<lambda>x. g x * h x) on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -619,7 +627,7 @@ lemma mat_fun_add:
   shows "mat_fun (\<lambda>x. g x + h x) A = mat_fun g A + mat_fun h A"
 proof (rule mat_fun_eqI[OF A])
   show "mat_fun g A + mat_fun h A \<in> carrier_mat n n" using A by simp
-  show "acts_on_eigenvectors A (\<lambda>x. g x + h x) (mat_fun g A + mat_fun h A)" unfolding acts_on_eigenvectors_def
+  show "mat_fun g A + mat_fun h A acts_as (\<lambda>x. g x + h x) on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -639,7 +647,7 @@ lemma mat_fun_smult:
   shows "mat_fun (\<lambda>x. c * g x) A = c \<cdot>\<^sub>m mat_fun g A"
 proof (rule mat_fun_eqI[OF A])
   show "c \<cdot>\<^sub>m mat_fun g A \<in> carrier_mat n n" using A by simp
-  show "acts_on_eigenvectors A (\<lambda>x. c * g x) (c \<cdot>\<^sub>m mat_fun g A)" unfolding acts_on_eigenvectors_def
+  show "c \<cdot>\<^sub>m mat_fun g A acts_as (\<lambda>x. c * g x) on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
     have vn: "dim_vec v = n" using v A(1) by simp
@@ -683,7 +691,7 @@ proof -
   show ?thesis
   proof (rule mat_fun_eqI[OF A, symmetric])
     show "mat_fun g ?B \<in> carrier_mat n n" using B by simp
-    show "acts_on_eigenvectors A (\<lambda>x. g (f x)) (mat_fun g ?B)" unfolding acts_on_eigenvectors_def
+    show "mat_fun g ?B acts_as (\<lambda>x. g (f x)) on_eigenvectors_of A" unfolding acts_on_eigenvectors_def
     proof (intro allI impI)
       fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
       have vn: "dim_vec v = n" using v A(1) by simp

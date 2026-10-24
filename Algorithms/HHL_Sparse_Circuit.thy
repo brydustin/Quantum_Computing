@@ -502,7 +502,7 @@ proof (rule mat_fun_eqI)
   show H: "colour_part n A q \<in> carrier_mat n n" "hermitian (colour_part n A q)"
     by (simp add: colour_part_def, rule colour_part_hermitian[OF A q])
   show "pair_evo n q (colour_h A q) d \<in> carrier_mat n n" by simp
-  show "acts_on_eigenvectors (colour_part n A q) (\<lambda>x. cis (d * x)) (pair_evo n q (colour_h A q) d)"
+  show "pair_evo n q (colour_h A q) d acts_as (\<lambda>x. cis (d * x)) on_eigenvectors_of colour_part n A q"
     unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row (colour_part n A q)"
@@ -599,7 +599,7 @@ proof (rule mat_fun_eqI)
   show H: "diag_part n A \<in> carrier_mat n n" "hermitian (diag_part n A)"
     by (simp add: diag_part_def, rule diag_part_hermitian[OF A])
   show "dia_evo n d A \<in> carrier_mat n n" by (simp add: dia_evo_def)
-  show "acts_on_eigenvectors (diag_part n A) (\<lambda>x. cis (d * x)) (dia_evo n d A)"
+  show "dia_evo n d A acts_as (\<lambda>x. cis (d * x)) on_eigenvectors_of diag_part n A"
     unfolding acts_on_eigenvectors_def
   proof (intro allI impI)
     fix v l assume v: "dim_vec v = dim_row (diag_part n A)"

@@ -247,7 +247,7 @@ fun prod_coeff :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> nat \
 | "prod_coeff n (Y # Ys) = cauchy_prod n (exp_coeff Y) (prod_coeff n Ys)"
 
 lemma prod_coeff_carrier: "\<forall>Y \<in> set Ys. Y \<in> carrier_mat n n \<Longrightarrow> seq_carrier n (prod_coeff n Ys)"
-  by (induction Ys) (auto intro: cauchy_prod_carrier)
+  by (induction Ys, auto intro: cauchy_prod_carrier)
 
 text \<open>Concatenating factor lists multiplies the series, scaling all factors scales the series, and
 $e^{-tY_m}\cdots e^{-tY_1}$ inverts $e^{tY_1}\cdots e^{tY_m}$:\<close>
@@ -396,7 +396,7 @@ lemma cauchy_prod_low_right:
   shows "cauchy_prod n g d q = g 0 * d q"
 proof -
   have "matrix_sum n (\<lambda>r. g r * d (q - r)) (Suc q) = g 0 * d (q - 0)"
-    by (rule matrix_sum_single) (use d g in \<open>auto simp: vanishes_below_def\<close>)
+    by (rule matrix_sum_single, use d g in \<open>auto simp: vanishes_below_def\<close>)
   thus ?thesis by (simp add: cauchy_prod_def)
 qed
 
