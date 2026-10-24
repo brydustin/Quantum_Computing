@@ -2,7 +2,9 @@ theory Hermitian_Functional_Calculus
   imports "HOL-Analysis.L2_Norm" QHLProver.Complex_Matrix Isabelle_Marries_Dirac.Quantum
 begin
 
+(*<*)
 hide_const (open) Quantum.X Quantum.Y Quantum.Z Quantum.H Quantum.S Quantum.T
+(*>*)
 
 section \<open>Functional calculus for Hermitian matrices\<close>
 
@@ -22,8 +24,7 @@ lemma diag_matrix_carrier [simp]: "diag_matrix xs \<in> carrier_mat (length xs) 
 lemma dim_diag_matrix [simp]: "dim_row (diag_matrix xs) = length xs" "dim_col (diag_matrix xs) = length xs"
   by (simp_all add: diag_matrix_def mat_diag_def)
 
-text \<open>It scales coordinates, $\diag(x)\,w=(x_iw_i)_i$; multiplying a matrix on the right by
-$\diag(x)$ scales its $j$-th column by $x_j$; and $\diag(x)^*=\diag(\overline x)$.\<close>
+text \<open>\[ \diag(x_1,\dots,x_n)\,w=(x_1w_1,\dots,x_nw_n) \]\<close>
 
 lemma diag_matrix_mult_vec:
   assumes "dim_vec w = length xs"
@@ -40,6 +41,8 @@ proof (rule eq_vecI)
     using i by simp
 qed simp
 
+text \<open>\[ \bigl(M\,\diag(x)\bigr)_{\ast j}=x_j\,M_{\ast j} \]\<close>
+
 lemma col_mult_diag:
   assumes M: "M \<in> carrier_mat n (length xs)" and j: "j < length xs"
   shows "Matrix.col (M * diag_matrix xs) j = xs ! j \<cdot>\<^sub>v Matrix.col M j"
@@ -54,6 +57,8 @@ proof (rule eq_vecI)
   finally show "Matrix.col (M * diag_matrix xs) j $ i = (xs ! j \<cdot>\<^sub>v Matrix.col M j) $ i"
     using M i j by (simp add: mult.commute)
 qed (use M in simp)
+
+text \<open>\[ \diag(x)^*=\diag(\overline x) \]\<close>
 
 lemma diag_matrix_dagger: "(diag_matrix xs)\<^sup>\<dagger> = diag_matrix (map cnj xs)"
   by (rule eq_matI) (auto simp: diag_matrix_def mat_diag_def dagger_def)
