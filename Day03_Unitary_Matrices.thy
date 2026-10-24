@@ -882,8 +882,6 @@ proof -
     using wdim wnorm by blast
 qed
 
-thm of_real_divide[where x = "cmod (\<langle>y | x\<rangle>) ^ 2" and y = "cmod (\<langle>y | x\<rangle>)", symmetric]
-
 
 lemma schur_lemma:
   fixes x y :: "complex Matrix.vec"
