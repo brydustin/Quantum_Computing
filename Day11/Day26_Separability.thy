@@ -5,7 +5,7 @@
 *)
 
 theory Day26_Separability
-  imports Quantum_Computing_by_VP_3_10_Lmat.Separable_Cone
+  imports Quantum_Computing_by_VP_Typed_Matrices.Separable_Cone
 begin
 
 section \<open>Days 26--28 (28 October -- 2 November 2011): separability and entanglement witnesses\<close>

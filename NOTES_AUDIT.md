@@ -3,7 +3,7 @@
 Source of truth: `QC_Notes.pdf` (Vern Paulsen, *Lectures on Quantum Computing and
 Completely Positive Maps*, Houston, Fall 2011; notes by Brandon Lee), transcribed in
 `QC_Notes_overleaf.tex`.  Formalisation: the nine theories of the sessions
-`Quantum_Computing_by_VP_3_10`, `Quantum_Computing_by_VP_3_10_Lmat`, `Quantum_Computing_by_VP` (see `ROOT`).
+`Quantum_Computing_by_VP_Basics`, `Quantum_Computing_by_VP_Typed_Matrices`, `Quantum_Computing_by_VP` (see `ROOT`).
 
 Verification status (2026-10-19): all sessions build
 with `quick_and_dirty = false`; no `sorry`, no `axiomatization`, no `oops`; a

@@ -1,6 +1,6 @@
 chapter AFP
 
-session Quantum_Computing_by_VP_3_10 in "." = Isabelle_Marries_Dirac +
+session Quantum_Computing_by_VP_Basics in "." = Isabelle_Marries_Dirac +
   description "
     Days 1--10 of the notes, with the typed matrices and the Hahn--Banach theorem of Day 25."
   options [document = pdf, quick_and_dirty = false, timeout = 3600]
@@ -29,13 +29,16 @@ session Quantum_Computing_by_VP_3_10 in "." = Isabelle_Marries_Dirac +
     Essential_Functional_Analysis
     Day25_Hahn_Banach
 
-session Quantum_Computing_by_VP_3_10_Lmat in "Lmat" = Quantum_Computing_by_VP_3_10 +
+session Quantum_Computing_by_VP_Typed_Matrices in "Lmat" = Quantum_Computing_by_VP_Basics +
+  description "
+    Matrices of fixed dimension as a Euclidean space, and the separable cone: closed, with
+    entanglement witnesses (Days 26--28)."
   options [document = pdf, quick_and_dirty = false, timeout = 3600]
   theories
     Lmat_Euclidean
     Separable_Cone
 
-session Quantum_Computing_by_VP in Day11 = Quantum_Computing_by_VP_3_10_Lmat +
+session Quantum_Computing_by_VP in Day11 = Quantum_Computing_by_VP_Typed_Matrices +
   description "
     Vern Paulsen's lecture notes on quantum computing and completely positive maps
     (Houston, 2011), formalised lecture by lecture."
@@ -114,22 +117,22 @@ session Quantum_Computing_by_VP in Day11 = Quantum_Computing_by_VP_3_10_Lmat +
     QC_Prelims
     QC_Notes_Overview
   document_theories
-    Quantum_Computing_by_VP_3_10.Day01_Inner_Product
-    Quantum_Computing_by_VP_3_10.Day02_Trace_Projections
-    Quantum_Computing_by_VP_3_10.Unitary_Tensor_Algebra
-    Quantum_Computing_by_VP_3_10.Day03_Unitary_Matrices
-    Quantum_Computing_by_VP_3_10.Day04_Hermitian_Matrices
-    Quantum_Computing_by_VP_3_10.Day05_Positivity_Tests
-    Quantum_Computing_by_VP_3_10.Day06_Tensor_Products
-    Quantum_Computing_by_VP_3_10.Day07_Postulates
-    Quantum_Computing_by_VP_3_10.Day08_Measurements
-    Quantum_Computing_by_VP_3_10.Day09_POVMs_Entanglement
-    Quantum_Computing_by_VP_3_10.Day10_Quantum_Gates
-    Quantum_Computing_by_VP_3_10.Matrix_Typed
-    Quantum_Computing_by_VP_3_10.Essential_Functional_Analysis
-    Quantum_Computing_by_VP_3_10.Day25_Hahn_Banach
-    Quantum_Computing_by_VP_3_10_Lmat.Lmat_Euclidean
-    Quantum_Computing_by_VP_3_10_Lmat.Separable_Cone
+    Quantum_Computing_by_VP_Basics.Day01_Inner_Product
+    Quantum_Computing_by_VP_Basics.Day02_Trace_Projections
+    Quantum_Computing_by_VP_Basics.Unitary_Tensor_Algebra
+    Quantum_Computing_by_VP_Basics.Day03_Unitary_Matrices
+    Quantum_Computing_by_VP_Basics.Day04_Hermitian_Matrices
+    Quantum_Computing_by_VP_Basics.Day05_Positivity_Tests
+    Quantum_Computing_by_VP_Basics.Day06_Tensor_Products
+    Quantum_Computing_by_VP_Basics.Day07_Postulates
+    Quantum_Computing_by_VP_Basics.Day08_Measurements
+    Quantum_Computing_by_VP_Basics.Day09_POVMs_Entanglement
+    Quantum_Computing_by_VP_Basics.Day10_Quantum_Gates
+    Quantum_Computing_by_VP_Basics.Matrix_Typed
+    Quantum_Computing_by_VP_Basics.Essential_Functional_Analysis
+    Quantum_Computing_by_VP_Basics.Day25_Hahn_Banach
+    Quantum_Computing_by_VP_Typed_Matrices.Lmat_Euclidean
+    Quantum_Computing_by_VP_Typed_Matrices.Separable_Cone
   document_files
     "root.tex"
 
@@ -141,7 +144,7 @@ session Quantum_Computing_by_VP_Day05 in "Day05" = Two_Hermitian_Results +
            document_variants = "document=/proof,/ML",
            quick_and_dirty = false, timeout = 3600]
   sessions
-    Quantum_Computing_by_VP_3_10
+    Quantum_Computing_by_VP_Basics
   theories
     Day05_Sylvester_Criterion
   document_files

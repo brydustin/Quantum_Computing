@@ -1,5 +1,5 @@
 theory Day08_Indistinguishable_States
-  imports Quantum_Computing_by_VP_3_10.Day07_Postulates
+  imports Quantum_Computing_by_VP_Basics.Day07_Postulates
 begin
 
 section \<open>Day 8: non-orthogonal states cannot be distinguished\<close>

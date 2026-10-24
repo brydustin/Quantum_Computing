@@ -1,7 +1,7 @@
 theory Day06_Tensor_Coordinates
   imports
     Day05_Direct_Sum_Basis
-    Quantum_Computing_by_VP_3_10.Day06_Tensor_Products
+    Quantum_Computing_by_VP_Basics.Day06_Tensor_Products
 begin
 
 section \<open>Day 6: coordinates in a tensor product\<close>

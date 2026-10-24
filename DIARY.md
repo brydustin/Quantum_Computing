@@ -904,3 +904,7 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `sk`→`shor_scale`, `gvec`→`ghz_vec`, `gv`→`ghz_vec_of`, `tv3`→`tensor3`, `lab_vec`→`label_vec`,
   `RE`→`recover_after`, and Day 30's `recovery_ops`/`recovery_map` → `bitflip_recovery_ops`/`_map`
   (Day 32 has the general ones).  Trap: a word-boundary rename of `pm` also hits LaTeX `\pm`.
+- **Session names** (2026-10-23): `Quantum_Computing_by_VP_3_10` → `Quantum_Computing_by_VP_Basics`
+  (Lectures 1–10, typed matrices, Hahn–Banach) and `Quantum_Computing_by_VP_3_10_Lmat` →
+  `Quantum_Computing_by_VP_Typed_Matrices` (now with a description); the old "3_10" was a leftover
+  of the Days 3–10 theory.  Imports in HHL, Day05, the checks and the AFP metadata follow.

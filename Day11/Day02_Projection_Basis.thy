@@ -1,5 +1,5 @@
 theory Day02_Projection_Basis
-  imports Quantum_Computing_by_VP_3_10.Day03_Unitary_Matrices
+  imports Quantum_Computing_by_VP_Basics.Day03_Unitary_Matrices
 begin
 
 section \<open>Day 2: the projection does not depend on the orthonormal basis\<close>
