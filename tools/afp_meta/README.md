@@ -12,7 +12,7 @@ and no oracles except the one noted for HHL_Algorithm_Search.
 | `3_HHL_Algorithm` | HHL_Algorithm | entries 1 and 2 | quantum phase estimation and the HHL algorithm |
 
 Each folder holds the archive to upload (`<Entry>.tar.gz`), the same entry unpacked, the PDF of
-every session with a document (the AFP's full variant, with proofs: 70, 882 and 388 pages for the
+every session with a document (the AFP's full variant, with proofs: 80, 882 and 388 pages for the
 three main sessions), and `SUBMISSION.md` with the fields of the submission form
 (title, short name, topics, license, abstract) and a comment for the editors.
 
