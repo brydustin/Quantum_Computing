@@ -29,7 +29,8 @@ text \<open>For a Hermitian $A\in M_n$ (\<open>A \<in> carrier_mat n n\<close> a
 $g:\R\to\C$, \<open>mat_fun g A\<close> is $g(A)$.
 \<^item> Computing $g(A)$: on eigenvectors (\<open>mat_fun_eigen\<close>), from a spectral decomposition
   (\<open>spectral_decomp_exists\<close>, \<open>mat_fun_decomp\<close>), or entrywise for real diagonal matrices
-  (\<open>mat_fun_diag\<close>).  To show that a given matrix is $g(A)$, use \<open>mat_fun_eqI\<close>.
+  (\<open>mat_fun_diag\<close>).  It exists and is unique (\<open>mat_fun_unique\<close>); to show that a given matrix is
+  $g(A)$, use \<open>mat_fun_eqI\<close>.
 \<^item> Algebra: \<open>mat_fun_add\<close>, \<open>mat_fun_smult\<close>, \<open>mat_fun_mult\<close>, \<open>mat_fun_pow\<close>,
   \<open>mat_fun_comp\<close>, \<open>mat_fun_dagger\<close>, \<open>mat_fun_hermitian\<close>, \<open>mat_fun_unitary\<close>, and
   \<open>mat_fun_cong\<close> (only the values on the spectrum matter).

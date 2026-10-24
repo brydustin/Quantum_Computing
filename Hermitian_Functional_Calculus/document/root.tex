@@ -26,9 +26,11 @@
 
 \begin{abstract}
 For a Hermitian matrix $A$ and a function $g:\R\to\C$ we define $g(A)$ as the matrix
-that multiplies every eigenvector of $A$ with eigenvalue $\lambda$ by $g(\lambda)$, and
-derive the algebra of this functional calculus: $g(A)h(A)=(gh)(A)$, $g(A)^*=\bar g(A)$,
-unitarity for $|g|=1$ on the spectrum, the time evolution $e^{itA}$ and the inverse.
+that multiplies every eigenvector of $A$ with eigenvalue $\lambda$ by $g(\lambda)$ (it exists
+and is unique), and derive the algebra of this functional calculus: it is linear in $g$,
+$g(A)h(A)=(gh)(A)$, $g(A)^*=\bar g(A)$, $g(A)^k=(g^k)(A)$, $g(f(A))=(g\circ f)(A)$ for real $f$,
+$g(A)$ is unitary when $|g|=1$ on the spectrum; special cases are the time evolution $e^{itA}$
+and the inverse.
 On top of it we verify the Lie--Trotter product formula
 $\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le 2(mLt)^2/r$ and
 Suzuki's higher-order formulas: Suzuki's recursion $S_{2k+2}$ agrees with

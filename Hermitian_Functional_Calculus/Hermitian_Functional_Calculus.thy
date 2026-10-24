@@ -492,6 +492,13 @@ proof (rule eigvec_mat_eqI[OF A mat_fun_carrier[OF A] B(1)])
     using acts_on_eigenvectorsD[OF mat_fun_acts_on_eigenvectors[OF A] _ ev] acts_on_eigenvectorsD[OF B(2) _ ev] v A(1) by simp
 qed
 
+text \<open>So $g(A)$ is the unique $n\times n$ matrix that acts as $g$ on the eigenvectors of $A$.\<close>
+
+corollary mat_fun_unique:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "\<exists>!B. B \<in> carrier_mat n n \<and> B acts_as g on_eigenvectors_of A"
+  using mat_fun_carrier[OF A] mat_fun_acts_on_eigenvectors[OF A] mat_fun_eqI[OF A] by blast
+
 text \<open>So for every spectral decomposition of $A$,
 \[ g(A)=U\,\diag\bigl(g(D_1),\dots,g(D_n)\bigr)\,U^*. \]\<close>
 

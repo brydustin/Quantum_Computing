@@ -13,8 +13,8 @@ Fields of the submission form at https://isa-afp.org/submission/
 ## Abstract
 
 For a Hermitian matrix $A$ and a function $g:\mathbb{R}\to\mathbb{C}$ we define $g(A)$ as the
-matrix that multiplies every eigenvector of $A$ with eigenvalue $\lambda$ by $g(\lambda)$, and
-prove the algebra of this functional calculus: it is linear in $g$, $g(A)\,h(A)=(gh)(A)$,
+matrix that multiplies every eigenvector of $A$ with eigenvalue $\lambda$ by $g(\lambda)$ (it exists and
+is unique), and prove the algebra of this functional calculus: it is linear in $g$, $g(A)\,h(A)=(gh)(A)$,
 $g(A)^*=\bar g(A)$, $g(A)^k=(g^k)(A)$, $g(f(A))=(g\circ f)(A)$ for real $f$, $g(A)$ is unitary when
 $|g|=1$ on the spectrum, and $g(A)$ depends only on the values of $g$ on the spectrum. Special cases are the time evolution $e^{itA}$, with $e^{isA}e^{itA}=e^{i(s+t)A}$, and the
 inverse. On top of it we verify the Lie–Trotter product formula with an explicit error bound,
@@ -34,8 +34,10 @@ theorem is derived from the Schur decomposition of QHLProver.
   `unitary` and vector norm; QHLProver's and IMD's names `unitary`, `inner_prod` clash, and the
   theories import Complex_Matrix before Quantum so that `unitary` is IMD's. IMD's gate constants
   `X, Y, Z, H, S, T` are hidden (open) so that matrix variables of these names can be used.
-- A redundancy check against the AFP (Jordan_Normal_Form, IMD, QHLProver, Commuting_Hermitian,
-  Projective_Measurements, Two_Hermitian_Results) finds one duplicate: the two-line lemma
+- A statement-level search (every fact of the entry matched against every fact of the imported
+  libraries) finds no fact that the libraries already state, or state more generally.  Against
+  other AFP entries (Commuting_Hermitian, Projective_Measurements, Two_Hermitian_Results) there is
+  one duplicate: the two-line lemma
   `dagger_adjoint` (IMD's dagger is QHLProver's adjoint), which Projective_Measurements also
   proves; importing Projective_Measurements (and with it HOL-Probability) for it seemed excessive.
 - Six short lemmas also occur in the entry Quantum_Computing_by_VP (submitted at the same time):
@@ -45,6 +47,9 @@ theorem is derived from the Schur decomposition of QHLProver.
 - We found no matrix exponential on Jordan_Normal_Form matrices and no Trotter or Suzuki
   formula in the AFP. Matrices_for_ODEs has the exponential of real square matrices (HOL-Analysis
   types); the time evolution here is defined through the spectral decomposition instead.
+- Notation: `B acts_as g on_eigenvectors_of A` (B acts on each eigenvector of A by g of its
+  eigenvalue) and `U ≈⇘η⇙ V` (‖Uv − Vv‖ ≤ η‖v‖ for all v, a bound on the operator norm of U − V
+  without defining that norm); the product formulas are stated with the latter.
 - The theory `Functional_Calculus_Overview` imports all parts; its section "Using the entry"
   (first in the document) lists the main constants and lemmas, with two worked examples.
 - This entry is used by the entry HHL_Algorithm (submitted at the same time).
