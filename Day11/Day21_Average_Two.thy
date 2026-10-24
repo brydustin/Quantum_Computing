@@ -630,12 +630,12 @@ qed
 
 subsection \<open>The case $n=2$\<close>
 
-definition gk :: "complex Matrix.mat list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex" where
-  "gk Fs p q i i' = (\<Sum>k<length Fs. Fs ! k $$ (i, p) * cnj (Fs ! k $$ (i', q)))"
+definition kraus_gram :: "complex Matrix.mat list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex" where
+  "kraus_gram Fs p q i i' = (\<Sum>k<length Fs. Fs ! k $$ (i, p) * cnj (Fs ! k $$ (i', q)))"
 
 lemma kraus2_entry:
   assumes F: "\<forall>A \<in> set Fs. A \<in> carrier_mat d 2" and X: "X \<in> carrier_mat 2 2" and i: "i < d" and i': "i' < d"
-  shows "kraus_map_dim d Fs X $$ (i, i') = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * gk Fs p q i i')"
+  shows "kraus_map_dim d Fs X $$ (i, i') = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * kraus_gram Fs p q i i')"
 proof -
   have "kraus_map_dim d Fs X $$ (i, i') = (\<Sum>k<length Fs. (Fs ! k * X * ((Fs ! k)\<^sup>\<dagger>)) $$ (i, i'))"
     unfolding kraus_map_dim_entry_sum_list[OF F X i i'] by (simp add: sum_list_sum_nth atLeast0LessThan)
@@ -646,14 +646,14 @@ proof -
     show "(Fs ! k * X * ((Fs ! k)\<^sup>\<dagger>)) $$ (i, i') = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * (Fs ! k $$ (i, p) * cnj (Fs ! k $$ (i', q))))"
       unfolding conj_entry[OF Fk X i i'] by (simp add: algebra_simps)
   qed
-  also have "\<dots> = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * gk Fs p q i i')"
-    unfolding gk_def sum_distrib_left by (subst sum.swap, rule sum.cong[OF refl], rule sum.swap)
+  also have "\<dots> = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * kraus_gram Fs p q i i')"
+    unfolding kraus_gram_def sum_distrib_left by (subst sum.swap, rule sum.cong[OF refl], rule sum.swap)
   finally show ?thesis .
 qed
 
-lemma gk_map:
-  "gk (map f [0..<d]) p q i i' = (\<Sum>j<d. f j $$ (i, p) * cnj (f j $$ (i', q)))"
-  by (simp add: gk_def)
+lemma kraus_gram_map:
+  "kraus_gram (map f [0..<d]) p q i i' = (\<Sum>j<d. f j $$ (i, p) * cnj (f j $$ (i', q)))"
+  by (simp add: kraus_gram_def)
 
 lemma mult_entry3:
   assumes A: "A \<in> carrier_mat d d" and B: "B \<in> carrier_mat d d" and C: "C \<in> carrier_mat d d" and i: "i < d" and i': "i' < d"
@@ -675,7 +675,7 @@ $K=\frac12(U_1+U_2)$.\<close>
 
 theorem ra_two:
   assumes As: "\<forall>A \<in> set As. A \<in> carrier_mat d 2" and u: "kraus_map_dim d As (1\<^sub>m 2) = 1\<^sub>m d"
-  shows "ra_split 2 d (kraus_map_dim d As)"
+  shows "ucp_average_split 2 d (kraus_map_dim d As)"
 proof -
   let ?K = "length As"
   define a where "a k i = As ! k $$ (i, 0)" for k i
@@ -749,12 +749,12 @@ proof -
   have Lc: "\<forall>A \<in> set (L l). A \<in> carrier_mat d 2" for l by (auto simp: L_def Cc)
   have Ydag: "(Y l)\<^sup>\<dagger> = U l * (R2\<^sup>\<dagger>)" for l
     using dagger_of_prod[of R2 "(U l)\<^sup>\<dagger>"] R2c Uc[of l] by (simp add: Y_def dagger_of_dagger_is_id)
-  have g00: "gk (L l) 0 0 i i' = gk As 0 0 i i'" if "i < d" "i' < d" for l i i'
-    using RR1 that by (simp add: L_def gk_map C_def gk_def a_def)
-  have g11: "gk (L l) 1 1 i i' = gk As 1 1 i i'" if ii: "i < d" "i' < d" for l i i'
+  have g00: "kraus_gram (L l) 0 0 i i' = kraus_gram As 0 0 i i'" if "i < d" "i' < d" for l i i'
+    using RR1 that by (simp add: L_def kraus_gram_map C_def kraus_gram_def a_def)
+  have g11: "kraus_gram (L l) 1 1 i i' = kraus_gram As 1 1 i i'" if ii: "i < d" "i' < d" for l i i'
   proof -
     have Yc: "Y l \<in> carrier_mat d d" using R2c Uc by (simp add: Y_def dagger_carrier)
-    have "gk (L l) 1 1 i i' = (\<Sum>j<d. Y l $$ (i, j) * cnj (Y l $$ (i', j)))" using ii by (simp add: L_def gk_map C_def)
+    have "kraus_gram (L l) 1 1 i i' = (\<Sum>j<d. Y l $$ (i, j) * cnj (Y l $$ (i', j)))" using ii by (simp add: L_def kraus_gram_map C_def)
     also have "\<dots> = (Y l * ((Y l)\<^sup>\<dagger>)) $$ (i, i')" by (rule prod_dagger_entry[OF Yc Yc ii, symmetric])
     also have "Y l * ((Y l)\<^sup>\<dagger>) = R2 * (R2\<^sup>\<dagger>)"
     proof -
@@ -765,19 +765,19 @@ proof -
       thus ?thesis using Uu R2d by (simp add: left_mult_one_mat[OF R2d])
     qed
     also have "(R2 * (R2\<^sup>\<dagger>)) $$ (i, i') = (\<Sum>j<d. R2 $$ (i, j) * cnj (R2 $$ (i', j)))" by (rule prod_dagger_entry[OF R2c R2c ii])
-    finally show ?thesis using RR2 ii by (simp add: gk_def b_def)
+    finally show ?thesis using RR2 ii by (simp add: kraus_gram_def b_def)
   qed
-  have g01l: "gk (L l) 0 1 i i' = (\<Sum>j<d. \<Sum>m<d. R1 $$ (i, j) * U l $$ (j, m) * cnj (R2 $$ (i', m)))" if ii: "i < d" "i' < d" for l i i'
+  have g01l: "kraus_gram (L l) 0 1 i i' = (\<Sum>j<d. \<Sum>m<d. R1 $$ (i, j) * U l $$ (j, m) * cnj (R2 $$ (i', m)))" if ii: "i < d" "i' < d" for l i i'
   proof -
     have Yc: "Y l \<in> carrier_mat d d" using R2c Uc by (simp add: Y_def dagger_carrier)
-    have "gk (L l) 0 1 i i' = (\<Sum>j<d. R1 $$ (i, j) * cnj (Y l $$ (i', j)))" using ii by (simp add: L_def gk_map C_def)
+    have "kraus_gram (L l) 0 1 i i' = (\<Sum>j<d. R1 $$ (i, j) * cnj (Y l $$ (i', j)))" using ii by (simp add: L_def kraus_gram_map C_def)
     also have "\<dots> = (R1 * ((Y l)\<^sup>\<dagger>)) $$ (i, i')" by (rule prod_dagger_entry[OF R1c Yc ii, symmetric])
     also have "R1 * ((Y l)\<^sup>\<dagger>) = R1 * U l * (R2\<^sup>\<dagger>)" unfolding Ydag using R1c Uc R2c by (simp add: assoc_mult_mat[of _ d d _ d _ d] dagger_carrier)
     finally show ?thesis by (simp add: mult_entry3[OF R1c Uc R2c ii])
   qed
-  have g01: "(gk (L 0) 0 1 i i' + gk (L 1) 0 1 i i') / 2 = gk As 0 1 i i'" if ii: "i < d" "i' < d" for i i'
+  have g01: "(kraus_gram (L 0) 0 1 i i' + kraus_gram (L 1) 0 1 i i') / 2 = kraus_gram As 0 1 i i'" if ii: "i < d" "i' < d" for i i'
   proof -
-    have "gk (L 0) 0 1 i i' + gk (L 1) 0 1 i i' = (\<Sum>j<d. \<Sum>m<d. 2 * (R1 $$ (i, j) * Kc $$ (j, m) * cnj (R2 $$ (i', m))))"
+    have "kraus_gram (L 0) 0 1 i i' + kraus_gram (L 1) 0 1 i i' = (\<Sum>j<d. \<Sum>m<d. 2 * (R1 $$ (i, j) * Kc $$ (j, m) * cnj (R2 $$ (i', m))))"
       unfolding g01l[OF ii] sum.distrib[symmetric]
     proof (rule sum.cong[OF refl], rule sum.cong[OF refl])
       fix j m assume "j \<in> {..<d}" "m \<in> {..<d}"
@@ -785,7 +785,7 @@ proof -
       thus "R1 $$ (i, j) * U 0 $$ (j, m) * cnj (R2 $$ (i', m)) + R1 $$ (i, j) * U 1 $$ (j, m) * cnj (R2 $$ (i', m))
           = 2 * (R1 $$ (i, j) * Kc $$ (j, m) * cnj (R2 $$ (i', m)))" unfolding \<open>Kc $$ (j, m) = (U1 $$ (j, m) + U2 $$ (j, m)) / 2\<close> by (simp add: U_def algebra_simps)
     qed
-    hence "(gk (L 0) 0 1 i i' + gk (L 1) 0 1 i i') / 2 = (\<Sum>j<d. \<Sum>m<d. R1 $$ (i, j) * Kc $$ (j, m) * cnj (R2 $$ (i', m)))"
+    hence "(kraus_gram (L 0) 0 1 i i' + kraus_gram (L 1) 0 1 i i') / 2 = (\<Sum>j<d. \<Sum>m<d. R1 $$ (i, j) * Kc $$ (j, m) * cnj (R2 $$ (i', m)))"
       by (simp only: sum_distrib_left[symmetric]) simp
     also have "\<dots> = (\<Sum>k<?K. a k i * cnj (b k i'))"
     proof -
@@ -799,19 +799,19 @@ proof -
         by (rule sum.cong[OF refl], rule sum.cong[OF refl]) (simp add: Kc_def sum_distrib_left algebra_simps)
       finally show ?thesis ..
     qed
-    finally show ?thesis by (simp add: gk_def a_def b_def)
+    finally show ?thesis by (simp add: kraus_gram_def a_def b_def)
   qed
-  have gsym: "gk Fs 1 0 i i' = cnj (gk Fs 0 1 i' i)" for Fs i i'
-    unfolding gk_def cnj_sum by (rule sum.cong[OF refl]) simp
-  have gav: "(gk (L 0) p q i i' + gk (L 1) p q i i') / 2 = gk As p q i i'" if pq: "p < 2" "q < 2" and ii: "i < d" "i' < d" for p q i i'
+  have gsym: "kraus_gram Fs 1 0 i i' = cnj (kraus_gram Fs 0 1 i' i)" for Fs i i'
+    unfolding kraus_gram_def cnj_sum by (rule sum.cong[OF refl]) simp
+  have gav: "(kraus_gram (L 0) p q i i' + kraus_gram (L 1) p q i i') / 2 = kraus_gram As p q i i'" if pq: "p < 2" "q < 2" and ii: "i < d" "i' < d" for p q i i'
   proof -
     have "p = 0 \<and> q = 0 \<or> p = 1 \<and> q = 1 \<or> p = 0 \<and> q = 1 \<or> p = 1 \<and> q = 0" using pq by auto
     thus ?thesis
     proof (elim disjE)
       assume "p = 1 \<and> q = 0"
-      hence "(gk (L 0) p q i i' + gk (L 1) p q i i') / 2 = cnj ((gk (L 0) 0 1 i' i + gk (L 1) 0 1 i' i) / 2)"
+      hence "(kraus_gram (L 0) p q i i' + kraus_gram (L 1) p q i i') / 2 = cnj ((kraus_gram (L 0) 0 1 i' i + kraus_gram (L 1) 0 1 i' i) / 2)"
         by (simp add: gsym gsym[unfolded One_nat_def])
-      also have "\<dots> = gk As p q i i'" using \<open>p = 1 \<and> q = 0\<close> g01[OF ii(2,1)] by (simp add: gsym gsym[unfolded One_nat_def])
+      also have "\<dots> = kraus_gram As p q i i'" using \<open>p = 1 \<and> q = 0\<close> g01[OF ii(2,1)] by (simp add: gsym gsym[unfolded One_nat_def])
       finally show ?thesis .
     qed (use g00 g11 g01 ii in auto)
   qed
@@ -822,7 +822,7 @@ proof -
       using c by simp_all
     fix i i' assume "i < dim_row (1\<^sub>m d)" "i' < dim_col (1\<^sub>m d)"
     hence ii: "i < d" "i' < d" by simp_all
-    have e: "kraus_map_dim d Fs (1\<^sub>m 2) $$ (i, i') = gk Fs 0 0 i i' + gk Fs 1 1 i i'" if "\<forall>A \<in> set Fs. A \<in> carrier_mat d 2" for Fs
+    have e: "kraus_map_dim d Fs (1\<^sub>m 2) $$ (i, i') = kraus_gram Fs 0 0 i i' + kraus_gram Fs 1 1 i i'" if "\<forall>A \<in> set Fs. A \<in> carrier_mat d 2" for Fs
       unfolding kraus2_entry[OF that one_carrier_mat ii] by (simp add: numeral_2_eq_2)
     have "kraus_map_dim d (L l) (1\<^sub>m 2) $$ (i, i') = kraus_map_dim d As (1\<^sub>m 2) $$ (i, i')"
       unfolding e[OF Lc] e[OF As] using g00[OF ii] g11[OF ii] by simp
@@ -842,23 +842,23 @@ proof -
       "i' < dim_col ((1 / of_nat 2) \<cdot>\<^sub>m kraus_map_dim d (concat [L 0, L 1]) X)"
     hence ii: "i < d" "i' < d" using c0 c1 unfolding app by simp_all
     have "((1 / of_nat 2) \<cdot>\<^sub>m kraus_map_dim d (concat [L 0, L 1]) X) $$ (i, i')
-        = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * ((gk (L 0) p q i i' + gk (L 1) p q i i') / 2))"
+        = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * ((kraus_gram (L 0) p q i i' + kraus_gram (L 1) p q i i') / 2))"
     proof -
       have "((1 / of_nat 2) \<cdot>\<^sub>m kraus_map_dim d (concat [L 0, L 1]) X) $$ (i, i')
           = (1 / 2) * (kraus_map_dim d (L 0) X $$ (i, i') + kraus_map_dim d (L 1) X $$ (i, i'))"
         unfolding app using c0 c1 ii by simp
-      also have "\<dots> = (1 / 2) * ((\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * gk (L 0) p q i i') + (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * gk (L 1) p q i i'))"
+      also have "\<dots> = (1 / 2) * ((\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * kraus_gram (L 0) p q i i') + (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * kraus_gram (L 1) p q i i'))"
         unfolding kraus2_entry[OF Lc X ii] ..
-      also have "\<dots> = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * ((gk (L 0) p q i i' + gk (L 1) p q i i') / 2))"
+      also have "\<dots> = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * ((kraus_gram (L 0) p q i i' + kraus_gram (L 1) p q i i') / 2))"
         unfolding sum.distrib[symmetric] sum_distrib_left
         by (rule sum.cong[OF refl], rule sum.cong[OF refl]) (simp add: algebra_simps)
       finally show ?thesis .
     qed
-    also have "\<dots> = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * gk As p q i i')"
+    also have "\<dots> = (\<Sum>p<2. \<Sum>q<2. X $$ (p, q) * kraus_gram As p q i i')"
     proof (rule sum.cong[OF refl], rule sum.cong[OF refl])
       fix p q :: nat assume "p \<in> {..<2}" "q \<in> {..<2}"
       hence pq: "p < 2" "q < 2" by simp_all
-      show "X $$ (p, q) * ((gk (L 0) p q i i' + gk (L 1) p q i i') / 2) = X $$ (p, q) * gk As p q i i'"
+      show "X $$ (p, q) * ((kraus_gram (L 0) p q i i' + kraus_gram (L 1) p q i i') / 2) = X $$ (p, q) * kraus_gram As p q i i'"
         unfolding gav[OF pq ii] ..
     qed
     also have "\<dots> = kraus_map_dim d As X $$ (i, i')" by (rule kraus2_entry[OF As X ii, symmetric])
@@ -873,7 +873,7 @@ proof -
     thus "length ([L 0, L 1] ! l) \<le> d \<and> (\<forall>B \<in> set ([L 0, L 1] ! l). B \<in> carrier_mat d 2)
       \<and> kraus_map_dim d ([L 0, L 1] ! l) (1\<^sub>m 2) = 1\<^sub>m d" using lenL Lc unit by simp
   qed
-  show ?thesis unfolding ra_split_def using B avg by (intro exI[of _ "[L 0, L 1]"]) simp
+  show ?thesis unfolding ucp_average_split_def using B avg by (intro exI[of _ "[L 0, L 1]"]) simp
 qed
 
 end

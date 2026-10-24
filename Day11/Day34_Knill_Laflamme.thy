@@ -116,44 +116,44 @@ qed
 subsection \<open>Linearity facts for the composite map $\mathcal R\circ\mathbb E$\<close>
 
 
-definition RE :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "RE n As Es M = kraus_map_dim n As (kraus_map_dim n Es M)"
+definition recover_after :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "recover_after n As Es M = kraus_map_dim n As (kraus_map_dim n Es M)"
 
-lemma RE_carrier: assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and M: "M \<in> carrier_mat n n" shows "RE n As Es M \<in> carrier_mat n n"
-  unfolding RE_def by (rule kraus_map_dim_carrier[OF As_c kraus_map_dim_carrier[OF Es_c M]])
+lemma recover_after_carrier: assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and M: "M \<in> carrier_mat n n" shows "recover_after n As Es M \<in> carrier_mat n n"
+  unfolding recover_after_def by (rule kraus_map_dim_carrier[OF As_c kraus_map_dim_carrier[OF Es_c M]])
 
-lemma RE_add: assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and M: "M \<in> carrier_mat n n" and N: "N \<in> carrier_mat n n" shows "RE n As Es (M + N) = RE n As Es M + RE n As Es N"
-  unfolding RE_def kraus_map_dim_add[OF M N Es_c]
+lemma recover_after_add: assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and M: "M \<in> carrier_mat n n" and N: "N \<in> carrier_mat n n" shows "recover_after n As Es (M + N) = recover_after n As Es M + recover_after n As Es N"
+  unfolding recover_after_def kraus_map_dim_add[OF M N Es_c]
   by (rule kraus_map_dim_add[OF kraus_map_dim_carrier[OF Es_c M] kraus_map_dim_carrier[OF Es_c N] As_c])
 
-lemma RE_smult: assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and M: "M \<in> carrier_mat n n" shows "RE n As Es (c \<cdot>\<^sub>m M) = c \<cdot>\<^sub>m RE n As Es M"
-  unfolding RE_def kraus_map_dim_smult[OF M Es_c]
+lemma recover_after_smult: assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and M: "M \<in> carrier_mat n n" shows "recover_after n As Es (c \<cdot>\<^sub>m M) = c \<cdot>\<^sub>m recover_after n As Es M"
+  unfolding recover_after_def kraus_map_dim_smult[OF M Es_c]
   by (rule kraus_map_dim_smult[OF kraus_map_dim_carrier[OF Es_c M] As_c])
 
-lemma RE_minus:
+lemma recover_after_minus:
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n"
       and Xc: "M \<in> carrier_mat n n" and Yc: "N \<in> carrier_mat n n"
-  shows "RE n As Es (M - N) = RE n As Es M - RE n As Es N"
+  shows "recover_after n As Es (M - N) = recover_after n As Es M - recover_after n As Es N"
 proof -
   have "M - N = M + (-1) \<cdot>\<^sub>m N" using Xc Yc by (intro eq_matI) auto
-  hence "RE n As Es (M - N) = RE n As Es M + (-1) \<cdot>\<^sub>m RE n As Es N" using RE_add[OF As_c Es_c Xc] RE_smult[OF As_c Es_c Yc] Yc by simp
-  thus ?thesis using RE_carrier[OF As_c Es_c Xc] RE_carrier[OF As_c Es_c Yc] by (intro eq_matI) auto
+  hence "recover_after n As Es (M - N) = recover_after n As Es M + (-1) \<cdot>\<^sub>m recover_after n As Es N" using recover_after_add[OF As_c Es_c Xc] recover_after_smult[OF As_c Es_c Yc] Yc by simp
+  thus ?thesis using recover_after_carrier[OF As_c Es_c Xc] recover_after_carrier[OF As_c Es_c Yc] by (intro eq_matI) auto
 qed
 
-lemma RE_foldr:
+lemma recover_after_foldr:
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and "\<forall>v \<in> set vs. dim_vec v = n"
-  shows "RE n As Es (foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m n n)) = foldr (\<lambda>v acc. RE n As Es (v \<oslash> v) + acc) vs (0\<^sub>m n n)"
+  shows "recover_after n As Es (foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m n n)) = foldr (\<lambda>v acc. recover_after n As Es (v \<oslash> v) + acc) vs (0\<^sub>m n n)"
   using assms(3)
 proof (induction vs)
   case Nil
-  have "RE n As Es (0\<^sub>m n n) = 0\<^sub>m n n" unfolding RE_def using As_c Es_c by (simp add: kraus_map_dim_zero)
+  have "recover_after n As Es (0\<^sub>m n n) = 0\<^sub>m n n" unfolding recover_after_def using As_c Es_c by (simp add: kraus_map_dim_zero)
   thus ?case by simp
 next
   case (Cons v vs)
   have vd: "dim_vec v = n" and rest: "\<forall>v \<in> set vs. dim_vec v = n" using Cons.prems by auto
   have rc: "foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m n n) \<in> carrier_mat n n"
     using rest by (induction vs) (auto simp: outer_prod_carrier)
-  show ?case using RE_add[OF As_c Es_c outer_prod_carrier[OF vd vd] rc] Cons.IH[OF rest] by simp
+  show ?case using recover_after_add[OF As_c Es_c outer_prod_carrier[OF vd vd] rc] Cons.IH[OF rest] by simp
 qed
 
 text \<open>D34-1: $\mathcal R\circ\mathbb E$ fixes $|\psi\rangle\langle\psi|$ for all $\psi\in V$ iff it
@@ -161,38 +161,38 @@ fixes $PXP$ for all $X$.\<close>
 
 proposition recovery_states_iff_PXP:
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat n n" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat n n" and P: "projection n P"
-  shows "(\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> RE n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>)
-         \<longleftrightarrow> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> RE n As Es (P * X * P) = P * X * P)"
+  shows "(\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> recover_after n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>)
+         \<longleftrightarrow> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> recover_after n As Es (P * X * P) = P * X * P)"
 proof
   have Pc: "P \<in> carrier_mat n n" and Ph: "P\<^sup>\<dagger> = P" using P by (auto simp: projection_def hermitian_def)
-  assume H: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> RE n As Es (P * X * P) = P * X * P"
-  show "\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> RE n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
+  assume H: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> recover_after n As Es (P * X * P) = P * X * P"
+  show "\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> recover_after n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
   proof (intro allI impI)
     fix \<psi> :: "complex Matrix.vec" assume \<psi>d: "dim_vec \<psi> = n" and \<psi>V: "P *\<^sub>v \<psi> = \<psi>"
     have "P * (\<psi> \<oslash> \<psi>) * P = (P *\<^sub>v \<psi>) \<oslash> (P *\<^sub>v \<psi>)"
       using conj_outer_prod[OF Pc \<psi>d] Ph by simp
     hence e: "P * (\<psi> \<oslash> \<psi>) * P = \<psi> \<oslash> \<psi>" unfolding \<psi>V .
-    have "RE n As Es (P * (\<psi> \<oslash> \<psi>) * P) = P * (\<psi> \<oslash> \<psi>) * P"
+    have "recover_after n As Es (P * (\<psi> \<oslash> \<psi>) * P) = P * (\<psi> \<oslash> \<psi>) * P"
       using H outer_prod_carrier[OF \<psi>d \<psi>d] by blast
-    thus "RE n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>" unfolding e .
+    thus "recover_after n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>" unfolding e .
   qed
 next
   have Pc: "P \<in> carrier_mat n n" and Ph: "P\<^sup>\<dagger> = P" using P by (auto simp: projection_def hermitian_def)
-  assume H: "\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> RE n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
-  have psd_case: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> psd X \<Longrightarrow> RE n As Es (P * X * P) = P * X * P"
+  assume H: "\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> recover_after n As Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
+  have psd_case: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> psd X \<Longrightarrow> recover_after n As Es (P * X * P) = P * X * P"
   proof -
     fix X :: "complex Matrix.mat" assume Xc: "X \<in> carrier_mat n n" and Xpsd: "psd X"
     obtain vs :: "complex Matrix.vec list" where vsV: "\<forall>v \<in> set vs. dim_vec v = n \<and> P *\<^sub>v v = v"
       and dec: "P * X * P = foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m n n)"
       using psd_PXP_decomp_in_range[OF P Xc Xpsd] by blast
     have vsd: "\<forall>v \<in> set vs. dim_vec v = n" using vsV by simp
-    have "RE n As Es (P * X * P) = foldr (\<lambda>v acc. RE n As Es (v \<oslash> v) + acc) vs (0\<^sub>m n n)"
-      unfolding dec by (rule RE_foldr[OF As_c Es_c vsd])
+    have "recover_after n As Es (P * X * P) = foldr (\<lambda>v acc. recover_after n As Es (v \<oslash> v) + acc) vs (0\<^sub>m n n)"
+      unfolding dec by (rule recover_after_foldr[OF As_c Es_c vsd])
     also have "\<dots> = foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m n n)"
       by (rule foldr_add_mat_cong) (use H vsV in auto)
-    finally show "RE n As Es (P * X * P) = P * X * P" unfolding dec .
+    finally show "recover_after n As Es (P * X * P) = P * X * P" unfolding dec .
   qed
-  show "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> RE n As Es (P * X * P) = P * X * P"
+  show "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> recover_after n As Es (P * X * P) = P * X * P"
   proof (intro allI impI)
     fix X :: "complex Matrix.mat" assume Xc: "X \<in> carrier_mat n n"
     obtain P1 P2 P3 P4 :: "complex Matrix.mat"
@@ -233,20 +233,20 @@ next
     have c1: "?c P1 \<in> carrier_mat n n" and c2: "?c P2 \<in> carrier_mat n n"
       and c3: "?c P3 \<in> carrier_mat n n" and c4: "?c P4 \<in> carrier_mat n n"
       using cc P1 P2 P3 P4 by blast+
-    have "RE n As Es (?c X) = RE n As Es ((?c P1 - ?c P2) + \<i> \<cdot>\<^sub>m (?c P3 - ?c P4))" unfolding PXP ..
-    also have "\<dots> = RE n As Es (?c P1 - ?c P2) + RE n As Es (\<i> \<cdot>\<^sub>m (?c P3 - ?c P4))"
-      by (rule RE_add[OF As_c Es_c minus_carrier_mat[OF c2] smult_carrier_mat[OF minus_carrier_mat[OF c4]]])
-    also have "RE n As Es (?c P1 - ?c P2) = RE n As Es (?c P1) - RE n As Es (?c P2)"
-      by (rule RE_minus[OF As_c Es_c c1 c2])
-    also have "RE n As Es (\<i> \<cdot>\<^sub>m (?c P3 - ?c P4)) = \<i> \<cdot>\<^sub>m RE n As Es (?c P3 - ?c P4)"
-      by (rule RE_smult[OF As_c Es_c minus_carrier_mat[OF c4]])
-    also have "RE n As Es (?c P3 - ?c P4) = RE n As Es (?c P3) - RE n As Es (?c P4)"
-      by (rule RE_minus[OF As_c Es_c c3 c4])
-    also have "(RE n As Es (?c P1) - RE n As Es (?c P2)) + \<i> \<cdot>\<^sub>m (RE n As Es (?c P3) - RE n As Es (?c P4))
+    have "recover_after n As Es (?c X) = recover_after n As Es ((?c P1 - ?c P2) + \<i> \<cdot>\<^sub>m (?c P3 - ?c P4))" unfolding PXP ..
+    also have "\<dots> = recover_after n As Es (?c P1 - ?c P2) + recover_after n As Es (\<i> \<cdot>\<^sub>m (?c P3 - ?c P4))"
+      by (rule recover_after_add[OF As_c Es_c minus_carrier_mat[OF c2] smult_carrier_mat[OF minus_carrier_mat[OF c4]]])
+    also have "recover_after n As Es (?c P1 - ?c P2) = recover_after n As Es (?c P1) - recover_after n As Es (?c P2)"
+      by (rule recover_after_minus[OF As_c Es_c c1 c2])
+    also have "recover_after n As Es (\<i> \<cdot>\<^sub>m (?c P3 - ?c P4)) = \<i> \<cdot>\<^sub>m recover_after n As Es (?c P3 - ?c P4)"
+      by (rule recover_after_smult[OF As_c Es_c minus_carrier_mat[OF c4]])
+    also have "recover_after n As Es (?c P3 - ?c P4) = recover_after n As Es (?c P3) - recover_after n As Es (?c P4)"
+      by (rule recover_after_minus[OF As_c Es_c c3 c4])
+    also have "(recover_after n As Es (?c P1) - recover_after n As Es (?c P2)) + \<i> \<cdot>\<^sub>m (recover_after n As Es (?c P3) - recover_after n As Es (?c P4))
                = (?c P1 - ?c P2) + \<i> \<cdot>\<^sub>m (?c P3 - ?c P4)"
       by (simp only: psd_case[OF conjunct1[OF P1] conjunct2[OF P1]] psd_case[OF conjunct1[OF P2] conjunct2[OF P2]]
                      psd_case[OF conjunct1[OF P3] conjunct2[OF P3]] psd_case[OF conjunct1[OF P4] conjunct2[OF P4]])
-    finally show "RE n As Es (?c X) = ?c X" unfolding PXP .
+    finally show "recover_after n As Es (?c X) = ?c X" unfolding PXP .
   qed
 qed
 

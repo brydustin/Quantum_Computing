@@ -64,6 +64,43 @@ lemma vec_to_mat_index [simp]: "i < k \<Longrightarrow> l < m \<Longrightarrow> 
 lemma col_vec_to_mat: "l < m \<Longrightarrow> Matrix.col (vec_to_mat k m u) l = Matrix.vec k (\<lambda>i. u $ (i * m + l))"
   by (auto simp: vec_to_mat_def)
 
+text \<open>Conversely, reading a matrix row by row gives a vector, and \<^const>\<open>vec_to_mat\<close> undoes this:
+\[
+  \begin{pmatrix}a&b&c\\ d&e&f\end{pmatrix}\quad\longmapsto\quad(a,b,c,d,e,f).
+\]\<close>
+
+definition mat_to_vec :: "complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
+  "mat_to_vec c = Matrix.vec (dim_row c * dim_col c) (\<lambda>k. c $$ (k div dim_col c, k mod dim_col c))"
+
+lemma vec_to_mat_mat_to_vec: "c \<in> carrier_mat K1 K2 \<Longrightarrow> vec_to_mat K1 K2 (mat_to_vec c) = c"
+proof (rule eq_matI)
+  fix i j assume c: "c \<in> carrier_mat K1 K2" and ij: "i < dim_row c" "j < dim_col c"
+  have j: "j < K2" using c ij by simp
+  have "i * K2 + j < K1 * K2"
+  proof -
+    have "i * K2 + j < i * K2 + K2" using j by simp
+    also have "\<dots> = Suc i * K2" by simp
+    also have "\<dots> \<le> K1 * K2" using c ij by (intro mult_le_mono1) simp
+    finally show ?thesis .
+  qed
+  thus "vec_to_mat K1 K2 (mat_to_vec c) $$ (i, j) = c $$ (i, j)" using c ij j by (simp add: vec_to_mat_def mat_to_vec_def carrier_matD[OF c])
+qed (auto simp: vec_to_mat_def)
+
+lemma dim_mat_to_vec: "c \<in> carrier_mat K1 K2 \<Longrightarrow> dim_vec (mat_to_vec c) = K1 * K2" by (simp add: mat_to_vec_def carrier_matD)
+
+lemma mat_to_vec_index:
+  assumes c: "c \<in> carrier_mat K1 K2" and i: "i < K1" and j: "j < K2"
+  shows "mat_to_vec c $ (i * K2 + j) = c $$ (i, j)"
+proof -
+  have "i * K2 + j < K1 * K2"
+  proof -
+    have "i * K2 + j < Suc i * K2" using j by simp
+    also have "\<dots> \<le> K1 * K2" using i by (intro mult_le_mono1) simp
+    finally show ?thesis .
+  qed
+  thus ?thesis using j by (simp add: mat_to_vec_def carrier_matD[OF c])
+qed
+
 text \<open>For other bases the matrix is multiplied by the inverse basis matrix.  If $f_1,\dots,f_m$ is
 a basis of $\C^m$ with column matrix $F$ and $G=F^{-1}$, then $u=\sum_jx_j\otimes f_j$ says $U=XF^T$,
 where $U$ is the matrix of $u$ and $X$ has the columns $x_j$; so the $x_j$ are the columns of

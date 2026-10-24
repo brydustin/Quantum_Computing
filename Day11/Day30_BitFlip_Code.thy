@@ -278,11 +278,11 @@ qed simp_all
 
 text \<open>Kraus operators of the recovery map $R(Y)=P_0YP_0+\sum_{k}X_kP_kYP_kX_k$.\<close>
 
-definition recovery_ops :: "complex Matrix.mat list" where
-  "recovery_ops = [P\<^sub>0, X\<^sub>1 * P\<^sub>1, X\<^sub>2 * P\<^sub>2, X\<^sub>3 * P\<^sub>3]"
+definition bitflip_recovery_ops :: "complex Matrix.mat list" where
+  "bitflip_recovery_ops = [P\<^sub>0, X\<^sub>1 * P\<^sub>1, X\<^sub>2 * P\<^sub>2, X\<^sub>3 * P\<^sub>3]"
 
-definition recovery_map :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "recovery_map = kraus_map_dim 8 recovery_ops"
+definition bitflip_recovery_map :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "bitflip_recovery_map = kraus_map_dim 8 bitflip_recovery_ops"
 
 lemma flip_proj_dag_mult:
   assumes b: "b < 3"
@@ -303,20 +303,20 @@ proof -
   finally show ?thesis .
 qed
 
-theorem recovery_ops_kraus: "kraus_operators 8 8 recovery_ops"
+theorem bitflip_recovery_ops_kraus: "kraus_operators 8 8 bitflip_recovery_ops"
 proof -
-  have c: "\<forall>W \<in> set recovery_ops. W \<in> carrier_mat 8 8" by (auto simp: recovery_ops_def)
-  have "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) recovery_ops (0\<^sub>m 8 8)
+  have c: "\<forall>W \<in> set bitflip_recovery_ops. W \<in> carrier_mat 8 8" by (auto simp: bitflip_recovery_ops_def)
+  have "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) bitflip_recovery_ops (0\<^sub>m 8 8)
         = P\<^sub>0 + (P\<^sub>1 + (P\<^sub>2 + (P\<^sub>3 + 0\<^sub>m 8 8)))"
-    by (simp add: recovery_ops_def flip_proj_dag_mult syndrome_proj_hermitian syndrome_proj_idem)
+    by (simp add: bitflip_recovery_ops_def flip_proj_dag_mult syndrome_proj_hermitian syndrome_proj_idem)
   also have "\<dots> = P\<^sub>0 + P\<^sub>1 + P\<^sub>2 + P\<^sub>3"
     by (rule eq_matI) (simp_all add: syndrome_proj_def add.assoc)
   also have "\<dots> = 1\<^sub>m 8" by (rule syndrome_proj_sum)
   finally show ?thesis using c by (simp add: kraus_operators_def)
 qed
 
-corollary recovery_map_CPTP: "recovery_map \<in> CPTP 8 8"
-  unfolding recovery_map_def by (rule kraus_is_cptp[OF recovery_ops_kraus]) simp_all
+corollary bitflip_recovery_map_CPTP: "bitflip_recovery_map \<in> CPTP 8 8"
+  unfolding bitflip_recovery_map_def by (rule kraus_is_cptp[OF bitflip_recovery_ops_kraus]) simp_all
 
 text \<open>The encoded state $\psi=a\ket{000}+b\ket{111}$ and its single-flip corruptions.\<close>
 
@@ -330,7 +330,7 @@ lemma encode_mat_dim [simp]: "dim_vec (encode_mat *\<^sub>v x) = 8" by simp
 lemma recovery_kraus_term:
   fixes \<phi> :: "complex Matrix.vec"
   assumes \<phi>d: "dim_vec \<phi> = 8"
-  shows "recovery_map (\<phi> \<oslash> \<phi>) =
+  shows "bitflip_recovery_map (\<phi> \<oslash> \<phi>) =
      (P\<^sub>0 *\<^sub>v \<phi>) \<oslash> (P\<^sub>0 *\<^sub>v \<phi>) + ((X\<^sub>1 *\<^sub>v (P\<^sub>1 *\<^sub>v \<phi>)) \<oslash> (X\<^sub>1 *\<^sub>v (P\<^sub>1 *\<^sub>v \<phi>))
      + ((X\<^sub>2 *\<^sub>v (P\<^sub>2 *\<^sub>v \<phi>)) \<oslash> (X\<^sub>2 *\<^sub>v (P\<^sub>2 *\<^sub>v \<phi>))
      + ((X\<^sub>3 *\<^sub>v (P\<^sub>3 *\<^sub>v \<phi>)) \<oslash> (X\<^sub>3 *\<^sub>v (P\<^sub>3 *\<^sub>v \<phi>)) + 0\<^sub>m 8 8)))"
@@ -339,7 +339,7 @@ proof -
   have assoc: "\<And>b K. (flip_bit_mat b * syndrome_proj K) *\<^sub>v \<phi> = flip_bit_mat b *\<^sub>v (syndrome_proj K *\<^sub>v \<phi>)"
     by (rule assoc_mult_mat_vec[OF flip_bit_mat_carrier syndrome_proj_carrier carrier_vecI[OF \<phi>d]])
   show ?thesis
-    unfolding recovery_map_def recovery_ops_def
+    unfolding bitflip_recovery_map_def bitflip_recovery_ops_def
     by (simp only: kraus_map_dim_Cons kraus_map_dim_Nil
           conj_outer_prod[OF syndrome_proj_carrier \<phi>d] conj_outer_prod[OF XP \<phi>d] assoc)
 qed
@@ -348,10 +348,10 @@ theorem bit_flip_code_recovery:
   fixes x :: "complex Matrix.vec"
   assumes xd: "dim_vec x = 2"
   defines "\<psi> \<equiv> encode_mat *\<^sub>v x"
-  shows "recovery_map (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
-    and "recovery_map ((X\<^sub>1 *\<^sub>v \<psi>) \<oslash> (X\<^sub>1 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
-    and "recovery_map ((X\<^sub>2 *\<^sub>v \<psi>) \<oslash> (X\<^sub>2 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
-    and "recovery_map ((X\<^sub>3 *\<^sub>v \<psi>) \<oslash> (X\<^sub>3 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
+  shows "bitflip_recovery_map (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
+    and "bitflip_recovery_map ((X\<^sub>1 *\<^sub>v \<psi>) \<oslash> (X\<^sub>1 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
+    and "bitflip_recovery_map ((X\<^sub>2 *\<^sub>v \<psi>) \<oslash> (X\<^sub>2 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
+    and "bitflip_recovery_map ((X\<^sub>3 *\<^sub>v \<psi>) \<oslash> (X\<^sub>3 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
 proof -
   have \<psi>d: "dim_vec \<psi> = 8" by (simp add: \<psi>_def)
   have \<psi>i: "\<And>i. i < 8 \<Longrightarrow> \<psi> $ i = (if i = 0 then x $ 0 else if i = 7 then x $ 1 else 0)"
@@ -419,28 +419,28 @@ proof -
   have a1: "P\<^sub>1 *\<^sub>v \<psi> = 0\<^sub>v 8" by (rule P_kill[OF \<psi>d]) (auto simp: \<psi>i)
   have a2: "P\<^sub>2 *\<^sub>v \<psi> = 0\<^sub>v 8" by (rule P_kill[OF \<psi>d]) (auto simp: \<psi>i)
   have a3: "P\<^sub>3 *\<^sub>v \<psi> = 0\<^sub>v 8" by (rule P_kill[OF \<psi>d]) (auto simp: \<psi>i)
-  show "recovery_map (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
+  show "bitflip_recovery_map (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
     unfolding recovery_kraus_term[OF \<psi>d] a0 a1 a2 a3 using oc z8 X_zero by simp
   \<comment> \<open>error on qubit 1\<close>
   have b0: "P\<^sub>0 *\<^sub>v (X\<^sub>1 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X1\<psi>, auto)
   have b1: "P\<^sub>1 *\<^sub>v (X\<^sub>1 *\<^sub>v \<psi>) = X\<^sub>1 *\<^sub>v \<psi>" by (rule P_fix[OF Xd]) (simp only: X1\<psi>, auto)
   have b2: "P\<^sub>2 *\<^sub>v (X\<^sub>1 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X1\<psi>, auto)
   have b3: "P\<^sub>3 *\<^sub>v (X\<^sub>1 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X1\<psi>, auto)
-  show "recovery_map ((X\<^sub>1 *\<^sub>v \<psi>) \<oslash> (X\<^sub>1 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
+  show "bitflip_recovery_map ((X\<^sub>1 *\<^sub>v \<psi>) \<oslash> (X\<^sub>1 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
     unfolding recovery_kraus_term[OF Xd] b0 b1 b2 b3 X1X1 using oc z8 X_zero by simp
   \<comment> \<open>error on qubit 2\<close>
   have c0: "P\<^sub>0 *\<^sub>v (X\<^sub>2 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X2\<psi>, auto)
   have c1: "P\<^sub>1 *\<^sub>v (X\<^sub>2 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X2\<psi>, auto)
   have c2: "P\<^sub>2 *\<^sub>v (X\<^sub>2 *\<^sub>v \<psi>) = X\<^sub>2 *\<^sub>v \<psi>" by (rule P_fix[OF Xd]) (simp only: X2\<psi>, auto)
   have c3: "P\<^sub>3 *\<^sub>v (X\<^sub>2 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X2\<psi>, auto)
-  show "recovery_map ((X\<^sub>2 *\<^sub>v \<psi>) \<oslash> (X\<^sub>2 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
+  show "bitflip_recovery_map ((X\<^sub>2 *\<^sub>v \<psi>) \<oslash> (X\<^sub>2 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
     unfolding recovery_kraus_term[OF Xd] c0 c1 c2 c3 X2X2 using oc z8 X_zero by simp
   \<comment> \<open>error on qubit 3\<close>
   have d0: "P\<^sub>0 *\<^sub>v (X\<^sub>3 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X3\<psi>, auto)
   have d1: "P\<^sub>1 *\<^sub>v (X\<^sub>3 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X3\<psi>, auto)
   have d2: "P\<^sub>2 *\<^sub>v (X\<^sub>3 *\<^sub>v \<psi>) = 0\<^sub>v 8" by (rule P_kill[OF Xd]) (simp only: X3\<psi>, auto)
   have d3: "P\<^sub>3 *\<^sub>v (X\<^sub>3 *\<^sub>v \<psi>) = X\<^sub>3 *\<^sub>v \<psi>" by (rule P_fix[OF Xd]) (simp only: X3\<psi>, auto)
-  show "recovery_map ((X\<^sub>3 *\<^sub>v \<psi>) \<oslash> (X\<^sub>3 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
+  show "bitflip_recovery_map ((X\<^sub>3 *\<^sub>v \<psi>) \<oslash> (X\<^sub>3 *\<^sub>v \<psi>)) = \<psi> \<oslash> \<psi>"
     unfolding recovery_kraus_term[OF Xd] d0 d1 d2 d3 X3X3 using oc z8 X_zero by simp
 qed
 

@@ -897,3 +897,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   complex one is stronger) are gone, and `mat_lin_indep_complex n` is `lin_indep_complex_mat n n`.
   Day 23 lost about 1100 lines.  Also: printed commentary with displayed equations across the
   notes, process remarks out of printed text, LaTeX instead of Isabelle symbols in texts.
+- **Names and one duplicate** (2026-10-23): `flatten_mat n B` (Day 22) was `mat_to_vec B`; `mat_to_vec`
+  now sits beside `vec_to_mat` in `Day06_Tensor_Coordinates` (with `mat_to_vec_index`).  Renamed:
+  `om`→`omega_pow`, `fmix`→`fourier_mix`, `D21_2`→`average_conjecture`, `ra_split`→`ucp_average_split`,
+  `gk`→`kraus_gram`, `ub`→`y_basis`, `tv2`→`y_word`, `bop`→`block_op`, `blk`→`on_block`, `pm`→`sign_pm`,
+  `sk`→`shor_scale`, `gvec`→`ghz_vec`, `gv`→`ghz_vec_of`, `tv3`→`tensor3`, `lab_vec`→`label_vec`,
+  `RE`→`recover_after`, and Day 30's `recovery_ops`/`recovery_map` → `bitflip_recovery_ops`/`_map`
+  (Day 32 has the general ones).  Trap: a word-boundary rename of `pm` also hits LaTeX `\pm`.

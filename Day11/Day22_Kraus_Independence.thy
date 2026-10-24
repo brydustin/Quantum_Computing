@@ -1,5 +1,5 @@
 theory Day22_Kraus_Independence
-  imports QC_Prelims "Jordan_Normal_Form.DL_Rank"
+  imports QC_Prelims Day06_Tensor_Coordinates "Jordan_Normal_Form.DL_Rank"
 begin
 
 section \<open>Day 22: linear independence bounds the number of Kraus operators (D22-6)\<close>
@@ -67,30 +67,16 @@ qed
 text \<open>Flattening a matrix into a vector carries linear independence of matrices to
 \<open>lin_indep_vecs\<close>, so a linearly independent family in $M_n$ has at most $n^2$ members.\<close>
 
-definition flatten_mat :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.vec" where
-  "flatten_mat n B = Matrix.vec (n*n) (\<lambda>k. B $$ (k div n, k mod n))"
-
-lemma flatten_mat_dim [simp]: "dim_vec (flatten_mat n B) = n*n"
-  by (simp add: flatten_mat_def)
-
-lemma flatten_mat_index:
-  assumes "i < n" and "j < n"
-  shows "flatten_mat n B $ (i*n + j) = B $$ (i,j)"
-proof -
-  have "i*n + j < n*n" using assms by (rule mult_index_lt)
-  moreover have "(i*n + j) div n = i" and "(i*n + j) mod n = j" using assms by simp_all
-  ultimately show ?thesis by (simp add: flatten_mat_def)
-qed
-
-lemma mat_lin_indep_complex_flatten:
+lemma lin_indep_mats_vecs:
   assumes li: "lin_indep_complex_mat n n Bs"
-  shows "lin_indep_vecs (n*n) (map (flatten_mat n) Bs)"
+  shows "lin_indep_vecs (n*n) (map mat_to_vec Bs)"
 proof (unfold lin_indep_vecs_def, intro conjI allI impI)
-  show "\<forall>v \<in> set (map (flatten_mat n) Bs). dim_vec v = n*n" by simp
+  show "\<forall>v \<in> set (map mat_to_vec Bs). dim_vec v = n*n"
+    using li by (auto simp: lin_indep_complex_mat_def intro: dim_mat_to_vec)
 next
   fix x :: "complex Matrix.vec"
-  let ?m = "length (map (flatten_mat n) Bs)"
-  let ?A = "mat_of_cols (n*n) (map (flatten_mat n) Bs)"
+  let ?m = "length (map mat_to_vec Bs)"
+  let ?A = "mat_of_cols (n*n) (map mat_to_vec Bs)"
   assume xc: "x \<in> carrier_vec ?m" and Ax: "?A *\<^sub>v x = 0\<^sub>v (n*n)"
   have Bc: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" using li by (simp add: lin_indep_complex_mat_def)
   have len: "?m = length Bs" by simp
@@ -115,9 +101,9 @@ next
     proof (rule sum.cong[OF refl])
       fix k assume "k \<in> {0..<length Bs}"
       hence k: "k < length Bs" by simp
-      have "?A $$ (i*n + j, k) = flatten_mat n (Bs ! k) $ (i*n + j)"
+      have "?A $$ (i*n + j, k) = mat_to_vec (Bs ! k) $ (i*n + j)"
         using mult_index_lt[OF i j] k by (simp add: mat_of_cols_index)
-      also have "\<dots> = Bs ! k $$ (i,j)" by (rule flatten_mat_index[OF i j])
+      also have "\<dots> = Bs ! k $$ (i,j)" by (rule mat_to_vec_index[OF _ i j]) (use Bc k in auto)
       finally show "x $ k * Bs ! k $$ (i,j) = ?A $$ (i*n + j, k) * x $ k" by (simp add: mult.commute)
     qed
     also have "\<dots> = (?A *\<^sub>v x) $ (i*n + j)"
@@ -133,10 +119,10 @@ next
   thus "x = 0\<^sub>v ?m" using xc by (intro eq_vecI) auto
 qed
 
-lemma mat_lin_indep_complex_length_le:
+lemma lin_indep_mats_length_le:
   assumes "lin_indep_complex_mat n n Bs"
   shows "length Bs \<le> n*n"
-  using lin_indep_vecs_length_le[OF mat_lin_indep_complex_flatten[OF assms]] by simp
+  using lin_indep_vecs_length_le[OF lin_indep_mats_vecs[OF assms]] by simp
 
 text \<open>Corollary to Choi's Theorem 3 (D22-6): an extreme CPTP map $M_n\to M_d$ with a minimal
 Kraus representation $(V_i)_{i<r}$ has $r^2\le n^2$, i.e.\ $\mathrm{cr}(\Phi)\le n$.\<close>
@@ -152,7 +138,7 @@ proof -
   have "lin_indep_complex_mat n n (kraus_products Vs)"
     using choi_theorem_3_cptp_iff[OF npos dpos \<Phi>_in rep minimal] ext by simp
   hence "length Vs * length Vs \<le> n * n"
-    using mat_lin_indep_complex_length_le length_kraus_products by metis
+    using lin_indep_mats_length_le length_kraus_products by metis
   thus ?thesis using power2_le_imp_le[of "length Vs" n] by (simp add: power2_eq_square)
 qed
 

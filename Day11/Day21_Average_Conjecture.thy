@@ -5,7 +5,7 @@ begin
 section \<open>Day 21: the conjecture on averages of unital maps (D21-2)\<close>
 
 text \<open>The notes ask whether every unital completely positive $\Phi:M_n\to M_d$ is the average of $n$
-unital completely positive maps of Choi rank at most $d$ (\<open>D21_2\<close>).  This is the strong
+unital completely positive maps of Choi rank at most $d$ (\<open>average_conjecture\<close>).  This is the strong
 Ruskai--Audenaert conjecture for the dual channel, open in general.  Proved here: Fourier mixing
 settles every map whose Kraus operators split into $n$ groups with vanishing cross sums
 (\<open>fourier_split\<close>); this covers measurement maps (\<open>ra_measurement\<close>), and Horn's lemma
@@ -35,29 +35,29 @@ qed simp
 
 text \<open>Characters of $\mathbb Z_n$.\<close>
 
-definition om :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex" where
-  "om n l m = cis (2 * pi * real l * real m / real n)"
+definition omega_pow :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex" where
+  "omega_pow n l m = cis (2 * pi * real l * real m / real n)"
 
-text \<open>With $\omega=e^{2\pi i/n}$, \<open>om n l m\<close> is $\omega^{lm}$.  The characters are orthogonal,
+text \<open>With $\omega=e^{2\pi i/n}$, \<open>omega_pow n l m\<close> is $\omega^{lm}$.  The characters are orthogonal,
 \[ \sum_{l<n}\omega^{lm}\,\overline{\omega^{lm'}}=n\,\delta_{mm'}, \]
 so the Fourier mixing $x\mapsto\bigl(\sum_m\omega^{lm}x_m\bigr)_l$ multiplies inner products by $n$.\<close>
 
-lemma om_norm [simp]: "om n l m * cnj (om n l m) = 1"
-  by (simp add: om_def cis_cnj cis_mult)
+lemma omega_pow_norm [simp]: "omega_pow n l m * cnj (omega_pow n l m) = 1"
+  by (simp add: omega_pow_def cis_cnj cis_mult)
 
-lemma om_orth:
+lemma omega_pow_orth:
   assumes m: "m < n" and m': "m' < n"
-  shows "(\<Sum>l<n. om n l m * cnj (om n l m')) = (if m = m' then of_nat n else 0)"
+  shows "(\<Sum>l<n. omega_pow n l m * cnj (omega_pow n l m')) = (if m = m' then of_nat n else 0)"
 proof (cases "m = m'")
   case True thus ?thesis by simp
 next
   case False
   let ?z = "cis (2 * pi * (real m - real m') / real n)"
   have n0: "0 < n" using m by simp
-  have e: "om n l m * cnj (om n l m') = ?z ^ l" for l
+  have e: "omega_pow n l m * cnj (omega_pow n l m') = ?z ^ l" for l
   proof -
-    have "om n l m * cnj (om n l m') = cis (2 * pi * real l * real m / real n - 2 * pi * real l * real m' / real n)"
-      by (simp add: om_def cis_cnj cis_mult)
+    have "omega_pow n l m * cnj (omega_pow n l m') = cis (2 * pi * real l * real m / real n - 2 * pi * real l * real m' / real n)"
+      by (simp add: omega_pow_def cis_cnj cis_mult)
     also have "\<dots> = cis (real l * (2 * pi * (real m - real m') / real n))"
       by (rule arg_cong[where f = cis]) (simp add: algebra_simps diff_divide_distrib)
     also have "\<dots> = ?z ^ l" by (simp add: DeMoivre)
@@ -95,23 +95,23 @@ next
     qed
     thus False using eq False by simp
   qed
-  have "(\<Sum>l<n. om n l m * cnj (om n l m')) = (\<Sum>l<n. ?z ^ l)" by (simp add: e)
+  have "(\<Sum>l<n. omega_pow n l m * cnj (omega_pow n l m')) = (\<Sum>l<n. ?z ^ l)" by (simp add: e)
   also have "\<dots> = 0" using z1 zn by (simp add: geometric_sum)
   finally show ?thesis using False by simp
 qed
 
-lemma om_mix:
-  "(\<Sum>l<n. (\<Sum>m<n. om n l m * x m) * cnj (\<Sum>m<n. om n l m * y m)) = of_nat n * (\<Sum>m<n. x m * cnj (y m))"
+lemma omega_pow_mix:
+  "(\<Sum>l<n. (\<Sum>m<n. omega_pow n l m * x m) * cnj (\<Sum>m<n. omega_pow n l m * y m)) = of_nat n * (\<Sum>m<n. x m * cnj (y m))"
 proof -
-  have "(\<Sum>l<n. (\<Sum>m<n. om n l m * x m) * cnj (\<Sum>m<n. om n l m * y m))
-        = (\<Sum>l<n. \<Sum>m<n. \<Sum>m'<n. (om n l m * cnj (om n l m')) * (x m * cnj (y m')))"
+  have "(\<Sum>l<n. (\<Sum>m<n. omega_pow n l m * x m) * cnj (\<Sum>m<n. omega_pow n l m * y m))
+        = (\<Sum>l<n. \<Sum>m<n. \<Sum>m'<n. (omega_pow n l m * cnj (omega_pow n l m')) * (x m * cnj (y m')))"
     by (simp add: cnj_sum sum_distrib_left sum_distrib_right algebra_simps) (rule sum.cong[OF refl], rule sum.swap)
-  also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. \<Sum>l<n. (om n l m * cnj (om n l m')) * (x m * cnj (y m')))"
+  also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. \<Sum>l<n. (omega_pow n l m * cnj (omega_pow n l m')) * (x m * cnj (y m')))"
     by (subst sum.swap, rule sum.cong[OF refl], rule sum.swap)
-  also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. (\<Sum>l<n. om n l m * cnj (om n l m')) * (x m * cnj (y m')))"
+  also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. (\<Sum>l<n. omega_pow n l m * cnj (omega_pow n l m')) * (x m * cnj (y m')))"
     by (simp only: sum_distrib_right)
   also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. (if m = m' then of_nat n else 0) * (x m * cnj (y m')))"
-    by (rule sum.cong[OF refl], rule sum.cong[OF refl]) (simp add: om_orth)
+    by (rule sum.cong[OF refl], rule sum.cong[OF refl]) (simp add: omega_pow_orth)
   also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. if m' = m then of_nat n * (x m * cnj (y m)) else 0)"
     by (rule sum.cong[OF refl], rule sum.cong[OF refl]) auto
   also have "\<dots> = of_nat n * (\<Sum>m<n. x m * cnj (y m))" by (simp add: sum_distrib_left)
@@ -139,25 +139,25 @@ lemma prod_dagger_entry:
 text \<open>D21-2 in the notes' main form: a unital $\Phi:M_n\to M_d$ is the average of $n$ unital
 completely positive maps of Choi rank at most $d$.\<close>
 
-definition ra_split :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
-  "ra_split n d \<Phi> \<longleftrightarrow> (\<exists>Bs. length Bs = n \<and> (\<forall>l<n. length (Bs ! l) \<le> d \<and> (\<forall>B \<in> set (Bs ! l). B \<in> carrier_mat d n)
+definition ucp_average_split :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
+  "ucp_average_split n d \<Phi> \<longleftrightarrow> (\<exists>Bs. length Bs = n \<and> (\<forall>l<n. length (Bs ! l) \<le> d \<and> (\<forall>B \<in> set (Bs ! l). B \<in> carrier_mat d n)
       \<and> kraus_map_dim d (Bs ! l) (1\<^sub>m n) = 1\<^sub>m d) \<and> (\<forall>X \<in> carrier_mat n n. \<Phi> X = (1 / of_nat n) \<cdot>\<^sub>m kraus_map_dim d (concat Bs) X))"
 
 text \<open>The conjecture itself, for maps given by Kraus operators (every completely positive map
 is one).  It is the strong Ruskai--Audenaert conjecture for the dual channel $M_d\to M_n$, open in
 general; the cases below are the ones settled in the literature by direct constructions.\<close>
 
-definition D21_2 :: bool where
-  "D21_2 \<longleftrightarrow> (\<forall>n d As. 0 < n \<longrightarrow> (\<forall>A \<in> set As. A \<in> carrier_mat d n) \<longrightarrow> kraus_map_dim d As (1\<^sub>m n) = 1\<^sub>m d
-     \<longrightarrow> ra_split n d (kraus_map_dim d As))"
+definition average_conjecture :: bool where
+  "average_conjecture \<longleftrightarrow> (\<forall>n d As. 0 < n \<longrightarrow> (\<forall>A \<in> set As. A \<in> carrier_mat d n) \<longrightarrow> kraus_map_dim d As (1\<^sub>m n) = 1\<^sub>m d
+     \<longrightarrow> ucp_average_split n d (kraus_map_dim d As))"
 
-definition fmix :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
-  "fmix n d A l j = Matrix.mat d n (\<lambda>(a, p). \<Sum>m<n. om n l m * A m j $$ (a, p))"
+definition fourier_mix :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
+  "fourier_mix n d A l j = Matrix.mat d n (\<lambda>(a, p). \<Sum>m<n. omega_pow n l m * A m j $$ (a, p))"
 
-lemma fmix_carrier [simp]: "fmix n d A l j \<in> carrier_mat d n" by (simp add: fmix_def)
+lemma fourier_mix_carrier [simp]: "fourier_mix n d A l j \<in> carrier_mat d n" by (simp add: fourier_mix_def)
 
-lemma fmix_index: "a < d \<Longrightarrow> p < n \<Longrightarrow> fmix n d A l j $$ (a, p) = (\<Sum>m<n. om n l m * A m j $$ (a, p))"
-  by (simp add: fmix_def)
+lemma fourier_mix_index: "a < d \<Longrightarrow> p < n \<Longrightarrow> fourier_mix n d A l j $$ (a, p) = (\<Sum>m<n. omega_pow n l m * A m j $$ (a, p))"
+  by (simp add: fourier_mix_def)
 
 text \<open>If the Kraus operators fall into $n$ groups of $d$ with $\sum_jA_{mj}A_{m'j}^*=0$ for $m\ne m'$,
 Fourier mixing $B_{lj}=\sum_m\omega^{lm}A_{mj}$ gives the decomposition.\<close>
@@ -166,9 +166,9 @@ theorem fourier_split:
   assumes n: "0 < n" and A: "\<And>m j. m < n \<Longrightarrow> j < d \<Longrightarrow> A m j \<in> carrier_mat d n"
     and u: "kraus_map_dim d (concat (map (\<lambda>m. map (A m) [0..<d]) [0..<n])) (1\<^sub>m n) = 1\<^sub>m d"
     and orth: "\<And>m m' a b. m < n \<Longrightarrow> m' < n \<Longrightarrow> m \<noteq> m' \<Longrightarrow> a < d \<Longrightarrow> b < d \<Longrightarrow> (\<Sum>j<d. (A m j * ((A m' j)\<^sup>\<dagger>)) $$ (a, b)) = 0"
-  shows "ra_split n d (kraus_map_dim d (concat (map (\<lambda>m. map (A m) [0..<d]) [0..<n])))"
+  shows "ucp_average_split n d (kraus_map_dim d (concat (map (\<lambda>m. map (A m) [0..<d]) [0..<n])))"
 proof -
-  let ?B = "fmix n d A"
+  let ?B = "fourier_mix n d A"
   define Bs where "Bs = map (\<lambda>l. map (?B l) [0..<d]) [0..<n]"
   have one: "1\<^sub>m n \<in> carrier_mat n n" by simp
   have e1: "(W * 1\<^sub>m n * (W\<^sup>\<dagger>)) $$ (a, b) = (W * (W\<^sup>\<dagger>)) $$ (a, b)" if "W \<in> carrier_mat d n" for W a b
@@ -187,17 +187,17 @@ proof -
       show ?thesis unfolding Bl kraus_map_dim_entry_sum_list[OF c one a b]
         by (simp add: e1 comp_def sum_set_upt_conv_sum_list_nat[symmetric] atLeast0LessThan)
     qed
-    also have "\<dots> = (\<Sum>j<d. \<Sum>p<n. (\<Sum>m<n. om n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. om n l m * A m j $$ (b, p)))"
-      by (rule sum.cong[OF refl]) (simp add: prod_dagger_entry[OF fmix_carrier fmix_carrier a b] fmix_index a b)
-    also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. om n l m * cnj (om n l m') * (\<Sum>j<d. (A m j * ((A m' j)\<^sup>\<dagger>)) $$ (a, b)))"
+    also have "\<dots> = (\<Sum>j<d. \<Sum>p<n. (\<Sum>m<n. omega_pow n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. omega_pow n l m * A m j $$ (b, p)))"
+      by (rule sum.cong[OF refl]) (simp add: prod_dagger_entry[OF fourier_mix_carrier fourier_mix_carrier a b] fourier_mix_index a b)
+    also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. omega_pow n l m * cnj (omega_pow n l m') * (\<Sum>j<d. (A m j * ((A m' j)\<^sup>\<dagger>)) $$ (a, b)))"
     proof -
-      have "(\<Sum>j<d. \<Sum>p<n. (\<Sum>m<n. om n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. om n l m * A m j $$ (b, p)))
-          = (\<Sum>j<d. \<Sum>p<n. \<Sum>m<n. \<Sum>m'<n. om n l m * cnj (om n l m') * (A m j $$ (a, p) * cnj (A m' j $$ (b, p))))"
+      have "(\<Sum>j<d. \<Sum>p<n. (\<Sum>m<n. omega_pow n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. omega_pow n l m * A m j $$ (b, p)))
+          = (\<Sum>j<d. \<Sum>p<n. \<Sum>m<n. \<Sum>m'<n. omega_pow n l m * cnj (omega_pow n l m') * (A m j $$ (a, p) * cnj (A m' j $$ (b, p))))"
         by (simp add: cnj_sum sum_distrib_left sum_distrib_right algebra_simps) (rule sum.cong[OF refl], rule sum.cong[OF refl], rule sum.swap)
-      also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. \<Sum>j<d. \<Sum>p<n. om n l m * cnj (om n l m') * (A m j $$ (a, p) * cnj (A m' j $$ (b, p))))"
+      also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. \<Sum>j<d. \<Sum>p<n. omega_pow n l m * cnj (omega_pow n l m') * (A m j $$ (a, p) * cnj (A m' j $$ (b, p))))"
         by (subst sum.swap, subst (2) sum.swap, rule sum.cong[OF refl], subst sum.swap,
             rule sum.cong[OF refl], subst sum.swap, rule refl)
-      also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. om n l m * cnj (om n l m') * (\<Sum>j<d. (A m j * ((A m' j)\<^sup>\<dagger>)) $$ (a, b)))"
+      also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. omega_pow n l m * cnj (omega_pow n l m') * (\<Sum>j<d. (A m j * ((A m' j)\<^sup>\<dagger>)) $$ (a, b)))"
         by (rule sum.cong[OF refl], rule sum.cong[OF refl]) (simp add: sum_distrib_left prod_dagger_entry[OF A A a b])
       finally show ?thesis .
     qed
@@ -221,12 +221,12 @@ proof -
     have "((1 / of_nat n) \<cdot>\<^sub>m kraus_map_dim d (concat Bs) X) $$ (a, b) = (1 / of_nat n) * (\<Sum>l<n. \<Sum>j<d. (?B l j * X * ((?B l j)\<^sup>\<dagger>)) $$ (a, b))"
       using cB a b unfolding Bs_def by (simp add: kraus_concat_entry[OF _ X a b])
     also have "\<dots> = (1 / of_nat n) * (\<Sum>j<d. \<Sum>p<n. \<Sum>q<n. X $$ (p, q) *
-        (\<Sum>l<n. (\<Sum>m<n. om n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. om n l m * A m j $$ (b, q))))"
+        (\<Sum>l<n. (\<Sum>m<n. omega_pow n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. omega_pow n l m * A m j $$ (b, q))))"
     proof -
       have "(\<Sum>l<n. \<Sum>j<d. (?B l j * X * ((?B l j)\<^sup>\<dagger>)) $$ (a, b))
-          = (\<Sum>l<n. \<Sum>j<d. \<Sum>p<n. \<Sum>q<n. X $$ (p, q) * ((\<Sum>m<n. om n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. om n l m * A m j $$ (b, q))))"
-        by (rule sum.cong[OF refl], rule sum.cong[OF refl]) (simp add: conj_entry[OF fmix_carrier X a b] fmix_index a b algebra_simps)
-      also have "\<dots> = (\<Sum>j<d. \<Sum>p<n. \<Sum>q<n. \<Sum>l<n. X $$ (p, q) * ((\<Sum>m<n. om n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. om n l m * A m j $$ (b, q))))"
+          = (\<Sum>l<n. \<Sum>j<d. \<Sum>p<n. \<Sum>q<n. X $$ (p, q) * ((\<Sum>m<n. omega_pow n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. omega_pow n l m * A m j $$ (b, q))))"
+        by (rule sum.cong[OF refl], rule sum.cong[OF refl]) (simp add: conj_entry[OF fourier_mix_carrier X a b] fourier_mix_index a b algebra_simps)
+      also have "\<dots> = (\<Sum>j<d. \<Sum>p<n. \<Sum>q<n. \<Sum>l<n. X $$ (p, q) * ((\<Sum>m<n. omega_pow n l m * A m j $$ (a, p)) * cnj (\<Sum>m<n. omega_pow n l m * A m j $$ (b, q))))"
         by (subst sum.swap, rule sum.cong[OF refl], subst sum.swap, rule sum.cong[OF refl], subst sum.swap, rule refl)
       finally show ?thesis by (simp add: sum_distrib_left)
     qed
@@ -237,13 +237,13 @@ proof -
         using n by (simp add: sum_distrib_left algebra_simps)
       also have "\<dots> = (\<Sum>m<n. \<Sum>j<d. \<Sum>p<n. \<Sum>q<n. A m j $$ (a, p) * X $$ (p, q) * cnj (A m j $$ (b, q)))"
         by (subst (2) sum.swap, subst (3) sum.swap, subst sum.swap, rule refl)
-      finally show ?thesis by (simp only: om_mix)
+      finally show ?thesis by (simp only: omega_pow_mix)
     qed
     also have "\<dots> = kraus_map_dim d (concat (map (\<lambda>m. map (A m) [0..<d]) [0..<n])) X $$ (a, b)"
       by (simp add: kraus_concat_entry[OF A X a b] conj_entry[OF A X a b])
     finally show "kraus_map_dim d (concat (map (\<lambda>m. map (A m) [0..<d]) [0..<n])) X $$ (a, b) = ((1 / of_nat n) \<cdot>\<^sub>m kraus_map_dim d (concat Bs) X) $$ (a, b)" ..
   qed
-  show ?thesis unfolding ra_split_def
+  show ?thesis unfolding ucp_average_split_def
     by (rule exI[of _ Bs]) (use unit avg in \<open>auto simp: Bs_def\<close>)
 qed
 
@@ -321,8 +321,8 @@ proof -
   thus ?thesis by blast
 qed
 
-lemma ra_split_cong: "(\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = \<Psi> X) \<Longrightarrow> ra_split n d \<Psi> \<Longrightarrow> ra_split n d \<Phi>"
-  unfolding ra_split_def by metis
+lemma ucp_average_split_cong: "(\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = \<Psi> X) \<Longrightarrow> ucp_average_split n d \<Psi> \<Longrightarrow> ucp_average_split n d \<Phi>"
+  unfolding ucp_average_split_def by metis
 
 lemma delta_sum2:
   fixes n i :: nat
@@ -350,7 +350,7 @@ definition povm_map :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> c
 theorem ra_measurement:
   assumes n: "0 < n" and Q: "\<And>i. i < n \<Longrightarrow> Q i \<in> carrier_mat d d \<and> psd (Q i)"
     and QI: "\<And>a b. a < d \<Longrightarrow> b < d \<Longrightarrow> (\<Sum>i<n. Q i $$ (a, b)) = 1\<^sub>m d $$ (a, b)"
-  shows "ra_split n d (povm_map n d Q)"
+  shows "ucp_average_split n d (povm_map n d Q)"
 proof -
   have "\<forall>i. \<exists>qi. i < n \<longrightarrow> (\<forall>a<d. \<forall>b<d. Q i $$ (a, b) = (\<Sum>k<d. qi k a * cnj (qi k b)))"
     using psd_vecs Q by blast
@@ -390,9 +390,9 @@ proof -
       by (rule eq_matI) (use n in \<open>simp_all add: povm_map_def QI\<close>)
     thus ?thesis using km[of "1\<^sub>m n"] by simp
   qed
-  have "ra_split n d (kraus_map_dim d (concat (map (\<lambda>i. map (A i) [0..<d]) [0..<n])))"
+  have "ucp_average_split n d (kraus_map_dim d (concat (map (\<lambda>i. map (A i) [0..<d]) [0..<n])))"
     by (rule fourier_split[OF n _ u]) (simp_all add: Ac orth)
-  thus ?thesis by (rule ra_split_cong[rotated]) (simp add: km)
+  thus ?thesis by (rule ucp_average_split_cong[rotated]) (simp add: km)
 qed
 
 subsection \<open>The case $d=1$: Horn's lemma\<close>
@@ -411,7 +411,7 @@ proof -
     and re: "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> \<rho> $$ (a, b) = (\<Sum>k<n. U $$ (a, k) * complex_of_real (D ! k) * cnj (U $$ (b, k)))"
     using psd_eig[OF rc rp] by blast
   define s where "s k a = complex_of_real (sqrt (D ! k)) * U $$ (a, k)" for k a
-  define \<phi> where "\<phi> l = Matrix.vec n (\<lambda>a. \<Sum>m<n. om n l m * s m a)" for l
+  define \<phi> where "\<phi> l = Matrix.vec n (\<lambda>a. \<Sum>m<n. omega_pow n l m * s m a)" for l
   have ss: "s k a * cnj (s k b) = U $$ (a, k) * complex_of_real (D ! k) * cnj (U $$ (b, k))" if k: "k < n" for k a b
   proof -
     have "complex_of_real (sqrt (D ! k)) * complex_of_real (sqrt (D ! k)) = complex_of_real (D ! k)"
@@ -421,7 +421,7 @@ proof -
   have avg: "\<rho> $$ (a, b) = (1 / of_nat n) * (\<Sum>l<n. \<phi> l $ a * cnj (\<phi> l $ b))" if a: "a < n" and b: "b < n" for a b
   proof -
     have "(\<Sum>l<n. \<phi> l $ a * cnj (\<phi> l $ b)) = of_nat n * (\<Sum>m<n. s m a * cnj (s m b))"
-      using a b om_mix[of n "\<lambda>m. s m a" "\<lambda>m. s m b"] by (simp add: \<phi>_def)
+      using a b omega_pow_mix[of n "\<lambda>m. s m a" "\<lambda>m. s m b"] by (simp add: \<phi>_def)
     thus ?thesis using n by (simp add: re[OF a b] ss)
   qed
   have UUe: "(\<Sum>a<n. U $$ (a, m) * cnj (U $$ (a, m'))) = (if m = m' then 1 else 0)" if "m < n" "m' < n" for m m'
@@ -443,11 +443,11 @@ proof -
   qed
   have nrm: "\<parallel>\<phi> l\<parallel> = 1" if l: "l < n" for l
   proof -
-    have "(\<Sum>a<n. \<phi> l $ a * cnj (\<phi> l $ a)) = (\<Sum>m<n. \<Sum>m'<n. om n l m * cnj (om n l m') * (\<Sum>a<n. s m a * cnj (s m' a)))"
+    have "(\<Sum>a<n. \<phi> l $ a * cnj (\<phi> l $ a)) = (\<Sum>m<n. \<Sum>m'<n. omega_pow n l m * cnj (omega_pow n l m') * (\<Sum>a<n. s m a * cnj (s m' a)))"
     proof -
-      have "(\<Sum>a<n. \<phi> l $ a * cnj (\<phi> l $ a)) = (\<Sum>a<n. \<Sum>m<n. \<Sum>m'<n. om n l m * cnj (om n l m') * (s m a * cnj (s m' a)))"
+      have "(\<Sum>a<n. \<phi> l $ a * cnj (\<phi> l $ a)) = (\<Sum>a<n. \<Sum>m<n. \<Sum>m'<n. omega_pow n l m * cnj (omega_pow n l m') * (s m a * cnj (s m' a)))"
         by (rule sum.cong[OF refl]) (simp add: \<phi>_def cnj_sum sum_distrib_left sum_distrib_right algebra_simps, rule sum.swap)
-      also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. \<Sum>a<n. om n l m * cnj (om n l m') * (s m a * cnj (s m' a)))"
+      also have "\<dots> = (\<Sum>m<n. \<Sum>m'<n. \<Sum>a<n. omega_pow n l m * cnj (omega_pow n l m') * (s m a * cnj (s m' a)))"
         by (subst sum.swap, rule sum.cong[OF refl], rule sum.swap)
       finally show ?thesis by (simp add: sum_distrib_left)
     qed
@@ -459,7 +459,7 @@ proof -
         unfolding s_def UUe[OF mm, symmetric] by (simp add: sum_distrib_left algebra_simps)
       moreover have "complex_of_real (sqrt (D ! m)) * complex_of_real (sqrt (D ! m)) = complex_of_real (D ! m)"
         using Dnn[OF mm(1)] by (simp flip: of_real_mult)
-      ultimately show "om n l m * cnj (om n l m') * (\<Sum>a<n. s m a * cnj (s m' a)) = (if m' = m then complex_of_real (D ! m) else 0)"
+      ultimately show "omega_pow n l m * cnj (omega_pow n l m') * (\<Sum>a<n. s m a * cnj (s m' a)) = (if m' = m then complex_of_real (D ! m) else 0)"
         by auto
     qed
     also have "\<dots> = 1" using trD by simp
@@ -494,7 +494,7 @@ definition cq_map :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> com
 
 theorem ra_cq:
   assumes n: "0 < n" and Rh: "\<And>a. a < d \<Longrightarrow> density_matrix n (Rh a)"
-  shows "ra_split n d (cq_map n d Rh)"
+  shows "ucp_average_split n d (cq_map n d Rh)"
 proof -
   have "\<forall>a. \<exists>\<phi>. a < d \<longrightarrow> (\<forall>l<n. dim_vec (\<phi> l) = n \<and> \<parallel>\<phi> l\<parallel> = 1)
            \<and> (\<forall>p<n. \<forall>q<n. Rh a $$ (p, q) = (1 / of_nat n) * (\<Sum>l<n. \<phi> l $ p * cnj (\<phi> l $ q)))"
@@ -579,7 +579,7 @@ proof -
     qed (use cc in \<open>simp add: cq_map_def\<close>)
     finally show "cq_map n d Rh X $$ (c, c') = ((1 / of_nat n) \<cdot>\<^sub>m kraus_map_dim d (concat Bs) X) $$ (c, c')" ..
   qed
-  show ?thesis unfolding ra_split_def
+  show ?thesis unfolding ucp_average_split_def
     by (rule exI[of _ Bs]) (use unit avg in \<open>auto simp: Bs_def Bc\<close>)
 qed
 

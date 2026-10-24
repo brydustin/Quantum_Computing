@@ -112,11 +112,11 @@ position $i$ ($i=0,\dots,8$).\<close>
 definition qubit_op :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "qubit_op i U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (2^i)) U) (1\<^sub>m (2^(8-i)))"
 
-definition bop :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "bop s U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (2^s)) U) (1\<^sub>m (2^(2-s)))"
+definition block_op :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "block_op s U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (2^s)) U) (1\<^sub>m (2^(2-s)))"
 
-definition blk :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "blk b M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (8^b)) M) (1\<^sub>m (8^(2-b)))"
+definition on_block :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "on_block b M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (8^b)) M) (1\<^sub>m (8^(2-b)))"
 
 text \<open>$\tilde U_i=I_{2^i}\otimes U\otimes I_{2^{8-i}}$ applies $U$ to qubit $i$.  In three blocks of three
 qubits, qubit $3b+s$ is qubit $s$ of block $b$:
@@ -135,60 +135,60 @@ qed
 
 lemma qubit_op_blk:
   assumes b: "b < 3" and s: "s < 3"
-  shows "qubit_op (3 * b + s) U = blk b (bop s U)"
+  shows "qubit_op (3 * b + s) U = on_block b (block_op s U)"
 proof -
   have e1: "1\<^sub>m (2^(3*b+s)) = Tensor.tensor_mat (1\<^sub>m (8^b)) (1\<^sub>m (2^s))"
     by (simp add: tensor_mat_id power_add power_mult)
   have "8 - (3*b+s) = (2-s) + 3*(2-b)" using b s by simp
   hence e2: "1\<^sub>m (2^(8-(3*b+s))) = Tensor.tensor_mat (1\<^sub>m (2^(2-s))) (1\<^sub>m (8^(2-b)))"
     by (simp add: tensor_mat_id power_add power_mult)
-  show ?thesis unfolding qubit_op_def blk_def bop_def e1 e2 by (simp only: tensor_mat_is_assoc)
+  show ?thesis unfolding qubit_op_def on_block_def block_op_def e1 e2 by (simp only: tensor_mat_is_assoc)
 qed
 
 lemma qubit_op_blk_div:
   assumes i: "i < 9"
-  shows "qubit_op i U = blk (i div 3) (bop (i mod 3) U)"
+  shows "qubit_op i U = on_block (i div 3) (block_op (i mod 3) U)"
 proof -
   have "i = 3 * (i div 3) + i mod 3" by simp
   moreover have "i div 3 < 3" using i by simp
   ultimately show ?thesis using qubit_op_blk[of "i div 3" "i mod 3" U] by simp
 qed
 
-lemma bop_cases:
+lemma block_op_cases:
   fixes U :: "complex Matrix.mat"
   assumes U: "U \<in> carrier_mat 2 2"
-  shows "bop 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
-    and "bop 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)"
-    and "bop 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
+  shows "block_op 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
+    and "block_op 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)"
+    and "block_op 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
 proof -
   have i4: "1\<^sub>m 4 = Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)" by (simp add: tensor_mat_id)
-  show "bop 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
-    unfolding bop_def using tensor_one_left[OF U] by (simp add: i4 tensor_mat_is_assoc)
-  show "bop 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)" unfolding bop_def by simp
+  show "block_op 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
+    unfolding block_op_def using tensor_one_left[OF U] by (simp add: i4 tensor_mat_is_assoc)
+  show "block_op 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)" unfolding block_op_def by simp
   have c: "Tensor.tensor_mat (1\<^sub>m 4) U \<in> carrier_mat 8 8" using U by auto
-  show "bop 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
-    unfolding bop_def using tensor_one_right[OF c] by (simp add: i4)
+  show "block_op 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
+    unfolding block_op_def using tensor_one_right[OF c] by (simp add: i4)
 qed
 
-lemma bop_carrier:
+lemma block_op_carrier:
   assumes U: "U \<in> carrier_mat 2 2" and s: "s < 3"
-  shows "bop s U \<in> carrier_mat 8 8"
+  shows "block_op s U \<in> carrier_mat 8 8"
 proof -
   have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus ?thesis using U by (elim disjE) (auto simp: bop_def)
+  thus ?thesis using U by (elim disjE) (auto simp: block_op_def)
 qed
 
-definition tv3 :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
-  "tv3 x y z = tensor_vec (tensor_vec x y) z"
+definition tensor3 :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
+  "tensor3 x y z = tensor_vec (tensor_vec x y) z"
 
-lemma tv3_dim: "dim_vec x = 8 \<Longrightarrow> dim_vec y = 8 \<Longrightarrow> dim_vec z = 8 \<Longrightarrow> dim_vec (tv3 x y z) = 512"
-  unfolding tv3_def by (simp add: tensor_vec_dim)
+lemma tensor3_dim: "dim_vec x = 8 \<Longrightarrow> dim_vec y = 8 \<Longrightarrow> dim_vec z = 8 \<Longrightarrow> dim_vec (tensor3 x y z) = 512"
+  unfolding tensor3_def by (simp add: tensor_vec_dim)
 
-lemma blk_tv3:
+lemma on_block_tv3:
   assumes M: "M \<in> carrier_mat 8 8" and x: "dim_vec x = 8" and y: "dim_vec y = 8" and z: "dim_vec z = 8"
-  shows "blk 0 M *\<^sub>v tv3 x y z = tv3 (M *\<^sub>v x) y z"
-    and "blk 1 M *\<^sub>v tv3 x y z = tv3 x (M *\<^sub>v y) z"
-    and "blk 2 M *\<^sub>v tv3 x y z = tv3 x y (M *\<^sub>v z)"
+  shows "on_block 0 M *\<^sub>v tensor3 x y z = tensor3 (M *\<^sub>v x) y z"
+    and "on_block 1 M *\<^sub>v tensor3 x y z = tensor3 x (M *\<^sub>v y) z"
+    and "on_block 2 M *\<^sub>v tensor3 x y z = tensor3 x y (M *\<^sub>v z)"
 proof -
   have i64: "1\<^sub>m 64 = Tensor.tensor_mat (1\<^sub>m 8) (1\<^sub>m 8)" by (simp add: tensor_mat_id)
   have xy: "dim_vec (tensor_vec x y) = 64" using x y by (simp add: tensor_vec_dim)
@@ -196,100 +196,100 @@ proof -
     using x y z by (auto intro: carrier_vecI)
   have c1: "Tensor.tensor_mat M (1\<^sub>m 8) \<in> carrier_mat 64 64" and c2: "Tensor.tensor_mat (1\<^sub>m 8) M \<in> carrier_mat 64 64"
     and c3: "Tensor.tensor_mat (1\<^sub>m 8) (1\<^sub>m 8) \<in> carrier_mat 64 64" using M by auto
-  have "blk 0 M = Tensor.tensor_mat (Tensor.tensor_mat M (1\<^sub>m 8)) (1\<^sub>m 8)"
-    unfolding blk_def using tensor_one_left[OF M] by (simp add: i64 tensor_mat_is_assoc)
-  thus "blk 0 M *\<^sub>v tv3 x y z = tv3 (M *\<^sub>v x) y z" unfolding tv3_def
+  have "on_block 0 M = Tensor.tensor_mat (Tensor.tensor_mat M (1\<^sub>m 8)) (1\<^sub>m 8)"
+    unfolding on_block_def using tensor_one_left[OF M] by (simp add: i64 tensor_mat_is_assoc)
+  thus "on_block 0 M *\<^sub>v tensor3 x y z = tensor3 (M *\<^sub>v x) y z" unfolding tensor3_def
     using tensor_mat_vec_mult[OF c1 one_carrier_mat xy z] tensor_mat_vec_mult[OF M one_carrier_mat x y] zc yc by simp
-  have "blk 1 M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 8) M) (1\<^sub>m 8)" unfolding blk_def by simp
-  thus "blk 1 M *\<^sub>v tv3 x y z = tv3 x (M *\<^sub>v y) z" unfolding tv3_def
+  have "on_block 1 M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 8) M) (1\<^sub>m 8)" unfolding on_block_def by simp
+  thus "on_block 1 M *\<^sub>v tensor3 x y z = tensor3 x (M *\<^sub>v y) z" unfolding tensor3_def
     using tensor_mat_vec_mult[OF c2 one_carrier_mat xy z] tensor_mat_vec_mult[OF one_carrier_mat M x y] zc xc by simp
   have c: "Tensor.tensor_mat (1\<^sub>m 64) M \<in> carrier_mat 512 512" using M by auto
-  have "blk 2 M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 8) (1\<^sub>m 8)) M"
-    unfolding blk_def using tensor_one_right[OF c] by (simp add: i64)
-  thus "blk 2 M *\<^sub>v tv3 x y z = tv3 x y (M *\<^sub>v z)" unfolding tv3_def
+  have "on_block 2 M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 8) (1\<^sub>m 8)) M"
+    unfolding on_block_def using tensor_one_right[OF c] by (simp add: i64)
+  thus "on_block 2 M *\<^sub>v tensor3 x y z = tensor3 x y (M *\<^sub>v z)" unfolding tensor3_def
     using tensor_mat_vec_mult[OF c3 M xy z]
       tensor_mat_vec_mult[OF one_carrier_mat one_carrier_mat x y] xc yc by (simp add: tensor_mat_id)
 qed
 
 subsection \<open>The block vectors $\ket{m}\pm\ket{7-m}$\<close>
 
-text \<open>In a block of three qubits, \<open>gvec p 0\<close> is $\ket{000}\pm\ket{111}$; a bit flip moves it to
-\<open>gvec p m\<close> with $m\in\{4,2,1\}$.  These eight vectors are mutually orthogonal.\<close>
+text \<open>In a block of three qubits, \<open>ghz_vec p 0\<close> is $\ket{000}\pm\ket{111}$; a bit flip moves it to
+\<open>ghz_vec p m\<close> with $m\in\{4,2,1\}$.  These eight vectors are mutually orthogonal.\<close>
 
-definition pm :: "bool \<Rightarrow> complex" where "pm p = (if p then 1 else -1)"
+definition sign_pm :: "bool \<Rightarrow> complex" where "sign_pm p = (if p then 1 else -1)"
 
-definition gvec :: "bool \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where
-  "gvec p m = unit_vec 8 m + pm p \<cdot>\<^sub>v unit_vec 8 (7 - m)"
+definition ghz_vec :: "bool \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where
+  "ghz_vec p m = unit_vec 8 m + sign_pm p \<cdot>\<^sub>v unit_vec 8 (7 - m)"
 
 text \<open>On a block, with $m=2^{2-s}$ for qubit $s$,
 \[ X_s(\ket{000}\pm\ket{111})=\ket m\pm\ket{7-m},\qquad Z_s(\ket{000}\pm\ket{111})=\ket{000}\mp\ket{111}, \]
 and $Y_s$ does both, with the factor $-i$.  The eight vectors $\ket m\pm\ket{7-m}$, $m\in\{0,1,2,4\}$,
 are orthogonal with norm $\sqrt2$.\<close>
 
-lemma gvec_dim [simp]: "dim_vec (gvec p m) = 8"
-  by (simp add: gvec_def)
+lemma ghz_vec_dim [simp]: "dim_vec (ghz_vec p m) = 8"
+  by (simp add: ghz_vec_def)
 
-lemma gvec_index:
+lemma ghz_vec_index:
   assumes r: "r < 8" and m: "m < 8"
-  shows "gvec p m $ r = (if r = m then 1 else 0) + pm p * (if r = 7 - m then 1 else 0)"
-  using r m by (simp add: gvec_def)
+  shows "ghz_vec p m $ r = (if r = m then 1 else 0) + sign_pm p * (if r = 7 - m then 1 else 0)"
+  using r m by (simp add: ghz_vec_def)
 
 lemma mult_gvec0:
   assumes M: "M \<in> carrier_mat 8 8" and r: "r < 8"
-  shows "(M *\<^sub>v gvec p 0) $ r = M $$ (r,0) + pm p * M $$ (r,7)"
+  shows "(M *\<^sub>v ghz_vec p 0) $ r = M $$ (r,0) + sign_pm p * M $$ (r,7)"
 proof -
-  have e: "M *\<^sub>v gvec p 0 = M *\<^sub>v unit_vec 8 0 + pm p \<cdot>\<^sub>v (M *\<^sub>v unit_vec 8 7)"
-    unfolding gvec_def using M by (simp add: mult_add_distrib_mat_vec mult_mat_vec)
+  have e: "M *\<^sub>v ghz_vec p 0 = M *\<^sub>v unit_vec 8 0 + sign_pm p \<cdot>\<^sub>v (M *\<^sub>v unit_vec 8 7)"
+    unfolding ghz_vec_def using M by (simp add: mult_add_distrib_mat_vec mult_mat_vec)
   show ?thesis unfolding e using M r by simp
 qed
 
-lemma bop_entry_cases:
+lemma block_op_entry_cases:
   assumes U: "U \<in> carrier_mat 2 2" and r: "r < 8" and k: "k < 8"
-  shows "bop 0 U $$ (r,k) = U $$ (r div 4, k div 4) * 1\<^sub>m 2 $$ (r div 2 mod 2, k div 2 mod 2) * 1\<^sub>m 2 $$ (r mod 2, k mod 2)"
-    and "bop 1 U $$ (r,k) = 1\<^sub>m 2 $$ (r div 4, k div 4) * U $$ (r div 2 mod 2, k div 2 mod 2) * 1\<^sub>m 2 $$ (r mod 2, k mod 2)"
-    and "bop 2 U $$ (r,k) = 1\<^sub>m 2 $$ (r div 4, k div 4) * 1\<^sub>m 2 $$ (r div 2 mod 2, k div 2 mod 2) * U $$ (r mod 2, k mod 2)"
-  unfolding bop_cases[OF U] by (rule tensor3_index; (use U r k in simp))+
+  shows "block_op 0 U $$ (r,k) = U $$ (r div 4, k div 4) * 1\<^sub>m 2 $$ (r div 2 mod 2, k div 2 mod 2) * 1\<^sub>m 2 $$ (r mod 2, k mod 2)"
+    and "block_op 1 U $$ (r,k) = 1\<^sub>m 2 $$ (r div 4, k div 4) * U $$ (r div 2 mod 2, k div 2 mod 2) * 1\<^sub>m 2 $$ (r mod 2, k mod 2)"
+    and "block_op 2 U $$ (r,k) = 1\<^sub>m 2 $$ (r div 4, k div 4) * 1\<^sub>m 2 $$ (r div 2 mod 2, k div 2 mod 2) * U $$ (r mod 2, k mod 2)"
+  unfolding block_op_cases[OF U] by (rule tensor3_index; (use U r k in simp))+
 
-lemma bop_X_gvec:
+lemma block_op_X_gvec:
   assumes s: "s < 3"
-  shows "bop s Pauli_X *\<^sub>v gvec p 0 = gvec p (2^(2-s))"
+  shows "block_op s Pauli_X *\<^sub>v ghz_vec p 0 = ghz_vec p (2^(2-s))"
 proof (rule eq_vecI)
-  have M: "bop s Pauli_X \<in> carrier_mat 8 8" by (rule bop_carrier[OF Pauli_X_carrier s])
-  show "dim_vec (bop s Pauli_X *\<^sub>v gvec p 0) = dim_vec (gvec p (2^(2-s)))" using M by simp
-  fix r assume "r < dim_vec (gvec p (2^(2-s)))"
+  have M: "block_op s Pauli_X \<in> carrier_mat 8 8" by (rule block_op_carrier[OF Pauli_X_carrier s])
+  show "dim_vec (block_op s Pauli_X *\<^sub>v ghz_vec p 0) = dim_vec (ghz_vec p (2^(2-s)))" using M by simp
+  fix r assume "r < dim_vec (ghz_vec p (2^(2-s)))"
   hence r: "r < 8" by simp
   have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus "(bop s Pauli_X *\<^sub>v gvec p 0) $ r = gvec p (2^(2-s)) $ r"
+  thus "(block_op s Pauli_X *\<^sub>v ghz_vec p 0) $ r = ghz_vec p (2^(2-s)) $ r"
     unfolding mult_gvec0[OF M r] using idx8[OF r]
-    by (elim disjE; simp add: bop_entry_cases[OF Pauli_X_carrier] bop_entry_cases(2)[OF Pauli_X_carrier, unfolded One_nat_def] gvec_index; simp add: Pauli_X_def pm_def)
+    by (elim disjE; simp add: block_op_entry_cases[OF Pauli_X_carrier] block_op_entry_cases(2)[OF Pauli_X_carrier, unfolded One_nat_def] ghz_vec_index; simp add: Pauli_X_def sign_pm_def)
 qed
 
-lemma bop_Y_gvec:
+lemma block_op_Y_gvec:
   assumes s: "s < 3"
-  shows "bop s Pauli_Y *\<^sub>v gvec p 0 = (-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s))"
+  shows "block_op s Pauli_Y *\<^sub>v ghz_vec p 0 = (-\<i>) \<cdot>\<^sub>v ghz_vec (\<not> p) (2^(2-s))"
 proof (rule eq_vecI)
-  have M: "bop s Pauli_Y \<in> carrier_mat 8 8" by (rule bop_carrier[OF Pauli_Y_carrier s])
-  show "dim_vec (bop s Pauli_Y *\<^sub>v gvec p 0) = dim_vec ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s)))" using M by simp
-  fix r assume "r < dim_vec ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s)))"
+  have M: "block_op s Pauli_Y \<in> carrier_mat 8 8" by (rule block_op_carrier[OF Pauli_Y_carrier s])
+  show "dim_vec (block_op s Pauli_Y *\<^sub>v ghz_vec p 0) = dim_vec ((-\<i>) \<cdot>\<^sub>v ghz_vec (\<not> p) (2^(2-s)))" using M by simp
+  fix r assume "r < dim_vec ((-\<i>) \<cdot>\<^sub>v ghz_vec (\<not> p) (2^(2-s)))"
   hence r: "r < 8" by simp
   have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus "(bop s Pauli_Y *\<^sub>v gvec p 0) $ r = ((-\<i>) \<cdot>\<^sub>v gvec (\<not> p) (2^(2-s))) $ r"
+  thus "(block_op s Pauli_Y *\<^sub>v ghz_vec p 0) $ r = ((-\<i>) \<cdot>\<^sub>v ghz_vec (\<not> p) (2^(2-s))) $ r"
     unfolding mult_gvec0[OF M r] using idx8[OF r] r
-    by (elim disjE; simp add: bop_entry_cases[OF Pauli_Y_carrier] bop_entry_cases(2)[OF Pauli_Y_carrier, unfolded One_nat_def] gvec_index; simp add: Pauli_Y_def pm_def)
+    by (elim disjE; simp add: block_op_entry_cases[OF Pauli_Y_carrier] block_op_entry_cases(2)[OF Pauli_Y_carrier, unfolded One_nat_def] ghz_vec_index; simp add: Pauli_Y_def sign_pm_def)
 qed
 
-lemma bop_Z_gvec:
+lemma block_op_Z_gvec:
   assumes s: "s < 3"
-  shows "bop s Pauli_Z *\<^sub>v gvec p 0 = gvec (\<not> p) 0"
+  shows "block_op s Pauli_Z *\<^sub>v ghz_vec p 0 = ghz_vec (\<not> p) 0"
 proof (rule eq_vecI)
-  have M: "bop s Pauli_Z \<in> carrier_mat 8 8" by (rule bop_carrier[OF Pauli_Z_carrier s])
-  show "dim_vec (bop s Pauli_Z *\<^sub>v gvec p 0) = dim_vec (gvec (\<not> p) 0)" using M by simp
-  fix r assume "r < dim_vec (gvec (\<not> p) 0)"
+  have M: "block_op s Pauli_Z \<in> carrier_mat 8 8" by (rule block_op_carrier[OF Pauli_Z_carrier s])
+  show "dim_vec (block_op s Pauli_Z *\<^sub>v ghz_vec p 0) = dim_vec (ghz_vec (\<not> p) 0)" using M by simp
+  fix r assume "r < dim_vec (ghz_vec (\<not> p) 0)"
   hence r: "r < 8" by simp
   have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus "(bop s Pauli_Z *\<^sub>v gvec p 0) $ r = gvec (\<not> p) 0 $ r"
+  thus "(block_op s Pauli_Z *\<^sub>v ghz_vec p 0) $ r = ghz_vec (\<not> p) 0 $ r"
     unfolding mult_gvec0[OF M r] using idx8[OF r]
-    by (elim disjE; simp add: bop_entry_cases[OF Pauli_Z_carrier] bop_entry_cases(2)[OF Pauli_Z_carrier, unfolded One_nat_def] gvec_index; simp add: Pauli_Z_def pm_def)
+    by (elim disjE; simp add: block_op_entry_cases[OF Pauli_Z_carrier] block_op_entry_cases(2)[OF Pauli_Z_carrier, unfolded One_nat_def] ghz_vec_index; simp add: Pauli_Z_def sign_pm_def)
 qed
 
 lemma inner_two_units:
@@ -311,31 +311,31 @@ proof -
   finally show ?thesis .
 qed
 
-lemma gvec_inner:
+lemma ghz_vec_inner:
   assumes m: "m \<in> {0,1,2,4}" and m': "m' \<in> {0,1,2,4}"
-  shows "\<langle>gvec p m | gvec p' m'\<rangle> = (if m = m' \<and> p = p' then 2 else 0)"
+  shows "\<langle>ghz_vec p m | ghz_vec p' m'\<rangle> = (if m = m' \<and> p = p' then 2 else 0)"
 proof -
   have lt: "m < 8" "7 - m < 8" "m' < 8" "7 - m' < 8" using m m' by auto
-  show ?thesis unfolding gvec_def inner_two_units[OF lt]
-    using m m' by (cases p; cases p') (auto simp: pm_def)
+  show ?thesis unfolding ghz_vec_def inner_two_units[OF lt]
+    using m m' by (cases p; cases p') (auto simp: sign_pm_def)
 qed
 
 subsection \<open>Code words and the images of the errors\<close>
 
-definition gv :: "bool \<times> nat \<Rightarrow> complex Matrix.vec" where "gv x = gvec (fst x) (snd x)"
+definition ghz_vec_of :: "bool \<times> nat \<Rightarrow> complex Matrix.vec" where "ghz_vec_of x = ghz_vec (fst x) (snd x)"
 
 text \<open>A label lists the block vectors of a product state, one per block.\<close>
 
-definition lab_vec :: "(bool \<times> nat) list \<Rightarrow> complex Matrix.vec" where
-  "lab_vec l = tv3 (gv (l ! 0)) (gv (l ! 1)) (gv (l ! 2))"
+definition label_vec :: "(bool \<times> nat) list \<Rightarrow> complex Matrix.vec" where
+  "label_vec l = tensor3 (ghz_vec_of (l ! 0)) (ghz_vec_of (l ! 1)) (ghz_vec_of (l ! 2))"
 
 definition valid_label :: "(bool \<times> nat) list \<Rightarrow> bool" where
   "valid_label l \<longleftrightarrow> length l = 3 \<and> (\<forall>x \<in> set l. snd x \<in> {0,1,2,4})"
 
-definition sk :: complex where "sk = complex_of_real (1 / sqrt 8)"
+definition shor_scale :: complex where "shor_scale = complex_of_real (1 / sqrt 8)"
 
 definition shor_cw :: "bool \<Rightarrow> complex Matrix.vec" where
-  "shor_cw p = sk \<cdot>\<^sub>v lab_vec (replicate 3 (p, 0))"
+  "shor_cw p = shor_scale \<cdot>\<^sub>v label_vec (replicate 3 (p, 0))"
 
 text \<open>The notes' code words $\ket{0_L},\ket{1_L}$.\<close>
 
@@ -349,90 +349,90 @@ proof -
     by (rule eq_vecI) simp_all
   show "shor_cw True = complex_of_real (1 / sqrt (2^3)) \<cdot>\<^sub>v
      tensor_vec (tensor_vec (unit_vec 8 0 + unit_vec 8 7) (unit_vec 8 0 + unit_vec 8 7)) (unit_vec 8 0 + unit_vec 8 7)"
-    by (simp add: shor_cw_def sk_def lab_vec_def tv3_def gv_def gvec_def pm_def)
+    by (simp add: shor_cw_def shor_scale_def label_vec_def tensor3_def ghz_vec_of_def ghz_vec_def sign_pm_def)
   show "shor_cw False = complex_of_real (1 / sqrt (2^3)) \<cdot>\<^sub>v
      tensor_vec (tensor_vec (unit_vec 8 0 - unit_vec 8 7) (unit_vec 8 0 - unit_vec 8 7)) (unit_vec 8 0 - unit_vec 8 7)"
-    by (simp add: shor_cw_def sk_def lab_vec_def tv3_def gv_def gvec_def pm_def m)
+    by (simp add: shor_cw_def shor_scale_def label_vec_def tensor3_def ghz_vec_of_def ghz_vec_def sign_pm_def m)
 qed
 
-lemma gv_dim [simp]: "dim_vec (gv x) = 8"
-  by (simp add: gv_def)
+lemma ghz_vec_of_dim [simp]: "dim_vec (ghz_vec_of x) = 8"
+  by (simp add: ghz_vec_of_def)
 
-lemma lab_vec_dim [simp]: "dim_vec (lab_vec l) = 512"
-  unfolding lab_vec_def gv_def by (rule tv3_dim) simp_all
+lemma label_vec_dim [simp]: "dim_vec (label_vec l) = 512"
+  unfolding label_vec_def ghz_vec_of_def by (rule tensor3_dim) simp_all
 
 lemma shor_cw_dim [simp]: "dim_vec (shor_cw p) = 512"
   by (simp add: shor_cw_def)
 
-lemma tv3_smult:
+lemma tensor3_smult:
   assumes "dim_vec x = 8" "dim_vec y = 8" "dim_vec z = 8"
-  shows "tv3 (k \<cdot>\<^sub>v x) y z = k \<cdot>\<^sub>v tv3 x y z" "tv3 x (k \<cdot>\<^sub>v y) z = k \<cdot>\<^sub>v tv3 x y z"
-    "tv3 x y (k \<cdot>\<^sub>v z) = k \<cdot>\<^sub>v tv3 x y z"
-  unfolding tv3_def using assms
+  shows "tensor3 (k \<cdot>\<^sub>v x) y z = k \<cdot>\<^sub>v tensor3 x y z" "tensor3 x (k \<cdot>\<^sub>v y) z = k \<cdot>\<^sub>v tensor3 x y z"
+    "tensor3 x y (k \<cdot>\<^sub>v z) = k \<cdot>\<^sub>v tensor3 x y z"
+  unfolding tensor3_def using assms
   by (simp_all add: tensor_vec_smult_left tensor_vec_smult_right tensor_vec_dim)
 
 lemma qubit_op_tl:
   assumes i: "i < 9" and U: "U \<in> carrier_mat 2 2"
-      and act: "bop (i mod 3) U *\<^sub>v gvec p 0 = \<kappa> \<cdot>\<^sub>v gvec q m"
-  shows "qubit_op i U *\<^sub>v lab_vec (replicate 3 (p, 0)) = \<kappa> \<cdot>\<^sub>v lab_vec ((replicate 3 (p, 0))[i div 3 := (q, m)])"
+      and act: "block_op (i mod 3) U *\<^sub>v ghz_vec p 0 = \<kappa> \<cdot>\<^sub>v ghz_vec q m"
+  shows "qubit_op i U *\<^sub>v label_vec (replicate 3 (p, 0)) = \<kappa> \<cdot>\<^sub>v label_vec ((replicate 3 (p, 0))[i div 3 := (q, m)])"
 proof -
-  have M: "bop (i mod 3) U \<in> carrier_mat 8 8" by (rule bop_carrier[OF U]) simp
-  have t0: "lab_vec (replicate 3 (p, 0)) = tv3 (gvec p 0) (gvec p 0) (gvec p 0)" by (simp add: lab_vec_def gv_def)
+  have M: "block_op (i mod 3) U \<in> carrier_mat 8 8" by (rule block_op_carrier[OF U]) simp
+  have t0: "label_vec (replicate 3 (p, 0)) = tensor3 (ghz_vec p 0) (ghz_vec p 0) (ghz_vec p 0)" by (simp add: label_vec_def ghz_vec_of_def)
   have "i div 3 = 0 \<or> i div 3 = 1 \<or> i div 3 = 2" using i by auto
   thus ?thesis
   proof (elim disjE)
     assume b: "i div 3 = 0"
-    show ?thesis unfolding qubit_op_blk_div[OF i] b t0 blk_tv3(1)[OF M gvec_dim gvec_dim gvec_dim] act
-      by (simp add: lab_vec_def gv_def tv3_smult)
+    show ?thesis unfolding qubit_op_blk_div[OF i] b t0 on_block_tv3(1)[OF M ghz_vec_dim ghz_vec_dim ghz_vec_dim] act
+      by (simp add: label_vec_def ghz_vec_of_def tensor3_smult)
   next
     assume b: "i div 3 = 1"
-    show ?thesis unfolding qubit_op_blk_div[OF i] b t0 blk_tv3(2)[OF M gvec_dim gvec_dim gvec_dim] act
-      by (simp add: lab_vec_def gv_def tv3_smult)
+    show ?thesis unfolding qubit_op_blk_div[OF i] b t0 on_block_tv3(2)[OF M ghz_vec_dim ghz_vec_dim ghz_vec_dim] act
+      by (simp add: label_vec_def ghz_vec_of_def tensor3_smult)
   next
     assume b: "i div 3 = 2"
-    show ?thesis unfolding qubit_op_blk_div[OF i] b t0 blk_tv3(3)[OF M gvec_dim gvec_dim gvec_dim] act
-      by (simp add: lab_vec_def gv_def tv3_smult)
+    show ?thesis unfolding qubit_op_blk_div[OF i] b t0 on_block_tv3(3)[OF M ghz_vec_dim ghz_vec_dim ghz_vec_dim] act
+      by (simp add: label_vec_def ghz_vec_of_def tensor3_smult)
   qed
 qed
 
 lemma qubit_op_X_tl:
-  "i < 9 \<Longrightarrow> qubit_op i Pauli_X *\<^sub>v lab_vec (replicate 3 (p, 0))
-     = lab_vec ((replicate 3 (p, 0))[i div 3 := (p, 2^(2 - i mod 3))])"
-  using qubit_op_tl[OF _ Pauli_X_carrier, of i p 1 p "2^(2 - i mod 3)"] bop_X_gvec[of "i mod 3" p] by simp
+  "i < 9 \<Longrightarrow> qubit_op i Pauli_X *\<^sub>v label_vec (replicate 3 (p, 0))
+     = label_vec ((replicate 3 (p, 0))[i div 3 := (p, 2^(2 - i mod 3))])"
+  using qubit_op_tl[OF _ Pauli_X_carrier, of i p 1 p "2^(2 - i mod 3)"] block_op_X_gvec[of "i mod 3" p] by simp
 
 lemma qubit_op_Y_tl:
-  "i < 9 \<Longrightarrow> qubit_op i Pauli_Y *\<^sub>v lab_vec (replicate 3 (p, 0))
-     = (-\<i>) \<cdot>\<^sub>v lab_vec ((replicate 3 (p, 0))[i div 3 := (\<not> p, 2^(2 - i mod 3))])"
-  using qubit_op_tl[OF _ Pauli_Y_carrier, of i p "-\<i>" "\<not> p" "2^(2 - i mod 3)"] bop_Y_gvec[of "i mod 3" p] by simp
+  "i < 9 \<Longrightarrow> qubit_op i Pauli_Y *\<^sub>v label_vec (replicate 3 (p, 0))
+     = (-\<i>) \<cdot>\<^sub>v label_vec ((replicate 3 (p, 0))[i div 3 := (\<not> p, 2^(2 - i mod 3))])"
+  using qubit_op_tl[OF _ Pauli_Y_carrier, of i p "-\<i>" "\<not> p" "2^(2 - i mod 3)"] block_op_Y_gvec[of "i mod 3" p] by simp
 
 lemma qubit_op_Z_tl:
-  "i < 9 \<Longrightarrow> qubit_op i Pauli_Z *\<^sub>v lab_vec (replicate 3 (p, 0))
-     = lab_vec ((replicate 3 (p, 0))[i div 3 := (\<not> p, 0)])"
-  using qubit_op_tl[OF _ Pauli_Z_carrier, of i p 1 "\<not> p" 0] bop_Z_gvec[of "i mod 3" p] by simp
+  "i < 9 \<Longrightarrow> qubit_op i Pauli_Z *\<^sub>v label_vec (replicate 3 (p, 0))
+     = label_vec ((replicate 3 (p, 0))[i div 3 := (\<not> p, 0)])"
+  using qubit_op_tl[OF _ Pauli_Z_carrier, of i p 1 "\<not> p" 0] block_op_Z_gvec[of "i mod 3" p] by simp
 
-lemma lab_vec_inner:
+lemma label_vec_inner:
   assumes l: "valid_label l" and l': "valid_label l'"
-  shows "\<langle>lab_vec l | lab_vec l'\<rangle> = (if l = l' then 8 else 0)"
+  shows "\<langle>label_vec l | label_vec l'\<rangle> = (if l = l' then 8 else 0)"
 proof -
   have len: "length l = 3" "length l' = 3" using l l' by (simp_all add: valid_label_def)
   have mem: "\<And>k. k < 3 \<Longrightarrow> snd (l ! k) \<in> {0,1,2,4} \<and> snd (l' ! k) \<in> {0,1,2,4}"
     using l l' len unfolding valid_label_def by (metis nth_mem)
-  have g: "\<And>k. k < 3 \<Longrightarrow> \<langle>gv (l ! k) | gv (l' ! k)\<rangle> = (if l ! k = l' ! k then 2 else 0)"
+  have g: "\<And>k. k < 3 \<Longrightarrow> \<langle>ghz_vec_of (l ! k) | ghz_vec_of (l' ! k)\<rangle> = (if l ! k = l' ! k then 2 else 0)"
   proof -
     fix k :: nat assume k: "k < 3"
-    show "\<langle>gv (l ! k) | gv (l' ! k)\<rangle> = (if l ! k = l' ! k then 2 else 0)"
-      unfolding gv_def using gvec_inner[of "snd (l ! k)" "snd (l' ! k)" "fst (l ! k)" "fst (l' ! k)"] mem[OF k]
+    show "\<langle>ghz_vec_of (l ! k) | ghz_vec_of (l' ! k)\<rangle> = (if l ! k = l' ! k then 2 else 0)"
+      unfolding ghz_vec_of_def using ghz_vec_inner[of "snd (l ! k)" "snd (l' ! k)" "fst (l ! k)" "fst (l' ! k)"] mem[OF k]
       by (auto simp: prod_eq_iff)
   qed
-  have e1: "\<langle>lab_vec l | lab_vec l'\<rangle> = \<langle>tensor_vec (gv (l ! 0)) (gv (l ! 1)) | tensor_vec (gv (l' ! 0)) (gv (l' ! 1))\<rangle>
-          * \<langle>gv (l ! 2) | gv (l' ! 2)\<rangle>"
-    unfolding lab_vec_def tv3_def by (rule tensor_inner_prod) (simp_all add: tensor_vec_dim)
-  have e2: "\<langle>tensor_vec (gv (l ! 0)) (gv (l ! 1)) | tensor_vec (gv (l' ! 0)) (gv (l' ! 1))\<rangle>
-          = \<langle>gv (l ! 0) | gv (l' ! 0)\<rangle> * \<langle>gv (l ! 1) | gv (l' ! 1)\<rangle>"
+  have e1: "\<langle>label_vec l | label_vec l'\<rangle> = \<langle>tensor_vec (ghz_vec_of (l ! 0)) (ghz_vec_of (l ! 1)) | tensor_vec (ghz_vec_of (l' ! 0)) (ghz_vec_of (l' ! 1))\<rangle>
+          * \<langle>ghz_vec_of (l ! 2) | ghz_vec_of (l' ! 2)\<rangle>"
+    unfolding label_vec_def tensor3_def by (rule tensor_inner_prod) (simp_all add: tensor_vec_dim)
+  have e2: "\<langle>tensor_vec (ghz_vec_of (l ! 0)) (ghz_vec_of (l ! 1)) | tensor_vec (ghz_vec_of (l' ! 0)) (ghz_vec_of (l' ! 1))\<rangle>
+          = \<langle>ghz_vec_of (l ! 0) | ghz_vec_of (l' ! 0)\<rangle> * \<langle>ghz_vec_of (l ! 1) | ghz_vec_of (l' ! 1)\<rangle>"
     by (rule tensor_inner_prod) simp_all
-  have g0: "\<langle>gv (l ! 0) | gv (l' ! 0)\<rangle> = (if l ! 0 = l' ! 0 then 2 else 0)" by (rule g) simp
-  have g1: "\<langle>gv (l ! 1) | gv (l' ! 1)\<rangle> = (if l ! 1 = l' ! 1 then 2 else 0)" by (rule g) simp
-  have g2: "\<langle>gv (l ! 2) | gv (l' ! 2)\<rangle> = (if l ! 2 = l' ! 2 then 2 else 0)" by (rule g) simp
+  have g0: "\<langle>ghz_vec_of (l ! 0) | ghz_vec_of (l' ! 0)\<rangle> = (if l ! 0 = l' ! 0 then 2 else 0)" by (rule g) simp
+  have g1: "\<langle>ghz_vec_of (l ! 1) | ghz_vec_of (l' ! 1)\<rangle> = (if l ! 1 = l' ! 1 then 2 else 0)" by (rule g) simp
+  have g2: "\<langle>ghz_vec_of (l ! 2) | ghz_vec_of (l' ! 2)\<rangle> = (if l ! 2 = l' ! 2 then 2 else 0)" by (rule g) simp
   have eqv: "l = l' \<longleftrightarrow> l ! 0 = l' ! 0 \<and> l ! 1 = l' ! 1 \<and> l ! 2 = l' ! 2"
   proof
     assume "l ! 0 = l' ! 0 \<and> l ! 1 = l' ! 1 \<and> l ! 2 = l' ! 2"
@@ -506,15 +506,15 @@ lemma shor_errors_carrier: "j < 22 \<Longrightarrow> shor_errors ! j \<in> carri
 
 lemma shor_errors_action:
   assumes j: "j < 22"
-  shows "shor_errors ! j *\<^sub>v shor_cw p = (shor_kappa ! j * sk) \<cdot>\<^sub>v lab_vec (shor_labels p ! j)"
+  shows "shor_errors ! j *\<^sub>v shor_cw p = (shor_kappa ! j * shor_scale) \<cdot>\<^sub>v label_vec (shor_labels p ! j)"
 proof -
   have Ec: "shor_errors ! j \<in> carrier_mat 512 512" by (rule shor_errors_carrier[OF j])
-  have "shor_errors ! j *\<^sub>v shor_cw p = sk \<cdot>\<^sub>v (shor_errors ! j *\<^sub>v lab_vec (replicate 3 (p, 0)))"
+  have "shor_errors ! j *\<^sub>v shor_cw p = shor_scale \<cdot>\<^sub>v (shor_errors ! j *\<^sub>v label_vec (replicate 3 (p, 0)))"
     unfolding shor_cw_def by (rule mult_mat_vec[OF Ec]) (rule carrier_vecI, simp)
-  also have "\<dots> = (shor_kappa ! j * sk) \<cdot>\<^sub>v lab_vec (shor_labels p ! j)"
+  also have "\<dots> = (shor_kappa ! j * shor_scale) \<cdot>\<^sub>v label_vec (shor_labels p ! j)"
   proof (rule shor_errors_cases[OF j, of p])
     assume a: "shor_errors ! j = 1\<^sub>m 512" "shor_labels p ! j = replicate 3 (p, 0)" "shor_kappa ! j = 1"
-    show ?thesis unfolding a one_mult_mat_vec[OF carrier_vecI[OF lab_vec_dim]] by (simp only: mult_1_left)
+    show ?thesis unfolding a one_mult_mat_vec[OF carrier_vecI[OF label_vec_dim]] by (simp only: mult_1_left)
   next
     fix i assume "i < 9" "shor_errors ! j = qubit_op i Pauli_X"
       "shor_labels p ! j = (replicate 3 (p, 0))[i div 3 := (p, 2^(2 - i mod 3))]" "shor_kappa ! j = 1"
@@ -595,30 +595,30 @@ lemma shor_errors_orth:
   assumes i: "i < 22" and j: "j < 22" and ij: "i \<noteq> j"
   shows "\<langle>shor_errors ! i *\<^sub>v shor_cw p | shor_errors ! j *\<^sub>v shor_cw p'\<rangle> = 0"
 proof -
-  have "\<langle>lab_vec (shor_labels p ! i) | lab_vec (shor_labels p' ! j)\<rangle> = 0"
-    using lab_vec_inner[OF shor_labels_valid[OF i] shor_labels_valid[OF j]] shor_labels_differ[OF i j ij] by simp
-  moreover have "dim_vec (lab_vec (shor_labels p ! i)) = dim_vec (lab_vec (shor_labels p' ! j))"
+  have "\<langle>label_vec (shor_labels p ! i) | label_vec (shor_labels p' ! j)\<rangle> = 0"
+    using label_vec_inner[OF shor_labels_valid[OF i] shor_labels_valid[OF j]] shor_labels_differ[OF i j ij] by simp
+  moreover have "dim_vec (label_vec (shor_labels p ! i)) = dim_vec (label_vec (shor_labels p' ! j))"
     by simp
   ultimately show ?thesis unfolding shor_errors_action[OF i] shor_errors_action[OF j]
     by (simp only: No_Cloning.inner_prod_distrib_left inner_prod_right_smult' mult_zero_right)
 qed
 
-lemma sk_sq: "cnj sk * sk = 1 / 8"
+lemma shor_scale_sq: "cnj shor_scale * shor_scale = 1 / 8"
 proof -
   have "sqrt 8 * sqrt 8 = (8::real)" by simp
   hence "(1 / sqrt 8) * (1 / sqrt 8) = (1/8::real)" by (simp add: divide_simps)
-  thus ?thesis unfolding sk_def by (simp only: complex_cnj_complex_of_real of_real_mult[symmetric]) simp
+  thus ?thesis unfolding shor_scale_def by (simp only: complex_cnj_complex_of_real of_real_mult[symmetric]) simp
 qed
 
 lemma shor_cw_inner: "\<langle>shor_cw p | shor_cw p'\<rangle> = (if p = p' then 1 else 0)"
 proof -
   have v: "valid_label (replicate 3 (q, 0))" for q by (simp add: valid_label_def)
-  have "\<langle>shor_cw p | shor_cw p'\<rangle> = cnj sk * sk * \<langle>lab_vec (replicate 3 (p, 0)) | lab_vec (replicate 3 (p', 0))\<rangle>"
+  have "\<langle>shor_cw p | shor_cw p'\<rangle> = cnj shor_scale * shor_scale * \<langle>label_vec (replicate 3 (p, 0)) | label_vec (replicate 3 (p', 0))\<rangle>"
   proof -
-    have "dim_vec (lab_vec (replicate 3 (p, 0))) = dim_vec (lab_vec (replicate 3 (p', 0)))" by simp
+    have "dim_vec (label_vec (replicate 3 (p, 0))) = dim_vec (label_vec (replicate 3 (p', 0)))" by simp
     thus ?thesis unfolding shor_cw_def by (simp only: No_Cloning.inner_prod_distrib_left inner_prod_right_smult' mult_ac)
   qed
-  also have "\<dots> = (if p = p' then 1 else 0)" unfolding lab_vec_inner[OF v v] sk_sq by simp
+  also have "\<dots> = (if p = p' then 1 else 0)" unfolding label_vec_inner[OF v v] shor_scale_sq by simp
   finally show ?thesis .
 qed
 
@@ -801,7 +801,7 @@ lemma qubit_op_Z_cw:
   shows "qubit_op i Pauli_Z *\<^sub>v shor_cw p = qubit_op (3 * (i div 3)) Pauli_Z *\<^sub>v shor_cw p"
 proof -
   have i': "3 * (i div 3) < 9" using i by simp
-  have c: "lab_vec (replicate 3 (p, 0)) \<in> carrier_vec 512" by (rule carrier_vecI) simp
+  have c: "label_vec (replicate 3 (p, 0)) \<in> carrier_vec 512" by (rule carrier_vecI) simp
   show ?thesis unfolding shor_cw_def
     using qubit_op_Z_tl[OF i] qubit_op_Z_tl[OF i']
       mult_mat_vec[OF qubit_op_carrier[OF Pauli_Z_carrier i] c]
@@ -861,12 +861,12 @@ proof -
   moreover have "\<langle>shor_errors ! 19 *\<^sub>v shor_cw True | shor_errors ! 19 *\<^sub>v shor_cw True\<rangle> = 1"
   proof -
     have v: "valid_label (shor_labels True ! 19)" by (rule shor_labels_valid) simp
-    have d: "dim_vec (lab_vec (shor_labels True ! 19)) = dim_vec (lab_vec (shor_labels True ! 19))" ..
+    have d: "dim_vec (label_vec (shor_labels True ! 19)) = dim_vec (label_vec (shor_labels True ! 19))" ..
     have k: "shor_kappa ! 19 = 1" by (simp add: shor_kappa_def nth_append)
-    have ac: "sk * (cnj sk * 8) = (cnj sk * sk) * 8" by (simp only: mult_ac)
+    have ac: "shor_scale * (cnj shor_scale * 8) = (cnj shor_scale * shor_scale) * 8" by (simp only: mult_ac)
     show ?thesis unfolding shor_errors_action[of 19 True, simplified] k
-      by (simp only: No_Cloning.inner_prod_distrib_left[OF d] inner_prod_right_smult' lab_vec_inner[OF v v] simp_thms(6) if_True
-          mult_1_left) (simp only: ac sk_sq, simp)
+      by (simp only: No_Cloning.inner_prod_distrib_left[OF d] inner_prod_right_smult' label_vec_inner[OF v v] simp_thms(6) if_True
+          mult_1_left) (simp only: ac shor_scale_sq, simp)
   qed
   ultimately show "\<langle>qubit_op 0 Pauli_Z *\<^sub>v shor_cw True | qubit_op 1 Pauli_Z *\<^sub>v shor_cw True\<rangle> = 1" by simp
 qed

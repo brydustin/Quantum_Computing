@@ -10,10 +10,10 @@ corrects one $Y$ flip exactly as the bit-flip code corrects one $X$ flip.\<close
 
 definition ket_beta :: "complex Matrix.vec" where "ket_beta = \<i> \<cdot>\<^sub>v ket_minus"
 
-definition ub :: "bool \<Rightarrow> complex Matrix.vec" where "ub s = (if s then ket_plus else ket_beta)"
+definition y_basis :: "bool \<Rightarrow> complex Matrix.vec" where "y_basis s = (if s then ket_plus else ket_beta)"
 
 lemma ket_beta_dim [simp]: "dim_vec ket_beta = 2" by (simp add: ket_beta_def ket_minus_def)
-lemma ub_dim [simp]: "dim_vec (ub s) = 2" by (simp add: ub_def)
+lemma y_basis_dim [simp]: "dim_vec (y_basis s) = 2" by (simp add: y_basis_def)
 
 lemma ket_beta_index: "ket_beta $ 0 = \<i> / sqrt 2" "ket_beta $ 1 = - \<i> / sqrt 2"
   by (simp_all add: ket_beta_def ket_minus_def)
@@ -24,8 +24,8 @@ lemma Y_plus: "Pauli_Y *\<^sub>v ket_plus = ket_beta"
 lemma Y_beta: "Pauli_Y *\<^sub>v ket_beta = ket_plus"
   by (rule eq_vecI) (auto simp: Pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
 
-lemma Y_ub: "Pauli_Y *\<^sub>v ub s = ub (\<not> s)"
-  by (cases s) (simp_all add: ub_def Y_plus Y_beta)
+lemma Y_ub: "Pauli_Y *\<^sub>v y_basis s = y_basis (\<not> s)"
+  by (cases s) (simp_all add: y_basis_def Y_plus Y_beta)
 
 lemma inner2: "dim_vec u = 2 \<Longrightarrow> dim_vec v = 2 \<Longrightarrow> \<langle>u|v\<rangle> = cnj (u $ 0) * v $ 0 + cnj (u $ 1) * v $ 1"
   by (subst inner_prod_sum[of _ 2]) (simp_all add: numeral_2_eq_2)
@@ -34,17 +34,17 @@ text \<open>\[ \beta=Y\ket+=\frac{i}{\sqrt2}\begin{pmatrix}1\\-1\end{pmatrix},\q
    \braket{+}{\beta}=0, \]
 so $\{\ket+,\beta\}$ is an orthonormal basis that $Y$ swaps, as $X$ swaps $\ket0$ and $\ket1$.\<close>
 
-lemma ub_inner: "\<langle>ub s | ub t\<rangle> = (if s = t then 1 else 0)"
+lemma y_basis_inner: "\<langle>y_basis s | y_basis t\<rangle> = (if s = t then 1 else 0)"
 proof -
   have r: "cnj (complex_of_real (sqrt 2)) = complex_of_real (sqrt 2)" by simp
   have s2: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2"
     by (simp only: of_real_mult[symmetric]) simp
-  show ?thesis unfolding inner2[OF ub_dim ub_dim]
-    by (cases s; cases t) (simp_all add: ub_def ket_plus_index_0 ket_plus_index_1 ket_beta_index ket_plus_index_1[unfolded One_nat_def] ket_beta_index(2)[unfolded One_nat_def] field_simps s2)
+  show ?thesis unfolding inner2[OF y_basis_dim y_basis_dim]
+    by (cases s; cases t) (simp_all add: y_basis_def ket_plus_index_0 ket_plus_index_1 ket_beta_index ket_plus_index_1[unfolded One_nat_def] ket_beta_index(2)[unfolded One_nat_def] field_simps s2)
 qed
 
 theorem ket_plus_beta_orth: "\<langle>ket_plus | ket_beta\<rangle> = 0"
-  using ub_inner[of True False] by (simp add: ub_def)
+  using y_basis_inner[of True False] by (simp add: y_basis_def)
 
 subsection \<open>Codes with orthogonal error images\<close>
 
@@ -162,70 +162,70 @@ qed
 
 subsection \<open>The $Y$-flip code\<close>
 
-definition tv2 :: "bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> complex Matrix.vec" where
-  "tv2 a b c = tensor_vec (tensor_vec (ub a) (ub b)) (ub c)"
+definition y_word :: "bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> complex Matrix.vec" where
+  "y_word a b c = tensor_vec (tensor_vec (y_basis a) (y_basis b)) (y_basis c)"
 
 definition y_errors :: "complex Matrix.mat list" where
-  "y_errors = [1\<^sub>m 8, bop 0 Pauli_Y, bop 1 Pauli_Y, bop 2 Pauli_Y]"
+  "y_errors = [1\<^sub>m 8, block_op 0 Pauli_Y, block_op 1 Pauli_Y, block_op 2 Pauli_Y]"
 
 definition y_codewords :: "complex Matrix.vec list" where
-  "y_codewords = [tv2 True True True, tv2 False False False]"
+  "y_codewords = [y_word True True True, y_word False False False]"
 
-lemma tv2_dim [simp]: "dim_vec (tv2 a b c) = 8"
-  unfolding tv2_def by (simp add: tensor_vec_dim)
+lemma y_word_dim [simp]: "dim_vec (y_word a b c) = 8"
+  unfolding y_word_def by (simp add: tensor_vec_dim)
 
 text \<open>The code $\ket0\mapsto\ket{{+}{+}{+}}$, $\ket1\mapsto\ket{\beta\beta\beta}$ is the bit-flip code in the basis
 $\{\ket+,\beta\}$.  The eight products of $\ket+$ and $\beta$ are orthonormal and $Y$ on qubit $s$
 swaps the factor $s$, so the images of the code under $I,Y_0,Y_1,Y_2$ are mutually orthogonal.\<close>
 
-lemma tv2_inner: "\<langle>tv2 a b c | tv2 a' b' c'\<rangle> = (if a = a' \<and> b = b' \<and> c = c' then 1 else 0)"
+lemma y_word_inner: "\<langle>y_word a b c | y_word a' b' c'\<rangle> = (if a = a' \<and> b = b' \<and> c = c' then 1 else 0)"
 proof -
-  have "\<langle>tv2 a b c | tv2 a' b' c'\<rangle> = \<langle>tensor_vec (ub a) (ub b) | tensor_vec (ub a') (ub b')\<rangle> * \<langle>ub c | ub c'\<rangle>"
-    unfolding tv2_def by (rule tensor_inner_prod) (simp_all add: tensor_vec_dim)
-  also have "\<langle>tensor_vec (ub a) (ub b) | tensor_vec (ub a') (ub b')\<rangle> = \<langle>ub a | ub a'\<rangle> * \<langle>ub b | ub b'\<rangle>"
+  have "\<langle>y_word a b c | y_word a' b' c'\<rangle> = \<langle>tensor_vec (y_basis a) (y_basis b) | tensor_vec (y_basis a') (y_basis b')\<rangle> * \<langle>y_basis c | y_basis c'\<rangle>"
+    unfolding y_word_def by (rule tensor_inner_prod) (simp_all add: tensor_vec_dim)
+  also have "\<langle>tensor_vec (y_basis a) (y_basis b) | tensor_vec (y_basis a') (y_basis b')\<rangle> = \<langle>y_basis a | y_basis a'\<rangle> * \<langle>y_basis b | y_basis b'\<rangle>"
     by (rule tensor_inner_prod) simp_all
-  finally show ?thesis by (simp add: ub_inner)
+  finally show ?thesis by (simp add: y_basis_inner)
 qed
 
 lemma y_actions:
-  "bop 0 Pauli_Y *\<^sub>v tv2 a b c = tv2 (\<not> a) b c"
-  "bop 1 Pauli_Y *\<^sub>v tv2 a b c = tv2 a (\<not> b) c"
-  "bop 2 Pauli_Y *\<^sub>v tv2 a b c = tv2 a b (\<not> c)"
+  "block_op 0 Pauli_Y *\<^sub>v y_word a b c = y_word (\<not> a) b c"
+  "block_op 1 Pauli_Y *\<^sub>v y_word a b c = y_word a (\<not> b) c"
+  "block_op 2 Pauli_Y *\<^sub>v y_word a b c = y_word a b (\<not> c)"
 proof -
   have Y: "Pauli_Y \<in> carrier_mat 2 2" by simp
   have I: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
-  have ab: "dim_vec (tensor_vec (ub a) (ub b)) = 4" by (simp add: tensor_vec_dim)
+  have ab: "dim_vec (tensor_vec (y_basis a) (y_basis b)) = 4" by (simp add: tensor_vec_dim)
   have c4: "\<And>A B. A \<in> carrier_mat 2 2 \<Longrightarrow> B \<in> carrier_mat 2 2 \<Longrightarrow> Tensor.tensor_mat A B \<in> carrier_mat 4 4"
     by auto
   have one: "\<And>v :: complex Matrix.vec. dim_vec v = 2 \<Longrightarrow> 1\<^sub>m 2 *\<^sub>v v = v" by (rule one_mult_mat_vec, rule carrier_vecI)
-  show "bop 0 Pauli_Y *\<^sub>v tv2 a b c = tv2 (\<not> a) b c"
-    unfolding bop_cases[OF Y] tv2_def tensor_mat_vec_mult[OF c4[OF Y I] I ab ub_dim]
-      tensor_mat_vec_mult[OF Y I ub_dim ub_dim] by (simp add: one Y_ub)
-  show "bop 1 Pauli_Y *\<^sub>v tv2 a b c = tv2 a (\<not> b) c"
-    unfolding bop_cases[OF Y] tv2_def tensor_mat_vec_mult[OF c4[OF I Y] I ab ub_dim]
-      tensor_mat_vec_mult[OF I Y ub_dim ub_dim] by (simp add: one Y_ub)
-  show "bop 2 Pauli_Y *\<^sub>v tv2 a b c = tv2 a b (\<not> c)"
-    unfolding bop_cases[OF Y] tv2_def tensor_mat_vec_mult[OF c4[OF I I] Y ab ub_dim]
-      tensor_mat_vec_mult[OF I I ub_dim ub_dim] by (simp add: one Y_ub)
+  show "block_op 0 Pauli_Y *\<^sub>v y_word a b c = y_word (\<not> a) b c"
+    unfolding block_op_cases[OF Y] y_word_def tensor_mat_vec_mult[OF c4[OF Y I] I ab y_basis_dim]
+      tensor_mat_vec_mult[OF Y I y_basis_dim y_basis_dim] by (simp add: one Y_ub)
+  show "block_op 1 Pauli_Y *\<^sub>v y_word a b c = y_word a (\<not> b) c"
+    unfolding block_op_cases[OF Y] y_word_def tensor_mat_vec_mult[OF c4[OF I Y] I ab y_basis_dim]
+      tensor_mat_vec_mult[OF I Y y_basis_dim y_basis_dim] by (simp add: one Y_ub)
+  show "block_op 2 Pauli_Y *\<^sub>v y_word a b c = y_word a b (\<not> c)"
+    unfolding block_op_cases[OF Y] y_word_def tensor_mat_vec_mult[OF c4[OF I I] Y ab y_basis_dim]
+      tensor_mat_vec_mult[OF I I y_basis_dim y_basis_dim] by (simp add: one Y_ub)
 qed
 
 lemma y_codewords_orthonormal: "orthonormal_list 8 y_codewords"
   unfolding orthonormal_list_def y_codewords_def
-  by (auto simp: tv2_inner less_Suc_eq)
+  by (auto simp: y_word_inner less_Suc_eq)
 
 lemma y_errors_unitary: "\<forall>U \<in> set y_errors. U \<in> carrier_mat 8 8 \<and> unitary U"
-  unfolding y_errors_def using bop_carrier[OF Pauli_Y_carrier, of 0] bop_carrier[OF Pauli_Y_carrier, of 1]
-    bop_carrier[OF Pauli_Y_carrier, of 2]
-  by (auto simp: bop_def Pauli_Y_unitary simp del: One_nat_def)
+  unfolding y_errors_def using block_op_carrier[OF Pauli_Y_carrier, of 0] block_op_carrier[OF Pauli_Y_carrier, of 1]
+    block_op_carrier[OF Pauli_Y_carrier, of 2]
+  by (auto simp: block_op_def Pauli_Y_unitary simp del: One_nat_def)
 
 lemma y_images_orthogonal:
   "\<forall>i < length y_errors. \<forall>j < length y_errors. i \<noteq> j \<longrightarrow>
      (\<forall>a < length y_codewords. \<forall>b < length y_codewords.
         \<langle>y_errors ! i *\<^sub>v y_codewords ! a | y_errors ! j *\<^sub>v y_codewords ! b\<rangle> = 0)"
 proof -
-  have I: "\<And>a b c. 1\<^sub>m 8 *\<^sub>v tv2 a b c = tv2 a b c" by (rule one_mult_mat_vec, rule carrier_vecI, simp)
+  have I: "\<And>a b c. 1\<^sub>m 8 *\<^sub>v y_word a b c = y_word a b c" by (rule one_mult_mat_vec, rule carrier_vecI, simp)
   show ?thesis unfolding y_errors_def y_codewords_def
-    by (auto simp: less_Suc_eq I y_actions y_actions(2)[unfolded One_nat_def] tv2_inner)
+    by (auto simp: less_Suc_eq I y_actions y_actions(2)[unfolded One_nat_def] y_word_inner)
 qed
 
 text \<open>D32-2: one CPTP map corrects every single $Y$ flip on every state $a\ket{+++}+b\ket{\beta\beta\beta}$.\<close>

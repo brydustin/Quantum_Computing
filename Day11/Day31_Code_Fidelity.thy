@@ -81,14 +81,14 @@ qed
 
 subsection \<open>Errors followed by recovery\<close>
 
-lemma recovery_ops_carrier': "\<forall>W \<in> set recovery_ops. W \<in> carrier_mat 8 8"
-  using recovery_ops_kraus by (simp add: kraus_operators_altdef)
+lemma bitflip_recovery_ops_carrier': "\<forall>W \<in> set bitflip_recovery_ops. W \<in> carrier_mat 8 8"
+  using bitflip_recovery_ops_kraus by (simp add: kraus_operators_altdef)
 
-lemma recovery_map_add: "A \<in> carrier_mat 8 8 \<Longrightarrow> B \<in> carrier_mat 8 8 \<Longrightarrow> recovery_map (A + B) = recovery_map A + recovery_map B"
-  unfolding recovery_map_def by (rule kraus_map_dim_add[OF _ _ recovery_ops_carrier'])
+lemma bitflip_recovery_map_add: "A \<in> carrier_mat 8 8 \<Longrightarrow> B \<in> carrier_mat 8 8 \<Longrightarrow> bitflip_recovery_map (A + B) = bitflip_recovery_map A + bitflip_recovery_map B"
+  unfolding bitflip_recovery_map_def by (rule kraus_map_dim_add[OF _ _ bitflip_recovery_ops_carrier'])
 
-lemma recovery_map_smult: "A \<in> carrier_mat 8 8 \<Longrightarrow> recovery_map (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m recovery_map A"
-  unfolding recovery_map_def by (rule kraus_map_dim_smult[OF _ recovery_ops_carrier'])
+lemma bitflip_recovery_map_smult: "A \<in> carrier_mat 8 8 \<Longrightarrow> bitflip_recovery_map (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m bitflip_recovery_map A"
+  unfolding bitflip_recovery_map_def by (rule kraus_map_dim_smult[OF _ bitflip_recovery_ops_carrier'])
 
 lemma comb8:
   fixes A B :: "complex Matrix.mat"
@@ -106,7 +106,7 @@ text \<open>D31-2: errors followed by recovery on an encoded state.\<close>
 theorem three_bit_code_recovery:
   assumes x: "dim_vec x = 2"
   defines "\<psi> \<equiv> encode_mat *\<^sub>v x" and "\<phi> \<equiv> encode_mat *\<^sub>v swap2 x"
-  shows "recovery_map (three_bit_channel p (\<psi> \<oslash> \<psi>))
+  shows "bitflip_recovery_map (three_bit_channel p (\<psi> \<oslash> \<psi>))
          = complex_of_real ((1 - p)^3 + 3 * p * (1 - p)^2) \<cdot>\<^sub>m (\<psi> \<oslash> \<psi>)
            + complex_of_real (3 * p^2 * (1 - p) + p^3) \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)"
 proof -
@@ -129,23 +129,23 @@ proof -
      + complex_of_real (p^3) \<cdot>\<^sub>m ?Q"
     unfolding three_bit_channel_def
     by (simp only: co c mult_carrier_mat[OF c c] mult_carrier_mat[OF mult_carrier_mat[OF c c] c] fl)
-  have r\<psi>: "recovery_map ?P = ?P" "recovery_map ((X\<^sub>1 *\<^sub>v \<psi>) \<oslash> (X\<^sub>1 *\<^sub>v \<psi>)) = ?P"
-    "recovery_map ((X\<^sub>2 *\<^sub>v \<psi>) \<oslash> (X\<^sub>2 *\<^sub>v \<psi>)) = ?P" "recovery_map ((X\<^sub>3 *\<^sub>v \<psi>) \<oslash> (X\<^sub>3 *\<^sub>v \<psi>)) = ?P"
+  have r\<psi>: "bitflip_recovery_map ?P = ?P" "bitflip_recovery_map ((X\<^sub>1 *\<^sub>v \<psi>) \<oslash> (X\<^sub>1 *\<^sub>v \<psi>)) = ?P"
+    "bitflip_recovery_map ((X\<^sub>2 *\<^sub>v \<psi>) \<oslash> (X\<^sub>2 *\<^sub>v \<psi>)) = ?P" "bitflip_recovery_map ((X\<^sub>3 *\<^sub>v \<psi>) \<oslash> (X\<^sub>3 *\<^sub>v \<psi>)) = ?P"
     unfolding \<psi>_def using bit_flip_code_recovery[OF x] by blast+
-  have r\<phi>: "recovery_map ?Q = ?Q" "recovery_map ((X\<^sub>1 *\<^sub>v \<phi>) \<oslash> (X\<^sub>1 *\<^sub>v \<phi>)) = ?Q"
-    "recovery_map ((X\<^sub>2 *\<^sub>v \<phi>) \<oslash> (X\<^sub>2 *\<^sub>v \<phi>)) = ?Q" "recovery_map ((X\<^sub>3 *\<^sub>v \<phi>) \<oslash> (X\<^sub>3 *\<^sub>v \<phi>)) = ?Q"
+  have r\<phi>: "bitflip_recovery_map ?Q = ?Q" "bitflip_recovery_map ((X\<^sub>1 *\<^sub>v \<phi>) \<oslash> (X\<^sub>1 *\<^sub>v \<phi>)) = ?Q"
+    "bitflip_recovery_map ((X\<^sub>2 *\<^sub>v \<phi>) \<oslash> (X\<^sub>2 *\<^sub>v \<phi>)) = ?Q" "bitflip_recovery_map ((X\<^sub>3 *\<^sub>v \<phi>) \<oslash> (X\<^sub>3 *\<^sub>v \<phi>)) = ?Q"
     unfolding \<phi>_def using bit_flip_code_recovery[OF swap2_dim] by blast+
   have oc: "\<And>M. M \<in> carrier_mat 8 8 \<Longrightarrow> (M *\<^sub>v \<psi>) \<oslash> (M *\<^sub>v \<psi>) \<in> carrier_mat 8 8"
        "\<And>M. M \<in> carrier_mat 8 8 \<Longrightarrow> (M *\<^sub>v \<phi>) \<oslash> (M *\<^sub>v \<phi>) \<in> carrier_mat 8 8"
     by (rule outer8, simp)+
   have Pc: "?P \<in> carrier_mat 8 8" and Qc: "?Q \<in> carrier_mat 8 8" by (rule outer8[OF \<psi>d], rule outer8[OF \<phi>d])
-  have "recovery_map (three_bit_channel p ?P)
+  have "bitflip_recovery_map (three_bit_channel p ?P)
         = complex_of_real ((1 - p)^3) \<cdot>\<^sub>m ?P + complex_of_real (p * (1 - p)^2) \<cdot>\<^sub>m ?P
           + complex_of_real (p * (1 - p)^2) \<cdot>\<^sub>m ?P + complex_of_real (p * (1 - p)^2) \<cdot>\<^sub>m ?P
           + complex_of_real (p^2 * (1 - p)) \<cdot>\<^sub>m ?Q + complex_of_real (p^2 * (1 - p)) \<cdot>\<^sub>m ?Q
           + complex_of_real (p^2 * (1 - p)) \<cdot>\<^sub>m ?Q + complex_of_real (p^3) \<cdot>\<^sub>m ?Q"
     unfolding E using Pc Qc oc[OF c] r\<psi>[unfolded One_nat_def] r\<phi>[unfolded One_nat_def]
-    by (simp add: recovery_map_add recovery_map_smult r\<psi> r\<phi>)
+    by (simp add: bitflip_recovery_map_add bitflip_recovery_map_smult r\<psi> r\<phi>)
   also have "\<dots> = complex_of_real ((1 - p)^3 + 3 * p * (1 - p)^2) \<cdot>\<^sub>m ?P
            + complex_of_real (3 * p^2 * (1 - p) + p^3) \<cdot>\<^sub>m ?Q"
     by (subst comb8[OF Pc Qc]) (simp add: mult_ac)
@@ -216,14 +216,14 @@ theorem code_min_fidelity:
   assumes p0: "0 \<le> p" and p1: "p \<le> 1"
   defines "c1 \<equiv> (1 - p)^3 + 3 * p * (1 - p)^2"
   shows "\<forall>x. dim_vec x = 2 \<longrightarrow> \<langle>x|x\<rangle> = 1 \<longrightarrow>
-           sqrt c1 \<le> fidelity (encode_mat *\<^sub>v x) (recovery_map (three_bit_channel p ((encode_mat *\<^sub>v x) \<oslash> (encode_mat *\<^sub>v x))))"
+           sqrt c1 \<le> fidelity (encode_mat *\<^sub>v x) (bitflip_recovery_map (three_bit_channel p ((encode_mat *\<^sub>v x) \<oslash> (encode_mat *\<^sub>v x))))"
     and "fidelity (encode_mat *\<^sub>v unit_vec 2 0)
-           (recovery_map (three_bit_channel p ((encode_mat *\<^sub>v unit_vec 2 0) \<oslash> (encode_mat *\<^sub>v unit_vec 2 0)))) = sqrt c1"
+           (bitflip_recovery_map (three_bit_channel p ((encode_mat *\<^sub>v unit_vec 2 0) \<oslash> (encode_mat *\<^sub>v unit_vec 2 0)))) = sqrt c1"
 proof -
   define c2 where "c2 = 3 * p^2 * (1 - p) + p^3"
   have c2: "0 \<le> c2" unfolding c2_def using p0 p1 by simp
   have val: "\<And>x. dim_vec x = 2 \<Longrightarrow> \<langle>x|x\<rangle> = 1 \<Longrightarrow>
-      fidelity (encode_mat *\<^sub>v x) (recovery_map (three_bit_channel p ((encode_mat *\<^sub>v x) \<oslash> (encode_mat *\<^sub>v x))))
+      fidelity (encode_mat *\<^sub>v x) (bitflip_recovery_map (three_bit_channel p ((encode_mat *\<^sub>v x) \<oslash> (encode_mat *\<^sub>v x))))
       = sqrt (c1 + c2 * (cmod \<langle>x | swap2 x\<rangle>)^2)"
   proof -
     fix x :: "complex Matrix.vec" assume x: "dim_vec x = 2" and n: "\<langle>x|x\<rangle> = 1"
@@ -234,12 +234,12 @@ proof -
     have ip: "\<langle>?\<psi>|?\<psi>\<rangle> = 1" "\<langle>?\<psi>|?\<phi>\<rangle> = \<langle>x | swap2 x\<rangle>" "\<langle>?\<phi>|?\<psi>\<rangle> = cnj \<langle>x | swap2 x\<rangle>"
       using encode_inner[OF x x] encode_inner[OF x swap2_dim] encode_inner[OF swap2_dim x] n
         inner_prod_cnj[of "swap2 x" x] x by simp_all
-    show "fidelity ?\<psi> (recovery_map (three_bit_channel p (?\<psi> \<oslash> ?\<psi>))) = sqrt (c1 + c2 * (cmod \<langle>x | swap2 x\<rangle>)^2)"
+    show "fidelity ?\<psi> (bitflip_recovery_map (three_bit_channel p (?\<psi> \<oslash> ?\<psi>))) = sqrt (c1 + c2 * (cmod \<langle>x | swap2 x\<rangle>)^2)"
       unfolding fidelity_def_eq three_bit_code_recovery[OF x] c1_def[symmetric] c2_def[symmetric] q ip
       by (simp add: cnj_mult_self_cmod)
   qed
   show "\<forall>x. dim_vec x = 2 \<longrightarrow> \<langle>x|x\<rangle> = 1 \<longrightarrow>
-           sqrt c1 \<le> fidelity (encode_mat *\<^sub>v x) (recovery_map (three_bit_channel p ((encode_mat *\<^sub>v x) \<oslash> (encode_mat *\<^sub>v x))))"
+           sqrt c1 \<le> fidelity (encode_mat *\<^sub>v x) (bitflip_recovery_map (three_bit_channel p ((encode_mat *\<^sub>v x) \<oslash> (encode_mat *\<^sub>v x))))"
     using val c2 by simp
   have e0: "dim_vec (unit_vec 2 0 :: complex Matrix.vec) = 2" "\<langle>unit_vec 2 0 | unit_vec 2 (0::nat)\<rangle> = (1::complex)"
     "\<langle>unit_vec 2 0 | swap2 (unit_vec 2 0)\<rangle> = (0::complex)"
@@ -252,7 +252,7 @@ proof -
       by (simp only:) (subst inner_prod_unit_vec_right, simp_all)
   qed
   show "fidelity (encode_mat *\<^sub>v unit_vec 2 0)
-           (recovery_map (three_bit_channel p ((encode_mat *\<^sub>v unit_vec 2 0) \<oslash> (encode_mat *\<^sub>v unit_vec 2 0)))) = sqrt c1"
+           (bitflip_recovery_map (three_bit_channel p ((encode_mat *\<^sub>v unit_vec 2 0) \<oslash> (encode_mat *\<^sub>v unit_vec 2 0)))) = sqrt c1"
     unfolding val[OF e0(1,2)] e0(3) by simp
 qed
 

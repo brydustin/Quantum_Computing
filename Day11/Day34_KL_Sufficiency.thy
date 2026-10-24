@@ -441,7 +441,7 @@ proof -
       thus ?thesis using d0 Rs_c by (simp add: outer_prod_zero_vec kraus_map_dim_zero zero_smult_mat_carrier[OF oc])
     qed
   qed
-  have pure: "\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> RE n Rs Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
+  have pure: "\<forall>\<psi>. dim_vec \<psi> = n \<longrightarrow> P *\<^sub>v \<psi> = \<psi> \<longrightarrow> recover_after n Rs Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>"
   proof (intro allI impI)
     fix \<psi> :: "complex Matrix.vec" assume \<psi>d: "dim_vec \<psi> = n" and \<psi>V: "P *\<^sub>v \<psi> = \<psi>"
     have oc: "\<psi> \<oslash> \<psi> \<in> carrier_mat n n" by (rule outer_prod_carrier[OF \<psi>d \<psi>d])
@@ -451,8 +451,8 @@ proof -
       hence "Fs ! k \<in> carrier_mat n n" using Fkc by simp
       thus "(Fs ! k *\<^sub>v \<psi>) \<oslash> (Fs ! k *\<^sub>v \<psi>) \<in> carrier_mat n n" by (intro outer_prod_carrier) simp_all
     qed
-    have "RE n Rs Es (\<psi> \<oslash> \<psi>) = kraus_map_dim n Rs (kraus_map_dim n Fs (\<psi> \<oslash> \<psi>))"
-      unfolding RE_def same[OF oc] ..
+    have "recover_after n Rs Es (\<psi> \<oslash> \<psi>) = kraus_map_dim n Rs (kraus_map_dim n Fs (\<psi> \<oslash> \<psi>))"
+      unfolding recover_after_def same[OF oc] ..
     also have "kraus_map_dim n Fs (\<psi> \<oslash> \<psi>)
                = foldr (\<lambda>k acc. (Fs ! k *\<^sub>v \<psi>) \<oslash> (Fs ! k *\<^sub>v \<psi>) + acc) [0..<?r] (0\<^sub>m n n)"
       using kraus_map_dim_outer_as_foldr[OF Fs_c \<psi>d] unfolding Fs_len .
@@ -463,11 +463,11 @@ proof -
       by (rule foldr_add_mat_smult_pull[OF _ oc]) (use rec_term[OF \<psi>d \<psi>V] in simp)
     also have "sum_list (map (\<lambda>k. complex_of_real (d k)) [0..<?r]) = 1"
       using sum_d by (simp add: interv_sum_list_conv_sum_set_nat atLeast0LessThan)
-    finally show "RE n Rs Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>" by (simp only: one_smult_mat)
+    finally show "recover_after n Rs Es (\<psi> \<oslash> \<psi>) = \<psi> \<oslash> \<psi>" by (simp only: one_smult_mat)
   qed
-  have "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> RE n Rs Es (P * X * P) = P * X * P"
+  have "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> recover_after n Rs Es (P * X * P) = P * X * P"
     using recovery_states_iff_PXP[OF Rs_c Es_c P] pure by blast
-  thus ?thesis using Rs unfolding RE_def by blast
+  thus ?thesis using Rs unfolding recover_after_def by blast
 qed
 
 text \<open>D34-2 (Theorem 1): the code is correctable iff $PE_i^*E_jP=\alpha_{ij}P$.\<close>
