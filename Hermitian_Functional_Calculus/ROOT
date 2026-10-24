@@ -16,6 +16,7 @@ session Hermitian_Functional_Calculus = Isabelle_Marries_Dirac +
     Trotter_Product_Formula
     Suzuki_Order
     Suzuki_Error
+    Functional_Calculus_Overview
   document_files
     "root.bib"
     "root.tex"
