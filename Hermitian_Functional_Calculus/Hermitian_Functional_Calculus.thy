@@ -69,7 +69,7 @@ text \<open>QHLProver's \<^const>\<open>hermitian\<close> and Schur decompositio
 \<^const>\<open>unitary\<close> and norm $\norm v$.\<close>
 
 lemma dagger_adjoint: "M\<^sup>\<dagger> = Complex_Matrix.adjoint M"
-  by (rule eq_matI) (simp_all add: dagger_def adjoint_eval)
+  by (rule eq_matI, simp_all add: dagger_def adjoint_eval)
 
 lemma hermitian_dagger: "hermitian A \<longleftrightarrow> A\<^sup>\<dagger> = A"
   by (simp add: hermitian_def dagger_adjoint)
@@ -180,17 +180,39 @@ lemma vnorm_reverse:
 lemma vnorm_zero_vec: "\<parallel>0\<^sub>v m\<parallel> = 0"
   by (simp add: cpx_vec_length_def)
 
-text \<open>Unitaries preserve the norm, $\norm{Wy}=\norm y$, and products and powers of unitaries are
-unitary.\<close>
+text \<open>A unitary is square: comparing $\Tr(U^*U)=\Tr(I_n)=n$ with $\Tr(UU^*)=\Tr(I_m)=m$, both being
+$\sum_{i,j}|u_{ij}|^2$.\<close>
+
+lemma unitary_square_dim:
+  assumes "unitary A"
+  shows "dim_row A = dim_col A"
+proof -
+  let ?m = "dim_row A" and ?n = "dim_col A"
+  have l: "(A\<^sup>\<dagger>) * A = 1\<^sub>m ?n" and r: "A * (A\<^sup>\<dagger>) = 1\<^sub>m ?m" using assms unfolding unitary_def by auto
+  have "of_nat ?n = (\<Sum>c<?n. ((A\<^sup>\<dagger>) * A) $$ (c, c))" by (simp add: l)
+  also have "\<dots> = (\<Sum>c<?n. \<Sum>r<?m. cnj (A $$ (r, c)) * A $$ (r, c))"
+    by (rule sum.cong) (auto simp: scalar_prod_def dagger_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>r<?m. \<Sum>c<?n. A $$ (r, c) * cnj (A $$ (r, c)))"
+    by (subst sum.swap) (simp add: mult.commute)
+  also have "\<dots> = (\<Sum>r<?m. (A * (A\<^sup>\<dagger>)) $$ (r, r))"
+    by (rule sum.cong) (auto simp: scalar_prod_def dagger_def atLeast0LessThan)
+  also have "\<dots> = of_nat ?m" by (simp add: r)
+  finally show ?thesis by simp
+qed
+
+text \<open>Unitaries preserve the norm, $\norm{Wy}=\norm y$; only the number of columns of $W$ has to
+match $y$.\<close>
 
 lemma unitary_vnorm:
-  assumes W: "W \<in> carrier_mat K K" "unitary W" and y: "dim_vec y = K"
+  assumes W: "W \<in> carrier_mat m n" "unitary W" and y: "dim_vec y = n"
   shows "\<parallel>W *\<^sub>v y\<parallel> = \<parallel>y\<parallel>"
 proof -
   have "Matrix.col (W * |y\<rangle>) 0 = W *\<^sub>v y"
     using W(1) y by (intro eq_vecI) (auto simp: ket_vec_def scalar_prod_def)
   thus ?thesis using unitary_is_length_preserving[OF W(2), of y] W(1) y by simp
 qed
+
+text \<open>Products of unitaries are unitary.\<close>
 
 lemma unitary_mult:
   assumes "unitary A" "unitary B" "A \<in> carrier_mat n n" "B \<in> carrier_mat n n"
@@ -205,6 +227,8 @@ proof -
     using assms(3,4) d by (mat_assoc n)+
   ultimately show ?thesis unfolding unitary_def using u assms(3,4) d by simp
 qed
+
+text \<open>Powers of a unitary are unitary.\<close>
 
 lemma unitary_pow:
   assumes U: "U \<in> carrier_mat m m" and u: "unitary U"
@@ -225,7 +249,7 @@ text \<open>\<open>spectral_decomp A U D\<close>: $U$ unitary and $U^*AU=\mathrm
 definition spectral_decomp :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> real list \<Rightarrow> bool" where
   "spectral_decomp A U D \<longleftrightarrow> U \<in> carrier_mat (dim_row A) (dim_row A) \<and> unitary U \<and>
      length D = dim_row A \<and> U\<^sup>\<dagger> * A * U = diag_matrix (map complex_of_real D)"
-
+                                             
 text \<open>The spectral theorem, from QHLProver's Schur decomposition of Hermitian matrices.\<close>
 
 lemma spectral_decomp_exists:

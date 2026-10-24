@@ -38,8 +38,9 @@ theorem is derived from the Schur decomposition of QHLProver.
   Projective_Measurements, Two_Hermitian_Results) finds one duplicate: the two-line lemma
   `dagger_adjoint` (IMD's dagger is QHLProver's adjoint), which Projective_Measurements also
   proves; importing Projective_Measurements (and with it HOL-Probability) for it seemed excessive.
-- Five one-line lemmas also occur in the entry Quantum_Computing_by_VP (submitted at the same time):
-  `dagger_carrier`, `unitary_dagger`, `unitary_mult`, `cpx_vec_length_smult`, `one_smult_mat`.
+- Six short lemmas also occur in the entry Quantum_Computing_by_VP (submitted at the same time):
+  `dagger_carrier`, `unitary_dagger`, `unitary_mult`, `cpx_vec_length_smult`, `one_smult_mat`,
+  `unitary_square_dim`.
   Neither entry imports the other, so both state them.
 - We found no matrix exponential on Jordan_Normal_Form matrices and no Trotter or Suzuki
   formula in the AFP. Matrices_for_ODEs has the exponential of real square matrices (HOL-Analysis
