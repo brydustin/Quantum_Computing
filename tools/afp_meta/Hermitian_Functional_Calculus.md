@@ -14,9 +14,9 @@ Fields of the submission form at https://isa-afp.org/submission/
 
 For a Hermitian matrix $A$ and a function $g:\mathbb{R}\to\mathbb{C}$ we define $g(A)$ as the
 matrix that multiplies every eigenvector of $A$ with eigenvalue $\lambda$ by $g(\lambda)$, and
-prove the algebra of this functional calculus: $g(A)\,h(A)=(gh)(A)$, $g(A)^*=\bar g(A)$, $g(A)$
-is unitary when $|g|=1$ on the spectrum, and $g(A)$ depends only on the values of $g$ on the
-spectrum. Special cases are the time evolution $e^{itA}$, with $e^{isA}e^{itA}=e^{i(s+t)A}$, and the
+prove the algebra of this functional calculus: it is linear in $g$, $g(A)\,h(A)=(gh)(A)$,
+$g(A)^*=\bar g(A)$, $g(A)^k=(g^k)(A)$, $g(f(A))=(g\circ f)(A)$ for real $f$, $g(A)$ is unitary when
+$|g|=1$ on the spectrum, and $g(A)$ depends only on the values of $g$ on the spectrum. Special cases are the time evolution $e^{itA}$, with $e^{isA}e^{itA}=e^{i(s+t)A}$, and the
 inverse. On top of it we verify the Lie–Trotter product formula with an explicit error bound,
 $\|(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}\|\le 2(mLt)^2/r$ for Hermitian $H_j$ of
 norm at most $L$, and Suzuki's higher-order product formulas: the order conditions (palindromic
@@ -44,4 +44,6 @@ theorem is derived from the Schur decomposition of QHLProver.
 - We found no matrix exponential on Jordan_Normal_Form matrices and no Trotter or Suzuki
   formula in the AFP. Matrices_for_ODEs has the exponential of real square matrices (HOL-Analysis
   types); the time evolution here is defined through the spectral decomposition instead.
+- The theory `Functional_Calculus_Overview` imports all parts; its section "Using the entry"
+  (first in the document) lists the main constants and lemmas, with two worked examples.
 - This entry is used by the entry HHL_Algorithm (submitted at the same time).

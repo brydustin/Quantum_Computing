@@ -694,24 +694,6 @@ proof -
     by (rule psd_U_diag_Udag[OF d(1)]) (use d(3) f spectral_decomp_eig_in_spectrum[OF A(1) sd] in simp_all)
 qed
 
-lemma mat_fun_add:
-  assumes A: "A \<in> carrier_mat n n" "hermitian A"
-  shows "mat_fun (\<lambda>x. g x + h x) A = mat_fun g A + mat_fun h A"
-proof (rule mat_fun_eqI[OF A])
-  show "mat_fun g A + mat_fun h A \<in> carrier_mat n n" using A by simp
-  show "acts_on_eigenvectors A (\<lambda>x. g x + h x) (mat_fun g A + mat_fun h A)" unfolding acts_on_eigenvectors_def
-  proof (intro allI impI)
-    fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
-    have vn: "dim_vec v = n" using v A(1) by simp
-    have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF vn])
-    have "(mat_fun g A + mat_fun h A) *\<^sub>v v = mat_fun g A *\<^sub>v v + mat_fun h A *\<^sub>v v"
-      by (rule add_mult_distrib_mat_vec[OF mat_fun_carrier[OF A] mat_fun_carrier[OF A] vc])
-    also have "\<dots> = g l \<cdot>\<^sub>v v + h l \<cdot>\<^sub>v v" by (simp add: mat_fun_eigen[OF A vn ev])
-    also have "\<dots> = (g l + h l) \<cdot>\<^sub>v v" by (simp add: add_smult_distrib_vec)
-    finally show "(mat_fun g A + mat_fun h A) *\<^sub>v v = (g l + h l) \<cdot>\<^sub>v v" .
-  qed
-qed
-
 lemma inner_prod_add_right:
   assumes "dim_vec a = n" "dim_vec b = n" "dim_vec c = n"
   shows "\<langle>a|b + c\<rangle> = \<langle>a|b\<rangle> + \<langle>a|c\<rangle>"

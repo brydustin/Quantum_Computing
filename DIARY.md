@@ -917,3 +917,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `etay`→`exp_taylor`, `peval`→`poly_eval`, `trunc`→`truncate_seq`, `obnd`→`op_bound`, `lam`→
   `total_weight`, `sprod`→`formula_product` (HHL and the paper follow).  75 informal statements
   now precede the results, so the document alternates statement and formal result.
+- **Functional calculus for users** (2026-10-23): new laws `mat_fun_add` (moved from HHL),
+  `mat_fun_smult`, `mat_fun_commute`, `mat_fun_pow`, `mat_fun_comp` (g(f(A)) = (g∘f)(A), f real),
+  `mat_fun_diag`; simp rules `mat_fun_dims`, `herm_inv_carrier`, `herm_inv_dims`, `evolution_dims`
+  (HHL_Program's local copies replaced by `declare … [OF A, simp]`).  The capstone opens the
+  document with an overview, a "Using the entry" guide and two proved examples (e^{itZ}, an
+  inverse); one informal statement before each new result.  A statement-level search (ML,
+  `Pattern.matches` against every library fact) finds no fact of the entry subsumed by
+  Jordan_Normal_Form, Isabelle_Marries_Dirac, QHLProver or HOL-Analysis.

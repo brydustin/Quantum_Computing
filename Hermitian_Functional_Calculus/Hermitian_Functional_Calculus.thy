@@ -428,6 +428,13 @@ proof -
   thus "mat_fun g A \<in> carrier_mat n n" "acts_on_eigenvectors A g (mat_fun g A)" using A(1) by auto
 qed
 
+text \<open>In particular $g(A)$ has the dimensions of $A$.\<close>
+
+lemma mat_fun_dims [simp]:
+  assumes "A \<in> carrier_mat n n" "hermitian A"
+  shows "dim_row (mat_fun g A) = n" "dim_col (mat_fun g A) = n"
+  using mat_fun_carrier[OF assms] by auto
+
 text \<open>\[ Av=\lambda v\quad\Longrightarrow\quad g(A)\,v=g(\lambda)\,v. \]\<close>
 
 theorem mat_fun_eigen:
@@ -576,6 +583,103 @@ proof -
     using c mat_fun_mult[OF A] mat_fun_dagger[OF A] carrier_matD[OF mat_fun_carrier[OF A, of g]] by simp
 qed
 
+text \<open>The calculus is additive in the function: $(g+h)(A)=g(A)+h(A)$.\<close>
+
+lemma mat_fun_add:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "mat_fun (\<lambda>x. g x + h x) A = mat_fun g A + mat_fun h A"
+proof (rule mat_fun_eqI[OF A])
+  show "mat_fun g A + mat_fun h A \<in> carrier_mat n n" using A by simp
+  show "acts_on_eigenvectors A (\<lambda>x. g x + h x) (mat_fun g A + mat_fun h A)" unfolding acts_on_eigenvectors_def
+  proof (intro allI impI)
+    fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
+    have vn: "dim_vec v = n" using v A(1) by simp
+    have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF vn])
+    have "(mat_fun g A + mat_fun h A) *\<^sub>v v = mat_fun g A *\<^sub>v v + mat_fun h A *\<^sub>v v"
+      by (rule add_mult_distrib_mat_vec[OF mat_fun_carrier[OF A] mat_fun_carrier[OF A] vc])
+    also have "\<dots> = g l \<cdot>\<^sub>v v + h l \<cdot>\<^sub>v v" by (simp add: mat_fun_eigen[OF A vn ev])
+    also have "\<dots> = (g l + h l) \<cdot>\<^sub>v v" by (simp add: add_smult_distrib_vec)
+    finally show "(mat_fun g A + mat_fun h A) *\<^sub>v v = (g l + h l) \<cdot>\<^sub>v v" .
+  qed
+qed
+
+text \<open>It is homogeneous: $(cg)(A)=c\,g(A)$.\<close>
+
+lemma mat_fun_smult:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "mat_fun (\<lambda>x. c * g x) A = c \<cdot>\<^sub>m mat_fun g A"
+proof (rule mat_fun_eqI[OF A])
+  show "c \<cdot>\<^sub>m mat_fun g A \<in> carrier_mat n n" using A by simp
+  show "acts_on_eigenvectors A (\<lambda>x. c * g x) (c \<cdot>\<^sub>m mat_fun g A)" unfolding acts_on_eigenvectors_def
+  proof (intro allI impI)
+    fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
+    have vn: "dim_vec v = n" using v A(1) by simp
+    have vc: "v \<in> carrier_vec n" by (rule carrier_vecI[OF vn])
+    have "(c \<cdot>\<^sub>m mat_fun g A) *\<^sub>v v = c \<cdot>\<^sub>v (mat_fun g A *\<^sub>v v)"
+      by (rule smult_mat_mult_mat_vec_assoc[OF mat_fun_carrier[OF A] vc])
+    thus "(c \<cdot>\<^sub>m mat_fun g A) *\<^sub>v v = (c * g l) \<cdot>\<^sub>v v" by (simp add: mat_fun_eigen[OF A vn ev] smult_smult_assoc)
+  qed
+qed
+
+text \<open>Any two functions of $A$ commute: $g(A)\,h(A)=h(A)\,g(A)$.\<close>
+
+lemma mat_fun_commute:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "mat_fun g A * mat_fun h A = mat_fun h A * mat_fun g A"
+  by (simp add: mat_fun_mult[OF A] mult.commute)
+
+text \<open>Powers: $g(A)^k=(g^k)(A)$.\<close>
+
+lemma mat_fun_pow:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "mat_fun g A ^\<^sub>m k = mat_fun (\<lambda>x. g x ^ k) A"
+proof (induction k)
+  case 0 show ?case using mat_fun_one[OF A] mat_fun_carrier[OF A, of g] by simp
+next
+  case (Suc k)
+  have "mat_fun g A ^\<^sub>m Suc k = mat_fun (\<lambda>x. g x ^ k) A * mat_fun g A" using Suc by simp
+  also have "\<dots> = mat_fun (\<lambda>x. g x ^ Suc k) A" by (simp add: mat_fun_mult[OF A] mult.commute)
+  finally show ?case .
+qed
+
+text \<open>Composition: for real $f$, $g(f(A))=(g\circ f)(A)$, since an eigenvector of $A$ with eigenvalue
+$\lambda$ is one of $f(A)$ with eigenvalue $f(\lambda)$.\<close>
+
+lemma mat_fun_comp:
+  assumes A: "A \<in> carrier_mat n n" "hermitian A"
+  shows "mat_fun g (mat_fun (\<lambda>x. complex_of_real (f x)) A) = mat_fun (\<lambda>x. g (f x)) A"
+proof -
+  let ?B = "mat_fun (\<lambda>x. complex_of_real (f x)) A"
+  have B: "?B \<in> carrier_mat n n" "hermitian ?B" using A mat_fun_hermitian[OF A, of f] by simp_all
+  show ?thesis
+  proof (rule mat_fun_eqI[OF A, symmetric])
+    show "mat_fun g ?B \<in> carrier_mat n n" using B by simp
+    show "acts_on_eigenvectors A (\<lambda>x. g (f x)) (mat_fun g ?B)" unfolding acts_on_eigenvectors_def
+    proof (intro allI impI)
+      fix v l assume v: "dim_vec v = dim_row A" and ev: "A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v"
+      have vn: "dim_vec v = n" using v A(1) by simp
+      have "?B *\<^sub>v v = complex_of_real (f l) \<cdot>\<^sub>v v" by (rule mat_fun_eigen[OF A vn ev])
+      thus "mat_fun g ?B *\<^sub>v v = g (f l) \<cdot>\<^sub>v v" by (rule mat_fun_eigen[OF B vn])
+    qed
+  qed
+qed
+
+text \<open>For a real diagonal matrix the calculus acts entrywise:
+\[ g\bigl(\diag(D_1,\dots,D_n)\bigr)=\diag\bigl(g(D_1),\dots,g(D_n)\bigr). \]\<close>
+
+lemma mat_fun_diag:
+  "mat_fun g (diag_matrix (map complex_of_real D)) = diag_matrix (map g D)"
+proof -
+  let ?n = "length D" and ?A = "diag_matrix (map complex_of_real D)"
+  have Ac: "?A \<in> carrier_mat ?n ?n" by (metis diag_matrix_carrier length_map)
+  have Ah: "hermitian ?A" unfolding hermitian_dagger diag_matrix_dagger by (simp add: comp_def)
+  have sd: "spectral_decomp ?A (1\<^sub>m ?n) D"
+    unfolding spectral_decomp_def using Ac by (simp add: id_is_unitary)
+  have "mat_fun g ?A = (1\<^sub>m ?n * diag_matrix (map g D)) * ((1\<^sub>m ?n)\<^sup>\<dagger>)" by (rule mat_fun_decomp[OF Ac Ah sd])
+  also have "\<dots> = diag_matrix (map g D)" by simp
+  finally show ?thesis .
+qed
+
 text \<open>Powers: $G^{i+j}=G^iG^j$, and $Uu=zu$ implies $U^ku=z^ku$.\<close>
 
 lemma pow_mat_add: "G \<in> carrier_mat m m \<Longrightarrow> G ^\<^sub>m (i + j) = G ^\<^sub>m i * G ^\<^sub>m j"
@@ -625,6 +729,9 @@ text \<open>$e^{itA}$ is unitary, acts on an eigenvector by $e^{itA}v=e^{it\lamb
 lemma evolution_carrier [simp]: "evolution A t \<in> carrier_mat n n"
   unfolding evolution_def using A by simp
 
+lemma evolution_dims [simp]: "dim_row (evolution A t) = n" "dim_col (evolution A t) = n"
+  using carrier_matD[OF evolution_carrier] by auto
+
 lemma evolution_eigen:
   "dim_vec v = n \<Longrightarrow> A *\<^sub>v v = complex_of_real l \<cdot>\<^sub>v v \<Longrightarrow> evolution A t *\<^sub>v v = cis (t * l) \<cdot>\<^sub>v v"
   unfolding evolution_def by (rule mat_fun_eigen[OF A])
@@ -657,6 +764,16 @@ text \<open>$A^{-1}=g(A)$ for $g(x)=1/x$; since $1/0=0$ in HOL this is the pseud
 
 definition herm_inv :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "herm_inv A = mat_fun (\<lambda>x. complex_of_real (inverse x)) A"
+
+text \<open>$A^{-1}$ is an $n\times n$ matrix.\<close>
+
+lemma herm_inv_carrier [simp]: "A \<in> carrier_mat n n \<Longrightarrow> hermitian A \<Longrightarrow> herm_inv A \<in> carrier_mat n n"
+  unfolding herm_inv_def by simp
+
+lemma herm_inv_dims [simp]:
+  assumes "A \<in> carrier_mat n n" "hermitian A"
+  shows "dim_row (herm_inv A) = n" "dim_col (herm_inv A) = n"
+  using herm_inv_carrier[OF assms] by auto
 
 text \<open>If $0$ is not an eigenvalue, $g(x)=1/x$ gives the inverse: $A^{-1}A=AA^{-1}=I$.\<close>
 

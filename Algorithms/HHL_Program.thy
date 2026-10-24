@@ -579,11 +579,7 @@ context
     and Cb: "\<And>j. j < 2 ^ k \<Longrightarrow> \<bar>C / reg_eig t0 (2 ^ k) j\<bar> \<le> 1"
 begin
 
-lemma mat_fun_dims [simp]: "dim_row (mat_fun g A) = n" "dim_col (mat_fun g A) = n"
-  using mat_fun_carrier[OF A] by auto
-
-lemma herm_inv_dims [simp]: "dim_row (herm_inv A) = n" "dim_col (herm_inv A) = n"
-  using mat_fun_carrier[OF A] unfolding herm_inv_def by auto
+declare mat_fun_dims[OF A, simp] herm_inv_dims[OF A, simp]
 
 lemma prog_d: "state_sig.d [2 ^ k, n, 2] = 2 ^ k * (n * 2)" by (simp add: state_sig.d_def)
 
