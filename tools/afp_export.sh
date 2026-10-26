@@ -15,8 +15,7 @@ put() {  # put ENTRY PATH...: tracked sources (no PDFs, no build output) under E
   done
 }
 STRIP=Hermitian_Functional_Calculus/ put Hermitian_Functional_Calculus Hermitian_Functional_Calculus
-STRIP= put Quantum_Computing_by_VP ROOT Day0[1-9]_*.thy Day10_*.thy Day25_Hahn_Banach.thy Unitary_Tensor_Algebra.thy Matrix_Typed.thy \
-  Essential_Functional_Analysis.thy Lmat Day11 Day05
+STRIP= put Quantum_Computing_by_VP ROOT ':(glob)*.thy' document Leading_Minors
 STRIP=Algorithms/ put HHL_Algorithm Algorithms
 # AFP options: documents come from the AFP's settings; keep only document = false and a timeout
 python3 - "$OUT" <<'PY'

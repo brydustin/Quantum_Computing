@@ -1,6 +1,6 @@
 # Day23 CP Radon–Nikodym — CLOSED (2026-10-18)
 
-**File:** `Day11/Day23_ChoiExtremeUCP.thy`   **Branch:** main
+**File:** `Day23_ChoiExtremeUCP.thy`   **Branch:** main
 
 Both remaining `sorry`s are gone:
 

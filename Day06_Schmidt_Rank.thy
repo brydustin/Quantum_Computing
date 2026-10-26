@@ -1,5 +1,5 @@
 theory Day06_Schmidt_Rank
-  imports Day06_Tensor_Coordinates Quantum_Computing_by_VP_Basics.Day09_POVMs_Entanglement
+  imports Day06_Tensor_Coordinates Quantum_Computing_by_VP.Day09_POVMs_Entanglement
 begin
 
 section \<open>Day 6: the Schmidt rank (D6-4)\<close>

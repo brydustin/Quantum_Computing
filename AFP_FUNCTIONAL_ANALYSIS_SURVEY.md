@@ -15,9 +15,9 @@ Radon–Nikodym, extreme points of CPTP maps, or Horodecki witnesses.
 | Hilbert–Schmidt inner product / norm on matrices, parallelogram, entry bounds, HS-Cauchy ⇒ convergent (completeness), hermitian/psd cones closed | `Essential_Functional_Analysis.thy` §1–§5 | JNF matrices |
 | Carathéodory for conic combinations of matrices (`caratheodory_matrix_cone`) | `Essential_Functional_Analysis.thy` §6 | JNF matrices + `vec_space` dimension bound |
 | Hahn–Banach extension of real-part functionals, with norm bound (`matrix_hahn_banach_lmat*`) | `Matrix_Typed.thy` (via `HOL-Hahn_Banach`) | typed wrapper `lmat` |
-| `lmat` as `real_inner` / `euclidean_space` / `heine_borel` | `Lmat/Lmat_Euclidean.thy` | `('a,'k,'l) lmat` |
-| Separable cone closed & compact pieces, separating hyperplane, entanglement witnesses (Horodecki) | `Lmat/Separable_Cone.thy`, `Day11/Day24_Separability.thy` | `lmat` + `HOL-Analysis.separating_hyperplane_closed_point` |
-| Loewner kernel inclusion (`loewner_ker_subset`), Moore–Penrose pseudoinverse of a hermitian spectral decomposition (`pinv_list`, `A_Aplus_A_eq`, `A_Aplus_B_eq_B`), dominated-PSD parametrisation (`dominated_outer_sum_param`), CP Radon–Nikodym (`cp_radon_nikodym_choi/_linear`), Choi's theorem 3 on extreme CPTP maps | `Day11/Day23_ChoiExtremeUCP.thy` | JNF matrices |
+| `lmat` as `real_inner` / `euclidean_space` / `heine_borel` | `Lmat_Euclidean.thy` | `('a,'k,'l) lmat` |
+| Separable cone closed & compact pieces, separating hyperplane, entanglement witnesses (Horodecki) | `Separable_Cone.thy`, `Day24_Separability.thy` | `lmat` + `HOL-Analysis.separating_hyperplane_closed_point` |
+| Loewner kernel inclusion (`loewner_ker_subset`), Moore–Penrose pseudoinverse of a hermitian spectral decomposition (`pinv_list`, `A_Aplus_A_eq`, `A_Aplus_B_eq_B`), dominated-PSD parametrisation (`dominated_outer_sum_param`), CP Radon–Nikodym (`cp_radon_nikodym_choi/_linear`), Choi's theorem 3 on extreme CPTP maps | `Day23_ChoiExtremeUCP.thy` | JNF matrices |
 
 ## 2. AFP entries with overlapping content
 

@@ -5,25 +5,25 @@
 *)
 theory QC_Notes_Overview
   imports
-    Quantum_Computing_by_VP_Basics.Day01_Inner_Product
-    Quantum_Computing_by_VP_Basics.Day02_Trace_Projections
+    Quantum_Computing_by_VP.Day01_Inner_Product
+    Quantum_Computing_by_VP.Day02_Trace_Projections
     Quantum_Computing_by_VP.Day02_Projection_Basis
-    Quantum_Computing_by_VP_Basics.Day03_Unitary_Matrices
-    Quantum_Computing_by_VP_Basics.Day04_Hermitian_Matrices
+    Quantum_Computing_by_VP.Day03_Unitary_Matrices
+    Quantum_Computing_by_VP.Day04_Hermitian_Matrices
     Quantum_Computing_by_VP.Day04_Hermitian_Converse
-    Quantum_Computing_by_VP_Basics.Day05_Positivity_Tests
+    Quantum_Computing_by_VP.Day05_Positivity_Tests
     Quantum_Computing_by_VP.Day05_Cholesky_Examples
     Quantum_Computing_by_VP.Day05_Direct_Sum_Basis
-    Quantum_Computing_by_VP_Basics.Day06_Tensor_Products
+    Quantum_Computing_by_VP.Day06_Tensor_Products
     Quantum_Computing_by_VP.Day06_Tensor_Coordinates
     Quantum_Computing_by_VP.Day06_Schmidt_Rank
     Quantum_Computing_by_VP.Day06_15_Universal
-    Quantum_Computing_by_VP_Basics.Day07_Postulates
-    Quantum_Computing_by_VP_Basics.Day08_Measurements
+    Quantum_Computing_by_VP.Day07_Postulates
+    Quantum_Computing_by_VP.Day08_Measurements
     Quantum_Computing_by_VP.Day08_Indistinguishable_States
-    Quantum_Computing_by_VP_Basics.Day09_POVMs_Entanglement
+    Quantum_Computing_by_VP.Day09_POVMs_Entanglement
     Quantum_Computing_by_VP.Day09_Bell_Measurement
-    Quantum_Computing_by_VP_Basics.Day10_Quantum_Gates
+    Quantum_Computing_by_VP.Day10_Quantum_Gates
     Quantum_Computing_by_VP.Day10_Superdense_Coding
     Quantum_Computing_by_VP.Day11_Gates_No_Cloning
     Quantum_Computing_by_VP.Day11_SWAP_Circuit
@@ -60,7 +60,7 @@ theory QC_Notes_Overview
     Quantum_Computing_by_VP.Day23_Choi3_UCP
     Quantum_Computing_by_VP.Day23_Extremality_Examples
     Quantum_Computing_by_VP.Day24_Operator_Systems
-    Quantum_Computing_by_VP_Basics.Day25_Hahn_Banach
+    Quantum_Computing_by_VP.Day25_Hahn_Banach
     Quantum_Computing_by_VP.Day25_Arveson_Correspondence
     Quantum_Computing_by_VP.Day25_Unital_Functional_Norm
     Quantum_Computing_by_VP.Day26_Arveson_Extension
@@ -84,12 +84,12 @@ theory QC_Notes_Overview
     Quantum_Computing_by_VP.Day34_Knill_Laflamme
     Quantum_Computing_by_VP.Day34_KL_Sufficiency
     Quantum_Computing_by_VP.Quantum_Channels
-    Quantum_Computing_by_VP_Basics.Unitary_Tensor_Algebra
+    Quantum_Computing_by_VP.Unitary_Tensor_Algebra
     Quantum_Computing_by_VP.QC_Prelims
-    Quantum_Computing_by_VP_Basics.Matrix_Typed
-    Quantum_Computing_by_VP_Basics.Essential_Functional_Analysis
-    Quantum_Computing_by_VP_Typed_Matrices.Lmat_Euclidean
-    Quantum_Computing_by_VP_Typed_Matrices.Separable_Cone
+    Quantum_Computing_by_VP.Matrix_Typed
+    Quantum_Computing_by_VP.Essential_Functional_Analysis
+    Quantum_Computing_by_VP.Lmat_Euclidean
+    Quantum_Computing_by_VP.Separable_Cone
 begin
 
 section \<open>Reading guide\<close>

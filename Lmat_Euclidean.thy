@@ -1,11 +1,11 @@
-(*  Title:   Lmat/Lmat_Euclidean.thy
+(*  Title:   Lmat_Euclidean.thy
     Author:  Dustin Bryant.  Infrastructure (not in the notes): the typed matrix space as a
              finite-dimensional real Hilbert space, so that HOL-Analysis applies to it.
 *)
 
 theory Lmat_Euclidean
   imports
-    Quantum_Computing_by_VP_Basics.Matrix_Typed
+    Quantum_Computing_by_VP.Matrix_Typed
     "HOL-Analysis.Euclidean_Space"
     "HOL-Analysis.L2_Norm"
     "HOL-Analysis.Elementary_Metric_Spaces"

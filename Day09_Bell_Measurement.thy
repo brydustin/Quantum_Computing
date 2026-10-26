@@ -1,5 +1,5 @@
 theory Day09_Bell_Measurement
-  imports Quantum_Computing_by_VP_Basics.Day09_POVMs_Entanglement
+  imports Quantum_Computing_by_VP.Day09_POVMs_Entanglement
 begin
 
 section \<open>Day 9: measuring one half of a Bell pair\<close>

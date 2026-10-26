@@ -933,3 +933,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   silently retarget them (use `where`).  Also `unitary_square_dim`, `unitary_vnorm` needs only the
   column count, `obndD` → `op_boundD`; paper listings render `≈⇘η⇙` via `\closeto`, checked by
   tools/paper_listings.py.
+- **Flat layout, one notes session** (2026-10-26, user: the `Day11/` folder made Day 11 look special;
+  "load each day and not the prereq"): every notes theory sits in the top-level directory, and
+  `Quantum_Computing_by_VP_Basics`/`_Typed_Matrices` are merged into the single session
+  `Quantum_Computing_by_VP` (parent Isabelle_Marries_Dirac; ROOT theories in day order).  Isabelle
+  forbids two sessions in one directory ("Duplicate use of directory"), so the Day 5 leading-minors
+  session (on Two_Hermitian_Results, too heavy to merge) lives in `Leading_Minors/`.  `HHL_Algorithm`
+  now builds on `Quantum_Computing_by_VP`.  Capstone `QC_Notes_Overview.thy`; jEdit via
+  `tools/jedit.sh` (dev heap `VP_External`, `tools/jedit/ROOT`).  Paper links stay pinned to 8e041d9.

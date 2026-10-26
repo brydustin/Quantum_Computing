@@ -35,7 +35,7 @@ def norm(s):
     s=s.replace('Quantum.unitary','unitary').replace('Complex_Matrix.unitary','unitary')
     return re.sub(r'\s+',' ',s).strip()
 srcs={}
-for d in ['Hermitian_Functional_Calculus','Algorithms','Day11','Algorithms/Demo','Algorithms/Channels','.']:
+for d in ['Hermitian_Functional_Calculus','Algorithms','Leading_Minors','Algorithms/Demo','Algorithms/Channels','.']:
     for f in glob.glob(os.path.join(P,d,'*.thy')):
         if os.path.basename(f) in ('Quantum_Computing.thy','Quantum_Computing_OLD.thy'): continue
         srcs[f]=norm(open(f).read())

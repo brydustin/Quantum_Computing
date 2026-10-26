@@ -3,7 +3,7 @@
 *)
 
 theory Day11_Gates_No_Cloning
-  imports Quantum_Computing_by_VP_Basics.Day10_Quantum_Gates
+  imports Quantum_Computing_by_VP.Day10_Quantum_Gates
 begin
 
 section \<open>Day 11 (21 September 2011): gates revisited, circuit diagrams, no-cloning\<close>

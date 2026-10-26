@@ -29,9 +29,8 @@ statements; a separate session (Day 5) imports the leading principal minors test
 ## Comment for the editors
 
 - Builds with Isabelle2025-2 and the AFP of 2026-04-09; no `sorry`, no oracles.
-- Sessions: Quantum_Computing_by_VP_Basics (Lectures 1–10), Quantum_Computing_by_VP_Typed_Matrices (typed matrices
-  as a Euclidean space, the separable cone), Quantum_Computing_by_VP (the remaining lectures and the
-  document), Quantum_Computing_by_VP_Day05 (Day 5: the leading principal minors test from Two_Hermitian_Results, kept
+- Sessions: Quantum_Computing_by_VP (every lecture, one theory per lecture, and the document),
+  Quantum_Computing_by_VP_Day05 (directory `Leading_Minors/`; Day 5: the leading principal minors test from Two_Hermitian_Results, kept
   apart because that entry loads HOL-Probability).
 - The notes are by Vern Paulsen (notes taken by Brandon Lee); they are cited, not reproduced:
   the document paraphrases each definition and theorem before its formal statement.

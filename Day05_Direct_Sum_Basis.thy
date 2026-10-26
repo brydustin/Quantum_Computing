@@ -1,5 +1,5 @@
 theory Day05_Direct_Sum_Basis
-  imports Quantum_Computing_by_VP_Basics.Day05_Positivity_Tests
+  imports Quantum_Computing_by_VP.Day05_Positivity_Tests
 begin
 
 section \<open>Day 5: a basis of $V\oplus W$ (D5-5)\<close>

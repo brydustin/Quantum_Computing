@@ -5,7 +5,7 @@
 .Rhistory
 .codex
 
-# Local archived theory copies (superseded by Quantum_Computing_3_10.thy and Day11/)
+# Local archived theory copies (superseded by Quantum_Computing_3_10.thy and the Day theories)
 Quantum_Computing_OLD.thy
 Quantum_Computing.thy
 
@@ -45,11 +45,11 @@ Applied_Math_Formalization/
 
 # generated notes document
 notes_doc/output/
-Day11/output/
+output/
 Hermitian_Functional_Calculus/output/
 Algorithms/output/
 Algorithms/*/output/
-Day05/output/
+Leading_Minors/output/
 
 # check reports
 tools/check/output/

@@ -1,5 +1,5 @@
 theory Day26_Arveson_Extension
-  imports Day25_Arveson_Correspondence Quantum_Computing_by_VP_Typed_Matrices.Separable_Cone
+  imports Day25_Arveson_Correspondence Quantum_Computing_by_VP.Separable_Cone
 begin
 
 section \<open>Day 26: Arveson's extension theorem\<close>

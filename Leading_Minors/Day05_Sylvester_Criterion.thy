@@ -1,5 +1,5 @@
 theory Day05_Sylvester_Criterion
-  imports Quantum_Computing_by_VP_Basics.Day05_Positivity_Tests Two_Hermitian_Results.Sylvester_Criterion
+  imports Quantum_Computing_by_VP.Day05_Positivity_Tests Two_Hermitian_Results.Sylvester_Criterion
 begin
 
 section \<open>Day 5: Sylvester's criterion (D5-1)\<close>

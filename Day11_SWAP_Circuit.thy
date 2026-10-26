@@ -1,5 +1,5 @@
 theory Day11_SWAP_Circuit
-  imports Quantum_Computing_by_VP_Basics.Day06_Tensor_Products
+  imports Quantum_Computing_by_VP.Day06_Tensor_Products
 begin
 
 section \<open>Day 11: SWAP from three CNOTs\<close>

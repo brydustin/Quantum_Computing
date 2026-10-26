@@ -4,6 +4,6 @@ begin
 
 ML_file "../project_checks.ML"
 
-ML \<open>Project_Checks.run {name = "Demo", audit = ["Quantum_Computing_by_VP_Basics", "Quantum_Computing_by_VP_Typed_Matrices", "Quantum_Computing_by_VP", "HHL_Algorithm", "HHL_Algorithm_Demo"], allow = [], targets = ["HHL_Algorithm_Demo"], ignore = [], strict = true} \<^theory>\<close>
+ML \<open>Project_Checks.run {name = "Demo", audit = ["Quantum_Computing_by_VP", "HHL_Algorithm", "HHL_Algorithm_Demo"], allow = [], targets = ["HHL_Algorithm_Demo"], ignore = [], strict = true} \<^theory>\<close>
 
 end

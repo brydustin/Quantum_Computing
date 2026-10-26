@@ -1,6 +1,6 @@
 chapter AFP
 
-session HHL_Algorithm = Quantum_Computing_by_VP_Basics +
+session HHL_Algorithm = Quantum_Computing_by_VP +
   description "
     Quantum phase estimation and the HHL algorithm for linear systems: exact and inexact
     analysis, approximate Hamiltonian simulation, programs of quantum Hoare logic, circuits."

@@ -9,7 +9,7 @@
 # Day 23 / Choi's Theorem 3 — Focused Session Handoff
 
 This document briefs a dedicated session for closing **Choi's Theorem 3**
-in `Day11/Day23_ChoiExtremeUCP.thy`. Read it cold; everything you need
+in `Day23_ChoiExtremeUCP.thy`. Read it cold; everything you need
 to start is here.
 
 ---
@@ -27,7 +27,7 @@ theorem choi_theorem_3_cptp:
   shows "extreme_CPTP n d Φ ⟷ mat_lin_indep_real n (kraus_products Vs)"
 ```
 
-at `Day11/Day23_ChoiExtremeUCP.thy:329` (line may shift). Currently `sorry`.
+at `Day23_ChoiExtremeUCP.thy:329` (line may shift). Currently `sorry`.
 
 **Recommended order:** prove the **reverse direction**
 (`¬ lin_indep ⟹ ¬ extreme`, contrapositive) first — it doesn't need
@@ -89,7 +89,7 @@ to write `T = Σ_l |u_l⟩⟨u_l|`. Then verify the rewrite
 > `kraus_quad_map d Vs T X = Σ_l W_l X W_l†`    where `W_l := Σ_i (u_l)_i V_i`,
 
 i.e., `kraus_quad_map d Vs T = kraus_map_dim d Ws` with `Ws := map (λu. Σ_i u_i V_i) us`.
-CP follows from `kraus_cp_no_tp` (in `Day11/Quantum_Computing11.thy:5635`).
+CP follows from `kraus_cp_no_tp` (in `Quantum_Computing11.thy:5635`).
 
 The rewrite is the heavy step: nested sums over `(i, j, l)`,
 `Σ_l u_i u_j* = T_{ij}`, then exchange order of summation.
@@ -154,7 +154,7 @@ The infinity-norm based bound is enough and avoids spectral theorem.)
 
 ## What is already in place (don't redo)
 
-All in `Day11/Day23_ChoiExtremeUCP.thy`:
+All in `Day23_ChoiExtremeUCP.thy`:
 
 | Item                         | Status |
 |------------------------------|--------|
@@ -227,7 +227,7 @@ inequality).
 
 \<^bold>Interactive workflow\<^bold>:</br>
 Load the theory in jEdit from the project root:
-\<open>/home/dusty/Desktop/Isabelle/Isabelle2025-2/bin/isabelle jedit -d . -l Vern_Paulsen_QC_3_10 Day11/Day23_ChoiExtremeUCP.thy\<close>
+\<open>/home/dusty/Desktop/Isabelle/Isabelle2025-2/bin/isabelle jedit -d . -l Vern_Paulsen_QC_3_10 Day23_ChoiExtremeUCP.thy\<close>
 
 The UCP version's products convention is **wrong** as stated
 (should be `{V_i V_j†}` in `M_d`, not `{V_j† V_i}` in `M_n`).
@@ -337,7 +337,7 @@ needs a separate session.
 ## Suggested entry prompt for the dedicated session
 
 > Open the project at `/home/dusty/Desktop/Isabelle/Vern_Paulsen_QC/`,
-> read `DAY23_HANDOFF.md` and `Day11/Day23_ChoiExtremeUCP.thy`. Close
+> read `DAY23_HANDOFF.md` and `Day23_ChoiExtremeUCP.thy`. Close
 > the **reverse direction** of `choi_theorem_3_cptp` following the
 > mathematical roadmap in the handoff. Build with
 > `isabelle build -d . Vern_Paulsen_QC` (use the

@@ -1,4 +1,4 @@
-(*  Title:   Lmat/Separable_Cone.thy
+(*  Title:   Separable_Cone.thy
     Author:  Dustin Bryant.  Days 27-28 of Paulsen's lectures: the separable cone is closed,
              separating hyperplanes, entanglement witnesses, the Horodecki characterisation.
 *)
@@ -6,7 +6,7 @@
 theory Separable_Cone
   imports
     Lmat_Euclidean
-    Quantum_Computing_by_VP_Basics.Day10_Quantum_Gates
+    Quantum_Computing_by_VP.Day10_Quantum_Gates
     "HOL-Analysis.Convex"
     "HOL-Analysis.Convex_Euclidean_Space"
     "HOL-Analysis.Polytope"

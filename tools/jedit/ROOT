@@ -1,0 +1,22 @@
+(* Development heap for jEdit: every theory the notes import from outside this project.
+   Not part of any AFP entry. *)
+session VP_External = Isabelle_Marries_Dirac +
+  sessions
+    Quantum_Fourier_Transform
+    "HOL-Hahn_Banach"
+    "HOL-Analysis"
+  theories
+    Isabelle_Marries_Dirac.No_Cloning
+    Quantum_Fourier_Transform.QFT
+    "Jordan_Normal_Form.DL_Rank"
+    "Jordan_Normal_Form.Schur_Decomposition"
+    "HOL-Library.Cardinality"
+    "HOL-Hahn_Banach.Hahn_Banach"
+    "HOL-Analysis.Euclidean_Space"
+    "HOL-Analysis.L2_Norm"
+    "HOL-Analysis.Elementary_Metric_Spaces"
+    "HOL-Analysis.Topology_Euclidean_Space"
+    "HOL-Analysis.Convex"
+    "HOL-Analysis.Convex_Euclidean_Space"
+    "HOL-Analysis.Starlike"
+    "HOL-Analysis.Polytope"
