@@ -1,8 +1,10 @@
 #!/bin/bash
-# Open a theory (default: the notes capstone) in jEdit. External theories come from the
-# VP_External heap (tools/jedit/ROOT, built on first use); the project's theories load from source.
+# Usage: tools/jedit.sh [FILE [SESSION]]  (default: the notes capstone, session Quantum_Computing_by_VP)
+# -R: the theories SESSION imports from other sessions come from a heap (built on first use);
+# SESSION's own theories load from source.
 # -norestore: don't bring back the previous jEdit view (it put ROOT in front of the capstone).
 . "$(dirname "$0")/env.sh"
 F=${1:-QC_Notes_Overview.thy}
+S=${2:-Quantum_Computing_by_VP}
 [ "${F#/}" = "$F" ] && F="$P/$F"
-exec "$ISABELLE" jedit -d "$AFP" -d "$P" -d "$P/tools/jedit" -l VP_External -j -norestore "$F"
+exec "$ISABELLE" jedit -d "$AFP" -d "$P" -R "$S" -j -norestore "$F"

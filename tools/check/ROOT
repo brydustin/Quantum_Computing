@@ -17,7 +17,7 @@ session VP_Check_Notes in "Notes" = Quantum_Computing_by_VP +
   options [document = false]
   theories Check_Notes
 
-session VP_Check_Day05 in "Day05" = Quantum_Computing_by_VP_Day05 +
+session VP_Check_Day05 in "Day05" = Quantum_Computing_by_VP +
   options [document = false]
   theories Check_Day05
 

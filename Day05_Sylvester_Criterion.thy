@@ -4,28 +4,20 @@ begin
 
 section \<open>Day 5: Sylvester's criterion (D5-1)\<close>
 
-text \<open>For an $n\times n$ matrix $P=(p_{ij})$ and $k=1,\dots,n$, the $k$-th leading principal
-submatrix is $P_k=(p_{ij})_{1\le i,j\le k}$, the upper left $k\times k$ corner, and
-$\det P_k$ is the $k$-th leading principal minor.  On Day~5 the notes give, without proof:
-\begin{notestheorem}[Sylvester's criterion]
-Let $P=P^*\in M_n$.  Then $P>0$ (that is, $\langle x|Px\rangle>0$ for every $x\ne0$) if and only if
-$\det P_k>0$ for $k=1,\dots,n$.
-\end{notestheorem}
-For Hermitian $P$ each $\det P_k$ is real, since $P_k$ is again Hermitian.  The criterion does
-not extend to $P\ge0$: $P=\begin{pmatrix}0&0\\0&-1\end{pmatrix}$ has minors $0,0\ge0$ but
-$\langle e_2|Pe_2\rangle=-1$.  For $n=2$ it reads: $\begin{pmatrix}a&b\\\bar b&c\end{pmatrix}>0$
-iff $a>0$ and $ac-|b|^2>0$.
-
-The criterion is proved in the AFP entry \emph{Two Hermitian Results}
-(@{thm [source] Sylvester_Criterion.sylvester_criterion}), with its own notions of Hermitian
-matrix (\<^const>\<open>Complex_Matrix.hermitian\<close>, from QHLProver) and positive definiteness
-(\<^const>\<open>Misc_Matrix_Results.positive_definite\<close>, with the quadratic form
+text \<open>Sylvester's criterion, stated in the previous section, is proved in the AFP entry
+\emph{Two Hermitian Results} (@{thm [source] Sylvester_Criterion.sylvester_criterion}), with its
+own notions of Hermitian matrix (\<^const>\<open>Complex_Matrix.hermitian\<close>, from QHLProver)
+and positive definiteness (\<^const>\<open>Misc_Matrix_Results.positive_definite\<close>, with the quadratic form
 \<^const>\<open>quadratic_form\<close> and the order on \<^typ>\<open>complex\<close>).  It is not reproved here.  The
 lemmas below show that these notions agree with \<^const>\<open>Day04_Hermitian_Matrices.hermitian\<close> and
 \<^const>\<open>Day04_Hermitian_Matrices.pd\<close> of the formalised notes; the theorem is then restated in
 those terms.  Names that both libraries define (\<open>hermitian\<close>, \<open>inner_prod\<close>) are written with
 their theory prefix.  Formally $P_k$ is \<^term>\<open>lps P k\<close>, and $k$ ranges over $0,\dots,n$:
-the case $k=0$ adds nothing, since a $0\times0$ determinant is $1$.\<close>
+the case $k=0$ adds nothing, since a $0\times0$ determinant is $1$.  The entry's imports undo the
+hiding of Isabelle\_Marries\_Dirac's gate names in \texttt{Day01\_Inner\_Product}, so they are
+hidden again here.\<close>
+
+hide_const (open) Quantum.X Quantum.Y Quantum.Z Quantum.H Quantum.S Quantum.T
 
 lemma hermitian_iff_Complex_Matrix_hermitian: "Day04_Hermitian_Matrices.hermitian A \<longleftrightarrow> Complex_Matrix.hermitian A"
   by (simp add: Day04_Hermitian_Matrices.hermitian_def Complex_Matrix.hermitian_def Linear_Algebra_Complements.dagger_adjoint)

@@ -23,11 +23,8 @@ $\begin{pmatrix}a&b\\\bar b&c\end{pmatrix}>0$ iff $a>0$ and $ac-|b|^2>0$.  The n
 without proof.  It is not reproved in this development: it is imported from the AFP entry
 \emph{Two Hermitian Results} and restated for \<^const>\<open>pd\<close> and \<^const>\<open>hermitian\<close> as
 \texttt{pd\_iff\_leading\_minors\_pos} (for $P\in M_n$ Hermitian, \<^term>\<open>pd P\<close> iff
-$\det P_k>0$ for all $k\le n$) in the theory \texttt{Day05\_Sylvester\_Criterion}.  That theory
-forms the separate session \texttt{Quantum\_Computing\_by\_VP\_Day05} with its own document
-(\texttt{Quantum\_Computing\_by\_VP\_Day05.pdf}), because the AFP entry builds on HOL-Analysis,
-HOL-Probability and QHLProver, which this document's sessions do not load.  (2) Cholesky's
-algorithm:
+$\det P_k>0$ for all $k\le n$) in the next section, the theory
+\texttt{Day05\_Sylvester\_Criterion}.  (2) Cholesky's algorithm:
 \begin{notestheorem}
 If $P=(p_{ij})$ is $n\times n$ with $P=P^*$, then $P\ge 0$ if and only if
 $P-\bigl(\tfrac{p_{i1}p_{1j}}{p_{11}}\bigr)_{ij}\ge 0$.

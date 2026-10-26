@@ -1,6 +1,6 @@
 chapter AFP
 
-session Quantum_Computing_by_VP in "." = Isabelle_Marries_Dirac +
+session Quantum_Computing_by_VP in "." = Two_Hermitian_Results +
   description "
     Vern Paulsen's lecture notes on quantum computing and completely positive maps
     (Houston, 2011), formalised lecture by lecture."
@@ -8,6 +8,7 @@ session Quantum_Computing_by_VP in "." = Isabelle_Marries_Dirac +
            document_variants = "document=/proof,/ML",
            quick_and_dirty = false, timeout = 3600]
   sessions
+    Isabelle_Marries_Dirac
     Quantum_Fourier_Transform
     "HOL-Hahn_Banach"
     "HOL-Analysis"
@@ -20,6 +21,7 @@ session Quantum_Computing_by_VP in "." = Isabelle_Marries_Dirac +
     Day04_Hermitian_Matrices
     Day04_Hermitian_Converse
     Day05_Positivity_Tests
+    Day05_Sylvester_Criterion
     Day05_Cholesky_Examples
     Day05_Direct_Sum_Basis
     Day06_Tensor_Products
@@ -98,19 +100,5 @@ session Quantum_Computing_by_VP in "." = Isabelle_Marries_Dirac +
     Quantum_Channels
     QC_Prelims
     QC_Notes_Overview
-  document_files
-    "root.tex"
-
-session Quantum_Computing_by_VP_Day05 in "Leading_Minors" = Two_Hermitian_Results +
-  description "
-    D5-1: the leading principal minors test, imported from the AFP entry Two_Hermitian_Results
-    (separate session: that entry loads HOL-Analysis and HOL-Probability)."
-  options [document = pdf, document_output = "output",
-           document_variants = "document=/proof,/ML",
-           quick_and_dirty = false, timeout = 3600]
-  sessions
-    Quantum_Computing_by_VP
-  theories
-    Day05_Sylvester_Criterion
   document_files
     "root.tex"

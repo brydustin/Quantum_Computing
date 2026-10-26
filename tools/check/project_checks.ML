@@ -1,7 +1,7 @@
 (* Checks for the project's theories: oracles, duplicate facts and definitions, name clashes.
-   Theories are identified by session.  "audit" sessions are checked for oracles other than the
-   "allow"ed ones; "targets" are checked for redundancy against everything else in the context
-   except the "ignore" sessions.
+   Theories are identified by session or by session-qualified theory name.  "audit" sessions are
+   checked for oracles other than the "allow"ed ones; "targets" are checked for redundancy against
+   everything else in the context except the "ignore" sessions.
    The report goes to output/NAME.txt; with "strict" any problem fails the build. *)
 
 structure Project_Checks =
@@ -57,7 +57,10 @@ fun run {name, audit, allow, targets, ignore, strict} thy =
   let
     val stab = session_table thy
     fun sess_of n = Symtab.lookup stab (hd (Long_Name.explode n))
-    fun in_sessions ss n = (case sess_of n of SOME s => member (op =) ss s | NONE => false)
+    fun in_sessions ss n = (case sess_of n of
+        SOME s => member (op =) ss s orelse
+          member (op =) ss (Long_Name.qualify s (hd (Long_Name.explode n)))
+      | NONE => false)
     val facts = Facts.dest_static false [] (Global_Theory.facts_of thy)
     val out = Unsynchronized.ref ([] : string list)
     fun say s = out := s :: ! out

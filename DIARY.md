@@ -941,3 +941,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   session (on Two_Hermitian_Results, too heavy to merge) lives in `Leading_Minors/`.  `HHL_Algorithm`
   now builds on `Quantum_Computing_by_VP`.  Capstone `QC_Notes_Overview.thy`; jEdit via
   `tools/jedit.sh` (dev heap `VP_External`, `tools/jedit/ROOT`).  Paper links stay pinned to 8e041d9.
+- **Day 5 joins the notes session** (2026-10-26, user: "So we can't get the import that I need to
+  verify Day 5 material?"): `Quantum_Computing_by_VP` now has parent `Two_Hermitian_Results` (plus
+  `sessions Isabelle_Marries_Dirac`), so `Day05_Sylvester_Criterion` is an ordinary top-level lecture
+  theory, imported by the capstone and printed after `Day05_Positivity_Tests`.  `Leading_Minors/`,
+  the session `Quantum_Computing_by_VP_Day05` and `notes_doc/Quantum_Computing_by_VP_Day05.pdf` are
+  gone.  The THR heap already holds the HOL-Analysis theories the notes use (Polytope etc.),
+  QHLProver's Complex_Matrix and six IMD theories, so the notes build is faster (2:45; heap 48 MB, was
+  114 MB); the rest of IMD, QFT and HOL-Hahn_Banach load from source.  Trap (the one Day01 warns
+  about): THR's imports undo Day01's hiding of IMD's gate names, so the capstone's examples
+  `⟨⟨Y|X⟩⟩`, `kraus_map_dim d Ws X` silently used the Pauli matrices; `Day05_Sylvester_Criterion`
+  hides them again (checked in the generated .tex: `\isafree`).  jEdit: `tools/jedit.sh` uses
+  `-R Quantum_Computing_by_VP` (an image with every theory the notes import from other sessions),
+  replacing the hand-kept `VP_External`.  `project_checks.ML`: session lists may name a
+  session-qualified theory; `VP_Check_Day05` targets `Quantum_Computing_by_VP.Day05_Sylvester_Criterion`.

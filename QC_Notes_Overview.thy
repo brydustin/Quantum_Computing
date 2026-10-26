@@ -12,6 +12,7 @@ theory QC_Notes_Overview
     Quantum_Computing_by_VP.Day04_Hermitian_Matrices
     Quantum_Computing_by_VP.Day04_Hermitian_Converse
     Quantum_Computing_by_VP.Day05_Positivity_Tests
+    Quantum_Computing_by_VP.Day05_Sylvester_Criterion
     Quantum_Computing_by_VP.Day05_Cholesky_Examples
     Quantum_Computing_by_VP.Day05_Direct_Sum_Basis
     Quantum_Computing_by_VP.Day06_Tensor_Products
@@ -110,7 +111,7 @@ early lecture may use results of later ones; it is still printed with its lectur
 2 & \texttt{Day02\_Trace\_Projections}, \texttt{Day02\_Projection\_Basis}\\
 3 & \texttt{Day03\_Unitary\_Matrices}\\
 4 & \texttt{Day04\_Hermitian\_Matrices}, \texttt{Day04\_Hermitian\_Converse}\\
-5 & \texttt{Day05\_Positivity\_Tests}, \texttt{Day05\_Cholesky\_Examples}, \texttt{Day05\_Direct\_Sum\_Basis}, \texttt{Day05\_Sylvester\_Criterion} (separate session)\\
+5 & \texttt{Day05\_Positivity\_Tests}, \texttt{Day05\_Sylvester\_Criterion}, \texttt{Day05\_Cholesky\_Examples}, \texttt{Day05\_Direct\_Sum\_Basis}\\
 6 & \texttt{Day06\_Tensor\_Products}, \texttt{Day06\_Tensor\_Coordinates}, \texttt{Day06\_Schmidt\_Rank}, \texttt{Day06\_15\_Universal}\\
 7 & \texttt{Day07\_Postulates}\\
 8 & \texttt{Day08\_Measurements}, \texttt{Day08\_Indistinguishable\_States}\\
