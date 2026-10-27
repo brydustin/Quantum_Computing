@@ -1,5 +1,5 @@
 theory Day23_Extremality_Examples
-  imports Day22_Kraus_Independence Quantum_Channels Day25_Arveson_Correspondence
+  imports Day22_Kraus_Independence
 begin
 
 section \<open>Day 23: extreme and non-extreme maps (D23-4)\<close>

@@ -1525,4 +1525,71 @@ next
     using kraus phi_eq by blast
 qed
 
+lemma kraus_lin_on:
+  assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+  shows "lin_on n d (carrier_mat n n) (kraus_map_dim d Ws)"
+  unfolding lin_on_def using assms
+  by (auto intro: kraus_map_dim_carrier kraus_map_dim_add kraus_map_dim_smult)
+
+lemma sum_wdag_w_append:
+  fixes Ws Vs :: "complex Matrix.mat list"
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+  shows "sum_wdag_w n (Ws @ Vs)
+         = sum_wdag_w n Ws + sum_wdag_w n Vs"
+  using Ws_c
+proof (induction Ws)
+  case Nil
+  have Vs_sum_c: "sum_wdag_w n Vs \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Vs_c] .
+  show ?case
+    using Vs_sum_c
+    by (intro eq_matI) (auto simp: sum_wdag_w_def)
+next
+  case (Cons W Ws)
+  hence W_c: "W \<in> carrier_mat d n"
+    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n" by auto
+  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
+    using W_c by (rule dagger_carrier)
+  have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n"
+    using Wd_c W_c by (rule mult_carrier_mat)
+  have Ws_sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Ws_c'] .
+  have Vs_sum_c: "sum_wdag_w n Vs \<in> carrier_mat n n"
+    using sum_wdag_w_carrier[OF Vs_c] .
+  have IH: "sum_wdag_w n (Ws @ Vs)
+              = sum_wdag_w n Ws + sum_wdag_w n Vs"
+    using Cons.IH Ws_c' by simp
+
+  have "sum_wdag_w n ((W # Ws) @ Vs)
+          = (W\<^sup>\<dagger>) * W + sum_wdag_w n (Ws @ Vs)"
+    by (simp add: sum_wdag_w_Cons)
+  also have "\<dots> = (W\<^sup>\<dagger>) * W + (sum_wdag_w n Ws + sum_wdag_w n Vs)"
+    using IH by simp
+  also have "\<dots> = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) + sum_wdag_w n Vs"
+    using WdW_c Ws_sum_c Vs_sum_c
+    by simp
+  also have "\<dots> = sum_wdag_w n (W # Ws) + sum_wdag_w n Vs"
+    by (simp add: sum_wdag_w_Cons)
+  finally show ?case.
+qed
+
+lemma kraus_is_trace_preserving:
+  fixes Ws :: "complex Matrix.mat list"
+  assumes Ws: "kraus_operators n d Ws"
+  shows "trace_preserving n (kraus_map_dim d Ws)"
+proof (unfold trace_preserving_def, intro allI impI)
+  fix \<rho> :: "complex Matrix.mat"
+  assume \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  have Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+    using Ws by (simp add: kraus_operators_def)
+  have sum_eq: "sum_wdag_w n Ws = 1\<^sub>m n"
+    using Ws by (simp add: kraus_operators_altdef)
+  have "Tr (kraus_map_dim d Ws \<rho>) = Tr (sum_wdag_w n Ws * \<rho>)"
+    using Tr_kraus_map_dim_as_wdagw[OF Ws_c \<rho>_c] .
+  also have "\<dots> = Tr ((1\<^sub>m n) * \<rho>)" using sum_eq by simp
+  also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
+  finally show "Tr (kraus_map_dim d Ws \<rho>) = Tr \<rho>" .
+qed
+
 end

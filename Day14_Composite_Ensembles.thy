@@ -1,5 +1,5 @@
 theory Day14_Composite_Ensembles
-  imports Day23_ChoiExtremeUCP
+  imports Day13_Density_Matrices
 begin
 
 section \<open>Day 14: composite ensembles (D14-5)\<close>

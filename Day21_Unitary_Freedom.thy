@@ -1,5 +1,5 @@
 theory Day21_Unitary_Freedom
-  imports QC_Prelims
+  imports Day23_ChoiExtremeUCP
 begin
 
 section \<open>Day 21: unitary freedom of rank-one decompositions and Kraus representations (D21-3, D21-5, D21-6)\<close>

@@ -8,7 +8,7 @@ Fields of the submission form at https://isa-afp.org/submission/
 - **Topics (suggested):** Mathematics/Physics/Quantum information; Computer science/Algorithms/Quantum computing; Mathematics/Algebra
 - **License:** BSD
 - **Archive:** `Quantum_Computing_by_VP.tar.gz` (the folder `Quantum_Computing_by_VP/`)
-- **Depends on (AFP):** Two_Hermitian_Results (parent session), Isabelle_Marries_Dirac,
+- **Depends on (AFP):** Two_Hermitian_Results (parent of the first session), Isabelle_Marries_Dirac,
   Jordan_Normal_Form, Quantum_Fourier_Transform; Isabelle: HOL-Analysis, HOL-Hahn_Banach
 
 ## Abstract
@@ -29,8 +29,12 @@ statements; the leading principal minors test of Day 5 is imported from Two_Herm
 ## Comment for the editors
 
 - Builds with Isabelle2025-2 and the AFP of 2026-04-09; no `sorry`, no oracles.
-- One session, Quantum_Computing_by_VP: every lecture, one theory per lecture, and the document.
-  Its parent is Two_Hermitian_Results, whose leading principal minors test Day 5 imports.
+- Two sessions.  Essential_Functional_Analysis (directory `Essential_Functional_Analysis/`, own
+  document): general matrix lemmas, unitary and Kronecker-product algebra, and matrices of fixed
+  dimension with the Hilbert-Schmidt norm as a normed and a Euclidean space, independent of the
+  lectures; its parent is Two_Hermitian_Results.  Quantum_Computing_by_VP, built on it: every
+  lecture, one theory per lecture, and the document; Day 5 imports the leading principal minors
+  test of Two_Hermitian_Results.
 - The notes are by Vern Paulsen (notes taken by Brandon Lee); they are cited, not reproduced:
   the document paraphrases each definition and theorem before its formal statement.
   **Please confirm with Vern Paulsen before submitting** that he is happy with an entry named

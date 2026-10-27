@@ -1,5 +1,5 @@
 theory Day26_CP_Factorization
-  imports Day26_Arveson_Extension Day32_Recovery_Proposition
+  imports Day26_Arveson_Extension Day32_Recovery_Proposition Day22_Minimal_Kraus
 begin
 
 section \<open>Day 26: factoring a CP map through a unital or a trace-preserving one (D26-1)\<close>
@@ -83,12 +83,6 @@ proof -
   qed (use Fc in simp_all)
   thus ?thesis unfolding e .
 qed
-
-lemma kraus_lin_on:
-  assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-  shows "lin_on n d (carrier_mat n n) (kraus_map_dim d Ws)"
-  unfolding lin_on_def using assms
-  by (auto intro: kraus_map_dim_carrier kraus_map_dim_add kraus_map_dim_smult)
 
 lemma kraus_compose_single: "kraus_compose [A] Es = map (\<lambda>E. A * E) Es"
   by (induction Es) (simp_all add: kraus_compose_Cons)

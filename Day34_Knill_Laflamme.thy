@@ -1,5 +1,5 @@
 theory Day34_Knill_Laflamme
-  imports Day22_Minimal_Kraus Quantum_Channels
+  imports Day22_Minimal_Kraus Day32_Recovery_Proposition
 begin
 
 section \<open>Day 34: the Knill--Laflamme conditions (D34-1, D34-2, D34-3)\<close>
@@ -38,34 +38,6 @@ proof -
     thus "v $ i = (P *\<^sub>v v) $ i" using x0 i by simp
   qed
   thus ?thesis using vd Pvd by (intro eq_vecI) auto
-qed
-
-lemma outer_sum_Nil: "outer_sum n [] = 0\<^sub>m n n"
-  by (rule eq_matI) (auto simp: outer_sum_def scalar_prod_def)
-
-lemma outer_sum_singleton_eq:
-  assumes vd: "dim_vec v = n"
-  shows "outer_sum n [v] = v \<oslash> v"
-proof (rule eq_matI)
-  have c: "v \<oslash> v \<in> carrier_mat n n" by (rule outer_prod_carrier[OF vd vd])
-  fix i j assume "i < dim_row (v \<oslash> v)" "j < dim_col (v \<oslash> v)"
-  hence i: "i < n" and j: "j < n" using carrier_matD[OF c] by auto
-  show "outer_sum n [v] $$ (i,j) = (v \<oslash> v) $$ (i,j)"
-    unfolding outer_sum_singleton_index[OF i j] using i j vd by (simp add: outer_prod_index)
-qed (use carrier_matD[OF outer_prod_carrier[OF vd vd]] in auto)
-
-lemma outer_sum_as_foldr:
-  assumes "\<forall>v \<in> set vs. dim_vec v = n"
-  shows "outer_sum n vs = foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m n n)"
-  using assms
-proof (induction vs)
-  case Nil show ?case by (simp add: outer_sum_Nil)
-next
-  case (Cons v vs)
-  have "outer_sum n (v # vs) = outer_sum n [v] + outer_sum n vs"
-    using Cons.prems by (intro outer_sum_Cons_split) simp
-  also have "outer_sum n [v] = v \<oslash> v" using Cons.prems by (intro outer_sum_singleton_eq) simp
-  finally show ?case using Cons by simp
 qed
 
 text \<open>For $X\ge0$ the matrix $PXP$ is a sum of $|\psi_l\rangle\langle\psi_l|$ with $\psi_l\in V$

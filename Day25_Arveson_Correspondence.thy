@@ -1,5 +1,5 @@
 theory Day25_Arveson_Correspondence
-  imports Day24_Operator_Systems
+  imports Day24_Operator_Systems Day23_ChoiExtremeUCP
 begin
 
 section \<open>Days 24--25: Arveson's correspondence between maps and functionals\<close>
@@ -9,23 +9,6 @@ $S_\Phi:M_d(S)\to\C$, $S_\Phi((A_{ij}))=\frac1d\sum_{i,j}\Phi(A_{ij})_{ij}$, wit
 $f\mapsto\Phi_f$, $\Phi_f(M)=d\,(f(E_{ij}\otimes M))_{ij}$.\<close>
 
 subsection \<open>Finite sums of matrices\<close>
-
-definition msum :: "nat \<Rightarrow> nat \<Rightarrow> ('a \<Rightarrow> complex Matrix.mat) \<Rightarrow> 'a list \<Rightarrow> complex Matrix.mat" where
-  "msum r c g xs = foldr (\<lambda>x acc. g x + acc) xs (0\<^sub>m r c)"
-
-lemma msum_Nil [simp]: "msum r c g [] = 0\<^sub>m r c"
-  by (simp add: msum_def)
-
-lemma msum_Cons [simp]: "msum r c g (x # xs) = g x + msum r c g xs"
-  by (simp add: msum_def)
-
-lemma msum_carrier: "\<forall>x \<in> set xs. g x \<in> carrier_mat r c \<Longrightarrow> msum r c g xs \<in> carrier_mat r c"
-  by (induction xs) auto
-
-lemma msum_index:
-  assumes "\<forall>x \<in> set xs. g x \<in> carrier_mat r c" and "i < r" and "j < c"
-  shows "msum r c g xs $$ (i,j) = (\<Sum>x\<leftarrow>xs. g x $$ (i,j))"
-  unfolding msum_def by (rule foldr_add_mat_index_rect[OF assms])
 
 lemma msum_in_os:
   assumes OS: "operator_system n OS" and g: "\<forall>x \<in> set xs. g x \<in> OS"
@@ -55,25 +38,6 @@ next
   have "\<Phi> (g x + msum n n g xs) = \<Phi> (g x) + \<Phi> (msum n n g xs)"
     using L gx msum_in_os[OF OS rest] unfolding lin_on_def by blast
   thus ?case using Cons.IH[OF rest] by simp
-qed
-
-lemma sum_list_product_upt:
-  "(\<Sum>x\<leftarrow>List.product [0..<a] [0..<b]. h x) = (\<Sum>i<a. \<Sum>j<b. h (i,j))"
-proof -
-  have "(\<Sum>x\<leftarrow>List.product [0..<a] [0..<b]. h x) = sum h ({..<a} \<times> {..<b})"
-    by (subst sum_list_distinct_conv_sum_set) (auto simp: distinct_product atLeast0LessThan)
-  also have "\<dots> = (\<Sum>i<a. \<Sum>j<b. h (i,j))" unfolding sum.cartesian_product by simp
-  finally show ?thesis .
-qed
-
-lemma sum_delta2:
-  fixes a d b e :: nat
-  assumes a: "a < d" and b: "b < e"
-  shows "(\<Sum>i<d. \<Sum>j<e. if i = a \<and> j = b then v else 0) = v"
-proof -
-  have "\<And>i. (\<Sum>j<e. if i = a \<and> j = b then v else 0) = (if i = a then v else 0)"
-    using b by (case_tac "i = a") (simp_all add: sum.delta)
-  thus ?thesis using a by (simp add: sum.delta)
 qed
 
 subsection \<open>$E_{ij}\otimes M$ and the block decomposition\<close>

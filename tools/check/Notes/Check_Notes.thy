@@ -61,6 +61,7 @@ theory Check_Notes
     Quantum_Computing_by_VP.Day26_Arveson_Extension
     Quantum_Computing_by_VP.Day26_CP_Factorization
     Quantum_Computing_by_VP.Day26_Separability
+    Quantum_Computing_by_VP.Day26_Separable_Cone
     Quantum_Computing_by_VP.Day27_Positive_Map_Criterion
     Quantum_Computing_by_VP.Day27_Entangled_Examples
     Quantum_Computing_by_VP.Day28_Horodecki_Peres
@@ -79,17 +80,15 @@ theory Check_Notes
     Quantum_Computing_by_VP.Day34_Knill_Laflamme
     Quantum_Computing_by_VP.Day34_KL_Sufficiency
     Quantum_Computing_by_VP.Quantum_Channels
-    Quantum_Computing_by_VP.Unitary_Tensor_Algebra
-    Quantum_Computing_by_VP.QC_Prelims
-    Quantum_Computing_by_VP.Matrix_Typed
-    Quantum_Computing_by_VP.Essential_Functional_Analysis
-    Quantum_Computing_by_VP.Lmat_Euclidean
-    Quantum_Computing_by_VP.Separable_Cone
+    Essential_Functional_Analysis.Matrix_Lemmas
+    Essential_Functional_Analysis.Unitary_Tensor_Algebra
+    Essential_Functional_Analysis.Matrix_Typed
+    Essential_Functional_Analysis.Lmat_Euclidean
 begin
 
 ML_file "../project_checks.ML"
 
-ML \<open>Project_Checks.run {name = "Notes", audit = ["Quantum_Computing_by_VP"], allow = [],
-  targets = ["Quantum_Computing_by_VP"], ignore = [], strict = true} \<^theory>\<close>
+ML \<open>Project_Checks.run {name = "Notes", audit = ["Essential_Functional_Analysis", "Quantum_Computing_by_VP"], allow = [],
+  targets = ["Essential_Functional_Analysis", "Quantum_Computing_by_VP"], ignore = [], strict = true} \<^theory>\<close>
 
 end

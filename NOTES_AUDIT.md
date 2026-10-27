@@ -22,14 +22,14 @@ Day 34 = 18 Nov 2011).  Status codes:
 | ✗ | not formalised (gap) |
 | – | deliberately not formalised: narrative, history, numerical example, or classical aside |
 
-Theory abbreviations: Ln = the theory of lecture n (`Day01_Inner_Product`, …, `Day32_Phase_Flip_Code`, all in the top-level directory), UTA = `Unitary_Tensor_Algebra`, HB = `Day25_Hahn_Banach`, CH = `Quantum_Channels` (channels beyond the notes),
-MT = `Matrix_Typed`, EFA = `Essential_Functional_Analysis`, LE = `Lmat_Euclidean`,
-SC = `Separable_Cone`,
+Theory abbreviations: Ln = the theory of lecture n (`Day01_Inner_Product`, …, `Day32_Phase_Flip_Code`, all in the top-level directory), UTA = `Unitary_Tensor_Algebra` (prerequisites session `Essential_Functional_Analysis`), HB = `Day25_Hahn_Banach`, CH = `Quantum_Channels` (channels beyond the notes),
+MT = `Matrix_Typed`, LE = `Lmat_Euclidean` (both in `Essential_Functional_Analysis`),
+SC = `Day26_Separable_Cone`,
 D23 = `Day23_ChoiExtremeUCP`, D26 = `Day26_Separability`; gap-closure theories
 (2026-10-19): D12 = `Day12_Counting_Probability`, D18 = `Day18_Positive_Maps`,
 D22 = `Day22_Kraus_Independence`, D28 = `Day28_Horodecki_Peres`, D30 = `Day30_BitFlip_Code`,
 D32 = `Day32_Pauli_Expansion`, D21 = `Day21_Unitary_Freedom`, D32R = `Day32_Recovery_Proposition`,
-D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Average_Two`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`, with shared lemmas in `QC_Prelims`; second gap-closure pass: PB = `Day02_Projection_Basis`, DSB = `Day05_Direct_Sum_Basis`, TC = `Day06_Tensor_Coordinates`, IS = `Day08_Indistinguishable_States`, BELL = `Day09_Bell_Measurement`, SW = `Day11_SWAP_Circuit`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Day05_Sylvester_Criterion`, CE = `Day05_Cholesky_Examples`, SDC = `Day10_Superdense_Coding`, CCN = `Day11_CCNOT_Table`, PTA = `Day15_Partial_Trace_A`, HC = `Day04_Hermitian_Converse`, CEN = `Day14_Composite_Ensembles`, CPOS = `Day19_Choi_Positivity`, SUB = `Day29_Subspace_Codes`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`, BF = `Day16_Block_Form`, UC = `Day22_UCP_Compact`.
+D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Average_Two`, D34 = `Day34_Knill_Laflamme`, D20 = `Day20_Choi_Rank`, D34S = `Day34_KL_Sufficiency`, D33 = `Day33_Shor_Code`, D17 = `Day17_Environment_Model`, OS = `Day24_Operator_Systems`, AC = `Day25_Arveson_Correspondence`, AE = `Day26_Arveson_Extension`, PMC = `Day27_Positive_Map_Criterion`; second gap-closure pass: PB = `Day02_Projection_Basis`, DSB = `Day05_Direct_Sum_Basis`, TC = `Day06_Tensor_Coordinates`, IS = `Day08_Indistinguishable_States`, BELL = `Day09_Bell_Measurement`, SW = `Day11_SWAP_Circuit`, CC = `Day29_Classical_Codes`, CF = `Day31_Code_Fidelity`, YC = `Day32_Y_Code`; third pass: CTU = `Day19_Choi_TP_Unital`, EE = `Day23_Extremality_Examples`, UFN = `Day25_Unital_Functional_Norm`; fourth pass: CPF = `Day26_CP_Factorization`, EEX = `Day27_Entangled_Examples`, SYL = `Day05_Sylvester_Criterion`, CE = `Day05_Cholesky_Examples`, SDC = `Day10_Superdense_Coding`, CCN = `Day11_CCNOT_Table`, PTA = `Day15_Partial_Trace_A`, HC = `Day04_Hermitian_Converse`, CEN = `Day14_Composite_Ensembles`, CPOS = `Day19_Choi_Positivity`, SUB = `Day29_Subspace_Codes`, RG = `Day21_Ranges`, SR = `Day06_Schmidt_Rank`, AM = `Day22_Adjoint_Maps`, C3U = `Day23_Choi3_UCP`, BF = `Day16_Block_Form`, UC = `Day22_UCP_Compact`.
 
 ---
 
@@ -293,7 +293,7 @@ D22M = `Day22_Minimal_Kraus`, RA = `Day21_Average_Conjecture`, RA2 = `Day21_Aver
 | id | notes | formal | status |
 |---|---|---|---|
 | D28-1 | the separable matrices form a closed cone in the Hermitian matrices | SC `separable_cone_lmat_closed`, `separable_cone_lmat_hermitian`, `separable_cone_lmat_convex_cone` | ✓ |
-| D28-2 | real functional f with f(R) < 0 ≤ f(C); complexification f̃ | SC `separable_cone_lmat_separating_hyperplane`, `hermitian_witness_from_lmat`, `entanglement_witness_hermitian'` | ✓ |
+| D28-2 | real functional f with f(R) < 0 ≤ f(C); complexification f̃ | SC `separable_cone_lmat_separating_hyperplane`, AE `hermitian_witness_from_lmat`, SC `entanglement_witness_hermitian'` | ✓ |
 | D28-3 | Theorem: R ≥ 0 separable iff Φ^{(r)}(R) ≥ 0 for all positive Φ : M_n → M_r | PMC `separable_iff_positive_maps` (for Hermitian R; from the witness form SC `separable_iff_witness` through Φ_f with f = Tr(W·)) | ✓ |
 | D28-4 | strict witnesses for density matrices | SC `entanglement_witness_strict`, `entanglement_witness_for_density` | ✓ (beyond the notes) |
 | D28-5 | Horodecki–Peres: for v ∈ ℂ²⊗ℂ², separable iff partial transpose of \|v⟩⟨v\| ≥ 0 | D28 `horodecki_peres_two_qubits`: psd (id⊗t)(\|v⟩⟨v\|) ⟷ v = α⊗β (pure states: separable = product); `horodecki_peres_entangled`; witness value −2\|v₀v₃−v₁v₂\|² (`partial_transpose_witness_value`) | ✓ |
@@ -434,9 +434,8 @@ in a variant (stated), ✗ not yet, – out of scope (reason given).
 | H-23 | §IV: estimating ⟨x\|M\|x⟩, k-copy polynomials, sampling, f(A)\|b⟩, SWAP test, preconditioning, ill-conditioned flagging | `HHL`: `fun_circuit_output` (f(A)\|b⟩); `HHL_Discussion`: `expect_stable`, `tpow_index` and `tpow_close` (k copies), `sample_dist_close` (sampling), `swap_test_output`/`swap_test_prob` (SWAP test), `precond_left`/`precond_right`; flagging is `flag_post_bound`. Paper errata: (AB)c = Bb is not a preconditioned system (`paper_precondition_wrong`: its unique solution c has Ac ≠ b and A(Bc) ≠ b; correct are BAx = Bb or ABc = b, x = Bc); the displayed flagged state swaps λ_j < 1/κ and λ_j ≥ 1/κ | ~ (paper wrong in details) |
 
 ## Infrastructure not in the notes (formalised to make the above possible)
-* UTA: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_unitary`), unitary algebra.
-* EFA: Hilbert–Schmidt norm, completeness of M_n in HS norm, closedness of the Hermitian and PSD sets, Carathéodory for conic combinations of product matrices.
-* MT, LE: typed-dimension matrices `lmat` with the HOL-Analysis `euclidean_space`/`heine_borel` tower, so that the HOL-Analysis separation and compactness theorems apply.
+* The parent session `Essential_Functional_Analysis` (no lecture material): `Matrix_Lemmas` (sums, adjoints, entrywise vector sums, `msum`, `lin_on`); UTA: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_unitary`), unitary algebra; MT, LE: typed-dimension matrices `lmat` with the Hilbert–Schmidt norm (a normed space for `HOL-Hahn_Banach`) and the HOL-Analysis `euclidean_space`/`heine_borel` tower, so that the HOL-Analysis separation and compactness theorems apply.
+* UC: closedness of the positive matrices and compactness of those of trace one, in the typed space.
 * SC: compactness of the product-density slice, closedness of the separable cone.
 * D23: CP Radon–Nikodym via the Moore–Penrose pseudoinverse (`dominated_outer_sum_param`, `cp_radon_nikodym_linear`).
 

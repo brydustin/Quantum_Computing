@@ -1,5 +1,5 @@
 theory Day28_Horodecki_Peres
-  imports QC_Prelims
+  imports Day17_Quantum_Noise
 begin
 
 section \<open>Day 28: the Horodecki--Peres criterion for two qubits (D28-5)\<close>

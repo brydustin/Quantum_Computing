@@ -1,5 +1,5 @@
 theory Day22_Minimal_Kraus
-  imports Day32_Recovery_Proposition
+  imports Day21_Unitary_Freedom
 begin
 
 section \<open>Day 22: a minimal Kraus representation is linearly independent (D22-1)\<close>
@@ -113,12 +113,6 @@ proof -
 qed
 
 subsection \<open>A unitary with a prescribed first row\<close>
-
-lemma mat_mult_entry:
-  fixes A B :: "complex Matrix.mat"
-  assumes "A \<in> carrier_mat r s" "B \<in> carrier_mat s t" "k < r" "j < t"
-  shows "(A * B) $$ (k,j) = (\<Sum>l<s. A $$ (k,l) * B $$ (l,j))"
-  using assms by (simp add: scalar_prod_def atLeast0LessThan)
 
 lemma transpose_unitary_isometry:
   assumes Mc: "M \<in> carrier_mat r r" and MM: "M * (M\<^sup>\<dagger>) = 1\<^sub>m r"

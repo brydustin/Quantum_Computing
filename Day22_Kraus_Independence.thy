@@ -1,5 +1,5 @@
 theory Day22_Kraus_Independence
-  imports QC_Prelims Day06_Tensor_Coordinates "Jordan_Normal_Form.DL_Rank"
+  imports Day06_Tensor_Coordinates Day23_ChoiExtremeUCP Jordan_Normal_Form.DL_Rank
 begin
 
 section \<open>Day 22: linear independence bounds the number of Kraus operators (D22-6)\<close>

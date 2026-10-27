@@ -2197,4 +2197,288 @@ next
   qed
 qed
 
+lemma outer_sum_singleton_index:
+  assumes r: "r < n" and c: "c < n"
+  shows "outer_sum n [\<psi>] $$ (r, c) = \<psi> $ r * cnj (\<psi> $ c)"
+proof -
+  let ?M = "mat_of_cols n [\<psi>]"
+  let ?Md = "(?M)\<^sup>\<dagger>"
+  have M_car: "?M \<in> carrier_mat n 1"
+    by (simp add: mat_of_cols_def)
+  have Md_car: "?Md \<in> carrier_mat 1 n"
+    using M_car by auto
+  have dr: "r < dim_row ?M" using M_car r by auto
+  have dc: "c < dim_col ?Md" using Md_car c by auto
+  have "outer_sum n [\<psi>] $$ (r, c) = (?M * ?Md) $$ (r, c)"
+    by (simp add: outer_sum_def)
+  also have "\<dots> = Matrix.row ?M r \<bullet> Matrix.col ?Md c"
+    using dc dr index_mult_mat(1) by blast
+  also have "\<dots> = (\<Sum>j = 0..<1. ?M $$ (r, j) * ?Md $$ (j, c))"
+    using M_car Md_car r c
+    by (simp add: scalar_prod_def Matrix.row_def Matrix.col_def)
+  also have "\<dots> = ?M $$ (r, 0) * ?Md $$ (0, c)"
+    by simp
+  also have "\<dots> = \<psi> $ r * cnj (\<psi> $ c)"
+    using r c by (simp add: mat_of_cols_def dagger_def)
+  finally show ?thesis.
+qed
+
+text \<open>Carrier of @{term \<open>outer_sum k vs\<close>}.\<close>
+
+lemma outer_sum_carrier:
+  "outer_sum k vs \<in> carrier_mat k k"
+  by (auto simp: outer_sum_def)
+
+lemma outer_sum_Nil: "outer_sum n [] = 0\<^sub>m n n"
+  by (rule eq_matI) (auto simp: outer_sum_def scalar_prod_def)
+
+lemma outer_sum_singleton_eq:
+  assumes vd: "dim_vec v = n"
+  shows "outer_sum n [v] = v \<oslash> v"
+proof (rule eq_matI)
+  have c: "v \<oslash> v \<in> carrier_mat n n" by (rule outer_prod_carrier[OF vd vd])
+  fix i j assume "i < dim_row (v \<oslash> v)" "j < dim_col (v \<oslash> v)"
+  hence i: "i < n" and j: "j < n" using carrier_matD[OF c] by auto
+  show "outer_sum n [v] $$ (i,j) = (v \<oslash> v) $$ (i,j)"
+    unfolding outer_sum_singleton_index[OF i j] using i j vd by (simp add: outer_prod_index)
+qed (use carrier_matD[OF outer_prod_carrier[OF vd vd]] in auto)
+
+text \<open>Cons-recursion for @{const outer_sum}: adds a rank-1 piece.\<close>
+
+lemma outer_sum_Cons_split:
+  assumes "\<forall>v \<in> set (u # us). dim_vec v = k"
+  shows "outer_sum k (u # us)
+           = outer_sum k [u] + outer_sum k us"
+proof (rule eq_matI)
+  let ?L = "outer_sum k (u # us)"
+  let ?R1 = "outer_sum k [u]"
+  let ?R2 = "outer_sum k us"
+  have L_c: "?L \<in> carrier_mat k k" by (rule outer_sum_carrier)
+  have R1_c: "?R1 \<in> carrier_mat k k" by (rule outer_sum_carrier)
+  have R2_c: "?R2 \<in> carrier_mat k k" by (rule outer_sum_carrier)
+  show "dim_row ?L = dim_row (?R1 + ?R2)" using L_c R1_c R2_c by simp
+  show "dim_col ?L = dim_col (?R1 + ?R2)" using L_c R1_c R2_c by simp
+  fix i j assume "i < dim_row (?R1 + ?R2)" "j < dim_col (?R1 + ?R2)"
+  hence i_lt: "i < k" and j_lt: "j < k" using R1_c R2_c by auto
+  have u_dim: "dim_vec u = k" using assms by simp
+  have us_dim: "\<forall>v \<in> set us. dim_vec v = k" using assms by simp
+  have uus_dim: "\<forall>v \<in> set (u # us). dim_vec v = k" using assms by simp
+  have eqL: "?L $$ (i, j)
+               = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) (u # us))"
+    by (rule outer_sum_entry_sum_list[OF uus_dim i_lt j_lt])
+  have eqR1: "?R1 $$ (i, j) = u $ i * cnj (u $ j)"
+  proof -
+    have "\<forall>v \<in> set [u]. dim_vec v = k" using u_dim by simp
+    hence "?R1 $$ (i, j) = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) [u])"
+      by (rule outer_sum_entry_sum_list[OF _ i_lt j_lt])
+    thus ?thesis by simp
+  qed
+  have eqR2: "?R2 $$ (i, j) = sum_list (map (\<lambda>v. v $ i * cnj (v $ j)) us)"
+    by (rule outer_sum_entry_sum_list[OF us_dim i_lt j_lt])
+  show "?L $$ (i, j) = (?R1 + ?R2) $$ (i, j)"
+    using eqL eqR1 eqR2 R1_c R2_c i_lt j_lt by simp
+qed
+
+lemma outer_sum_as_foldr:
+  assumes "\<forall>v \<in> set vs. dim_vec v = n"
+  shows "outer_sum n vs = foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m n n)"
+  using assms
+proof (induction vs)
+  case Nil show ?case by (simp add: outer_sum_Nil)
+next
+  case (Cons v vs)
+  have "outer_sum n (v # vs) = outer_sum n [v] + outer_sum n vs"
+    using Cons.prems by (intro outer_sum_Cons_split) simp
+  also have "outer_sum n [v] = v \<oslash> v" using Cons.prems by (intro outer_sum_singleton_eq) simp
+  finally show ?case using Cons by simp
+qed
+
+lemma Tr_hermitian_Im_zero:
+  assumes Pc: "P \<in> carrier_mat n n" and herm: "hermitian P"
+  shows "Im (Tr P) = 0"
+proof -
+  have "Tr P = (\<Sum>r<n. P $$ (r,r))" using Pc by (simp add: Tr_def)
+  moreover have "\<And>r. r < n \<Longrightarrow> Im (P $$ (r,r)) = 0"
+  proof -
+    fix r assume r: "r < n"
+    have eq: "P $$ (r,r) = cnj (P $$ (r,r))"
+      using hermitian_index[OF herm, of r r] r Pc by auto
+    have "Im (P $$ (r,r)) = Im (cnj (P $$ (r,r)))" using eq by (rule arg_cong)
+    also have "\<dots> = - Im (P $$ (r,r))" by simp
+    finally show "Im (P $$ (r,r)) = 0" by simp
+  qed
+  ultimately show ?thesis by simp
+qed
+
+lemma Tr_hermitian_real:
+  assumes Pc: "P \<in> carrier_mat n n" and herm: "hermitian P"
+  shows "Tr P = complex_of_real (Re (Tr P))"
+  using Tr_hermitian_Im_zero[OF assms] by (simp add: complex_eq_iff)
+
+text \<open>A positive semidefinite matrix of trace zero is zero (the notes: ``given a non-zero
+$P\ge0$, $\Tr(P)\ne0$'').\<close>
+
+lemma psd_Tr_zero_imp_zero:
+  assumes Pc: "P \<in> carrier_mat n n" and pos: "psd P" and tr0: "Tr P = 0"
+  shows "P = 0\<^sub>m n n"
+proof -
+  obtain U :: "complex Matrix.mat" and D :: "real list"
+    where Uc: "U \<in> carrier_mat n n" and UU: "unitary U" and Dlen: "length D = n"
+      and Dnn: "\<forall>i < n. 0 \<le> D ! i"
+      and PUD: "P = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+    using psd_spectral_decomp_nonneg[OF Pc pos] by blast
+  let ?D = "diag_mat_of_real D"
+  have Dc: "?D \<in> carrier_mat n n" by (rule diag_mat_of_real_carrier[of D, unfolded Dlen])
+  have Udc: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by (rule dagger_carrier)
+  have UdU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n" using UU Uc by (simp add: unitary_def)
+  have UDc: "U * ?D \<in> carrier_mat n n" using Uc Dc by simp
+  have "Tr P = Tr ((U * ?D) * (U\<^sup>\<dagger>))" using PUD by simp
+  also have "\<dots> = Tr ((U\<^sup>\<dagger>) * (U * ?D))"
+    using UDc Udc Dlen Uc by (intro Tr_cyclic) auto
+  also have "\<dots> = Tr (((U\<^sup>\<dagger>) * U) * ?D)"
+    using assoc_mult_mat[OF Udc Uc Dc] by simp
+  also have "\<dots> = Tr ?D" unfolding UdU left_mult_one_mat[OF Dc] ..
+  also have "\<dots> = (\<Sum>i<n. complex_of_real (D ! i))"
+    using Dlen by (simp add: Tr_def)
+  finally have "(\<Sum>i<n. D ! i) = 0" using tr0 by (simp flip: of_real_sum)
+  hence D0: "\<And>i. i < n \<Longrightarrow> D ! i = 0"
+    using Dnn sum_nonneg_eq_0_iff[of "{..<n}" "\<lambda>i. D ! i"] by auto
+  have Dz: "?D = 0\<^sub>m n n"
+    by (rule eq_matI) (use Dlen D0 in auto)
+  have "P = U * 0\<^sub>m n n * (U\<^sup>\<dagger>)" using PUD Dz by simp
+  also have "\<dots> = 0\<^sub>m n n" using Uc Udc by simp
+  finally show ?thesis .
+qed
+
+lemma outer_prod_self_psd:
+  assumes "dim_vec v = n"
+  shows "psd (v \<oslash> v)"
+proof -
+  have c: "v \<oslash> v \<in> carrier_mat n n" by (rule outer_prod_carrier[OF assms assms])
+  have "v \<oslash> v = outer_sum n [v]"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row (outer_sum n [v])" "j < dim_col (outer_sum n [v])"
+    hence i: "i < n" and j: "j < n" by simp_all
+    show "(v \<oslash> v) $$ (i,j) = outer_sum n [v] $$ (i,j)"
+      unfolding outer_sum_singleton_index[OF i j] using i j assms by (simp add: outer_prod_index)
+  qed (use carrier_matD[OF c] in auto)
+  thus ?thesis using outer_sum_psd[of "[v]" 1 n] assms by simp
+qed
+
+lemma hermitian_smult_real_mat:
+  fixes M :: "complex Matrix.mat" and c :: real
+  assumes Mcar: "M \<in> carrier_mat n n" and Mherm: "hermitian M"
+  shows "hermitian (complex_of_real c \<cdot>\<^sub>m M)"
+proof -
+  let ?cM = "complex_of_real c \<cdot>\<^sub>m M"
+  have cM_car: "?cM \<in> carrier_mat n n" using Mcar by simp
+  have Mdag: "M\<^sup>\<dagger> = M" using Mherm by (simp add: hermitian_def)
+  have "?cM\<^sup>\<dagger> = ?cM"
+  proof (rule eq_matI)
+    show "dim_row (?cM\<^sup>\<dagger>) = dim_row ?cM"
+      using cM_car Mcar by (simp add: dim_row_of_dagger)
+    show "dim_col (?cM\<^sup>\<dagger>) = dim_col ?cM"
+      using cM_car Mcar by (simp add: dim_col_of_dagger)
+  next
+    fix i j
+    assume i: "i < dim_row ?cM" and j: "j < dim_col ?cM"
+    hence ij: "i < n" "j < n" using cM_car Mcar by simp_all
+    have eq1: "?cM\<^sup>\<dagger> $$ (i, j) = cnj (?cM $$ (j, i))"
+      unfolding dagger_def using ij cM_car Mcar by simp
+    have eq2: "?cM $$ (j, i) = complex_of_real c * M $$ (j, i)"
+      using ij Mcar by simp
+    have eq3: "cnj (M $$ (j, i)) = M\<^sup>\<dagger> $$ (i, j)"
+      unfolding dagger_def using ij Mcar by simp
+    have "?cM\<^sup>\<dagger> $$ (i, j) = cnj (complex_of_real c) * cnj (M $$ (j, i))"
+      using eq1 eq2 by simp
+    also have "\<dots> = complex_of_real c * cnj (M $$ (j, i))" by simp
+    also have "\<dots> = complex_of_real c * (M\<^sup>\<dagger>) $$ (i, j)" using eq3 by simp
+    also have "\<dots> = complex_of_real c * M $$ (i, j)" using Mdag by simp
+    also have "\<dots> = ?cM $$ (i, j)" using ij Mcar by simp
+    finally show "?cM\<^sup>\<dagger> $$ (i, j) = ?cM $$ (i, j)" .
+  qed
+  thus ?thesis by (simp add: hermitian_def)
+qed
+
+lemma psd_smult_nonneg:
+  assumes c: "0 \<le> c"
+      and A: "psd A" and Ac: "A \<in> carrier_mat n n"
+  shows "psd (complex_of_real c \<cdot>\<^sub>m A)"
+proof -
+  have A_dagger: "(A\<^sup>\<dagger>) = A" using A by (simp add: psd_def hermitian_def)
+  have A_quad: "\<And>x. dim_vec x = n \<Longrightarrow> Re (\<langle>x | A *\<^sub>v x\<rangle>) \<ge> 0"
+    using A Ac by (simp add: psd_def)
+
+  have herm_cA: "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = complex_of_real c \<cdot>\<^sub>m A"
+  proof -
+    have "((complex_of_real c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = (cnj (complex_of_real c)) \<cdot>\<^sub>m (A\<^sup>\<dagger>)"
+      by (rule dagger_of_smult)
+    also have "\<dots> = complex_of_real c \<cdot>\<^sub>m A"
+      using A_dagger by simp
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>Action of the scaled matrix on a vector.\<close>
+  have smult_mv:
+    "\<And>x. x \<in> carrier_vec n \<Longrightarrow>
+         (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
+  proof -
+    fix x :: "complex Matrix.vec" assume x_car: "x \<in> carrier_vec n"
+    show "(complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)"
+    proof (rule eq_vecI)
+      show "dim_vec ((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x)
+            = dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
+        using Ac by simp
+    next
+      fix i assume "i < dim_vec (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x))"
+      hence i: "i < n" using Ac by simp
+      have r1: "Matrix.row A i \<in> carrier_vec n"
+        using Ac i by auto
+      have i_dr: "i < dim_row A" using i Ac by simp
+      have "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
+              = Matrix.row (complex_of_real c \<cdot>\<^sub>m A) i \<bullet> x"
+        using i Ac by auto
+      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v Matrix.row A i) \<bullet> x"
+        using row_smult[OF i_dr] by simp
+      also have "\<dots> = complex_of_real c * (Matrix.row A i \<bullet> x)"
+        using r1 x_car by simp
+      also have "\<dots> = complex_of_real c * (A *\<^sub>v x) $ i"
+        using i Ac by auto
+      also have "\<dots> = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i"
+        using i Ac by auto
+      finally show "((complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x) $ i
+                  = (complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)) $ i" .
+    qed
+  qed
+
+  have quad: "\<And>x. dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A) \<Longrightarrow>
+                Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>) \<ge> 0"
+  proof -
+    fix x :: "complex Matrix.vec"
+    assume dx: "dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m A)"
+    hence dx': "dim_vec x = n" using Ac by simp
+    have x_car: "x \<in> carrier_vec n" using dx' by auto
+
+    have "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
+        = \<langle>x | complex_of_real c \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
+      using smult_mv[OF x_car] by simp
+    also have "\<dots> = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>"
+      by (rule inner_prod_right_smult')
+    finally have eq: "\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>
+                    = complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>" .
+
+    have Re_split: "Re (complex_of_real c * \<langle>x | A *\<^sub>v x\<rangle>)
+                  = c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
+      by simp
+    have "0 \<le> c * Re (\<langle>x | A *\<^sub>v x\<rangle>)"
+      using c A_quad[OF dx'] by (rule mult_nonneg_nonneg)
+    thus "0 \<le> Re (\<langle>x | (complex_of_real c \<cdot>\<^sub>m A) *\<^sub>v x\<rangle>)"
+      using eq Re_split by simp
+  qed
+
+  show ?thesis
+    unfolding psd_def hermitian_def
+    using herm_cA quad by blast
+qed
+
 end

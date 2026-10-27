@@ -16,10 +16,6 @@ definition operator_system :: "nat \<Rightarrow> complex Matrix.mat set \<Righta
 definition Mp :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat set \<Rightarrow> complex Matrix.mat set" where
   "Mp p n OS = {A \<in> carrier_mat (p * n) (p * n). \<forall>a < p. \<forall>b < p. block_of_mat n A a b \<in> OS}"
 
-definition lin_on :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat set \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
-  "lin_on n d OS \<Phi> \<longleftrightarrow> (\<forall>A \<in> OS. \<Phi> A \<in> carrier_mat d d) \<and> (\<forall>A \<in> OS. \<forall>B \<in> OS. \<Phi> (A + B) = \<Phi> A + \<Phi> B)
-     \<and> (\<forall>A \<in> OS. \<forall>c. \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A)"
-
 definition p_positive_on :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat set \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
   "p_positive_on n d p OS \<Phi> \<longleftrightarrow> (\<forall>A \<in> Mp p n OS. psd A \<longrightarrow> psd (amplification n d p \<Phi> A))"
 

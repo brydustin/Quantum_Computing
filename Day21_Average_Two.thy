@@ -1,5 +1,5 @@
 theory Day21_Average_Two
-  imports Day21_Average_Conjecture Quantum_Channels
+  imports Day21_Average_Conjecture
 begin
 
 section \<open>Day 21: the conjecture D21-2 for $n=2$\<close>

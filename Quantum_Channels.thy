@@ -1100,36 +1100,6 @@ qed
 
 subsection \<open>Kraus maps of Kraus-operator lists are CPTP\<close>
 
-lemma kraus_is_trace_preserving:
-  fixes Ws :: "complex Matrix.mat list"
-  assumes Ws: "kraus_operators n d Ws"
-  shows "trace_preserving n (kraus_map_dim d Ws)"
-proof (unfold trace_preserving_def, intro allI impI)
-  fix \<rho> :: "complex Matrix.mat"
-  assume \<rho>_c: "\<rho> \<in> carrier_mat n n"
-  have Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-    using Ws by (simp add: kraus_operators_def)
-  have sum_eq: "sum_wdag_w n Ws = 1\<^sub>m n"
-    using Ws by (simp add: kraus_operators_altdef)
-  have "Tr (kraus_map_dim d Ws \<rho>) = Tr (sum_wdag_w n Ws * \<rho>)"
-    using Tr_kraus_map_dim_as_wdagw[OF Ws_c \<rho>_c] .
-  also have "\<dots> = Tr ((1\<^sub>m n) * \<rho>)" using sum_eq by simp
-  also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
-  finally show "Tr (kraus_map_dim d Ws \<rho>) = Tr \<rho>" .
-qed
-
-lemma kraus_is_cptp:
-  fixes Ws :: "complex Matrix.mat list"
-  assumes Ws: "kraus_operators n d Ws"
-      and npos: "0 < n"
-      and dpos: "0 < d"
-  shows "kraus_map_dim d Ws \<in> CPTP n d"
-  unfolding CPTP_def
-  using kraus_is_cp[OF Ws npos dpos] kraus_is_trace_preserving[OF Ws]
-  by simp
-
-
-
 lemma Pauli_X_kraus_map_CPTP:
   "kraus_map_dim 2 [Pauli_X] \<in> CPTP 2 2"
 proof -
@@ -1200,100 +1170,6 @@ proof -
   also have "\<dots> = \<rho>" using rho_zero .
   finally show ?thesis
     by (simp add: identity_channel_def)
-qed
-
-
-subsection \<open>Concatenation of Kraus lists\<close>
-
-lemma sum_wdag_w_append:
-  fixes Ws Vs :: "complex Matrix.mat list"
-  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-      and Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-  shows "sum_wdag_w n (Ws @ Vs)
-         = sum_wdag_w n Ws + sum_wdag_w n Vs"
-  using Ws_c
-proof (induction Ws)
-  case Nil
-  have Vs_sum_c: "sum_wdag_w n Vs \<in> carrier_mat n n"
-    using sum_wdag_w_carrier[OF Vs_c] .
-  show ?case
-    using Vs_sum_c
-    by (intro eq_matI) (auto simp: sum_wdag_w_def)
-next
-  case (Cons W Ws)
-  hence W_c: "W \<in> carrier_mat d n"
-    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n" by auto
-  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W_c by (rule dagger_carrier)
-  have WdW_c: "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n"
-    using Wd_c W_c by (rule mult_carrier_mat)
-  have Ws_sum_c: "sum_wdag_w n Ws \<in> carrier_mat n n"
-    using sum_wdag_w_carrier[OF Ws_c'] .
-  have Vs_sum_c: "sum_wdag_w n Vs \<in> carrier_mat n n"
-    using sum_wdag_w_carrier[OF Vs_c] .
-  have IH: "sum_wdag_w n (Ws @ Vs)
-              = sum_wdag_w n Ws + sum_wdag_w n Vs"
-    using Cons.IH Ws_c' by simp
-
-  have "sum_wdag_w n ((W # Ws) @ Vs)
-          = (W\<^sup>\<dagger>) * W + sum_wdag_w n (Ws @ Vs)"
-    by (simp add: sum_wdag_w_Cons)
-  also have "\<dots> = (W\<^sup>\<dagger>) * W + (sum_wdag_w n Ws + sum_wdag_w n Vs)"
-    using IH by simp
-  also have "\<dots> = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) + sum_wdag_w n Vs"
-    using WdW_c Ws_sum_c Vs_sum_c
-    by simp
-  also have "\<dots> = sum_wdag_w n (W # Ws) + sum_wdag_w n Vs"
-    by (simp add: sum_wdag_w_Cons)
-  finally show ?case.
-qed
-
-
-
-lemma kraus_map_dim_append:
-  fixes Ws Vs :: "complex Matrix.mat list"
-  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-      and Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
-  shows "kraus_map_dim d (Ws @ Vs) \<rho>
-         = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>"
-  using Ws_c
-proof (induction Ws)
-  case Nil
-  have Vs_km_c: "kraus_map_dim d Vs \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Vs_c \<rho>_c] .
-  show ?case
-    using Vs_km_c by (intro eq_matI) auto
-next
-  case (Cons W Ws)
-  hence W_c: "W \<in> carrier_mat d n"
-    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n" by auto
-  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W_c by (rule dagger_carrier)
-  have W\<rho>_c: "W * \<rho> \<in> carrier_mat d n"
-    using W_c \<rho>_c by (rule mult_carrier_mat)
-  have W\<rho>Wd_c: "W * \<rho> * (W\<^sup>\<dagger>) \<in> carrier_mat d d"
-    using W\<rho>_c Wd_c by (rule mult_carrier_mat)
-  have Ws_km_c: "kraus_map_dim d Ws \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Ws_c' \<rho>_c] .
-  have Vs_km_c: "kraus_map_dim d Vs \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Vs_c \<rho>_c] .
-  have IH: "kraus_map_dim d (Ws @ Vs) \<rho>
-              = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>"
-    using Cons.IH Ws_c' by simp
-
-  have "kraus_map_dim d ((W # Ws) @ Vs) \<rho>
-          = W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d (Ws @ Vs) \<rho>"
-    by simp
-  also have "\<dots> = W * \<rho> * (W\<^sup>\<dagger>)
-                  + (kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>)"
-    using IH by simp
-  also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)
-                  + kraus_map_dim d Vs \<rho>"
-    using W\<rho>Wd_c Ws_km_c Vs_km_c by simp
-  also have "\<dots> = kraus_map_dim d (W # Ws) \<rho> + kraus_map_dim d Vs \<rho>"
-    by simp
-  finally show ?case.
 qed
 
 
@@ -1416,18 +1292,6 @@ definition maximally_mixed_state :: "nat \<Rightarrow> complex Matrix.mat" where
 lemma maximally_mixed_state_carrier [simp]:
   "maximally_mixed_state n \<in> carrier_mat n n"
   by (simp add: maximally_mixed_state_def)
-
-lemma Tr_one_mat:
-  "Tr (1\<^sub>m n :: complex Matrix.mat) = of_nat n"
-proof -
-  have "Tr (1\<^sub>m n :: complex Matrix.mat)
-          = (\<Sum>r < n. if r < n then (1\<^sub>m n :: complex Matrix.mat) $$ (r, r)
-                       else 0)"
-    by (simp add: Tr_def)
-  also have "\<dots> = (\<Sum>r < n. (1 :: complex))" by simp
-  also have "\<dots> = of_nat n" by simp
-  finally show ?thesis.
-qed
 
 lemma maximally_mixed_state_trace:
   assumes npos: "0 < n"

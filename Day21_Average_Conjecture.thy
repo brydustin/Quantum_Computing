@@ -1,5 +1,5 @@
 theory Day21_Average_Conjecture
-  imports Day32_Phase_Flip_Code
+  imports Day19_Choi_Theorem
 begin
 
 section \<open>Day 21: the conjecture on averages of unital maps (D21-2)\<close>

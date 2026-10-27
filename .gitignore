@@ -56,3 +56,4 @@ tools/check/output.log
 
 # AFP export (tools/afp_export.sh)
 afp_export/
+Essential_Functional_Analysis/output/

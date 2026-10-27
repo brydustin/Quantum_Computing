@@ -28,29 +28,6 @@ decomposition into positives is formalised below; the proposition is
 \<open>density_preserving_iff_positive_tp\<close> and the example \<open>transpose_not_2_positive\<close>, both in
 \<open>Day18_Positive_Maps\<close>.\<close>
 
-lemma diag_mat_of_real_hermitian:
-  "((diag_mat_of_real D)\<^sup>\<dagger>) = diag_mat_of_real D"
-proof (rule eq_matI)
-  show "dim_row ((diag_mat_of_real D)\<^sup>\<dagger>) = dim_row (diag_mat_of_real D)"
-    by simp
-  show "dim_col ((diag_mat_of_real D)\<^sup>\<dagger>) = dim_col (diag_mat_of_real D)"
-    by simp
-next
-  fix i j
-  assume ij: "i < dim_row (diag_mat_of_real D)"
-             "j < dim_col (diag_mat_of_real D)"
-  hence iln: "i < length D" and jln: "j < length D" by simp_all
-  have "(diag_mat_of_real D)\<^sup>\<dagger> $$ (i,j) = cnj (diag_mat_of_real D $$ (j,i))"
-    using iln jln by (simp add: dagger_def)
-  also have "\<dots> = (if i = j then cnj (of_real (D ! i)) else 0)"
-    using iln jln by auto
-  also have "\<dots> = (if i = j then of_real (D ! i) else 0)"
-    by simp
-  also have "\<dots> = diag_mat_of_real D $$ (i,j)"
-    using iln jln by auto
-  finally show "(diag_mat_of_real D)\<^sup>\<dagger> $$ (i,j) = diag_mat_of_real D $$ (i,j)".
-qed
-
 lemma hermitian_decomp_psd:
   fixes H :: "complex Matrix.mat"
   assumes sq: "H \<in> carrier_mat n n"

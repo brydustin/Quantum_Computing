@@ -1,5 +1,5 @@
 theory Day27_Positive_Map_Criterion
-  imports Day26_Arveson_Extension Day34_Knill_Laflamme
+  imports Day26_Separable_Cone
 begin
 
 section \<open>Days 27--28: positive maps detect entanglement\<close>
@@ -7,7 +7,7 @@ section \<open>Days 27--28: positive maps detect entanglement\<close>
 text \<open>Days 27--28: positive maps detect entanglement.  For $R\in M_r(M_n)$ (block size $n$),
 $\Phi^{(r)}(R)\ge0$ for every positive $\Phi$ when $R$ is separable (D27-1); a functional $f$ on
 $M_r(M_n)$ is nonnegative on the separable matrices iff $\Phi_f$ is positive (D27-3); and with
-the entanglement witnesses of \<open>Separable_Cone\<close> this gives the positive-map criterion (D28-3).\<close>
+the entanglement witnesses of \<open>Day26_Separable_Cone\<close> this gives the positive-map criterion (D28-3).\<close>
 
 subsection \<open>Tensor products with a matrix in the first factor\<close>
 
@@ -272,11 +272,6 @@ proof -
       using x y d Pc[of "block_of_mat n A (x div d) (y div d)"] by (simp add: amplification_def)
   qed (simp_all add: amplification_def)
 qed
-
-lemma unwrap_lm_scaleR_mat:
-  fixes R :: "(complex, 'k :: finite, 'k) lmat"
-  shows "unwrap_lm (u *\<^sub>R R) = complex_of_real u \<cdot>\<^sub>m unwrap_lm R"
-  by (rule eq_matI) (auto simp: scaleR_conv_of_real)
 
 theorem positive_map_separable:
   fixes R :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat" and \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"

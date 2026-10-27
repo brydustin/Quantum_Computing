@@ -4,6 +4,7 @@
 
 theory Day01_Inner_Product
   imports
+    Essential_Functional_Analysis.Matrix_Lemmas
     Quantum_Fourier_Transform.QFT
     Isabelle_Marries_Dirac.No_Cloning
 begin
@@ -181,6 +182,25 @@ proof -
     using assms by (auto simp: distrib_left sum.distrib intro!: sum.cong)
 qed
 
+lemma hs_inner_prod_left_add:
+  assumes "dim_row A1 = dim_row B" and "dim_col A1 = dim_col B"
+      and "dim_row A2 = dim_row B" and "dim_col A2 = dim_col B"
+  shows "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
+proof -
+  have dims:
+    "dim_row (A1 + A2) = dim_row B" "dim_col (A1 + A2) = dim_col B"
+    using assms by auto
+  have "\<langle>\<langle> A1 + A2 | B \<rangle>\<rangle> = cnj (\<langle>\<langle> B | A1 + A2 \<rangle>\<rangle>)"
+    using dims by (intro hs_inner_prod_cnj) auto
+  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle> + \<langle>\<langle> B | A2 \<rangle>\<rangle>)"
+    using assms by (simp add: hs_inner_prod_right_add)
+  also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle>) + cnj (\<langle>\<langle> B | A2 \<rangle>\<rangle>)"
+    by simp
+  also have "\<dots> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
+    by (metis assms(1,2,3,4) hs_inner_prod_cnj)    
+  finally show ?thesis.
+qed
+
 lemma hs_inner_prod_right_smult:
   assumes "dim_row x = dim_row y" and "dim_col x = dim_col y"
   shows "\<langle>\<langle> y | c \<cdot>\<^sub>m x \<rangle>\<rangle> = c * \<langle>\<langle> y | x \<rangle>\<rangle>"
@@ -274,6 +294,38 @@ proof -
     by simp
   then show "x$$(i,j) = 0" 
     by simp
+qed
+
+lemma inner_prod_vec_sum_right:
+  assumes ud: "dim_vec u = n"
+      and wd: "\<And>J. J \<in> Js \<Longrightarrow> dim_vec (w J) = n"
+  shows "\<langle>u | vec_sum n Js w\<rangle> = sum (\<lambda>J. \<langle>u | w J\<rangle>) Js"
+proof -
+  have "\<langle>u | vec_sum n Js w\<rangle> = (\<Sum>i = 0..<n. cnj (u $ i) * vec_sum n Js w $ i)"
+    using inner_prod_sum[OF ud, of "vec_sum n Js w"] by simp
+  also have "\<dots> = (\<Sum>i = 0..<n. sum (\<lambda>J. cnj (u $ i) * w J $ i) Js)"
+    by (intro sum.cong refl) (simp add: sum_distrib_left)
+  also have "\<dots> = sum (\<lambda>J. \<Sum>i = 0..<n. cnj (u $ i) * w J $ i) Js"
+    by (rule sum.swap)
+  also have "\<dots> = sum (\<lambda>J. \<langle>u | w J\<rangle>) Js"
+  proof (rule sum.cong[OF refl])
+    fix J assume J: "J \<in> Js"
+    show "(\<Sum>i = 0..<n. cnj (u $ i) * w J $ i) = \<langle>u | w J\<rangle>"
+      using inner_prod_sum[OF ud wd[OF J]] by simp
+  qed
+  finally show ?thesis .
+qed
+
+lemma inner_prod_unit_vec_right:
+  assumes ud: "dim_vec u = n" and j: "j < n"
+  shows "\<langle>u | unit_vec n j\<rangle> = cnj (u $ j)"
+proof -
+  have "\<langle>u | unit_vec n j\<rangle> = (\<Sum>i = 0..<n. cnj (u $ i) * unit_vec n j $ i)"
+    using inner_prod_sum[OF ud, of "unit_vec n j"] by simp
+  also have "\<dots> = (\<Sum>i = 0..<n. if i = j then cnj (u $ i) else 0)"
+    using j by (intro sum.cong refl) simp
+  also have "\<dots> = cnj (u $ j)" using j by simp
+  finally show ?thesis .
 qed
 
 end

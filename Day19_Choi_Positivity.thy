@@ -1,7 +1,6 @@
 theory Day19_Choi_Positivity
   imports
     Day27_Entangled_Examples
-    Day23_ChoiExtremeUCP
 begin
 
 section \<open>Day 19: Choi's theorem with (2) isolated (D19-1)\<close>

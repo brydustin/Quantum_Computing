@@ -1,5 +1,5 @@
 theory Day04_Hermitian_Converse
-  imports Day18_CP_Maps
+  imports Day04_Hermitian_Matrices
 begin
 
 section \<open>Day 4: the converse directions for Hermitian matrices (D4-1)\<close>
@@ -17,7 +17,7 @@ proof -
   also have "(U * diag_mat_of_real D)\<^sup>\<dagger> = ((diag_mat_of_real D)\<^sup>\<dagger>) * (U\<^sup>\<dagger>)"
     by (rule dagger_of_prod) (use U Dc in auto)
   also have "(diag_mat_of_real D)\<^sup>\<dagger> = diag_mat_of_real D"
-    by (rule Day18_CP_Maps.diag_mat_of_real_hermitian)
+    by (rule diag_mat_of_real_hermitian[unfolded hermitian_def])
   also have "(U\<^sup>\<dagger>)\<^sup>\<dagger> = U" by (rule dagger_of_dagger_is_id)
   finally have "(U * diag_mat_of_real D * (U\<^sup>\<dagger>))\<^sup>\<dagger> = U * (diag_mat_of_real D * (U\<^sup>\<dagger>))" .
   also have "\<dots> = U * diag_mat_of_real D * (U\<^sup>\<dagger>)" using U Dc Ud by (simp add: assoc_mult_mat)

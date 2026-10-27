@@ -1,5 +1,5 @@
 theory Day18_Positive_Maps
-  imports QC_Prelims
+  imports Day19_Choi_Theorem
 begin
 
 section \<open>Days 17--18: densities to densities iff positive and trace-preserving (D17-4, D18-2)\<close>

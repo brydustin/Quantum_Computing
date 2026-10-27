@@ -1,5 +1,5 @@
 theory Day05_Cholesky_Examples
-  imports QC_Prelims
+  imports Day05_Positivity_Tests
 begin
 
 section \<open>Day 5: Cholesky's algorithm on the notes' two examples (D5-3)\<close>

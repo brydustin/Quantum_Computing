@@ -1,5 +1,5 @@
 theory Day32_Recovery_Proposition
-  imports Day21_Unitary_Freedom Quantum_Channels
+  imports Day21_Unitary_Freedom Day32_Phase_Flip_Code
 begin
 
 section \<open>Days 32--33: composition of Kraus maps and the general recovery proposition (D32-4, D33-2)\<close>
@@ -52,12 +52,6 @@ next
     using fx rc by (intro eq_matI) (auto simp: dagger_def)
   thus ?case using Cons.IH[OF rest] by simp
 qed
-
-lemma foldr_add_mat_cong:
-  fixes f g :: "'a \<Rightarrow> complex Matrix.mat"
-  assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x = g x"
-  shows "foldr (\<lambda>x acc. f x + acc) xs z = foldr (\<lambda>x acc. g x + acc) xs z"
-  using assms by (induction xs) auto
 
 lemma foldr_add_mat_zero:
   "foldr (\<lambda>x acc. (0\<^sub>m m n :: complex Matrix.mat) + acc) xs (0\<^sub>m m n) = 0\<^sub>m m n"

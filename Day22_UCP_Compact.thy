@@ -1,5 +1,12 @@
 theory Day22_UCP_Compact
-  imports Day16_Block_Form Day19_Choi_TP_Unital Day27_Positive_Map_Criterion
+  imports
+    Day16_Block_Form
+    Day19_Choi_TP_Unital
+    Essential_Functional_Analysis.Lmat_Euclidean
+    "HOL-Analysis.Convex"
+    "HOL-Analysis.Convex_Euclidean_Space"
+    "HOL-Analysis.Polytope"
+    "HOL-Analysis.Starlike"
 begin
 
 section \<open>Day 22: $\mathrm{UCP}(M_n,M_d)$ is compact (D22-4)\<close>
@@ -12,10 +19,604 @@ positive $P$ whose diagonal blocks sum to $I_d$ (\<open>ucp_choi_image\<close>, 
 \<open>choi_inv\<close>), and that set is compact (\<open>compact_ucp_choi_set\<close>): it is closed, and it lies in
 $d$ times the compact set of unit-trace positive matrices.\<close>
 
+subsection \<open>Typed PSD predicate\<close>
+
+definition psd_lmat :: "(complex, 'k :: finite, 'k) lmat \<Rightarrow> bool" where
+  "psd_lmat M \<longleftrightarrow> psd (unwrap_lm M)"
+
+lemma psd_lmat_unwrap [iff]:
+  "psd_lmat (M :: (complex, 'k :: finite, 'k) lmat) \<longleftrightarrow> psd (unwrap_lm M)"
+  unfolding psd_lmat_def by simp
+
+subsection \<open>The positive matrices form a closed set\<close>
+
+text \<open>Sub-lemmas for the closedness of PSD: the Hermitian half and the
+nonneg-quadratic-form half.\<close>
+
+lemma closed_entry_hermitian_eq:
+  fixes i j :: nat
+  assumes ij: "i < CARD('k :: finite)" "j < CARD('k)"
+  shows "closed {M :: (complex, 'k, 'k) lmat.
+                  unwrap_lm M $$ (i, j) = cnj (unwrap_lm M $$ (j, i))}"
+proof -
+  have cont_ij: "continuous_on UNIV (\<lambda>M :: (complex, 'k, 'k) lmat.
+                                       unwrap_lm M $$ (i, j))"
+    using continuous_on_unwrap_lm_index[OF ij] .
+  have cont_ji: "continuous_on UNIV (\<lambda>M :: (complex, 'k, 'k) lmat.
+                                       unwrap_lm M $$ (j, i))"
+    using continuous_on_unwrap_lm_index[OF ij(2) ij(1)] .
+  have cont_cnj_ji: "continuous_on UNIV (\<lambda>M :: (complex, 'k, 'k) lmat.
+                                          cnj (unwrap_lm M $$ (j, i)))"
+    using cont_ji continuous_on_cnj by blast
+  have cont_diff: "continuous_on UNIV
+                    (\<lambda>M :: (complex, 'k, 'k) lmat.
+                       unwrap_lm M $$ (i, j) - cnj (unwrap_lm M $$ (j, i)))"
+    using cont_ij cont_cnj_ji by (rule continuous_on_diff)
+  have eq: "{M :: (complex, 'k, 'k) lmat.
+              unwrap_lm M $$ (i, j) = cnj (unwrap_lm M $$ (j, i))}
+          = (\<lambda>M. unwrap_lm M $$ (i, j) - cnj (unwrap_lm M $$ (j, i))) -` {0}"
+    by auto
+  show ?thesis
+    unfolding eq
+  proof (rule continuous_closed_vimage)
+    show "closed {0::complex}" by simp
+    fix M show "continuous (at M)
+                  (\<lambda>M :: (complex, 'k, 'k) lmat.
+                     unwrap_lm M $$ (i, j) - cnj (unwrap_lm M $$ (j, i)))"
+      using cont_diff continuous_on_eq_continuous_at by blast
+  qed
+qed
+
+lemma closed_hermitian_unwrap_lmat:
+  "closed {M :: (complex, 'k :: finite, 'k) lmat. hermitian (unwrap_lm M)}"
+proof -
+  let ?I = "{(i, j). i < CARD('k) \<and> j < CARD('k)}"
+  let ?S = "\<lambda>(i, j). {M :: (complex, 'k, 'k) lmat.
+                       unwrap_lm M $$ (i, j) = cnj (unwrap_lm M $$ (j, i))}"
+
+  have herm_eq:
+    "{M :: (complex, 'k, 'k) lmat. hermitian (unwrap_lm M)}
+     = (\<Inter>p \<in> ?I. ?S p)"
+  proof safe
+    fix x :: "(complex, 'k, 'k) lmat" and a b
+    assume hx: "hermitian (unwrap_lm x)"
+    assume a_lt: "a < CARD('k)"
+    assume b_lt: "b < CARD('k)"
+
+    have da: "a < dim_row (unwrap_lm x)"
+      using a_lt by simp
+    have db: "b < dim_col (unwrap_lm x)"
+      using b_lt by simp
+    show "unwrap_lm x $$ (a, b) = cnj (unwrap_lm x $$ (b, a))"
+      by (metis da db hermitian_index hx)
+  next
+    fix x :: "(complex, 'k, 'k) lmat"
+    assume x_in: "x \<in> (\<Inter>p \<in> ?I. ?S p)"
+    have entries:
+      "\<And>a b. a < CARD('k) \<Longrightarrow> b < CARD('k)
+       \<Longrightarrow> unwrap_lm x $$ (a, b) = cnj (unwrap_lm x $$ (b, a))"
+    proof -
+      fix a b
+      assume ab: "a < CARD('k)" "b < CARD('k)"
+      hence "(a, b) \<in> ?I"
+        by simp
+      with x_in have "x \<in> ?S (a, b)"
+        by blast
+      thus "unwrap_lm x $$ (a, b) = cnj (unwrap_lm x $$ (b, a))"
+        by simp
+    qed
+
+    show "hermitian (unwrap_lm x)"
+      unfolding hermitian_def
+    proof (rule eq_matI)
+      show "dim_row ((unwrap_lm x)\<^sup>\<dagger>) = dim_row (unwrap_lm x)"
+        by simp
+      show "dim_col ((unwrap_lm x)\<^sup>\<dagger>) = dim_col (unwrap_lm x)"
+        by simp
+    next
+      fix i j
+      assume ij:
+        "i < dim_row (unwrap_lm x)"
+        "j < dim_col (unwrap_lm x)"
+
+      have i_lt: "i < CARD('k)"
+        using ij(1) by simp
+      have j_lt: "j < CARD('k)"
+        using ij(2) by simp
+
+      have ji:
+        "unwrap_lm x $$ (j, i) = cnj (unwrap_lm x $$ (i, j))"
+        using entries[OF j_lt i_lt] .
+
+      show "((unwrap_lm x)\<^sup>\<dagger>) $$ (i, j) = unwrap_lm x $$ (i, j)"
+        by (metis (no_types) dagger_def entries i_lt ij(2) index_mat(1) 
+            prod.simps(2) unwrap_lm_dim_col unwrap_lm_dim_row)
+    qed
+  qed
+
+  show ?thesis
+    unfolding herm_eq
+    by (intro closed_INT, simp add: closed_entry_hermitian_eq) 
+qed
+
+lemma closed_nonneg_quad_form_lmat:
+  fixes x :: "complex Matrix.vec"
+  assumes xdim: "dim_vec x = CARD('k :: finite)"
+  shows "closed {M :: (complex, 'k, 'k) lmat.
+                  Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) \<ge> 0}"
+proof -
+  let ?n = "CARD('k)"
+  let ?f =
+    "\<lambda>M :: (complex, 'k, 'k) lmat.
+       Re (\<Sum>i = 0..<?n.
+             \<Sum>j = 0..<?n.
+               cnj (x $ i) * (unwrap_lm M $$ (i, j)) * (x $ j))"
+
+  have quad_expand:
+    "\<And>M :: (complex, 'k, 'k) lmat.
+       Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) = ?f M"
+  proof -
+    fix M :: "(complex, 'k, 'k) lmat"
+
+    have rowM: "dim_row (unwrap_lm M) = ?n"
+      by simp
+    have colM: "dim_col (unwrap_lm M) = ?n"
+      by simp
+
+    have "\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>
+        = (\<Sum>i = 0..<dim_vec x.
+             cnj (x $ i) * ((unwrap_lm M *\<^sub>v x) $ i))"
+      by (simp add: Quantum.inner_prod_def xdim)
+    also have "... =
+        (\<Sum>i = 0..<?n.
+             cnj (x $ i) * ((unwrap_lm M *\<^sub>v x) $ i))"
+      using xdim by simp
+    also have "... =
+        (\<Sum>i = 0..<?n.
+             cnj (x $ i) *
+               (\<Sum>j = 0..<?n. unwrap_lm M $$ (i, j) * x $ j))"
+    proof (rule sum.cong)
+      show "{0..<?n} = {0..<?n}"
+        by simp
+    next
+      fix i
+      assume i: "i \<in> {0..<?n}"
+      hence i_lt: "i < dim_row (unwrap_lm M)"
+        using rowM by simp
+
+      have "((unwrap_lm M *\<^sub>v x) $ i)
+          = (\<Sum>j = 0..<dim_col (unwrap_lm M).
+                unwrap_lm M $$ (i, j) * x $ j)"
+        by (metis (no_types) carrier_vec_dim_vec i_lt mult_mat_vec_index 
+            unwrap_lm_carrier unwrap_lm_dim_col unwrap_lm_dim_row xdim)
+      also have "... =
+          (\<Sum>j = 0..<?n. unwrap_lm M $$ (i, j) * x $ j)"
+        using colM by simp
+      finally show
+        "cnj (x $ i) * ((unwrap_lm M *\<^sub>v x) $ i)
+         =
+         cnj (x $ i) *
+           (\<Sum>j = 0..<?n. unwrap_lm M $$ (i, j) * x $ j)"
+        by simp
+    qed
+    also have "... =
+        (\<Sum>i = 0..<?n.
+          \<Sum>j = 0..<?n.
+            cnj (x $ i) * (unwrap_lm M $$ (i, j)) * (x $ j))"
+      by (simp add: sum_distrib_left algebra_simps)
+    finally show
+      "Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) = ?f M"
+      by simp
+  qed
+
+  have cont_terms:
+    "\<And>i j. i < ?n \<Longrightarrow> j < ?n \<Longrightarrow>
+      continuous_on UNIV
+        (\<lambda>M :: (complex, 'k, 'k) lmat.
+          cnj (x $ i) * (unwrap_lm M $$ (i, j)) * (x $ j))"
+  proof -
+    fix i j
+    assume ij: "i < ?n" "j < ?n"
+
+    have cont_entry:
+      "continuous_on UNIV
+        (\<lambda>M :: (complex, 'k, 'k) lmat. unwrap_lm M $$ (i, j))"
+      using continuous_on_unwrap_lm_index[OF ij] .
+
+    have h1: "continuous_on UNIV
+        (\<lambda>M :: (complex, 'k, 'k) lmat.
+          cnj (x $ i) * (unwrap_lm M $$ (i, j)))"
+      using cont_entry
+      by (rule continuous_on_mult [OF continuous_on_const])
+    have h2: "continuous_on UNIV
+        (\<lambda>M :: (complex, 'k, 'k) lmat. x $ j)"
+      by (rule continuous_on_const)
+    show "continuous_on UNIV
+        (\<lambda>M :: (complex, 'k, 'k) lmat.
+          cnj (x $ i) * (unwrap_lm M $$ (i, j)) * (x $ j))"
+      using h1 h2 by (rule continuous_on_mult)
+  qed
+
+  have cont_sum_complex:
+    "continuous_on UNIV
+      (\<lambda>M :: (complex, 'k, 'k) lmat.
+        \<Sum>i = 0..<?n.
+          \<Sum>j = 0..<?n.
+            cnj (x $ i) * (unwrap_lm M $$ (i, j)) * (x $ j))"
+    by (intro continuous_on_sum cont_terms) auto
+
+  have cont_f: "continuous_on UNIV ?f"
+    using cont_sum_complex
+    by (intro continuous_on_Re)
+
+  have set_eq:
+    "{M :: (complex, 'k, 'k) lmat.
+        Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) \<ge> 0}
+     = ?f -` {0..}"
+    using quad_expand by auto
+
+  show ?thesis
+    unfolding set_eq
+  proof (rule continuous_closed_vimage)
+    show "closed ({0..} :: real set)"
+      by simp
+  next
+    fix M :: "(complex, 'k, 'k) lmat"
+    show "continuous (at M) ?f"
+      using cont_f continuous_on_eq_continuous_at by blast
+  qed
+qed
+
+lemma closed_psd_lmat:
+  "closed {M :: (complex, 'k :: finite, 'k) lmat. psd_lmat M}"
+proof -
+  let ?H = "{M :: (complex, 'k, 'k) lmat. hermitian (unwrap_lm M)}"
+  let ?Q = "\<lambda>x. {M :: (complex, 'k, 'k) lmat. Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) \<ge> 0}"
+  have psd_eq:
+    "{M :: (complex, 'k, 'k) lmat. psd_lmat M}
+     = ?H \<inter> (\<Inter>x \<in> {y. dim_vec y = CARD('k)}. ?Q x)"
+    unfolding psd_lmat_def psd_def by auto
+  have closed_H: "closed ?H" by (rule closed_hermitian_unwrap_lmat)
+  have closed_INT: "closed (\<Inter>x \<in> {y. dim_vec y = CARD('k)}. ?Q x)"
+  proof (rule closed_INT, intro ballI)
+    fix x :: "complex Matrix.vec"
+    assume "x \<in> {y. dim_vec y = CARD('k)}"
+    hence dim: "dim_vec x = CARD('k)" by simp
+    show "closed {M :: (complex, 'k, 'k) lmat. Re (\<langle>x | unwrap_lm M *\<^sub>v x\<rangle>) \<ge> 0}"
+      by (rule closed_nonneg_quad_form_lmat[OF dim])
+  qed
+  show ?thesis
+    unfolding psd_eq using closed_H closed_INT by (rule closed_Int)
+qed
+
+subsection \<open>Trace on lmat\<close>
+
+definition Tr_lmat :: "(complex, 'k :: finite, 'k) lmat \<Rightarrow> complex" where
+  "Tr_lmat M = (\<Sum>i = 0..<CARD('k). unwrap_lm M $$ (i, i))"
+
+lemma continuous_on_Tr_lmat:
+  fixes S :: "(complex, 'k :: finite, 'k) lmat set"
+  shows "continuous_on S Tr_lmat"
+proof -
+  have term_cont:
+    "\<And>i. i < CARD('k)
+       \<Longrightarrow> continuous_on S (\<lambda>M :: (complex, 'k, 'k) lmat. unwrap_lm M $$ (i, i))"
+  proof -
+    fix i :: nat
+    assume i_lt: "i < CARD('k)"
+    show "continuous_on S (\<lambda>M :: (complex, 'k, 'k) lmat. unwrap_lm M $$ (i, i))"
+      using continuous_on_unwrap_lm_index[OF i_lt i_lt] .
+  qed
+  have sum_cont:
+    "continuous_on S
+       (\<lambda>M :: (complex, 'k, 'k) lmat.
+          \<Sum>i = 0..<CARD('k). unwrap_lm M $$ (i, i))"
+  proof (rule continuous_on_sum)
+    fix i assume "i \<in> {0..<CARD('k)}"
+    hence i_lt: "i < CARD('k)" by simp
+    show "continuous_on S (\<lambda>M :: (complex, 'k, 'k) lmat. unwrap_lm M $$ (i, i))"
+      by (rule term_cont [OF i_lt])
+  qed
+  show ?thesis using sum_cont unfolding Tr_lmat_def by simp
+qed
+
+lemma Tr_lmat_add:
+  fixes M N :: "(complex, 'k :: finite, 'k) lmat"
+  shows "Tr_lmat (M + N) = Tr_lmat M + Tr_lmat N"
+proof -
+  have step: "(\<Sum>i = 0..<CARD('k). unwrap_lm (M + N) $$ (i, i))
+            = (\<Sum>i = 0..<CARD('k).
+                 unwrap_lm M $$ (i, i) + unwrap_lm N $$ (i, i))"
+    by (rule sum.cong) auto
+  show ?thesis
+    unfolding Tr_lmat_def using step by (simp add: sum.distrib)
+qed
+
+lemma Tr_lmat_scaleR:
+  fixes M :: "(complex, 'k :: finite, 'k) lmat" and a :: real
+  shows "Tr_lmat (a *\<^sub>R M) = a *\<^sub>R Tr_lmat M"
+proof -
+  have step: "(\<Sum>i = 0..<CARD('k). unwrap_lm (a *\<^sub>R M) $$ (i, i))
+            = (\<Sum>i = 0..<CARD('k). a *\<^sub>R (unwrap_lm M $$ (i, i)))"
+    by (rule sum.cong) auto
+  show ?thesis
+    unfolding Tr_lmat_def using step by (simp add: scaleR_sum_right)
+qed
+
+lemma Tr_lmat_zero [simp]:
+  "Tr_lmat (0 :: (complex, 'k :: finite, 'k) lmat) = 0"
+  unfolding Tr_lmat_def by simp
+
+lemma Tr_lmat_sum_scaleR:
+  fixes T :: "'a set" and u :: "'a \<Rightarrow> real"
+    and f :: "'a \<Rightarrow> (complex, 'k :: finite, 'k) lmat"
+  assumes "finite T"
+  shows "Tr_lmat (\<Sum>t \<in> T. u t *\<^sub>R f t) = (\<Sum>t \<in> T. u t *\<^sub>R Tr_lmat (f t))"
+  using assms
+proof induction
+  case empty thus ?case by simp
+next
+  case (insert t T)
+  have "Tr_lmat (\<Sum>s \<in> insert t T. u s *\<^sub>R f s)
+      = Tr_lmat (u t *\<^sub>R f t + (\<Sum>s \<in> T. u s *\<^sub>R f s))"
+    using insert by simp
+  also have "\<dots> = Tr_lmat (u t *\<^sub>R f t) + Tr_lmat (\<Sum>s \<in> T. u s *\<^sub>R f s)"
+    by (rule Tr_lmat_add)
+  also have "\<dots> = u t *\<^sub>R Tr_lmat (f t) + (\<Sum>s \<in> T. u s *\<^sub>R Tr_lmat (f s))"
+    using insert.IH by (simp add: Tr_lmat_scaleR)
+  also have "\<dots> = (\<Sum>s \<in> insert t T. u s *\<^sub>R Tr_lmat (f s))"
+    using insert by simp
+  finally show ?case .
+qed
+
+lemma closed_unit_trace_lmat:
+  "closed {M :: (complex, 'k :: finite, 'k) lmat. Tr_lmat M = 1}"
+proof -
+  have eq: "{M :: (complex, 'k, 'k) lmat. Tr_lmat M = 1} = Tr_lmat -` {1}" by auto
+  show ?thesis
+    unfolding eq
+  proof (rule continuous_closed_vimage)
+    show "closed {1::complex}" by simp
+    fix M :: "(complex, 'k, 'k) lmat"
+    show "continuous (at M) Tr_lmat"
+      using continuous_on_Tr_lmat continuous_on_eq_continuous_at by blast
+  qed
+qed
+
+subsection \<open>Compactness of the unit-trace PSD slice\<close>
+
+text \<open>For $\sigma\ge0$ with $\Tr\sigma=1$ and eigenvalues $\lambda_i\ge0$,
+$\norm\sigma_{HS}^2=\sum_i\lambda_i^2\le\bigl(\sum_i\lambda_i\bigr)^2=1$.\<close>
+
+lemma psd_entry_bound_by_diag:
+  fixes M :: "complex Matrix.mat"
+  assumes Mcar: "M \<in> carrier_mat n n"
+      and Mpsd: "psd M"
+      and i: "i < n" and j: "j < n"
+  shows "(norm (M $$ (i, j)))\<^sup>2 \<le> Re (M $$ (i, i)) * Re (M $$ (j, j))"
+proof -
+  obtain Q :: "complex Matrix.mat"
+    where Qcar: "Q \<in> carrier_mat n n"
+      and Qpsd: "psd Q"
+      and QQ: "Q * Q = M"
+    using psd_sqrt_exists [OF Mcar Mpsd] by blast
+  have Qherm: "hermitian Q" using Qpsd by (rule psd_hermitian)
+  have Qdr: "dim_row Q = n" using Qcar by simp
+  have Qdc: "dim_col Q = n" using Qcar by simp
+  have Qcnj:
+    "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> Q $$ (b, a) = cnj (Q $$ (a, b))"
+  proof -
+    fix a b assume a: "a < n" and b: "b < n"
+    have e1: "(Q\<^sup>\<dagger>) $$ (a, b) = cnj (Q $$ (b, a))"
+      unfolding dagger_def using Qdr Qdc a b by simp
+    have qe: "Q $$ (a, b) = cnj (Q $$ (b, a))"
+      using e1 Qherm by (simp add: hermitian_def)
+    show "Q $$ (b, a) = cnj (Q $$ (a, b))"
+      using qe by (metis complex_cnj_cnj)
+  qed
+  have Mij_sum:
+    "M $$ (i, j) = (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
+  proof -
+    have "M $$ (i, j) = (Q * Q) $$ (i, j)" using QQ by simp
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (i, k) * Q $$ (k, j))"
+      using Qcar i j by (simp add: scalar_prod_def Matrix.row_def
+                                     Matrix.col_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
+    proof (rule sum.cong [OF refl])
+      fix k assume k_in: "k \<in> {0..<n}"
+      hence k_lt: "k < n" by simp
+      have "Q $$ (k, j) = cnj (Q $$ (j, k))" using Qcnj [OF j k_lt] .
+      thus "Q $$ (i, k) * Q $$ (k, j) = Q $$ (i, k) * cnj (Q $$ (j, k))"
+        by simp
+    qed
+    finally show ?thesis .
+  qed
+  have diag_entry_sum:
+    "\<And>l. l < n
+       \<Longrightarrow> Re (M $$ (l, l)) = (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)"
+  proof -
+    fix l assume l: "l < n"
+    have "M $$ (l, l) = (Q * Q) $$ (l, l)" using QQ by simp
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (l, k) * Q $$ (k, l))"
+      using Qcar l by (simp add: scalar_prod_def Matrix.row_def
+                                   Matrix.col_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (l, k) * cnj (Q $$ (l, k)))"
+    proof (rule sum.cong [OF refl])
+      fix k assume k_in: "k \<in> {0..<n}"
+      hence k_lt: "k < n" by simp
+      have "Q $$ (k, l) = cnj (Q $$ (l, k))" using Qcnj [OF l k_lt] .
+      thus "Q $$ (l, k) * Q $$ (k, l) = Q $$ (l, k) * cnj (Q $$ (l, k))"
+        by simp
+    qed
+    also have "\<dots> = (\<Sum>k = 0..<n. complex_of_real ((norm (Q $$ (l, k)))\<^sup>2))"
+    proof (rule sum.cong [OF refl])
+      fix k assume "k \<in> {0..<n}"
+      show "Q $$ (l, k) * cnj (Q $$ (l, k))
+          = complex_of_real ((norm (Q $$ (l, k)))\<^sup>2)"
+        by (simp add: complex_mult_cnj power2_eq_square norm_complex_def)
+    qed
+    also have "\<dots> = complex_of_real (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)"
+      by simp
+    finally have entry_eq:
+      "M $$ (l, l) = complex_of_real (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)" .
+    thus "Re (M $$ (l, l)) = (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)" by simp
+  qed
+  have Mii_real:
+    "Re (M $$ (i, i)) = (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)"
+    using diag_entry_sum [OF i] .
+  have Mjj_real:
+    "Re (M $$ (j, j)) = (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
+    using diag_entry_sum [OF j] .
+  have triangle:
+    "norm (M $$ (i, j))
+       \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
+  proof -
+    have "norm (M $$ (i, j))
+        = norm (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
+      using Mij_sum by simp
+    also have "\<dots> \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k) * cnj (Q $$ (j, k))))"
+      by (rule norm_sum)
+    also have "\<dots> = (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
+      by (simp add: norm_mult)
+    finally show ?thesis .
+  qed
+  have CS:
+    "(\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))\<^sup>2
+       \<le> (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)
+        * (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
+    by (rule Cauchy_Schwarz_ineq_sum)
+  have nn: "0 \<le> norm (M $$ (i, j))" by simp
+  have sn: "0 \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
+    by (intro sum_nonneg) auto
+  have sq_mono:
+    "(norm (M $$ (i, j)))\<^sup>2
+       \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))\<^sup>2"
+    using triangle nn sn by (simp add: power_mono)
+  have "(norm (M $$ (i, j)))\<^sup>2
+       \<le> (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)
+        * (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
+    using sq_mono CS by linarith
+  thus ?thesis using Mii_real Mjj_real by simp
+qed
+
+lemma norm_lmat_le_of_psd_unit_trace:
+  fixes M :: "(complex, 'k :: finite, 'k) lmat"
+  assumes psd: "psd_lmat M" and tr: "Tr_lmat M = 1"
+  shows "norm M \<le> 1"
+proof -
+  let ?n = "CARD('k)"
+  have psd_unwrap: "psd (unwrap_lm M)" using psd by simp
+  have unwrap_carr: "unwrap_lm M \<in> carrier_mat ?n ?n" by simp
+  have Tr_lmat_unwrap: "Tr_lmat M = Tr (unwrap_lm M)"
+    unfolding Tr_lmat_def Tr_def by (simp add: atLeast0LessThan)
+  have norm_sq_eq:
+    "(norm M)\<^sup>2 = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+                    (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
+  proof -
+    have "(norm M)\<^sup>2 = inner M M" by (simp add: power2_norm_eq_inner)
+    also have "\<dots> = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+                      (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
+      unfolding inner_lmat_def
+      by (intro sum.cong refl)
+         (auto simp: power2_norm_eq_inner [symmetric] split: prod.split)
+    finally show ?thesis .
+  qed
+  have entry_bound:
+    "\<And>i j. i < ?n \<Longrightarrow> j < ?n \<Longrightarrow>
+       (norm (unwrap_lm M $$ (i, j)))\<^sup>2 \<le>
+       Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j))"
+    using psd_entry_bound_by_diag [OF unwrap_carr psd_unwrap] .
+  have sum_bound:
+    "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}. (norm (unwrap_lm M $$ (i, j)))\<^sup>2)
+     \<le> (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+          Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+  proof (rule sum_mono)
+    fix x :: "nat \<times> nat"
+    assume x_in: "x \<in> {0..<?n} \<times> {0..<?n}"
+    obtain a b where x_eq: "x = (a, b)" by (cases x)
+    from x_in x_eq have ab: "a < ?n" "b < ?n" by auto
+    show "(case x of (i, j) \<Rightarrow> (norm (unwrap_lm M $$ (i, j)))\<^sup>2)
+          \<le> (case x of (i, j) \<Rightarrow>
+                Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+      using entry_bound [OF ab(1) ab(2)] by (simp add: x_eq)
+  qed
+  have prod_eq:
+    "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+        Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))
+     = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+       * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
+  proof -
+    have "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+            Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))
+        = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n.
+            Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+      by (rule sum.cartesian_product [symmetric])
+    also have "\<dots> = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+                  * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
+      by (rule sum_product [symmetric])
+    finally show ?thesis .
+  qed
+  have Re_tr_one:
+    "(\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i))) = 1"
+  proof -
+    have "(\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+        = Re (\<Sum>i = 0..<?n. unwrap_lm M $$ (i, i))"
+      by (rule Re_sum [symmetric])
+    also have "\<dots> = Re (Tr (unwrap_lm M))"
+      unfolding Tr_def by (simp add: atLeast0LessThan)
+    also have "\<dots> = Re (Tr_lmat M)" using Tr_lmat_unwrap by simp
+    also have "\<dots> = Re (1 :: complex)" using tr by simp
+    also have "\<dots> = 1" by simp
+    finally show ?thesis .
+  qed
+  have norm_sq_le: "(norm M)\<^sup>2 \<le> 1"
+  proof -
+    have "(norm M)\<^sup>2
+        = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+            (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
+      by (rule norm_sq_eq)
+    also have "\<dots> \<le> (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
+                      Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
+      using sum_bound .
+    also have "\<dots> = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
+                  * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
+      by (rule prod_eq)
+    also have "\<dots> = 1 * 1" using Re_tr_one by simp
+    also have "\<dots> = 1" by simp
+    finally show ?thesis .
+  qed
+  have nn: "0 \<le> norm M" by (rule norm_ge_zero)
+  show "norm M \<le> 1"
+    using norm_sq_le nn
+    by (smt (verit) one_power2 power2_le_imp_le)
+qed
+
+lemma compact_unit_trace_psd_lmat:
+  "compact {M :: (complex, 'k :: finite, 'k) lmat. psd_lmat M \<and> Tr_lmat M = 1}"
+proof -
+  let ?S = "{M :: (complex, 'k, 'k) lmat. psd_lmat M \<and> Tr_lmat M = 1}"
+  have closed_S: "closed ?S"
+  proof -
+    have eq: "?S = {M. psd_lmat M} \<inter> {M. Tr_lmat M = 1}" by auto
+    show ?thesis
+      unfolding eq using closed_psd_lmat closed_unit_trace_lmat by (rule closed_Int)
+  qed
+  have bounded_S: "bounded ?S"
+  proof -
+    have "\<forall>M \<in> ?S. norm M \<le> 1"
+      using norm_lmat_le_of_psd_unit_trace by auto
+    thus ?thesis by (rule bounded_iff [THEN iffD2, OF exI[where x = 1]])
+  qed
+  show ?thesis using closed_S bounded_S compact_eq_bounded_closed by blast
+qed
+
+subsection \<open>UCP maps in Choi coordinates\<close>
+
 text \<open>In Choi coordinates a linear map $\Phi:M_n\to M_d$ is UCP iff $P_\Phi\ge0$ and
 $\sum_iR_{ii}=I_d$ (@{thm [source] choi_ucp_iff}); the set of such $P$ is compact.  Dimensions are
-cardinalities of finite types, $n=|{'n}|$, $d=|{'d}|$, so that the typed matrices of
-\<open>Separable_Cone\<close> (a Euclidean space) can be used.\<close>
+cardinalities of finite types, $n=|{'n}|$, $d=|{'d}|$, so that the typed matrices (a Euclidean
+space, \<open>Lmat_Euclidean\<close>) and the closed and compact sets of positive matrices above can be
+used.\<close>
 
 definition ucp_choi_set :: "(complex, 'n :: finite \<times> 'd :: finite, 'n \<times> 'd) lmat set" where
   "ucp_choi_set = {M. psd_lmat M \<and> (\<forall>a < CARD('d). \<forall>b < CARD('d).

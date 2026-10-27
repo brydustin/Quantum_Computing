@@ -160,11 +160,8 @@ lemma rot_diff_inner:
   unfolding rot_e0_vec
   by (simp add: inner_prod_def scalar_prod_def numeral_2_eq_2 power2_eq_square flip: of_real_diff of_real_mult of_real_add)
 
-lemma cnj_mult_self: "cnj z * z = complex_of_real ((cmod z)\<^sup>2)"
-  by (metis complex_norm_square mult.commute)
-
 lemma inner_self_sum: "dim_vec v = N \<Longrightarrow> \<langle>v|v\<rangle> = (\<Sum>i<N. complex_of_real ((cmod (v $ i))\<^sup>2))"
-  by (simp add: inner_prod_def scalar_prod_def atLeast0LessThan cnj_mult_self)
+  by (simp add: inner_prod_def scalar_prod_def atLeast0LessThan cnj_mult_self_cmod)
 
 text \<open>The register amplitudes have total weight one: $\alpha=F_N^*b$ with $b$ a unit vector.\<close>
 

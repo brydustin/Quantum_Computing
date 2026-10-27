@@ -1,6 +1,26 @@
 chapter AFP
 
-session Quantum_Computing_by_VP in "." = Two_Hermitian_Results +
+session Essential_Functional_Analysis in "Essential_Functional_Analysis" = Two_Hermitian_Results +
+  description "
+    Prerequisites for the lectures: general matrix lemmas, unitary and Kronecker-product
+    algebra, and matrices of fixed dimension with the Hilbert-Schmidt norm as a normed and
+    a Euclidean space."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    Isabelle_Marries_Dirac
+    "HOL-Hahn_Banach"
+    "HOL-Analysis"
+  theories
+    Matrix_Lemmas
+    Unitary_Tensor_Algebra
+    Matrix_Typed
+    Lmat_Euclidean
+  document_files
+    "root.tex"
+
+session Quantum_Computing_by_VP in "." = Essential_Functional_Analysis +
   description "
     Vern Paulsen's lecture notes on quantum computing and completely positive maps
     (Houston, 2011), formalised lecture by lecture."
@@ -16,7 +36,6 @@ session Quantum_Computing_by_VP in "." = Two_Hermitian_Results +
     Day01_Inner_Product
     Day02_Trace_Projections
     Day02_Projection_Basis
-    Unitary_Tensor_Algebra
     Day03_Unitary_Matrices
     Day04_Hermitian_Matrices
     Day04_Hermitian_Converse
@@ -70,16 +89,13 @@ session Quantum_Computing_by_VP in "." = Two_Hermitian_Results +
     Day23_Choi3_UCP
     Day23_Extremality_Examples
     Day24_Operator_Systems
-    Matrix_Typed
-    Essential_Functional_Analysis
     Day25_Hahn_Banach
     Day25_Arveson_Correspondence
     Day25_Unital_Functional_Norm
     Day26_Arveson_Extension
     Day26_CP_Factorization
-    Lmat_Euclidean
-    Separable_Cone
     Day26_Separability
+    Day26_Separable_Cone
     Day27_Positive_Map_Criterion
     Day27_Entangled_Examples
     Day28_Horodecki_Peres
@@ -98,7 +114,6 @@ session Quantum_Computing_by_VP in "." = Two_Hermitian_Results +
     Day34_Knill_Laflamme
     Day34_KL_Sufficiency
     Quantum_Channels
-    QC_Prelims
     QC_Notes_Overview
   document_files
     "root.tex"

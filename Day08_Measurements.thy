@@ -461,12 +461,6 @@ definition lin_indep_vecs :: "nat \<Rightarrow> complex Matrix.vec list \<Righta
      (\<forall>x :: complex Matrix.vec. x \<in> carrier_vec (length vs) \<longrightarrow>
          mat_of_cols n vs *\<^sub>v x = 0\<^sub>v n \<longrightarrow> x = 0\<^sub>v (length vs))"
 
-lemma outer_prod_carrier:
-  fixes v w :: "complex Matrix.vec"
-  assumes "dim_vec v = n" and "dim_vec w = m"
-  shows "v \<oslash> w \<in> carrier_mat n m"
-  using assms by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def carrier_matI)
-
 lemma outer_prod_dagger:
   fixes v w :: "complex Matrix.vec"
   shows "(v \<oslash> w)\<^sup>\<dagger> = w \<oslash> v"

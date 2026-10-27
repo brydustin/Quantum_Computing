@@ -1,5 +1,5 @@
 theory Day20_Choi_Rank
-  imports Day34_Knill_Laflamme Day22_Kraus_Independence
+  imports Day22_Kraus_Independence Day22_Minimal_Kraus
 begin
 
 section \<open>Day 20: Choi's rank theorem $\mathrm{cr}(\Phi)=\operatorname{rank}P_\Phi$ (D20-4)\<close>

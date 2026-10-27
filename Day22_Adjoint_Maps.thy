@@ -1,5 +1,5 @@
 theory Day22_Adjoint_Maps
-  imports Day19_Choi_TP_Unital Day19_Choi_Positivity Day26_CP_Factorization
+  imports Day19_Choi_Positivity
 begin
 
 section \<open>Day 22: the adjoint map, an affine bijection from UCP onto CPTP (D22-5)\<close>

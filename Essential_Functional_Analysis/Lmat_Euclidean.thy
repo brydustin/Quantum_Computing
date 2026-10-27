@@ -5,20 +5,20 @@
 
 theory Lmat_Euclidean
   imports
-    Quantum_Computing_by_VP.Matrix_Typed
+    Matrix_Typed
     "HOL-Analysis.Euclidean_Space"
     "HOL-Analysis.L2_Norm"
     "HOL-Analysis.Elementary_Metric_Spaces"
     "HOL-Analysis.Topology_Euclidean_Space"
 begin
 
-text \<open>The HOL/Hahn\_Banach development imports a locale also called \<open>norm\<close>
-under the qualifier \<open>Normed_Space\<close>.  Hide its short names so that, inside
-our instantiation blocks, \<open>norm\<close> resolves to the class method from
-\<^theory>\<open>HOL.Real_Vector_Spaces\<close>.\<close>
+text \<open>The HOL/Hahn\_Banach development imports locales also called \<open>norm\<close>, \<open>seminorm\<close>
+and \<open>continuous\<close>.  Hide their short names so that \<open>norm\<close> is the class method from
+\<^theory>\<open>HOL.Real_Vector_Spaces\<close> and \<open>continuous\<close> the topological predicate.\<close>
 
 hide_const (open) Normed_Space.norm
 hide_const (open) Normed_Space.seminorm
+hide_const (open) Function_Norm.continuous
 
 section \<open>Overview\<close>
 
@@ -776,5 +776,39 @@ lemma LIMSEQ_unwrap_lm_index:
   shows "(\<lambda>n. unwrap_lm (f n) $$ (i, j)) \<longlonglongrightarrow> unwrap_lm L $$ (i, j)"
   using tendsto_unwrap_lm_index assms by blast
 
+
+section \<open>Entries as continuous functions; wrapping\<close>
+
+text \<open>The entry-projection \<open>M \<mapsto> unwrap_lm M $$ (i, j)\<close> is continuous
+on lmat for valid index \<open>(i, j)\<close>.\<close>
+
+lemma isCont_unwrap_lm_index:
+  fixes x :: "('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat"
+  assumes ij: "i < CARD('m)" "j < CARD('n)"
+  shows "isCont (\<lambda>M. unwrap_lm M $$ (i, j)) x"
+proof -
+  have lim_id: "((\<lambda>y. y) \<longlongrightarrow> x) (at x)" by (rule tendsto_ident_at)
+  have lim_entry: "((\<lambda>y. unwrap_lm y $$ (i, j)) \<longlongrightarrow> unwrap_lm x $$ (i, j)) (at x)"
+    by (rule tendsto_unwrap_lm_index[OF lim_id ij(1) ij(2)])
+  show ?thesis unfolding isCont_def using lim_entry by simp
+qed
+
+lemma continuous_on_unwrap_lm_index:
+  fixes S :: "('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat set"
+  assumes ij: "i < CARD('m)" "j < CARD('n)"
+  shows "continuous_on S (\<lambda>M. unwrap_lm M $$ (i, j))"
+  using isCont_unwrap_lm_index[OF ij]
+  by (intro continuous_at_imp_continuous_on) auto
+
+lemma unwrap_wrap_lm:
+  fixes M :: "complex Matrix.mat"
+  assumes "M \<in> carrier_mat CARD('k::finite) CARD('k)"
+  shows "unwrap_lm (wrap_lm M :: (complex, 'k, 'k) lmat) = M"
+  by (rule wrap_lm_inverse) (use assms in auto)
+
+lemma unwrap_lm_scaleR_mat:
+  fixes R :: "(complex, 'k :: finite, 'k) lmat"
+  shows "unwrap_lm (u *\<^sub>R R) = complex_of_real u \<cdot>\<^sub>m unwrap_lm R"
+  by (rule eq_matI) (auto simp: scaleR_conv_of_real)
 
 end

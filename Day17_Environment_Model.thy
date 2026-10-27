@@ -1,5 +1,5 @@
 theory Day17_Environment_Model
-  imports Day22_Minimal_Kraus
+  imports Day19_Choi_Theorem
 begin
 
 section \<open>Day 17: the environment model of noise\<close>

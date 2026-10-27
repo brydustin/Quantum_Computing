@@ -955,3 +955,35 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `-R Quantum_Computing_by_VP` (an image with every theory the notes import from other sessions),
   replacing the hand-kept `VP_External`.  `project_checks.ML`: session lists may name a
   session-qualified theory; `VP_Check_Day05` targets `Quantum_Computing_by_VP.Day05_Sylvester_Criterion`.
+- **Prerequisites session `Essential_Functional_Analysis`** (2026-10-26, user: make Unitary_Tensor_Algebra,
+  Matrix_Typed, Essential_Functional_Analysis, Lmat_Euclidean and Separable_Cone "a sort of 'Essential
+  Functional Analysis' bundle to prep us for this project" without adding AFP entries).  A dependency scan
+  (`Thm_Deps.thm_deps` over every fact of the notes and HHL theories) decided what goes where:
+  * New session `Essential_Functional_Analysis` (directory `Essential_Functional_Analysis/`, own document,
+    parent `Two_Hermitian_Results`), the parent of `Quantum_Computing_by_VP`; still one AFP entry.  It holds
+    `Matrix_Lemmas` (new: the lecture-independent half of `QC_Prelims` plus general helpers that sat in later
+    lectures: `dagger_carrier`, `mat_mult_entry`, `foldr_add_*`, `msum`, `lin_on`, `sum_delta2`, ...),
+    `Unitary_Tensor_Algebra`, `Matrix_Typed` and `Lmat_Euclidean`.  None of it imports a lecture:
+    `Unitary_Tensor_Algebra` needed only `hs_inner_prod_left_add` (now in Day 1), and `Matrix_Typed`'s
+    Hilbert-Schmidt norm is now defined entrywise with `L2_set` (same norm, 250 lines shorter, no Day 1).
+  * `Essential_Functional_Analysis.thy` deleted: nothing used it (its Caratheodory route to the closed
+    separable cone had been replaced by the compact-convex-hull argument).
+  * `Separable_Cone` is lecture material: renamed `Day26_Separable_Cone`, printed after
+    `Day26_Separability`; its typed positive-matrix part (closed, compact unit-trace slice) moved to its
+    first user `Day22_UCP_Compact`, the Hermitian-witness lemma to `Day26_Arveson_Extension`.
+  * `QC_Prelims` dissolved (bundle, Days 1, 3, 4); `Quantum_Channels` stays as the appendix, its five
+    lemmas used by lectures moved to Days 2, 17, 19, 22.
+  * Helper lemmas moved to the lecture that defines their notions (outer-sum facts to Day 4, CP congruences
+    to Day 17, `kraus_lin_on` to Day 19, `loewner_ker_subset` to Day 21).  Gratuitous forward imports
+    dropped (Day 21 imported Day 32, Day 22 imported Day 27, Day 27 imported Day 34, Day 2 imported Day 3).
+  * HHL: `HHL_Approximate.cnj_mult_self` duplicated the bundle's `cnj_mult_self_cmod`, which is now in
+    scope everywhere; removed.  The bundle hides HOL-Hahn_Banach's `continuous` next to its `norm` and
+    `seminorm` (`Lmat_Euclidean`); `Day22_UCP_Compact` and `Day26_Arveson_Extension` import the
+    HOL-Analysis convexity theories they used to get through `Separable_Cone`.
+  * check_all green (build 4:30 after the first full run of 7:34; maxrss 4.9 GB); generated .tex identical
+    apart from the moved blocks and import lines; 82 theories in the notes session, 4 in the bundle.
+  * Remaining forward uses are lecture definitions used before their lecture (the capstone's convention:
+    a completing theory may use later results): Day 6 (Bell states, Day 9; Day06_15_Universal), Day 10
+    (Pauli matrices, Day 30), Day 15 (tr_B facts, Day 16), Days 17-19 (sum_wdag_w, choi_seed, unit_blocks,
+    operator systems), Days 20-22 (vec_of_kraus, lin_indep_complex_mat, Choi's theorem 3 of Day 23),
+    Day 26 (kraus_compose, Day 32), Day 30 (encode_mat, Day 31), Day 32 (block_op, Day 33).

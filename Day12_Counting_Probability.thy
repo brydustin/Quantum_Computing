@@ -1,5 +1,5 @@
 theory Day12_Counting_Probability
-  imports QC_Prelims
+  imports Day12_Quantum_Parallelism
 begin
 
 section \<open>Day 12: $H^{\otimes N}$ on $|0\cdots0\rangle$ and the counting probability (D12-1, D12-4)\<close>

@@ -42,32 +42,6 @@ next
   ultimately show ?case using Cons.hyps by auto
 qed
 
-lemma outer_sum_singleton_index:
-  assumes r: "r < n" and c: "c < n"
-  shows "outer_sum n [\<psi>] $$ (r, c) = \<psi> $ r * cnj (\<psi> $ c)"
-proof -
-  let ?M = "mat_of_cols n [\<psi>]"
-  let ?Md = "(?M)\<^sup>\<dagger>"
-  have M_car: "?M \<in> carrier_mat n 1"
-    by (simp add: mat_of_cols_def)
-  have Md_car: "?Md \<in> carrier_mat 1 n"
-    using M_car by auto
-  have dr: "r < dim_row ?M" using M_car r by auto
-  have dc: "c < dim_col ?Md" using Md_car c by auto
-  have "outer_sum n [\<psi>] $$ (r, c) = (?M * ?Md) $$ (r, c)"
-    by (simp add: outer_sum_def)
-  also have "\<dots> = Matrix.row ?M r \<bullet> Matrix.col ?Md c"
-    using dc dr index_mult_mat(1) by blast
-  also have "\<dots> = (\<Sum>j = 0..<1. ?M $$ (r, j) * ?Md $$ (j, c))"
-    using M_car Md_car r c
-    by (simp add: scalar_prod_def Matrix.row_def Matrix.col_def)
-  also have "\<dots> = ?M $$ (r, 0) * ?Md $$ (0, c)"
-    by simp
-  also have "\<dots> = \<psi> $ r * cnj (\<psi> $ c)"
-    using r c by (simp add: mat_of_cols_def dagger_def)
-  finally show ?thesis.
-qed
-
 text \<open>Day 13: $\ketbra{e^{i\theta}\psi}{e^{i\theta}\psi}=\ketbra\psi\psi$; the density matrix forgets the phase.\<close>
 
 lemma pure_density_smult_unit:

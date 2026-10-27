@@ -67,6 +67,7 @@ theory QC_Notes_Overview
     Quantum_Computing_by_VP.Day26_Arveson_Extension
     Quantum_Computing_by_VP.Day26_CP_Factorization
     Quantum_Computing_by_VP.Day26_Separability
+    Quantum_Computing_by_VP.Day26_Separable_Cone
     Quantum_Computing_by_VP.Day27_Positive_Map_Criterion
     Quantum_Computing_by_VP.Day27_Entangled_Examples
     Quantum_Computing_by_VP.Day28_Horodecki_Peres
@@ -85,12 +86,6 @@ theory QC_Notes_Overview
     Quantum_Computing_by_VP.Day34_Knill_Laflamme
     Quantum_Computing_by_VP.Day34_KL_Sufficiency
     Quantum_Computing_by_VP.Quantum_Channels
-    Quantum_Computing_by_VP.Unitary_Tensor_Algebra
-    Quantum_Computing_by_VP.QC_Prelims
-    Quantum_Computing_by_VP.Matrix_Typed
-    Quantum_Computing_by_VP.Essential_Functional_Analysis
-    Quantum_Computing_by_VP.Lmat_Euclidean
-    Quantum_Computing_by_VP.Separable_Cone
 begin
 
 section \<open>Reading guide\<close>
@@ -132,7 +127,7 @@ early lecture may use results of later ones; it is still printed with its lectur
 23 & \texttt{Day23\_ChoiExtremeUCP}, \texttt{Day23\_Choi3\_UCP}, \texttt{Day23\_Extremality\_Examples}\\
 24 & \texttt{Day24\_Operator\_Systems}\\
 25 & \texttt{Day25\_Hahn\_Banach}, \texttt{Day25\_Arveson\_Correspondence}, \texttt{Day25\_Unital\_Functional\_Norm}\\
-26 & \texttt{Day26\_Arveson\_Extension}, \texttt{Day26\_CP\_Factorization}, \texttt{Day26\_Separability}\\
+26 & \texttt{Day26\_Arveson\_Extension}, \texttt{Day26\_CP\_Factorization}, \texttt{Day26\_Separability}, \texttt{Day26\_Separable\_Cone}\\
 27 & \texttt{Day27\_Positive\_Map\_Criterion}, \texttt{Day27\_Entangled\_Examples}\\
 28 & \texttt{Day28\_Horodecki\_Peres}\\
 29 & \texttt{Day29\_Error\_Correction}, \texttt{Day29\_Classical\_Codes}, \texttt{Day29\_Subspace\_Codes}\\
@@ -144,12 +139,12 @@ early lecture may use results of later ones; it is still printed with its lectur
 \end{tabular}
 \end{center}
 
-The last part holds what the lectures build on or lead to: \texttt{Quantum\_Channels} (standard
-channels beyond the notes), \texttt{Unitary\_Tensor\_Algebra} (unitary and Kronecker-product
-algebra), \texttt{QC\_Prelims} (lemmas shared by the completing theories), \texttt{Matrix\_Typed},
-\texttt{Essential\_Functional\_Analysis} and \texttt{Lmat\_Euclidean} (typed matrices,
-Hilbert--Schmidt analysis, Carath\'eodory), and \texttt{Separable\_Cone} (the proofs behind
-\texttt{Day26\_Separability}).  The companion AFP entries \emph{Hermitian Functional Calculus} and
+The last part, \texttt{Quantum\_Channels}, collects standard channels beyond the notes.  What the
+lectures build on but do not teach is the parent session \emph{Essential Functional Analysis}:
+general matrix lemmas (\texttt{Matrix\_Lemmas}), unitary and Kronecker-product algebra
+(\texttt{Unitary\_Tensor\_Algebra}), and matrices of fixed dimension as a type, with the
+Hilbert--Schmidt norm (\texttt{Matrix\_Typed}) and the structure of a Euclidean space
+(\texttt{Lmat\_Euclidean}).  The companion AFP entries \emph{Hermitian Functional Calculus} and
 \emph{HHL Algorithm} go beyond the notes: the functional calculus and product formulas, quantum
 phase estimation and the HHL algorithm.
 \<close>

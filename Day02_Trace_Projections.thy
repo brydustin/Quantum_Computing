@@ -941,4 +941,16 @@ proof -
   finally show "w = x - ?P *\<^sub>v x".
 qed
 
+lemma Tr_one_mat:
+  "Tr (1\<^sub>m n :: complex Matrix.mat) = of_nat n"
+proof -
+  have "Tr (1\<^sub>m n :: complex Matrix.mat)
+          = (\<Sum>r < n. if r < n then (1\<^sub>m n :: complex Matrix.mat) $$ (r, r)
+                       else 0)"
+    by (simp add: Tr_def)
+  also have "\<dots> = (\<Sum>r < n. (1 :: complex))" by simp
+  also have "\<dots> = of_nat n" by simp
+  finally show ?thesis.
+qed
+
 end

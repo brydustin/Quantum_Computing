@@ -396,4 +396,14 @@ proof -
   show ?thesis using \<Psi>_cp \<Psi>_tp by (simp add: CPTP_def)
 qed
 
+lemma kraus_is_cptp:
+  fixes Ws :: "complex Matrix.mat list"
+  assumes Ws: "kraus_operators n d Ws"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "kraus_map_dim d Ws \<in> CPTP n d"
+  unfolding CPTP_def
+  using kraus_is_cp[OF Ws npos dpos] kraus_is_trace_preserving[OF Ws]
+  by simp
+
 end
