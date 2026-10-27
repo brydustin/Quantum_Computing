@@ -1072,3 +1072,14 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
     `kraus_rep_of_psd_choi` 187), Quantum_Channels (every channel proved CPTP entrywise instead of via
     Kraus operators), Day 14's `pure_density_iff_idempotent` (370), Day 3's Schur proofs (385 + 366 while
     the AFP has `Schur_Decomposition`), process comments ("Step 1..8") in Days 11, 14, 19, 21.
+- **Audit tick 2: Day 17's amplification** (2026-10-27).  That the amplification Φ^(p) of a Kraus map is
+  the Kraus map of the I_p ⊗ W_i took 420 lines of entrywise index bookkeeping (`tensor_id_kraus_*_index`,
+  `sum_block_delta*`, `kraus_term_index`, `kraus_amplification_single`).  Now: a pn×pn matrix is the sum of
+  its blocks in place, x = Σ E_ab ⊗ x_ab (`block_of_mat_decomposition`); the amplification acts on the
+  blocks, Φ^(p)(x) = Σ E_ab ⊗ Φ(x_ab) (`amplification_blocks`); and (I⊗W)(E_ab⊗x_ab)(I⊗W)* = E_ab⊗Wx_abW*
+  by the tensor product rule (`tensor_unit_sandwich`), so Φ^(p) of X ↦ WXW* is conjugation by I_p⊗W
+  (`amplification_sandwich`, 15 lines).  Day 17 went from 1568 to about 1180 lines; `amplification_add`
+  and `amplification_zero_map` are one-liners (`amplification_dims` [simp] removed the dimension
+  boilerplate).  Trap met: a double delta sum Σ_a Σ_b needs the condition on the inner index as the OUTER
+  `if` (`if b = c' then if a = c then … else 0 else 0`), otherwise `sum.delta` cannot fire; plan script
+  `tools/deps/plans/day17.py`, helpers in `planlib.py`.

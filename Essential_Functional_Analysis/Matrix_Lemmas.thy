@@ -459,6 +459,11 @@ lemma msum_mult_right:
   shows "msum r c g xs * B = msum r p (\<lambda>x. g x * B) xs"
   unfolding msum_def by (rule foldr_add_mat_mult_right[OF assms(2,1)])
 
+lemma msum_mult_left:
+  assumes "A \<in> carrier_mat m r" and "\<forall>x \<in> set xs. g x \<in> carrier_mat r c"
+  shows "A * msum r c g xs = msum m c (\<lambda>x. A * g x) xs"
+  unfolding msum_def by (rule foldr_add_mat_mult_left[OF assms])
+
 section \<open>Finite sums and index arithmetic\<close>
 
 lemma sum_list_product_upt:
@@ -565,6 +570,19 @@ proof -
       = msum r p (\<lambda>x. (case x of (i, j) \<Rightarrow> g i j) * B) (List.product [0..<k] [0..<k])"
     by (rule msum_mult_right[OF _ B]) (use g in auto)
   also have "(\<lambda>x. (case x of (i, j) \<Rightarrow> g i j) * B) = (\<lambda>(i, j). g i j * B)"
+    by (rule ext) (simp split: prod.split)
+  finally show ?thesis .
+qed
+
+lemma msum_pairs_mult_left:
+  assumes g: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> g i j \<in> carrier_mat r c" and A: "A \<in> carrier_mat m r"
+  shows "A * msum r c (\<lambda>(i, j). g i j) (List.product [0..<k] [0..<k])
+       = msum m c (\<lambda>(i, j). A * g i j) (List.product [0..<k] [0..<k])"
+proof -
+  have "A * msum r c (\<lambda>(i, j). g i j) (List.product [0..<k] [0..<k])
+      = msum m c (\<lambda>x. A * (case x of (i, j) \<Rightarrow> g i j)) (List.product [0..<k] [0..<k])"
+    by (rule msum_mult_left[OF A]) (use g in auto)
+  also have "(\<lambda>x. A * (case x of (i, j) \<Rightarrow> g i j)) = (\<lambda>(i, j). A * g i j)"
     by (rule ext) (simp split: prod.split)
   finally show ?thesis .
 qed

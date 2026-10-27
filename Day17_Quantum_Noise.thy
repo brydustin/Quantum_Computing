@@ -477,6 +477,30 @@ next
     by (simp add: block_of_mat_index)
 qed
 
+text \<open>A $pn\times pn$ matrix is the sum of its blocks in place: $x=\sum_{a,b}E_{ab}\otimes x_{ab}$.\<close>
+
+lemma block_of_mat_decomposition:
+  assumes x: "x \<in> carrier_mat (p*n) (p*n)" and n: "0 < n"
+  shows "x = msum (p*n) (p*n) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) (List.product [0..<p] [0..<p])"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (msum (p*n) (p*n) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) (List.product [0..<p] [0..<p]))"
+    "j < dim_col (msum (p*n) (p*n) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) (List.product [0..<p] [0..<p]))"
+  hence i: "i < p*n" and j: "j < p*n" by simp_all
+  have p: "0 < p" using i by (cases p) auto
+  have e: "(E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) $$ (i, j)
+         = (if b = j div n then if a = i div n then x $$ (i, j) else 0 else 0)"
+    if "a < p" "b < p" for a b
+    using index_tensor_mat[where rA = p and cA = p and rB = n and cB = n, OF _ _ _ _ i j p n] that
+          less_mult_imp_div_less[OF i] less_mult_imp_div_less[OF j] mod_less_divisor[OF n]
+    by (auto simp: block_of_mat_def div_mult_mod_eq)
+  have "msum (p*n) (p*n) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) (List.product [0..<p] [0..<p]) $$ (i, j)
+      = (\<Sum>a<p. \<Sum>b<p. if b = j div n then if a = i div n then x $$ (i, j) else 0 else 0)"
+    by (subst msum_pairs_index) (use i j in \<open>auto simp: e intro!: sum.cong\<close>)
+  also have "\<dots> = x $$ (i, j)"
+    using less_mult_imp_div_less[OF i] less_mult_imp_div_less[OF j] by (simp add: sum.delta)
+  finally show "x $$ (i, j) = msum (p*n) (p*n) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) (List.product [0..<p] [0..<p]) $$ (i, j)" ..
+qed (use x in auto)
+
 text \<open>The amplification $\Phi^{(p)}=\mathrm{id}_p\otimes\Phi$ applies $\Phi$ block by block,
 $\Phi^{(p)}\bigl((X_{ab})\bigr)=\bigl(\Phi(X_{ab})\bigr)$.  $\Phi$ is \emph{$p$-positive} if $\Phi^{(p)}$ is
 positive, and \emph{completely positive} if it is $p$-positive for every $p$.\<close>
@@ -492,12 +516,54 @@ lemma amplification_carrier [simp]:
   "amplification n d p \<Phi> X \<in> carrier_mat (p*d) (p*d)"
   by (simp add: amplification_def)
 
+lemma amplification_dims [simp]:
+  "dim_row (amplification n d p \<Phi> x) = p*d" "dim_col (amplification n d p \<Phi> x) = p*d"
+  by (simp_all add: amplification_def)
+
 lemma amplification_index:
   assumes "i < p*d" and "j < p*d"
   shows "amplification n d p \<Phi> X $$ (i,j) =
          \<Phi> (block_of_mat n X (i div d) (j div d)) $$
              (i mod d, j mod d)"
   using assms by (simp add: amplification_def)
+
+text \<open>So $\Phi^{(p)}(x)=\sum_{a,b}E_{ab}\otimes\Phi(x_{ab})$, and $\Phi^{(p)}$ is linear in $\Phi$.\<close>
+
+lemma amplification_blocks:
+  assumes \<Phi>: "\<And>a b. a < p \<Longrightarrow> b < p \<Longrightarrow> \<Phi> (block_of_mat n x a b) \<in> carrier_mat d d" and d: "0 < d"
+  shows "amplification n d p \<Phi> x
+       = msum (p*d) (p*d) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> \<Phi> (block_of_mat n x a b)) (List.product [0..<p] [0..<p])"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (msum (p*d) (p*d) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> \<Phi> (block_of_mat n x a b)) (List.product [0..<p] [0..<p]))"
+    "j < dim_col (msum (p*d) (p*d) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> \<Phi> (block_of_mat n x a b)) (List.product [0..<p] [0..<p]))"
+  hence i: "i < p*d" and j: "j < p*d" by simp_all
+  have p: "0 < p" using i by (cases p) auto
+  have e: "(E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> \<Phi> (block_of_mat n x a b)) $$ (i, j)
+         = (if b = j div d then if a = i div d then \<Phi> (block_of_mat n x a b) $$ (i mod d, j mod d) else 0 else 0)"
+    if "a < p" "b < p" for a b
+    using index_tensor_mat[where rA = p and cA = p and rB = d and cB = d, OF _ _ _ _ i j p d] that
+          carrier_matD[OF \<Phi>[OF that]] less_mult_imp_div_less[OF i] less_mult_imp_div_less[OF j] by auto
+  have "msum (p*d) (p*d) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> \<Phi> (block_of_mat n x a b)) (List.product [0..<p] [0..<p]) $$ (i, j)
+      = (\<Sum>a<p. \<Sum>b<p. if b = j div d then if a = i div d then \<Phi> (block_of_mat n x a b) $$ (i mod d, j mod d) else 0 else 0)"
+    by (subst msum_pairs_index) (use i j in \<open>auto simp: e \<Phi> intro!: sum.cong\<close>)
+  also have "\<dots> = amplification n d p \<Phi> x $$ (i, j)"
+    using less_mult_imp_div_less[OF i] less_mult_imp_div_less[OF j] i j
+    by (simp add: sum.delta amplification_index)
+  finally show "amplification n d p \<Phi> x $$ (i, j)
+      = msum (p*d) (p*d) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> \<Phi> (block_of_mat n x a b)) (List.product [0..<p] [0..<p]) $$ (i, j)" ..
+qed auto
+
+lemma amplification_zero_map:
+  assumes dpos: "0 < d"
+  shows "amplification n d p (\<lambda>\<rho>. 0\<^sub>m d d) x = 0\<^sub>m (p*d) (p*d)"
+  using dpos by (intro eq_matI) (auto simp: amplification_def)
+
+lemma amplification_add:
+  assumes dpos: "0 < d"
+      and F: "\<And>a b. F (block_of_mat n x a b) \<in> carrier_mat d d"
+      and G: "\<And>a b. G (block_of_mat n x a b) \<in> carrier_mat d d"
+  shows "amplification n d p (\<lambda>\<rho>. F \<rho> + G \<rho>) x = amplification n d p F x + amplification n d p G x"
+  using dpos by (intro eq_matI) (auto simp: amplification_index carrier_matD[OF F] carrier_matD[OF G])
 
 text \<open>The amplification of a Kraus map is a Kraus map, with operators $I_p\otimes W_i$:
 \[ \Phi^{(p)}(X)=\sum_i(I_p\otimes W_i)\,X\,(I_p\otimes W_i)^*, \]
@@ -515,475 +581,35 @@ lemma tensor_id_kraus_list_carrier:
            L \<in> carrier_mat (p*d) (p*n)"
   using Ws tensor_id_kraus_carrier by auto
 
-lemma tensor_id_kraus_index:
-  assumes W: "W \<in> carrier_mat d n"
-      and r: "r < p*d"
-      and c: "c < p*n"
-      and dpos: "0 < d"
-      and npos: "0 < n"
-  shows "(1\<^sub>m p \<Otimes> W) $$ (r,c) =
-         (if r div d = c div n then W $$ (r mod d, c mod n) else 0)"
+text \<open>Block by block, $(I\otimes W)(E_{ab}\otimes x_{ab})(I\otimes W)^*=E_{ab}\otimes Wx_{ab}W^*$, so the
+amplification of $X\mapsto WXW^*$ is conjugation by $I_p\otimes W$.\<close>
+
+lemma tensor_unit_sandwich:
+  assumes W: "W \<in> carrier_mat d n" and B: "B \<in> carrier_mat n n"
+  shows "(1\<^sub>m p \<Otimes> W) * (E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> B) * ((1\<^sub>m p \<Otimes> W)\<^sup>\<dagger>) = E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> (W * B * (W\<^sup>\<dagger>))"
 proof -
-  have rowW: "dim_row W = d" and colW: "dim_col W = n"
-    using W by auto
-  have rd: "r div d < p"
-    using r dpos by (simp add: less_mult_imp_div_less)
-  have cn: "c div n < p"
-    using c npos by (simp add: less_mult_imp_div_less)
-  have ppos: "0 < p"
-    using r dpos by (cases p) auto
-  have "(1\<^sub>m p \<Otimes> W) $$ (r,c) =
-        (1\<^sub>m p :: complex Matrix.mat) $$ (r div d, c div n) *
-        W $$ (r mod d, c mod n)"
-    using index_tensor_mat[OF _ _ rowW colW r c _ npos, of "1\<^sub>m p"]
-    using ppos by simp
-  also have "\<dots> =
-        (if r div d = c div n then W $$ (r mod d, c mod n) else 0)"
-    using rd cn by simp
-  finally show ?thesis .
+  have "(1\<^sub>m p \<Otimes> W)\<^sup>\<dagger> = 1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)" by (simp add: hermite_cnj_of_tensor)
+  thus ?thesis using carrier_matD[OF W] carrier_matD[OF B] carrier_matD[OF dagger_carrier[OF W]]
+    by (simp add: tensor_mat_mult)
 qed
 
-lemma sum_block_delta:
-  fixes f :: "nat \<Rightarrow> complex"
-  assumes a: "a < p"
-      and npos: "0 < n"
-  shows "(\<Sum>t < p*n. if a = t div n then f (t mod n) else 0) =
-         (\<Sum>r < n. f r)"
+lemma amplification_sandwich:
+  assumes W: "W \<in> carrier_mat d n" and x: "x \<in> carrier_mat (p*n) (p*n)" and n: "0 < n" and d: "0 < d"
+  shows "amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x = (1\<^sub>m p \<Otimes> W) * x * ((1\<^sub>m p \<Otimes> W)\<^sup>\<dagger>)"
 proof -
-  have bij: "bij_betw (\<lambda>(q, r). q * n + r) ({..<p} \<times> {..<n}) {..<p*n}"
-  proof (rule bij_betwI[where g = "\<lambda>t. (t div n, t mod n)"])
-    show "(\<lambda>(q, r). q * n + r) \<in> {..<p} \<times> {..<n} \<rightarrow> {..<p*n}"
-    proof
-      fix z assume "z \<in> {..<p} \<times> {..<n}"
-      then obtain q r where z: "z = (q, r)" and q: "q < p" and r: "r < n"
-        by blast
-      have "q * n + r < (q + 1) * n"
-        using r by simp
-      also have "\<dots> \<le> p * n"
-      proof -
-        have "q + 1 \<le> p"
-          using q by simp
-        thus "(q + 1) * n \<le> p * n"
-          by (rule mult_le_mono1)
-      qed
-      finally show "(case z of (q, r) \<Rightarrow> q * n + r) \<in> {..<p*n}"
-        using z by simp
-    qed
-  next
-    show "(\<lambda>t. (t div n, t mod n)) \<in> {..<p*n} \<rightarrow> {..<p} \<times> {..<n}"
-      using npos by (auto simp: less_mult_imp_div_less)
-  next
-    fix z assume "z \<in> {..<p} \<times> {..<n}"
-    then obtain q r where z: "z = (q, r)" and r: "r < n"
-      by blast
-    show "(\<lambda>t. (t div n, t mod n)) ((\<lambda>(q, r). q * n + r) z) = z"
-      using z r by simp
-  next
-    fix t assume "t \<in> {..<p*n}"
-    show "(\<lambda>(q, r). q * n + r) ((\<lambda>t. (t div n, t mod n)) t) = t"
-      by simp
-  qed
-
-  have "(\<Sum>t < p*n. if a = t div n then f (t mod n) else 0) =
-        (\<Sum>(q, r) \<in> {..<p} \<times> {..<n}. if a = q then f r else 0)"
-    using sum.reindex_bij_betw[OF bij, symmetric,
-        of "\<lambda>t. if a = t div n then f (t mod n) else 0"]
-  proof -
-    have "(\<Sum>t < p*n. if a = t div n then f (t mod n) else 0) =
-          (\<Sum>x \<in> {..<p} \<times> {..<n}.
-             if a = ((case x of (q, r) \<Rightarrow> q * n + r) div n)
-             then f (((case x of (q, r) \<Rightarrow> q * n + r) mod n)) else 0)"
-      using sum.reindex_bij_betw[OF bij, symmetric,
-          of "\<lambda>t. if a = t div n then f (t mod n) else 0"]
-      by (simp add: case_prod_beta)
-    also have "\<dots> = (\<Sum>(q, r) \<in> {..<p} \<times> {..<n}. if a = q then f r else 0)"
-    proof (intro sum.cong refl)
-      fix x assume x: "x \<in> {..<p} \<times> {..<n}"
-      then obtain q r where xr: "x = (q, r)" and r: "r < n"
-        by blast
-      show "(if a = ((case x of (q, r) \<Rightarrow> q * n + r) div n)
-             then f (((case x of (q, r) \<Rightarrow> q * n + r) mod n)) else 0) =
-            (case x of (q, r) \<Rightarrow> if a = q then f r else 0)"
-        using xr r npos by simp
-    qed
-    finally show ?thesis .
-  qed
-  also have "\<dots> = (\<Sum>q < p. \<Sum>r < n. if a = q then f r else 0)"
-    by (simp add: sum.cartesian_product)
-  also have "\<dots> = (\<Sum>q < p. if a = q then (\<Sum>r < n. f r) else 0)"
-    by (intro sum.cong refl) simp
-  also have "\<dots> = (\<Sum>r < n. f r)"
-    using a by simp
+  let ?P = "List.product [0..<p] [0..<p]" and ?I = "1\<^sub>m p \<Otimes> W"
+  have Ic: "?I \<in> carrier_mat (p*d) (p*n)" using W by simp
+  have Id: "?I\<^sup>\<dagger> \<in> carrier_mat (p*n) (p*d)" by (rule dagger_carrier[OF Ic])
+  have t: "\<And>a b. E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b \<in> carrier_mat (p*n) (p*n)" by simp
+  have "amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x
+      = msum (p*d) (p*d) (\<lambda>(a, b). ?I * (E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) * (?I\<^sup>\<dagger>)) ?P"
+    by (subst amplification_blocks[OF _ d])
+       (use W in \<open>auto simp: tensor_unit_sandwich[OF W block_of_mat_carrier] intro!: mult_carrier_mat dagger_carrier\<close>)
+  also have "\<dots> = ?I * msum (p*n) (p*n) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) ?P * (?I\<^sup>\<dagger>)"
+    by (simp only: msum_pairs_mult_left[OF t Ic] msum_pairs_mult_right[OF _ Id] mult_carrier_mat[OF Ic t])
+  also have "msum (p*n) (p*n) (\<lambda>(a, b). E\<lbrakk>a,b ; p,p\<rbrakk> \<Otimes> block_of_mat n x a b) ?P = x"
+    by (rule block_of_mat_decomposition[OF x n, symmetric])
   finally show ?thesis .
-qed
-
-lemma sum_block_delta_index:
-  fixes h :: "nat \<Rightarrow> complex"
-  assumes a: "a < p"
-      and npos: "0 < n"
-  shows "(\<Sum>t < p*n. if a = t div n then h t else 0) =
-         (\<Sum>r < n. h (a*n + r))"
-proof -
-  have eq: "\<And>t. t < p*n \<Longrightarrow>
-      (if a = t div n then h t else 0) =
-      (if a = t div n then h (a*n + t mod n) else 0)"
-  proof -
-    fix t assume t: "t < p*n"
-    show "(if a = t div n then h t else 0) =
-          (if a = t div n then h (a*n + t mod n) else 0)"
-    proof (cases "a = t div n")
-      case True
-      have "t = (t div n) * n + t mod n"
-        by simp
-      also have "\<dots> = a * n + t mod n"
-        using True by simp
-      finally show ?thesis
-        using True by simp
-    next
-      case False
-      thus ?thesis by simp
-    qed
-  qed
-  have "(\<Sum>t < p*n. if a = t div n then h t else 0) =
-        (\<Sum>t < p*n. if a = t div n then h (a*n + t mod n) else 0)"
-    by (intro sum.cong refl eq) simp
-  also have "\<dots> = (\<Sum>r < n. h (a*n + r))"
-    using sum_block_delta[OF a npos, of "\<lambda>r. h (a*n + r)"] .
-  finally show ?thesis .
-qed
-
-lemma tensor_id_kraus_left_mult_index:
-  assumes W: "W \<in> carrier_mat d n"
-      and x: "x \<in> carrier_mat (p*n) q"
-      and i: "i < p*d"
-      and s: "s < q"
-      and dpos: "0 < d"
-      and npos: "0 < n"
-  shows "((1\<^sub>m p \<Otimes> W) * x) $$ (i,s) =
-         (\<Sum>t < n. W $$ (i mod d, t) * x $$ ((i div d) * n + t, s))"
-proof -
-  have a: "i div d < p"
-    using i dpos by (simp add: less_mult_imp_div_less)
-  have L: "(1\<^sub>m p \<Otimes> W) \<in> carrier_mat (p*d) (p*n)"
-    using W by (rule tensor_id_kraus_carrier)
-  have iL: "i < dim_row (1\<^sub>m p \<Otimes> W)"
-    using W i by auto
-  have sx: "s < dim_col x"
-    using x s by auto
-  have "((1\<^sub>m p \<Otimes> W) * x) $$ (i,s) =
-        Matrix.row (1\<^sub>m p \<Otimes> W) i \<bullet> Matrix.col x s"
-    using index_mult_mat(1)[OF iL sx] .
-  also have "\<dots> =
-        (\<Sum>r = 0..<p*n. (1\<^sub>m p \<Otimes> W) $$ (i,r) * x $$ (r,s))"
-  proof -
-    have "Matrix.row (1\<^sub>m p \<Otimes> W) i \<bullet> Matrix.col x s =
-          (\<Sum>r = 0..<p*n.
-             Matrix.row (1\<^sub>m p \<Otimes> W) i $ r * Matrix.col x s $ r)"
-      unfolding scalar_prod_def using x by simp
-    also have "\<dots> =
-          (\<Sum>r = 0..<p*n. (1\<^sub>m p \<Otimes> W) $$ (i,r) * x $$ (r,s))"
-      using W x i s by (intro sum.cong refl) simp
-    finally show ?thesis .
-  qed
-  also have "\<dots> =
-        (\<Sum>r < p*n. (1\<^sub>m p \<Otimes> W) $$ (i,r) * x $$ (r,s))"
-    by (simp add: lessThan_atLeast0)
-  also have "\<dots> =
-        (\<Sum>r < p*n. if i div d = r div n
-             then W $$ (i mod d, r mod n) * x $$ (r,s) else 0)"
-    using W i dpos npos
-    by (intro sum.cong refl) (simp add: tensor_id_kraus_index)
-  also have "\<dots> =
-        (\<Sum>t < n. W $$ (i mod d, t) * x $$ ((i div d) * n + t, s))"
-    using sum_block_delta_index[OF a npos,
-        of "\<lambda>r. W $$ (i mod d, r mod n) * x $$ (r,s)"]
-    by simp
-  finally show ?thesis .
-qed
-
-lemma tensor_id_kraus_right_mult_index:
-  assumes W: "W \<in> carrier_mat d n"
-      and y: "y \<in> carrier_mat q (p*n)"
-      and i: "i < q"
-      and j: "j < p*d"
-      and dpos: "0 < d"
-      and npos: "0 < n"
-  shows "(y * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>))) $$ (i,j) =
-         (\<Sum>s < n. y $$ (i, (j div d) * n + s) * (W\<^sup>\<dagger>) $$ (s, j mod d))"
-proof -
-  have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W by (rule dagger_carrier)
-  have b: "j div d < p"
-    using j dpos by (simp add: less_mult_imp_div_less)
-  have R: "(1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) \<in> carrier_mat (p*n) (p*d)"
-    using Wdag by (rule tensor_id_kraus_carrier)
-  have iy: "i < dim_row y"
-    using y i by auto
-  have jR: "j < dim_col (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>))"
-    using W j by auto
-  have "(y * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>))) $$ (i,j) =
-        Matrix.row y i \<bullet> Matrix.col (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) j"
-    using index_mult_mat(1)[OF iy jR] .
-  also have "\<dots> =
-        (\<Sum>r = 0..<p*n. y $$ (i,r) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) $$ (r,j))"
-  proof -
-    have "Matrix.row y i \<bullet> Matrix.col (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) j =
-          (\<Sum>r = 0..<p*n.
-             Matrix.row y i $ r * Matrix.col (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) j $ r)"
-      unfolding scalar_prod_def using W y by simp
-    also have "\<dots> =
-          (\<Sum>r = 0..<p*n. y $$ (i,r) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) $$ (r,j))"
-      using W y i j by (intro sum.cong refl) simp
-    finally show ?thesis .
-  qed
-  also have "\<dots> =
-        (\<Sum>r < p*n. y $$ (i,r) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) $$ (r,j))"
-    by (simp add: lessThan_atLeast0)
-  also have "\<dots> =
-        (\<Sum>r < p*n. if j div d = r div n
-             then y $$ (i,r) * (W\<^sup>\<dagger>) $$ (r mod n, j mod d) else 0)"
-    using Wdag j dpos npos
-    by (intro sum.cong refl) (simp add: tensor_id_kraus_index mult.commute)
-  also have "\<dots> =
-        (\<Sum>s < n. y $$ (i, (j div d) * n + s) * (W\<^sup>\<dagger>) $$ (s, j mod d))"
-    using sum_block_delta_index[OF b npos,
-        of "\<lambda>r. y $$ (i,r) * (W\<^sup>\<dagger>) $$ (r mod n, j mod d)"]
-    by simp
-  finally show ?thesis .
-qed
-
-lemma kraus_term_index:
-  assumes W: "W \<in> carrier_mat d n"
-      and B: "B \<in> carrier_mat n n"
-      and i: "i < d"
-      and j: "j < d"
-  shows "(W * B * (W\<^sup>\<dagger>)) $$ (i,j) =
-         (\<Sum>s < n. (\<Sum>t < n. W $$ (i,t) * B $$ (t,s)) * (W\<^sup>\<dagger>) $$ (s,j))"
-proof -
-  have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W by (rule dagger_carrier)
-  have WB: "W * B \<in> carrier_mat d n"
-    using W B by (intro mult_carrier_mat) auto
-  have iWB: "i < dim_row (W * B)"
-    using WB i by auto
-  have jWdag: "j < dim_col (W\<^sup>\<dagger>)"
-    using Wdag j by auto
-  have "(W * B * (W\<^sup>\<dagger>)) $$ (i,j) =
-        Matrix.row (W * B) i \<bullet> Matrix.col (W\<^sup>\<dagger>) j"
-    using index_mult_mat(1)[OF iWB jWdag] .
-  also have "\<dots> = (\<Sum>s = 0..<n. (W * B) $$ (i,s) * (W\<^sup>\<dagger>) $$ (s,j))"
-  proof -
-    have "Matrix.row (W * B) i \<bullet> Matrix.col (W\<^sup>\<dagger>) j =
-          (\<Sum>s = 0..<n. Matrix.row (W * B) i $ s * Matrix.col (W\<^sup>\<dagger>) j $ s)"
-      unfolding scalar_prod_def using W WB by simp
-    also have "\<dots> = (\<Sum>s = 0..<n. (W * B) $$ (i,s) * (W\<^sup>\<dagger>) $$ (s,j))"
-    proof (intro sum.cong refl)
-      fix s assume s: "s \<in> {0..<n}"
-      hence sn: "s < n" by simp
-      have "Matrix.row (W * B) i $ s = (W * B) $$ (i,s)"
-        using B WB i sn by (simp add: Matrix.row_def)
-      moreover have "Matrix.col (W\<^sup>\<dagger>) j $ s = (W\<^sup>\<dagger>) $$ (s,j)"
-        using W Wdag j sn by (simp add: Matrix.col_def)
-      ultimately show "Matrix.row (W * B) i $ s * Matrix.col (W\<^sup>\<dagger>) j $ s =
-        (W * B) $$ (i,s) * (W\<^sup>\<dagger>) $$ (s,j)"
-        by simp
-    qed
-    finally show ?thesis .
-  qed
-  also have "\<dots> = (\<Sum>s < n. (W * B) $$ (i,s) * (W\<^sup>\<dagger>) $$ (s,j))"
-    by (simp add: lessThan_atLeast0)
-  also have "\<dots> =
-        (\<Sum>s < n. (\<Sum>t < n. W $$ (i,t) * B $$ (t,s)) * (W\<^sup>\<dagger>) $$ (s,j))"
-  proof (intro sum.cong refl)
-    fix s assume s: "s \<in> {..<n}"
-    hence sn: "s < n" by simp
-    have iW: "i < dim_row W"
-      using W i by auto
-    have sB: "s < dim_col B"
-      using B sn by auto
-    have "(W * B) $$ (i,s) = Matrix.row W i \<bullet> Matrix.col B s"
-      using index_mult_mat(1)[OF iW sB] .
-    also have "\<dots> = (\<Sum>t = 0..<n. W $$ (i,t) * B $$ (t,s))"
-    proof -
-      have "Matrix.row W i \<bullet> Matrix.col B s =
-            (\<Sum>t = 0..<n. Matrix.row W i $ t * Matrix.col B s $ t)"
-        unfolding scalar_prod_def using W B by simp
-      also have "\<dots> = (\<Sum>t = 0..<n. W $$ (i,t) * B $$ (t,s))"
-        using W B i sn by (intro sum.cong refl) simp
-      finally show ?thesis .
-    qed
-    also have "\<dots> = (\<Sum>t < n. W $$ (i,t) * B $$ (t,s))"
-      by (simp add: lessThan_atLeast0)
-    finally show "(W * B) $$ (i,s) * (W\<^sup>\<dagger>) $$ (s,j) =
-        (\<Sum>t<n. W $$ (i,t) * B $$ (t,s)) * (W\<^sup>\<dagger>) $$ (s,j)"
-      by simp
-  qed
-  finally show ?thesis .
-qed
-
-lemma kraus_amplification_single:
-  assumes W: "W \<in> carrier_mat d n"
-      and x: "x \<in> carrier_mat (p*n) (p*n)"
-      and dpos: "0 < d"
-      and npos: "0 < n"
-  shows "amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x =
-         ((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>))"
-proof (rule eq_matI)
-  have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W by (rule dagger_carrier)
-  have L: "(1\<^sub>m p \<Otimes> W) \<in> carrier_mat (p*d) (p*n)"
-    using W by (rule tensor_id_kraus_carrier)
-  have R: "(1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) \<in> carrier_mat (p*n) (p*d)"
-    using Wdag by (rule tensor_id_kraus_carrier)
-  have LX: "(1\<^sub>m p \<Otimes> W) * x \<in> carrier_mat (p*d) (p*n)"
-    using L x by (intro mult_carrier_mat) auto
-  have RHS_c: "((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) \<in> carrier_mat (p*d) (p*d)"
-    using mult_carrier_mat[OF LX R] by simp
-  show "dim_row (amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x) =
-        dim_row (((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)))"
-    using W RHS_c by (simp add: amplification_def)
-  show "dim_col (amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x) =
-        dim_col (((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)))"
-    using W RHS_c by (simp add: amplification_def)
-next
-  fix i j
-  assume ij: "i < dim_row (((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)))"
-             "j < dim_col (((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)))"
-  have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W by (rule dagger_carrier)
-  have L: "(1\<^sub>m p \<Otimes> W) \<in> carrier_mat (p*d) (p*n)"
-    using W by (rule tensor_id_kraus_carrier)
-  have R: "(1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) \<in> carrier_mat (p*n) (p*d)"
-    using Wdag by (rule tensor_id_kraus_carrier)
-  have LX: "(1\<^sub>m p \<Otimes> W) * x \<in> carrier_mat (p*d) (p*n)"
-    using L x by (intro mult_carrier_mat) auto
-  have RHS_c: "((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) \<in> carrier_mat (p*d) (p*d)"
-    using mult_carrier_mat[OF LX R] by simp
-  have i_pd: "i < p*d" and j_pd: "j < p*d"
-    using W ij RHS_c by auto
-  have imodd: "i mod d < d" and jmodd: "j mod d < d"
-    using dpos by simp_all
-  have idiv: "i div d < p" and jdiv: "j div d < p"
-    using i_pd j_pd dpos by (simp_all add: less_mult_imp_div_less)
-  have lhs:
-    "amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x $$ (i,j) =
-     (\<Sum>s < n. (\<Sum>t < n. W $$ (i mod d,t) *
-        x $$ ((i div d) * n + t, (j div d) * n + s)) *
-        (W\<^sup>\<dagger>) $$ (s, j mod d))"
-  proof -
-    have "amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x $$ (i,j) =
-          (W * block_of_mat n x (i div d) (j div d) * (W\<^sup>\<dagger>)) $$ (i mod d, j mod d)"
-      using i_pd j_pd by (simp add: amplification_def)
-    also have "\<dots> =
-       (\<Sum>s < n. (\<Sum>t < n. W $$ (i mod d,t) *
-          block_of_mat n x (i div d) (j div d) $$ (t,s)) *
-          (W\<^sup>\<dagger>) $$ (s, j mod d))"
-    proof -
-      have Bc: "block_of_mat n x (i div d) (j div d) \<in> carrier_mat n n"
-        by (simp add: block_of_mat_def)
-      show ?thesis
-        using kraus_term_index[OF W Bc imodd jmodd] .
-    qed
-    also have "\<dots> =
-       (\<Sum>s < n. (\<Sum>t < n. W $$ (i mod d,t) *
-          x $$ ((i div d) * n + t, (j div d) * n + s)) *
-          (W\<^sup>\<dagger>) $$ (s, j mod d))"
-      by (intro sum.cong refl arg_cong2[where f="(*)"] sum.cong) (simp_all add: block_of_mat_def)
-    finally show ?thesis .
-  qed
-  have rhs:
-    "(((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>))) $$ (i,j) =
-     (\<Sum>s < n. (\<Sum>t < n. W $$ (i mod d,t) *
-        x $$ ((i div d) * n + t, (j div d) * n + s)) *
-        (W\<^sup>\<dagger>) $$ (s, j mod d))"
-  proof -
-    have "(((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>))) $$ (i,j) =
-          (\<Sum>s < n. ((1\<^sub>m p \<Otimes> W) * x) $$ (i, (j div d) * n + s) *
-             (W\<^sup>\<dagger>) $$ (s, j mod d))"
-      by (rule tensor_id_kraus_right_mult_index[where W=W and d=d and n=n and p=p and q="p*d"])
-         (use W LX i_pd j_pd dpos npos in auto)
-    also have "\<dots> =
-       (\<Sum>s < n. (\<Sum>t < n. W $$ (i mod d,t) *
-          x $$ ((i div d) * n + t, (j div d) * n + s)) *
-          (W\<^sup>\<dagger>) $$ (s, j mod d))"
-    proof (intro sum.cong refl)
-      fix s assume s: "s \<in> {..<n}"
-      hence sn: "s < n" by simp
-      have col: "(j div d) * n + s < p*n"
-      proof -
-        have "(j div d) * n + s < (j div d + 1) * n"
-          using sn by simp
-        also have "\<dots> \<le> p * n"
-        proof -
-          have "j div d + 1 \<le> p"
-            using jdiv by simp
-          thus "(j div d + 1) * n \<le> p * n"
-            by (rule mult_le_mono1)
-        qed
-        finally show ?thesis .
-      qed
-      show "((1\<^sub>m p \<Otimes> W) * x) $$ (i, (j div d) * n + s) *
-             (W\<^sup>\<dagger>) $$ (s, j mod d) =
-            (\<Sum>t<n. W $$ (i mod d, t) *
-                x $$ (i div d * n + t, j div d * n + s)) *
-             (W\<^sup>\<dagger>) $$ (s, j mod d)"
-        using tensor_id_kraus_left_mult_index[OF W x i_pd col dpos npos]
-        by simp
-    qed
-    finally show ?thesis .
-  qed
-  show "amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x $$ (i,j) =
-        (((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>))) $$ (i,j)"
-    using lhs rhs by simp
-qed
-
-lemma amplification_zero_map:
-  assumes dpos: "0 < d"
-  shows "amplification n d p (\<lambda>\<rho>. 0\<^sub>m d d) x = 0\<^sub>m (p*d) (p*d)"
-proof (rule eq_matI)
-  show "dim_row (amplification n d p (\<lambda>\<rho>. 0\<^sub>m d d) x) = dim_row (0\<^sub>m (p*d) (p*d))"
-    by (simp add: amplification_def)
-  show "dim_col (amplification n d p (\<lambda>\<rho>. 0\<^sub>m d d) x) = dim_col (0\<^sub>m (p*d) (p*d))"
-    by (simp add: amplification_def)
-next
-  fix i j
-  assume i: "i < dim_row (0\<^sub>m (p*d) (p*d))"
-     and j: "j < dim_col (0\<^sub>m (p*d) (p*d))"
-  show "amplification n d p (\<lambda>\<rho>. 0\<^sub>m d d) x $$ (i,j) =
-        (0\<^sub>m (p*d) (p*d)) $$ (i,j)"
-    using i j dpos by (simp add: amplification_def)
-qed
-
-lemma amplification_add:
-  assumes dpos: "0 < d"
-      and F: "\<And>a b. F (block_of_mat n x a b) \<in> carrier_mat d d"
-      and G: "\<And>a b. G (block_of_mat n x a b) \<in> carrier_mat d d"
-  shows "amplification n d p (\<lambda>\<rho>. F \<rho> + G \<rho>) x =
-         amplification n d p F x + amplification n d p G x"
-proof (rule eq_matI)
-  show "dim_row (amplification n d p (\<lambda>\<rho>. F \<rho> + G \<rho>) x) =
-        dim_row (amplification n d p F x + amplification n d p G x)"
-    by (simp add: amplification_def)
-  show "dim_col (amplification n d p (\<lambda>\<rho>. F \<rho> + G \<rho>) x) =
-        dim_col (amplification n d p F x + amplification n d p G x)"
-    by (simp add: amplification_def)
-next
-  fix i j
-  assume i: "i < dim_row (amplification n d p F x + amplification n d p G x)"
-     and j: "j < dim_col (amplification n d p F x + amplification n d p G x)"
-  have ipd: "i < p*d" and jpd: "j < p*d"
-    using i j by (simp_all add: amplification_def)
-  have imodd: "i mod d < d" and jmodd: "j mod d < d"
-    using dpos by simp_all
-  let ?B = "block_of_mat n x (i div d) (j div d)"
-  have FB: "F ?B \<in> carrier_mat d d"
-    by (rule F)
-  have GB: "G ?B \<in> carrier_mat d d"
-    by (rule G)
-  show "amplification n d p (\<lambda>\<rho>. F \<rho> + G \<rho>) x $$ (i,j) =
-        (amplification n d p F x + amplification n d p G x) $$ (i,j)"
-    using ipd jpd imodd jmodd FB GB
-    by (simp add: amplification_def)
 qed
 
 lemma amplification_kraus_map_dim:
@@ -996,50 +622,20 @@ lemma amplification_kraus_map_dim:
   using Ws
 proof (induction Ws)
   case Nil
-  show ?case
-    by (simp add: amplification_zero_map[OF dpos])
+  have "kraus_map_dim d [] = (\<lambda>\<rho>. 0\<^sub>m d d)" by (rule ext) simp
+  thus ?case by (simp add: amplification_zero_map[OF dpos])
 next
   case (Cons W Ws)
-  hence Wc: "W \<in> carrier_mat d n"
-    and Wsc: "\<forall>W\<in>set Ws. W \<in> carrier_mat d n"
-    by auto
-  have term_c: "\<And>a b. W * block_of_mat n x a b * (W\<^sup>\<dagger>) \<in> carrier_mat d d"
-  proof -
-    fix a b
-    have Wdag: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-      using Wc by (rule dagger_carrier)
-    have Bc: "block_of_mat n x a b \<in> carrier_mat n n"
-      by (simp add: block_of_mat_def)
-    have WB: "W * block_of_mat n x a b \<in> carrier_mat d n"
-      using mult_carrier_mat[OF Wc Bc] by simp
-    show "W * block_of_mat n x a b * (W\<^sup>\<dagger>) \<in> carrier_mat d d"
-      using mult_carrier_mat[OF WB Wdag] by simp
-  qed
-  have rest_c: "\<And>a b. kraus_map_dim d Ws (block_of_mat n x a b) \<in> carrier_mat d d"
-  proof -
-    fix a b
-    have Bc: "block_of_mat n x a b \<in> carrier_mat n n"
-      by (simp add: block_of_mat_def)
-    show "kraus_map_dim d Ws (block_of_mat n x a b) \<in> carrier_mat d d"
-      using kraus_map_dim_carrier[OF Wsc Bc] .
-  qed
-  have cons_fun:
-    "kraus_map_dim d (W # Ws) = (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)"
-    by (rule ext) simp
-  have "amplification n d p (kraus_map_dim d (W # Ws)) x =
-        amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x +
-        amplification n d p (kraus_map_dim d Ws) x"
-    using amplification_add[
-        where F="\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)" and G="kraus_map_dim d Ws"
-          and n=n and d=d and p=p and x=x,
-        OF dpos term_c rest_c]
-    by (simp add: cons_fun)
-  also have "\<dots> =
-        ((1\<^sub>m p \<Otimes> W) * x) * (1\<^sub>m p \<Otimes> (W\<^sup>\<dagger>)) +
-        kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) x"
-    using kraus_amplification_single[OF Wc x dpos npos] Cons.IH[OF Wsc] by simp
-  also have "\<dots> = kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) (W # Ws)) x"
-    using Wc by (simp add: hermite_cnj_of_tensor)
+  have W: "W \<in> carrier_mat d n" and Ws: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n" using Cons.prems by auto
+  have "kraus_map_dim d (W # Ws) = (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)" by (rule ext) simp
+  hence "amplification n d p (kraus_map_dim d (W # Ws)) x
+       = amplification n d p (\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)) x + amplification n d p (kraus_map_dim d Ws) x"
+    using amplification_add[OF dpos, of "\<lambda>\<rho>. W * \<rho> * (W\<^sup>\<dagger>)" n x "kraus_map_dim d Ws" p]
+          mult_carrier_mat[OF mult_carrier_mat[OF W block_of_mat_carrier] dagger_carrier[OF W]]
+          kraus_map_dim_carrier[OF Ws block_of_mat_carrier] by simp
+  also have "\<dots> = (1\<^sub>m p \<Otimes> W) * x * ((1\<^sub>m p \<Otimes> W)\<^sup>\<dagger>) + kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) Ws) x"
+    by (simp only: amplification_sandwich[OF W x npos dpos] Cons.IH[OF Ws])
+  also have "\<dots> = kraus_map_dim (p*d) (map (\<lambda>W. 1\<^sub>m p \<Otimes> W) (W # Ws)) x" by simp
   finally show ?case .
 qed
 
