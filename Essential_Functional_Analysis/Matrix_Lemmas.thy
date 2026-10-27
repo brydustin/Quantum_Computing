@@ -178,6 +178,35 @@ proof -
   thus thesis using that by blast
 qed
 
+text \<open>An independent frame cancels: if $M^*M$ is invertible, $MAM^*=0$ forces $A=0$.\<close>
+
+lemma frame_cancel:
+  fixes M A B :: "complex Matrix.mat"
+  assumes M: "M \<in> carrier_mat m k" and A: "A \<in> carrier_mat k k" and B: "B \<in> carrier_mat k k"
+      and BG: "B * (M\<^sup>\<dagger> * M) = 1\<^sub>m k" and GB: "(M\<^sup>\<dagger> * M) * B = 1\<^sub>m k"
+      and z: "M * A * (M\<^sup>\<dagger>) = 0\<^sub>m m m"
+  shows "A = 0\<^sub>m k k"
+proof -
+  have Md: "M\<^sup>\<dagger> \<in> carrier_mat k m" by (rule dagger_carrier[OF M])
+  have G: "M\<^sup>\<dagger> * M \<in> carrier_mat k k" using Md M by simp
+  have MA: "M * A \<in> carrier_mat m k" using M A by simp
+  have GA: "(M\<^sup>\<dagger> * M) * A \<in> carrier_mat k k" using G A by simp
+  have "(M\<^sup>\<dagger> * M) * A * (M\<^sup>\<dagger> * M) = M\<^sup>\<dagger> * (M * A * (M\<^sup>\<dagger>)) * M"
+    by (simp only: assoc_mult_mat[OF Md MA Md, symmetric] assoc_mult_mat[OF Md M A, symmetric]
+                   assoc_mult_mat[OF GA Md M])
+  also have "\<dots> = 0\<^sub>m k k" using z Md M by simp
+  finally have GAG: "(M\<^sup>\<dagger> * M) * A * (M\<^sup>\<dagger> * M) = 0\<^sub>m k k" .
+  have "A * (M\<^sup>\<dagger> * M) = B * (M\<^sup>\<dagger> * M) * A * (M\<^sup>\<dagger> * M)" using BG A by simp
+  also have "\<dots> = B * ((M\<^sup>\<dagger> * M) * A * (M\<^sup>\<dagger> * M))"
+    by (simp only: assoc_mult_mat[OF B G A] assoc_mult_mat[OF B GA G])
+  also have "\<dots> = 0\<^sub>m k k" using GAG B by simp
+  finally have AG: "A * (M\<^sup>\<dagger> * M) = 0\<^sub>m k k" .
+  have "A = A * ((M\<^sup>\<dagger> * M) * B)" using GB A by simp
+  also have "\<dots> = A * (M\<^sup>\<dagger> * M) * B" by (simp only: assoc_mult_mat[OF A G B])
+  also have "\<dots> = 0\<^sub>m k k" using AG B by simp
+  finally show ?thesis .
+qed
+
 lemma foldr_add_mat_carrier:
   fixes f :: "'a \<Rightarrow> complex Matrix.mat"
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat n n"
@@ -500,6 +529,16 @@ lemma msum_index:
   shows "msum r c g xs $$ (i,j) = (\<Sum>x\<leftarrow>xs. g x $$ (i,j))"
   unfolding msum_def by (rule foldr_add_mat_index_rect[OF assms])
 
+text \<open>Every \<open>msum\<close> has its stated dimensions; multiplying a sum on the right.\<close>
+
+lemma msum_dims [simp]: "dim_row (msum r c g xs) = r" "dim_col (msum r c g xs) = c"
+  by (induction xs) simp_all
+
+lemma msum_mult_right:
+  assumes "\<forall>x \<in> set xs. g x \<in> carrier_mat r c" and "B \<in> carrier_mat c p"
+  shows "msum r c g xs * B = msum r p (\<lambda>x. g x * B) xs"
+  unfolding msum_def by (rule foldr_add_mat_mult_right[OF assms(2,1)])
+
 section \<open>Finite sums and index arithmetic\<close>
 
 lemma sum_list_product_upt:
@@ -580,6 +619,41 @@ proof -
   thus ?thesis by (simp add: atLeast0LessThan)
 qed
 
+text \<open>Sums over pairs of indices $(i,j)$ with $i,j<k$.\<close>
+
+lemma msum_pairs_carrier:
+  assumes "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> g i j \<in> carrier_mat r c"
+  shows "msum r c (\<lambda>(i, j). g i j) (List.product [0..<k] [0..<k]) \<in> carrier_mat r c"
+  by (rule msum_carrier) (use assms in auto)
+
+lemma msum_pairs_index:
+  assumes g: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> g i j \<in> carrier_mat r c" and a: "a < r" and b: "b < c"
+  shows "msum r c (\<lambda>(i, j). g i j) (List.product [0..<k] [0..<k]) $$ (a, b)
+       = (\<Sum>i<k. \<Sum>j<k. g i j $$ (a, b))"
+proof -
+  have "\<forall>x \<in> set (List.product [0..<k] [0..<k]). (case x of (i, j) \<Rightarrow> g i j) \<in> carrier_mat r c"
+    using g by auto
+  from msum_index[OF this a b] show ?thesis by (simp add: sum_list_product_upt)
+qed
+
+lemma msum_pairs_mult_right:
+  assumes g: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> g i j \<in> carrier_mat r c" and B: "B \<in> carrier_mat c p"
+  shows "msum r c (\<lambda>(i, j). g i j) (List.product [0..<k] [0..<k]) * B
+       = msum r p (\<lambda>(i, j). g i j * B) (List.product [0..<k] [0..<k])"
+proof -
+  have "msum r c (\<lambda>(i, j). g i j) (List.product [0..<k] [0..<k]) * B
+      = msum r p (\<lambda>x. (case x of (i, j) \<Rightarrow> g i j) * B) (List.product [0..<k] [0..<k])"
+    by (rule msum_mult_right[OF _ B]) (use g in auto)
+  also have "(\<lambda>x. (case x of (i, j) \<Rightarrow> g i j) * B) = (\<lambda>(i, j). g i j * B)"
+    by (rule ext) (simp split: prod.split)
+  finally show ?thesis .
+qed
+
+lemma msum_upt_index:
+  assumes "\<And>x. x < m \<Longrightarrow> g x \<in> carrier_mat r c" and "a < r" and "b < c"
+  shows "msum r c g [0..<m] $$ (a, b) = (\<Sum>x<m. g x $$ (a, b))"
+  using assms by (simp add: msum_index interv_sum_list_conv_sum_set_nat atLeast0LessThan)
+
 lemma idx8: "k < (8::nat) \<Longrightarrow> k = 0 \<or> k = 1 \<or> k = 2 \<or> k = 3 \<or> k = 4 \<or> k = 5 \<or> k = 6 \<or> k = 7"
   by auto
 
@@ -619,6 +693,12 @@ next
     using L gx msum_closed[OF S0 S rest] unfolding lin_on_def by blast
   thus ?case using Cons.IH[OF rest] by simp
 qed
+
+lemma lin_on_smult:
+  assumes "lin_on n d S F"
+  shows "lin_on n d S (\<lambda>X. a \<cdot>\<^sub>m F X)"
+  using assms unfolding lin_on_def
+  by (auto simp: add_smult_distrib_left_mat[of _ d d] smult_smult_mat mult.commute)
 
 section \<open>Linear-space isomorphisms\<close>
 

@@ -245,8 +245,8 @@ Theory abbreviations: Ln = the theory of lecture n (`Day01_Inner_Product`, `Day0
 | id | notes | formal | status |
 |---|---|---|---|
 | D23-1 | Choi 3: Φ UCP with minimal Kraus rep (V_i) is extreme iff {V_i*V_j} linearly independent | L23 `choi_theorem_3_ucp`: for Φ ∈ UCP with Φ(X) = Σ W_i X W_i* (W_i = V_i* in the notes' notation) and the W_i linearly independent, `extreme_UCP` ⟺ linear independence of the products W_j W_i* (= V_j* V_i); from L23 `choi_theorem_3_cptp_iff` (the CPTP form) through the duality of D22-5 (`extreme_UCP_iff_adjoint`: Γ maps midpoint decompositions both ways; L21 `lin_indep_complex_mat_dagger`, L23 `kraus_operators_dagger_of_unital`).  "Minimal" is replaced by linear independence, which minimal representations have (L22 `minimal_kraus_rep_lin_indep`); extremality compares maps on M_n (functions on `complex Matrix.mat` are only constrained on `carrier_mat n n`) | ✓ |
-| D23-2 | forward direction via perturbation ψ_± | L23 `extreme_CPTP_imp_products_indep`, by contraposition (perturbation `kraus_quad_map`, `small_eps_psd`, `herm_witness_of_complex`) | ✓ |
-| D23-3 | reverse direction via Choi 2 | L23 `products_indep_imp_extreme_CPTP` via CP Radon–Nikodym (`cp_radon_nikodym_linear`, `dominated_outer_sum_param`) instead of Choi 2 | ~ |
+| D23-2 | forward direction via perturbation ψ_± | L23 `extreme_CPTP_imp_products_indep`, by contraposition (perturbation `kraus_quad_map`, `small_eps_psd`, `kraus_pair_sum_hermitian_witness`) | ✓ |
+| D23-3 | reverse direction via Choi 2 | L23 `products_indep_imp_extreme_CPTP` via CP Radon–Nikodym (`cp_radon_nikodym`, `dominated_outer_sum_param`) instead of Choi 2 | ~ |
 | D23-4 | Examples: U*XU extreme; ½(U₁*XU₁+U₂*XU₂) not; Tr(X)I not; diag not | EE `unitary_conjugation_extreme`, `avg2_not_extreme` (needs U₁, U₂ linearly independent; `avg2_proportional_extreme` otherwise), `tr_map_not_extreme` (the map is X ↦ Tr(X)I_d/d), `diag_not_extreme` | ~ |
 
 ## Part IV: Operator systems, Arveson, entanglement (Days 24–28)
@@ -430,7 +430,7 @@ in a variant (stated), ✗ not yet, – out of scope (reason given).
 * The parent session `Essential_Functional_Analysis` (no lecture material): `Matrix_Lemmas` (sums, adjoints, entrywise vector sums, entries of sums over [0..<N], `msum`, `lin_on`, `lin_on_msum_closed`, linear-space isomorphisms `is_isomorphism_between`); UTA: tensor-product algebra (`tensor_mat_mult`, `tensor_mat_unitary`), unitary algebra; MT, LE: typed-dimension matrices `lmat` with the Hilbert–Schmidt norm (a normed space for `HOL-Hahn_Banach`) and the HOL-Analysis `euclidean_space`/`heine_borel` tower, so that the HOL-Analysis separation and compactness theorems apply.
 * UC: closedness of the positive matrices and compactness of those of trace one, in the typed space.
 * L28: compactness of the product-density slice, closedness of the separable cone.
-* L23: CP Radon–Nikodym via the Moore–Penrose pseudoinverse (`dominated_outer_sum_param`, `cp_radon_nikodym_linear`).
+* L23: CP Radon–Nikodym via the Moore–Penrose pseudoinverse (`dominated_outer_sum_param`, `cp_radon_nikodym`).
 
 ## Fidelity remarks (variants that are mathematically equivalent or stronger)
 1. `psd`/`pd` carry `hermitian` explicitly (D4-3).  A lemma `psd_iff_quad_form_nonneg` making the notes' form explicit is cheap and worth adding.
@@ -455,7 +455,7 @@ A6 D13-4 phase invariance of `pure_density`; D13-2 ensemble probability = Re Tr(
 A7 D12-3 rank-one measurement probability \|⟨γ\|ψ⟩\|².
 A8 D8-5 expected value: Σ λ_m p_m(ψ) = ⟨ψ\|Hψ⟩, H Hermitian.
 A9 D16-4/D14-5 `psd_tensor`, `density_matrix_tensor`.
-A10 D23-1 complex-coefficient witness (`herm_witness_of_complex`, `mat_lin_indep_complex_neg_witness`) giving `choi_theorem_3_cptp_iff`: extreme ⟷ complex-linear independence. DONE.
+A10 D23-1 complex-coefficient witness (`kraus_pair_sum_hermitian_witness`, `kraus_pair_sum_dependence`) giving `choi_theorem_3_cptp_iff`: extreme ⟷ complex-linear independence. DONE.
 A11 D2-11 Hermitian idempotent is the orthogonal projection onto its range (Pv = v for v = Px; Pw = 0 for w ⊥ range).
 A12 D32-1 rename `shor_zero/one` → `phase_code_zero/one`. DONE.
 

@@ -7,7 +7,7 @@
 | `check/` | check sessions; `project_checks.ML` audits oracles and finds duplicate facts, duplicate definitions and name clashes; reports in `check/output/` |
 | `watch_build.sh SESSION [LIMIT]` | verbose build that stops a command running longer than LIMIT s and names it |
 | `eval.sh FILE [LINE] [LOGIC]` | per-command check and timing of a scratch theory (`isabelle eval_at`) |
-| `chk.sh [SESSION]` | build a scratch session in `wip/` |
+| `chk.sh [SESSION]` | build a scratch session in `wip/` (`WIP=dir` for another scratch directory) |
 | `paper_listings.py` | the paper's Isabelle listings against the sources |
 | `paper_links.py [REV]` | repoint the paper's source links to a commit (commit the theories first) |
 | `counts.py` | lines and results per level, as in the paper |

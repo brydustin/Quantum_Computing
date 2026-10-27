@@ -1035,3 +1035,23 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   * Scripted as `tools/deps/plans/day23.py` (regenerates from HEAD), with the dependency tools now kept in
     `tools/deps/`.  Statement check: all facts unchanged except the restated direction theorem (no `¬`)
     and the two removed duplicates; HHL unchanged.  check_all as before.
+- **Day 23 rewritten around Choi matrices** (2026-10-27, user: "beautify it. SLAY").
+  `Day23_Choi_Extreme_Points` went from 4758 to about 1440 lines; the proofs that were entrywise index
+  computations on nested `foldr` sums now go through Choi matrices.
+  * ψ_T(X) = Σ T_ij V_i X V_j* and the pair sum P_T = Σ T_ij V_j*V_i are sums over index pairs (`msum`).
+    Their Choi matrix is V T V* (V: vectorised Kraus operators), so complete positivity for T ≥ 0 is
+    Choi's theorem (was 818 + 45 lines of rank-one decompositions), and "ψ_T = 0 only for T = 0" for
+    independent V_i is the Gram inverse of V (was 590 lines).  The trace formula Tr ψ_T(ρ) = Tr(P_T ρ)
+    is cyclicity (was 281 lines); I + εH ≥ 0 comes from the spectral theorem (was 290 lines).
+  * Extreme points have one definition, `extreme_point n d S Φ` (S = CPTP or UCP), with
+    `extreme_CPTP`, `extreme_UCP` as abbreviations; a midpoint pair needs only one of the two maps to
+    differ from Φ (the other then does too).  The UCP–CPTP duality is one transfer lemma.
+  * (⇐) applies the CP Radon–Nikodym theorem (now stated with Choi matrices, `cp_radon_nikodym`) to
+    ½Φ₁; the 488-line proof is 80 lines.
+  * General helpers went to their homes: sums over index pairs and `frame_cancel` to `Matrix_Lemmas`,
+    `sandwich_mat_unit_entry` to Day 2, `unitary_conj_mult` to Day 3, Choi-matrix linearity and
+    `Tr_msum_pairs` to Day 19.  `pair_index_lt` stays in Day 23: in the prerequisites it duplicated
+    HHL's `reg_lt` (strict Algorithms check).
+  * Statement check: every headline result keeps its name and statement, except that `extreme_CPTP`/
+    `extreme_UCP` now unfold to `extreme_point`; HHL unchanged.  Developed in a scratch session
+    (`wip/d23`, `WIP=wip/d23 tools/chk.sh VP_D23`) at 5–7 s per check against the notes heap.

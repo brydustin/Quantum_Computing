@@ -291,6 +291,11 @@ proof (intro conjI allI impI)
   thus "c k = 0" using c0 by simp
 qed
 
+lemma lin_indep_complex_mat_msum:
+  "lin_indep_complex_mat d n Ws \<longleftrightarrow> (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
+     (\<forall>c. msum d n (\<lambda>k. c k \<cdot>\<^sub>m (Ws ! k)) [0..<length Ws] = 0\<^sub>m d n \<longrightarrow> (\<forall>k < length Ws. c k = 0))"
+  by (simp add: lin_indep_complex_mat_def msum_def)
+
 definition outer_prods :: "complex Matrix.vec list \<Rightarrow> complex Matrix.mat list" where
   "outer_prods vs = map (\<lambda>k. vs ! (k div length vs) \<oslash> vs ! (k mod length vs)) [0..<length vs * length vs]"
 

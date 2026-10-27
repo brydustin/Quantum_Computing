@@ -1257,6 +1257,9 @@ next
     using WdW_c Cons by (simp add: sum_wdag_w_Cons)
 qed
 
+lemma sum_wdag_w_dims [simp]: "dim_row (sum_wdag_w n Ws) = n" "dim_col (sum_wdag_w n Ws) = n"
+  by (induction Ws) (simp_all add: sum_wdag_w_def)
+
 lemma kraus_operators_altdef:
   "kraus_operators n d Ws \<longleftrightarrow>
      (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and> sum_wdag_w n Ws = 1\<^sub>m n"

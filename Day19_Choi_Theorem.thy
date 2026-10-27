@@ -1846,6 +1846,35 @@ next
                   = (choi_matrix n d Phi - choi_matrix n d Psi) $$ (r, c)" .
 qed
 
+text \<open>The Choi matrix is linear in the map.\<close>
+
+lemma choi_matrix_smult:
+  assumes F: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> F X \<in> carrier_mat d d" and d: "0 < d"
+  shows "choi_matrix n d (\<lambda>X. a \<cdot>\<^sub>m F X) = a \<cdot>\<^sub>m choi_matrix n d F"
+proof (rule eq_matI)
+  fix r c assume "r < dim_row (a \<cdot>\<^sub>m choi_matrix n d F)" "c < dim_col (a \<cdot>\<^sub>m choi_matrix n d F)"
+  hence r: "r < n*d" and c: "c < n*d" by (simp_all add: choi_matrix_def)
+  have E: "mat_unit (r div d) (c div d) n n \<in> carrier_mat n n" by simp
+  have "r mod d < d" "c mod d < d" using d by simp_all
+  thus "choi_matrix n d (\<lambda>X. a \<cdot>\<^sub>m F X) $$ (r, c) = (a \<cdot>\<^sub>m choi_matrix n d F) $$ (r, c)"
+    using r c F[OF E] by (simp add: choi_matrix_def)
+qed (simp_all add: choi_matrix_def)
+
+lemma choi_matrix_lincomb:
+  assumes F: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> F X \<in> carrier_mat d d"
+      and G: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> G X \<in> carrier_mat d d" and d: "0 < d"
+  shows "choi_matrix n d (\<lambda>X. a \<cdot>\<^sub>m F X + b \<cdot>\<^sub>m G X) = a \<cdot>\<^sub>m choi_matrix n d F + b \<cdot>\<^sub>m choi_matrix n d G"
+proof (rule eq_matI)
+  fix r c assume "r < dim_row (a \<cdot>\<^sub>m choi_matrix n d F + b \<cdot>\<^sub>m choi_matrix n d G)"
+    "c < dim_col (a \<cdot>\<^sub>m choi_matrix n d F + b \<cdot>\<^sub>m choi_matrix n d G)"
+  hence r: "r < n*d" and c: "c < n*d" by (simp_all add: choi_matrix_def)
+  have E: "mat_unit (r div d) (c div d) n n \<in> carrier_mat n n" by simp
+  have "r mod d < d" "c mod d < d" using d by simp_all
+  thus "choi_matrix n d (\<lambda>X. a \<cdot>\<^sub>m F X + b \<cdot>\<^sub>m G X) $$ (r, c)
+      = (a \<cdot>\<^sub>m choi_matrix n d F + b \<cdot>\<^sub>m choi_matrix n d G) $$ (r, c)"
+    using r c F[OF E] G[OF E] by (simp add: choi_matrix_def)
+qed (simp_all add: choi_matrix_def)
+
 text \<open>The Choi matrix agrees on maps that agree on the carrier.\<close>
 
 lemma choi_matrix_cong:
@@ -2122,6 +2151,15 @@ next
   have "Tr (g x + msum d d g xs) = Tr (g x) + Tr (msum d d g xs)"
     by (rule Tr_add) (use gx msum_carrier[OF rest] in auto)
   thus ?case using Cons.IH[OF rest] by simp
+qed
+
+lemma Tr_msum_pairs:
+  assumes "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> g i j \<in> carrier_mat r r"
+  shows "Tr (msum r r (\<lambda>(i, j). g i j) (List.product [0..<k] [0..<k])) = (\<Sum>i<k. \<Sum>j<k. Tr (g i j))"
+proof -
+  have "\<forall>x \<in> set (List.product [0..<k] [0..<k]). (case x of (i, j) \<Rightarrow> g i j) \<in> carrier_mat r r"
+    using assms by auto
+  from Tr_msum[OF this] show ?thesis by (simp add: sum_list_product_upt)
 qed
 
 text \<open>In matrix units $A=\sum_{i,j}a_{ij}E_{ij}$ and $I=\sum_iE_{ii}$, so a linear $\Phi$ satisfies

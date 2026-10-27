@@ -447,6 +447,22 @@ proof -
   finally show ?thesis using i by simp
 qed
 
+lemma sandwich_mat_unit_entry:
+  assumes V: "V \<in> carrier_mat d n" and W: "W \<in> carrier_mat d n"
+      and a: "a < n" and b: "b < n" and i: "i < d" and j: "j < d"
+  shows "(V * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j) = V $$ (i, a) * cnj (W $$ (j, b))"
+proof -
+  have VE: "(V * mat_unit a b n n) $$ (i, s) = (if s = b then V $$ (i, a) else 0)" if "s < n" for s
+    using unit_mult_right_entry[OF V i that a] by simp
+  have "(V * mat_unit a b n n * (W\<^sup>\<dagger>)) $$ (i, j)
+      = (\<Sum>s<n. (V * mat_unit a b n n) $$ (i, s) * (W\<^sup>\<dagger>) $$ (s, j))"
+    using V W i j by (intro mat_mult_entry) (auto simp: mat_unit_def)
+  also have "\<dots> = (\<Sum>s<n. if s = b then V $$ (i, a) * cnj (W $$ (j, b)) else 0)"
+    using W j by (intro sum.cong refl) (auto simp: VE dagger_def)
+  also have "\<dots> = V $$ (i, a) * cnj (W $$ (j, b))" using b by simp
+  finally show ?thesis .
+qed
+
 text \<open>Writing $A=\sum_{i,j}a_{ij}E_{ij}$ and $B=\sum_{k,l}b_{kl}E_{kl}$, the product rule for matrix
 units gives $\Tr(AB)=\sum_{i,j}a_{ij}b_{ji}$, which is symmetric in $A$ and $B$:\<close>
 

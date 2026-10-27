@@ -92,6 +92,27 @@ lemma unitary_preserves_inner_prod:
   by (metis carrier_mat_triv col_fst_is_col col_mult2 dim_col dim_col_mat(1) 
       ket_vec_col ket_vec_def less_numeral_extra(1) u v) 
 
+text \<open>Conjugation by a unitary is multiplicative.\<close>
+
+lemma unitary_conj_mult:
+  fixes U X Y :: "complex Matrix.mat"
+  assumes U: "U \<in> carrier_mat k k" and Uu: "unitary U" and X: "X \<in> carrier_mat k k" and Y: "Y \<in> carrier_mat k k"
+  shows "(U * X * (U\<^sup>\<dagger>)) * (U * Y * (U\<^sup>\<dagger>)) = U * (X * Y) * (U\<^sup>\<dagger>)"
+proof -
+  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat k k" by (rule dagger_carrier[OF U])
+  have UdU: "U\<^sup>\<dagger> * U = 1\<^sub>m k" using Uu U by (simp add: unitary_def)
+  have UX: "U * X \<in> carrier_mat k k" and UY: "U * Y \<in> carrier_mat k k" using U X Y by simp_all
+  have UXU: "U * X * (U\<^sup>\<dagger>) \<in> carrier_mat k k" using UX Ud by simp
+  have "(U * X * (U\<^sup>\<dagger>)) * (U * Y * (U\<^sup>\<dagger>)) = ((U * X * (U\<^sup>\<dagger>)) * (U * Y)) * (U\<^sup>\<dagger>)"
+    by (rule assoc_mult_mat[OF UXU UY Ud, symmetric])
+  also have "\<dots> = (U * X * ((U\<^sup>\<dagger>) * (U * Y))) * (U\<^sup>\<dagger>)"
+    by (simp only: assoc_mult_mat[OF UX Ud UY])
+  also have "\<dots> = (U * X * Y) * (U\<^sup>\<dagger>)"
+    by (simp only: assoc_mult_mat[OF Ud U Y, symmetric] UdU left_mult_one_mat[OF Y])
+  also have "\<dots> = U * (X * Y) * (U\<^sup>\<dagger>)" by (simp only: assoc_mult_mat[OF U X Y])
+  finally show ?thesis .
+qed
+
 subsection \<open>Householder unitaries\<close>
 
 text \<open>\begin{notesdef}
