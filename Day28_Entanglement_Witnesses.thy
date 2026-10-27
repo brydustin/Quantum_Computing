@@ -1,30 +1,28 @@
-(*  Title:   Day26_Separable_Cone.thy
-    Author:  Dustin Bryant.  Days 26-28 of Paulsen's lectures: the separable cone is closed,
-             separating hyperplanes, entanglement witnesses, the Horodecki characterisation.
+(*  Title:   Day28_Entanglement_Witnesses.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 2 November 2011 (Day 28)
 *)
 
-theory Day26_Separable_Cone
+theory Day28_Entanglement_Witnesses
   imports
-    Day22_UCP_Compact
+    Day09_POVMs_Entanglement
     Day26_Arveson_Extension
-    "HOL-Analysis.Convex"
-    "HOL-Analysis.Convex_Euclidean_Space"
-    "HOL-Analysis.Polytope"
-    "HOL-Analysis.Starlike"
+    Day27_Detecting_Entanglement
 begin
 
-text \<open>HOL-Hahn\_Banach defines a locale also called \<open>continuous\<close>.
-Hide its short name so that, in the proofs below, \<open>continuous\<close>
-resolves to the topological-space predicate from
-\<^theory>\<open>HOL.Topological_Spaces\<close>.\<close>
+section \<open>Day 28 (2 November 2011): entanglement witnesses; the Horodecki--Peres criterion\<close>
 
-hide_const (open) Function_Norm.continuous
+text \<open>The separable matrices form a closed cone $C$ in the real vector space of Hermitian
+matrices; an entangled $R$ is separated from $C$ by a real functional, which complexifies to
+$\tilde f(H+iK)=f(H)+if(K)$, and $\tilde f$ corresponds to a Hermitian matrix $W$ with
+$\Tr(WR)<0\le\Tr(W\sigma)$ for all separable $\sigma$: an \emph{entanglement witness}.  The
+notes state the criterion through the positive maps $\Phi_f$ of Day 27 (D28-3).  Formalised
+below: (i) every non-separable Hermitian $\rho$ has a witness; (ii) density matrices have a
+witness with a strict margin; (iii) (Horodecki) $\rho$ is separable iff every Hermitian $W$ that
+is non-negative on the cone is non-negative on $\rho$; the positive-map criterion; and, for two
+qubits, the Horodecki--Peres criterion (D28-5).  The universal-witness question is not
+formalised.
 
-section \<open>Separability and entanglement witnesses: the proofs (Days 26--28)\<close>
-
-text \<open>This theory proves the results restated lecture by lecture in theory
-Day26\_Separability.  The notes argue in the real vector space of Hermitian matrices with a
-closed-cone separation theorem; formally we work in the typed matrix space
+Formally we work in the typed matrix space
 \<open>(complex, 'm \<times> 'p, 'm \<times> 'p) lmat\<close>, a real inner-product space (Lmat\_Euclidean), and use
 HOL-Analysis' \<open>separating_hyperplane_closed_point\<close>.  Steps: the positive matrices form a
 closed set; the unit-trace positive matrices form a compact set; the tensor product is
@@ -33,70 +31,16 @@ compact and does not contain $0$, and the separable cone is the cone over it, he
 then yields a real functional, which is converted into a Hermitian witness $W$ with
 $\Re\Tr(W\rho)<0\le\Re\Tr(W\sigma)$ on the cone.\<close>
 
-section \<open>Typed tensor product\<close>
+(*<*)
+text \<open>HOL-Hahn\_Banach defines a locale also called \<open>continuous\<close>.
+Hide its short name so that, in the proofs below, \<open>continuous\<close>
+resolves to the topological-space predicate from
+\<^theory>\<open>HOL.Topological_Spaces\<close>.\<close>
 
-text \<open>Two square matrices with type-level dimensions \<open>'m, 'p\<close> tensor
-to a square matrix with type-level dimension \<open>'m \<times> 'p\<close>.\<close>
+hide_const (open) Function_Norm.continuous
+(*>*)
 
-lemma tensor_mat_carrier_lmat:
-  fixes A B :: "complex Matrix.mat"
-  assumes A: "A \<in> carrier_mat (CARD('m :: finite)) (CARD('m))"
-      and B: "B \<in> carrier_mat (CARD('p :: finite)) (CARD('p))"
-  shows "A \<Otimes> B \<in> carrier_mat (CARD('m \<times> 'p)) (CARD('m \<times> 'p))"
-proof -
-  have rA: "dim_row A = CARD('m)" and cA: "dim_col A = CARD('m)" using A by auto
-  have rB: "dim_row B = CARD('p)" and cB: "dim_col B = CARD('p)" using B by auto
-  have row: "dim_row (A \<Otimes> B) = CARD('m \<times> 'p)" using rA rB by simp
-  have col: "dim_col (A \<Otimes> B) = CARD('m \<times> 'p)" using cA cB by simp
-  show ?thesis using row col by auto
-qed
-
-definition tensor_lmat ::
-  "(complex, 'm :: finite, 'm) lmat \<Rightarrow> (complex, 'p :: finite, 'p) lmat
-   \<Rightarrow> (complex, 'm \<times> 'p, 'm \<times> 'p) lmat" where
-  "tensor_lmat \<sigma> \<tau> = wrap_lm (unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>)"
-
-lemma unwrap_lm_tensor_lmat [simp]:
-  fixes \<sigma> :: "(complex, 'm :: finite, 'm) lmat"
-    and \<tau> :: "(complex, 'p :: finite, 'p) lmat"
-  shows "unwrap_lm (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
-       = unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>"
-  unfolding tensor_lmat_def
-  by (subst wrap_lm_inverse) (use tensor_mat_carrier_lmat in auto)
-
-
-section \<open>The separable cone\<close>
-
-text \<open>The set of \emph{separable matrices}: all nonneg combinations of
-tensor products of typed PSD matrices.  Equivalently, the convex
-conic hull of the product PSD set.\<close>
-
-definition separable_lmat_gen :: "(complex, 'm :: finite \<times> 'p :: finite,
-                                   'm \<times> 'p) lmat set" where
-  "separable_lmat_gen =
-     {tensor_lmat \<sigma> \<tau> | \<sigma> \<tau>.
-        (psd_lmat \<sigma> :: bool) \<and> (psd_lmat \<tau> :: bool)}"
-
-definition separable_cone_lmat :: "(complex, 'm :: finite \<times> 'p :: finite,
-                                    'm \<times> 'p) lmat set" where
-  "separable_cone_lmat = convex_cone hull separable_lmat_gen"
-
-text \<open>Sanity: the cone contains 0, is convex, and is conic.\<close>
-
-lemma separable_cone_lmat_convex_cone:
-  "convex_cone (separable_cone_lmat
-                  :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)"
-  unfolding separable_cone_lmat_def
-  by (rule convex_cone_convex_cone_hull)
-
-lemma zero_in_separable_cone_lmat:
-  "(0 :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat)
-     \<in> separable_cone_lmat"
-  unfolding separable_cone_lmat_def
-  using convex_cone_hull_contains_0 by blast
-
-
-section \<open>Tensor continuity\<close>
+subsection \<open>Tensor continuity\<close>
 
 text \<open>The typed tensor product is jointly continuous in both factors.\<close>
 
@@ -222,24 +166,6 @@ proof (subst continuous_on_componentwise, intro ballI)
     using cont_inner target_eq
     by (auto cong: continuous_on_cong)
 qed
-
-
-section \<open>The unit-trace product slice\<close>
-
-definition Sprime :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set"
-  where
-  "Sprime =
-   {\<rho>. \<exists>(\<sigma> :: (complex, 'm, 'm) lmat) (\<tau> :: (complex, 'p, 'p) lmat).
-         \<rho> = tensor_lmat \<sigma> \<tau>
-         \<and> psd_lmat \<sigma> \<and> Tr_lmat \<sigma> = 1
-         \<and> psd_lmat \<tau> \<and> Tr_lmat \<tau> = 1}"
-
-lemma Sprime_image:
-  "(Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)
-   = (\<lambda>(\<sigma>, \<tau>). tensor_lmat \<sigma> \<tau>) `
-       ({\<sigma> :: (complex, 'm, 'm) lmat. psd_lmat \<sigma> \<and> Tr_lmat \<sigma> = 1}
-        \<times> {\<tau> :: (complex, 'p, 'p) lmat. psd_lmat \<tau> \<and> Tr_lmat \<tau> = 1})"
-  unfolding Sprime_def by auto
 
 lemma compact_Sprime:
   "compact (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set)"
@@ -389,7 +315,7 @@ proof
 qed
 
 
-section \<open>Closedness of the separable cone\<close>
+subsection \<open>Closedness of the separable cone\<close>
 
 text \<open>Why the separable cone is closed.  Let $S'=\{\sigma\otimes\tau:\ \sigma,\tau\ge0,\ \Tr\sigma=\Tr\tau=1\}$.
 \begin{enumerate}
@@ -964,7 +890,7 @@ proof -
 qed
 
 
-section \<open>The lmat inner product as a real-trace inner product\<close>
+subsection \<open>The lmat inner product as a real-trace inner product\<close>
 
 lemma inner_lmat_eq_re_tr_dagger:
   fixes M N :: "(complex, 'k :: finite, 'k) lmat"
@@ -979,7 +905,7 @@ proof -
 qed
 
 
-section \<open>Separating hyperplane for non-separable states\<close>
+subsection \<open>Separating hyperplane for non-separable states\<close>
 
 text \<open>Separation.  The separable cone $C$ is closed and convex, so a point $\rho\notin C$ is strictly
 separated from it by a linear functional $x\mapsto\langle a,x\rangle$ and a constant $b$:
@@ -1035,7 +961,7 @@ proof -
 qed
 
 
-section \<open>Entanglement witness in real-trace form\<close>
+subsection \<open>Entanglement witness in real-trace form\<close>
 
 text \<open>Since $\langle a,x\rangle=\mathrm{Re}\Tr(a^*x)$, the separating functional is a matrix $W$ with
 $\mathrm{Re}\Tr(W^*\rho)<0\le\mathrm{Re}\Tr(W^*\sigma)$ for every separable $\sigma$.\<close>
@@ -1086,7 +1012,7 @@ proof -
 qed
 
 
-section \<open>Hermitian entanglement witness\<close>
+subsection \<open>Hermitian entanglement witness\<close>
 
 text \<open>If $\rho$ is Hermitian the witness can be taken Hermitian: replace $W$ by $\tfrac12(W+W^*)$,
 which leaves $\mathrm{Re}\Tr(W^*\sigma)$ unchanged for Hermitian $\sigma$.\<close>
@@ -1376,7 +1302,7 @@ proof -
 qed
 
 
-section \<open>Hermitian closure of the separable cone\<close>
+subsection \<open>Hermitian closure of the separable cone\<close>
 
 text \<open>Every element of \<open>separable_cone_lmat\<close> has hermitian unwrap.
 Generators \<open>tensor_lmat \<sigma> \<tau>\<close> with \<open>\<sigma>, \<tau>\<close> PSD are hermitian, and the
@@ -1650,7 +1576,7 @@ proof -
 qed
 
 
-section \<open>Main separability characterisation\<close>
+subsection \<open>Main separability characterisation\<close>
 
 text \<open>The Horodecki-style witness characterisation: for hermitian
 \<open>\<rho>\<close>, membership in the separable cone is equivalent to the
@@ -1707,7 +1633,7 @@ next
 qed
 
 
-section \<open>Density-matrix specialisation\<close>
+subsection \<open>Density-matrix specialisation\<close>
 
 text \<open>For an actual quantum density matrix \<open>\<rho>\<close> (PSD with unit trace),
 the conditions \<open>psd_lmat \<rho>\<close> and \<open>Tr_lmat \<rho> = 1\<close> imply
@@ -2057,5 +1983,327 @@ proof -
   qed
 qed
 
+subsection \<open>The positive-map criterion (D28-3)\<close>
+
+text \<open>A Hermitian $R\in M_r(M_n)$ is separable iff $\Phi^{(r)}(R)\ge0$ for every positive
+$\Phi:M_n\to M_r$.\<close>
+
+theorem separable_iff_positive_maps:
+  fixes R :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes Rh: "hermitian (unwrap_lm R)"
+  shows "R \<in> separable_cone_lmat \<longleftrightarrow>
+         (\<forall>\<Phi>. lin_on CARD('p) CARD('m) (carrier_mat CARD('p) CARD('p)) \<Phi> \<longrightarrow> positive_map CARD('p) CARD('m) \<Phi>
+              \<longrightarrow> psd (amplification CARD('p) CARD('m) CARD('m) \<Phi> (unwrap_lm R)))"
+proof
+  assume "R \<in> separable_cone_lmat"
+  thus "\<forall>\<Phi>. lin_on CARD('p) CARD('m) (carrier_mat CARD('p) CARD('p)) \<Phi> \<longrightarrow> positive_map CARD('p) CARD('m) \<Phi>
+              \<longrightarrow> psd (amplification CARD('p) CARD('m) CARD('m) \<Phi> (unwrap_lm R))"
+    using positive_map_separable[where d="CARD('m)" and R=R] by simp
+next
+  let ?n = "CARD('p)" and ?r = "CARD('m)"
+  assume all: "\<forall>\<Phi>. lin_on ?n ?r (carrier_mat ?n ?n) \<Phi> \<longrightarrow> positive_map ?n ?r \<Phi>
+              \<longrightarrow> psd (amplification ?n ?r ?r \<Phi> (unwrap_lm R))"
+  show "R \<in> separable_cone_lmat"
+  proof (rule ccontr)
+    assume nR: "R \<notin> separable_cone_lmat"
+    then obtain W where Wc: "W \<in> carrier_mat CARD('m \<times> 'p) CARD('m \<times> 'p)" and Wh: "hermitian W"
+      and Wsep: "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat. \<sigma> \<in> separable_cone_lmat \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
+      and WR: "\<not> 0 \<le> Re (Tr (W * unwrap_lm R))"
+      using separable_iff_witness[OF Rh] by blast
+    have Wc': "W \<in> carrier_mat (?r * ?n) (?r * ?n)" using Wc by (simp add: card_prod)
+    define f where "f = (\<lambda>A. Tr (W * A))"
+    have f: "lin_fun_on (carrier_mat (?r * ?n) (?r * ?n)) f"
+      unfolding lin_fun_on_def f_def
+    proof (intro conjI ballI allI)
+      fix A B :: "complex Matrix.mat" assume A: "A \<in> carrier_mat (?r * ?n) (?r * ?n)" and B: "B \<in> carrier_mat (?r * ?n) (?r * ?n)"
+      show "Tr (W * (A + B)) = Tr (W * A) + Tr (W * B)"
+        unfolding mult_add_distrib_mat[OF Wc' A B] by (rule Tr_add) (use Wc' A B in simp_all)
+    next
+      fix A :: "complex Matrix.mat" and c :: complex assume A: "A \<in> carrier_mat (?r * ?n) (?r * ?n)"
+      show "Tr (W * (c \<cdot>\<^sub>m A)) = c * Tr (W * A)" unfolding mult_smult_distrib[OF Wc' A] Tr_smult ..
+    qed
+    have r0: "0 < ?r" and n0: "0 < ?n" by simp_all
+    define \<Phi> where "\<Phi> = arveson_map ?n ?r f"
+    have Lphi: "lin_on ?n ?r (carrier_mat ?n ?n) \<Phi>"
+      unfolding \<Phi>_def by (rule arveson_map_lin[OF operator_system_full]) (use f in \<open>simp add: Mp_full\<close>)
+    have pphi: "positive_map ?n ?r \<Phi>"
+      unfolding \<Phi>_def positive_map_iff_sep_nonneg[OF f r0 n0]
+    proof (intro allI impI)
+      fix Q P :: "complex Matrix.mat" assume Qc: "Q \<in> carrier_mat ?r ?r" and Qp: "psd Q" and Pc: "P \<in> carrier_mat ?n ?n" and Pp: "psd P"
+      define \<sigma> where "\<sigma> = (wrap_lm Q :: (complex, 'm, 'm) lmat)"
+      define \<tau> where "\<tau> = (wrap_lm P :: (complex, 'p, 'p) lmat)"
+      have us: "unwrap_lm \<sigma> = Q" and ut: "unwrap_lm \<tau> = P" unfolding \<sigma>_def \<tau>_def
+        using Qc Pc by (simp_all add: wrap_lm_inverse)
+      have "tensor_lmat \<sigma> \<tau> \<in> separable_lmat_gen" unfolding separable_lmat_gen_def using us ut Qp Pp by auto
+      hence "tensor_lmat \<sigma> \<tau> \<in> separable_cone_lmat" unfolding separable_cone_lmat_def by (rule hull_inc)
+      hence re: "0 \<le> Re (f (Tensor.tensor_mat Q P))" using Wsep unfolding f_def by (metis unwrap_lm_tensor_lmat us ut)
+      have tc: "Tensor.tensor_mat Q P \<in> carrier_mat (?r * ?n) (?r * ?n)" using Qc Pc by simp
+      have "hermitian (Tensor.tensor_mat Q P)" by (rule psd_hermitian[OF psd_tensor[OF Qc Pc Qp Pp]])
+      hence "f (Tensor.tensor_mat Q P) \<in> \<real>" unfolding f_def by (rule Tr_herm_mult_real[OF Wc' tc Wh])
+      thus "0 \<le> f (Tensor.tensor_mat Q P)" using re by (simp add: less_eq_complex_def complex_is_Real_iff)
+    qed
+    have psdR: "psd (amplification ?n ?r ?r \<Phi> (unwrap_lm R))" using all Lphi pphi by blast
+    have "unwrap_lm R \<in> carrier_mat CARD('m \<times> 'p) CARD('m \<times> 'p)" by (rule unwrap_lm_carrier)
+    hence Rc: "unwrap_lm R \<in> carrier_mat (?r * ?n) (?r * ?n)" by (simp only: card_prod)
+    define v where "v = Matrix.vec (?r * ?r) (\<lambda>x. if x div ?r = x mod ?r then 1 else (0::complex))"
+    have vd: "dim_vec v = ?r * ?r" unfolding v_def by simp
+    have "\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle> = (\<Sum>i<?r. \<Sum>j<?r. \<Phi> (block_of_mat ?n (unwrap_lm R) i j) $$ (i,j))"
+      unfolding v_def by (rule diag_quad_amplification)
+    also have "\<dots> = of_nat ?r * arveson_functional ?n ?r \<Phi> (unwrap_lm R)" unfolding arveson_functional_def by simp
+    also have "arveson_functional ?n ?r \<Phi> (unwrap_lm R) = f (unwrap_lm R)"
+      unfolding \<Phi>_def by (rule arveson_functional_of_map[OF operator_system_full]) (use f Rc in \<open>simp_all add: Mp_full\<close>)
+    finally have q: "\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle> = of_nat ?r * Tr (W * unwrap_lm R)" unfolding f_def .
+    have "0 \<le> Re (\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle>)"
+      using psdR psd_iff_quad_form_nonneg[OF amplification_carrier] vd by blast
+    hence "0 \<le> Re (Tr (W * unwrap_lm R))" unfolding q by (simp add: zero_le_mult_iff)
+    thus False using WR by simp
+  qed
+qed
+
+subsection \<open>The Horodecki--Peres criterion for two qubits (D28-5)\<close>
+
+text \<open>Entries of the partial transpose $\Phi^{(2)}(X)$ of a $4\times4$ matrix.\<close>
+
+lemma partial_transpose_2_index:
+  fixes M :: "complex Matrix.mat"
+  assumes i: "i < 4" and j: "j < 4"
+  shows "amplification 2 2 2 (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) M $$ (i,j)
+         = M $$ ((i div 2) * 2 + j mod 2, (j div 2) * 2 + i mod 2)"
+proof -
+  have "amplification 2 2 2 transpose_mat M $$ (i,j)
+        = transpose_mat (block_of_mat 2 M (i div 2) (j div 2)) $$ (i mod 2, j mod 2)"
+    using i j by (simp add: amplification_def)
+  also have "\<dots> = block_of_mat 2 M (i div 2) (j div 2) $$ (j mod 2, i mod 2)"
+    by (simp add: block_of_mat_def)
+  also have "\<dots> = M $$ ((i div 2) * 2 + j mod 2, (j div 2) * 2 + i mod 2)"
+    by (simp add: block_of_mat_def)
+  finally show ?thesis .
+qed
+
+lemma product_vec_iff_det_zero:
+  fixes v :: "complex Matrix.vec"
+  assumes vd: "dim_vec v = 4"
+  shows "(\<exists>\<alpha> \<beta>. dim_vec \<alpha> = 2 \<and> dim_vec \<beta> = 2 \<and> v = tensor_vec \<alpha> \<beta>)
+         \<longleftrightarrow> v $ 0 * v $ 3 - v $ 1 * v $ 2 = 0"
+proof
+  assume "\<exists>\<alpha> \<beta>. dim_vec \<alpha> = 2 \<and> dim_vec \<beta> = 2 \<and> v = tensor_vec \<alpha> \<beta>"
+  then obtain \<alpha> \<beta> where ad: "dim_vec \<alpha> = 2" and bd: "dim_vec \<beta> = 2" and v: "v = tensor_vec \<alpha> \<beta>" by blast
+  have e: "\<And>k. k < 4 \<Longrightarrow> v $ k = \<alpha> $ (k div 2) * \<beta> $ (k mod 2)"
+    unfolding v using tensor_vec_index[OF ad bd] by simp
+  show "v $ 0 * v $ 3 - v $ 1 * v $ 2 = 0" using e[of 0] e[of 1] e[of 2] e[of 3] by simp
+next
+  assume det0: "v $ 0 * v $ 3 - v $ 1 * v $ 2 = 0"
+  let ?a = "v $ 0" and ?b = "v $ 1" and ?c = "v $ 2" and ?d = "v $ 3"
+  have idx: "\<And>k :: nat. k < 4 \<Longrightarrow> k = 0 \<or> k = 1 \<or> k = 2 \<or> k = 3" by auto
+  show "\<exists>\<alpha> \<beta>. dim_vec \<alpha> = 2 \<and> dim_vec \<beta> = 2 \<and> v = tensor_vec \<alpha> \<beta>"
+  proof (cases "?a = 0")
+    case False
+    let ?\<alpha> = "Matrix.vec 2 (\<lambda>k. if k = 0 then 1 else ?c / ?a)"
+    let ?\<beta> = "Matrix.vec 2 (\<lambda>k. if k = 0 then ?a else ?b)"
+    have "v = tensor_vec ?\<alpha> ?\<beta>"
+    proof (rule eq_vecI)
+      fix k assume "k < dim_vec (tensor_vec ?\<alpha> ?\<beta>)"
+      hence k: "k < 4" by (simp add: tensor_vec_dim)
+      have d: "?d = ?b * ?c / ?a" using det0 False by (simp add: field_simps)
+      show "v $ k = tensor_vec ?\<alpha> ?\<beta> $ k"
+        using tensor_vec_index[of ?\<alpha> 2 ?\<beta> 2 k] k idx[OF k] d False by auto
+    qed (simp add: vd tensor_vec_dim)
+    thus ?thesis by (intro exI[of _ ?\<alpha>] exI[of _ ?\<beta>]) simp
+  next
+    case True
+    hence bc: "?b = 0 \<or> ?c = 0" using det0 by simp
+    show ?thesis
+    proof (cases "?b = 0")
+      case True
+      \<comment> \<open>$v=(0,0,c,d)=e_1\otimes(c,d)$\<close>
+      let ?\<alpha> = "Matrix.vec 2 (\<lambda>k. if k = 0 then 0 else 1) :: complex Matrix.vec"
+      let ?\<beta> = "Matrix.vec 2 (\<lambda>k. if k = 0 then ?c else ?d)"
+      have "v = tensor_vec ?\<alpha> ?\<beta>"
+      proof (rule eq_vecI)
+        fix k assume "k < dim_vec (tensor_vec ?\<alpha> ?\<beta>)"
+        hence k: "k < 4" by (simp add: tensor_vec_dim)
+        show "v $ k = tensor_vec ?\<alpha> ?\<beta> $ k"
+          using tensor_vec_index[of ?\<alpha> 2 ?\<beta> 2 k] k idx[OF k] \<open>?a = 0\<close> True by auto
+      qed (simp add: vd tensor_vec_dim)
+      thus ?thesis by (intro exI[of _ ?\<alpha>] exI[of _ ?\<beta>]) simp
+    next
+      case False
+      hence c0: "?c = 0" using bc by simp
+      \<comment> \<open>$v=(0,b,0,d)=(b,d)\otimes e_1$\<close>
+      let ?\<alpha> = "Matrix.vec 2 (\<lambda>k. if k = 0 then ?b else ?d)"
+      let ?\<beta> = "Matrix.vec 2 (\<lambda>k. if k = 0 then 0 else 1) :: complex Matrix.vec"
+      have "v = tensor_vec ?\<alpha> ?\<beta>"
+      proof (rule eq_vecI)
+        fix k assume "k < dim_vec (tensor_vec ?\<alpha> ?\<beta>)"
+        hence k: "k < 4" by (simp add: tensor_vec_dim)
+        show "v $ k = tensor_vec ?\<alpha> ?\<beta> $ k"
+          using tensor_vec_index[of ?\<alpha> 2 ?\<beta> 2 k] k idx[OF k] \<open>?a = 0\<close> c0 by auto
+      qed (simp add: vd tensor_vec_dim)
+      thus ?thesis by (intro exI[of _ ?\<alpha>] exI[of _ ?\<beta>]) simp
+    qed
+  qed
+qed
+
+text \<open>The notes' witness $w=(-\overline{v_2},\overline{v_1})$ gives
+$\langle w|\Phi^{(2)}(|v\rangle\langle v|)w\rangle=-2|v_0v_3-v_1v_2|^2$
+($=2|\langle v_2|v_1\rangle|^2-2\|v_1\|^2\|v_2\|^2$ by Lagrange's identity).\<close>
+
+lemma partial_transpose_witness_value:
+  fixes v :: "complex Matrix.vec"
+  assumes vd: "dim_vec v = 4"
+  defines "w \<equiv> Matrix.vec 4 (\<lambda>k. if k = 0 then - cnj (v $ 2) else if k = 1 then - cnj (v $ 3)
+                                    else if k = 2 then cnj (v $ 0) else cnj (v $ 1))"
+  shows "\<langle>w | amplification 2 2 2 (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) (v \<oslash> v) *\<^sub>v w\<rangle>
+         = - 2 * cnj (v $ 0 * v $ 3 - v $ 1 * v $ 2) * (v $ 0 * v $ 3 - v $ 1 * v $ 2)"
+proof -
+  let ?Y = "amplification 2 2 2 (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) (v \<oslash> v)"
+  have Yc: "?Y \<in> carrier_mat 4 4" by (simp add: amplification_def)
+  have wd: "dim_vec w = 4" by (simp add: w_def)
+  have Yent: "\<And>i j :: nat. i < 4 \<Longrightarrow> j < 4 \<Longrightarrow>
+      ?Y $$ (i,j) = v $ ((i div 2) * 2 + j mod 2) * cnj (v $ ((j div 2) * 2 + i mod 2))"
+  proof -
+    fix i j :: nat assume i: "i < 4" and j: "j < 4"
+    have "?Y $$ (i,j) = (v \<oslash> v) $$ ((i div 2) * 2 + j mod 2, (j div 2) * 2 + i mod 2)"
+      by (rule partial_transpose_2_index[OF i j])
+    also have "\<dots> = v $ ((i div 2) * 2 + j mod 2) * cnj (v $ ((j div 2) * 2 + i mod 2))"
+      using i j vd by (intro outer_prod_index) (auto dest!: set_4_disj)
+    finally show "?Y $$ (i,j) = v $ ((i div 2) * 2 + j mod 2) * cnj (v $ ((j div 2) * 2 + i mod 2))" .
+  qed
+  \<comment> \<open>Name the four entries: simp diverges on goals with many distinct \<open>v $ k\<close> subterms.\<close>
+  define a b c d where abcd: "a = v $ 0" "b = v $ 1" "c = v $ 2" "d = v $ 3"
+  define \<delta> where "\<delta> = a * d - b * c"
+  define u :: "complex Matrix.vec" where
+    "u = Matrix.vec 4 (\<lambda>k. if k = 0 then - b else if k = 1 then a else if k = 2 then - d else c)"
+  have s4: "{0..<(4::nat)} = {0,1,2,3}" by auto
+  have sum4: "\<And>f :: nat \<Rightarrow> complex. (\<Sum>j\<in>{0,1,2,3}. f j) = f 0 + f 1 + f 2 + f 3"
+    by (simp add: add.assoc)
+  have Y00: "?Y $$ (0,0) = a * cnj a" using Yent[of 0 0] by (simp add: abcd)
+  have Y01: "?Y $$ (0,1) = b * cnj a" using Yent[of 0 1] by (simp add: abcd)
+  have Y02: "?Y $$ (0,2) = a * cnj c" using Yent[of 0 2] by (simp add: abcd)
+  have Y03: "?Y $$ (0,3) = b * cnj c" using Yent[of 0 3] by (simp add: abcd)
+  have Y10: "?Y $$ (1,0) = a * cnj b" using Yent[of 1 0] by (simp add: abcd)
+  have Y11: "?Y $$ (1,1) = b * cnj b" using Yent[of 1 1] by (simp add: abcd)
+  have Y12: "?Y $$ (1,2) = a * cnj d" using Yent[of 1 2] by (simp add: abcd)
+  have Y13: "?Y $$ (1,3) = b * cnj d" using Yent[of 1 3] by (simp add: abcd)
+  have Y20: "?Y $$ (2,0) = c * cnj a" using Yent[of 2 0] by (simp add: abcd)
+  have Y21: "?Y $$ (2,1) = d * cnj a" using Yent[of 2 1] by (simp add: abcd)
+  have Y22: "?Y $$ (2,2) = c * cnj c" using Yent[of 2 2] by (simp add: abcd)
+  have Y23: "?Y $$ (2,3) = d * cnj c" using Yent[of 2 3] by (simp add: abcd)
+  have Y30: "?Y $$ (3,0) = c * cnj b" using Yent[of 3 0] by (simp add: abcd)
+  have Y31: "?Y $$ (3,1) = d * cnj b" using Yent[of 3 1] by (simp add: abcd)
+  have Y32: "?Y $$ (3,2) = c * cnj d" using Yent[of 3 2] by (simp add: abcd)
+  have Y33: "?Y $$ (3,3) = d * cnj d" using Yent[of 3 3] by (simp add: abcd)
+  have w0: "w $ 0 = - cnj c" by (simp add: w_def abcd)
+  have w1: "w $ 1 = - cnj d" by (simp add: w_def abcd)
+  have w2: "w $ 2 = cnj a" by (simp add: w_def abcd)
+  have w3: "w $ 3 = cnj b" by (simp add: w_def abcd)
+  have u0: "u $ 0 = - b" by (simp add: u_def)
+  have u1: "u $ 1 = a" by (simp add: u_def)
+  have u2: "u $ 2 = - d" by (simp add: u_def)
+  have u3: "u $ 3 = c" by (simp add: u_def)
+  have r0: "(\<Sum>j\<in>{0,1,2,3}. ?Y $$ (0,j) * w $ j) = cnj \<delta> * u $ 0"
+    unfolding sum4 Y00 Y01 Y02 Y03 w0 w1 w2 w3 u0 \<delta>_def by (simp add: algebra_simps)
+  have r1: "(\<Sum>j\<in>{0,1,2,3}. ?Y $$ (1,j) * w $ j) = cnj \<delta> * u $ 1"
+    unfolding sum4 Y10 Y11 Y12 Y13 w0 w1 w2 w3 u1 \<delta>_def by (simp add: algebra_simps)
+  have r2: "(\<Sum>j\<in>{0,1,2,3}. ?Y $$ (2,j) * w $ j) = cnj \<delta> * u $ 2"
+    unfolding sum4 Y20 Y21 Y22 Y23 w0 w1 w2 w3 u2 \<delta>_def by (simp add: algebra_simps)
+  have r3: "(\<Sum>j\<in>{0,1,2,3}. ?Y $$ (3,j) * w $ j) = cnj \<delta> * u $ 3"
+    unfolding sum4 Y30 Y31 Y32 Y33 w0 w1 w2 w3 u3 \<delta>_def by (simp add: algebra_simps)
+  \<comment> \<open>\<open>Y w = cnj \<delta> \<cdot> (-b, a, -d, c)\<close>, entry by entry\<close>
+  have Yw: "?Y *\<^sub>v w = cnj \<delta> \<cdot>\<^sub>v u"
+  proof (rule eq_vecI)
+    fix i assume "i < dim_vec (cnj \<delta> \<cdot>\<^sub>v u)"
+    hence i: "i < 4" by (simp add: u_def)
+    have "(?Y *\<^sub>v w) $ i = (\<Sum>j\<in>{0,1,2,3}. ?Y $$ (i,j) * w $ j)"
+      using i Yc wd carrier_matD[OF Yc] by (simp add: scalar_prod_def s4)
+    also have "\<dots> = cnj \<delta> * u $ i"
+      using set_4_disj[OF i] r0 r1 r2 r3 by (elim disjE) simp_all
+    finally show "(?Y *\<^sub>v w) $ i = (cnj \<delta> \<cdot>\<^sub>v u) $ i" using i by (simp add: u_def)
+  qed (simp add: u_def Yc[THEN carrier_matD(1)])
+  have "\<langle>w | ?Y *\<^sub>v w\<rangle> = cnj \<delta> * \<langle>w | u\<rangle>" unfolding Yw by (rule inner_prod_right_smult')
+  also have "\<langle>w | u\<rangle> = (\<Sum>i\<in>{0,1,2,3}. cnj (w $ i) * u $ i)"
+    using inner_prod_sum[of w 4 u] wd by (simp add: u_def s4)
+  also have "\<dots> = - (\<delta> + \<delta>)"
+    unfolding sum4 w0 w1 w2 w3 u0 u1 u2 u3 \<delta>_def by (simp add: algebra_simps)
+  finally have "\<langle>w | ?Y *\<^sub>v w\<rangle> = cnj \<delta> * (- (\<delta> + \<delta>))" .
+  also have "\<dots> = - 2 * cnj \<delta> * \<delta>" by (simp add: algebra_simps)
+  finally show ?thesis unfolding \<delta>_def abcd .
+qed
+
+theorem horodecki_peres_two_qubits:
+  fixes v :: "complex Matrix.vec"
+  assumes vd: "dim_vec v = 4"
+  shows "psd (amplification 2 2 2 (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) (v \<oslash> v))
+         \<longleftrightarrow> (\<exists>\<alpha> \<beta>. dim_vec \<alpha> = 2 \<and> dim_vec \<beta> = 2 \<and> v = tensor_vec \<alpha> \<beta>)"
+proof
+  let ?Y = "amplification 2 2 2 (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) (v \<oslash> v)"
+  have Yc: "?Y \<in> carrier_mat 4 4" by (simp add: amplification_def)
+  assume pos: "psd ?Y"
+  define w where "w = Matrix.vec 4 (\<lambda>k. if k = 0 then - cnj (v $ 2) else if k = 1 then - cnj (v $ 3)
+                                    else if k = 2 then cnj (v $ 0) else cnj (v $ 1))"
+  have wd: "dim_vec w = 4" by (simp add: w_def)
+  let ?\<delta> = "v $ 0 * v $ 3 - v $ 1 * v $ 2"
+  have val: "\<langle>w | ?Y *\<^sub>v w\<rangle> = - 2 * cnj ?\<delta> * ?\<delta>"
+    unfolding w_def by (rule partial_transpose_witness_value[OF vd])
+  have "0 \<le> Re (\<langle>w | ?Y *\<^sub>v w\<rangle>)" using pos Yc wd by (simp add: psd_def)
+  moreover have val': "\<langle>w | ?Y *\<^sub>v w\<rangle> = complex_of_real (- 2 * (cmod ?\<delta>)\<^sup>2)"
+  proof -
+    have "- 2 * cnj ?\<delta> * ?\<delta> = - 2 * (cnj ?\<delta> * ?\<delta>)" by (simp only: mult_ac(1))
+    also have "cnj ?\<delta> * ?\<delta> = complex_of_real ((cmod ?\<delta>)\<^sup>2)" by (rule cnj_mult_self_cmod)
+    also have "- 2 * complex_of_real ((cmod ?\<delta>)\<^sup>2) = complex_of_real (- 2 * (cmod ?\<delta>)\<^sup>2)" by simp
+    finally show ?thesis unfolding val .
+  qed
+  ultimately have "0 \<le> - 2 * (cmod ?\<delta>)\<^sup>2" by simp
+  hence "(cmod ?\<delta>)\<^sup>2 \<le> 0" by simp
+  hence "(cmod ?\<delta>)\<^sup>2 = 0" using zero_le_power2[of "cmod ?\<delta>"] by (rule order_antisym)
+  hence "cmod ?\<delta> = 0" by simp
+  hence "?\<delta> = 0" by simp
+  thus "\<exists>\<alpha> \<beta>. dim_vec \<alpha> = 2 \<and> dim_vec \<beta> = 2 \<and> v = tensor_vec \<alpha> \<beta>"
+    using product_vec_iff_det_zero[OF vd] by simp
+next
+  assume "\<exists>\<alpha> \<beta>. dim_vec \<alpha> = 2 \<and> dim_vec \<beta> = 2 \<and> v = tensor_vec \<alpha> \<beta>"
+  then obtain \<alpha> \<beta> where ad: "dim_vec \<alpha> = 2" and bd: "dim_vec \<beta> = 2" and v: "v = tensor_vec \<alpha> \<beta>" by blast
+  let ?Y = "amplification 2 2 2 (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) (v \<oslash> v)"
+  have Yc: "?Y \<in> carrier_mat 4 4" by (simp add: amplification_def)
+  define \<beta>' where "\<beta>' = Matrix.vec 2 (\<lambda>k. cnj (\<beta> $ k))"
+  let ?u = "tensor_vec \<alpha> \<beta>'"
+  have b'd: "dim_vec \<beta>' = 2" by (simp add: \<beta>'_def)
+  have ud: "dim_vec ?u = 4" using ad b'd by (simp add: tensor_vec_dim)
+  have e: "\<And>k. k < 4 \<Longrightarrow> v $ k = \<alpha> $ (k div 2) * \<beta> $ (k mod 2)"
+    unfolding v using tensor_vec_index[OF ad bd] by simp
+  have eu: "\<And>k. k < 4 \<Longrightarrow> ?u $ k = \<alpha> $ (k div 2) * cnj (\<beta> $ (k mod 2))"
+    using tensor_vec_index[OF ad b'd] by (simp add: \<beta>'_def)
+  have "?Y = ?u \<oslash> ?u"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row (?u \<oslash> ?u)" "j < dim_col (?u \<oslash> ?u)"
+    hence i: "i < 4" and j: "j < 4" using carrier_matD[OF outer_prod_carrier[OF ud ud]] by auto
+    have p: "(i div 2) * 2 + j mod 2 < 4" using set_4_disj[OF i] set_4_disj[OF j] by (elim disjE) simp_all
+    have q: "(j div 2) * 2 + i mod 2 < 4" using set_4_disj[OF i] set_4_disj[OF j] by (elim disjE) simp_all
+    have "?Y $$ (i,j) = (v \<oslash> v) $$ ((i div 2) * 2 + j mod 2, (j div 2) * 2 + i mod 2)"
+      by (rule partial_transpose_2_index[OF i j])
+    also have "\<dots> = v $ ((i div 2) * 2 + j mod 2) * cnj (v $ ((j div 2) * 2 + i mod 2))"
+      using p q vd by (intro outer_prod_index) auto
+    also have "\<dots> = \<alpha> $ (i div 2) * \<beta> $ (j mod 2) * cnj (\<alpha> $ (j div 2) * \<beta> $ (i mod 2))"
+      using e[OF p] e[OF q] i j by simp
+    also have "\<dots> = ?u $ i * cnj (?u $ j)"
+      using eu[OF i] eu[OF j] by simp
+    also have "\<dots> = (?u \<oslash> ?u) $$ (i,j)"
+      using i j ud by (intro outer_prod_index[symmetric]) auto
+    finally show "?Y $$ (i,j) = (?u \<oslash> ?u) $$ (i,j)" .
+  next
+    show "dim_row ?Y = dim_row (?u \<oslash> ?u)"
+      using carrier_matD[OF Yc] carrier_matD[OF outer_prod_carrier[OF ud ud]] by simp
+    show "dim_col ?Y = dim_col (?u \<oslash> ?u)"
+      using carrier_matD[OF Yc] carrier_matD[OF outer_prod_carrier[OF ud ud]] by simp
+  qed
+  thus "psd ?Y" using outer_prod_self_psd[OF ud] by simp
+qed
+
+corollary horodecki_peres_entangled:
+  fixes v :: "complex Matrix.vec"
+  assumes vd: "dim_vec v = 4"
+  shows "entangled 2 2 v \<longleftrightarrow>
+         \<not> psd (amplification 2 2 2 (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) (v \<oslash> v))"
+  using horodecki_peres_two_qubits[OF vd] vd by (simp add: entangled_def)
 
 end

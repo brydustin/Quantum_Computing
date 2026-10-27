@@ -3,7 +3,7 @@
 *)
 
 theory Day11_Gates_No_Cloning
-  imports Quantum_Computing_by_VP.Day10_Quantum_Gates
+  imports Day09_POVMs_Entanglement Day10_Quantum_Gates
 begin
 
 section \<open>Day 11 (21 September 2011): gates revisited, circuit diagrams, no-cloning\<close>
@@ -13,106 +13,8 @@ $Xe_0=e_1$, $Xe_1=e_0$, $He_1=(e_0-e_1)/\sqrt2$, so that $X$ and $H$ are reflect
 truth tables of CNOT ($\ket{a,b}\mapsto\ket{a,b+a}$, arithmetic in $\Z_2$) and of CCNOT
 ($\ket{a,b,c}\mapsto\ket{a,b,c+ab}$).  Circuit diagrams are introduced; the CNOT with
 control on the second wire has matrix $\begin{pmatrix}1&0&0&0\\0&0&0&1\\0&0&1&0\\0&1&0&0\end{pmatrix}$,
-and three alternating CNOTs compose to the swap of the two wires (\<open>SWAP_three_CNOTs\<close> in
-theory Day11\_SWAP\_Circuit).
-
-\begin{notesdef}
-The Toffoli gate CCNOT is the $8\times8$ permutation matrix that fixes the first six basis
-vectors and exchanges $\ket{110}$ and $\ket{111}$.
-\end{notesdef}\<close>
-
-definition CCNOT :: "complex Matrix.mat" where
-  "CCNOT \<equiv> Matrix.mat 8 8
-     (\<lambda>(i,j). if (i = 6 \<and> j = 7) \<or> (i = 7 \<and> j = 6)
-               then 1
-               else if i = j \<and> i < 6 then 1 else 0)"
-
-lemma CCNOT_dagger [simp]:
-  "CCNOT\<^sup>\<dagger> = CCNOT"
-  unfolding CCNOT_def dagger_def
-  by (simp add: cong_mat)
-
-lemma CCNOT_dim_row [simp]:
-  "dim_row CCNOT = 8"
-  by (simp add: CCNOT_def)
-
-lemma CCNOT_dim_col [simp]:
-  "dim_col CCNOT = 8"
-  by (simp add: CCNOT_def)
-
-
-lemma CCNOT_inv [simp]:
-  "CCNOT * CCNOT = 1\<^sub>m 8"
-proof (rule eq_matI)
-  show "dim_row (CCNOT * CCNOT) = dim_row (1\<^sub>m 8)" by simp
-  show "dim_col (CCNOT * CCNOT) = dim_col (1\<^sub>m 8)" by simp
-next
-  fix i j
-  assume "i < dim_row (1\<^sub>m 8)" and "j < dim_col (1\<^sub>m 8)"
-  then have i: "i < 8" and j: "j < 8" by simp_all
-
-  define p where "p = (if i < 6 then i else if i = 6 then 7 else 6)"
-  define q where "q = (if j < 6 then j else if j = 6 then 7 else 6)"
-  have p8: "p < 8" using i by (auto simp: p_def)
-  have q8: "q < 8" using j by (auto simp: q_def)
-
-  have row_i: "\<And>k. k < 8 \<Longrightarrow> CCNOT $$ (i, k) = (if k = p then 1 else 0)"
-    using i by (auto simp: CCNOT_def p_def)
-  have col_j: "\<And>k::nat. k < 8 \<Longrightarrow> CCNOT $$ (k, j) = (if k = q then 1 else 0)"
-  proof -
-    fix k :: nat assume k: "k < 8"
-    from j consider "j < 6" | "j = 6" | "j = 7" by linarith
-    then show "CCNOT $$ (k, j) = (if k = q then 1 else 0)"
-    proof cases
-      case 1
-      then have qj: "q = j" by (simp add: q_def)
-      show ?thesis using k 1 qj by (auto simp: CCNOT_def)
-    next
-      case 2
-      then have qj: "q = 7" by (simp add: q_def)
-      show ?thesis using k 2 qj by (auto simp: CCNOT_def)
-    next
-      case 3
-      then have qj: "q = 6" by (simp add: q_def)
-      show ?thesis using k 3 qj by (auto simp: CCNOT_def)
-    qed
-  qed
-
-  have pq_iff: "(p = q) \<longleftrightarrow> (i = j)"
-    using i j by (auto simp: p_def q_def)
-
-  have "(CCNOT * CCNOT) $$ (i, j)
-          = (\<Sum>k = 0..<8. CCNOT $$ (i, k) * CCNOT $$ (k, j))"
-    using i j by (simp add: times_mat_def scalar_prod_def)
-  also have "\<dots> = (\<Sum>k = 0..<8.
-        (if k = p then (1::complex) else 0) * (if k = q then 1 else 0))"
-    using row_i col_j by auto
-  also have "\<dots> = (if p = q then 1 else 0)"
-  proof (cases "p = q")
-    case True
-    have pointwise:
-      "(if k = p then (1::complex) else 0) * (if k = q then 1 else 0)
-         = (if k = p then 1 else 0)" for k
-      using True by simp
-    have "(\<Sum>k = 0..<8.
-            (if k = p then (1::complex) else 0) * (if k = q then 1 else 0))
-        = (\<Sum>k = 0..<8. if k = p then (1::complex) else 0)"
-      by (rule sum.cong) (simp_all add: pointwise)
-    also have "\<dots> = 1" using p8 by fastforce
-    finally show ?thesis using True by simp
-  next
-    case False
-    have "\<And>k. (if k = p then (1::complex) else 0) * (if k = q then 1 else 0) = 0"
-      using False by auto
-    with False show ?thesis by simp
-  qed
-  also have "\<dots> = (1\<^sub>m 8) $$ (i, j)"
-    using i j pq_iff by simp
-  finally show "(CCNOT * CCNOT) $$ (i, j) = (1\<^sub>m 8) $$ (i, j)" .
-qed
-
-lemma CCNOT_unitary: "unitary CCNOT"
-  by (simp add: unitary_def)
+and three alternating CNOTs compose to the swap of the two wires (\<open>SWAP_three_CNOTs\<close>
+below).\<close>
 
 subsection \<open>Cloning and no-cloning\<close>
 
@@ -328,5 +230,102 @@ proof
   hence "c = 0 \<or> c = 1" by auto
   with c_ne0 c_ne1 show False by (simp add: c_def)
 qed
+
+subsection \<open>SWAP from three CNOTs\<close>
+
+lemma less4_cases: "(i::nat) < 4 \<longleftrightarrow> i = 0 \<or> i = 1 \<or> i = 2 \<or> i = 3"
+  by auto
+
+text \<open>$\mathrm{CNOT}'$ is CNOT controlled by the second qubit.\<close>
+
+definition CNOT' :: "complex Matrix.mat" where
+  "CNOT' = Matrix.mat 4 4 (\<lambda>(i,j). if (i,j) \<in> {(0,0),(1,3),(2,2),(3,1)} then 1 else 0)"
+
+text \<open>D11-3: $\mathrm{SWAP}=\mathrm{CNOT}\cdot\mathrm{CNOT}'\cdot\mathrm{CNOT}$
+(\<^const>\<open>SWAP\<close> is the AFP's).\<close>
+
+theorem SWAP_three_CNOTs: "SWAP = CNOT * CNOT' * CNOT"
+  by (rule eq_matI)
+     (auto simp: SWAP_def CNOT_def CNOT'_def scalar_prod_def sum.atLeast0_lessThan_Suc
+        lessThan_Suc atLeast0LessThan[symmetric] less_Suc_eq)
+
+lemma SWAP_basis:
+  assumes "a < 2" "b < 2"
+  shows "SWAP *\<^sub>v tensor_vec (unit_vec 2 a) (unit_vec 2 b) = tensor_vec (unit_vec 2 b) (unit_vec 2 a)"
+proof -
+  have "\<forall>a \<in> {0,1}. \<forall>b \<in> {0,1::nat}.
+          SWAP *\<^sub>v tensor_vec (unit_vec 2 a) (unit_vec 2 b) = tensor_vec (unit_vec 2 b) (unit_vec 2 a)"
+    by (auto intro!: eq_vecI simp: SWAP_def tensor_vec_index tensor_vec_dim scalar_prod_def
+        sum.atLeast0_lessThan_Suc lessThan_Suc atLeast0LessThan[symmetric] less_Suc_eq less4_cases)
+  moreover have "a \<in> {0,1}" "b \<in> {0,1}" using assms by auto
+  ultimately show ?thesis by blast
+qed
+
+lemma CNOT'_basis:
+  assumes "a < 2" "b < 2"
+  shows "CNOT' *\<^sub>v tensor_vec (unit_vec 2 a) (unit_vec 2 b) = tensor_vec (unit_vec 2 ((a + b) mod 2)) (unit_vec 2 b)"
+proof -
+  have "\<forall>a \<in> {0,1}. \<forall>b \<in> {0,1::nat}.
+          CNOT' *\<^sub>v tensor_vec (unit_vec 2 a) (unit_vec 2 b) = tensor_vec (unit_vec 2 ((a + b) mod 2)) (unit_vec 2 b)"
+    by (auto intro!: eq_vecI simp: CNOT'_def tensor_vec_index tensor_vec_dim scalar_prod_def
+        sum.atLeast0_lessThan_Suc lessThan_Suc atLeast0LessThan[symmetric] less_Suc_eq less4_cases)
+  moreover have "a \<in> {0,1}" "b \<in> {0,1}" using assms by auto
+  ultimately show ?thesis by blast
+qed
+
+subsection \<open>The CCNOT truth table (D11-2)\<close>
+
+lemma CCNOT_unit_vec:
+  assumes k: "k < 8"
+  shows "CCNOT *\<^sub>v unit_vec 8 k = unit_vec 8 (if k = 6 then 7 else if k = 7 then 6 else k)"
+proof (rule eq_vecI)
+  fix r assume "r < dim_vec (unit_vec 8 (if k = 6 then 7 else if k = 7 then 6 else k) :: complex Matrix.vec)"
+  hence r: "r < 8" by simp
+  have "(CCNOT *\<^sub>v unit_vec 8 k) $ r = (\<Sum>i<8. CCNOT $$ (r, i) * (if i = k then 1 else 0))"
+    using r k by (simp add: scalar_prod_def unit_vec_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>i<8. if i = k then CCNOT $$ (r, i) else 0)" by (rule sum.cong) simp_all
+  also have "\<dots> = CCNOT $$ (r, k)" using k by simp
+  also have "\<dots> = (if (r = 6 \<and> k = 7) \<or> (r = 7 \<and> k = 6) then 1 else if r = k \<and> r < 6 then 1 else 0)"
+    using r k by (simp add: CCNOT_def)
+  also have "\<dots> = unit_vec 8 (if k = 6 then 7 else if k = 7 then 6 else k) $ r"
+    using r k by (cases "k = 6"; cases "k = 7"; cases "r = k"; simp add: unit_vec_def)
+  finally show "(CCNOT *\<^sub>v unit_vec 8 k) $ r = unit_vec 8 (if k = 6 then 7 else if k = 7 then 6 else k) $ r" .
+qed simp
+
+text \<open>On basis states $|a,b,c\rangle=e_a\otimes e_b\otimes e_c$: when $a=0$ nothing happens; when
+$a=1$, CNOT acts on $b,c$.\<close>
+
+theorem CCNOT_basis:
+  assumes a: "a < 2" and b: "b < 2" and c: "c < 2"
+  shows "CCNOT *\<^sub>v tensor_vec (unit_vec 2 a) (tensor_vec (unit_vec 2 b) (unit_vec 2 c)) =
+         tensor_vec (unit_vec 2 a) (tensor_vec (unit_vec 2 b) (unit_vec 2 (if a = 1 \<and> b = 1 then 1 - c else c)))"
+proof -
+  have u: "\<And>c. c < 2 \<Longrightarrow> tensor_vec (unit_vec 2 a) (tensor_vec (unit_vec 2 b) (unit_vec 2 c))
+                          = (unit_vec 8 (a * 4 + (b * 2 + c)) :: complex Matrix.vec)"
+  proof -
+    fix c :: nat assume c: "c < 2"
+    have bc: "b * 2 + c < 4" using b c by linarith
+    show "tensor_vec (unit_vec 2 a) (tensor_vec (unit_vec 2 b) (unit_vec 2 c)) = (unit_vec 8 (a * 4 + (b * 2 + c)) :: complex Matrix.vec)"
+      using tensor_unit_vec[OF b c] tensor_unit_vec[OF a bc] by simp
+  qed
+  have c': "(if a = 1 \<and> b = 1 then 1 - c else c) < 2" using c by auto
+  have k: "a * 4 + (b * 2 + c) < 8" using a b c by linarith
+  show ?thesis
+    unfolding u[OF c] u[OF c'] CCNOT_unit_vec[OF k]
+    using a b c by (auto simp: less_2_cases_iff)
+qed
+
+corollary CCNOT_truth_table:
+  fixes e :: "nat \<Rightarrow> complex Matrix.vec"
+  defines "e \<equiv> \<lambda>a. unit_vec 2 a"
+  shows "CCNOT *\<^sub>v tensor_vec (e 0) (tensor_vec (e 0) (e 0)) = tensor_vec (e 0) (tensor_vec (e 0) (e 0))"
+    and "CCNOT *\<^sub>v tensor_vec (e 0) (tensor_vec (e 0) (e 1)) = tensor_vec (e 0) (tensor_vec (e 0) (e 1))"
+    and "CCNOT *\<^sub>v tensor_vec (e 0) (tensor_vec (e 1) (e 0)) = tensor_vec (e 0) (tensor_vec (e 1) (e 0))"
+    and "CCNOT *\<^sub>v tensor_vec (e 0) (tensor_vec (e 1) (e 1)) = tensor_vec (e 0) (tensor_vec (e 1) (e 1))"
+    and "CCNOT *\<^sub>v tensor_vec (e 1) (tensor_vec (e 0) (e 0)) = tensor_vec (e 1) (tensor_vec (e 0) (e 0))"
+    and "CCNOT *\<^sub>v tensor_vec (e 1) (tensor_vec (e 0) (e 1)) = tensor_vec (e 1) (tensor_vec (e 0) (e 1))"
+    and "CCNOT *\<^sub>v tensor_vec (e 1) (tensor_vec (e 1) (e 0)) = tensor_vec (e 1) (tensor_vec (e 1) (e 1))"
+    and "CCNOT *\<^sub>v tensor_vec (e 1) (tensor_vec (e 1) (e 1)) = tensor_vec (e 1) (tensor_vec (e 1) (e 0))"
+  unfolding e_def by (simp_all add: CCNOT_basis)
 
 end

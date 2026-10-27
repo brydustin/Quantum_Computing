@@ -3,7 +3,7 @@
 *)
 
 theory Quantum_Channels
-  imports Day32_Phase_Flip_Code
+  imports Day31_Bit_Flip_Channel
 begin
 
 section \<open>Extensions beyond the notes\<close>

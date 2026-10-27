@@ -1,15 +1,19 @@
+(*  Title:   Day22_UCP_Compact.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 17 October 2011 (Day 22)
+*)
+
 theory Day22_UCP_Compact
   imports
-    Day16_Block_Form
-    Day19_Choi_TP_Unital
     Essential_Functional_Analysis.Lmat_Euclidean
+    Day16_Block_Form
+    Day22_Minimal_Kraus
     "HOL-Analysis.Convex"
     "HOL-Analysis.Convex_Euclidean_Space"
     "HOL-Analysis.Polytope"
     "HOL-Analysis.Starlike"
 begin
 
-section \<open>Day 22: $\mathrm{UCP}(M_n,M_d)$ is compact (D22-4)\<close>
+subsection \<open>$\mathrm{UCP}(M_n,M_d)$ is compact (D22-4)\<close>
 
 text \<open>The notes: $\mathrm{UCP}(M_n,M_d)$ is convex and compact, closed because the conditions are
 closed and bounded because $\Phi(I)=I$ forces $0\le\Phi(E_{ii})\le I$.  The space $L(M_n,M_d)$ carries
@@ -19,7 +23,7 @@ positive $P$ whose diagonal blocks sum to $I_d$ (\<open>ucp_choi_image\<close>, 
 \<open>choi_inv\<close>), and that set is compact (\<open>compact_ucp_choi_set\<close>): it is closed, and it lies in
 $d$ times the compact set of unit-trace positive matrices.\<close>
 
-subsection \<open>Typed PSD predicate\<close>
+subsubsection \<open>Typed PSD predicate\<close>
 
 definition psd_lmat :: "(complex, 'k :: finite, 'k) lmat \<Rightarrow> bool" where
   "psd_lmat M \<longleftrightarrow> psd (unwrap_lm M)"
@@ -28,7 +32,7 @@ lemma psd_lmat_unwrap [iff]:
   "psd_lmat (M :: (complex, 'k :: finite, 'k) lmat) \<longleftrightarrow> psd (unwrap_lm M)"
   unfolding psd_lmat_def by simp
 
-subsection \<open>The positive matrices form a closed set\<close>
+subsubsection \<open>The positive matrices form a closed set\<close>
 
 text \<open>Sub-lemmas for the closedness of PSD: the Hermitian half and the
 nonneg-quadratic-form half.\<close>
@@ -289,7 +293,7 @@ proof -
     unfolding psd_eq using closed_H closed_INT by (rule closed_Int)
 qed
 
-subsection \<open>Trace on lmat\<close>
+subsubsection \<open>Trace on lmat\<close>
 
 definition Tr_lmat :: "(complex, 'k :: finite, 'k) lmat \<Rightarrow> complex" where
   "Tr_lmat M = (\<Sum>i = 0..<CARD('k). unwrap_lm M $$ (i, i))"
@@ -383,7 +387,7 @@ proof -
   qed
 qed
 
-subsection \<open>Compactness of the unit-trace PSD slice\<close>
+subsubsection \<open>Compactness of the unit-trace PSD slice\<close>
 
 text \<open>For $\sigma\ge0$ with $\Tr\sigma=1$ and eigenvalues $\lambda_i\ge0$,
 $\norm\sigma_{HS}^2=\sum_i\lambda_i^2\le\bigl(\sum_i\lambda_i\bigr)^2=1$.\<close>
@@ -610,7 +614,7 @@ proof -
   show ?thesis using closed_S bounded_S compact_eq_bounded_closed by blast
 qed
 
-subsection \<open>UCP maps in Choi coordinates\<close>
+subsubsection \<open>UCP maps in Choi coordinates\<close>
 
 text \<open>In Choi coordinates a linear map $\Phi:M_n\to M_d$ is UCP iff $P_\Phi\ge0$ and
 $\sum_iR_{ii}=I_d$ (@{thm [source] choi_ucp_iff}); the set of such $P$ is compact.  Dimensions are

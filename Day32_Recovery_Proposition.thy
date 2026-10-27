@@ -1,264 +1,17 @@
+(*  Title:   Day32_Recovery_Proposition.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 14 November 2011 (Day 32)
+*)
+
 theory Day32_Recovery_Proposition
-  imports Day21_Unitary_Freedom Day32_Phase_Flip_Code
+  imports
+    Day09_POVMs_Entanglement
+    Day22_Minimal_Kraus
+    Day32_Phase_Flip_Code
 begin
 
-section \<open>Days 32--33: composition of Kraus maps and the general recovery proposition (D32-4, D33-2)\<close>
+subsection \<open>The general recovery proposition (D32-4, D33-2)\<close>
 
-subsection \<open>Algebra of \<open>foldr\<close>-sums of matrices\<close>
-
-lemma foldr_add_mat_mult_left:
-  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
-  assumes Ac: "A \<in> carrier_mat m n" and fc: "\<forall>x \<in> set xs. f x \<in> carrier_mat n p"
-  shows "A * foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n p) = foldr (\<lambda>x acc. A * f x + acc) xs (0\<^sub>m m p)"
-  using fc
-proof (induction xs)
-  case Nil show ?case using Ac by simp
-next
-  case (Cons x xs)
-  have fx: "f x \<in> carrier_mat n p" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat n p" using Cons.prems by auto
-  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n p) \<in> carrier_mat n p"
-    using rest by (induction xs) auto
-  show ?case using Ac fx rc Cons.IH[OF rest] by (simp add: mult_add_distrib_mat)
-qed
-
-lemma foldr_add_mat_mult_right:
-  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
-  assumes Bc: "B \<in> carrier_mat n p" and fc: "\<forall>x \<in> set xs. f x \<in> carrier_mat m n"
-  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) * B = foldr (\<lambda>x acc. f x * B + acc) xs (0\<^sub>m m p)"
-  using fc
-proof (induction xs)
-  case Nil show ?case using Bc by simp
-next
-  case (Cons x xs)
-  have fx: "f x \<in> carrier_mat m n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat m n" using Cons.prems by auto
-  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n"
-    using rest by (induction xs) auto
-  show ?case using Bc fx rc Cons.IH[OF rest] by (simp add: add_mult_distrib_mat)
-qed
-
-lemma foldr_add_mat_dagger:
-  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
-  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat m n"
-  shows "(foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger> = foldr (\<lambda>x acc. (f x)\<^sup>\<dagger> + acc) xs (0\<^sub>m n m)"
-  using assms
-proof (induction xs)
-  case Nil show ?case by (rule eq_matI) (auto simp: dagger_def)
-next
-  case (Cons x xs)
-  have fx: "f x \<in> carrier_mat m n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat m n" using Cons.prems by auto
-  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n" by (rule foldr_add_carrier_dn[OF rest])
-  have "(f x + foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger>
-        = (f x)\<^sup>\<dagger> + ((foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger>)"
-    using fx rc by (intro eq_matI) (auto simp: dagger_def)
-  thus ?case using Cons.IH[OF rest] by simp
-qed
-
-lemma foldr_add_mat_zero:
-  "foldr (\<lambda>x acc. (0\<^sub>m m n :: complex Matrix.mat) + acc) xs (0\<^sub>m m n) = 0\<^sub>m m n"
-  by (induction xs) auto
-
-lemma foldr_add_mat_delta:
-  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes fc: "\<forall>x \<in> set xs. f x \<in> carrier_mat m n" and d: "distinct xs" and i: "i \<in> set xs"
-  shows "foldr (\<lambda>x acc. (if x = i then f x else 0\<^sub>m m n) + acc) xs (0\<^sub>m m n) = f i"
-  using fc d i
-proof (induction xs)
-  case Nil thus ?case by simp
-next
-  case (Cons x xs)
-  show ?case
-  proof (cases "x = i")
-    case True
-    hence "i \<notin> set xs" using Cons.prems by simp
-    hence "foldr (\<lambda>x acc. (if x = i then f x else 0\<^sub>m m n) + acc) xs (0\<^sub>m m n) = 0\<^sub>m m n"
-      by (subst foldr_add_mat_cong[where g = "\<lambda>_. 0\<^sub>m m n"]) (auto simp: foldr_add_mat_zero)
-    thus ?thesis using True Cons.prems by simp
-  next
-    case False
-    thus ?thesis using Cons by simp
-  qed
-qed
-
-lemma foldr_add_mat_smult_pull:
-  fixes f :: "'a \<Rightarrow> complex Matrix.mat" and c :: "'a \<Rightarrow> complex"
-  assumes fc: "\<forall>x \<in> set xs. f x = c x \<cdot>\<^sub>m M" and Mc: "M \<in> carrier_mat m n"
-  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) = sum_list (map c xs) \<cdot>\<^sub>m M"
-  using fc
-proof (induction xs)
-  case Nil show ?case using Mc by (intro eq_matI) auto
-next
-  case (Cons x xs)
-  have "foldr (\<lambda>x acc. f x + acc) (x # xs) (0\<^sub>m m n) = c x \<cdot>\<^sub>m M + sum_list (map c xs) \<cdot>\<^sub>m M"
-    using Cons by simp
-  also have "\<dots> = (c x + sum_list (map c xs)) \<cdot>\<^sub>m M" using Mc by (intro eq_matI) (auto simp: algebra_simps)
-  finally show ?case by simp
-qed
-
-lemma foldr_list_as_index:
-  fixes g :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-  shows "foldr (\<lambda>A acc. g A + acc) As z = foldr (\<lambda>l acc. g (As ! l) + acc) [0..<length As] z"
-proof -
-  have "foldr (\<lambda>l acc. g (As ! l) + acc) [0..<length As] z = foldr (\<lambda>A acc. g A + acc) (map (nth As) [0..<length As]) z"
-    by (simp add: foldr_map comp_def)
-  also have "map (nth As) [0..<length As] = As" by (rule map_nth)
-  finally show ?thesis ..
-qed
-
-subsection \<open>Composition of Kraus maps\<close>
-
-definition kraus_compose :: "complex Matrix.mat list \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list" where
-  "kraus_compose As Es = concat (map (\<lambda>E. map (\<lambda>A. A * E) As) Es)"
-
-lemma kraus_compose_Nil [simp]: "kraus_compose As [] = []"
-  by (simp add: kraus_compose_def)
-
-lemma kraus_compose_Cons: "kraus_compose As (E # Es) = map (\<lambda>A. A * E) As @ kraus_compose As Es"
-  by (simp add: kraus_compose_def)
-
-lemma length_kraus_compose [simp]: "length (kraus_compose As Es) = length Es * length As"
-  by (induction Es) (simp_all add: kraus_compose_Cons)
-
-text \<open>Composing Kraus maps multiplies their operators: for $\mathcal E(X)=\sum_iE_iXE_i^*$ and
-$\mathcal A(Y)=\sum_lA_lYA_l^*$,
-\[ (\mathcal A\circ\mathcal E)(X)=\sum_{i,l}(A_lE_i)\,X\,(A_lE_i)^*, \]
-and if both are trace preserving then
-$\sum_{i,l}(A_lE_i)^*(A_lE_i)=\sum_iE_i^*\bigl(\sum_lA_l^*A_l\bigr)E_i=\sum_iE_i^*E_i=I$.\<close>
-
-lemma kraus_compose_nth:
-  assumes i: "i < length Es" and l: "l < length As"
-  shows "kraus_compose As Es ! (i * length As + l) = As ! l * Es ! i"
-  using i
-proof (induction Es arbitrary: i)
-  case Nil thus ?case by simp
-next
-  case (Cons E Es)
-  show ?case
-  proof (cases i)
-    case 0 thus ?thesis using l by (simp add: kraus_compose_Cons nth_append)
-  next
-    case (Suc i')
-    hence "i * length As + l = length As + (i' * length As + l)" by simp
-    thus ?thesis using Suc Cons by (simp add: kraus_compose_Cons nth_append)
-  qed
-qed
-
-lemma kraus_compose_carrier:
-  assumes "\<forall>A \<in> set As. A \<in> carrier_mat m d" and "\<forall>E \<in> set Es. E \<in> carrier_mat d n"
-  shows "\<forall>W \<in> set (kraus_compose As Es). W \<in> carrier_mat m n"
-  using assms by (auto simp: kraus_compose_def)
-
-lemma kraus_map_dim_map_mult_right:
-  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat m d" and Ec: "E \<in> carrier_mat d n" and Xc: "M \<in> carrier_mat n n"
-  shows "kraus_map_dim m (map (\<lambda>A. A * E) As) M = kraus_map_dim m As (E * M * (E\<^sup>\<dagger>))"
-  using As_c
-proof (induction As)
-  case Nil show ?case by simp
-next
-  case (Cons A As)
-  have Ac: "A \<in> carrier_mat m d" using Cons.prems by simp
-  have Adc: "A\<^sup>\<dagger> \<in> carrier_mat d m" and Edc: "E\<^sup>\<dagger> \<in> carrier_mat n d"
-    by (rule dagger_carrier[OF Ac]) (rule dagger_carrier[OF Ec])
-  have dag: "(A * E)\<^sup>\<dagger> = (E\<^sup>\<dagger>) * (A\<^sup>\<dagger>)"
-    by (rule dagger_of_prod) (simp only: carrier_matD[OF Ac] carrier_matD[OF Ec])
-  have "(A * E) * M * ((A * E)\<^sup>\<dagger>) = ((A * E) * M) * ((E\<^sup>\<dagger>) * (A\<^sup>\<dagger>))" by (simp only: dag)
-  also have "\<dots> = (A * (E * M)) * ((E\<^sup>\<dagger>) * (A\<^sup>\<dagger>))" by (simp only: assoc_mult_mat[OF Ac Ec Xc])
-  also have "\<dots> = A * ((E * M) * ((E\<^sup>\<dagger>) * (A\<^sup>\<dagger>)))"
-    by (rule assoc_mult_mat[OF Ac mult_carrier_mat[OF Ec Xc] mult_carrier_mat[OF Edc Adc]])
-  also have "\<dots> = A * (((E * M) * (E\<^sup>\<dagger>)) * (A\<^sup>\<dagger>))"
-    by (simp only: assoc_mult_mat[OF mult_carrier_mat[OF Ec Xc] Edc Adc, symmetric])
-  also have "\<dots> = A * (E * M * (E\<^sup>\<dagger>)) * (A\<^sup>\<dagger>)"
-    by (rule assoc_mult_mat[OF Ac mult_carrier_mat[OF mult_carrier_mat[OF Ec Xc] Edc] Adc, symmetric])
-  finally have "(A * E) * M * ((A * E)\<^sup>\<dagger>) = A * (E * M * (E\<^sup>\<dagger>)) * (A\<^sup>\<dagger>)" .
-  thus ?case using Cons by simp
-qed
-
-lemma kraus_map_dim_compose:
-  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat m d" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat d n"
-      and Xc: "M \<in> carrier_mat n n"
-  shows "kraus_map_dim m (kraus_compose As Es) M = kraus_map_dim m As (kraus_map_dim d Es M)"
-  using Es_c
-proof (induction Es)
-  case Nil show ?case using As_c by (simp add: kraus_map_dim_zero)
-next
-  case (Cons E Es)
-  have Ec: "E \<in> carrier_mat d n" and Es_c': "\<forall>E \<in> set Es. E \<in> carrier_mat d n" using Cons.prems by auto
-  have c1: "\<forall>W \<in> set (map (\<lambda>A. A * E) As). W \<in> carrier_mat m n" using As_c Ec by auto
-  have c2: "\<forall>W \<in> set (kraus_compose As Es). W \<in> carrier_mat m n" by (rule kraus_compose_carrier[OF As_c Es_c'])
-  have EXE: "E * M * (E\<^sup>\<dagger>) \<in> carrier_mat d d" using Ec Xc dagger_carrier[OF Ec] by auto
-  have kc: "kraus_map_dim d Es M \<in> carrier_mat d d" by (rule kraus_map_dim_carrier[OF Es_c' Xc])
-  have "kraus_map_dim m (kraus_compose As (E # Es)) M
-        = kraus_map_dim m As (E * M * (E\<^sup>\<dagger>)) + kraus_map_dim m As (kraus_map_dim d Es M)"
-    unfolding kraus_compose_Cons kraus_map_dim_append[OF c1 c2 Xc]
-    using kraus_map_dim_map_mult_right[OF As_c Ec Xc] Cons.IH[OF Es_c'] by simp
-  also have "\<dots> = kraus_map_dim m As (E * M * (E\<^sup>\<dagger>) + kraus_map_dim d Es M)"
-    by (rule kraus_map_dim_add[OF EXE kc As_c, symmetric])
-  finally show ?case by simp
-qed
-
-lemma sum_wdag_w_map_mult_right:
-  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat m d" and Ec: "E \<in> carrier_mat d n"
-  shows "sum_wdag_w n (map (\<lambda>A. A * E) As) = (E\<^sup>\<dagger>) * sum_wdag_w d As * E"
-  using As_c
-proof (induction As)
-  case Nil show ?case using Ec dagger_carrier[OF Ec] by simp
-next
-  case (Cons A As)
-  have Ac: "A \<in> carrier_mat m d" and As_c': "\<forall>A \<in> set As. A \<in> carrier_mat m d" using Cons.prems by auto
-  have sc: "sum_wdag_w d As \<in> carrier_mat d d" by (rule sum_wdag_w_carrier[OF As_c'])
-  have AA: "(A\<^sup>\<dagger>) * A \<in> carrier_mat d d" using Ac dagger_carrier[OF Ac] by auto
-  have Adc: "A\<^sup>\<dagger> \<in> carrier_mat d m" and Edc: "E\<^sup>\<dagger> \<in> carrier_mat n d"
-    by (rule dagger_carrier[OF Ac]) (rule dagger_carrier[OF Ec])
-  have dag: "(A * E)\<^sup>\<dagger> = (E\<^sup>\<dagger>) * (A\<^sup>\<dagger>)"
-    by (rule dagger_of_prod) (simp only: carrier_matD[OF Ac] carrier_matD[OF Ec])
-  have "((A * E)\<^sup>\<dagger>) * (A * E) = ((E\<^sup>\<dagger>) * (A\<^sup>\<dagger>)) * (A * E)" by (simp only: dag)
-  also have "\<dots> = (E\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * (A * E))" by (rule assoc_mult_mat[OF Edc Adc mult_carrier_mat[OF Ac Ec]])
-  also have "\<dots> = (E\<^sup>\<dagger>) * (((A\<^sup>\<dagger>) * A) * E)" by (simp only: assoc_mult_mat[OF Adc Ac Ec, symmetric])
-  also have "\<dots> = (E\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * A) * E"
-    by (rule assoc_mult_mat[OF Edc mult_carrier_mat[OF Adc Ac] Ec, symmetric])
-  finally have key: "((A * E)\<^sup>\<dagger>) * (A * E) = (E\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * A) * E" .
-  have "((A * E)\<^sup>\<dagger>) * (A * E) + (E\<^sup>\<dagger>) * sum_wdag_w d As * E
-        = (E\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * A) * E + (E\<^sup>\<dagger>) * sum_wdag_w d As * E" by (simp only: key)
-  also have "\<dots> = ((E\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * A) + (E\<^sup>\<dagger>) * sum_wdag_w d As) * E"
-    by (rule add_mult_distrib_mat[OF mult_carrier_mat[OF Edc AA] mult_carrier_mat[OF Edc sc] Ec, symmetric])
-  also have "(E\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * A) + (E\<^sup>\<dagger>) * sum_wdag_w d As = (E\<^sup>\<dagger>) * ((A\<^sup>\<dagger>) * A + sum_wdag_w d As)"
-    by (rule mult_add_distrib_mat[OF Edc AA sc, symmetric])
-  finally show ?case unfolding list.map sum_wdag_w_Cons Cons.IH[OF As_c'] .
-qed
-
-lemma sum_wdag_w_compose:
-  assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat m d" and Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat d n"
-      and As_tp: "sum_wdag_w d As = 1\<^sub>m d"
-  shows "sum_wdag_w n (kraus_compose As Es) = sum_wdag_w n Es"
-  using Es_c
-proof (induction Es)
-  case Nil show ?case by simp
-next
-  case (Cons E Es)
-  have Ec: "E \<in> carrier_mat d n" and Es_c': "\<forall>E \<in> set Es. E \<in> carrier_mat d n" using Cons.prems by auto
-  have c1: "\<forall>W \<in> set (map (\<lambda>A. A * E) As). W \<in> carrier_mat m n" using As_c Ec by auto
-  have c2: "\<forall>W \<in> set (kraus_compose As Es). W \<in> carrier_mat m n" by (rule kraus_compose_carrier[OF As_c Es_c'])
-  have "sum_wdag_w n (kraus_compose As (E # Es)) = (E\<^sup>\<dagger>) * E + sum_wdag_w n (kraus_compose As Es)"
-    unfolding kraus_compose_Cons sum_wdag_w_append[OF c1 c2] sum_wdag_w_map_mult_right[OF As_c Ec] As_tp
-    using Ec dagger_carrier[OF Ec] by simp
-  thus ?case using Cons.IH[OF Es_c'] by (simp add: sum_wdag_w_Cons)
-qed
-
-lemma kraus_operators_compose:
-  assumes As: "kraus_operators d m As" and Es: "kraus_operators n d Es"
-  shows "kraus_operators n m (kraus_compose As Es)"
-proof -
-  have As_c: "\<forall>A \<in> set As. A \<in> carrier_mat m d" and As_tp: "sum_wdag_w d As = 1\<^sub>m d"
-    using As by (auto simp: kraus_operators_altdef)
-  have Es_c: "\<forall>E \<in> set Es. E \<in> carrier_mat d n" and Es_tp: "sum_wdag_w n Es = 1\<^sub>m n"
-    using Es by (auto simp: kraus_operators_altdef)
-  show ?thesis
-    unfolding kraus_operators_altdef
-    using kraus_compose_carrier[OF As_c Es_c] sum_wdag_w_compose[OF As_c Es_c As_tp] Es_tp by simp
-qed
-
-subsection \<open>The general recovery proposition (D32-4) and its linear-combination form (D33-2)\<close>
-
-subsection \<open>Matrix sums acting on vectors\<close>
+subsubsection \<open>Matrix sums acting on vectors\<close>
 
 lemma smult_zero_vec [simp]: "(c :: complex) \<cdot>\<^sub>v 0\<^sub>v n = 0\<^sub>v n"
   by (intro eq_vecI) auto
@@ -819,5 +572,305 @@ proof -
   finally show ?thesis .
 qed
 
+
+subsection \<open>The code for $Y$ flips\<close>
+
+definition block_op :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "block_op s U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (2^s)) U) (1\<^sub>m (2^(2-s)))"
+
+lemma block_op_cases:
+  fixes U :: "complex Matrix.mat"
+  assumes U: "U \<in> carrier_mat 2 2"
+  shows "block_op 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
+    and "block_op 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)"
+    and "block_op 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
+proof -
+  have i4: "1\<^sub>m 4 = Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)" by (simp add: tensor_mat_id)
+  show "block_op 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
+    unfolding block_op_def using tensor_one_left[OF U] by (simp add: i4 tensor_mat_is_assoc)
+  show "block_op 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)" unfolding block_op_def by simp
+  have c: "Tensor.tensor_mat (1\<^sub>m 4) U \<in> carrier_mat 8 8" using U by auto
+  show "block_op 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
+    unfolding block_op_def using tensor_one_right[OF c] by (simp add: i4)
+qed
+
+lemma block_op_carrier:
+  assumes U: "U \<in> carrier_mat 2 2" and s: "s < 3"
+  shows "block_op s U \<in> carrier_mat 8 8"
+proof -
+  have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
+  thus ?thesis using U by (elim disjE) (auto simp: block_op_def)
+qed
+
+lemma gram_entry:
+  fixes A B :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat n k" and B: "B \<in> carrier_mat n k" and a: "a < k" and b: "b < k"
+  shows "((A\<^sup>\<dagger>) * B) $$ (a,b) = \<langle>Matrix.col A a | Matrix.col B b\<rangle>"
+proof -
+  have "((A\<^sup>\<dagger>) * B) $$ (a,b) = (\<Sum>i<n. cnj (A $$ (i,a)) * B $$ (i,b))"
+    using A B a b by (simp add: scalar_prod_def dagger_def)
+  also have "\<dots> = \<langle>Matrix.col A a | Matrix.col B b\<rangle>"
+  proof -
+    have dA: "dim_vec (Matrix.col A a) = n" and dB: "dim_vec (Matrix.col B b) = n" using A B by simp_all
+    show ?thesis unfolding inner_prod_sum[OF dA dB] atLeast0LessThan
+      by (rule sum.cong) (use A B a b in auto)
+  qed
+  finally show ?thesis .
+qed
+
+lemma sandwich_VVd:
+  fixes V W :: "complex Matrix.mat"
+  assumes V: "V \<in> carrier_mat n k" and W: "W \<in> carrier_mat n n"
+  shows "(V * (V\<^sup>\<dagger>)) * W * (V * (V\<^sup>\<dagger>)) = V * ((V\<^sup>\<dagger>) * W * V) * (V\<^sup>\<dagger>)"
+proof -
+  have Vd: "V\<^sup>\<dagger> \<in> carrier_mat k n" by (rule dagger_carrier[OF V])
+  have VdW: "(V\<^sup>\<dagger>) * W \<in> carrier_mat k n" by (rule mult_carrier_mat[OF Vd W])
+  have "(V * (V\<^sup>\<dagger>)) * W * (V * (V\<^sup>\<dagger>)) = V * ((V\<^sup>\<dagger>) * W) * (V * (V\<^sup>\<dagger>))"
+    by (simp only: assoc_mult_mat[OF V Vd W])
+  also have "\<dots> = V * (((V\<^sup>\<dagger>) * W) * (V * (V\<^sup>\<dagger>)))"
+    by (rule assoc_mult_mat[OF V VdW mult_carrier_mat[OF V Vd]])
+  also have "((V\<^sup>\<dagger>) * W) * (V * (V\<^sup>\<dagger>)) = (((V\<^sup>\<dagger>) * W) * V) * (V\<^sup>\<dagger>)"
+    by (rule assoc_mult_mat[OF VdW V Vd, symmetric])
+  also have "V * ((((V\<^sup>\<dagger>) * W) * V) * (V\<^sup>\<dagger>)) = (V * (((V\<^sup>\<dagger>) * W) * V)) * (V\<^sup>\<dagger>)"
+    by (rule assoc_mult_mat[OF V mult_carrier_mat[OF VdW V] Vd, symmetric])
+  finally show ?thesis .
+qed
+
+text \<open>Day 32: the code for $Y$ flips.  With $\beta=Y\ket+$ one has $\ket+\perp\beta$,
+$Y\ket+=\beta$, $Y\beta=\ket+$, and the code $\ket0\mapsto\ket{+++}$, $\ket1\mapsto\ket{\beta\beta\beta}$
+corrects one $Y$ flip exactly as the bit-flip code corrects one $X$ flip.\<close>
+
+definition ket_beta :: "complex Matrix.vec" where "ket_beta = \<i> \<cdot>\<^sub>v ket_minus"
+
+definition y_basis :: "bool \<Rightarrow> complex Matrix.vec" where "y_basis s = (if s then ket_plus else ket_beta)"
+
+lemma ket_beta_dim [simp]: "dim_vec ket_beta = 2" by (simp add: ket_beta_def ket_minus_def)
+lemma y_basis_dim [simp]: "dim_vec (y_basis s) = 2" by (simp add: y_basis_def)
+
+lemma ket_beta_index: "ket_beta $ 0 = \<i> / sqrt 2" "ket_beta $ 1 = - \<i> / sqrt 2"
+  by (simp_all add: ket_beta_def ket_minus_def)
+
+lemma Y_plus: "Pauli_Y *\<^sub>v ket_plus = ket_beta"
+  by (rule eq_vecI) (auto simp: Pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
+
+lemma Y_beta: "Pauli_Y *\<^sub>v ket_beta = ket_plus"
+  by (rule eq_vecI) (auto simp: Pauli_Y_def ket_plus_def ket_beta_def ket_minus_def scalar_prod_def less_2_cases_iff)
+
+lemma Y_ub: "Pauli_Y *\<^sub>v y_basis s = y_basis (\<not> s)"
+  by (cases s) (simp_all add: y_basis_def Y_plus Y_beta)
+
+lemma inner2: "dim_vec u = 2 \<Longrightarrow> dim_vec v = 2 \<Longrightarrow> \<langle>u|v\<rangle> = cnj (u $ 0) * v $ 0 + cnj (u $ 1) * v $ 1"
+  by (subst inner_prod_sum[of _ 2]) (simp_all add: numeral_2_eq_2)
+
+text \<open>\[ \beta=Y\ket+=\frac{i}{\sqrt2}\begin{pmatrix}1\\-1\end{pmatrix},\qquad Y\beta=\ket+,\qquad
+   \braket{+}{\beta}=0, \]
+so $\{\ket+,\beta\}$ is an orthonormal basis that $Y$ swaps, as $X$ swaps $\ket0$ and $\ket1$.\<close>
+
+lemma y_basis_inner: "\<langle>y_basis s | y_basis t\<rangle> = (if s = t then 1 else 0)"
+proof -
+  have r: "cnj (complex_of_real (sqrt 2)) = complex_of_real (sqrt 2)" by simp
+  have s2: "complex_of_real (sqrt 2) * complex_of_real (sqrt 2) = 2"
+    by (simp only: of_real_mult[symmetric]) simp
+  show ?thesis unfolding inner2[OF y_basis_dim y_basis_dim]
+    by (cases s; cases t) (simp_all add: y_basis_def ket_plus_index_0 ket_plus_index_1 ket_beta_index ket_plus_index_1[unfolded One_nat_def] ket_beta_index(2)[unfolded One_nat_def] field_simps s2)
+qed
+
+theorem ket_plus_beta_orth: "\<langle>ket_plus | ket_beta\<rangle> = 0"
+  using y_basis_inner[of True False] by (simp add: y_basis_def)
+
+subsubsection \<open>Codes with orthogonal error images\<close>
+
+text \<open>For a code with orthonormal basis $v_1,\dots,v_k$ (the columns of $V$, projection $VV^*$)
+and unitary errors whose images of the basis are mutually orthogonal, the recovery proposition
+gives one CPTP map correcting each error on every code state $Vc$.\<close>
+
+lemma proj_of_orthonormal:
+  assumes orth: "orthonormal_list n vs"
+  defines "V \<equiv> mat_of_cols n vs"
+  shows "projection n (V * (V\<^sup>\<dagger>))"
+proof -
+  let ?k = "length vs"
+  have Vc: "V \<in> carrier_mat n ?k" unfolding V_def by simp
+  have Vdc: "V\<^sup>\<dagger> \<in> carrier_mat ?k n" by (rule dagger_carrier[OF Vc])
+  have VdV: "(V\<^sup>\<dagger>) * V = 1\<^sub>m ?k" unfolding V_def by (rule cols_mat_dagger_left[OF orth])
+  have Pc: "V * (V\<^sup>\<dagger>) \<in> carrier_mat n n" using Vc Vdc by simp
+  have "(V * (V\<^sup>\<dagger>))\<^sup>\<dagger> = ((V\<^sup>\<dagger>)\<^sup>\<dagger>) * (V\<^sup>\<dagger>)" by (rule dagger_of_prod) (use Vc Vdc in simp)
+  hence h: "(V * (V\<^sup>\<dagger>))\<^sup>\<dagger> = V * (V\<^sup>\<dagger>)" unfolding dagger_of_dagger_is_id .
+  have "V * (V\<^sup>\<dagger>) * (V * (V\<^sup>\<dagger>)) = V * (((V\<^sup>\<dagger>) * V) * (V\<^sup>\<dagger>))"
+    by (simp only: assoc_mult_mat[OF Vc Vdc mult_carrier_mat[OF Vc Vdc]] assoc_mult_mat[OF Vdc Vc Vdc])
+  also have "\<dots> = V * (V\<^sup>\<dagger>)" unfolding VdV by (simp only: left_mult_one_mat[OF Vdc])
+  finally show ?thesis unfolding projection_def hermitian_def using Pc h by simp
+qed
+
+lemma proj_fixes_code:
+  assumes orth: "orthonormal_list n vs" and c: "dim_vec c = length vs"
+  defines "V \<equiv> mat_of_cols n vs"
+  shows "(V * (V\<^sup>\<dagger>)) *\<^sub>v (V *\<^sub>v c) = V *\<^sub>v c"
+proof -
+  let ?k = "length vs"
+  have Vc: "V \<in> carrier_mat n ?k" unfolding V_def by simp
+  have Vdc: "V\<^sup>\<dagger> \<in> carrier_mat ?k n" by (rule dagger_carrier[OF Vc])
+  have VdV: "(V\<^sup>\<dagger>) * V = 1\<^sub>m ?k" unfolding V_def by (rule cols_mat_dagger_left[OF orth])
+  have cc: "c \<in> carrier_vec ?k" by (rule carrier_vecI[OF c])
+  have "(V * (V\<^sup>\<dagger>)) *\<^sub>v (V *\<^sub>v c) = V *\<^sub>v ((V\<^sup>\<dagger>) *\<^sub>v (V *\<^sub>v c))"
+    by (rule assoc_mult_mat_vec[OF Vc Vdc mult_mat_vec_carrier[OF Vc cc]])
+  also have "(V\<^sup>\<dagger>) *\<^sub>v (V *\<^sub>v c) = c"
+    using assoc_mult_mat_vec[OF Vdc Vc cc] unfolding VdV using cc by simp
+  finally show ?thesis .
+qed
+
+theorem orthogonal_images_recovery:
+  assumes orth: "orthonormal_list n vs"
+      and Us: "\<forall>U \<in> set Us. U \<in> carrier_mat n n \<and> unitary U"
+      and img: "\<forall>i < length Us. \<forall>j < length Us. i \<noteq> j \<longrightarrow>
+                  (\<forall>a < length vs. \<forall>b < length vs. \<langle>Us ! i *\<^sub>v vs ! a | Us ! j *\<^sub>v vs ! b\<rangle> = 0)"
+  defines "V \<equiv> mat_of_cols n vs"
+  shows "recovery_setting n (V * (V\<^sup>\<dagger>)) Us"
+proof (rule recovery_setting_unitaries[OF _ Us])
+  let ?k = "length vs" and ?P = "V * (V\<^sup>\<dagger>)"
+  show "projection n ?P" unfolding V_def by (rule proj_of_orthonormal[OF orth])
+  have Vc: "V \<in> carrier_mat n ?k" unfolding V_def by simp
+  have Vdc: "V\<^sup>\<dagger> \<in> carrier_mat ?k n" by (rule dagger_carrier[OF Vc])
+  have vsd: "\<And>a. a < ?k \<Longrightarrow> vs ! a \<in> carrier_vec n"
+    using orth unfolding orthonormal_list_def by (auto intro: carrier_vecI)
+  show "\<forall>i < length Us. \<forall>j < length Us. i \<noteq> j \<longrightarrow> ?P * (((Us ! i)\<^sup>\<dagger>) * Us ! j) * ?P = 0\<^sub>m n n"
+  proof (intro allI impI)
+    fix i j assume i: "i < length Us" and j: "j < length Us" and ij: "i \<noteq> j"
+    have Uic: "Us ! i \<in> carrier_mat n n" and Ujc: "Us ! j \<in> carrier_mat n n" using Us i j nth_mem by blast+
+    have Uidc: "(Us ! i)\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF Uic])
+    have UVi: "Us ! i * V \<in> carrier_mat n ?k" and UVj: "Us ! j * V \<in> carrier_mat n ?k" using Uic Ujc Vc by auto
+    have G0: "((Us ! i * V)\<^sup>\<dagger>) * (Us ! j * V) = 0\<^sub>m ?k ?k"
+    proof (rule eq_matI)
+      fix a b assume "a < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" "b < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+      hence a: "a < ?k" and b: "b < ?k" by simp_all
+      have ca: "Matrix.col (Us ! i * V) a = Us ! i *\<^sub>v vs ! a"
+        using col_mult2[OF Uic Vc a] col_mat_of_cols[OF a vsd[OF a]] unfolding V_def by simp
+      have cb: "Matrix.col (Us ! j * V) b = Us ! j *\<^sub>v vs ! b"
+        using col_mult2[OF Ujc Vc b] col_mat_of_cols[OF b vsd[OF b]] unfolding V_def by simp
+      show "(((Us ! i * V)\<^sup>\<dagger>) * (Us ! j * V)) $$ (a,b) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (a,b)"
+        unfolding gram_entry[OF UVi UVj a b] ca cb using img i j ij a b by simp
+    qed (use UVi UVj in \<open>simp_all add: V_def\<close>)
+    have "(V\<^sup>\<dagger>) * ((Us ! i)\<^sup>\<dagger> * Us ! j) * V = ((Us ! i * V)\<^sup>\<dagger>) * (Us ! j * V)"
+    proof -
+      have "(Us ! i * V)\<^sup>\<dagger> = (V\<^sup>\<dagger>) * ((Us ! i)\<^sup>\<dagger>)" by (rule dagger_of_prod) (use Uic Vc in simp)
+      thus ?thesis
+        by (simp add: assoc_mult_mat[OF Vdc Uidc mult_carrier_mat[OF Ujc Vc]]
+            assoc_mult_mat[OF Vdc mult_carrier_mat[OF Uidc Ujc] Vc] assoc_mult_mat[OF Uidc Ujc Vc])
+    qed
+    hence inner0: "(V\<^sup>\<dagger>) * ((Us ! i)\<^sup>\<dagger> * Us ! j) * V = 0\<^sub>m ?k ?k" unfolding G0 .
+    have W: "(Us ! i)\<^sup>\<dagger> * Us ! j \<in> carrier_mat n n" using Uidc Ujc by simp
+    have "?P * ((Us ! i)\<^sup>\<dagger> * Us ! j) * ?P = V * ((V\<^sup>\<dagger>) * ((Us ! i)\<^sup>\<dagger> * Us ! j) * V) * (V\<^sup>\<dagger>)"
+      by (rule sandwich_VVd[OF Vc W])
+    also have "\<dots> = 0\<^sub>m n n" unfolding inner0 using Vc Vdc by simp
+    finally show "?P * (((Us ! i)\<^sup>\<dagger>) * Us ! j) * ?P = 0\<^sub>m n n" .
+  qed
+qed
+
+corollary orthogonal_images_correct:
+  assumes orth: "orthonormal_list n vs"
+      and Us: "\<forall>U \<in> set Us. U \<in> carrier_mat n n \<and> unitary U"
+      and img: "\<forall>i < length Us. \<forall>j < length Us. i \<noteq> j \<longrightarrow>
+                  (\<forall>a < length vs. \<forall>b < length vs. \<langle>Us ! i *\<^sub>v vs ! a | Us ! j *\<^sub>v vs ! b\<rangle> = 0)"
+  shows "\<exists>Rs. kraus_operators n n Rs \<and>
+           (\<forall>(c :: complex Matrix.vec) j. dim_vec c = length vs \<longrightarrow> j < length Us \<longrightarrow>
+              kraus_map_dim n Rs (Us ! j * ((mat_of_cols n vs *\<^sub>v c) \<oslash> (mat_of_cols n vs *\<^sub>v c)) * ((Us ! j)\<^sup>\<dagger>))
+              = (mat_of_cols n vs *\<^sub>v c) \<oslash> (mat_of_cols n vs *\<^sub>v c))"
+proof -
+  let ?V = "mat_of_cols n vs"
+  have S: "recovery_setting n (?V * (?V\<^sup>\<dagger>)) Us" by (rule orthogonal_images_recovery[OF orth Us img])
+  show ?thesis
+  proof (intro exI conjI allI impI)
+    show "kraus_operators n n (Day32_Recovery_Proposition.recovery_ops n (?V * (?V\<^sup>\<dagger>)) Us)"
+      by (rule recovery_ops_kraus_operators[OF S])
+    fix c :: "complex Matrix.vec" and j assume c: "dim_vec c = length vs" and j: "j < length Us"
+    have \<psi>d: "dim_vec (?V *\<^sub>v c) = n" by simp
+    have Ujc: "Us ! j \<in> carrier_mat n n" using Us j nth_mem by blast
+    show "kraus_map_dim n (Day32_Recovery_Proposition.recovery_ops n (?V * (?V\<^sup>\<dagger>)) Us)
+            (Us ! j * ((?V *\<^sub>v c) \<oslash> (?V *\<^sub>v c)) * ((Us ! j)\<^sup>\<dagger>)) = (?V *\<^sub>v c) \<oslash> (?V *\<^sub>v c)"
+      unfolding conj_outer_prod[OF Ujc \<psi>d]
+      by (rule recovery_single_error[OF S \<psi>d proj_fixes_code[OF orth c] j])
+  qed
+qed
+
+subsubsection \<open>The $Y$-flip code\<close>
+
+definition y_word :: "bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> complex Matrix.vec" where
+  "y_word a b c = tensor_vec (tensor_vec (y_basis a) (y_basis b)) (y_basis c)"
+
+definition y_errors :: "complex Matrix.mat list" where
+  "y_errors = [1\<^sub>m 8, block_op 0 Pauli_Y, block_op 1 Pauli_Y, block_op 2 Pauli_Y]"
+
+definition y_codewords :: "complex Matrix.vec list" where
+  "y_codewords = [y_word True True True, y_word False False False]"
+
+lemma y_word_dim [simp]: "dim_vec (y_word a b c) = 8"
+  unfolding y_word_def by (simp add: tensor_vec_dim)
+
+text \<open>The code $\ket0\mapsto\ket{{+}{+}{+}}$, $\ket1\mapsto\ket{\beta\beta\beta}$ is the bit-flip code in the basis
+$\{\ket+,\beta\}$.  The eight products of $\ket+$ and $\beta$ are orthonormal and $Y$ on qubit $s$
+swaps the factor $s$, so the images of the code under $I,Y_0,Y_1,Y_2$ are mutually orthogonal.\<close>
+
+lemma y_word_inner: "\<langle>y_word a b c | y_word a' b' c'\<rangle> = (if a = a' \<and> b = b' \<and> c = c' then 1 else 0)"
+proof -
+  have "\<langle>y_word a b c | y_word a' b' c'\<rangle> = \<langle>tensor_vec (y_basis a) (y_basis b) | tensor_vec (y_basis a') (y_basis b')\<rangle> * \<langle>y_basis c | y_basis c'\<rangle>"
+    unfolding y_word_def by (rule tensor_inner_prod) (simp_all add: tensor_vec_dim)
+  also have "\<langle>tensor_vec (y_basis a) (y_basis b) | tensor_vec (y_basis a') (y_basis b')\<rangle> = \<langle>y_basis a | y_basis a'\<rangle> * \<langle>y_basis b | y_basis b'\<rangle>"
+    by (rule tensor_inner_prod) simp_all
+  finally show ?thesis by (simp add: y_basis_inner)
+qed
+
+lemma y_actions:
+  "block_op 0 Pauli_Y *\<^sub>v y_word a b c = y_word (\<not> a) b c"
+  "block_op 1 Pauli_Y *\<^sub>v y_word a b c = y_word a (\<not> b) c"
+  "block_op 2 Pauli_Y *\<^sub>v y_word a b c = y_word a b (\<not> c)"
+proof -
+  have Y: "Pauli_Y \<in> carrier_mat 2 2" by simp
+  have I: "(1\<^sub>m 2 :: complex Matrix.mat) \<in> carrier_mat 2 2" by simp
+  have ab: "dim_vec (tensor_vec (y_basis a) (y_basis b)) = 4" by (simp add: tensor_vec_dim)
+  have c4: "\<And>A B. A \<in> carrier_mat 2 2 \<Longrightarrow> B \<in> carrier_mat 2 2 \<Longrightarrow> Tensor.tensor_mat A B \<in> carrier_mat 4 4"
+    by auto
+  have one: "\<And>v :: complex Matrix.vec. dim_vec v = 2 \<Longrightarrow> 1\<^sub>m 2 *\<^sub>v v = v" by (rule one_mult_mat_vec, rule carrier_vecI)
+  show "block_op 0 Pauli_Y *\<^sub>v y_word a b c = y_word (\<not> a) b c"
+    unfolding block_op_cases[OF Y] y_word_def tensor_mat_vec_mult[OF c4[OF Y I] I ab y_basis_dim]
+      tensor_mat_vec_mult[OF Y I y_basis_dim y_basis_dim] by (simp add: one Y_ub)
+  show "block_op 1 Pauli_Y *\<^sub>v y_word a b c = y_word a (\<not> b) c"
+    unfolding block_op_cases[OF Y] y_word_def tensor_mat_vec_mult[OF c4[OF I Y] I ab y_basis_dim]
+      tensor_mat_vec_mult[OF I Y y_basis_dim y_basis_dim] by (simp add: one Y_ub)
+  show "block_op 2 Pauli_Y *\<^sub>v y_word a b c = y_word a b (\<not> c)"
+    unfolding block_op_cases[OF Y] y_word_def tensor_mat_vec_mult[OF c4[OF I I] Y ab y_basis_dim]
+      tensor_mat_vec_mult[OF I I y_basis_dim y_basis_dim] by (simp add: one Y_ub)
+qed
+
+lemma y_codewords_orthonormal: "orthonormal_list 8 y_codewords"
+  unfolding orthonormal_list_def y_codewords_def
+  by (auto simp: y_word_inner less_Suc_eq)
+
+lemma y_errors_unitary: "\<forall>U \<in> set y_errors. U \<in> carrier_mat 8 8 \<and> unitary U"
+  unfolding y_errors_def using block_op_carrier[OF Pauli_Y_carrier, of 0] block_op_carrier[OF Pauli_Y_carrier, of 1]
+    block_op_carrier[OF Pauli_Y_carrier, of 2]
+  by (auto simp: block_op_def Pauli_Y_unitary simp del: One_nat_def)
+
+lemma y_images_orthogonal:
+  "\<forall>i < length y_errors. \<forall>j < length y_errors. i \<noteq> j \<longrightarrow>
+     (\<forall>a < length y_codewords. \<forall>b < length y_codewords.
+        \<langle>y_errors ! i *\<^sub>v y_codewords ! a | y_errors ! j *\<^sub>v y_codewords ! b\<rangle> = 0)"
+proof -
+  have I: "\<And>a b c. 1\<^sub>m 8 *\<^sub>v y_word a b c = y_word a b c" by (rule one_mult_mat_vec, rule carrier_vecI, simp)
+  show ?thesis unfolding y_errors_def y_codewords_def
+    by (auto simp: less_Suc_eq I y_actions y_actions(2)[unfolded One_nat_def] y_word_inner)
+qed
+
+text \<open>D32-2: one CPTP map corrects every single $Y$ flip on every state $a\ket{+++}+b\ket{\beta\beta\beta}$.\<close>
+
+theorem y_code_corrects:
+  "\<exists>Rs. kraus_operators 8 8 Rs \<and>
+     (\<forall>c j. dim_vec c = 2 \<longrightarrow> j < 4 \<longrightarrow>
+        kraus_map_dim 8 Rs (y_errors ! j * ((mat_of_cols 8 y_codewords *\<^sub>v c) \<oslash> (mat_of_cols 8 y_codewords *\<^sub>v c)) * ((y_errors ! j)\<^sup>\<dagger>))
+        = (mat_of_cols 8 y_codewords *\<^sub>v c) \<oslash> (mat_of_cols 8 y_codewords *\<^sub>v c))"
+proof -
+  have l: "length y_codewords = 2" "length y_errors = 4" by (simp_all add: y_codewords_def y_errors_def)
+  show ?thesis using orthogonal_images_correct[OF y_codewords_orthonormal y_errors_unitary y_images_orthogonal]
+    unfolding l .
+qed
 
 end

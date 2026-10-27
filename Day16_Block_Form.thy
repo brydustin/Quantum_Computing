@@ -1,8 +1,28 @@
+(*  Title:   Day16_Block_Form.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 3 October 2011 (Day 16)
+*)
+
 theory Day16_Block_Form
-  imports Day06_Tensor_Coordinates Day15_Partial_Traces
+  imports Day15_Partial_Traces
 begin
 
-section \<open>Day 16: $H_A\otimes H_B\cong H_A^{(p)}$ and $L(H_A\otimes H_B)\cong M_p(L(H_A))$ (D16-2)\<close>
+section \<open>Day 16 (3 October 2011): partial traces in block form; the postulates for density matrices\<close>
+
+text \<open>With matrix units $E_{ij}$ of $L(\Hil_B)$, every $X\in L(\Hil_A)\otimes L(\Hil_B)$ is uniquely
+$X=\sum_{i,j}X_{ij}\otimes E_{ij}$ with $X_{ij}\in L(\Hil_A)$, and
+$\tr_B(X)=\sum_iX_{ii}$, $\tr_A(X)=(\tr X_{ij})_{ij}$; symmetrically for
+$X=\sum E_{kl}\otimes Y_{kl}$.  Choosing a basis $f_1,\dots,f_p$ of $\Hil_B$ identifies
+$\Hil_A\otimes\Hil_B\cong\Hil_A^{(p)}=\Hil_A\oplus\cdots\oplus\Hil_A$ and
+$L(\Hil_A\otimes\Hil_B)\cong M_p(L(\Hil_A))$, block matrices $(X_{ij})$ acting by
+$(X_{ij})(h_j)_j=(\sum_jX_{ij}h_j)_i$; in block notation $\tr_B((X_{ij}))=X_{11}+\cdots+X_{pp}$ and
+$\tr_A((X_{ij}))=(\tr X_{ij})$.
+
+Reformulated postulates.  1$'$: the state of a system is a density matrix $\rho\in L(\Hil_A)$.
+2$'$: closed evolution is $\rho\mapsto U\rho U^*$.  3$'$: a measurement system $\{M_\alpha\}$ with
+$\sum M_\alpha^*M_\alpha=I$ yields outcome $\alpha$ with probability $\tr(M_\alpha^*M_\alpha\rho)$.
+4$'$: systems with densities $\rho_1,\rho_2$ compose to $\rho_1\otimes\rho_2$ on $\Hil_A\otimes\Hil_B$.\<close>
+
+subsection \<open>$H_A\otimes H_B\cong H_A^{(p)}$ and $L(H_A\otimes H_B)\cong M_p(L(H_A))$ (D16-2)\<close>
 
 text \<open>The notes identify $H_A\otimes H_B$ with $p$ copies of $H_A$ through
 $\sum_ih_i\otimes f_i\leftrightarrow(h_1,\dots,h_p)$, with $\|v\|^2=\sum_i\|h_i\|^2$, and an operator $X$ with

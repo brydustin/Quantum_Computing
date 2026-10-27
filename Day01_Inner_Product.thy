@@ -9,6 +9,7 @@ theory Day01_Inner_Product
     Isabelle_Marries_Dirac.No_Cloning
 begin
 
+(*<*)
 text \<open>Isabelle\_Marries\_Dirac names its gates \<open>X\<close>, \<open>Y\<close>, \<open>Z\<close>, \<open>H\<close>, \<open>S\<close>, \<open>T\<close>; hidden here
 so that these letters are variables.  The gates remain \<open>Quantum.X\<close> etc.; the project
 names are \<open>Pauli_X\<close>, \<open>Pauli_Y\<close>, \<open>Pauli_Z\<close>, \<open>Hadamard\<close>, \<open>Phase_S\<close>.  Theories importing
@@ -19,64 +20,7 @@ hide_const (open) Quantum.X Quantum.Y Quantum.Z Quantum.H Quantum.S Quantum.T
 (* No_Cloning is imported for cauchy_schwarz_ineq; its simp rules slow down every vector equation. *)
 
 declare cauchy_schwarz_eq [simp del] cauchy_schwarz_col [simp del] eq_from_inner_prod [simp del]
-
-section \<open>Preliminaries: linear-space isomorphisms\<close>
-
-text \<open>Matrix spaces are represented by carrier predicates on the single type
-\<^typ>\<open>complex Matrix.mat\<close>.  The record below packages a carrier with its zero,
-addition and scalar multiplication, so that statements such as
-$L(\Hil_A)\otimes L(\Hil_B)\cong L(\Hil_A\otimes\Hil_B)$ (Day 15) can be made as explicit
-linear isomorphisms with explicit inverses.\<close>
-
-record ('a, 'v) linear_structure =
-  ls_carrier :: "'v set"
-  ls_zero :: "'v"
-  ls_add :: "'v \<Rightarrow> 'v \<Rightarrow> 'v"
-  ls_smul :: "'a \<Rightarrow> 'v \<Rightarrow> 'v"
-
-definition linear_structure_map ::
-  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> ('v \<Rightarrow> 'w) \<Rightarrow> bool" where
-  "linear_structure_map V W f \<equiv>
-     f (ls_zero V) = ls_zero W \<and>
-     (\<forall>x \<in> ls_carrier V. f x \<in> ls_carrier W) \<and>
-     (\<forall>x \<in> ls_carrier V. \<forall>y \<in> ls_carrier V.
-        f (ls_add V x y) = ls_add W (f x) (f y)) \<and>
-     (\<forall>c x. x \<in> ls_carrier V \<longrightarrow>
-        f (ls_smul V c x) = ls_smul W c (f x))"
-
-definition is_isomorphism_between ::
-  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> ('v \<Rightarrow> 'w) \<Rightarrow> bool" where
-  "is_isomorphism_between V W f \<equiv>
-     linear_structure_map V W f \<and>
-     (\<exists>g. linear_structure_map W V g \<and>
-          (\<forall>x \<in> ls_carrier V. g (f x) = x) \<and>
-          (\<forall>y \<in> ls_carrier W. f (g y) = y))"
-
-definition is_isomorphic_to ::
-  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> bool" where
-  "is_isomorphic_to V W \<equiv> \<exists>f. is_isomorphism_between V W f"
-
-lemma is_isomorphism_betweenD_map:
-  assumes "is_isomorphism_between V W f"
-  shows "linear_structure_map V W f"
-  using assms by (simp add: is_isomorphism_between_def)
-
-lemma is_isomorphism_betweenD_inverse:
-  assumes "is_isomorphism_between V W f"
-  obtains g where "linear_structure_map W V g"
-    and "\<And>x. x \<in> ls_carrier V \<Longrightarrow> g (f x) = x"
-    and "\<And>y. y \<in> ls_carrier W \<Longrightarrow> f (g y) = y"
-  using assms by (auto simp: is_isomorphism_between_def)
-
-text \<open>The example used throughout: $M_{m,n}$ with entrywise addition and scaling.\<close>
-
-definition mat_linear_structure :: "nat \<Rightarrow> nat \<Rightarrow> (complex, complex Matrix.mat) linear_structure" where
-  "mat_linear_structure m n \<equiv>
-     \<lparr> ls_carrier = carrier_mat m n,
-       ls_zero = 0\<^sub>m m n,
-       ls_add = (\<lambda>x y. x + y),
-       ls_smul = (\<lambda>c x. c \<cdot>\<^sub>m x) \<rparr>"
-
+(*>*)
 
 section \<open>Day 1 (22 August 2011): the inner product\<close>
 
@@ -103,6 +47,131 @@ lemma inner_prod_sum:
   shows "\<langle>u|v\<rangle> = (\<Sum> i \<in> {0..< n}. cnj(u $ i) * (v $ i))"
   using assms by (simp add: inner_prod_def)
 
+lemma cpx_vec_length_zero_iff:
+  fixes v :: "complex Matrix.vec"
+  shows "\<parallel>v\<parallel> = 0 \<longleftrightarrow> v = 0\<^sub>v (dim_vec v)"
+proof
+  assume norm_zero: "\<parallel>v\<parallel> = 0"
+  have inner_zero: "\<langle>v | v\<rangle> = 0"
+    using norm_zero cpx_vec_length_inner_prod[of v] by simp
+  show "v = 0\<^sub>v (dim_vec v)"
+  proof (rule ccontr)
+    assume "v \<noteq> 0\<^sub>v (dim_vec v)"
+    then have "\<langle>v | v\<rangle> \<noteq> 0"
+      by (rule inner_prod_with_itself_nonneg_reals_non0)
+    then show False
+      using inner_zero by simp
+  qed
+next
+  assume v_zero: "v = 0\<^sub>v (dim_vec v)"
+  have index_zero: "\<And>i. i < dim_vec v \<Longrightarrow> v $ i = 0"
+    using v_zero by (metis index_zero_vec(1))
+  have sum_zero: "(\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2) = 0"
+    using index_zero by (simp add: sum.neutral)
+  show "\<parallel>v\<parallel> = 0"
+    using sum_zero by (simp add: cpx_vec_length_def)
+qed
+
+text \<open>$\braket vv=0$ iff $v=0$.\<close>
+
+lemma inner_prod_self_eq_zero_iff:
+  fixes v :: "complex Matrix.vec"
+  shows "\<langle>v | v\<rangle> = 0 \<longleftrightarrow> v = 0\<^sub>v (dim_vec v)"
+proof
+  assume h: "\<langle>v | v\<rangle> = 0"
+  have "complex_of_real (\<parallel>v\<parallel>\<^sup>2) = 0" using h by (simp only: cpx_vec_length_inner_prod)
+  hence "\<parallel>v\<parallel>\<^sup>2 = 0" by (simp only: of_real_eq_0_iff)
+  hence "\<parallel>v\<parallel> = 0" by simp
+  thus "v = 0\<^sub>v (dim_vec v)" using cpx_vec_length_zero_iff by simp
+next
+  assume "v = 0\<^sub>v (dim_vec v)" thus "\<langle>v | v\<rangle> = 0" by (rule inner_prod_with_itself_eq0)
+qed
+
+lemma cpx_vec_length_smult:
+  fixes a :: complex and v :: "complex Matrix.vec"
+  shows "\<parallel>a \<cdot>\<^sub>v v\<parallel> = cmod a * \<parallel>v\<parallel>"
+proof -
+  let ?S = "(\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2)"
+  have S_nonneg: "?S \<ge> 0"
+    by (simp add: sum_nonneg)
+  have "\<parallel>a \<cdot>\<^sub>v v\<parallel> =
+        sqrt (\<Sum>i<dim_vec v. (cmod (a * (v $ i)))\<^sup>2)"
+    by (simp add: cpx_vec_length_def)
+  also have "\<dots> =
+        sqrt (\<Sum>i<dim_vec v. (cmod a)\<^sup>2 * (cmod (v $ i))\<^sup>2)"
+    by (simp add: norm_mult power_mult_distrib)
+  also have "\<dots> =
+        sqrt ((cmod a)\<^sup>2 * ?S)"
+    by (simp add: sum_distrib_left)
+  also have "\<dots> = cmod a * sqrt ?S"
+    using S_nonneg by (simp add: real_sqrt_mult)
+  also have "\<dots> = cmod a * \<parallel>v\<parallel>"
+    by (simp add: cpx_vec_length_def)
+  finally show ?thesis .
+qed
+
+text \<open>The vector inner product is linear on the right,
+$\braket u{av+w}=a\braket uv+\braket uw$, and conjugate-linear on the left; correspondingly
+$(\gamma U)^*=\overline\gamma\,U^*$.\<close>
+
+lemma inner_prod_right_smult':
+  fixes u v :: "complex Matrix.vec"
+  shows "\<langle>u | a \<cdot>\<^sub>v v\<rangle> = a * \<langle>u | v\<rangle>"
+  by (simp add: inner_prod_def sum_distrib_left algebra_simps)
+
+lemma inner_prod_right_add':
+  fixes u v w :: "complex Matrix.vec"
+  assumes vw: "dim_vec v = dim_vec w"
+  shows "\<langle>u | v + w\<rangle> = \<langle>u | v\<rangle> + \<langle>u | w\<rangle>"
+proof -
+  have "\<langle>u | v + w\<rangle> =
+        (\<Sum>i<dim_vec v. cnj (u $ i) * ((v $ i) + (w $ i)))"
+    using vw by (simp add: inner_prod_def lessThan_atLeast0)
+  also have "\<dots> =
+        (\<Sum>i<dim_vec v. cnj (u $ i) * (v $ i))
+        + (\<Sum>i<dim_vec v. cnj (u $ i) * (w $ i))"
+    by (simp add: sum.distrib algebra_simps)
+  also have "\<dots> = \<langle>u | v\<rangle> + \<langle>u | w\<rangle>"
+    using vw by (simp add: inner_prod_def lessThan_atLeast0)
+  finally show ?thesis .
+qed
+
+lemma inner_prod_right_minus':
+  fixes u v w :: "complex Matrix.vec"
+  assumes vw: "dim_vec v = dim_vec w"
+  shows "\<langle>u | v - w\<rangle> = \<langle>u | v\<rangle> - \<langle>u | w\<rangle>"
+proof -
+  have "\<langle>u | v - w\<rangle> =
+        (\<Sum>i<dim_vec v. cnj (u $ i) * ((v $ i) - (w $ i)))"
+    using vw by (simp add: inner_prod_def lessThan_atLeast0)
+  also have "\<dots> =
+        (\<Sum>i<dim_vec v. cnj (u $ i) * (v $ i))
+        - (\<Sum>i<dim_vec v. cnj (u $ i) * (w $ i))"
+    by (simp add: sum_subtractf algebra_simps)
+  also have "\<dots> = \<langle>u | v\<rangle> - \<langle>u | w\<rangle>"
+    using vw by (simp add: inner_prod_def lessThan_atLeast0)
+  finally show ?thesis .
+qed
+
+lemma inner_prod_left_minus':
+  fixes u v w :: "complex Matrix.vec"
+  assumes uv: "dim_vec u = dim_vec v"
+      and uw: "dim_vec u = dim_vec w"
+  shows "\<langle>u - v | w\<rangle> = \<langle>u | w\<rangle> - \<langle>v | w\<rangle>"
+proof -
+  have dims: "dim_vec u = dim_vec w" "dim_vec v = dim_vec w"
+    using uv uw by simp_all
+  have "\<langle>u - v | w\<rangle> =
+        (\<Sum>i<dim_vec w. cnj ((u $ i) - (v $ i)) * (w $ i))"
+    using dims by (simp add: inner_prod_def lessThan_atLeast0)
+  also have "\<dots> =
+        (\<Sum>i<dim_vec w. cnj (u $ i) * (w $ i))
+        - (\<Sum>i<dim_vec w. cnj (v $ i) * (w $ i))"
+    by (simp add: sum_subtractf algebra_simps)
+  also have "\<dots> = \<langle>u | w\<rangle> - \<langle>v | w\<rangle>"
+    using dims by (simp add: inner_prod_def lessThan_atLeast0)
+  finally show ?thesis .
+qed
 
 subsection \<open>The Hilbert--Schmidt inner product on matrices\<close>
 

@@ -1,14 +1,18 @@
+(*  Title:   Day25_Arveson_Correspondence.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 26 October 2011 (Day 25)
+*)
+
 theory Day25_Arveson_Correspondence
-  imports Day24_Operator_Systems Day23_ChoiExtremeUCP
+  imports Day23_Choi_Extreme_Points Day24_Operator_Systems
 begin
 
-section \<open>Days 24--25: Arveson's correspondence between maps and functionals\<close>
+subsection \<open>Arveson's correspondence between maps and functionals\<close>
 
 text \<open>Days 24--25: Arveson's correspondence between maps $\Phi:S\to M_d$ and functionals
 $S_\Phi:M_d(S)\to\C$, $S_\Phi((A_{ij}))=\frac1d\sum_{i,j}\Phi(A_{ij})_{ij}$, with inverse
 $f\mapsto\Phi_f$, $\Phi_f(M)=d\,(f(E_{ij}\otimes M))_{ij}$.\<close>
 
-subsection \<open>Finite sums of matrices\<close>
+subsubsection \<open>Finite sums of matrices\<close>
 
 lemma msum_in_os:
   assumes OS: "operator_system n OS" and g: "\<forall>x \<in> set xs. g x \<in> OS"
@@ -40,7 +44,7 @@ next
   thus ?case using Cons.IH[OF rest] by simp
 qed
 
-subsection \<open>$E_{ij}\otimes M$ and the block decomposition\<close>
+subsubsection \<open>$E_{ij}\otimes M$ and the block decomposition\<close>
 
 definition unit_block :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "unit_block d n i j M = Matrix.mat (d * n) (d * n)
@@ -111,7 +115,7 @@ proof -
   qed (use A mc in simp_all)
 qed
 
-subsection \<open>The correspondence\<close>
+subsubsection \<open>The correspondence\<close>
 
 definition arveson_functional :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex" where
   "arveson_functional n d \<Phi> A = (\<Sum>i<d. \<Sum>j<d. \<Phi> (block_of_mat n A i j) $$ (i,j)) / of_nat d"
@@ -334,7 +338,7 @@ proof -
   finally show ?thesis .
 qed
 
-subsection \<open>Theorem (Arveson): completely positive iff $d$-positive iff $S_\Phi$ positive\<close>
+subsubsection \<open>Theorem (Arveson): completely positive iff $d$-positive iff $S_\Phi$ positive\<close>
 
 lemma if_zero_mult: "(if P then x else 0) * (y::complex) = (if P then x * y else 0)"
   by simp

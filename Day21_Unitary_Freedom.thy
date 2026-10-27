@@ -1,10 +1,115 @@
+(*  Title:   Day21_Unitary_Freedom.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 14 October 2011 (Day 21)
+*)
+
 theory Day21_Unitary_Freedom
-  imports Day23_ChoiExtremeUCP
+  imports Day08_Measurements Day20_Positive_Functionals
 begin
 
-section \<open>Day 21: unitary freedom of rank-one decompositions and Kraus representations (D21-3, D21-5, D21-6)\<close>
+section \<open>Day 21 (14 October 2011): the Kraus rank bound; unitary freedom of representations\<close>
 
-subsection \<open>The Gram matrix of an independent list is invertible; dual vectors\<close>
+text \<open>\begin{notescor}
+A completely positive $\Phi:M_n\to M_d$ has a Kraus representation $\Phi(X)=\sum_{l=1}^KA_lXA_l^*$
+with $K\le nd$.
+\end{notescor}
+The notes then record a conjecture (every CP map is an average of $n$ UCP maps of Choi rank
+$\le d$) and develop the uniqueness theory:
+\begin{noteslemma}
+If $T:\C^r\to\C^m$ is one-to-one then $T^*$ is onto.
+\end{noteslemma}
+\begin{notesprop}
+If $v_1,\dots,v_r\in\C^k$ are linearly independent then so are $\{v_iv_j^*\}_{i,j}\subseteq M_k$.
+\end{notesprop}
+\begin{noteslemma}
+If $0\le ww^*\le P$ then $w\in\range(P)$; hence for $P=\sum_lw_lw_l^*\ge0$,
+$\range(P)=\operatorname{span}\{w_l\}$.
+\end{noteslemma}
+\begin{notestheorem}
+If $P=\sum_{j=1}^rv_jv_j^*=\sum_{l=1}^mw_lw_l^*$ with $\rank P=r$, there is $U=(\alpha_{ij})_{m\times r}$
+with $w_i=\sum_j\alpha_{ij}v_j$ and $U^*U=I_r$.
+\end{notestheorem}
+\begin{notestheorem}[Choi 2]
+If $\Phi$ is completely positive with $\crk(\Phi)=r$ and
+$\Phi(X)=\sum_{j=1}^rV_jXV_j^*=\sum_{l=1}^mW_lXW_l^*$, then $W_i=\sum_j\alpha_{ij}V_j$ for a unique
+$U=(\alpha_{ij})$ with $U^*U=I_r$.
+\end{notestheorem}
+Formalised below: the Kraus rank bound, unitary freedom (D21-3, D21-5, D21-6) and the ranges
+of positive matrices (D21-4), whose kernel form ($\ker A\subseteq\ker B$ when $0\le B\le A$,
+\<open>loewner_ker_subset\<close>) Day 23 uses to prove Choi's Theorem 3 without the unitary-freedom
+theorem.  The conjecture on averages (D21-2) is the next theory.\<close>
+
+corollary kraus_rank_bound:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n
+                      \<Longrightarrow> \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and cp:     "completely_positive n d \<Phi>"
+      and npos:   "0 < n"
+      and dpos:   "0 < d"
+  shows "\<exists>As :: complex Matrix.mat list.
+           length As \<le> n * d \<and>
+           (\<forall>A \<in> set As. A \<in> carrier_mat d n) \<and>
+           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X)"
+proof -
+  have psd_choi: "psd (choi_matrix n d \<Phi>)"
+    using choi_theorem[OF linear smult range npos dpos] cp by simp
+  obtain Ws :: "complex Matrix.mat list"
+    where Ws_len: "length Ws = n * d"
+      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Ws_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
+    using kraus_rep_of_psd_choi[OF linear smult range npos dpos psd_choi]
+    by blast
+  have Ws_len_le: "length Ws \<le> n * d" using Ws_len by simp
+  show ?thesis using Ws_len_le Ws_c Ws_eq by blast
+qed
+
+
+text \<open>Dimension bookkeeping for $T^\dagger$ (the onto statement is not formalised).\<close>
+
+lemma adjoint_image_in_dom:
+  fixes T :: "complex Matrix.mat"
+  assumes sq: "T \<in> carrier_mat m r"
+  shows "\<forall>w :: complex Matrix.vec. dim_vec w = m
+           \<longrightarrow> dim_vec (T\<^sup>\<dagger> *\<^sub>v w) = r"
+  using sq by auto
+
+
+text \<open>$\crk(\Phi)\le nd$: the defining set of the Choi rank is non-empty.\<close>
+
+corollary choi_rank_le:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n
+                      \<Longrightarrow> \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and cp:     "completely_positive n d \<Phi>"
+      and npos:   "0 < n"
+      and dpos:   "0 < d"
+  shows "choi_rank n d \<Phi> \<le> n * d"
+proof -
+  obtain As where As_len: "length As \<le> n * d"
+              and As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+              and As_eq: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X"
+    using kraus_rank_bound[OF linear smult range cp npos dpos] by blast
+  have len_in:
+    "length As
+       \<in> { length Bs | Bs :: complex Matrix.mat list.
+              (\<forall>B \<in> set Bs. B \<in> carrier_mat d n)
+              \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Bs X) }"
+    using As_c As_eq by blast
+  have "Inf { length Bs | Bs :: complex Matrix.mat list.
+                 (\<forall>B \<in> set Bs. B \<in> carrier_mat d n)
+                 \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Bs X) }
+        \<le> length As"
+    using len_in by (intro cInf_lower) auto
+  also have "\<dots> \<le> n * d" using As_len .
+  finally show ?thesis unfolding choi_rank_def .
+qed
+
+subsection \<open>Unitary freedom of rank-one decompositions and Kraus representations (D21-3, D21-5, D21-6)\<close>
+
+subsubsection \<open>The Gram matrix of an independent list is invertible; dual vectors\<close>
 
 lemma gram_det_nonzero:
   assumes li: "lin_indep_vecs n vs"
@@ -116,7 +221,19 @@ proof -
   show ?thesis using \<phi>len \<phi>d dual by blast
 qed
 
-subsection \<open>D21-3: independent vectors give independent rank-one matrices\<close>
+subsubsection \<open>D21-3: independent vectors give independent rank-one matrices\<close>
+
+text \<open>Linear independence over $\C$ of a list of $d\times n$ matrices.\<close>
+
+definition lin_indep_complex_mat ::
+  "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool"
+where
+  "lin_indep_complex_mat d n Ws \<equiv>
+     (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and>
+     (\<forall>c :: nat \<Rightarrow> complex.
+        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Ws!k) + acc) [0..<length Ws] (0\<^sub>m d n)
+            = 0\<^sub>m d n
+        \<longrightarrow> (\<forall>k < length Ws. c k = 0))"
 
 definition outer_prods :: "complex Matrix.vec list \<Rightarrow> complex Matrix.mat list" where
   "outer_prods vs = map (\<lambda>k. vs ! (k div length vs) \<oslash> vs ! (k mod length vs)) [0..<length vs * length vs]"
@@ -302,7 +419,7 @@ proof -
   qed
 qed
 
-subsection \<open>Isometric mixing of columns preserves $VV^*$\<close>
+subsubsection \<open>Isometric mixing of columns preserves $VV^*$\<close>
 
 lemma dagger_transpose_mult:
   assumes Uc: "U \<in> carrier_mat m r" and UU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m r"
@@ -354,7 +471,7 @@ proof (rule eq_matI)
   finally show "Y $$ (i,j) = (0\<^sub>m p q :: complex Matrix.mat) $$ (i,j)" using i j by simp
 qed (use carrier_matD[OF Yc] in simp_all)
 
-subsection \<open>D21-5: two rank-one decompositions are related by an isometry\<close>
+subsubsection \<open>D21-5: two rank-one decompositions are related by an isometry\<close>
 
 text \<open>If $P=\sum_{j<r}v_jv_j^*=\sum_{l<m}w_lw_l^*$ with $v_1,\dots,v_r$ linearly independent
 (the notes assume $\operatorname{rank}P=r$, which is equivalent), then $w_l=\sum_j\alpha_{lj}v_j$
@@ -573,7 +690,7 @@ proof -
   thus ?thesis using Uc UU by blast
 qed
 
-subsection \<open>D21-6 (Choi 2): unitary freedom of Kraus representations\<close>
+subsubsection \<open>D21-6 (Choi 2): unitary freedom of Kraus representations\<close>
 
 lemma vec_of_kraus_mat_of_cols_index:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n" and dpos: "0 < d"
@@ -704,6 +821,160 @@ proof -
     qed (use Wl_c foldr_add_mat_carrier_rect[OF fc] in auto)
   qed
   show ?thesis using Uc UU back_eq by blast
+qed
+
+subsection \<open>Ranges of positive matrices (D21-4)\<close>
+
+text \<open>If $A\ge B\ge0$ then $\ker A\subseteq\ker B$: for $Ax=0$,
+$0=\braket x{Ax}=\braket x{Bx}+\braket x{(A-B)x}$ with both terms $\ge0$, so $\braket x{Bx}=0$; writing
+$B=NN^*$ this is $\norm{N^*x}^2=0$, hence $Bx=N(N^*x)=0$.\<close>
+
+lemma loewner_ker_subset:
+  fixes A B :: "complex Matrix.mat" and x :: "complex Matrix.vec"
+  assumes A_c: "A \<in> carrier_mat k k"
+      and B_c: "B \<in> carrier_mat k k"
+      and B_psd: "psd B"
+      and diff_psd: "psd (A - B)"
+      and x_dim: "dim_vec x = k"
+      and Ax_zero: "A *\<^sub>v x = 0\<^sub>v k"
+  shows "B *\<^sub>v x = 0\<^sub>v k"
+proof -
+  have AmB_c: "A - B \<in> carrier_mat k k" using A_c B_c by auto
+  have Bx_dim: "dim_vec (B *\<^sub>v x) = k" using B_c x_dim by auto
+  have Ax_dim: "dim_vec (A *\<^sub>v x) = k" using A_c x_dim by auto
+  have AmBx_dim: "dim_vec ((A - B) *\<^sub>v x) = k" using AmB_c x_dim by auto
+  have x_car: "x \<in> carrier_vec k" using x_dim by auto
+
+  \<comment> \<open>Step 1: \<open>\<langle>x | A x\<rangle> = 0\<close> because \<open>A x = 0\<close>.\<close>
+  have Ax_inner_zero: "\<langle>x | A *\<^sub>v x\<rangle> = 0"
+    using Ax_zero x_dim by (simp add: inner_prod_def)
+
+  \<comment> \<open>Step 2: linearity: \<open>\<langle>x | (A-B) x\<rangle> = \<langle>x | A x\<rangle> - \<langle>x | B x\<rangle>\<close>.\<close>
+  have AmBx_eq: "(A - B) *\<^sub>v x = A *\<^sub>v x - B *\<^sub>v x"
+    using minus_mult_distrib_mat_vec[OF A_c B_c x_car] .
+  have dim_AB_eq: "dim_vec (A *\<^sub>v x) = dim_vec (B *\<^sub>v x)"
+    using Ax_dim Bx_dim by simp
+  have inner_diff: "\<langle>x | (A - B) *\<^sub>v x\<rangle> = \<langle>x | A *\<^sub>v x\<rangle> - \<langle>x | B *\<^sub>v x\<rangle>"
+  proof -
+    have "\<langle>x | (A - B) *\<^sub>v x\<rangle> = \<langle>x | A *\<^sub>v x - B *\<^sub>v x\<rangle>"
+      using AmBx_eq by simp
+    also have "\<dots> = \<langle>x | A *\<^sub>v x\<rangle> - \<langle>x | B *\<^sub>v x\<rangle>"
+      by (rule inner_prod_right_minus'[OF dim_AB_eq])
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>Step 3: PSD on both sides forces \<open>Re \<langle>x | B x\<rangle> = 0\<close>.\<close>
+  have dim_B: "dim_vec x = dim_row B" using x_dim B_c by auto
+  have dim_AmB: "dim_vec x = dim_row (A - B)" using x_dim AmB_c by auto
+  have Re_B_nn: "Re \<langle>x | B *\<^sub>v x\<rangle> \<ge> 0"
+    using B_psd dim_B unfolding psd_def by blast
+  have Re_AmB_nn: "Re \<langle>x | (A - B) *\<^sub>v x\<rangle> \<ge> 0"
+    using diff_psd dim_AmB unfolding psd_def by blast
+  have Re_neg: "Re \<langle>x | (A - B) *\<^sub>v x\<rangle> = - Re \<langle>x | B *\<^sub>v x\<rangle>"
+    using inner_diff Ax_inner_zero by simp
+  have Re_B_zero: "Re \<langle>x | B *\<^sub>v x\<rangle> = 0"
+    using Re_B_nn Re_AmB_nn Re_neg by linarith
+
+  \<comment> \<open>Step 4: Hermiticity of B makes \<open>\<langle>x | B x\<rangle>\<close> real, so it equals 0.\<close>
+  have B_herm: "hermitian B" using B_psd by (rule psd_hermitian)
+  have B_real: "\<langle>x | B *\<^sub>v x\<rangle> \<in> \<real>"
+    using hermitian_iff_real_quad_form[OF B_c] B_herm x_dim by blast
+  have B_inner_zero: "\<langle>x | B *\<^sub>v x\<rangle> = 0"
+    using B_real Re_B_zero
+    by (auto simp: complex_is_Real_iff complex_eq_iff)
+
+  \<comment> \<open>Step 5: PSD-Kraus decomposition gives \<open>B = N N\<^sup>\<dagger>\<close>.\<close>
+  obtain vs where vs_len: "length vs = k"
+              and vs_dim_all: "\<forall>v \<in> set vs. dim_vec v = k"
+              and outer_eq: "outer_sum k vs = B"
+    using psd_kraus_decomp[OF B_c B_psd] by blast
+  define N where "N \<equiv> mat_of_cols k vs"
+  have N_c: "N \<in> carrier_mat k k"
+    unfolding N_def using vs_len by auto
+  have Ndag_c: "N\<^sup>\<dagger> \<in> carrier_mat k k" using N_c by auto
+  have B_eq: "B = N * (N\<^sup>\<dagger>)"
+    using outer_eq[symmetric] by (simp add: outer_sum_def N_def)
+
+  \<comment> \<open>Step 6: \<open>\<langle>x | B x\<rangle> = \<langle>N\<^sup>\<dagger> x | N\<^sup>\<dagger> x\<rangle>\<close>.\<close>
+  let ?y = "N\<^sup>\<dagger> *\<^sub>v x"
+  have y_dim: "dim_vec ?y = k" using Ndag_c x_dim by auto
+  have Bx_eq: "B *\<^sub>v x = N *\<^sub>v ?y"
+  proof -
+    have "B *\<^sub>v x = (N * (N\<^sup>\<dagger>)) *\<^sub>v x" using B_eq by simp
+    also have "\<dots> = N *\<^sub>v (N\<^sup>\<dagger> *\<^sub>v x)"
+      using N_c Ndag_c x_car by (simp add: assoc_mult_mat_vec)
+    finally show ?thesis .
+  qed
+  have y_inner_eq: "\<langle>x | B *\<^sub>v x\<rangle> = \<langle>?y | ?y\<rangle>"
+  proof -
+    have "\<langle>x | B *\<^sub>v x\<rangle> = \<langle>x | N *\<^sub>v ?y\<rangle>" using Bx_eq by simp
+    also have "\<dots> = \<langle>N\<^sup>\<dagger> *\<^sub>v x | ?y\<rangle>"
+      using inner_prod_adjoint_swap[OF N_c x_dim y_dim] .
+    finally show ?thesis by simp
+  qed
+
+  \<comment> \<open>Step 7: \<open>\<langle>?y | ?y\<rangle> = 0 \<Longrightarrow> ?y = 0\<close>.\<close>
+  have y_inner_zero: "\<langle>?y | ?y\<rangle> = 0"
+    using y_inner_eq B_inner_zero by simp
+  have y_zero: "?y = 0\<^sub>v k"
+  proof (rule ccontr)
+    assume "?y \<noteq> 0\<^sub>v k"
+    hence "?y \<noteq> 0\<^sub>v (dim_vec ?y)" using y_dim by simp
+    hence "\<langle>?y | ?y\<rangle> \<noteq> 0"
+      by (rule inner_prod_with_itself_nonneg_reals_non0)
+    thus False using y_inner_zero by simp
+  qed
+
+  \<comment> \<open>Step 8: \<open>B x = N (N\<^sup>\<dagger> x) = N \<cdot> 0 = 0\<close>.\<close>
+  have N_zero: "N *\<^sub>v 0\<^sub>v k = 0\<^sub>v k"
+  proof (rule eq_vecI)
+    show "dim_vec (N *\<^sub>v 0\<^sub>v k) = dim_vec (0\<^sub>v k)" using N_c by simp
+  next
+    fix i assume i_a: "i < dim_vec (0\<^sub>v k)"
+    hence i_lt: "i < k" by simp
+    have "(N *\<^sub>v 0\<^sub>v k) $ i = (\<Sum>j = 0..<k. N $$ (i,j) * 0)"
+      using N_c i_lt by (simp add: scalar_prod_def)
+    also have "\<dots> = 0" by simp
+    finally show "(N *\<^sub>v 0\<^sub>v k) $ i = (0\<^sub>v k) $ i" using i_lt by simp
+  qed
+  have "B *\<^sub>v x = N *\<^sub>v ?y" using Bx_eq .
+  also have "\<dots> = N *\<^sub>v 0\<^sub>v k" using y_zero by simp
+  also have "\<dots> = 0\<^sub>v k" using N_zero .
+  finally show ?thesis .
+qed
+
+text \<open>The notes: if $0\le ww^*\le P$ then $w\in R(P)$.\<close>
+
+theorem dominated_rank_one_in_range:
+  assumes P: "P \<in> carrier_mat k k" and Pp: "psd P" and w: "dim_vec w = k"
+      and dom: "psd (P - outer_sum k [w])"
+  shows "w \<in> mat_range k P"
+proof (rule hermitian_perp_ker_in_range[OF P psd_hermitian[OF Pp] w])
+  fix x assume x: "dim_vec x = k" and Px: "P *\<^sub>v x = 0\<^sub>v k"
+  have B: "outer_sum k [w] \<in> carrier_mat k k" by (rule outer_sum_carrier)
+  have Bp: "psd (outer_sum k [w])" using w by (intro outer_sum_psd) auto
+  have Bx: "outer_sum k [w] *\<^sub>v x = 0\<^sub>v k" by (rule loewner_ker_subset[OF P B Bp dom x Px])
+  let ?V = "mat_of_cols k [w]"
+  have Vc: "?V \<in> carrier_mat k 1" using mat_of_cols_carrier(1)[of k "[w]"] by simp
+  have Vd: "?V\<^sup>\<dagger> \<in> carrier_mat 1 k" by (rule dagger_carrier[OF Vc])
+  have "Quantum.inner_prod x (outer_sum k [w] *\<^sub>v x) = Quantum.inner_prod (?V\<^sup>\<dagger> *\<^sub>v x) (?V\<^sup>\<dagger> *\<^sub>v x)"
+  proof -
+    have "outer_sum k [w] *\<^sub>v x = ?V *\<^sub>v (?V\<^sup>\<dagger> *\<^sub>v x)"
+      unfolding outer_sum_def by (rule assoc_mult_mat_vec[OF Vc Vd carrier_vecI[OF x]])
+    thus ?thesis using inner_prod_adjoint_swap[OF Vc x, of "?V\<^sup>\<dagger> *\<^sub>v x"] carrier_matD[OF Vd] by simp
+  qed
+  hence "Quantum.inner_prod (?V\<^sup>\<dagger> *\<^sub>v x) (?V\<^sup>\<dagger> *\<^sub>v x) = 0" using Bx x by (simp add: Quantum.inner_prod_def)
+  hence Vx: "?V\<^sup>\<dagger> *\<^sub>v x = 0\<^sub>v 1" using inner_prod_self_eq_zero_iff[of "?V\<^sup>\<dagger> *\<^sub>v x"] carrier_matD[OF Vd] by simp
+  have "Quantum.inner_prod x w = Quantum.inner_prod x (?V *\<^sub>v unit_vec 1 0)"
+  proof -
+    have "?V *\<^sub>v unit_vec 1 0 = w"
+      by (rule eq_vecI) (use w in \<open>auto simp: mat_of_cols_def scalar_prod_def unit_vec_def\<close>)
+    thus ?thesis by simp
+  qed
+  also have "\<dots> = Quantum.inner_prod (?V\<^sup>\<dagger> *\<^sub>v x) (unit_vec 1 0)"
+    by (rule inner_prod_adjoint_swap[OF Vc x]) simp
+  also have "\<dots> = 0" unfolding Vx by (simp add: Quantum.inner_prod_def)
+  finally show "Quantum.inner_prod x w = 0" .
 qed
 
 end

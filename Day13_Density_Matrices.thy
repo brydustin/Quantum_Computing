@@ -3,7 +3,7 @@
 *)
 
 theory Day13_Density_Matrices
-  imports Day12_Quantum_Parallelism
+  imports Day07_Postulates
 begin
 
 section \<open>Day 13 (26 September 2011): ensembles and density matrices\<close>
@@ -685,6 +685,33 @@ proof -
   have "0 \<le> Re (Tr (((M * Q)\<^sup>\<dagger>) * (M * Q)))"
     using Tr_psd_Re_nonneg[OF MQd_MQ_psd MQd_MQ_c].
   thus ?thesis using Tr_eq by simp
+qed
+
+text \<open>Day 13: $\ketbra{e^{i\theta}\psi}{e^{i\theta}\psi}=\ketbra\psi\psi$; the density matrix forgets the phase.\<close>
+
+lemma pure_density_smult_unit:
+  fixes \<psi> :: "complex Matrix.vec" and c :: complex
+  assumes c: "cmod c = 1"
+  shows "pure_density (c \<cdot>\<^sub>v \<psi>) = pure_density \<psi>"
+proof -
+  let ?n = "dim_vec \<psi>"
+  have cc: "c * cnj c = 1"
+    using c by (metis complex_norm_square of_real_1 one_power2)
+  show ?thesis
+    unfolding pure_density_def Let_def
+  proof (rule eq_matI)
+    show "dim_row (outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>]) = dim_row (outer_sum ?n [\<psi>])" by simp
+    show "dim_col (outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>]) = dim_col (outer_sum ?n [\<psi>])" by simp
+    fix i j assume "i < dim_row (outer_sum ?n [\<psi>])" "j < dim_col (outer_sum ?n [\<psi>])"
+    hence ij: "i < ?n" "j < ?n" by auto
+    have "outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>] $$ (i, j) = (c * \<psi> $ i) * cnj (c * \<psi> $ j)"
+      using outer_sum_singleton_index[of i ?n j "c \<cdot>\<^sub>v \<psi>"] ij by simp
+    also have "\<dots> = (c * cnj c) * (\<psi> $ i * cnj (\<psi> $ j))" by (simp add: algebra_simps)
+    also have "\<dots> = \<psi> $ i * cnj (\<psi> $ j)" using cc by simp
+    also have "\<dots> = outer_sum ?n [\<psi>] $$ (i, j)"
+      using outer_sum_singleton_index[OF ij] by simp
+    finally show "outer_sum (dim_vec (c \<cdot>\<^sub>v \<psi>)) [c \<cdot>\<^sub>v \<psi>] $$ (i, j) = outer_sum ?n [\<psi>] $$ (i, j)" .
+  qed
 qed
 
 end

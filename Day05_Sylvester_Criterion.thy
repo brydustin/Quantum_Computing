@@ -1,10 +1,14 @@
+(*  Title:   Day05_Sylvester_Criterion.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 7 September 2011 (Day 5)
+*)
+
 theory Day05_Sylvester_Criterion
-  imports Quantum_Computing_by_VP.Day05_Positivity_Tests Two_Hermitian_Results.Sylvester_Criterion
+  imports Day04_Hermitian_Matrices Two_Hermitian_Results.Sylvester_Criterion
 begin
 
-section \<open>Day 5: Sylvester's criterion (D5-1)\<close>
+subsection \<open>Sylvester's criterion (D5-1)\<close>
 
-text \<open>Sylvester's criterion, stated in the previous section, is proved in the AFP entry
+text \<open>Sylvester's criterion, stated above, is proved in the AFP entry
 \emph{Two Hermitian Results} (@{thm [source] Sylvester_Criterion.sylvester_criterion}), with its
 own notions of Hermitian matrix (\<^const>\<open>Complex_Matrix.hermitian\<close>, from QHLProver)
 and positive definiteness (\<^const>\<open>Misc_Matrix_Results.positive_definite\<close>, with the quadratic form

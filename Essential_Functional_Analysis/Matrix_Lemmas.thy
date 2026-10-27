@@ -123,6 +123,26 @@ lemma mat_mult_entry:
   shows "(A * B) $$ (k,j) = (\<Sum>l<s. A $$ (k,l) * B $$ (l,j))"
   using assms by (simp add: scalar_prod_def atLeast0LessThan)
 
+lemma foldr_add_mat_carrier:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat n n"
+  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
+  using assms by (induction xs) auto
+
+lemma foldr_add_mat_index:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat n n" and "i < n" and "j < n"
+  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) $$ (i, j) = sum_list (map (\<lambda>x. f x $$ (i, j)) xs)"
+  using assms
+proof (induction xs)
+  case Nil thus ?case by simp
+next
+  case (Cons x xs)
+  have fx: "f x \<in> carrier_mat n n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat n n" using Cons.prems by auto
+  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n" by (rule foldr_add_mat_carrier[OF rest])
+  show ?case using Cons.IH[OF rest] Cons.prems fx rc by simp
+qed
+
 lemma foldr_add_mat_carrier_rect:
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat p q"
   shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m p q) \<in> carrier_mat p q"
@@ -159,6 +179,106 @@ lemma foldr_add_mat_cong:
   assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x = g x"
   shows "foldr (\<lambda>x acc. f x + acc) xs z = foldr (\<lambda>x acc. g x + acc) xs z"
   using assms by (induction xs) auto
+
+subsection \<open>Algebra of \<open>foldr\<close>-sums of matrices\<close>
+
+lemma foldr_add_mat_mult_left:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat m n" and fc: "\<forall>x \<in> set xs. f x \<in> carrier_mat n p"
+  shows "A * foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n p) = foldr (\<lambda>x acc. A * f x + acc) xs (0\<^sub>m m p)"
+  using fc
+proof (induction xs)
+  case Nil show ?case using Ac by simp
+next
+  case (Cons x xs)
+  have fx: "f x \<in> carrier_mat n p" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat n p" using Cons.prems by auto
+  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n p) \<in> carrier_mat n p"
+    using rest by (induction xs) auto
+  show ?case using Ac fx rc Cons.IH[OF rest] by (simp add: mult_add_distrib_mat)
+qed
+
+lemma foldr_add_mat_mult_right:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes Bc: "B \<in> carrier_mat n p" and fc: "\<forall>x \<in> set xs. f x \<in> carrier_mat m n"
+  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) * B = foldr (\<lambda>x acc. f x * B + acc) xs (0\<^sub>m m p)"
+  using fc
+proof (induction xs)
+  case Nil show ?case using Bc by simp
+next
+  case (Cons x xs)
+  have fx: "f x \<in> carrier_mat m n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat m n" using Cons.prems by auto
+  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n"
+    using rest by (induction xs) auto
+  show ?case using Bc fx rc Cons.IH[OF rest] by (simp add: add_mult_distrib_mat)
+qed
+
+lemma foldr_add_mat_dagger:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat m n"
+  shows "(foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger> = foldr (\<lambda>x acc. (f x)\<^sup>\<dagger> + acc) xs (0\<^sub>m n m)"
+  using assms
+proof (induction xs)
+  case Nil show ?case by (rule eq_matI) (auto simp: dagger_def)
+next
+  case (Cons x xs)
+  have fx: "f x \<in> carrier_mat m n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat m n" using Cons.prems by auto
+  have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n" by (rule foldr_add_carrier_dn[OF rest])
+  have "(f x + foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger>
+        = (f x)\<^sup>\<dagger> + ((foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n))\<^sup>\<dagger>)"
+    using fx rc by (intro eq_matI) (auto simp: dagger_def)
+  thus ?case using Cons.IH[OF rest] by simp
+qed
+
+lemma foldr_add_mat_zero:
+  "foldr (\<lambda>x acc. (0\<^sub>m m n :: complex Matrix.mat) + acc) xs (0\<^sub>m m n) = 0\<^sub>m m n"
+  by (induction xs) auto
+
+lemma foldr_add_mat_delta:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes fc: "\<forall>x \<in> set xs. f x \<in> carrier_mat m n" and d: "distinct xs" and i: "i \<in> set xs"
+  shows "foldr (\<lambda>x acc. (if x = i then f x else 0\<^sub>m m n) + acc) xs (0\<^sub>m m n) = f i"
+  using fc d i
+proof (induction xs)
+  case Nil thus ?case by simp
+next
+  case (Cons x xs)
+  show ?case
+  proof (cases "x = i")
+    case True
+    hence "i \<notin> set xs" using Cons.prems by simp
+    hence "foldr (\<lambda>x acc. (if x = i then f x else 0\<^sub>m m n) + acc) xs (0\<^sub>m m n) = 0\<^sub>m m n"
+      by (subst foldr_add_mat_cong[where g = "\<lambda>_. 0\<^sub>m m n"]) (auto simp: foldr_add_mat_zero)
+    thus ?thesis using True Cons.prems by simp
+  next
+    case False
+    thus ?thesis using Cons by simp
+  qed
+qed
+
+lemma foldr_add_mat_smult_pull:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat" and c :: "'a \<Rightarrow> complex"
+  assumes fc: "\<forall>x \<in> set xs. f x = c x \<cdot>\<^sub>m M" and Mc: "M \<in> carrier_mat m n"
+  shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) = sum_list (map c xs) \<cdot>\<^sub>m M"
+  using fc
+proof (induction xs)
+  case Nil show ?case using Mc by (intro eq_matI) auto
+next
+  case (Cons x xs)
+  have "foldr (\<lambda>x acc. f x + acc) (x # xs) (0\<^sub>m m n) = c x \<cdot>\<^sub>m M + sum_list (map c xs) \<cdot>\<^sub>m M"
+    using Cons by simp
+  also have "\<dots> = (c x + sum_list (map c xs)) \<cdot>\<^sub>m M" using Mc by (intro eq_matI) (auto simp: algebra_simps)
+  finally show ?case by simp
+qed
+
+lemma foldr_list_as_index:
+  fixes g :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  shows "foldr (\<lambda>A acc. g A + acc) As z = foldr (\<lambda>l acc. g (As ! l) + acc) [0..<length As] z"
+proof -
+  have "foldr (\<lambda>l acc. g (As ! l) + acc) [0..<length As] z = foldr (\<lambda>A acc. g A + acc) (map (nth As) [0..<length As]) z"
+    by (simp add: foldr_map comp_def)
+  also have "map (nth As) [0..<length As] = As" by (rule map_nth)
+  finally show ?thesis ..
+qed
 
 definition msum :: "nat \<Rightarrow> nat \<Rightarrow> ('a \<Rightarrow> complex Matrix.mat) \<Rightarrow> 'a list \<Rightarrow> complex Matrix.mat" where
   "msum r c g xs = foldr (\<lambda>x acc. g x + acc) xs (0\<^sub>m r c)"
@@ -209,5 +329,90 @@ Day 24 on) with values in $M_d$.\<close>
 definition lin_on :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat set \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
   "lin_on n d OS \<Phi> \<longleftrightarrow> (\<forall>A \<in> OS. \<Phi> A \<in> carrier_mat d d) \<and> (\<forall>A \<in> OS. \<forall>B \<in> OS. \<Phi> (A + B) = \<Phi> A + \<Phi> B)
      \<and> (\<forall>A \<in> OS. \<forall>c. \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A)"
+
+text \<open>On a set closed under sums and containing $0$, such a map commutes with finite sums.\<close>
+
+lemma msum_closed:
+  assumes S0: "0\<^sub>m n n \<in> S" and S: "\<And>A B. A \<in> S \<Longrightarrow> B \<in> S \<Longrightarrow> A + B \<in> S"
+    and g: "\<forall>x \<in> set xs. g x \<in> S"
+  shows "msum n n g xs \<in> S"
+  using g by (induction xs) (auto intro: S simp: S0)
+
+lemma lin_on_msum_closed:
+  assumes L: "lin_on n d S \<Phi>" and S0: "0\<^sub>m n n \<in> S" and S: "\<And>A B. A \<in> S \<Longrightarrow> B \<in> S \<Longrightarrow> A + B \<in> S"
+    and g: "\<forall>x \<in> set xs. g x \<in> S"
+  shows "\<Phi> (msum n n g xs) = msum d d (\<lambda>x. \<Phi> (g x)) xs"
+  using g
+proof (induction xs)
+  case Nil
+  have "\<Phi> (0 \<cdot>\<^sub>m 0\<^sub>m n n) = 0 \<cdot>\<^sub>m \<Phi> (0\<^sub>m n n)" and c: "\<Phi> (0\<^sub>m n n) \<in> carrier_mat d d"
+    using L S0 unfolding lin_on_def by blast+
+  moreover have "(0 :: complex) \<cdot>\<^sub>m 0\<^sub>m n n = 0\<^sub>m n n" by (rule eq_matI) simp_all
+  moreover have "(0 :: complex) \<cdot>\<^sub>m \<Phi> (0\<^sub>m n n) = 0\<^sub>m d d" using c by (intro eq_matI) auto
+  ultimately show ?case by simp
+next
+  case (Cons x xs)
+  hence gx: "g x \<in> S" and rest: "\<forall>x \<in> set xs. g x \<in> S" by auto
+  have "\<Phi> (g x + msum n n g xs) = \<Phi> (g x) + \<Phi> (msum n n g xs)"
+    using L gx msum_closed[OF S0 S rest] unfolding lin_on_def by blast
+  thus ?case using Cons.IH[OF rest] by simp
+qed
+
+section \<open>Linear-space isomorphisms\<close>
+
+text \<open>Matrix spaces are represented by carrier predicates on the single type
+\<^typ>\<open>complex Matrix.mat\<close>.  The record below packages a carrier with its zero,
+addition and scalar multiplication, so that statements such as
+$L(\Hil_A)\otimes L(\Hil_B)\cong L(\Hil_A\otimes\Hil_B)$ (Day 15) can be made as explicit
+linear isomorphisms with explicit inverses.\<close>
+
+record ('a, 'v) linear_structure =
+  ls_carrier :: "'v set"
+  ls_zero :: "'v"
+  ls_add :: "'v \<Rightarrow> 'v \<Rightarrow> 'v"
+  ls_smul :: "'a \<Rightarrow> 'v \<Rightarrow> 'v"
+
+definition linear_structure_map ::
+  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> ('v \<Rightarrow> 'w) \<Rightarrow> bool" where
+  "linear_structure_map V W f \<equiv>
+     f (ls_zero V) = ls_zero W \<and>
+     (\<forall>x \<in> ls_carrier V. f x \<in> ls_carrier W) \<and>
+     (\<forall>x \<in> ls_carrier V. \<forall>y \<in> ls_carrier V.
+        f (ls_add V x y) = ls_add W (f x) (f y)) \<and>
+     (\<forall>c x. x \<in> ls_carrier V \<longrightarrow>
+        f (ls_smul V c x) = ls_smul W c (f x))"
+
+definition is_isomorphism_between ::
+  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> ('v \<Rightarrow> 'w) \<Rightarrow> bool" where
+  "is_isomorphism_between V W f \<equiv>
+     linear_structure_map V W f \<and>
+     (\<exists>g. linear_structure_map W V g \<and>
+          (\<forall>x \<in> ls_carrier V. g (f x) = x) \<and>
+          (\<forall>y \<in> ls_carrier W. f (g y) = y))"
+
+definition is_isomorphic_to ::
+  "('a, 'v) linear_structure \<Rightarrow> ('a, 'w) linear_structure \<Rightarrow> bool" where
+  "is_isomorphic_to V W \<equiv> \<exists>f. is_isomorphism_between V W f"
+
+lemma is_isomorphism_betweenD_map:
+  assumes "is_isomorphism_between V W f"
+  shows "linear_structure_map V W f"
+  using assms by (simp add: is_isomorphism_between_def)
+
+lemma is_isomorphism_betweenD_inverse:
+  assumes "is_isomorphism_between V W f"
+  obtains g where "linear_structure_map W V g"
+    and "\<And>x. x \<in> ls_carrier V \<Longrightarrow> g (f x) = x"
+    and "\<And>y. y \<in> ls_carrier W \<Longrightarrow> f (g y) = y"
+  using assms by (auto simp: is_isomorphism_between_def)
+
+text \<open>The example used throughout: $M_{m,n}$ with entrywise addition and scaling.\<close>
+
+definition mat_linear_structure :: "nat \<Rightarrow> nat \<Rightarrow> (complex, complex Matrix.mat) linear_structure" where
+  "mat_linear_structure m n \<equiv>
+     \<lparr> ls_carrier = carrier_mat m n,
+       ls_zero = 0\<^sub>m m n,
+       ls_add = (\<lambda>x y. x + y),
+       ls_smul = (\<lambda>c x. c \<cdot>\<^sub>m x) \<rparr>"
 
 end

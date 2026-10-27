@@ -1,5 +1,9 @@
+(*  Title:   Day24_Operator_Systems.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 24 October 2011 (Day 24)
+*)
+
 theory Day24_Operator_Systems
-  imports Day17_Environment_Model
+  imports Day17_Quantum_Noise
 begin
 
 section \<open>Day 24 (24 October 2011): operator systems\<close>

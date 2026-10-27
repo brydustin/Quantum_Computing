@@ -1,8 +1,151 @@
-theory Day30_BitFlip_Code
-  imports Day31_Bit_Flip_Channel
+(*  Title:   Day30_Bit_Flip_Code.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 9 November 2011 (Day 30)
+*)
+
+theory Day30_Bit_Flip_Code
+  imports
+    Day10_Quantum_Gates
+    Day22_Minimal_Kraus
+    Day29_Error_Correction
 begin
 
-section \<open>Day 30: the three-qubit bit-flip code and its recovery map (D30-3, D30-4)\<close>
+section \<open>Day 30 (9 November 2011): error probabilities; the three-qubit bit-flip code\<close>
+
+text \<open>If a bit flips with probability $p$ (independently), the repetition code on three bits
+leaves an error undetected with probability $3p^2(1-p)^4+3p^4(1-p)^2+p^6$, the parity code with
+probability $\binom42p^2(1-p)^2+p^4$ (the former is smaller for $p<\tfrac12$), and the
+majority-rule code $0\mapsto000$, $1\mapsto111$ decodes wrongly with probability $3p^2(1-p)+p^3$
+(below; the comparison holds for all $0<p<1$).
+
+Quantum error correction: one cannot clone, but basis vectors can be copied and measurements
+can decode.  With $X=\begin{pmatrix}0&1\\1&0\end{pmatrix}$ the allowed errors are qubit flips
+$X\otimes I\otimes I$, $I\otimes X\otimes I$, \dots.  The \emph{three-qubit bit-flip code} encodes
+$a\ket0+b\ket1\mapsto a\ket{000}+b\ket{111}$ (two CNOTs).  Decoding: (1) syndrome measurement with
+$P_0=\ketbra{000}{000}+\ketbra{111}{111}$, $P_1=\ketbra{100}{100}+\ketbra{011}{011}$,
+$P_2=\ketbra{010}{010}+\ketbra{101}{101}$, $P_3=\ketbra{001}{001}+\ketbra{110}{110}$,
+$\sum P_i^2=I$, which leaves a state with at most one flip unchanged and reveals where the flip
+occurred; (2) recovery
+$R(Y)=P_0YP_0+(X\otimes I\otimes I)P_1YP_1(X\otimes I\otimes I)+\cdots$, a completely positive
+trace-preserving map with $R(\ketbra{\psi_i}{\psi_i})=\ketbra\psi\psi$ after zero or one error.
+The code's recovery theorem is \<open>bit_flip_code_recovery\<close> below (syndrome projections,
+$\sum P_i=I$, $R$ CPTP); $X$ is \<open>Pauli_X\<close> of Day 10.\<close>
+
+subsection \<open>Probabilities of undetected and uncorrected errors (D30-1)\<close>
+
+text \<open>Each bit flips independently with probability $p$; an error pattern $e$ of weight $k$ on
+$n$ bits has probability $p^k(1-p)^{n-k}$.  An error is undetected when it turns the sent
+codeword into another codeword.\<close>
+
+definition word_prob :: "real \<Rightarrow> nat \<Rightarrow> nat list \<Rightarrow> real" where
+  "word_prob p n e = p ^ hamming_weight e * (1 - p) ^ (n - hamming_weight e)"
+
+definition err_prob :: "real \<Rightarrow> nat \<Rightarrow> nat list set \<Rightarrow> real" where
+  "err_prob p n ES = (\<Sum>e \<in> ES. word_prob p n e)"
+
+text \<open>Bits flip independently with probability $p$, so an error pattern of weight $k$ in $n$ bits has
+probability $p^k(1-p)^{n-k}$, and a set of patterns the sum of these.\<close>
+
+lemma err_prob_list: "distinct es \<Longrightarrow> err_prob p n (set es) = (\<Sum>e\<leftarrow>es. word_prob p n e)"
+  unfolding err_prob_def by (simp add: sum_list_distinct_conv_sum_set)
+
+definition rep_code :: "nat list set" where "rep_code = repetition_encode ` bin_words 3"
+definition par_code :: "nat list set" where "par_code = parity_check_encode ` bin_words 3"
+
+lemma rep_code_list: "rep_code = set (map repetition_encode (List.n_lists 3 [0, 1]))"
+  unfolding rep_code_def bin_words_def by simp
+
+lemma par_code_list: "par_code = set (map parity_check_encode (List.n_lists 3 [0, 1]))"
+  unfolding par_code_def bin_words_def by simp
+
+definition undetected :: "nat list set \<Rightarrow> nat \<Rightarrow> nat list \<Rightarrow> nat list set" where
+  "undetected C n c = {e \<in> bin_words n. e \<noteq> replicate n 0 \<and> xor_word c e \<in> C}"
+
+lemma set_filter_bin: "{e \<in> bin_words n. P e} = set (filter P (List.n_lists n [0, 1]))"
+  unfolding bin_words_def by auto
+
+text \<open>Repetition on three bits: $3p^2(1-p)^4+3p^4(1-p)^2+p^6$.\<close>
+
+theorem repetition_undetected_prob:
+  assumes c: "c \<in> rep_code"
+  shows "err_prob p 6 (undetected rep_code 6 c) = 3 * p^2 * (1 - p)^4 + 3 * p^4 * (1 - p)^2 + p^6"
+proof -
+  let ?L = "[[1,0,0,1,0,0], [0,1,0,0,1,0], [0,0,1,0,0,1], [1,1,0,1,1,0], [1,0,1,1,0,1], [0,1,1,0,1,1], [1,1,1,1,1,1]] :: nat list list"
+  have "\<forall>c \<in> rep_code. undetected rep_code 6 c = set ?L"
+    unfolding rep_code_list undetected_def set_filter_bin by code_simp
+  hence eqs: "undetected rep_code 6 c = set ?L" using c by blast
+  have e: "err_prob p 6 (set ?L) = (\<Sum>e\<leftarrow>?L. word_prob p 6 e)" by (rule err_prob_list) code_simp
+  show ?thesis unfolding eqs e by (simp add: word_prob_def hamming_weight_def eval_nat_numeral algebra_simps)
+qed
+
+text \<open>Parity on three bits: $\binom42p^2(1-p)^2+p^4$.\<close>
+
+theorem parity_undetected_prob:
+  assumes c: "c \<in> par_code"
+  shows "err_prob p 4 (undetected par_code 4 c) = 6 * p^2 * (1 - p)^2 + p^4"
+proof -
+  let ?L = "[[1,1,0,0], [1,0,1,0], [1,0,0,1], [0,1,1,0], [0,1,0,1], [0,0,1,1], [1,1,1,1]] :: nat list list"
+  have "\<forall>c \<in> par_code. undetected par_code 4 c = set ?L"
+    unfolding par_code_list undetected_def set_filter_bin parity_check_encode_def parity_bit_def by code_simp
+  hence eqs: "undetected par_code 4 c = set ?L" using c by blast
+  have e: "err_prob p 4 (set ?L) = (\<Sum>e\<leftarrow>?L. word_prob p 4 e)" by (rule err_prob_list) code_simp
+  show ?thesis unfolding eqs e by (simp add: word_prob_def hamming_weight_def eval_nat_numeral algebra_simps)
+qed
+
+text \<open>The notes compare the two for $p<\frac12$; the inequality in fact holds for all $0<p<1$.\<close>
+
+theorem repetition_better_than_parity:
+  assumes p0: "0 < p" and p1: "p < 1"
+  shows "3 * p^2 * (1 - p)^4 + 3 * p^4 * (1 - p)^2 + p^6 < 6 * p^2 * (1 - p)^2 + (p::real)^4"
+proof -
+  define q where "q = 1 - p"
+  have q0: "0 < q" and q1: "q < 1" using p0 p1 unfolding q_def by simp_all
+  have "6 * p^2 * q^2 + p^4 - (3 * p^2 * q^4 + 3 * p^4 * q^2 + p^6)
+        = p^2 * (3 * q^2 * (1 - q^2) + 3 * q^2 * (1 - p^2) + p^2 * (1 - p^2))"
+    by (simp add: eval_nat_numeral algebra_simps)
+  moreover have "0 < p^2 * (3 * q^2 * (1 - q^2) + 3 * q^2 * (1 - p^2) + p^2 * (1 - p^2))"
+  proof -
+    have "0 < q^2 * (1 - q^2)" using q0 q1 by (simp add: power_less_one_iff)
+    moreover have "0 \<le> q^2 * (1 - p^2)" using p0 p1 by (simp add: power_le_one)
+    moreover have "0 \<le> p^2 * (1 - p^2)" using p0 p1 by (simp add: power_le_one)
+    ultimately show ?thesis using p0 by (intro mult_pos_pos) simp_all
+  qed
+  ultimately show ?thesis unfolding q_def by simp
+qed
+
+corollary repetition_better_than_parity_notes:
+  "0 < p \<Longrightarrow> p < 1/2 \<Longrightarrow> 3 * p^2 * (1 - p)^4 + 3 * p^4 * (1 - p)^2 + p^6 < 6 * p^2 * (1 - p)^2 + (p::real)^4"
+  by (rule repetition_better_than_parity) simp_all
+
+text \<open>Majority rule $0\mapsto000$, $1\mapsto111$: decoding fails with probability $3p^2(1-p)+p^3$.\<close>
+
+definition maj_decode :: "nat list \<Rightarrow> nat" where
+  "maj_decode w = (if 2 \<le> sum_list w then 1 else 0)"
+
+theorem majority_uncorrected_prob:
+  assumes b: "b \<in> {0, 1}"
+  shows "err_prob p 3 {e \<in> bin_words 3. maj_decode (xor_word (replicate 3 b) e) \<noteq> b}
+         = 3 * p^2 * (1 - p) + p^3"
+proof -
+  let ?L = "[[1,1,0], [1,0,1], [0,1,1], [1,1,1]] :: nat list list"
+  have "\<forall>b \<in> {0, 1::nat}. {e \<in> bin_words 3. maj_decode (xor_word (replicate 3 b) e) \<noteq> b} = set ?L"
+    unfolding set_filter_bin maj_decode_def by code_simp
+  hence eqs: "{e \<in> bin_words 3. maj_decode (xor_word (replicate 3 b) e) \<noteq> b} = set ?L" using b by blast
+  have e: "err_prob p 3 (set ?L) = (\<Sum>e\<leftarrow>?L. word_prob p 3 e)" by (rule err_prob_list) code_simp
+  show ?thesis unfolding eqs e by (simp add: word_prob_def hamming_weight_def eval_nat_numeral algebra_simps)
+qed
+
+subsection \<open>The three-qubit bit-flip code and its recovery map (D30-3, D30-4)\<close>
+
+text \<open>The encoding $a\ket0+b\ket1\mapsto a\ket{000}+b\ket{111}$ as an $8\times2$ matrix.\<close>
+
+definition encode_mat :: "complex Matrix.mat" where
+  "encode_mat \<equiv> Matrix.mat 8 2 (\<lambda>(i,j).
+     if i = 0 \<and> j = 0 then 1
+     else if i = 7 \<and> j = 1 then 1
+     else 0)"
+
+lemma encode_mat_carrier [simp]: "encode_mat \<in> carrier_mat 8 2"
+  by (auto simp: encode_mat_def)
 
 text \<open>The syndrome projections $P_0=\ketbra{000}{000}+\ketbra{111}{111}$, \dots, as diagonal
 $0/1$ matrices ($\ket{abc}\leftrightarrow e_{4a+2b+c}$), and the single flips

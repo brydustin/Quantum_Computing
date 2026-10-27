@@ -3,7 +3,7 @@
 *)
 
 theory Day09_POVMs_Entanglement
-  imports Day08_Measurements
+  imports Day07_Postulates
 begin
 
 section \<open>Day 9 (16 September 2011): positive operator-valued measures; composite systems; entanglement\<close>
@@ -194,7 +194,7 @@ qed
 
 subsection \<open>Composite systems\<close>
 
-text \<open>Postulate 4 was stated with Day 7.  The notes' example: photons in states
+text \<open>The notes' example: photons in states
 $\tfrac1{\sqrt2}(\ket0+\ket1)$ and $\tfrac1{\sqrt2}(\ket0+i\ket1)$ form the pair
 $\tfrac12(\ket{00}+i\ket{01}+\ket{10}+i\ket{11})\in\C^2\otimes\C^2$, a vector of Schmidt
 rank $1$.  Two photons described by a unit vector $\psi\in\C^2\otimes\C^2$ can be regarded
@@ -210,6 +210,30 @@ If lab A has the measurement system $\{M_m\}$ on $\Hil$ and lab B has state spac
 the measurement system of the composite is $\{M_m\otimes I_{\Kil}\}$ and
 $p_m^{AB}(\psi\otimes\phi)=\norm{(M_m\otimes I)(\psi\otimes\phi)}^2=p_m^A(\psi)$.
 \end{notesremark}\<close>
+
+text \<open>\begin{notespost}[4]
+The state space of a composite system is the tensor product of the state spaces of its
+components; if the $i$-th component is in state $\psi_i$, the system is in state
+$\psi_1\otimes\cdots\otimes\psi_n$.
+\end{notespost}\<close>
+
+lemma tensor_of_states_is_state:
+  assumes "quantum_state n \<psi>1" and "quantum_state m \<psi>2"
+  shows "quantum_state (n*m) (tensor_vec \<psi>1 \<psi>2)"
+proof -
+  have d1: "dim_vec \<psi>1 = n" and d2: "dim_vec \<psi>2 = m"
+    using assms by (auto simp: quantum_state_def)
+  have norm1: "\<parallel>\<psi>1\<parallel> = 1" and norm2: "\<parallel>\<psi>2\<parallel> = 1"
+    using assms by (auto simp: quantum_state_def)
+  have dim: "dim_vec (tensor_vec \<psi>1 \<psi>2) = n * m"
+    using d1 d2 by (rule tensor_vec_dim)
+  (* From tensor_inner_prod: \<langle>\<psi>1\<otimes>\<psi>2 | \<psi>1\<otimes>\<psi>2\<rangle> = \<langle>\<psi>1|\<psi>1\<rangle>\<sqdot>\<langle>\<psi>2|\<psi>2\<rangle> = 1\<sqdot>1 = 1. *)
+  have norm_tensor: "\<parallel>tensor_vec \<psi>1 \<psi>2\<parallel> = 1"
+    by (smt (verit) cpx_vec_length_inner_prod inner_prod_csqrt norm1 norm2 of_real_eq_1_iff 
+        one_power2 power2_eq_square tensor_inner_prod)
+  show ?thesis
+    unfolding quantum_state_def using dim norm_tensor by simp
+qed
 
 lemma tensor_mat_vec_mult:
   assumes A: "A \<in> carrier_mat nr nc"
@@ -409,7 +433,7 @@ text \<open>A state $\psi\in\Hil_A\otimes\Hil_B$ is \emph{entangled} if it is no
 state $u\otimes v$.  The Bell state $\gamma=\tfrac1{\sqrt2}(\ket{00}+\ket{11})$ is
 entangled.  The notes' first application of entanglement (A and B share $\gamma$; A measures
 $\ketbra00,\ketbra11$ and gets each outcome with probability $\tfrac12$, after which B's
-measurement is determined) is \<open>bell_measurement\<close> in theory Day09\_Bell\_Measurement.\<close>
+measurement is determined) is \<open>bell_measurement\<close> below.\<close>
 
 definition entangled :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec \<Rightarrow> bool" where
   "entangled n m \<psi> \<equiv>
@@ -539,5 +563,28 @@ proof -
     unfolding entangled_def using dim_bell not_product by simp
 qed  (* If bell_state = u\<otimes>v then matrix [u₀v₀, u₀v₁; u₁v₀, u₁v₁] has rank 1.
         But the bell_state coefficient matrix [1/\<surd>2, 0; 0, 1/\<surd>2] has rank 2. *)
+
+corollary entangled_iff_schmidt_rank:
+  assumes u: "dim_vec u = n * m" and m: "0 < m" and u0: "u \<noteq> 0\<^sub>v (n * m)"
+  shows "entangled n m u \<longleftrightarrow> 1 < schmidt_rank u m"
+proof -
+  have "schmidt_rank u m \<noteq> 0" using schmidt_rank_zero_iff[OF u m] u0 by simp
+  thus ?thesis using schmidt_rank_one_iff_product[OF u m u0] u unfolding entangled_def by auto
+qed
+
+corollary schmidt_rank_bell_state: "schmidt_rank bell_state 2 = 2"
+proof -
+  have d: "dim_vec bell_state = 2 * 2" using bell_state_is_quantum_state unfolding quantum_state_def by simp
+  have ne: "bell_state \<noteq> 0\<^sub>v (2 * 2)"
+  proof
+    assume z: "bell_state = 0\<^sub>v (2 * 2)"
+    have "\<parallel>bell_state\<parallel> = 1" using bell_state_is_quantum_state unfolding quantum_state_def by simp
+    moreover have "\<parallel>bell_state\<parallel> = 0" using cpx_vec_length_zero_iff[of bell_state] z d by simp
+    ultimately show False by simp
+  qed
+  have "1 < schmidt_rank bell_state 2" using entangled_iff_schmidt_rank[OF d _ ne] bell_state_entangled by simp
+  moreover have "schmidt_rank bell_state 2 \<le> 2" by (rule schmidt_rank_repr(2)[OF d _ schmidt_repr_exists[OF d]]) simp
+  ultimately show ?thesis by simp
+qed
 
 end

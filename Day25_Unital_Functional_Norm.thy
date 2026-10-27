@@ -1,9 +1,12 @@
+(*  Title:   Day25_Unital_Functional_Norm.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 26 October 2011 (Day 25)
+*)
+
 theory Day25_Unital_Functional_Norm
-  imports Day25_Arveson_Correspondence
-    "HOL-Analysis.L2_Norm"
+  imports Day25_Arveson_Correspondence "HOL-Analysis.L2_Norm"
 begin
 
-section \<open>Day 25: a unital functional is positive iff it has norm one (D25-4)\<close>
+subsection \<open>A unital functional is positive iff it has norm one (D25-4)\<close>
 
 text \<open>Day 25 proposition (D25-4): for an operator system $S\subseteq M_n$ and a linear
 $f:S\to\C$ with $f(I)=1$, $f$ is positive iff $\norm f=1$.  The operator norm is
@@ -19,7 +22,7 @@ definition op_norm :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> real" 
 definition fun_norm :: "nat \<Rightarrow> complex Matrix.mat set \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex) \<Rightarrow> real" where
   "fun_norm n TS f = Sup {cmod (f A) | A. A \<in> TS \<and> op_norm n A \<le> 1}"
 
-subsection \<open>Vectors\<close>
+subsubsection \<open>Vectors\<close>
 
 lemma vnorm_nonneg: "\<parallel>v\<parallel> \<ge> 0"
   unfolding cpx_vec_length_def by (simp add: sum_nonneg)
@@ -63,7 +66,7 @@ lemma vnorm_le_sum: "\<parallel>w\<parallel> \<le> (\<Sum>i<dim_vec w. cmod (w $
 lemma vnorm_zero_iff: "dim_vec v = n \<Longrightarrow> \<parallel>v\<parallel> = 0 \<longleftrightarrow> v = 0\<^sub>v n"
   using cpx_vec_length_zero_iff[of v] by auto
 
-subsection \<open>The operator norm\<close>
+subsubsection \<open>The operator norm\<close>
 
 text \<open>The operator norm $\norm A=\sup\{\norm{Av}:\norm v\le1\}$ is finite because
 $\norm{Av}\le\bigl(\sum_{i,k}|a_{ik}|\bigr)\norm v$.  It satisfies $\norm{Av}\le\norm A\,\norm v$,
@@ -184,7 +187,7 @@ proof (rule eq_matI)
   thus "A $$ (i,j) = 0\<^sub>m n n $$ (i,j)" using A i j by simp
 qed (use A in auto)
 
-subsection \<open>Unital functionals\<close>
+subsubsection \<open>Unital functionals\<close>
 
 context
   fixes n :: nat and TS :: "complex Matrix.mat set" and f :: "complex Matrix.mat \<Rightarrow> complex"

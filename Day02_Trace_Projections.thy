@@ -365,6 +365,24 @@ lemma Tr_zero_mat [simp]:
   shows "Tr (Matrix.mat m n (\<lambda>(r,c). 0)) = 0"
   by (simp add: Tr_def, simp add: sum.neutral)
 
+lemma Tr_dagger:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat n n"
+  shows "Tr (M\<^sup>\<dagger>) = cnj (Tr M)"
+proof -
+  have dr: "dim_row M = n" and dc: "dim_col M = n" using M_c by auto
+  have d_dr: "dim_row (M\<^sup>\<dagger>) = n" using dc by simp
+  have d_dc: "dim_col (M\<^sup>\<dagger>) = n" using dr by simp
+  have "Tr (M\<^sup>\<dagger>) = (\<Sum>r<n. (M\<^sup>\<dagger>) $$ (r,r))"
+    unfolding Tr_def using d_dr d_dc by simp
+  also have "\<dots> = (\<Sum>r<n. cnj (M $$ (r,r)))"
+    using dr dc unfolding dagger_def by simp
+  also have "\<dots> = cnj (\<Sum>r<n. M $$ (r,r))" by simp
+  also have "\<dots> = cnj (Tr M)"
+    unfolding Tr_def using dr dc by simp
+  finally show ?thesis .
+qed
+
 subsection \<open>Matrix-unit algebra and cyclicity of the trace\<close>
 
 text \<open>$E_{ij}^*=E_{ji}$, $E_{ij}E_{kl}=\delta_{jk}E_{il}$, $\Tr(AB)=\Tr(BA)$,
@@ -515,12 +533,169 @@ the matrix with columns $v_1,\dots,v_k$ is \<^term>\<open>mat_of_cols n vs\<clos
 $P=\sum_i\ketbra{v_i}{v_i}=VV^\dagger$ is \<^term>\<open>outer_sum n vs\<close>.  The results below are the
 projection formula, $V^\dagger V=I_k$, the completeness relation $VV^\dagger=I_n$ for a full
 basis, $P=P^\dagger$, $P^2=P$, Parseval, the orthogonality of the residual, and the uniqueness
-of the decomposition.  Independence of $P$ from the basis is \<open>outer_sum_basis_independent\<close> in
-theory Day02\_Projection\_Basis; the characterisation of Hermitian idempotents as orthogonal projections is
-\<open>projection_annihilates_orthogonal\<close> in theory Day32\_Phase\_Flip\_Code.\<close>
+of the decomposition.  Independence of $P$ from the basis is \<open>outer_sum_basis_independent\<close> below; the
+characterisation of Hermitian idempotents as orthogonal projections needs Hermitian matrices and
+is \<open>projection_annihilates_orthogonal\<close> on Day 4.\<close>
 
+text \<open>The outer product $\ketbra vw=v\,w^*$ of Dirac's notation.\<close>
 
+abbreviation outer_prod :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat"
+    (infixr "\<oslash>" 75)
+  where "v \<oslash> w \<equiv> |v\<rangle> * bra_vec w"
 
+lemma bra_vec_index_0:
+  assumes j: "j < dim_vec w"
+  shows "bra_vec w $$ (0,j) = cnj (w $ j)"
+  using j by (simp add: bra_vec_def row_vec_def cpx_mat_cnj_def)
+
+text \<open>$\ketbra vw=v\,w^*$ has entries $v_i\overline{w_j}$ and sends every vector to a multiple of
+$v$: $\ketbra vw\,x=\braket wx\,v$.\<close>
+
+lemma outer_prod_index:
+  fixes v w :: "complex Matrix.vec"
+  assumes i: "i < dim_vec v"
+      and j: "j < dim_vec w"
+  shows "(v \<oslash> w) $$ (i,j) = (v $ i) * cnj (w $ j)"
+proof -
+  have row_index_0: "Matrix.row (ket_vec v) i $ 0 = v $ i"
+    using i by (simp add: Matrix.row_def ket_vec_def)
+  have bra_rows: "dim_row (bra_vec w) = 1"
+    by (simp add: bra_vec_def row_vec_def cpx_mat_cnj_def)
+  have ket_rows: "dim_row (ket_vec v) = dim_vec v"
+    by (simp add: ket_vec_def)
+  have bra_cols: "dim_col (bra_vec w) = dim_vec w"
+    by (simp add: bra_vec_def row_vec_def cpx_mat_cnj_def)
+  have col_index_0: "Matrix.col (bra_vec w) j $ 0 = cnj (w $ j)"
+    using j bra_rows by (simp add: Matrix.col_def bra_vec_index_0)
+
+  have "(ket_vec v * bra_vec w) $$ (i,j) =
+        Matrix.row (ket_vec v) i \<bullet> Matrix.col (bra_vec w) j"
+    by (rule index_mult_mat(1)) (use i j ket_rows bra_cols in auto)
+  also have "\<dots> = (\<Sum>k<1. Matrix.row (ket_vec v) i $ k * Matrix.col (bra_vec w) j $ k)"
+    using bra_rows by (simp add: scalar_prod_def lessThan_atLeast0)
+  also have "\<dots> = Matrix.row (ket_vec v) i $ 0 * Matrix.col (bra_vec w) j $ 0"
+    by simp
+  also have "\<dots> = (v $ i) * cnj (w $ j)"
+    using row_index_0 col_index_0 by simp
+  finally show ?thesis .
+qed
+
+lemma outer_prod_mult_vec_index:
+  fixes v w x :: "complex Matrix.vec"
+  assumes xdim: "dim_vec x = dim_vec w"
+      and i: "i < dim_vec v"
+  shows "((v \<oslash> w) *\<^sub>v x) $ i = (v $ i) * \<langle>w | x\<rangle>"
+proof -
+  have ket_rows: "dim_row (ket_vec v) = dim_vec v"
+    by (simp add: ket_vec_def)
+  have bra_cols: "dim_col (bra_vec w) = dim_vec w"
+    by (simp add: bra_vec_def row_vec_def cpx_mat_cnj_def)
+  have prod_rows: "dim_row (ket_vec v * bra_vec w) = dim_vec v"
+    using ket_rows by simp
+
+  have "((ket_vec v * bra_vec w) *\<^sub>v x) $ i =
+        Matrix.row (ket_vec v * bra_vec w) i \<bullet> x"
+    by (rule index_mult_mat_vec) (use i prod_rows in auto)
+  also have "\<dots> =
+        (\<Sum>j<dim_vec w. (v $ i * cnj (w $ j)) * (x $ j))"
+  proof -
+    have "\<And>j. j < dim_vec w \<Longrightarrow>
+          Matrix.row (ket_vec v * bra_vec w) i $ j = v $ i * cnj (w $ j)"
+      using i bra_cols by (simp add: Matrix.row_def outer_prod_index)
+    then show ?thesis
+      using xdim by (simp add: scalar_prod_def lessThan_atLeast0)
+  qed
+  also have "\<dots> = (v $ i) * (\<Sum>j<dim_vec w. cnj (w $ j) * (x $ j))"
+    by (simp add: sum_distrib_left algebra_simps)
+  also have "\<dots> = (v $ i) * \<langle>w | x\<rangle>"
+    using xdim by (simp add: inner_prod_def lessThan_atLeast0)
+  finally show ?thesis .
+qed
+
+lemma outer_prod_mult_vec:
+  fixes v w x :: "complex Matrix.vec"
+  assumes xdim: "dim_vec x = dim_vec w"
+  shows "(v \<oslash> w) *\<^sub>v x = \<langle>w | x\<rangle> \<cdot>\<^sub>v v"
+proof (rule eq_vecI)
+  show "dim_vec ((v \<oslash> w) *\<^sub>v x) = dim_vec (\<langle>w | x\<rangle> \<cdot>\<^sub>v v)"
+    by (simp add: ket_vec_def)
+next
+  fix i
+  assume i: "i < dim_vec (\<langle>w | x\<rangle> \<cdot>\<^sub>v v)"
+  then have iv: "i < dim_vec v"
+    by simp
+  have "((v \<oslash> w) *\<^sub>v x) $ i = (v $ i) * \<langle>w | x\<rangle>"
+    using outer_prod_mult_vec_index[OF xdim iv] .
+  also have "\<dots> = (\<langle>w | x\<rangle> \<cdot>\<^sub>v v) $ i"
+    using iv by (simp add: algebra_simps)
+  finally show "((v \<oslash> w) *\<^sub>v x) $ i = (\<langle>w | x\<rangle> \<cdot>\<^sub>v v) $ i" .
+qed
+
+lemma outer_prod_carrier:
+  fixes v w :: "complex Matrix.vec"
+  assumes "dim_vec v = n" and "dim_vec w = m"
+  shows "v \<oslash> w \<in> carrier_mat n m"
+  using assms by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def carrier_matI)
+
+text \<open>Conjugating a rank-one matrix: $W|\varphi\rangle\langle\varphi|W^*=|W\varphi\rangle\langle W\varphi|$.\<close>
+
+lemma conj_outer_prod:
+  fixes W :: "complex Matrix.mat" and \<phi> :: "complex Matrix.vec"
+  assumes Wc: "W \<in> carrier_mat m n" and \<phi>d: "dim_vec \<phi> = n"
+  shows "W * (\<phi> \<oslash> \<phi>) * (W\<^sup>\<dagger>) = (W *\<^sub>v \<phi>) \<oslash> (W *\<^sub>v \<phi>)"
+proof -
+  define M where "M = \<phi> \<oslash> \<phi>"
+  define R where "R = (W *\<^sub>v \<phi>) \<oslash> (W *\<^sub>v \<phi>)"
+  have Mc: "M \<in> carrier_mat n n" unfolding M_def by (rule outer_prod_carrier[OF \<phi>d \<phi>d])
+  have Me: "\<And>k l. k < n \<Longrightarrow> l < n \<Longrightarrow> M $$ (k,l) = \<phi> $ k * cnj (\<phi> $ l)"
+    unfolding M_def using \<phi>d by (intro outer_prod_index) auto
+  have Wdc: "W\<^sup>\<dagger> \<in> carrier_mat n m" by (rule dagger_carrier[OF Wc])
+  have W\<phi>d: "dim_vec (W *\<^sub>v \<phi>) = m" using Wc by simp
+  have Rc: "R \<in> carrier_mat m m" unfolding R_def by (rule outer_prod_carrier[OF W\<phi>d W\<phi>d])
+  have Re: "\<And>i j. i < m \<Longrightarrow> j < m \<Longrightarrow> R $$ (i,j) = (W *\<^sub>v \<phi>) $ i * cnj ((W *\<^sub>v \<phi>) $ j)"
+    unfolding R_def using W\<phi>d by (intro outer_prod_index) auto
+  have WMc: "W * M \<in> carrier_mat m n" using Wc Mc by simp
+  have "W * M * (W\<^sup>\<dagger>) = R"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row R" "j < dim_col R"
+    hence i: "i < m" and j: "j < m" using carrier_matD[OF Rc] by auto
+    have inner: "\<And>l. l < n \<Longrightarrow> (W * M) $$ (i,l) = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * cnj (\<phi> $ l)"
+    proof -
+      fix l assume l: "l < n"
+      have "(W * M) $$ (i,l) = (\<Sum>k<n. W $$ (i,k) * M $$ (k,l))"
+        using i l carrier_matD[OF Wc] carrier_matD[OF Mc] by (simp add: scalar_prod_def atLeast0LessThan)
+      also have "\<dots> = (\<Sum>k<n. W $$ (i,k) * (\<phi> $ k * cnj (\<phi> $ l)))"
+        using l by (intro sum.cong refl) (simp add: Me)
+      also have "\<dots> = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * cnj (\<phi> $ l)"
+        by (simp add: sum_distrib_right mult_ac(1))
+      finally show "(W * M) $$ (i,l) = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * cnj (\<phi> $ l)" .
+    qed
+    have "(W * M * (W\<^sup>\<dagger>)) $$ (i,j) = (\<Sum>l<n. (W * M) $$ (i,l) * cnj (W $$ (j,l)))"
+      using i j carrier_matD[OF WMc] carrier_matD[OF Wdc] carrier_matD[OF Wc]
+      by (simp add: scalar_prod_def dagger_def atLeast0LessThan)
+    also have "\<dots> = (\<Sum>l<n. (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * (cnj (\<phi> $ l) * cnj (W $$ (j,l))))"
+      by (intro sum.cong refl) (simp add: inner mult_ac(1))
+    also have "\<dots> = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * (\<Sum>l<n. cnj (W $$ (j,l) * \<phi> $ l))"
+      by (simp add: sum_distrib_left mult.commute)
+    also have "\<dots> = (W *\<^sub>v \<phi>) $ i * cnj ((W *\<^sub>v \<phi>) $ j)"
+      using i j carrier_matD[OF Wc] \<phi>d by (simp add: scalar_prod_def atLeast0LessThan)
+    also have "\<dots> = R $$ (i,j)" by (rule Re[OF i j, symmetric])
+    finally show "(W * M * (W\<^sup>\<dagger>)) $$ (i,j) = R $$ (i,j)" .
+  next
+    show "dim_row (W * M * (W\<^sup>\<dagger>)) = dim_row R" using carrier_matD[OF Wc] carrier_matD[OF Rc] by simp
+    show "dim_col (W * M * (W\<^sup>\<dagger>)) = dim_col R" using carrier_matD[OF Wdc] carrier_matD[OF Rc] by simp
+  qed
+  thus ?thesis unfolding M_def R_def .
+qed
+
+lemma outer_prod_zero_vec: "(0\<^sub>v n :: complex Matrix.vec) \<oslash> (0\<^sub>v n) = 0\<^sub>m n n"
+proof (rule eq_matI)
+  have c: "(0\<^sub>v n :: complex Matrix.vec) \<oslash> (0\<^sub>v n) \<in> carrier_mat n n" by (rule outer_prod_carrier) simp_all
+  fix i j assume "i < dim_row (0\<^sub>m n n :: complex Matrix.mat)" "j < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
+  hence "i < n" "j < n" by simp_all
+  thus "((0\<^sub>v n :: complex Matrix.vec) \<oslash> (0\<^sub>v n)) $$ (i,j) = (0\<^sub>m n n :: complex Matrix.mat) $$ (i,j)"
+    by (simp add: outer_prod_index)
+qed (use carrier_matD[OF outer_prod_carrier[of "0\<^sub>v n :: complex Matrix.vec" n "0\<^sub>v n" n]] in auto)
 
 definition orthonormal_list :: "nat \<Rightarrow> complex Matrix.vec list \<Rightarrow> bool" where
   "orthonormal_list n vs \<equiv>
@@ -951,6 +1126,90 @@ proof -
   also have "\<dots> = (\<Sum>r < n. (1 :: complex))" by simp
   also have "\<dots> = of_nat n" by simp
   finally show ?thesis.
+qed
+
+subsection \<open>The projection does not depend on the orthonormal basis\<close>
+
+definition col_span :: "nat \<Rightarrow> complex Matrix.vec list \<Rightarrow> complex Matrix.vec set" where
+  "col_span n vs = {mat_of_cols n vs *\<^sub>v c | c. dim_vec c = length vs}"
+
+lemma outer_sum_fixes_col_span:
+  assumes orth: "orthonormal_list n vs" and w: "w \<in> col_span n vs"
+  shows "outer_sum n vs *\<^sub>v w = w"
+proof -
+  let ?k = "length vs" and ?V = "mat_of_cols n vs"
+  obtain c where c: "dim_vec c = ?k" and wc: "w = ?V *\<^sub>v c" using w unfolding col_span_def by blast
+  have Vc: "?V \<in> carrier_mat n ?k" by simp
+  have Vdc: "?V\<^sup>\<dagger> \<in> carrier_mat ?k n" by (rule dagger_carrier[OF Vc])
+  have cc: "c \<in> carrier_vec ?k" by (rule carrier_vecI[OF c])
+  have VdV: "(?V\<^sup>\<dagger>) * ?V = 1\<^sub>m ?k" by (rule cols_mat_dagger_left[OF orth])
+  have "outer_sum n vs *\<^sub>v w = ?V *\<^sub>v ((?V\<^sup>\<dagger>) *\<^sub>v (?V *\<^sub>v c))"
+    unfolding outer_sum_def wc by (rule assoc_mult_mat_vec[OF Vc Vdc mult_mat_vec_carrier[OF Vc cc]])
+  also have "(?V\<^sup>\<dagger>) *\<^sub>v (?V *\<^sub>v c) = c"
+    using assoc_mult_mat_vec[OF Vdc Vc cc] unfolding VdV using cc by simp
+  finally show ?thesis unfolding wc .
+qed
+
+lemma mem_col_span_self:
+  assumes "\<forall>v \<in> set vs. dim_vec v = n" and j: "j < length vs"
+  shows "vs ! j \<in> col_span n vs"
+proof -
+  have Vc: "mat_of_cols n vs \<in> carrier_mat n (length vs)" by simp
+  have vj: "vs ! j \<in> carrier_vec n" using assms(1) j by (auto intro!: carrier_vecI)
+  have "mat_of_cols n vs *\<^sub>v unit_vec (length vs) j = Matrix.col (mat_of_cols n vs) j"
+    by (rule eq_vecI) (use Vc j in auto)
+  also have "\<dots> = vs ! j" by (rule col_mat_of_cols[OF j vj])
+  finally have "mat_of_cols n vs *\<^sub>v unit_vec (length vs) j = vs ! j" .
+  thus ?thesis unfolding col_span_def
+    by (intro CollectI exI[of _ "unit_vec (length vs) j"]) simp
+qed
+
+lemma outer_sum_absorbs:
+  assumes ov: "orthonormal_list n vs" and ow: "orthonormal_list n ws"
+      and sub: "set ws \<subseteq> col_span n vs"
+  shows "outer_sum n vs * outer_sum n ws = outer_sum n ws"
+proof -
+  let ?V = "mat_of_cols n vs" and ?W = "mat_of_cols n ws" and ?P = "outer_sum n vs"
+  have wd: "\<And>j. j < length ws \<Longrightarrow> ws ! j \<in> carrier_vec n"
+    using ow unfolding orthonormal_list_def by (auto intro: carrier_vecI)
+  have Pc: "?P \<in> carrier_mat n n" by (simp add: carrier_matI)
+  have Wc: "?W \<in> carrier_mat n (length ws)" by simp
+  have Wdc: "?W\<^sup>\<dagger> \<in> carrier_mat (length ws) n" by (rule dagger_carrier[OF Wc])
+  have PW: "?P * ?W = ?W"
+  proof (rule eq_matI)
+    fix i j assume i: "i < dim_row ?W" and j': "j < dim_col ?W"
+    have j: "j < length ws" using j' by simp
+    have "(?P * ?W) $$ (i,j) = (?P *\<^sub>v Matrix.col ?W j) $ i" using i j Pc by (simp add: scalar_prod_def atLeast0LessThan)
+    also have "Matrix.col ?W j = ws ! j" by (rule col_mat_of_cols[OF j wd[OF j]])
+    also have "?P *\<^sub>v ws ! j = ws ! j" by (rule outer_sum_fixes_col_span[OF ov subsetD[OF sub nth_mem[OF j]]])
+    finally show "(?P * ?W) $$ (i,j) = ?W $$ (i,j)" using i j wd[OF j] by (simp add: mat_of_cols_def)
+  qed (use Pc in simp_all)
+  have "?P * outer_sum n ws = (?P * ?W) * (?W\<^sup>\<dagger>)"
+    unfolding outer_sum_def[of n ws] by (rule assoc_mult_mat[OF Pc Wc Wdc, symmetric])
+  thus ?thesis unfolding PW outer_sum_def[of n ws] .
+qed
+
+text \<open>D2-8: two orthonormal bases of the same subspace give the same projection.\<close>
+
+theorem outer_sum_basis_independent:
+  assumes ov: "orthonormal_list n vs" and ow: "orthonormal_list n ws"
+      and span: "col_span n vs = col_span n ws"
+  shows "outer_sum n vs = outer_sum n ws"
+proof -
+  let ?P = "outer_sum n vs" and ?Q = "outer_sum n ws"
+  have vd: "\<forall>v \<in> set vs. dim_vec v = n" and wd: "\<forall>v \<in> set ws. dim_vec v = n"
+    using ov ow unfolding orthonormal_list_def by auto
+  have subw: "set ws \<subseteq> col_span n vs"
+    using mem_col_span_self[OF wd] span by (auto simp: in_set_conv_nth)
+  have subv: "set vs \<subseteq> col_span n ws"
+    using mem_col_span_self[OF vd] span by (auto simp: in_set_conv_nth)
+  have PQ: "?P * ?Q = ?Q" by (rule outer_sum_absorbs[OF ov ow subw])
+  have QP: "?Q * ?P = ?P" by (rule outer_sum_absorbs[OF ow ov subv])
+  have Pc: "?P \<in> carrier_mat n n" and Qc: "?Q \<in> carrier_mat n n" by (simp_all add: carrier_matI)
+  have "?Q = (?P * ?Q)\<^sup>\<dagger>" unfolding PQ outer_sum_hermitian ..
+  also have "\<dots> = (?Q\<^sup>\<dagger>) * (?P\<^sup>\<dagger>)" by (rule dagger_of_prod) (use Pc Qc in simp)
+  also have "\<dots> = ?P" unfolding outer_sum_hermitian QP ..
+  finally show ?thesis ..
 qed
 
 end

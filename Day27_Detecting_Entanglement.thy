@@ -1,13 +1,25 @@
-theory Day27_Positive_Map_Criterion
-  imports Day26_Separable_Cone
+(*  Title:   Day27_Detecting_Entanglement.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 31 October 2011 (Day 27)
+*)
+
+theory Day27_Detecting_Entanglement
+  imports Day25_Arveson_Correspondence Day26_Separability
 begin
 
-section \<open>Days 27--28: positive maps detect entanglement\<close>
+section \<open>Day 27 (31 October 2011): positive maps detect entanglement; convex cones\<close>
 
-text \<open>Days 27--28: positive maps detect entanglement.  For $R\in M_r(M_n)$ (block size $n$),
-$\Phi^{(r)}(R)\ge0$ for every positive $\Phi$ when $R$ is separable (D27-1); a functional $f$ on
-$M_r(M_n)$ is nonnegative on the separable matrices iff $\Phi_f$ is positive (D27-3); and with
-the entanglement witnesses of \<open>Day26_Separable_Cone\<close> this gives the positive-map criterion (D28-3).\<close>
+text \<open>For $R\in M_r(M_n)$ (block size $n$), $\Phi^{(r)}(R)\ge0$ for every positive $\Phi$ when $R$
+is separable (D27-1), so a positive map with $\Phi^{(r)}(R)\not\ge0$ shows that $R$ is
+entangled; the transpose does so for the notes' examples (D27-2).  A functional $f$ on
+$M_r(M_n)$ is non-negative on the separable matrices iff $\Phi_f$ is positive (D27-3).  That
+every entangled $R$ is detected by some positive map needs convex cones:
+\begin{notestheorem}
+Let $V$ be a finite-dimensional real vector space, $K\subseteq V$ closed and convex, $y\notin K$.
+Then there is a linear $f:V\to\R$ and $\alpha\in\R$ with $f(y)<\alpha\le f(K)$; if $C$ is a closed
+cone and $w\notin C$ there is $f$ with $f(w)<0\le f(C)$.
+\end{notestheorem}
+This is HOL-Analysis' \<open>separating_hyperplane_closed_point\<close>; Day 28 applies it to the separable
+cone, once the cone is shown to be closed.\<close>
 
 subsection \<open>Tensor products with a matrix in the first factor\<close>
 
@@ -142,7 +154,7 @@ proof -
   finally show ?thesis .
 qed
 
-subsection \<open>Proposition (Day 27): $f(\mathrm{Sep})\ge0$ iff $\Phi_f$ is positive\<close>
+subsection \<open>$f(\mathrm{Sep})\ge0$ iff $\Phi_f$ is positive (D27-3)\<close>
 
 theorem positive_map_iff_sep_nonneg:
   fixes f :: "complex Matrix.mat \<Rightarrow> complex"
@@ -195,7 +207,7 @@ next
   qed simp
 qed
 
-subsection \<open>Proposition (Day 27): positive maps keep separable matrices positive\<close>
+subsection \<open>Positive maps keep separable matrices positive (D27-1)\<close>
 
 lemma block_tensor:
   fixes Q P :: "complex Matrix.mat"
@@ -356,81 +368,117 @@ proof -
   thus ?thesis using R unfolding C_def by blast
 qed
 
-subsection \<open>Theorem (Day 28): the positive-map criterion\<close>
+subsection \<open>Entangled matrices detected by the transpose (D27-2)\<close>
 
-text \<open>A Hermitian $R\in M_r(M_n)$ is separable iff $\Phi^{(r)}(R)\ge0$ for every positive
-$\Phi:M_n\to M_r$.\<close>
+lemma sum_two_support:
+  fixes g :: "nat \<Rightarrow> complex"
+  assumes "p \<noteq> q" "p < m" "q < m" "\<And>x. x < m \<Longrightarrow> x \<noteq> p \<Longrightarrow> x \<noteq> q \<Longrightarrow> g x = 0"
+  shows "(\<Sum>x = 0..<m. g x) = g p + g q"
+proof -
+  have "(\<Sum>x = 0..<m. g x) = (\<Sum>x \<in> {p, q}. g x)"
+    by (rule sum.mono_neutral_right) (use assms in auto)
+  thus ?thesis using assms(1) by simp
+qed
 
-theorem separable_iff_positive_maps:
-  fixes R :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
-  assumes Rh: "hermitian (unwrap_lm R)"
-  shows "R \<in> separable_cone_lmat \<longleftrightarrow>
-         (\<forall>\<Phi>. lin_on CARD('p) CARD('m) (carrier_mat CARD('p) CARD('p)) \<Phi> \<longrightarrow> positive_map CARD('p) CARD('m) \<Phi>
-              \<longrightarrow> psd (amplification CARD('p) CARD('m) CARD('m) \<Phi> (unwrap_lm R)))"
+lemma transpose_lin_on: "lin_on n n (carrier_mat n n) (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat)"
+  unfolding lin_on_def by (auto intro!: eq_matI)
+
+text \<open>The partial transpose of $(E_{f(a)f(b)})$ is $(E_{f(b)f(a)})$; its quadratic form at
+$e_0\otimes e_{f(1)}-e_1\otimes e_{f(0)}$ is $-2$.\<close>
+
+lemma unit_blocks_partial_transpose_not_psd:
+  assumes r: "2 \<le> r" and f: "f 0 < n" "f 1 < n" "f 0 \<noteq> f 1"
+  shows "\<not> psd (amplification n n r (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) (unit_blocks r n f))"
 proof
-  assume "R \<in> separable_cone_lmat"
-  thus "\<forall>\<Phi>. lin_on CARD('p) CARD('m) (carrier_mat CARD('p) CARD('p)) \<Phi> \<longrightarrow> positive_map CARD('p) CARD('m) \<Phi>
-              \<longrightarrow> psd (amplification CARD('p) CARD('m) CARD('m) \<Phi> (unwrap_lm R))"
-    using positive_map_separable[where d="CARD('m)" and R=R] by simp
-next
-  let ?n = "CARD('p)" and ?r = "CARD('m)"
-  assume all: "\<forall>\<Phi>. lin_on ?n ?r (carrier_mat ?n ?n) \<Phi> \<longrightarrow> positive_map ?n ?r \<Phi>
-              \<longrightarrow> psd (amplification ?n ?r ?r \<Phi> (unwrap_lm R))"
-  show "R \<in> separable_cone_lmat"
-  proof (rule ccontr)
-    assume nR: "R \<notin> separable_cone_lmat"
-    then obtain W where Wc: "W \<in> carrier_mat CARD('m \<times> 'p) CARD('m \<times> 'p)" and Wh: "hermitian W"
-      and Wsep: "\<forall>\<sigma> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat. \<sigma> \<in> separable_cone_lmat \<longrightarrow> 0 \<le> Re (Tr (W * unwrap_lm \<sigma>))"
-      and WR: "\<not> 0 \<le> Re (Tr (W * unwrap_lm R))"
-      using separable_iff_witness[OF Rh] by blast
-    have Wc': "W \<in> carrier_mat (?r * ?n) (?r * ?n)" using Wc by (simp add: card_prod)
-    define f where "f = (\<lambda>A. Tr (W * A))"
-    have f: "lin_fun_on (carrier_mat (?r * ?n) (?r * ?n)) f"
-      unfolding lin_fun_on_def f_def
-    proof (intro conjI ballI allI)
-      fix A B :: "complex Matrix.mat" assume A: "A \<in> carrier_mat (?r * ?n) (?r * ?n)" and B: "B \<in> carrier_mat (?r * ?n) (?r * ?n)"
-      show "Tr (W * (A + B)) = Tr (W * A) + Tr (W * B)"
-        unfolding mult_add_distrib_mat[OF Wc' A B] by (rule Tr_add) (use Wc' A B in simp_all)
-    next
-      fix A :: "complex Matrix.mat" and c :: complex assume A: "A \<in> carrier_mat (?r * ?n) (?r * ?n)"
-      show "Tr (W * (c \<cdot>\<^sub>m A)) = c * Tr (W * A)" unfolding mult_smult_distrib[OF Wc' A] Tr_smult ..
-    qed
-    have r0: "0 < ?r" and n0: "0 < ?n" by simp_all
-    define \<Phi> where "\<Phi> = arveson_map ?n ?r f"
-    have Lphi: "lin_on ?n ?r (carrier_mat ?n ?n) \<Phi>"
-      unfolding \<Phi>_def by (rule arveson_map_lin[OF operator_system_full]) (use f in \<open>simp add: Mp_full\<close>)
-    have pphi: "positive_map ?n ?r \<Phi>"
-      unfolding \<Phi>_def positive_map_iff_sep_nonneg[OF f r0 n0]
-    proof (intro allI impI)
-      fix Q P :: "complex Matrix.mat" assume Qc: "Q \<in> carrier_mat ?r ?r" and Qp: "psd Q" and Pc: "P \<in> carrier_mat ?n ?n" and Pp: "psd P"
-      define \<sigma> where "\<sigma> = (wrap_lm Q :: (complex, 'm, 'm) lmat)"
-      define \<tau> where "\<tau> = (wrap_lm P :: (complex, 'p, 'p) lmat)"
-      have us: "unwrap_lm \<sigma> = Q" and ut: "unwrap_lm \<tau> = P" unfolding \<sigma>_def \<tau>_def
-        using Qc Pc by (simp_all add: wrap_lm_inverse)
-      have "tensor_lmat \<sigma> \<tau> \<in> separable_lmat_gen" unfolding separable_lmat_gen_def using us ut Qp Pp by auto
-      hence "tensor_lmat \<sigma> \<tau> \<in> separable_cone_lmat" unfolding separable_cone_lmat_def by (rule hull_inc)
-      hence re: "0 \<le> Re (f (Tensor.tensor_mat Q P))" using Wsep unfolding f_def by (metis unwrap_lm_tensor_lmat us ut)
-      have tc: "Tensor.tensor_mat Q P \<in> carrier_mat (?r * ?n) (?r * ?n)" using Qc Pc by simp
-      have "hermitian (Tensor.tensor_mat Q P)" by (rule psd_hermitian[OF psd_tensor[OF Qc Pc Qp Pp]])
-      hence "f (Tensor.tensor_mat Q P) \<in> \<real>" unfolding f_def by (rule Tr_herm_mult_real[OF Wc' tc Wh])
-      thus "0 \<le> f (Tensor.tensor_mat Q P)" using re by (simp add: less_eq_complex_def complex_is_Real_iff)
-    qed
-    have psdR: "psd (amplification ?n ?r ?r \<Phi> (unwrap_lm R))" using all Lphi pphi by blast
-    have "unwrap_lm R \<in> carrier_mat CARD('m \<times> 'p) CARD('m \<times> 'p)" by (rule unwrap_lm_carrier)
-    hence Rc: "unwrap_lm R \<in> carrier_mat (?r * ?n) (?r * ?n)" by (simp only: card_prod)
-    define v where "v = Matrix.vec (?r * ?r) (\<lambda>x. if x div ?r = x mod ?r then 1 else (0::complex))"
-    have vd: "dim_vec v = ?r * ?r" unfolding v_def by simp
-    have "\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle> = (\<Sum>i<?r. \<Sum>j<?r. \<Phi> (block_of_mat ?n (unwrap_lm R) i j) $$ (i,j))"
-      unfolding v_def by (rule diag_quad_amplification)
-    also have "\<dots> = of_nat ?r * arveson_functional ?n ?r \<Phi> (unwrap_lm R)" unfolding arveson_functional_def by simp
-    also have "arveson_functional ?n ?r \<Phi> (unwrap_lm R) = f (unwrap_lm R)"
-      unfolding \<Phi>_def by (rule arveson_functional_of_map[OF operator_system_full]) (use f Rc in \<open>simp_all add: Mp_full\<close>)
-    finally have q: "\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle> = of_nat ?r * Tr (W * unwrap_lm R)" unfolding f_def .
-    have "0 \<le> Re (\<langle>v | amplification ?n ?r ?r \<Phi> (unwrap_lm R) *\<^sub>v v\<rangle>)"
-      using psdR psd_iff_quad_form_nonneg[OF amplification_carrier] vd by blast
-    hence "0 \<le> Re (Tr (W * unwrap_lm R))" unfolding q by (simp add: zero_le_mult_iff)
-    thus False using WR by simp
+  let ?M = "unit_blocks r n f"
+  let ?Y = "amplification n n r (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat) ?M"
+  assume ps: "psd ?Y"
+  define p q where "p = f 1" and "q = n + f 0"
+  have n: "0 < n" using f by simp
+  have rn: "2 * n \<le> r * n" using r by simp
+  have pq: "p \<noteq> q" "p < r * n" "q < r * n" using f rn unfolding p_def q_def by linarith+
+  have Yc: "?Y \<in> carrier_mat (r * n) (r * n)" by (simp add: amplification_def)
+  have Ye: "?Y $$ (x, y) = (if y mod n = f (x div n) \<and> x mod n = f (y div n) then 1 else 0)"
+    if x: "x < r * n" and y: "y < r * n" for x y
+  proof -
+    have xd: "x div n < r" "y div n < r" using x y by (simp_all add: less_mult_imp_div_less)
+    have "(x div n) * n + y mod n < r * n" "(y div n) * n + x mod n < r * n"
+      using mult_index_lt xd n by simp_all
+    thus ?thesis using x y n by (simp add: amplification_def block_of_mat_def unit_blocks_def)
+  qed
+  define h :: "complex Matrix.vec" where "h = Matrix.vec (r * n) (\<lambda>x. if x = p then 1 else if x = q then -1 else 0)"
+  have hd: "dim_vec h = r * n" by (simp add: h_def)
+  have pdiv: "p div n = 0" "p mod n = f 1" "q div n = 1" "q mod n = f 0"
+    using f unfolding p_def q_def by simp_all
+  have Yh: "(?Y *\<^sub>v h) $ x = ?Y $$ (x, p) - ?Y $$ (x, q)" if x: "x < r * n" for x
+  proof -
+    have "(?Y *\<^sub>v h) $ x = (\<Sum>y = 0..<r * n. ?Y $$ (x, y) * h $ y)"
+      using x carrier_matD[OF Yc] hd by (simp add: scalar_prod_def)
+    also have "\<dots> = ?Y $$ (x, p) * h $ p + ?Y $$ (x, q) * h $ q"
+      by (rule sum_two_support[OF pq]) (simp add: h_def)
+    finally show ?thesis using pq by (simp add: h_def)
+  qed
+  have "\<langle>h | ?Y *\<^sub>v h\<rangle> = (\<Sum>x = 0..<r * n. cnj (h $ x) * (?Y *\<^sub>v h) $ x)"
+    using inner_prod_sum[of h "r * n" "?Y *\<^sub>v h"] hd carrier_matD[OF Yc] by simp
+  also have "\<dots> = cnj (h $ p) * (?Y *\<^sub>v h) $ p + cnj (h $ q) * (?Y *\<^sub>v h) $ q"
+    by (rule sum_two_support[OF pq]) (simp add: h_def)
+  also have "\<dots> = (?Y $$ (p, p) - ?Y $$ (p, q)) - (?Y $$ (q, p) - ?Y $$ (q, q))"
+    using pq Yh[of p] Yh[of q] by (simp add: h_def)
+  also have "\<dots> = -2" using pq f by (simp add: Ye pdiv)
+  finally have "Re \<langle>h | ?Y *\<^sub>v h\<rangle> = -2" by simp
+  moreover have "\<forall>x. dim_vec x = dim_row ?Y \<longrightarrow> Re \<langle>x | ?Y *\<^sub>v x\<rangle> \<ge> 0"
+    using ps unfolding psd_def by blast
+  hence "0 \<le> Re \<langle>h | ?Y *\<^sub>v h\<rangle>" using hd carrier_matD(1)[OF Yc] by (rule_tac allE, auto)
+  ultimately show False by simp
+qed
+
+theorem unit_blocks_entangled:
+  fixes R :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes R: "unwrap_lm R = unit_blocks CARD('m) CARD('p) f"
+      and r: "2 \<le> CARD('m)" and f: "f 0 < CARD('p)" "f 1 < CARD('p)" "f 0 \<noteq> f 1"
+  shows "psd (unwrap_lm R) \<and> R \<notin> separable_cone_lmat"
+proof
+  show "psd (unwrap_lm R)" unfolding R by (rule unit_blocks_psd)
+  show "R \<notin> separable_cone_lmat"
+  proof
+    assume sep: "R \<in> separable_cone_lmat"
+    have "psd (amplification CARD('p) CARD('p) CARD('m) transpose_mat (unwrap_lm R))"
+      by (rule positive_map_separable[OF transpose_lin_on transpose_positive_map _ sep]) simp
+    thus False using unit_blocks_partial_transpose_not_psd[OF r f] unfolding R by simp
   qed
 qed
+
+text \<open>The notes' first example: $\begin{pmatrix}E_{ii}&E_{ij}\\E_{ji}&E_{jj}\end{pmatrix}\in M_2(M_n)$, $i\ne j$.\<close>
+
+corollary entangled_example_2:
+  fixes R :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
+  assumes m: "CARD('m) = 2" and ij: "i < CARD('p)" "j < CARD('p)" "i \<noteq> j"
+      and R: "unwrap_lm R = unit_blocks 2 CARD('p) (\<lambda>a. if a = 0 then i else j)"
+  shows "block_of_mat CARD('p) (unwrap_lm R) 0 0 = E\<lbrakk>i,i ; CARD('p),CARD('p)\<rbrakk>"
+    and "block_of_mat CARD('p) (unwrap_lm R) 0 1 = E\<lbrakk>i,j ; CARD('p),CARD('p)\<rbrakk>"
+    and "block_of_mat CARD('p) (unwrap_lm R) 1 0 = E\<lbrakk>j,i ; CARD('p),CARD('p)\<rbrakk>"
+    and "block_of_mat CARD('p) (unwrap_lm R) 1 1 = E\<lbrakk>j,j ; CARD('p),CARD('p)\<rbrakk>"
+    and "psd (unwrap_lm R) \<and> R \<notin> separable_cone_lmat"
+proof -
+  let ?f = "\<lambda>a::nat. if a = 0 then i else j"
+  show "block_of_mat CARD('p) (unwrap_lm R) 0 0 = E\<lbrakk>i,i ; CARD('p),CARD('p)\<rbrakk>"
+    using unit_blocks_block[of 0 2 0 ?f "CARD('p)"] ij unfolding R by simp
+  show "block_of_mat CARD('p) (unwrap_lm R) 0 1 = E\<lbrakk>i,j ; CARD('p),CARD('p)\<rbrakk>"
+    using unit_blocks_block[of 0 2 1 ?f "CARD('p)"] ij unfolding R by simp
+  show "block_of_mat CARD('p) (unwrap_lm R) 1 0 = E\<lbrakk>j,i ; CARD('p),CARD('p)\<rbrakk>"
+    using unit_blocks_block[of 1 2 0 ?f "CARD('p)"] ij unfolding R by simp
+  show "block_of_mat CARD('p) (unwrap_lm R) 1 1 = E\<lbrakk>j,j ; CARD('p),CARD('p)\<rbrakk>"
+    using unit_blocks_block[of 1 2 1 ?f "CARD('p)"] ij unfolding R by simp
+  show "psd (unwrap_lm R) \<and> R \<notin> separable_cone_lmat"
+    by (rule unit_blocks_entangled[where f = ?f]) (use m ij R in simp_all)
+qed
+
+text \<open>The second: $(E_{ij})\in M_n(M_n)$, $n\ge2$, which is \<^const>\<open>choi_seed\<close>.\<close>
+
+corollary entangled_example_choi_seed:
+  fixes R :: "(complex, 'p :: finite \<times> 'p, 'p \<times> 'p) lmat"
+  assumes n: "2 \<le> CARD('p)" and R: "unwrap_lm R = choi_seed CARD('p)"
+  shows "psd (unwrap_lm R) \<and> R \<notin> separable_cone_lmat"
+  by (rule unit_blocks_entangled[where f = id]) (use n R in \<open>simp_all add: choi_seed_unit_blocks\<close>)
 
 end

@@ -1,108 +1,16 @@
+(*  Title:   Day33_Shor_Code.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 16 November 2011 (Day 33)
+*)
+
 theory Day33_Shor_Code
-  imports Day32_Recovery_Proposition Day32_Pauli_Expansion Day30_BitFlip_Code
+  imports Day30_Bit_Flip_Code Day32_Recovery_Proposition
 begin
 
-section \<open>Days 32--33: the nine-qubit Shor code\<close>
+section \<open>Day 33 (16 November 2011): the nine-qubit Shor code\<close>
 
-text \<open>Days 32--33: the nine-qubit Shor code.  The $2^9$-dimensional space is never handled
+text \<open>The nine-qubit Shor code of Day 32 and its recovery.  The $2^9$-dimensional space is never handled
 entrywise: nine qubits are three blocks of three, every single-qubit operator acts inside one
 block, and all inner products factor over the blocks (\<open>tensor_inner_prod\<close>).\<close>
-
-subsection \<open>Tensor products of matrices\<close>
-
-lemma tensor_index_c:
-  fixes A B :: "complex Matrix.mat"
-  assumes "A \<in> carrier_mat r c" "B \<in> carrier_mat p q" "i < r * p" "j < c * q" "0 < c" "0 < q"
-  shows "Tensor.tensor_mat A B $$ (i,j) = A $$ (i div p, j div q) * B $$ (i mod p, j mod q)"
-  using assms by (intro index_tensor_mat) auto
-
-lemma tensor_one_left:
-  fixes A :: "complex Matrix.mat"
-  assumes Ac: "A \<in> carrier_mat m m" and m: "0 < m"
-  shows "Tensor.tensor_mat (1\<^sub>m 1) A = A"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row A" "j < dim_col A"
-  hence i: "i < m" and j: "j < m" using Ac by auto
-  show "Tensor.tensor_mat (1\<^sub>m 1) A $$ (i,j) = A $$ (i,j)"
-  proof -
-    have "Tensor.tensor_mat (1\<^sub>m 1) A $$ (i,j) = 1\<^sub>m 1 $$ (i div m, j div m) * A $$ (i mod m, j mod m)"
-      by (rule tensor_index_c[OF one_carrier_mat Ac]) (use i j m in simp_all)
-    thus ?thesis using i j by simp
-  qed
-qed (use Ac in auto)
-
-lemma tensor_one_right:
-  fixes A :: "complex Matrix.mat"
-  assumes Ac: "A \<in> carrier_mat m m" and m: "0 < m"
-  shows "Tensor.tensor_mat A (1\<^sub>m 1) = A"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row A" "j < dim_col A"
-  hence i: "i < m" and j: "j < m" using Ac by auto
-  show "Tensor.tensor_mat A (1\<^sub>m 1) $$ (i,j) = A $$ (i,j)"
-  proof -
-    have "Tensor.tensor_mat A (1\<^sub>m 1) $$ (i,j) = A $$ (i div 1, j div 1) * 1\<^sub>m 1 $$ (i mod 1, j mod 1)"
-      by (rule tensor_index_c[OF Ac one_carrier_mat]) (use i j m in simp_all)
-    thus ?thesis by simp
-  qed
-qed (use Ac in auto)
-
-lemma tensor_mat_add_right:
-  fixes A B C :: "complex Matrix.mat"
-  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat p q" and Cc: "C \<in> carrier_mat p q"
-      and c: "0 < c" and q: "0 < q"
-  shows "Tensor.tensor_mat A (B + C) = Tensor.tensor_mat A B + Tensor.tensor_mat A C"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row (Tensor.tensor_mat A B + Tensor.tensor_mat A C)"
-    "j < dim_col (Tensor.tensor_mat A B + Tensor.tensor_mat A C)"
-  hence i: "i < r * p" and j: "j < c * q" using Ac Bc Cc by auto
-  have p: "0 < p" using i by (cases p) auto
-  show "Tensor.tensor_mat A (B + C) $$ (i,j) = (Tensor.tensor_mat A B + Tensor.tensor_mat A C) $$ (i,j)"
-    using tensor_index_c[OF Ac add_carrier_mat[OF Cc] i j c q] tensor_index_c[OF Ac Bc i j c q]
-      tensor_index_c[OF Ac Cc i j c q] i j p q Ac Bc Cc by (simp add: distrib_left)
-qed (use Ac Bc Cc in auto)
-
-lemma tensor_mat_add_left:
-  fixes A B C :: "complex Matrix.mat"
-  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat r c" and Cc: "C \<in> carrier_mat p q"
-      and c: "0 < c" and q: "0 < q"
-  shows "Tensor.tensor_mat (A + B) C = Tensor.tensor_mat A C + Tensor.tensor_mat B C"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row (Tensor.tensor_mat A C + Tensor.tensor_mat B C)"
-    "j < dim_col (Tensor.tensor_mat A C + Tensor.tensor_mat B C)"
-  hence i: "i < r * p" and j: "j < c * q" using Ac Bc Cc by auto
-  have p: "0 < p" using i by (cases p) auto
-  have id: "i div p < r" and jd: "j div q < c" using i j p q by (auto simp: less_mult_imp_div_less)
-  show "Tensor.tensor_mat (A + B) C $$ (i,j) = (Tensor.tensor_mat A C + Tensor.tensor_mat B C) $$ (i,j)"
-    using tensor_index_c[OF add_carrier_mat[OF Bc] Cc i j c q] tensor_index_c[OF Ac Cc i j c q]
-      tensor_index_c[OF Bc Cc i j c q] i j id jd Ac Bc Cc by (simp add: distrib_right)
-qed (use Ac Bc Cc in auto)
-
-lemma tensor_mat_smult_right:
-  fixes A B :: "complex Matrix.mat"
-  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat p q" and c: "0 < c" and q: "0 < q"
-  shows "Tensor.tensor_mat A (k \<cdot>\<^sub>m B) = k \<cdot>\<^sub>m Tensor.tensor_mat A B"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row (k \<cdot>\<^sub>m Tensor.tensor_mat A B)" "j < dim_col (k \<cdot>\<^sub>m Tensor.tensor_mat A B)"
-  hence i: "i < r * p" and j: "j < c * q" using Ac Bc by auto
-  have p: "0 < p" using i by (cases p) auto
-  show "Tensor.tensor_mat A (k \<cdot>\<^sub>m B) $$ (i,j) = (k \<cdot>\<^sub>m Tensor.tensor_mat A B) $$ (i,j)"
-    using tensor_index_c[OF Ac smult_carrier_mat[OF Bc] i j c q] tensor_index_c[OF Ac Bc i j c q]
-      i j p q Ac Bc by (simp add: mult_ac)
-qed (use Ac Bc in auto)
-
-lemma tensor_mat_smult_left:
-  fixes A B :: "complex Matrix.mat"
-  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat p q" and c: "0 < c" and q: "0 < q"
-  shows "Tensor.tensor_mat (k \<cdot>\<^sub>m A) B = k \<cdot>\<^sub>m Tensor.tensor_mat A B"
-proof (rule eq_matI)
-  fix i j assume "i < dim_row (k \<cdot>\<^sub>m Tensor.tensor_mat A B)" "j < dim_col (k \<cdot>\<^sub>m Tensor.tensor_mat A B)"
-  hence i: "i < r * p" and j: "j < c * q" using Ac Bc by auto
-  have p: "0 < p" using i by (cases p) auto
-  have id: "i div p < r" and jd: "j div q < c" using i j p q by (auto simp: less_mult_imp_div_less)
-  show "Tensor.tensor_mat (k \<cdot>\<^sub>m A) B $$ (i,j) = (k \<cdot>\<^sub>m Tensor.tensor_mat A B) $$ (i,j)"
-    using tensor_index_c[OF smult_carrier_mat[OF Ac] Bc i j c q] tensor_index_c[OF Ac Bc i j c q]
-      i j id jd Ac Bc by (simp add: mult_ac)
-qed (use Ac Bc in auto)
 
 subsection \<open>Single-qubit operators on nine qubits, and on a block of three\<close>
 
@@ -111,9 +19,6 @@ position $i$ ($i=0,\dots,8$).\<close>
 
 definition qubit_op :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "qubit_op i U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (2^i)) U) (1\<^sub>m (2^(8-i)))"
-
-definition block_op :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "block_op s U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (2^s)) U) (1\<^sub>m (2^(2-s)))"
 
 definition on_block :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "on_block b M = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m (8^b)) M) (1\<^sub>m (8^(2-b)))"
@@ -152,30 +57,6 @@ proof -
   have "i = 3 * (i div 3) + i mod 3" by simp
   moreover have "i div 3 < 3" using i by simp
   ultimately show ?thesis using qubit_op_blk[of "i div 3" "i mod 3" U] by simp
-qed
-
-lemma block_op_cases:
-  fixes U :: "complex Matrix.mat"
-  assumes U: "U \<in> carrier_mat 2 2"
-  shows "block_op 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
-    and "block_op 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)"
-    and "block_op 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
-proof -
-  have i4: "1\<^sub>m 4 = Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)" by (simp add: tensor_mat_id)
-  show "block_op 0 U = Tensor.tensor_mat (Tensor.tensor_mat U (1\<^sub>m 2)) (1\<^sub>m 2)"
-    unfolding block_op_def using tensor_one_left[OF U] by (simp add: i4 tensor_mat_is_assoc)
-  show "block_op 1 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) U) (1\<^sub>m 2)" unfolding block_op_def by simp
-  have c: "Tensor.tensor_mat (1\<^sub>m 4) U \<in> carrier_mat 8 8" using U by auto
-  show "block_op 2 U = Tensor.tensor_mat (Tensor.tensor_mat (1\<^sub>m 2) (1\<^sub>m 2)) U"
-    unfolding block_op_def using tensor_one_right[OF c] by (simp add: i4)
-qed
-
-lemma block_op_carrier:
-  assumes U: "U \<in> carrier_mat 2 2" and s: "s < 3"
-  shows "block_op s U \<in> carrier_mat 8 8"
-proof -
-  have "s = 0 \<or> s = 1 \<or> s = 2" using s by auto
-  thus ?thesis using U by (elim disjE) (auto simp: block_op_def)
 qed
 
 definition tensor3 :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
@@ -703,40 +584,6 @@ proof -
 qed
 
 subsection \<open>Proposition (Day 33): orthogonal images, and $Z_1v=Z_2v=Z_3v$\<close>
-
-lemma gram_entry:
-  fixes A B :: "complex Matrix.mat"
-  assumes A: "A \<in> carrier_mat n k" and B: "B \<in> carrier_mat n k" and a: "a < k" and b: "b < k"
-  shows "((A\<^sup>\<dagger>) * B) $$ (a,b) = \<langle>Matrix.col A a | Matrix.col B b\<rangle>"
-proof -
-  have "((A\<^sup>\<dagger>) * B) $$ (a,b) = (\<Sum>i<n. cnj (A $$ (i,a)) * B $$ (i,b))"
-    using A B a b by (simp add: scalar_prod_def dagger_def)
-  also have "\<dots> = \<langle>Matrix.col A a | Matrix.col B b\<rangle>"
-  proof -
-    have dA: "dim_vec (Matrix.col A a) = n" and dB: "dim_vec (Matrix.col B b) = n" using A B by simp_all
-    show ?thesis unfolding inner_prod_sum[OF dA dB] atLeast0LessThan
-      by (rule sum.cong) (use A B a b in auto)
-  qed
-  finally show ?thesis .
-qed
-
-lemma sandwich_VVd:
-  fixes V W :: "complex Matrix.mat"
-  assumes V: "V \<in> carrier_mat n k" and W: "W \<in> carrier_mat n n"
-  shows "(V * (V\<^sup>\<dagger>)) * W * (V * (V\<^sup>\<dagger>)) = V * ((V\<^sup>\<dagger>) * W * V) * (V\<^sup>\<dagger>)"
-proof -
-  have Vd: "V\<^sup>\<dagger> \<in> carrier_mat k n" by (rule dagger_carrier[OF V])
-  have VdW: "(V\<^sup>\<dagger>) * W \<in> carrier_mat k n" by (rule mult_carrier_mat[OF Vd W])
-  have "(V * (V\<^sup>\<dagger>)) * W * (V * (V\<^sup>\<dagger>)) = V * ((V\<^sup>\<dagger>) * W) * (V * (V\<^sup>\<dagger>))"
-    by (simp only: assoc_mult_mat[OF V Vd W])
-  also have "\<dots> = V * (((V\<^sup>\<dagger>) * W) * (V * (V\<^sup>\<dagger>)))"
-    by (rule assoc_mult_mat[OF V VdW mult_carrier_mat[OF V Vd]])
-  also have "((V\<^sup>\<dagger>) * W) * (V * (V\<^sup>\<dagger>)) = (((V\<^sup>\<dagger>) * W) * V) * (V\<^sup>\<dagger>)"
-    by (rule assoc_mult_mat[OF VdW V Vd, symmetric])
-  also have "V * ((((V\<^sup>\<dagger>) * W) * V) * (V\<^sup>\<dagger>)) = (V * (((V\<^sup>\<dagger>) * W) * V)) * (V\<^sup>\<dagger>)"
-    by (rule assoc_mult_mat[OF V mult_carrier_mat[OF VdW V] Vd, symmetric])
-  finally show ?thesis .
-qed
 
 lemma qubit_op_unitary: "unitary U \<Longrightarrow> unitary (qubit_op i U)"
   unfolding qubit_op_def by simp

@@ -27,8 +27,8 @@ $\crk(\Phi)=\min\{L:\Phi(X)=\sum_{l=1}^LB_lXB_l^*\}$.
 $\crk(\Phi)=\rank(P_\Phi)$.
 \end{notestheorem}
 The functional proposition, the adjoint proposition (for Kraus maps) and the definition of
-the Choi rank are formalised below; the rank theorem is \<open>choi_rank_eq_rank\<close> in
-\<open>Day20_Choi_Rank\<close> (its lemma $\rank((E_{ij}))=1$ is not stated separately), and the bound
+the Choi rank are formalised below; the rank theorem is \<open>choi_rank_eq_rank\<close>, proved on Day 22 from the linear independence
+of minimal Kraus representations (its lemma $\rank((E_{ij}))=1$ is not needed), and the bound
 $\crk(\Phi)\le nd$ is below.\<close>
 
 subsection \<open>The adjoint of a Kraus map\<close>
@@ -737,8 +737,8 @@ qed
 subsection \<open>Choi rank\<close>
 
 text \<open>\<open>choi_rank n d \<Phi>\<close> is the least length of a Kraus list representing $\Phi$ on the
-carrier.  The theorem $\crk(\Phi)=\rank(P_\Phi)$ is \<open>choi_rank_eq_rank\<close> in
-\<open>Day20_Choi_Rank\<close>; the bound $\crk(\Phi)\le nd$ follows from the Kraus-rank bound of Day 21.\<close>
+carrier.  The theorem $\crk(\Phi)=\rank(P_\Phi)$ is \<open>choi_rank_eq_rank\<close>
+(Day 22); the bound $\crk(\Phi)\le nd$ follows from the Kraus-rank bound of Day 21.\<close>
 
 
 definition choi_rank ::

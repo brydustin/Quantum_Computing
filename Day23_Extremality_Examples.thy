@@ -1,13 +1,17 @@
+(*  Title:   Day23_Extremality_Examples.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 19 October 2011 (Day 23)
+*)
+
 theory Day23_Extremality_Examples
-  imports Day22_Kraus_Independence
+  imports Day23_Choi_Extreme_Points
 begin
 
-section \<open>Day 23: extreme and non-extreme maps (D23-4)\<close>
+subsection \<open>Extreme and non-extreme maps (D23-4)\<close>
 
 text \<open>Day 23, examples after Choi's Theorem 3, in the CPTP form and with the Kraus convention
 $\Phi(X)=\sum_iW_iXW_i^*$ of the formalisation (the notes write $U^*XU$; replace $U$ by $U^*$).\<close>
 
-subsection \<open>Linear dependence tests\<close>
+subsubsection \<open>Linear dependence tests\<close>
 
 lemma foldr_smult_index:
   assumes Bs: "\<forall>B \<in> set Bs. B \<in> carrier_mat n m" and r: "r < n" and s: "s < m"
@@ -119,7 +123,7 @@ proof -
   thus thesis using that by blast
 qed
 
-subsection \<open>Example 1: unitary conjugation is extreme\<close>
+subsubsection \<open>Example 1: unitary conjugation is extreme\<close>
 
 theorem unitary_conjugation_extreme:
   assumes U: "U \<in> carrier_mat n n" and Uu: "unitary U" and n: "0 < n"
@@ -145,7 +149,7 @@ proof -
     using choi_theorem_3_cptp_iff[OF n n kraus_is_cptp[OF K n n] rep min] ind by simp
 qed
 
-subsection \<open>Example 2: an average of two unitary conjugations\<close>
+subsubsection \<open>Example 2: an average of two unitary conjugations\<close>
 
 definition avg2 :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat list" where
   "avg2 U1 U2 = [(1 / csqrt 2) \<cdot>\<^sub>m U1, (1 / csqrt 2) \<cdot>\<^sub>m U2]"
@@ -292,7 +296,7 @@ proof -
   show ?thesis using choi_theorem_3_cptp_iff[OF n n kraus_is_cptp[OF K n n] rep min] ind by simp
 qed
 
-subsection \<open>Example 4: the diagonal map\<close>
+subsubsection \<open>Example 4: the diagonal map\<close>
 
 lemma unit_mult_left_entry:
   assumes Bm: "Bm \<in> carrier_mat n m" and r: "r < p" and k: "k < m" and j: "j < n"
@@ -451,7 +455,7 @@ proof -
   thus ?thesis using choi_theorem_3_cptp_iff[OF n0 n0 kraus_is_cptp[OF K n0 n0] rep diag_kraus_lin_indep] by simp
 qed
 
-subsection \<open>Example 3: $X\mapsto\Tr(X)\,I_d$\<close>
+subsubsection \<open>Example 3: $X\mapsto\Tr(X)\,I_d$\<close>
 
 text \<open>As written, $\Phi(X)=\Tr(X)I_d$ is neither unital ($\Phi(I_n)=nI_d$) nor trace preserving
 ($\Tr\Phi(X)=d\Tr X$) unless $n=1$ resp.\ $d=1$.  The CPTP normalisation is

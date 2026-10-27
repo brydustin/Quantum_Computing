@@ -987,3 +987,33 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
     (Pauli matrices, Day 30), Day 15 (tr_B facts, Day 16), Days 17-19 (sum_wdag_w, choi_seed, unit_blocks,
     operator systems), Days 20-22 (vec_of_kraus, lin_indep_complex_mat, Choi's theorem 3 of Day 23),
     Day 26 (kraus_compose, Day 32), Day 30 (encode_mat, Day 31), Day 32 (block_op, Day 33).
+- **One theory per lecture, strict lecture order** (2026-10-27, user: "organize the files then in a fashion
+  which you think is maximally aesthetic.  You can combine theories or you can make 'Days' go over multiple
+  theories").  The notes session went from 82 theories to 45: each lecture is one theory `DayNN_Topic`, and
+  eight lectures continue in further theories (Day 5: Sylvester's criterion, kept apart because its AFP
+  import clashes with the notes' names; 9: the Bell measurement, kept apart because its short names
+  `e0`, `e1` captured a variable of HHL's `inner3` when merged; 21: the averages conjecture;
+  22: compactness; 23: examples;
+  25: the correspondence and unital functionals; 26: separability; 32: the recovery proposition).
+  * Every theory imports only earlier lectures.  The 14 forward uses were removed by moving notions to the
+    day the notes introduce them (Pauli matrices to Day 10, CCNOT to Day 10, `choi_seed` to Day 18,
+    `sum_wdag_w` to Day 17, the Choi-matrix basics of Day 23 to Day 19, `unit_blocks` to Day 19,
+    `kraus_compose` to Day 19 (with the other Kraus-map algebra), `encode_mat` to Day 30, `block_op` to Day 32, `lin_indep_complex_mat` to
+    Day 21) or the result to the first day whose tools it needs (Choi's rank theorem D20-4 to Day 22,
+    D17-4 to Day 18, the corollaries D22-6 to Day 23, the Schmidt-rank/entanglement facts to Day 9).
+  * Material in a lecture earlier than its day moved to its day where nothing earlier needs it: D2-11
+    (projections) and D4-8 (ranges) to Day 4, D9-2 (Postulate 4) to Day 9, D13-4 to Day 13, D15-5/D15-6
+    to Day 15, D29-1 repetition lemmas to Day 29, D30-1 probabilities to Day 30, D31-1 bit-flip channel to
+    Day 31, D32-6 Pauli magic to Day 32; `Day26_Separable_Cone` split into Day 26 (definitions) and Day 28
+    (closedness, separation, witnesses, with the positive-map criterion and Horodecki-Peres).  General
+    lemmas went to the prerequisites: linear-space isomorphisms (was Day 1's preliminaries), `foldr` sums
+    (Days 8, 32), Kronecker identities (Day 33), and the new `lin_on_msum_closed`, which replaces Day 19's
+    use of operator systems (Day 24).
+  * The document has one section per lecture under the course's five parts (I: Days 1-7, II: 8-17,
+    III: 18-23, IV: 24-28, V: 29-34) plus "Beyond the notes"; second theories print as subsections.  Days
+    26, 27, 28, 33, 34 got their date headers.  The capstone's convention "a completing theory may use
+    results of later ones" is gone.
+  * Done by a block-level plan checked against the fact-level dependency scan before building
+    (scratchpad tools: `engine.py`, `plan.py`, `emit.py`, which also computes minimal imports).  Checks:
+    every one of the 1916 facts has the same statement constants as before (no capture by a newly visible
+    constant), 2 facts added; the notes build takes 2:17 (was 2:27).

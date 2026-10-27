@@ -3,7 +3,7 @@
 *)
 
 theory Day32_Phase_Flip_Code
-  imports Day31_Bit_Flip_Channel
+  imports Day10_Quantum_Gates
 begin
 
 section \<open>Day 32 (14 November 2011): the phase-flip code, the Shor code, Pauli magic\<close>
@@ -35,7 +35,7 @@ Pauli matrix) map $V=\operatorname{span}\{\ket{0_L},\ket{1_L}\}$ to mutually ort
 (up to the coincidences $Z_1v=Z_2v=Z_3v$ etc.).  The proposition is \<open>recovery_single_error\<close>
 in \<open>Day32_Recovery_Proposition\<close>, together with its linear-combination form
 \<open>recovery_linear_combination\<close> (Day 33); the Pauli expansion identity is
-\<open>pauli_expansion_unitary\<close> in \<open>Day32_Pauli_Expansion\<close>.  The Shor code and Shor's theorem
+\<open>pauli_expansion_unitary\<close> below.  The Shor code and Shor's theorem
 are \<open>Day33_Shor_Code\<close> (\<open>shor_code_theorem\<close>).  As first stated, the orthogonality claim is false
 ($Z_1\ne Z_2$ but $Z_1\ket{0_L}=Z_2\ket{0_L}$, \<open>shor_notes_Z1_Z2\<close>); Day 33 corrects it.\<close>
 
@@ -235,140 +235,6 @@ lemma phase_code_zero_carrier [simp]: "phase_code_zero \<in> carrier_vec 8"
 lemma phase_code_one_carrier [simp]: "phase_code_one \<in> carrier_vec 8"
   by (simp add: carrier_dim_vec)
 
-
-subsection \<open>Projections\<close>
-
-text \<open>A \emph{projection} on $\C^n$ is a Hermitian idempotent, the notion of Day 2; projections
-are the building blocks of syndrome measurements and recovery maps (Days 30--34).  Day 2's
-theorem that such a $P$ is the orthogonal projection onto its range follows the basic facts.\<close>
-
-definition projection :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
-  "projection n P \<equiv>
-     P \<in> carrier_mat n n \<and> hermitian P \<and> P * P = P"
-
-lemma projection_carrier:
-  "projection n P \<Longrightarrow> P \<in> carrier_mat n n"
-  by (simp add: projection_def)
-
-lemma projection_hermitian:
-  "projection n P \<Longrightarrow> hermitian P"
-  by (simp add: projection_def)
-
-lemma projection_idempotent:
-  "projection n P \<Longrightarrow> P * P = P"
-  by (simp add: projection_def)
-
-lemma projection_zero: "projection n (0\<^sub>m n n)"
-  by (auto simp: projection_def hermitian_def dagger_def)
-
-lemma projection_one: "projection n (1\<^sub>m n)"
-  by (auto simp: projection_def hermitian_def dagger_def)
-
-
-lemma projection_psd:
-  assumes "projection n P"
-  shows "psd P"
-proof -
-  have P_c: "P \<in> carrier_mat n n" using assms by (rule projection_carrier)
-  have P_h: "hermitian P" using assms by (rule projection_hermitian)
-  have P_idem: "P * P = P" using assms by (rule projection_idempotent)
-  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
-  have eq: "P = (P\<^sup>\<dagger>) * P" using P_dag P_idem by simp
-  have psd_PdP: "psd (P\<^sup>\<dagger> * P)"
-    using P_c by (rule psd_MdagM)
-  show ?thesis using eq psd_PdP by simp
-qed
-
-
-text \<open>The theorem of Day 2: a Hermitian idempotent $P$ is the orthogonal projection onto its
-range, i.e. $Pv=v$ for $v$ in the range and $Pw=0$ for $w$ orthogonal to the range.\<close>
-
-lemma projection_fixes_range:
-  fixes P :: "complex Matrix.mat" and x :: "complex Matrix.vec"
-  assumes P: "projection n P" and x: "dim_vec x = n"
-  shows "P *\<^sub>v (P *\<^sub>v x) = P *\<^sub>v x"
-proof -
-  have Pc: "P \<in> carrier_mat n n" and idem: "P * P = P" using P by (auto simp: projection_def)
-  have xc: "x \<in> carrier_vec n" using x by auto
-  have "P *\<^sub>v (P *\<^sub>v x) = (P * P) *\<^sub>v x" using assoc_mult_mat_vec[OF Pc Pc xc] by simp
-  thus ?thesis using idem by simp
-qed
-
-lemma projection_annihilates_orthogonal:
-  fixes P :: "complex Matrix.mat" and w :: "complex Matrix.vec"
-  assumes P: "projection n P" and w: "dim_vec w = n"
-      and orth: "\<And>x :: complex Matrix.vec. dim_vec x = n \<Longrightarrow> \<langle>P *\<^sub>v x | w\<rangle> = 0"
-  shows "P *\<^sub>v w = 0\<^sub>v n"
-proof -
-  have Pc: "P \<in> carrier_mat n n" and herm: "hermitian P" and idem: "P * P = P"
-    using P by (auto simp: projection_def)
-  have Ph: "P\<^sup>\<dagger> = P" using herm by (simp add: hermitian_def)
-  have Pw: "dim_vec (P *\<^sub>v w) = n" using Pc w by auto
-  have "\<langle>P *\<^sub>v w | P *\<^sub>v w\<rangle> = \<langle>P\<^sup>\<dagger> *\<^sub>v w | P *\<^sub>v w\<rangle>" using Ph by simp
-  also have "\<dots> = \<langle>w | P *\<^sub>v (P *\<^sub>v w)\<rangle>"
-    using inner_prod_adjoint_swap[OF Pc w Pw] by simp
-  also have "\<dots> = \<langle>w | P *\<^sub>v w\<rangle>" using projection_fixes_range[OF P w] by simp
-  also have "\<dots> = cnj \<langle>P *\<^sub>v w | w\<rangle>"
-  proof -
-    have dims: "dim_vec (P *\<^sub>v w) = dim_vec w" using Pw w by simp
-    show ?thesis using inner_prod_cnj[OF dims] .
-  qed
-  also have "\<dots> = 0" using orth[OF w] by simp
-  finally have "\<langle>P *\<^sub>v w | P *\<^sub>v w\<rangle> = 0" .
-  thus ?thesis using inner_prod_self_eq_zero_iff[of "P *\<^sub>v w"] Pw by simp
-qed
-
-lemma projection_complement_idempotent:
-  assumes "projection n P"
-  shows "(1\<^sub>m n - P) * (1\<^sub>m n - P) = 1\<^sub>m n - P"
-proof -
-  have P_c: "P \<in> carrier_mat n n"
-    using assms by (rule projection_carrier)
-
-  have P_idem: "P * P = P"
-    using assms by (rule projection_idempotent)
-
-  have P_one_l: "1\<^sub>m n * P = P"
-    using P_c by simp
-
-  have P_one_r: "P * 1\<^sub>m n = P"
-    using P_c by simp
-
-  have I_one: "(1\<^sub>m n :: complex Matrix.mat) * 1\<^sub>m n = 1\<^sub>m n"
-    by simp
-
-  have "(1\<^sub>m n - P) * (1\<^sub>m n - P) = (1\<^sub>m n) * (1\<^sub>m n - P) - P * (1\<^sub>m n - P)"
-    by (meson P_c minus_carrier_mat minus_mult_distrib_mat one_carrier_mat)
-  also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * P) - (P * (1\<^sub>m n) - P * P)"
-    by (metis P_c mult_minus_distrib_mat one_carrier_mat)
-  also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * P) - (P * (1\<^sub>m n)) + P * P"
-    using P_c by (simp add: algebra_simps, auto)
-  also have "... = (1\<^sub>m n - P) - P + P * P"
-    by (simp add: P_one_l P_one_r)
-  also have "... = (1\<^sub>m n - P) - P + P"
-    using P_idem by simp
-  also have "... = 1\<^sub>m n - P"
-    by auto
-  finally show ?thesis.
-qed
-
-
-subsection \<open>More on the repetition code\<close>
-
-lemma hamming_weight_append:
-  "hamming_weight (xs @ ys) = hamming_weight xs + hamming_weight ys"
-  by (simp add: hamming_weight_def)
-
-lemma hamming_weight_repetition_encode:
-  "hamming_weight (repetition_encode v) = 2 * hamming_weight v"
-  by (simp add: repetition_encode_def hamming_weight_append)
-
-lemma repetition_encode_binary:
-  assumes "\<forall>x \<in> set v. x < 2"
-  shows "\<forall>x \<in> set (repetition_encode v). x < 2"
-  using assms by (auto simp: repetition_encode_def)
-
-
 subsection \<open>Algebra of projections; towards Days 33 and 34\<close>
 
 text \<open>Day 33 constructs the Shor recovery map from the projections onto the $22$ orthogonal
@@ -389,9 +255,9 @@ then $R$ also corrects $G(X)=\sum_iG_iXG_i^*$.
 \end{notestheorem}
 Of the Knill--Laflamme results, the equivalence of Theorem 1's two readings
 (\<open>recovery_states_iff_PXP\<close>), the necessity of $PE_i^*E_jP=\alpha_{ij}P$
-(\<open>knill_laflamme_necessity\<close>) and Theorem 2 (\<open>knill_laflamme_closure\<close>) are proved in
-\<open>Day34_Knill_Laflamme\<close>; the converse, the construction of $R$ from the conditions, and
-the equivalence itself (\<open>knill_laflamme\<close>) are in \<open>Day34_KL_Sufficiency\<close>.  The elementary algebra of orthogonal
+(\<open>knill_laflamme_necessity\<close>) and Theorem 2 (\<open>knill_laflamme_closure\<close>) are proved on
+Day 34, with the converse, the construction of $R$ from the conditions, and the equivalence
+itself (\<open>knill_laflamme\<close>).  The elementary algebra of orthogonal
 projections used by the proofs follows.\<close>
 
 
@@ -522,6 +388,105 @@ proof -
   have Q_c: "Q \<in> carrier_mat n n"
     using assms by (rule orthogonal_projections_carrier_right)
   show ?thesis using P_c Q_c by (intro eq_matI) auto
+qed
+
+subsection \<open>Pauli magic (D32-6)\<close>
+
+text \<open>\begin{notesprop}
+$I,X,Y,Z$ are orthogonal in $M_2$ and all have $2$-norm $\sqrt2$.
+\end{notesprop}\<close>
+
+proposition pauli_orthogonal:
+  shows "\<langle>\<langle> 1\<^sub>m 2 | Pauli_X \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Y \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Z \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> Pauli_X | Pauli_Y \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> Pauli_X | Pauli_Z \<rangle>\<rangle> = 0"
+    and "\<langle>\<langle> Pauli_Y | Pauli_Z \<rangle>\<rangle> = 0"
+proof -
+  show "\<langle>\<langle> 1\<^sub>m 2 | Pauli_X \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Y \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> 1\<^sub>m 2 | Pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_X | Pauli_Y \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_X_def Pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_X | Pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_X_def Pauli_Z_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_Y | Pauli_Z \<rangle>\<rangle> = 0"
+    by (simp add: hs_inner_prod_def Pauli_Y_def Pauli_Z_def numeral_2_eq_2)
+qed
+
+proposition pauli_norm:
+  shows "\<langle>\<langle> 1\<^sub>m 2 | (1\<^sub>m 2 :: complex Matrix.mat) \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> Pauli_X | Pauli_X \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> Pauli_Y | Pauli_Y \<rangle>\<rangle> = 2"
+    and "\<langle>\<langle> Pauli_Z | Pauli_Z \<rangle>\<rangle> = 2"
+proof -
+  show "\<langle>\<langle> 1\<^sub>m 2 | (1\<^sub>m 2 :: complex Matrix.mat) \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_X | Pauli_X \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def Pauli_X_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_Y | Pauli_Y \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def Pauli_Y_def numeral_2_eq_2)
+  show "\<langle>\<langle> Pauli_Z | Pauli_Z \<rangle>\<rangle> = 2"
+    by (simp add: hs_inner_prod_def Pauli_Z_def numeral_2_eq_2)
+qed
+
+
+subsection \<open>The Pauli expansion identity for unitaries (D32-7)\<close>
+
+lemma cmod_parallelogram:
+  fixes a b :: complex
+  shows "(cmod (a + b))\<^sup>2 + (cmod (a - b))\<^sup>2 = 2 * (cmod a)\<^sup>2 + 2 * (cmod b)\<^sup>2"
+  unfolding cmod_power2 by (simp add: power2_eq_square algebra_simps)
+
+proposition pauli_expansion_unitary:
+  fixes U :: "complex Matrix.mat" and a0 a1 a2 a3 :: complex
+  assumes Uu: "unitary U"
+      and U_eq: "U = a0 \<cdot>\<^sub>m 1\<^sub>m 2 + a1 \<cdot>\<^sub>m Pauli_X + a2 \<cdot>\<^sub>m Pauli_Y + a3 \<cdot>\<^sub>m Pauli_Z"
+  shows "(cmod a0)\<^sup>2 + (cmod a1)\<^sup>2 + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2 = 1"
+proof -
+  have Uc: "U \<in> carrier_mat 2 2"
+    unfolding U_eq by (simp add: Pauli_X_def Pauli_Y_def Pauli_Z_def)
+  have dr: "dim_row U = 2" and dc: "dim_col U = 2" using Uc by auto
+  have e00: "U $$ (0,0) = a0 + a3"
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
+  have e01: "U $$ (0,1) = a1 + \<i> * a2"
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
+  have e10: "U $$ (1,0) = a1 - \<i> * a2"
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
+  have e11: "U $$ (1,1) = a0 - a3"
+    by (simp add: U_eq Pauli_X_def Pauli_Y_def Pauli_Z_def)
+  have UdU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m 2" using Uu dc by (simp add: unitary_def)
+  have tr2: "Tr ((U\<^sup>\<dagger>) * U) = 2" unfolding UdU by (simp add: Tr_one_mat)
+  have hs: "\<langle>\<langle> U | U \<rangle>\<rangle> = Tr ((U\<^sup>\<dagger>) * U)"
+    by (rule hs_inner_prod_as_trace) simp_all
+  have expand: "\<langle>\<langle> U | U \<rangle>\<rangle> =
+      cnj (U $$ (0,0)) * U $$ (0,0) + cnj (U $$ (0,1)) * U $$ (0,1)
+    + cnj (U $$ (1,0)) * U $$ (1,0) + cnj (U $$ (1,1)) * U $$ (1,1)"
+    unfolding hs_inner_prod_def dr dc by (simp add: numeral_2_eq_2)
+  have "2 = Re (\<langle>\<langle> U | U \<rangle>\<rangle>)" using hs tr2 by simp
+  also have "\<dots> = (cmod (a0 + a3))\<^sup>2 + (cmod (a1 + \<i> * a2))\<^sup>2
+                 + (cmod (a1 - \<i> * a2))\<^sup>2 + (cmod (a0 - a3))\<^sup>2"
+    unfolding expand e00 e01 e10 e11 cnj_mult_self_cmod by simp
+  also have "\<dots> = 2 * ((cmod a0)\<^sup>2 + (cmod a1)\<^sup>2 + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2)"
+  proof -
+    have p1: "(cmod (a0 + a3))\<^sup>2 + (cmod (a0 - a3))\<^sup>2 = 2 * (cmod a0)\<^sup>2 + 2 * (cmod a3)\<^sup>2"
+      by (rule cmod_parallelogram)
+    have p2: "(cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a1 - \<i> * a2))\<^sup>2 = 2 * (cmod a1)\<^sup>2 + 2 * (cmod a2)\<^sup>2"
+      using cmod_parallelogram[of a1 "\<i> * a2"] by (simp add: norm_mult)
+    have "(cmod (a0 + a3))\<^sup>2 + (cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a1 - \<i> * a2))\<^sup>2 + (cmod (a0 - a3))\<^sup>2
+          = ((cmod (a0 + a3))\<^sup>2 + (cmod (a0 - a3))\<^sup>2) + ((cmod (a1 + \<i> * a2))\<^sup>2 + (cmod (a1 - \<i> * a2))\<^sup>2)"
+      by (simp add: algebra_simps)
+    also have "\<dots> = (2 * (cmod a0)\<^sup>2 + 2 * (cmod a3)\<^sup>2) + (2 * (cmod a1)\<^sup>2 + 2 * (cmod a2)\<^sup>2)"
+      unfolding p1 p2 ..
+    also have "\<dots> = 2 * ((cmod a0)\<^sup>2 + (cmod a1)\<^sup>2 + (cmod a2)\<^sup>2 + (cmod a3)\<^sup>2)"
+      by (simp add: algebra_simps)
+    finally show ?thesis .
+  qed
+  finally show ?thesis by simp
 qed
 
 end

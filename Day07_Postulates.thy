@@ -590,28 +590,4 @@ text \<open>After outcome $m$ the state becomes $M_m\psi/\norm{M_m\psi}$:\<close
 definition post_meas_state :: "complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
   "post_meas_state M \<psi> \<equiv> (1 / complex_of_real (\<parallel>M *\<^sub>v \<psi>\<parallel>)) \<cdot>\<^sub>v (M *\<^sub>v \<psi>)"
 
-text \<open>\begin{notespost}[4, Day 9]
-The state space of a composite system is the tensor product of the state spaces of its
-components; if the $i$-th component is in state $\psi_i$, the system is in state
-$\psi_1\otimes\cdots\otimes\psi_n$.
-\end{notespost}\<close>
-
-lemma tensor_of_states_is_state:
-  assumes "quantum_state n \<psi>1" and "quantum_state m \<psi>2"
-  shows "quantum_state (n*m) (tensor_vec \<psi>1 \<psi>2)"
-proof -
-  have d1: "dim_vec \<psi>1 = n" and d2: "dim_vec \<psi>2 = m"
-    using assms by (auto simp: quantum_state_def)
-  have norm1: "\<parallel>\<psi>1\<parallel> = 1" and norm2: "\<parallel>\<psi>2\<parallel> = 1"
-    using assms by (auto simp: quantum_state_def)
-  have dim: "dim_vec (tensor_vec \<psi>1 \<psi>2) = n * m"
-    using d1 d2 by (rule tensor_vec_dim)
-  (* From tensor_inner_prod: \<langle>\<psi>1\<otimes>\<psi>2 | \<psi>1\<otimes>\<psi>2\<rangle> = \<langle>\<psi>1|\<psi>1\<rangle>\<sqdot>\<langle>\<psi>2|\<psi>2\<rangle> = 1\<sqdot>1 = 1. *)
-  have norm_tensor: "\<parallel>tensor_vec \<psi>1 \<psi>2\<parallel> = 1"
-    by (smt (verit) cpx_vec_length_inner_prod inner_prod_csqrt norm1 norm2 of_real_eq_1_iff 
-        one_power2 power2_eq_square tensor_inner_prod)
-  show ?thesis
-    unfolding quantum_state_def using dim norm_tensor by simp
-qed
-
 end

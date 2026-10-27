@@ -467,4 +467,100 @@ lemma mult_index_div_mod:
   shows "(i * m + l) div m = i" "(i * m + l) mod m = l"
   using assms by simp_all
 
+subsection \<open>Tensor products of matrices\<close>
+
+lemma tensor_index_c:
+  fixes A B :: "complex Matrix.mat"
+  assumes "A \<in> carrier_mat r c" "B \<in> carrier_mat p q" "i < r * p" "j < c * q" "0 < c" "0 < q"
+  shows "Tensor.tensor_mat A B $$ (i,j) = A $$ (i div p, j div q) * B $$ (i mod p, j mod q)"
+  using assms by (intro index_tensor_mat) auto
+
+lemma tensor_one_left:
+  fixes A :: "complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat m m" and m: "0 < m"
+  shows "Tensor.tensor_mat (1\<^sub>m 1) A = A"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row A" "j < dim_col A"
+  hence i: "i < m" and j: "j < m" using Ac by auto
+  show "Tensor.tensor_mat (1\<^sub>m 1) A $$ (i,j) = A $$ (i,j)"
+  proof -
+    have "Tensor.tensor_mat (1\<^sub>m 1) A $$ (i,j) = 1\<^sub>m 1 $$ (i div m, j div m) * A $$ (i mod m, j mod m)"
+      by (rule tensor_index_c[OF one_carrier_mat Ac]) (use i j m in simp_all)
+    thus ?thesis using i j by simp
+  qed
+qed (use Ac in auto)
+
+lemma tensor_one_right:
+  fixes A :: "complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat m m" and m: "0 < m"
+  shows "Tensor.tensor_mat A (1\<^sub>m 1) = A"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row A" "j < dim_col A"
+  hence i: "i < m" and j: "j < m" using Ac by auto
+  show "Tensor.tensor_mat A (1\<^sub>m 1) $$ (i,j) = A $$ (i,j)"
+  proof -
+    have "Tensor.tensor_mat A (1\<^sub>m 1) $$ (i,j) = A $$ (i div 1, j div 1) * 1\<^sub>m 1 $$ (i mod 1, j mod 1)"
+      by (rule tensor_index_c[OF Ac one_carrier_mat]) (use i j m in simp_all)
+    thus ?thesis by simp
+  qed
+qed (use Ac in auto)
+
+lemma tensor_mat_add_right:
+  fixes A B C :: "complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat p q" and Cc: "C \<in> carrier_mat p q"
+      and c: "0 < c" and q: "0 < q"
+  shows "Tensor.tensor_mat A (B + C) = Tensor.tensor_mat A B + Tensor.tensor_mat A C"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (Tensor.tensor_mat A B + Tensor.tensor_mat A C)"
+    "j < dim_col (Tensor.tensor_mat A B + Tensor.tensor_mat A C)"
+  hence i: "i < r * p" and j: "j < c * q" using Ac Bc Cc by auto
+  have p: "0 < p" using i by (cases p) auto
+  show "Tensor.tensor_mat A (B + C) $$ (i,j) = (Tensor.tensor_mat A B + Tensor.tensor_mat A C) $$ (i,j)"
+    using tensor_index_c[OF Ac add_carrier_mat[OF Cc] i j c q] tensor_index_c[OF Ac Bc i j c q]
+      tensor_index_c[OF Ac Cc i j c q] i j p q Ac Bc Cc by (simp add: distrib_left)
+qed (use Ac Bc Cc in auto)
+
+lemma tensor_mat_add_left:
+  fixes A B C :: "complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat r c" and Cc: "C \<in> carrier_mat p q"
+      and c: "0 < c" and q: "0 < q"
+  shows "Tensor.tensor_mat (A + B) C = Tensor.tensor_mat A C + Tensor.tensor_mat B C"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (Tensor.tensor_mat A C + Tensor.tensor_mat B C)"
+    "j < dim_col (Tensor.tensor_mat A C + Tensor.tensor_mat B C)"
+  hence i: "i < r * p" and j: "j < c * q" using Ac Bc Cc by auto
+  have p: "0 < p" using i by (cases p) auto
+  have id: "i div p < r" and jd: "j div q < c" using i j p q by (auto simp: less_mult_imp_div_less)
+  show "Tensor.tensor_mat (A + B) C $$ (i,j) = (Tensor.tensor_mat A C + Tensor.tensor_mat B C) $$ (i,j)"
+    using tensor_index_c[OF add_carrier_mat[OF Bc] Cc i j c q] tensor_index_c[OF Ac Cc i j c q]
+      tensor_index_c[OF Bc Cc i j c q] i j id jd Ac Bc Cc by (simp add: distrib_right)
+qed (use Ac Bc Cc in auto)
+
+lemma tensor_mat_smult_right:
+  fixes A B :: "complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat p q" and c: "0 < c" and q: "0 < q"
+  shows "Tensor.tensor_mat A (k \<cdot>\<^sub>m B) = k \<cdot>\<^sub>m Tensor.tensor_mat A B"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (k \<cdot>\<^sub>m Tensor.tensor_mat A B)" "j < dim_col (k \<cdot>\<^sub>m Tensor.tensor_mat A B)"
+  hence i: "i < r * p" and j: "j < c * q" using Ac Bc by auto
+  have p: "0 < p" using i by (cases p) auto
+  show "Tensor.tensor_mat A (k \<cdot>\<^sub>m B) $$ (i,j) = (k \<cdot>\<^sub>m Tensor.tensor_mat A B) $$ (i,j)"
+    using tensor_index_c[OF Ac smult_carrier_mat[OF Bc] i j c q] tensor_index_c[OF Ac Bc i j c q]
+      i j p q Ac Bc by (simp add: mult_ac)
+qed (use Ac Bc in auto)
+
+lemma tensor_mat_smult_left:
+  fixes A B :: "complex Matrix.mat"
+  assumes Ac: "A \<in> carrier_mat r c" and Bc: "B \<in> carrier_mat p q" and c: "0 < c" and q: "0 < q"
+  shows "Tensor.tensor_mat (k \<cdot>\<^sub>m A) B = k \<cdot>\<^sub>m Tensor.tensor_mat A B"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (k \<cdot>\<^sub>m Tensor.tensor_mat A B)" "j < dim_col (k \<cdot>\<^sub>m Tensor.tensor_mat A B)"
+  hence i: "i < r * p" and j: "j < c * q" using Ac Bc by auto
+  have p: "0 < p" using i by (cases p) auto
+  have id: "i div p < r" and jd: "j div q < c" using i j p q by (auto simp: less_mult_imp_div_less)
+  show "Tensor.tensor_mat (k \<cdot>\<^sub>m A) B $$ (i,j) = (k \<cdot>\<^sub>m Tensor.tensor_mat A B) $$ (i,j)"
+    using tensor_index_c[OF smult_carrier_mat[OF Ac] Bc i j c q] tensor_index_c[OF Ac Bc i j c q]
+      i j id jd Ac Bc by (simp add: mult_ac)
+qed (use Ac Bc in auto)
+
 end

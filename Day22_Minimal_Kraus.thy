@@ -1,10 +1,415 @@
+(*  Title:   Day22_Minimal_Kraus.thy
+    Author:  Dustin Bryant, after Vern Paulsen's lecture of 17 October 2011 (Day 22)
+*)
+
 theory Day22_Minimal_Kraus
-  imports Day21_Unitary_Freedom
+  imports Day21_Unitary_Freedom Jordan_Normal_Form.DL_Rank
 begin
 
-section \<open>Day 22: a minimal Kraus representation is linearly independent (D22-1)\<close>
+section \<open>Day 22 (17 October 2011): minimal Kraus representations, convex sets, UCP and CPTP\<close>
 
-subsection \<open>Mixing a Kraus list by an isometry does not change the map\<close>
+text \<open>\begin{notesprop}
+If $\Phi$ is completely positive, $\crk(\Phi)=r$ and $\Phi(X)=\sum_{i=1}^rV_i^*XV_i$, then
+$V_1,\dots,V_r$ are linearly independent.
+\end{notesprop}
+\begin{notesdef}
+$C\subseteq V$ is \emph{convex} if $tv_1+(1-t)v_2\in C$ for $v_1,v_2\in C$, $0\le t\le1$;
+$v\in C$ is \emph{extreme} if $v=\tfrac12(v_1+v_2)$ with $v_1,v_2\in C$ forces $v=v_1=v_2$.
+The \emph{convex hull} of $E$ is the set of convex combinations of points of $E$; a map
+between convex sets is \emph{affine} if it preserves convex combinations.
+\end{notesdef}
+\begin{notestheorem}[Krein--Milman]
+A compact convex subset of a finite-dimensional real vector space is the convex hull of its
+extreme points.
+\end{notestheorem}
+Examples: $UCP(M_n,M_d)$, the unital completely positive maps, is convex ($P_{t\Phi_1+(1-t)\Phi_2}
+=tP_{\Phi_1}+(1-t)P_{\Phi_2}\ge0$) and compact (closed; bounded because $0\le\Phi(E_{ii})\le I$ gives
+$|r_{ij}|\le1$ for the entries of $P_\Phi$); $CPTP(M_d,M_n)$ is convex and compact, being the
+image of $UCP(M_n,M_d)$ under the affine bijection $\Gamma(\Phi)=\Phi^*$.
+\begin{notestheorem}[Choi 3]
+If $\Phi:M_n\to M_d$ is unital and completely positive, $\Phi(X)=\sum_{i=1}^rV_i^*XV_i$ with
+$r=\crk(\Phi)$, then $\Phi$ is an extreme point of $UCP(M_n,M_d)$ iff
+$\{V_i^*V_j:1\le i,j\le r\}$ is linearly independent in $M_d$.
+\end{notestheorem}
+\begin{notescor}
+If $\Phi$ is extreme then $\crk(\Phi)\le d$.  If $\Phi:M_d\to M_n$ is CPTP with
+$\Phi(X)=\sum_{i=1}^rV_iXV_i^*$, $r=\crk(\Phi)$, then $\Phi$ is extreme in $CPTP(M_d,M_n)$ iff
+$\{V_i^*V_j\}$ is linearly independent.
+\end{notescor}
+Below: convexity of UCP and CPTP, the proposition (\<open>minimal_kraus_rep_lin_indep\<close>), with it
+Choi's rank theorem of Day 20, and the affine bijection $\Gamma$; compactness is the next
+theory.  Choi's Theorem 3 and its corollary $\crk(\Phi)\le d$ (\<open>extreme_CPTP_choi_rank_le\<close>)
+are proved on Day 23, in the CPTP form.  Krein--Milman is available in HOL-Analysis
+(\<open>Krein_Milman_Minkowski\<close>).\<close>
+
+subsection \<open>Convex sets and extreme points\<close>
+
+definition convex_set_mat :: "complex Matrix.mat set \<Rightarrow> bool" where
+  "convex_set_mat C \<equiv>
+     \<forall>A \<in> C. \<forall>B \<in> C. \<forall>t :: real. 0 \<le> t \<and> t \<le> 1 \<longrightarrow>
+       complex_of_real t \<cdot>\<^sub>m A
+       + (1 - complex_of_real t) \<cdot>\<^sub>m B \<in> C"
+
+definition extreme_point_mat ::
+  "complex Matrix.mat set \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
+  "extreme_point_mat C v \<equiv>
+     v \<in> C \<and>
+     \<not> (\<exists>v1 \<in> C. \<exists>v2 \<in> C. v1 \<noteq> v \<and> v \<noteq> v2 \<and>
+           v = (1/2 :: complex) \<cdot>\<^sub>m v1 + (1/2 :: complex) \<cdot>\<^sub>m v2)"
+
+definition affine_map_mat ::
+  "(complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
+  "affine_map_mat tmap \<equiv>
+     \<forall>A B. \<forall>t :: real. 0 \<le> t \<and> t \<le> 1 \<longrightarrow>
+       tmap (complex_of_real t \<cdot>\<^sub>m A
+             + (1 - complex_of_real t) \<cdot>\<^sub>m B) =
+       complex_of_real t \<cdot>\<^sub>m tmap A
+       + (1 - complex_of_real t) \<cdot>\<^sub>m tmap B"
+
+
+subsection \<open>The convex sets UCP and CPTP\<close>
+
+definition UCP ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) set" where
+  "UCP n d \<equiv> {\<Phi>. completely_positive n d \<Phi> \<and> unital_map n d \<Phi>}"
+
+definition CPTP ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) set" where
+  "CPTP n d \<equiv> {\<Phi>. completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>}"
+
+
+
+lemma amplification_smult:
+  assumes dpos: "0 < d"
+      and F_block: "\<And>a b. F (block_of_mat n x a b) \<in> carrier_mat d d"
+  shows "amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x
+         = c \<cdot>\<^sub>m amplification n d p F x"
+proof (rule eq_matI)
+  show "dim_row (amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x) =
+        dim_row (c \<cdot>\<^sub>m amplification n d p F x)"
+    by (simp add: amplification_def)
+  show "dim_col (amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x) =
+        dim_col (c \<cdot>\<^sub>m amplification n d p F x)"
+    by (simp add: amplification_def)
+next
+  fix i j
+  assume i: "i < dim_row (c \<cdot>\<^sub>m amplification n d p F x)"
+     and j: "j < dim_col (c \<cdot>\<^sub>m amplification n d p F x)"
+  have ipd: "i < p*d" and jpd: "j < p*d"
+    using i j by (simp_all add: amplification_def)
+  have imodd: "i mod d < d" and jmodd: "j mod d < d"
+    using dpos by simp_all
+  let ?B = "block_of_mat n x (i div d) (j div d)"
+  have FB: "F ?B \<in> carrier_mat d d"
+    by (rule F_block)
+  show "amplification n d p (\<lambda>\<rho>. c \<cdot>\<^sub>m F \<rho>) x $$ (i,j) =
+        (c \<cdot>\<^sub>m amplification n d p F x) $$ (i,j)"
+    using ipd jpd imodd jmodd FB
+    by (simp add: amplification_def)
+qed
+
+
+text \<open>UCP is convex.  The range hypotheses are explicit because \<open>completely_positive\<close> does
+not constrain the values of $\Phi_i$ off the carrier.\<close>
+
+lemma UCP_convex:
+  fixes t :: real
+  assumes t_nn:   "0 \<le> t"
+      and t_le:   "t \<le> 1"
+      and \<Phi>1_in:  "\<Phi>1 \<in> UCP n d"
+      and \<Phi>2_in:  "\<Phi>2 \<in> UCP n d"
+      and r1: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>1 X \<in> carrier_mat d d"
+      and r2: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>2 X \<in> carrier_mat d d"
+      and dpos: "0 < d"
+  shows "(\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+              + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X) \<in> UCP n d"
+proof -
+  let ?\<Psi> = "\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+                + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X"
+  have cp1: "completely_positive n d \<Phi>1"
+    using \<Phi>1_in by (simp add: UCP_def)
+  have cp2: "completely_positive n d \<Phi>2"
+    using \<Phi>2_in by (simp add: UCP_def)
+  have un1: "unital_map n d \<Phi>1"
+    using \<Phi>1_in by (simp add: UCP_def)
+  have un2: "unital_map n d \<Phi>2"
+    using \<Phi>2_in by (simp add: UCP_def)
+  have one_minus_nn: "0 \<le> 1 - t" using t_le by simp
+  have one_minus_eq: "(1 - complex_of_real t) = complex_of_real (1 - t)"
+    by simp
+
+  (* Unitality. *)
+  have \<Psi>_unital: "unital_map n d ?\<Psi>"
+  proof -
+    have \<Phi>1_one: "\<Phi>1 (1\<^sub>m n) = 1\<^sub>m d" using un1 by (simp add: unital_map_def)
+    have \<Phi>2_one: "\<Phi>2 (1\<^sub>m n) = 1\<^sub>m d" using un2 by (simp add: unital_map_def)
+    have "?\<Psi> (1\<^sub>m n) = complex_of_real t \<cdot>\<^sub>m (1\<^sub>m d :: complex Matrix.mat)
+                       + (1 - complex_of_real t) \<cdot>\<^sub>m (1\<^sub>m d)"
+      using \<Phi>1_one \<Phi>2_one by simp
+    also have "\<dots> = (complex_of_real t + (1 - complex_of_real t))
+                     \<cdot>\<^sub>m (1\<^sub>m d :: complex Matrix.mat)"
+      by (rule add_smult_distrib_right_mat[symmetric]) auto
+    also have "\<dots> = (1 :: complex) \<cdot>\<^sub>m (1\<^sub>m d :: complex Matrix.mat)"
+      by simp
+    also have "\<dots> = 1\<^sub>m d"
+      by (intro eq_matI) auto
+    finally show ?thesis unfolding unital_map_def .
+  qed
+
+  (* Complete positivity. *)
+  have \<Psi>_cp: "completely_positive n d ?\<Psi>"
+    unfolding completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+       and X_psd: "psd X"
+    have block_c: "\<And>a b. block_of_mat n X a b \<in> carrier_mat n n"
+      by (simp add: block_of_mat_def)
+    have F1_block: "\<And>a b. \<Phi>1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r1 block_c by blast
+    have F2_block: "\<And>a b. \<Phi>2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r2 block_c by blast
+    let ?F1 = "\<lambda>\<rho>. complex_of_real t \<cdot>\<^sub>m \<Phi>1 \<rho>"
+    let ?F2 = "\<lambda>\<rho>. (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 \<rho>"
+    have F1'_block: "\<And>a b. ?F1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F1_block by simp
+    have F2'_block: "\<And>a b. ?F2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F2_block by simp
+
+    (* amplification distributes over the convex combination *)
+    have amp_eq:
+      "amplification n d p ?\<Psi> X
+         = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+           + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+    proof -
+      have step_add:
+        "amplification n d p (\<lambda>\<rho>. ?F1 \<rho> + ?F2 \<rho>) X
+           = amplification n d p ?F1 X + amplification n d p ?F2 X"
+        using amplification_add[where F = ?F1 and G = ?F2
+                                 and n = n and d = d and p = p and x = X,
+                                OF dpos F1'_block F2'_block] .
+      have step_s1:
+        "amplification n d p ?F1 X
+           = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X"
+        using amplification_smult[where F = \<Phi>1 and c = "complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F1_block] .
+      have step_s2:
+        "amplification n d p ?F2 X
+           = (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+        using amplification_smult[where F = \<Phi>2 and c = "1 - complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F2_block] .
+      show ?thesis using step_add step_s1 step_s2 by simp
+    qed
+
+    have amp1_psd: "psd (amplification n d p \<Phi>1 X)"
+      using cp1 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp2_psd: "psd (amplification n d p \<Phi>2 X)"
+      using cp2 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp1_c: "amplification n d p \<Phi>1 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have amp2_c: "amplification n d p \<Phi>2 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+
+    have term1_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X)"
+      using t_nn amp1_psd amp1_c by (rule psd_smult_nonneg)
+    have term2_psd:
+      "psd ((1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+    proof -
+      have prev: "psd (complex_of_real (1 - t)
+                          \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+        using one_minus_nn amp2_psd amp2_c by (rule psd_smult_nonneg)
+      have rew: "complex_of_real (1 - t) = 1 - complex_of_real t"
+        by simp
+      show ?thesis using prev rew by metis
+    qed
+    have term1_c:
+      "complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp1_c by simp
+    have term2_c:
+      "(1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp2_c by simp
+
+    have psum_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+            + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+      using term1_psd term2_psd term1_c term2_c
+      by (rule psd_add_psd)
+
+    show "psd (amplification n d p ?\<Psi> X)"
+      using amp_eq psum_psd by simp
+  qed
+
+  show ?thesis using \<Psi>_cp \<Psi>_unital by (simp add: UCP_def)
+qed
+
+
+text \<open>CPTP is convex.\<close>
+
+lemma CPTP_convex:
+  fixes t :: real
+  assumes t_nn:   "0 \<le> t"
+      and t_le:   "t \<le> 1"
+      and \<Phi>1_in:  "\<Phi>1 \<in> CPTP n d"
+      and \<Phi>2_in:  "\<Phi>2 \<in> CPTP n d"
+      and r1: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>1 X \<in> carrier_mat d d"
+      and r2: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>2 X \<in> carrier_mat d d"
+      and dpos: "0 < d"
+  shows "(\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+              + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X) \<in> CPTP n d"
+proof -
+  let ?\<Psi> = "\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X
+                + (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X"
+  have cp1: "completely_positive n d \<Phi>1"
+    using \<Phi>1_in by (simp add: CPTP_def)
+  have cp2: "completely_positive n d \<Phi>2"
+    using \<Phi>2_in by (simp add: CPTP_def)
+  have tp1: "trace_preserving n \<Phi>1"
+    using \<Phi>1_in by (simp add: CPTP_def)
+  have tp2: "trace_preserving n \<Phi>2"
+    using \<Phi>2_in by (simp add: CPTP_def)
+
+  have one_minus_nn: "0 \<le> 1 - t" using t_le by simp
+
+  (* CP: copy of UCP_convex's CP half. *)
+  have \<Psi>_cp: "completely_positive n d ?\<Psi>"
+    unfolding completely_positive_def p_positive_def
+  proof (intro allI impI)
+    fix p :: nat and X :: "complex Matrix.mat"
+    assume ppos: "0 < p" and X_c: "X \<in> carrier_mat (p*n) (p*n)"
+       and X_psd: "psd X"
+    have block_c: "\<And>a b. block_of_mat n X a b \<in> carrier_mat n n"
+      by (simp add: block_of_mat_def)
+    have F1_block: "\<And>a b. \<Phi>1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r1 block_c by blast
+    have F2_block: "\<And>a b. \<Phi>2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using r2 block_c by blast
+    let ?F1 = "\<lambda>\<rho>. complex_of_real t \<cdot>\<^sub>m \<Phi>1 \<rho>"
+    let ?F2 = "\<lambda>\<rho>. (1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 \<rho>"
+    have F1'_block: "\<And>a b. ?F1 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F1_block by simp
+    have F2'_block: "\<And>a b. ?F2 (block_of_mat n X a b) \<in> carrier_mat d d"
+      using F2_block by simp
+    have amp_eq:
+      "amplification n d p ?\<Psi> X
+         = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+           + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+    proof -
+      have step_add:
+        "amplification n d p (\<lambda>\<rho>. ?F1 \<rho> + ?F2 \<rho>) X
+           = amplification n d p ?F1 X + amplification n d p ?F2 X"
+        using amplification_add[where F = ?F1 and G = ?F2
+                                 and n = n and d = d and p = p and x = X,
+                                OF dpos F1'_block F2'_block] .
+      have step_s1:
+        "amplification n d p ?F1 X
+           = complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X"
+        using amplification_smult[where F = \<Phi>1 and c = "complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F1_block] .
+      have step_s2:
+        "amplification n d p ?F2 X
+           = (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X"
+        using amplification_smult[where F = \<Phi>2 and c = "1 - complex_of_real t"
+                                   and n = n and d = d and p = p and x = X,
+                                  OF dpos F2_block] .
+      show ?thesis using step_add step_s1 step_s2 by simp
+    qed
+    have amp1_psd: "psd (amplification n d p \<Phi>1 X)"
+      using cp1 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp2_psd: "psd (amplification n d p \<Phi>2 X)"
+      using cp2 ppos X_c X_psd
+      by (auto simp: completely_positive_def p_positive_def)
+    have amp1_c: "amplification n d p \<Phi>1 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have amp2_c: "amplification n d p \<Phi>2 X \<in> carrier_mat (p*d) (p*d)"
+      by (simp add: amplification_def)
+    have term1_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X)"
+      using t_nn amp1_psd amp1_c by (rule psd_smult_nonneg)
+    have term2_psd:
+      "psd ((1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+    proof -
+      have prev: "psd (complex_of_real (1 - t)
+                          \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+        using one_minus_nn amp2_psd amp2_c by (rule psd_smult_nonneg)
+      have rew: "complex_of_real (1 - t) = 1 - complex_of_real t" by simp
+      show ?thesis using prev rew by metis
+    qed
+    have term1_c:
+      "complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp1_c by simp
+    have term2_c:
+      "(1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X
+        \<in> carrier_mat (p*d) (p*d)"
+      using amp2_c by simp
+    have psum_psd:
+      "psd (complex_of_real t \<cdot>\<^sub>m amplification n d p \<Phi>1 X
+            + (1 - complex_of_real t) \<cdot>\<^sub>m amplification n d p \<Phi>2 X)"
+      using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
+    show "psd (amplification n d p ?\<Psi> X)"
+      using amp_eq psum_psd by simp
+  qed
+
+  (* Trace preservation: Tr(t Phi1 X + (1-t) Phi2 X) = Tr X. *)
+  have \<Psi>_tp: "trace_preserving n ?\<Psi>"
+  proof (unfold trace_preserving_def, intro allI impI)
+    fix X :: "complex Matrix.mat"
+    assume X_c: "X \<in> carrier_mat n n"
+    have \<Phi>1X_c: "\<Phi>1 X \<in> carrier_mat d d" using r1 X_c by blast
+    have \<Phi>2X_c: "\<Phi>2 X \<in> carrier_mat d d" using r2 X_c by blast
+    have Tr1: "Tr (\<Phi>1 X) = Tr X"
+      using tp1 X_c by (simp add: trace_preserving_def)
+    have Tr2: "Tr (\<Phi>2 X) = Tr X"
+      using tp2 X_c by (simp add: trace_preserving_def)
+    have row_eq:
+      "dim_row (complex_of_real t \<cdot>\<^sub>m \<Phi>1 X)
+       = dim_row ((1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X)"
+      using \<Phi>1X_c \<Phi>2X_c by simp
+    have col_eq:
+      "dim_col (complex_of_real t \<cdot>\<^sub>m \<Phi>1 X)
+       = dim_col ((1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X)"
+      using \<Phi>1X_c \<Phi>2X_c by simp
+    have "Tr (?\<Psi> X) = Tr (complex_of_real t \<cdot>\<^sub>m \<Phi>1 X)
+                       + Tr ((1 - complex_of_real t) \<cdot>\<^sub>m \<Phi>2 X)"
+      using row_eq col_eq by (rule Tr_add)
+    also have "\<dots> = complex_of_real t * Tr (\<Phi>1 X)
+                    + (1 - complex_of_real t) * Tr (\<Phi>2 X)"
+      by (simp add: Tr_smult)
+    also have "\<dots> = complex_of_real t * Tr X
+                    + (1 - complex_of_real t) * Tr X"
+      using Tr1 Tr2 by simp
+    also have "\<dots> = (complex_of_real t + (1 - complex_of_real t)) * Tr X"
+      by (simp add: ring_distribs)
+    also have "\<dots> = 1 * Tr X" by simp
+    also have "\<dots> = Tr X" by simp
+    finally show "Tr (?\<Psi> X) = Tr X" .
+  qed
+
+  show ?thesis using \<Psi>_cp \<Psi>_tp by (simp add: CPTP_def)
+qed
+
+lemma kraus_is_cptp:
+  fixes Ws :: "complex Matrix.mat list"
+  assumes Ws: "kraus_operators n d Ws"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "kraus_map_dim d Ws \<in> CPTP n d"
+  unfolding CPTP_def
+  using kraus_is_cp[OF Ws npos dpos] kraus_is_trace_preserving[OF Ws]
+  by simp
+
+subsection \<open>A minimal Kraus representation is linearly independent (D22-1)\<close>
+
+subsubsection \<open>Mixing a Kraus list by an isometry does not change the map\<close>
 
 definition kraus_mix :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list" where
   "kraus_mix d n U Vs =
@@ -112,7 +517,7 @@ proof -
                     kraus_map_dim_add[OF _ _ Vs_c] kraus_map_dim_smult[OF _ Vs_c] kraus_map_dim_carrier[OF Vs_c])
 qed
 
-subsection \<open>A unitary with a prescribed first row\<close>
+subsubsection \<open>A unitary with a prescribed first row\<close>
 
 lemma transpose_unitary_isometry:
   assumes Mc: "M \<in> carrier_mat r r" and MM: "M * (M\<^sup>\<dagger>) = 1\<^sub>m r"
@@ -151,7 +556,7 @@ proof -
     using Mc transpose_unitary_isometry[OF Mc MM] row0 by (intro exI[of _ "transpose_mat ?M"]) auto
 qed
 
-subsection \<open>D22-1\<close>
+subsubsection \<open>D22-1\<close>
 
 lemma kraus_map_dim_zero_head:
   assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n" and Xc: "M \<in> carrier_mat n n"
@@ -247,5 +652,592 @@ next
   qed
 qed
 
+
+subsection \<open>Choi's rank theorem $\mathrm{cr}(\Phi)=\operatorname{rank}P_\Phi$ (D20-4)\<close>
+
+text \<open>A linearly independent list of vectors in $\mathbb C^n$ has at most $n$ members.
+The bridge is to JNF's @{locale vec_space}: kernel-triviality of \<open>mat_of_cols\<close> is
+JNF's \<open>lin_indpt\<close> (via \<open>vec_space.lin_depE\<close>), and \<open>li_le_dim\<close> bounds the cardinality.\<close>
+
+lemma lin_indep_vecs_distinct:
+  assumes li: "lin_indep_vecs n vs"
+  shows "distinct vs"
+proof (rule ccontr)
+  assume "\<not> distinct vs"
+  then obtain i j where i: "i < length vs" and j: "j < length vs" and ij: "i \<noteq> j"
+    and eq: "vs ! i = vs ! j" by (auto simp: distinct_conv_nth)
+  have vsd: "\<forall>v \<in> set vs. dim_vec v = n" using li by (simp add: lin_indep_vecs_def)
+  let ?m = "length vs"
+  define x :: "complex Matrix.vec" where
+    "x = Matrix.vec ?m (\<lambda>k. if k = i then 1 else if k = j then -1 else 0)"
+  have xc: "x \<in> carrier_vec ?m" by (simp add: x_def)
+  have xi: "x $ i = 1" using i ij by (simp add: x_def)
+  have xnz: "x \<noteq> 0\<^sub>v ?m" using xi i by (metis index_zero_vec(1) one_neq_zero)
+  have "mat_of_cols n vs *\<^sub>v x = 0\<^sub>v n"
+  proof (rule eq_vecI)
+    fix r assume "r < dim_vec (0\<^sub>v n :: complex Matrix.vec)"
+    hence r: "r < n" by simp
+    have "(mat_of_cols n vs *\<^sub>v x) $ r = (\<Sum>k = 0..<?m. mat_of_cols n vs $$ (r,k) * x $ k)"
+      using r carrier_vecD[OF xc] by (simp add: scalar_prod_def)
+    also have "\<dots> = (\<Sum>k = 0..<?m. (if k = i then vs ! i $ r else 0) - (if k = j then vs ! j $ r else 0))"
+      using r ij by (intro sum.cong refl) (simp add: x_def mat_of_cols_index)
+    also have "\<dots> = vs ! i $ r - vs ! j $ r"
+      using i j by (simp add: sum_subtractf)
+    also have "\<dots> = 0" using eq by simp
+    finally show "(mat_of_cols n vs *\<^sub>v x) $ r = (0\<^sub>v n :: complex Matrix.vec) $ r" using r by simp
+  qed simp
+  hence "x = 0\<^sub>v ?m" using li xc by (simp add: lin_indep_vecs_def)
+  thus False using xnz by simp
+qed
+
+lemma lin_indep_vecs_length_le:
+  assumes li: "lin_indep_vecs n vs"
+  shows "length vs \<le> n"
+proof -
+  interpret V: vec_space "TYPE(complex)" n .
+  have vsd: "\<forall>v \<in> set vs. dim_vec v = n" using li by (simp add: lin_indep_vecs_def)
+  have vsc: "set vs \<subseteq> carrier_vec n" using vsd by auto
+  have dist: "distinct vs" by (rule lin_indep_vecs_distinct[OF li])
+  let ?A = "mat_of_cols n vs"
+  have Ac: "?A \<in> carrier_mat n (length vs)" by simp
+  have cols: "cols ?A = vs" using vsc by simp
+  have indpt: "V.lin_indpt (set vs)"
+  proof
+    assume dep: "V.lin_dep (set vs)"
+    obtain x where xc: "x \<in> carrier_vec (length vs)" and xnz: "x \<noteq> 0\<^sub>v (length vs)"
+      and Ax: "?A *\<^sub>v x = 0\<^sub>v n"
+      using V.lin_depE[OF Ac, of thesis] dep dist cols by auto
+    have "x = 0\<^sub>v (length vs)" using li xc Ax by (simp add: lin_indep_vecs_def)
+    thus False using xnz by simp
+  qed
+  have "card (set vs) \<le> V.dim"
+    using V.li_le_dim(2)[OF V.fin_dim _ indpt] vsc by simp
+  thus ?thesis using V.dim_is_n distinct_card[OF dist] by simp
+qed
+
+text \<open>Flattening a matrix into a vector carries linear independence of matrices to
+\<open>lin_indep_vecs\<close>, so a linearly independent family in $M_n$ has at most $n^2$ members.\<close>
+
+lemma lin_indep_mats_vecs:
+  assumes li: "lin_indep_complex_mat n n Bs"
+  shows "lin_indep_vecs (n*n) (map mat_to_vec Bs)"
+proof (unfold lin_indep_vecs_def, intro conjI allI impI)
+  show "\<forall>v \<in> set (map mat_to_vec Bs). dim_vec v = n*n"
+    using li by (auto simp: lin_indep_complex_mat_def intro: dim_mat_to_vec)
+next
+  fix x :: "complex Matrix.vec"
+  let ?m = "length (map mat_to_vec Bs)"
+  let ?A = "mat_of_cols (n*n) (map mat_to_vec Bs)"
+  assume xc: "x \<in> carrier_vec ?m" and Ax: "?A *\<^sub>v x = 0\<^sub>v (n*n)"
+  have Bc: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n" using li by (simp add: lin_indep_complex_mat_def)
+  have len: "?m = length Bs" by simp
+  let ?f = "\<lambda>k. x $ k \<cdot>\<^sub>m (Bs!k)"
+  have fc: "\<forall>k \<in> set [0..<length Bs]. ?f k \<in> carrier_mat n n" using Bc by auto
+  have comb0: "foldr (\<lambda>k acc. x $ k \<cdot>\<^sub>m (Bs!k) + acc) [0..<length Bs] (0\<^sub>m n n) = 0\<^sub>m n n"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row (0\<^sub>m n n :: complex Matrix.mat)" "j < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
+    hence i: "i < n" and j: "j < n" by simp_all
+    have "foldr (\<lambda>k acc. ?f k + acc) [0..<length Bs] (0\<^sub>m n n) $$ (i,j)
+            = sum_list (map (\<lambda>k. ?f k $$ (i,j)) [0..<length Bs])"
+      by (rule foldr_add_mat_index[OF fc i j])
+    also have "\<dots> = (\<Sum>k = 0..<length Bs. (x $ k \<cdot>\<^sub>m (Bs!k)) $$ (i,j))"
+      by (simp add: sum_list_sum_nth atLeast0LessThan)
+    also have "\<dots> = (\<Sum>k = 0..<length Bs. x $ k * Bs!k $$ (i,j))"
+    proof (rule sum.cong[OF refl])
+      fix k assume "k \<in> {0..<length Bs}"
+      hence "Bs ! k \<in> carrier_mat n n" using Bc by (auto dest: nth_mem)
+      thus "(x $ k \<cdot>\<^sub>m (Bs!k)) $$ (i,j) = x $ k * Bs!k $$ (i,j)" using i j by simp
+    qed
+    also have "\<dots> = (\<Sum>k = 0..<length Bs. ?A $$ (i*n + j, k) * x $ k)"
+    proof (rule sum.cong[OF refl])
+      fix k assume "k \<in> {0..<length Bs}"
+      hence k: "k < length Bs" by simp
+      have "?A $$ (i*n + j, k) = mat_to_vec (Bs ! k) $ (i*n + j)"
+        using mult_index_lt[OF i j] k by (simp add: mat_of_cols_index)
+      also have "\<dots> = Bs ! k $$ (i,j)" by (rule mat_to_vec_index[OF _ i j]) (use Bc k in auto)
+      finally show "x $ k * Bs ! k $$ (i,j) = ?A $$ (i*n + j, k) * x $ k" by (simp add: mult.commute)
+    qed
+    also have "\<dots> = (?A *\<^sub>v x) $ (i*n + j)"
+    proof -
+      have lt: "i*n + j < n*n" using i j by (rule mult_index_lt)
+      show ?thesis using lt xc by (simp add: scalar_prod_def)
+    qed
+    also have "\<dots> = 0" using Ax mult_index_lt[OF i j] by simp
+    finally show "foldr (\<lambda>k acc. ?f k + acc) [0..<length Bs] (0\<^sub>m n n) $$ (i,j) = (0\<^sub>m n n :: complex Matrix.mat) $$ (i,j)"
+      using i j by simp
+  qed (use foldr_add_mat_carrier[OF fc] in auto)
+  have "\<forall>k < length Bs. x $ k = 0" using li comb0 by (simp add: lin_indep_complex_mat_def)
+  thus "x = 0\<^sub>v ?m" using xc by (intro eq_vecI) auto
+qed
+
+lemma lin_indep_mats_length_le:
+  assumes "lin_indep_complex_mat n n Bs"
+  shows "length Bs \<le> n*n"
+  using lin_indep_vecs_length_le[OF lin_indep_mats_vecs[OF assms]] by simp
+
+text \<open>Rank is JNF's \<open>vec_space.rank\<close>, the dimension of the column space.\<close>
+
+abbreviation mat_rank :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> nat" where
+  "mat_rank m A \<equiv> vec_space.rank m A"
+
+subsubsection \<open>$\operatorname{rank}(\sum_{l<L}w_lw_l^*)\le L$\<close>
+
+lemma rank_outer_prod_le_1:
+  assumes vd: "dim_vec v = m"
+  shows "mat_rank m (v \<oslash> v) \<le> 1"
+proof -
+  interpret V: vec_space "TYPE(complex)" m .
+  have c: "v \<oslash> v \<in> carrier_mat m m" by (rule outer_prod_carrier[OF vd vd])
+  show ?thesis
+  proof (rule V.rank_le_1_product_entries[OF c, of "\<lambda>r. v $ r" "\<lambda>c. cnj (v $ c)"])
+    fix r c assume "r < dim_row (v \<oslash> v)" "c < dim_col (v \<oslash> v)"
+    hence r: "r < m" and cc: "c < m" using carrier_matD[OF c] by auto
+    have "r < dim_vec v" and "c < dim_vec v" using r cc vd by simp_all
+    thus "(v \<oslash> v) $$ (r, c) = v $ r * cnj (v $ c)" by (rule outer_prod_index)
+  qed
+qed
+
+lemma rank_foldr_outer_le:
+  assumes vsd: "\<forall>v \<in> set vs. dim_vec v = m"
+  shows "mat_rank m (foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m m m)) \<le> length vs"
+  using vsd
+proof (induction vs)
+  case Nil
+  interpret V: vec_space "TYPE(complex)" m .
+  show ?case using V.rank_0I by simp
+next
+  case (Cons v vs)
+  interpret V: vec_space "TYPE(complex)" m .
+  have vd: "dim_vec v = m" and rest: "\<forall>v \<in> set vs. dim_vec v = m" using Cons.prems by auto
+  have rc: "foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m m m) \<in> carrier_mat m m"
+    using rest by (induction vs) (auto simp: outer_prod_carrier)
+  have "mat_rank m (v \<oslash> v + foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m m m))
+        \<le> mat_rank m (v \<oslash> v) + mat_rank m (foldr (\<lambda>v acc. v \<oslash> v + acc) vs (0\<^sub>m m m))"
+    by (rule V.rank_subadditive[OF outer_prod_carrier[OF vd vd] rc])
+  also have "\<dots> \<le> 1 + length vs" using rank_outer_prod_le_1[OF vd] Cons.IH[OF rest] by simp
+  finally show ?case by simp
+qed
+
+lemma rank_outer_sum_le:
+  assumes vsd: "\<forall>v \<in> set vs. dim_vec v = m"
+  shows "mat_rank m (outer_sum m vs) \<le> length vs"
+  unfolding outer_sum_as_foldr[OF vsd] by (rule rank_foldr_outer_le[OF vsd])
+
+subsubsection \<open>Independent vectors inside the column space bound the rank from below\<close>
+
+lemma mult_mat_vec_in_span:
+  assumes Ac: "A \<in> carrier_mat m k" and xc: "x \<in> carrier_vec k"
+  shows "A *\<^sub>v x \<in> module.span class_ring (module_vec TYPE(complex) m) (set (cols A))"
+proof -
+  interpret V: vec_space "TYPE(complex)" m .
+  have cd: "\<forall>w \<in> set (cols A). dim_vec w = m" using Ac by (auto simp: cols_def)
+  have cc: "set (cols A) \<subseteq> carrier_vec m" using cd by auto
+  have A_eq: "mat_of_cols m (cols A) = A" using mat_of_cols_cols[of A] Ac by simp
+  have x_eq: "Matrix.vec (length (cols A)) (\<lambda>i. (x :: complex Matrix.vec) $ i) = x" using Ac xc by (intro eq_vecI) auto
+  have "A *\<^sub>v x = V.lincomb_list (\<lambda>i. x $ i) (cols A)"
+    unfolding V.lincomb_list_as_mat_mult[OF cd] A_eq x_eq ..
+  also have "\<dots> \<in> V.span_list (cols A)" by (rule V.in_span_listI) auto
+  also have "V.span_list (cols A) = V.span (set (cols A))" by (rule V.span_list_as_span[OF cc])
+  finally show ?thesis .
+qed
+
+lemma rank_ge_indep_in_colspace:
+  assumes Ac: "A \<in> carrier_mat m k" and li: "lin_indep_vecs m ws"
+      and insp: "\<And>w. w \<in> set ws \<Longrightarrow> w \<in> module.span class_ring (module_vec TYPE(complex) m) (set (cols A))"
+  shows "length ws \<le> mat_rank m A"
+proof -
+  interpret V: vec_space "TYPE(complex)" m .
+  define SS where "SS = set (cols A)"
+  have Sc: "SS \<subseteq> carrier_vec m" unfolding SS_def using Ac by (auto simp: cols_def)
+  have finS: "finite SS" by (simp add: SS_def)
+  have wsc: "set ws \<subseteq> carrier_vec m" using li by (auto simp: lin_indep_vecs_def)
+  have dist: "distinct ws" by (rule lin_indep_vecs_distinct[OF li])
+  \<comment> \<open>independence in \<open>V\<close>, as in \<open>lin_indep_vecs_length_le\<close>\<close>
+  have indpt: "V.lin_indpt (set ws)"
+  proof
+    assume dep: "V.lin_dep (set ws)"
+    have Wc: "mat_of_cols m ws \<in> carrier_mat m (length ws)" by simp
+    have cols: "cols (mat_of_cols m ws) = ws" using wsc by simp
+    obtain x where xc: "x \<in> carrier_vec (length ws)" and xnz: "x \<noteq> 0\<^sub>v (length ws)"
+      and Ax: "mat_of_cols m ws *\<^sub>v x = 0\<^sub>v m"
+      using V.lin_depE[OF Wc, of thesis] dep dist cols by auto
+    have "x = 0\<^sub>v (length ws)" using li xc Ax by (simp add: lin_indep_vecs_def)
+    thus False using xnz by simp
+  qed
+  \<comment> \<open>pass to the subspace \<open>span S\<close>\<close>
+  have sub: "VectorSpace.subspace class_ring (V.span SS) V.V" by (rule V.span_is_subspace[OF Sc])
+  interpret Sp: VectorSpace.vectorspace class_ring "V.vs (V.span SS)" by (rule V.subspace_is_vs[OF sub])
+  have sub_md: "submodule class_ring (V.span SS) V.V" using sub by (simp add: VectorSpace.subspace_def)
+  have wsS: "set ws \<subseteq> V.span SS" unfolding SS_def using insp by auto
+  have indpt_S: "Sp.lin_indpt (set ws)"
+    using V.span_li_not_depend(2)[OF wsS sub_md] indpt by simp
+  have Sc': "SS \<subseteq> carrier V.V" using Sc by (simp add: module_vec_simps)
+  have fd: "Sp.fin_dim" using V.fin_dim_span[OF finS Sc'] by simp
+  have "card (set ws) \<le> Sp.dim" using Sp.li_le_dim(2)[OF fd _ indpt_S] wsS by simp
+  thus ?thesis using distinct_card[OF dist] unfolding V.rank_def by (simp add: SS_def)
+qed
+
+subsubsection \<open>The theorem\<close>
+
+lemma choi_rank_attained:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow> \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and cp:     "completely_positive n d \<Phi>"
+      and npos:   "0 < n" and dpos: "0 < d"
+  shows "\<exists>As :: complex Matrix.mat list. length As = choi_rank n d \<Phi> \<and>
+           (\<forall>A \<in> set As. A \<in> carrier_mat d n) \<and>
+           (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X)"
+proof -
+  let ?K = "{ length As | As :: complex Matrix.mat list.
+             (\<forall>A \<in> set As. A \<in> carrier_mat d n)
+             \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X) }"
+  have "?K \<noteq> {}" using kraus_rank_bound[OF linear smult range cp npos dpos] by blast
+  hence "Inf ?K \<in> ?K" by (rule Inf_nat_def1)
+  then obtain As :: "complex Matrix.mat list" where e: "Inf ?K = length As"
+    and c: "\<forall>A \<in> set As. A \<in> carrier_mat d n" and eq: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X"
+    unfolding mem_Collect_eq by blast
+  show ?thesis unfolding choi_rank_def by (intro exI[of _ As] conjI, rule e[symmetric], rule c, rule eq)
+qed
+
+theorem choi_rank_eq_rank:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow> \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and cp:     "completely_positive n d \<Phi>"
+      and npos:   "0 < n" and dpos: "0 < d"
+  shows "choi_rank n d \<Phi> = mat_rank (n*d) (choi_matrix n d \<Phi>)"
+proof -
+  obtain As :: "complex Matrix.mat list" where len: "length As = choi_rank n d \<Phi>"
+    and As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
+    and rep: "\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d As X"
+    using choi_rank_attained[OF assms] by blast
+  let ?ws = "map (vec_of_kraus d n) As"
+  have wsd: "\<forall>w \<in> set ?ws. dim_vec w = n*d" by simp
+  have choi: "choi_matrix n d \<Phi> = outer_sum (n*d) ?ws"
+    using choi_matrix_cong[of n \<Phi> "kraus_map_dim d As" d] rep choi_matrix_kraus_eq[OF As_c npos dpos] by simp
+  \<comment> \<open>\<open>rank P\<^sub>\<Phi> \<le> cr \<Phi>\<close>\<close>
+  have le1: "mat_rank (n*d) (choi_matrix n d \<Phi>) \<le> choi_rank n d \<Phi>"
+    unfolding choi using rank_outer_sum_le[OF wsd] len by simp
+  \<comment> \<open>\<open>cr \<Phi> \<le> rank P\<^sub>\<Phi>\<close>: the minimal representation is independent (D22-1), so its Kraus vectors are
+      independent vectors in the column space of \<open>P\<^sub>\<Phi> = W W\<^sup>\<dagger>\<close>.\<close>
+  have minimal: "choi_rank n d (kraus_map_dim d As) = length As"
+  proof -
+    have "\<And>Bs :: complex Matrix.mat list.
+            (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> kraus_map_dim d As X = kraus_map_dim d Bs X)
+            \<longleftrightarrow> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Bs X)"
+      using rep by simp
+    hence "{length Bs | Bs :: complex Matrix.mat list. (\<forall>A \<in> set Bs. A \<in> carrier_mat d n)
+             \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> kraus_map_dim d As X = kraus_map_dim d Bs X)}
+           = {length Bs | Bs :: complex Matrix.mat list. (\<forall>A \<in> set Bs. A \<in> carrier_mat d n)
+             \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Bs X)}" by simp
+    thus ?thesis unfolding choi_rank_def using len unfolding choi_rank_def by simp
+  qed
+  have liA: "lin_indep_complex_mat d n As" by (rule minimal_kraus_rep_lin_indep[OF npos dpos As_c minimal])
+  have liw: "lin_indep_vecs (n*d) ?ws" by (rule lin_indep_complex_mat_vec_of_kraus[OF liA dpos])
+  let ?W = "mat_of_cols (n*d) ?ws"
+  have Wc: "?W \<in> carrier_mat (n*d) (length As)" using mat_of_cols_carrier[of "n*d" ?ws] by simp
+  have Wdc: "?W\<^sup>\<dagger> \<in> carrier_mat (length As) (n*d)" using dagger_carrier[OF Wc] .
+  have Pc: "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)" unfolding choi outer_sum_def using Wc Wdc by auto
+  obtain B where Bc: "B \<in> carrier_mat (length As) (length As)"
+    and GB: "((?W\<^sup>\<dagger>) * ?W) * B = 1\<^sub>m (length As)" using gram_inverse[OF liw] by auto
+  have insp: "\<And>w. w \<in> set ?ws \<Longrightarrow> w \<in> module.span class_ring (module_vec TYPE(complex) (n*d)) (set (cols (choi_matrix n d \<Phi>)))"
+  proof -
+    fix w assume "w \<in> set ?ws"
+    then obtain l where l: "l < length As" and wl: "w = ?ws ! l" by (metis in_set_conv_nth length_map)
+    have wc: "w \<in> carrier_vec (n*d)" unfolding wl using l by (intro carrier_vecI) simp
+    \<comment> \<open>\<open>w = col W l = (W W\<^sup>\<dagger>) (W B e\<^sub>l)\<close>\<close>
+    let ?x = "?W *\<^sub>v (B *\<^sub>v unit_vec (length As) l)"
+    have xc: "?x \<in> carrier_vec (n*d)" using Wc Bc by simp
+    let ?e = "unit_vec (length As) l"
+    have ec: "?e \<in> carrier_vec (length As)" by simp
+    have Bec: "B *\<^sub>v ?e \<in> carrier_vec (length As)" using Bc by simp
+    have "choi_matrix n d \<Phi> *\<^sub>v ?x = (?W * (?W\<^sup>\<dagger>)) *\<^sub>v (?W *\<^sub>v (B *\<^sub>v ?e))" unfolding choi outer_sum_def ..
+    also have "\<dots> = ((?W * (?W\<^sup>\<dagger>)) * ?W) *\<^sub>v (B *\<^sub>v ?e)"
+      by (rule assoc_mult_mat_vec[OF mult_carrier_mat[OF Wc Wdc] Wc Bec, symmetric])
+    also have "\<dots> = (((?W * (?W\<^sup>\<dagger>)) * ?W) * B) *\<^sub>v ?e"
+      by (rule assoc_mult_mat_vec[OF mult_carrier_mat[OF mult_carrier_mat[OF Wc Wdc] Wc] Bc ec, symmetric])
+    also have "((?W * (?W\<^sup>\<dagger>)) * ?W) * B = ?W * ((?W\<^sup>\<dagger>) * ?W * B)"
+      by (simp only: assoc_mult_mat[OF Wc Wdc Wc] assoc_mult_mat[OF Wc mult_carrier_mat[OF Wdc Wc] Bc])
+    also have "?W * ((?W\<^sup>\<dagger>) * ?W * B) = ?W" by (simp only: GB right_mult_one_mat[OF Wc])
+    also have "?W *\<^sub>v ?e = Matrix.col ?W l"
+    proof (rule eq_vecI)
+      fix i assume "i < dim_vec (Matrix.col ?W l)"
+      hence i: "i < n*d" using carrier_matD[OF Wc] by simp
+      have "(?W *\<^sub>v ?e) $ i = (\<Sum>j<length As. ?W $$ (i,j) * ?e $ j)"
+        using i carrier_matD[OF Wc] by (simp add: scalar_prod_def atLeast0LessThan)
+      also have "\<dots> = (\<Sum>j<length As. if j = l then ?W $$ (i,j) else 0)"
+        by (intro sum.cong refl) (simp add: unit_vec_def)
+      also have "\<dots> = ?W $$ (i,l)" by (simp only: sum.delta[OF finite_lessThan]) (simp add: l)
+      also have "\<dots> = Matrix.col ?W l $ i" using i carrier_matD[OF Wc] by (simp add: Matrix.col_def)
+      finally show "(?W *\<^sub>v ?e) $ i = Matrix.col ?W l $ i" .
+    qed (simp add: carrier_matD[OF Wc])
+    also have "Matrix.col ?W l = ?ws ! l" using l wc[unfolded wl] by (intro col_mat_of_cols) simp_all
+    finally have "choi_matrix n d \<Phi> *\<^sub>v ?x = w" unfolding wl .
+    thus "w \<in> module.span class_ring (module_vec TYPE(complex) (n*d)) (set (cols (choi_matrix n d \<Phi>)))"
+      using mult_mat_vec_in_span[OF Pc xc] by simp
+  qed
+  have ge1: "choi_rank n d \<Phi> \<le> mat_rank (n*d) (choi_matrix n d \<Phi>)"
+    using rank_ge_indep_in_colspace[OF Pc liw insp] len by simp
+  show ?thesis using le1 ge1 by simp
+qed
+
+
+subsection \<open>The adjoint map, an affine bijection from UCP onto CPTP (D22-5)\<close>
+
+text \<open>The notes: $\mathrm{UCP}(M_n,M_d)$ and $\mathrm{CPTP}(M_d,M_n)$ are convex, and
+$\Gamma(\Phi)=\Phi^*$ is an affine bijection between them with affine inverse, so the two
+convex sets are affinely isomorphic.  The adjoint was available only for Kraus maps
+(\<^const>\<open>kraus_adjoint_dim\<close>); here it is defined for every linear $\Phi$.  Maps are total
+functions on matrices, so $\Gamma$ is a bijection up to agreement on $M_n$, resp.\ $M_d$:
+$\Gamma$ sends linear UCP maps to linear CPTP maps and back, and $\Gamma(\Gamma(\Phi))=\Phi$ on
+$M_n$.  The set \<^const>\<open>UCP\<close> does not record linearity, which the notes' maps have, so it is
+assumed.\<close>
+
+text \<open>For linear $\Phi:M_n\to M_d$, $\Phi^*:M_d\to M_n$ is determined by
+$\langle Y|\Phi(X)\rangle=\langle\Phi^*(Y)|X\rangle$; taking $X=E_{ij}$ gives
+$\Phi^*(Y)_{ij}=\langle\Phi(E_{ij})|Y\rangle$.\<close>
+
+definition map_adjoint :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "map_adjoint n d \<Phi> Y = Matrix.mat n n (\<lambda>(i, j). \<langle>\<langle> \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) | Y \<rangle>\<rangle>)"
+
+text \<open>$\Phi^*:M_d\to M_n$ is determined by $\langle\Phi^*(Y)|X\rangle=\langle Y|\Phi(X)\rangle$.  Since
+$\Phi(X)=\sum_{i,j}x_{ij}\Phi(E_{ij})$ for linear $\Phi$, it suffices that
+\[ \Phi^*(Y)_{ij}=\langle\Phi(E_{ij})|Y\rangle, \]
+which is the definition.\<close>
+
+lemma map_adjoint_carrier [simp]: "map_adjoint n d \<Phi> Y \<in> carrier_mat n n"
+  by (simp add: map_adjoint_def)
+
+lemma map_adjoint_dims [simp]: "dim_row (map_adjoint n d \<Phi> Y) = n" "dim_col (map_adjoint n d \<Phi> Y) = n"
+  by (simp_all add: map_adjoint_def)
+
+lemma lin_entry:
+  assumes L: "lin_on n d (carrier_mat n n) \<Phi>" and X: "X \<in> carrier_mat n n" and a: "a < d" and b: "b < d"
+  shows "\<Phi> X $$ (a, b) = (\<Sum>i<n. \<Sum>j<n. X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b))"
+proof -
+  have Ec: "\<And>i j. \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) \<in> carrier_mat d d" using L unfolding lin_on_def by simp
+  have "\<Phi> X $$ (a, b) = msum d d (\<lambda>(i,j). X $$ (i,j) \<cdot>\<^sub>m \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>)) (List.product [0..<n] [0..<n]) $$ (a, b)"
+    by (simp add: lin_expansion[OF L X])
+  also have "\<dots> = (\<Sum>x\<leftarrow>List.product [0..<n] [0..<n]. ((\<lambda>(i,j). X $$ (i,j) \<cdot>\<^sub>m \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>)) x) $$ (a, b))"
+    by (rule msum_index) (use Ec a b in auto)
+  also have "\<dots> = (\<Sum>i<n. \<Sum>j<n. X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b))"
+    unfolding sum_list_product_upt using Ec a b carrier_matD[OF Ec] by simp
+  finally show ?thesis .
+qed
+
+theorem map_adjoint_correct:
+  assumes L: "lin_on n d (carrier_mat n n) \<Phi>" and X: "X \<in> carrier_mat n n" and Y: "Y \<in> carrier_mat d d"
+  shows "\<langle>\<langle> Y | \<Phi> X \<rangle>\<rangle> = \<langle>\<langle> map_adjoint n d \<Phi> Y | X \<rangle>\<rangle>"
+proof -
+  have Ec: "\<And>i j. \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) \<in> carrier_mat d d" using L unfolding lin_on_def by simp
+  have PX: "\<Phi> X \<in> carrier_mat d d" using L X unfolding lin_on_def by simp
+  have "\<langle>\<langle> Y | \<Phi> X \<rangle>\<rangle> = (\<Sum>a<d. \<Sum>b<d. cnj (Y $$ (a, b)) * \<Phi> X $$ (a, b))"
+    using PX by (simp add: hs_inner_prod_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>a<d. \<Sum>b<d. \<Sum>i<n. \<Sum>j<n. cnj (Y $$ (a, b)) * (X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)))"
+    by (simp add: lin_entry[OF L X] sum_distrib_left)
+  also have "\<dots> = (\<Sum>a<d. \<Sum>i<n. \<Sum>b<d. \<Sum>j<n. cnj (Y $$ (a, b)) * (X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)))"
+    by (rule sum.cong[OF refl], rule sum.swap)
+  also have "\<dots> = (\<Sum>i<n. \<Sum>a<d. \<Sum>b<d. \<Sum>j<n. cnj (Y $$ (a, b)) * (X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)))"
+    by (rule sum.swap)
+  also have "\<dots> = (\<Sum>i<n. \<Sum>a<d. \<Sum>j<n. \<Sum>b<d. cnj (Y $$ (a, b)) * (X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)))"
+    by (rule sum.cong[OF refl], rule sum.cong[OF refl], rule sum.swap)
+  also have "\<dots> = (\<Sum>i<n. \<Sum>j<n. \<Sum>a<d. \<Sum>b<d. cnj (Y $$ (a, b)) * (X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)))"
+    by (rule sum.cong[OF refl], rule sum.swap)
+  also have "\<dots> = (\<Sum>i<n. \<Sum>j<n. cnj (\<langle>\<langle> \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) | Y \<rangle>\<rangle>) * X $$ (i, j))"
+  proof (intro sum.cong refl)
+    fix i j
+    have "cnj (\<langle>\<langle> \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) | Y \<rangle>\<rangle>) = \<langle>\<langle> Y | \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) \<rangle>\<rangle>"
+      using hs_inner_prod_cnj[of Y "\<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>)"] carrier_matD[OF Y] carrier_matD[OF Ec[of i j]] by simp
+    also have "\<dots> = (\<Sum>a<d. \<Sum>b<d. cnj (Y $$ (a, b)) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b))"
+      using carrier_matD[OF Ec[of i j]] by (simp add: hs_inner_prod_def atLeast0LessThan)
+    finally have c: "cnj (\<langle>\<langle> \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) | Y \<rangle>\<rangle>) = (\<Sum>a<d. \<Sum>b<d. cnj (Y $$ (a, b)) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b))" .
+    have "(\<Sum>a<d. \<Sum>b<d. cnj (Y $$ (a, b)) * (X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)))
+          = (\<Sum>a<d. \<Sum>b<d. cnj (Y $$ (a, b)) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)) * X $$ (i, j)"
+      by (simp add: sum_distrib_left sum_distrib_right mult_ac)
+    thus "(\<Sum>a<d. \<Sum>b<d. cnj (Y $$ (a, b)) * (X $$ (i, j) * \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) $$ (a, b)))
+                  = cnj (\<langle>\<langle> \<Phi> (E\<lbrakk>i,j ; n,n\<rbrakk>) | Y \<rangle>\<rangle>) * X $$ (i, j)" unfolding c .
+  qed
+  also have "\<dots> = \<langle>\<langle> map_adjoint n d \<Phi> Y | X \<rangle>\<rangle>"
+    using X by (simp add: hs_inner_prod_def map_adjoint_def atLeast0LessThan)
+  finally show ?thesis .
+qed
+
+lemma hs_inner_prod_mat_unit:
+  assumes A: "A \<in> carrier_mat n n" and i: "i < n" and j: "j < n"
+  shows "\<langle>\<langle> A | E\<lbrakk>i,j ; n,n\<rbrakk> \<rangle>\<rangle> = cnj (A $$ (i, j))"
+proof -
+  have "\<langle>\<langle> A | E\<lbrakk>i,j ; n,n\<rbrakk> \<rangle>\<rangle> = (\<Sum>a<n. \<Sum>b<n. cnj (A $$ (a, b)) * (if a = i \<and> b = j then 1 else 0))"
+    by (simp add: hs_inner_prod_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>a<n. if a = i then cnj (A $$ (a, j)) else 0)"
+    by (rule sum.cong[OF refl]) (use j in \<open>auto simp: if_distrib cong: if_cong\<close>)
+  also have "\<dots> = cnj (A $$ (i, j))" using i by simp
+  finally show ?thesis .
+qed
+
+lemma hs_inner_prod_ext:
+  assumes A: "A \<in> carrier_mat n n" and B: "B \<in> carrier_mat n n"
+      and eq: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<langle>\<langle> A | X \<rangle>\<rangle> = \<langle>\<langle> B | X \<rangle>\<rangle>"
+  shows "A = B"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row B" "j < dim_col B"
+  hence i: "i < n" and j: "j < n" using B by auto
+  have "cnj (A $$ (i, j)) = cnj (B $$ (i, j))"
+    using eq[of "E\<lbrakk>i,j ; n,n\<rbrakk>"] hs_inner_prod_mat_unit[OF A i j] hs_inner_prod_mat_unit[OF B i j] by simp
+  thus "A $$ (i, j) = B $$ (i, j)" by simp
+qed (use A B in auto)
+
+lemma map_adjoint_lin: "lin_on d n (carrier_mat d d) (map_adjoint n d \<Phi>)"
+  unfolding lin_on_def
+proof (intro conjI ballI allI)
+  fix A B :: "complex Matrix.mat" assume A: "A \<in> carrier_mat d d" and B: "B \<in> carrier_mat d d"
+  show "map_adjoint n d \<Phi> (A + B) = map_adjoint n d \<Phi> A + map_adjoint n d \<Phi> B"
+    by (rule eq_matI) (use A B in \<open>auto simp: map_adjoint_def hs_inner_prod_def sum.distrib distrib_left\<close>)
+next
+  fix A :: "complex Matrix.mat" and c :: complex assume A: "A \<in> carrier_mat d d"
+  show "map_adjoint n d \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m map_adjoint n d \<Phi> A"
+    by (rule eq_matI) (use A in \<open>auto simp: map_adjoint_def hs_inner_prod_def sum_distrib_left mult_ac\<close>)
+qed simp
+
+lemma map_adjoint_cong:
+  assumes "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = \<Psi> X"
+  shows "map_adjoint n d \<Phi> = map_adjoint n d \<Psi>"
+  unfolding map_adjoint_def using assms by (intro ext) (simp add: mat_unit_def)
+
+text \<open>For a Kraus map the adjoint is \<^const>\<open>kraus_adjoint_dim\<close>.\<close>
+
+lemma map_adjoint_kraus:
+  assumes As: "\<forall>A \<in> set As. A \<in> carrier_mat d n" and Y: "Y \<in> carrier_mat d d"
+  shows "map_adjoint n d (kraus_map_dim d As) Y = kraus_adjoint_dim n As Y"
+proof (rule hs_inner_prod_ext[OF map_adjoint_carrier kraus_adjoint_dim_carrier[OF As Y]])
+  fix X :: "complex Matrix.mat" assume X: "X \<in> carrier_mat n n"
+  have L: "lin_on n d (carrier_mat n n) (kraus_map_dim d As)" by (rule kraus_lin_on[OF As])
+  show "\<langle>\<langle> map_adjoint n d (kraus_map_dim d As) Y | X \<rangle>\<rangle> = \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
+    using map_adjoint_correct[OF L X Y] kraus_adjoint_correct[OF As X Y] by simp
+qed
+
+text \<open>$\Phi^{**}=\Phi$.\<close>
+
+theorem map_adjoint_adjoint:
+  assumes L: "lin_on n d (carrier_mat n n) \<Phi>" and X: "X \<in> carrier_mat n n"
+  shows "map_adjoint d n (map_adjoint n d \<Phi>) X = \<Phi> X"
+proof -
+  have PX: "\<Phi> X \<in> carrier_mat d d" using L X unfolding lin_on_def by simp
+  have "\<And>Y. Y \<in> carrier_mat d d \<Longrightarrow> \<langle>\<langle> map_adjoint d n (map_adjoint n d \<Phi>) X | Y \<rangle>\<rangle> = \<langle>\<langle> \<Phi> X | Y \<rangle>\<rangle>"
+  proof -
+    fix Y :: "complex Matrix.mat" assume Y: "Y \<in> carrier_mat d d"
+    have Ac: "map_adjoint d n (map_adjoint n d \<Phi>) X \<in> carrier_mat d d" by simp
+    have "\<langle>\<langle> map_adjoint d n (map_adjoint n d \<Phi>) X | Y \<rangle>\<rangle> = \<langle>\<langle> X | map_adjoint n d \<Phi> Y \<rangle>\<rangle>"
+      using map_adjoint_correct[OF map_adjoint_lin Y X] by simp
+    also have "\<dots> = cnj \<langle>\<langle> map_adjoint n d \<Phi> Y | X \<rangle>\<rangle>"
+      using hs_inner_prod_cnj[of X "map_adjoint n d \<Phi> Y"] carrier_matD[OF X] by simp
+    also have "\<dots> = cnj \<langle>\<langle> Y | \<Phi> X \<rangle>\<rangle>" using map_adjoint_correct[OF L X Y] by simp
+    also have "\<dots> = \<langle>\<langle> \<Phi> X | Y \<rangle>\<rangle>"
+      using hs_inner_prod_cnj[of "\<Phi> X" Y] carrier_matD[OF PX] carrier_matD[OF Y] by simp
+    finally show "\<langle>\<langle> map_adjoint d n (map_adjoint n d \<Phi>) X | Y \<rangle>\<rangle> = \<langle>\<langle> \<Phi> X | Y \<rangle>\<rangle>" .
+  qed
+  moreover have "\<And>A B. A \<in> carrier_mat d d \<Longrightarrow> B \<in> carrier_mat d d \<Longrightarrow> (\<And>Y. Y \<in> carrier_mat d d \<Longrightarrow> \<langle>\<langle> A | Y \<rangle>\<rangle> = \<langle>\<langle> B | Y \<rangle>\<rangle>) \<Longrightarrow> A = B"
+    by (rule hs_inner_prod_ext)
+  ultimately show ?thesis using PX by force
+qed
+
+lemma cp_kraus_form:
+  assumes L: "lin_on n d (carrier_mat n n) \<Phi>" and cp: "completely_positive n d \<Phi>" and n: "0 < n" and d: "0 < d"
+  shows "\<exists>Ws. (\<forall>W \<in> set Ws. W \<in> carrier_mat d n) \<and> (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Ws X)"
+  using choi_four_conditions[OF lin_on_choi_hyps[OF L] n d] cp by blast
+
+lemma trace_preserving_cong:
+  assumes "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = \<Psi> X"
+  shows "trace_preserving n \<Phi> \<longleftrightarrow> trace_preserving n \<Psi>"
+  using assms unfolding trace_preserving_def by auto
+
+text \<open>$\Gamma(\Phi)=\Phi^*$ maps the unital CP maps $M_n\to M_d$ to the CPTP maps $M_d\to M_n$ and
+back.\<close>
+
+theorem adjoint_ucp_imp_cptp:
+  assumes L: "lin_on n d (carrier_mat n n) \<Phi>" and U: "\<Phi> \<in> UCP n d" and n: "0 < n" and d: "0 < d"
+  shows "map_adjoint n d \<Phi> \<in> CPTP d n"
+proof -
+  have cp: "completely_positive n d \<Phi>" and un: "\<Phi> (1\<^sub>m n) = 1\<^sub>m d" using U by (auto simp: UCP_def unital_map_def)
+  obtain Ws where Wc: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n" and W: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = kraus_map_dim d Ws X"
+    using cp_kraus_form[OF L cp n d] by blast
+  have eq: "\<And>Y. Y \<in> carrier_mat d d \<Longrightarrow> map_adjoint n d \<Phi> Y = kraus_adjoint_dim n Ws Y"
+    using map_adjoint_cong[of n \<Phi> "kraus_map_dim d Ws" d] W map_adjoint_kraus[OF Wc] by simp
+  have "completely_positive d n (kraus_adjoint_dim n Ws)" by (rule adjoint_cp_from_kraus[OF Wc n d])
+  hence "completely_positive d n (map_adjoint n d \<Phi>)" using completely_positive_cong[of d "map_adjoint n d \<Phi>" "kraus_adjoint_dim n Ws" n] eq by blast
+  moreover have "unital_map n d (kraus_map_dim d Ws)" using un W[of "1\<^sub>m n"] by (simp add: unital_map_def)
+  hence "trace_preserving d (kraus_adjoint_dim n Ws)" using cp_unital_iff_adjoint_tp[OF Wc n d] by simp
+  hence "trace_preserving d (map_adjoint n d \<Phi>)" using trace_preserving_cong[of d "map_adjoint n d \<Phi>" "kraus_adjoint_dim n Ws"] eq by blast
+  ultimately show ?thesis by (simp add: CPTP_def)
+qed
+
+theorem adjoint_cptp_imp_ucp:
+  assumes L: "lin_on d n (carrier_mat d d) \<Psi>" and C: "\<Psi> \<in> CPTP d n" and n: "0 < n" and d: "0 < d"
+  shows "map_adjoint d n \<Psi> \<in> UCP n d"
+proof -
+  have cp: "completely_positive d n \<Psi>" and tp: "trace_preserving d \<Psi>" using C by (auto simp: CPTP_def)
+  obtain Bs where Bc: "\<forall>B \<in> set Bs. B \<in> carrier_mat n d" and B: "\<And>X. X \<in> carrier_mat d d \<Longrightarrow> \<Psi> X = kraus_map_dim n Bs X"
+    using cp_kraus_form[OF L cp d n] by blast
+  define As where "As = map (\<lambda>B. B\<^sup>\<dagger>) Bs"
+  have Ac: "\<forall>A \<in> set As. A \<in> carrier_mat d n" using Bc by (auto simp: As_def intro: dagger_carrier)
+  have BsAs: "map (\<lambda>A. A\<^sup>\<dagger>) As = Bs" by (simp add: As_def comp_def dagger_of_dagger_is_id)
+  have eq: "\<And>Y. Y \<in> carrier_mat n n \<Longrightarrow> map_adjoint d n \<Psi> Y = kraus_map_dim d As Y"
+  proof -
+    fix Y :: "complex Matrix.mat" assume Y: "Y \<in> carrier_mat n n"
+    have "map_adjoint d n \<Psi> Y = kraus_adjoint_dim d Bs Y"
+      using map_adjoint_cong[of d \<Psi> "kraus_map_dim n Bs" n] B map_adjoint_kraus[OF Bc Y] by simp
+    also have "\<dots> = kraus_map_dim d As Y" unfolding As_def by (rule kraus_adjoint_dim_as_kraus_map_dim[OF Bc Y])
+    finally show "map_adjoint d n \<Psi> Y = kraus_map_dim d As Y" .
+  qed
+  have "completely_positive n d (kraus_map_dim d As)" by (rule kraus_cp_no_tp[OF Ac n d])
+  hence "completely_positive n d (map_adjoint d n \<Psi>)" using completely_positive_cong[of n "map_adjoint d n \<Psi>" "kraus_map_dim d As" d] eq by blast
+  moreover have "\<And>X. X \<in> carrier_mat d d \<Longrightarrow> kraus_adjoint_dim n As X = \<Psi> X"
+    using kraus_adjoint_dim_as_kraus_map_dim[OF Ac] B unfolding BsAs by simp
+  hence "trace_preserving d (kraus_adjoint_dim n As)" using tp trace_preserving_cong[of d "kraus_adjoint_dim n As" \<Psi>] by blast
+  hence "unital_map n d (kraus_map_dim d As)" using cp_unital_iff_adjoint_tp[OF Ac n d] by simp
+  hence "unital_map n d (map_adjoint d n \<Psi>)" using eq[of "1\<^sub>m n"] by (simp add: unital_map_def)
+  ultimately show ?thesis by (simp add: UCP_def)
+qed
+
+text \<open>$\Gamma$ is affine (for real weights), and $\Gamma^{-1}=\Gamma$ by
+@{thm [source] map_adjoint_adjoint}.\<close>
+
+lemma hs_inner_prod_left_real_comb:
+  fixes t s :: real
+  assumes A: "A \<in> carrier_mat d d" and B: "B \<in> carrier_mat d d" and Y: "Y \<in> carrier_mat d d"
+  shows "\<langle>\<langle> complex_of_real t \<cdot>\<^sub>m A + complex_of_real s \<cdot>\<^sub>m B | Y \<rangle>\<rangle>
+         = complex_of_real t * \<langle>\<langle> A | Y \<rangle>\<rangle> + complex_of_real s * \<langle>\<langle> B | Y \<rangle>\<rangle>"
+proof -
+  have "\<langle>\<langle> complex_of_real t \<cdot>\<^sub>m A + complex_of_real s \<cdot>\<^sub>m B | Y \<rangle>\<rangle>
+        = (\<Sum>i<d. \<Sum>j<d. complex_of_real t * (cnj (A $$ (i, j)) * Y $$ (i, j)) + complex_of_real s * (cnj (B $$ (i, j)) * Y $$ (i, j)))"
+  proof -
+    have e: "\<And>i j. i < d \<Longrightarrow> j < d \<Longrightarrow> cnj ((complex_of_real t \<cdot>\<^sub>m A + complex_of_real s \<cdot>\<^sub>m B) $$ (i, j)) * Y $$ (i, j)
+        = complex_of_real t * (cnj (A $$ (i, j)) * Y $$ (i, j)) + complex_of_real s * (cnj (B $$ (i, j)) * Y $$ (i, j))"
+      using A B by (simp add: algebra_simps)
+    show ?thesis unfolding hs_inner_prod_def carrier_matD(1,2)[OF Y] atLeast0LessThan
+      by (intro sum.cong refl) (simp add: e)
+  qed
+  also have "\<dots> = complex_of_real t * \<langle>\<langle> A | Y \<rangle>\<rangle> + complex_of_real s * \<langle>\<langle> B | Y \<rangle>\<rangle>"
+    using carrier_matD[OF Y] by (simp add: hs_inner_prod_def atLeast0LessThan sum.distrib sum_distrib_left)
+  finally show ?thesis .
+qed
+
+theorem map_adjoint_affine:
+  fixes t :: real
+  assumes L1: "lin_on n d (carrier_mat n n) \<Phi>1" and L2: "lin_on n d (carrier_mat n n) \<Phi>2" and Y: "Y \<in> carrier_mat d d"
+  shows "map_adjoint n d (\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X + complex_of_real (1 - t) \<cdot>\<^sub>m \<Phi>2 X) Y
+         = complex_of_real t \<cdot>\<^sub>m map_adjoint n d \<Phi>1 Y + complex_of_real (1 - t) \<cdot>\<^sub>m map_adjoint n d \<Phi>2 Y"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (complex_of_real t \<cdot>\<^sub>m map_adjoint n d \<Phi>1 Y + complex_of_real (1 - t) \<cdot>\<^sub>m map_adjoint n d \<Phi>2 Y)"
+    "j < dim_col (complex_of_real t \<cdot>\<^sub>m map_adjoint n d \<Phi>1 Y + complex_of_real (1 - t) \<cdot>\<^sub>m map_adjoint n d \<Phi>2 Y)"
+  hence i: "i < n" and j: "j < n" by simp_all
+  have c1: "\<Phi>1 (E\<lbrakk>i,j ; n,n\<rbrakk>) \<in> carrier_mat d d" and c2: "\<Phi>2 (E\<lbrakk>i,j ; n,n\<rbrakk>) \<in> carrier_mat d d"
+    using L1 L2 unfolding lin_on_def by simp_all
+  show "map_adjoint n d (\<lambda>X. complex_of_real t \<cdot>\<^sub>m \<Phi>1 X + complex_of_real (1 - t) \<cdot>\<^sub>m \<Phi>2 X) Y $$ (i, j)
+        = (complex_of_real t \<cdot>\<^sub>m map_adjoint n d \<Phi>1 Y + complex_of_real (1 - t) \<cdot>\<^sub>m map_adjoint n d \<Phi>2 Y) $$ (i, j)"
+    using i j hs_inner_prod_left_real_comb[OF c1 c2 Y, of t "1 - t"] by (simp add: map_adjoint_def)
+qed simp_all
 
 end

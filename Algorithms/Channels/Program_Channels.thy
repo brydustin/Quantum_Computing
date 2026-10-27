@@ -1,6 +1,6 @@
 theory Program_Channels
-  imports Quantum_Computing_by_VP.Day32_Recovery_Proposition Quantum_Computing_by_VP.Day23_ChoiExtremeUCP
-    Quantum_Computing_by_VP.Day22_Adjoint_Maps HHL_Algorithm.HHL_Program
+  imports Quantum_Computing_by_VP.Day32_Recovery_Proposition Quantum_Computing_by_VP.Day23_Choi_Extreme_Points
+    HHL_Algorithm.HHL_Program
 begin
 
 section \<open>Loop-free programs are channels\<close>
