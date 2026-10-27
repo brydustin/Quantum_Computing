@@ -794,7 +794,7 @@ proof -
   have Qi: "?Q $$ (l, 0) = p $ l" if "l < ?N" for l
   proof -
     have "(?Q *\<^sub>v unit_vec ?N 0) $ l = ?Q $$ (l, 0)"
-      using mult_unit_vec[OF bp(3), of 0] that carrier_matD[OF bp(3)] by simp
+      using mult_mat_vec_unit_vec[OF bp(3), of 0] that carrier_matD[OF bp(3)] by simp
     thus ?thesis unfolding bp(1) by simp
   qed
   show "circuit_mat ?N (eig_gates m p \<theta>) $$ (i, j) = (if i = j then 1 else 0) + (cis \<theta> - 1) * p $ i * cnj (p $ j)"

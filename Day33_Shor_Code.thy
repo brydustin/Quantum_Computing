@@ -532,17 +532,11 @@ qed
 lemma shor_VdV: "(shor_V\<^sup>\<dagger>) * shor_V = 1\<^sub>m 2"
   unfolding shor_V_def using cols_mat_dagger_left[OF shor_orthonormal] by (simp add: numeral_2_eq_2)
 
-lemma mat_vec_unit_col:
-  fixes M :: "complex Matrix.mat"
-  assumes M: "M \<in> carrier_mat n k" and a: "a < k"
-  shows "M *\<^sub>v unit_vec k a = Matrix.col M a"
-  by (rule eq_vecI) (use M a in auto)
-
 lemma shor_V_col: "a < 2 \<Longrightarrow> Matrix.col shor_V a = [shor_cw True, shor_cw False] ! a"
   unfolding shor_V_def by (rule col_mat_of_cols) (auto simp: less_2_cases_iff intro!: carrier_vecI)
 
 lemma shor_V_unit: "shor_V *\<^sub>v unit_vec 2 0 = shor_cw True" "shor_V *\<^sub>v unit_vec 2 1 = shor_cw False"
-  using mat_vec_unit_col[OF shor_V_carrier, of 0] mat_vec_unit_col[OF shor_V_carrier, of 1]
+  using mult_mat_vec_unit_vec[OF shor_V_carrier, of 0] mult_mat_vec_unit_vec[OF shor_V_carrier, of 1]
     shor_V_col[of 0] shor_V_col[of 1] by simp_all
 
 lemma shor_P_projection: "projection 512 shor_P"

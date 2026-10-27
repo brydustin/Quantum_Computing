@@ -249,18 +249,6 @@ next
   thus ?case using Suc by simp
 qed
 
-lemma mult_unit_vec:
-  fixes M :: "complex Matrix.mat"
-  assumes M: "M \<in> carrier_mat nr nc" and k: "k < nc"
-  shows "M *\<^sub>v unit_vec nc k = Matrix.col M k"
-proof (rule eq_vecI)
-  fix i assume "i < dim_vec (Matrix.col M k)"
-  hence i: "i < nr" using M by simp
-  have "(M *\<^sub>v unit_vec nc k) $ i = Matrix.row M i \<bullet> unit_vec nc k" using i M by simp
-  also have "\<dots> = Matrix.row M i $ k" by (rule scalar_prod_right_unit[OF k])
-  finally show "(M *\<^sub>v unit_vec nc k) $ i = Matrix.col M k $ i" using i k M by simp
-qed (use M in simp)
-
 lemma mat_eq_unit:
   fixes A B :: "complex Matrix.mat"
   assumes A: "A \<in> carrier_mat K K" and B: "B \<in> carrier_mat K K"
@@ -269,11 +257,10 @@ lemma mat_eq_unit:
 proof (rule Matrix.mat_col_eqI)
   fix i assume "i < dim_col B"
   hence i: "i < K" using B by simp
-  show "Matrix.col A i = Matrix.col B i" using e[OF i] mult_unit_vec[OF A i] mult_unit_vec[OF B i] by simp
+  show "Matrix.col A i = Matrix.col B i" using e[OF i] mult_mat_vec_unit_vec[OF A i] mult_mat_vec_unit_vec[OF B i] by simp
 qed (use A B in auto)
 
 text \<open>The permutation matrix $\ket t\mapsto\ket{f(t)}$.\<close>
-
 
 definition pmat :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat" where
   "pmat N f = Matrix.mat N N (\<lambda>(r, t). if r = f t then 1 else 0)"
@@ -285,7 +272,7 @@ lemma dim_pmat [simp]: "dim_row (pmat N f) = N" "dim_col (pmat N f) = N" by (sim
 lemma pmat_unit:
   assumes t: "t < N" and f: "f t < N"
   shows "pmat N f *\<^sub>v unit_vec N t = unit_vec N (f t)"
-  unfolding mult_unit_vec[OF pmat_carrier t] using t f by (intro eq_vecI) (auto simp: pmat_def unit_vec_def)
+  unfolding mult_mat_vec_unit_vec[OF pmat_carrier t] using t f by (intro eq_vecI) (auto simp: pmat_def unit_vec_def)
 
 lemma pmat_mult:
   assumes g: "\<And>t. t < N \<Longrightarrow> g t < N"

@@ -1133,3 +1133,24 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `no_cloning` got one), as are the "Compute …"/"Show equality entry-by-entry" notes of Day 12.
   `planlib.strip_comments` removes inline comments by a predicate on their text, respecting nested
   cartouches.  Plan: `tools/deps/plans/day3.py`.
+- **Audit tick 7: Day 4's positive matrices through the eigenvector columns** (2026-10-27).  The
+  spectral theorem gives U†PU = diag D; the new `spectral_col_eigenvector` (15 lines, from
+  `hermitian_spectral_decomp_right` and JNF's `col_mult2`) reads it column by column:
+  P *v col U i = D_i ⋅v col U i.  With it `psd_spectral_decomp_nonneg` is D_i = ⟨u_i|Pu_i⟩ ≥ 0 (74 → 26
+  lines), `psd_iff_nonneg_eigenvalues` is ⟨v|Pv⟩ = μ‖v‖² one way and `psd_U_diag_Udag` the other
+  (176 → 40), `psd_kraus_decomp` is P = (U√D)(U√D)* with `mat_of_cols n vs = U√D` (190 → 28), and
+  `psd_sqrt_exists` is Q = U√D U† with `unitary_conj_mult` (153 → 19).  `psd_U_diag_Udag` itself is
+  `psd_conjugate` of the diagonal, which is (√D)†√D (72 → 12 + 8); the 83-line quadratic-form lemma
+  `diag_mat_of_real_quad_Re_nonneg` and `diag_mat_of_real_mult_vec_index` are gone.  `inner_unit_T_unit`
+  (88 → 16) and `mult_mat_vec_index` (45 → 12) are the sum formulas; `hermitian_spectral_decomp_eq` lost
+  its `smt` (it is `unitary_conj_cancel` for U†); `diag_mat_of_real_hermitian` is two lines and
+  `diag_mat_of_real_sqrt_square` entrywise (47 → 15).  The diag facts now sit in the diagonal subsection
+  and the spectral-decomposition corollaries in the spectral-theorem subsection.  Day 4: 2955 → 2165
+  lines, `smt`/`metis` 52 → 22; every statement unchanged (fact-level scan).  The strict check caught
+  the new `mult_mat_vec_unit_vec` (A e_i = col A i) duplicating Day 33's `mat_vec_unit_col` and HHL's
+  `mult_unit_vec`: both deleted, their seven uses point at Day 4.  Traps
+  (memory): an unannotated matrix variable is `semiring_0`-polymorphic, so `scalar_prod_right_unit`
+  silently never applies; `cpx_vec_length_inner_prod [simp]` turns (of_real ‖v‖)² back into ⟨v|v⟩;
+  `auto` with `mat_diag_diag` + `of_real_mult[symmetric]` loops; a plan's
+  `open(q,"w").write(open(q).read())` truncated Day 4 (read first).  Plan: `tools/deps/plans/day4.py`;
+  scratch `wip/d23/D04.thy`.

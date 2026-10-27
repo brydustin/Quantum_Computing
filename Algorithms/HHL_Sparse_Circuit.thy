@@ -203,7 +203,7 @@ proof (rule eq_vecI)
   hence r: "r < n * n * 2" by simp
   have l: "(ent_gate n d A *\<^sub>v bstate n x y b) $ r =
       (if r div 2 = x * n + y then ent_block d A x y $$ (r mod 2, b) else 0)"
-    unfolding mult_unit_vec[OF ent_gate_carrier j] using r j
+    unfolding mult_mat_vec_unit_vec[OF ent_gate_carrier j] using r j
     by (simp add: ent_gate_def ctrl_blocks_index enc_div[OF b] enc_mod[OF b] mult_index_div_mod[OF y] y)
   have e0: "enc n x y 0 = (x * n + y) * 2" and e1: "enc n x y 1 = (x * n + y) * 2 + 1" by (simp_all add: enc_def)
   show "(ent_gate n d A *\<^sub>v bstate n x y b) $ r =
@@ -550,9 +550,9 @@ proof (rule Matrix.mat_col_eqI)
   fix k assume "k < dim_col (emb n * E)"
   hence k: "k < n" using E by simp
   have "Matrix.col (C * emb n) k = C *\<^sub>v Matrix.col (emb n) k" by (rule col_mult2[OF C emb_carrier k])
-  also have "Matrix.col (emb n) k = bstate n k 0 0" using mult_unit_vec[OF emb_carrier k] emb_unit[OF k] by simp
+  also have "Matrix.col (emb n) k = bstate n k 0 0" using mult_mat_vec_unit_vec[OF emb_carrier k] emb_unit[OF k] by simp
   also have "C *\<^sub>v bstate n k 0 0 = emb n *\<^sub>v (E *\<^sub>v unit_vec n k)" by (rule act[OF k])
-  also have "E *\<^sub>v unit_vec n k = Matrix.col E k" by (rule mult_unit_vec[OF E k])
+  also have "E *\<^sub>v unit_vec n k = Matrix.col E k" by (rule mult_mat_vec_unit_vec[OF E k])
   also have "emb n *\<^sub>v Matrix.col E k = Matrix.col (emb n * E) k" by (rule col_mult2[OF emb_carrier E k, symmetric])
   finally show "Matrix.col (C * emb n) k = Matrix.col (emb n * E) k" .
 qed (use C E in \<open>simp_all add: emb_def\<close>)
