@@ -1610,7 +1610,6 @@ proof -
   show ?thesis using lt d_div d_mod by (simp add: vec_of_kraus_def)
 qed
 
-
 subsection \<open>Choi matrix of a Kraus map\<close>
 
 text \<open>The Choi matrix of a Kraus map is the outer sum of the vectorised Kraus operators:
@@ -1794,7 +1793,6 @@ next
                   = outer_sum (n*d) ?vs $$ (r, c)" .
 qed
 
-
 subsection \<open>Choi matrix is linear in the map\<close>
 
 text \<open>The Choi matrix depends linearly on the map: $P_{\Phi-\Psi}=P_\Phi-P_\Psi$.\<close>
@@ -1802,49 +1800,6 @@ text \<open>The Choi matrix depends linearly on the map: $P_{\Phi-\Psi}=P_\Phi-P
 lemma choi_matrix_carrier [simp]:
   "choi_matrix n d \<Phi> \<in> carrier_mat (n*d) (n*d)"
   by (simp add: choi_matrix_def)
-
-lemma choi_matrix_diff:
-  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-  assumes Phi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X \<in> carrier_mat d d"
-      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
-      and npos: "0 < n" and dpos: "0 < d"
-  shows "choi_matrix n d (\<lambda>X. Phi X - Psi X)
-           = choi_matrix n d Phi - choi_matrix n d Psi"
-proof (rule eq_matI)
-  show "dim_row (choi_matrix n d (\<lambda>X. Phi X - Psi X))
-          = dim_row (choi_matrix n d Phi - choi_matrix n d Psi)"
-    by (simp add: choi_matrix_def)
-  show "dim_col (choi_matrix n d (\<lambda>X. Phi X - Psi X))
-          = dim_col (choi_matrix n d Phi - choi_matrix n d Psi)"
-    by (simp add: choi_matrix_def)
-next
-  fix r c
-  assume r_a: "r < dim_row (choi_matrix n d Phi - choi_matrix n d Psi)"
-     and c_a: "c < dim_col (choi_matrix n d Phi - choi_matrix n d Psi)"
-  have r_lt: "r < n*d"
-    using r_a by (simp add: choi_matrix_def)
-  have c_lt: "c < n*d"
-    using c_a by (simp add: choi_matrix_def)
-  have a_lt: "r div d < n" using r_lt dpos by (simp add: div_less_iff_less_mult)
-  have b_lt: "c div d < n" using c_lt dpos by (simp add: div_less_iff_less_mult)
-  have i_lt: "r mod d < d" using dpos by simp
-  have j_lt: "c mod d < d" using dpos by simp
-  let ?E = "mat_unit (r div d) (c div d) n n"
-  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
-  have phi_E_c: "Phi ?E \<in> carrier_mat d d" by (rule Phi_range[OF E_c])
-  have psi_E_c: "Psi ?E \<in> carrier_mat d d" by (rule Psi_range[OF E_c])
-  have "choi_matrix n d (\<lambda>X. Phi X - Psi X) $$ (r, c)
-          = (Phi ?E - Psi ?E) $$ (r mod d, c mod d)"
-    using r_lt c_lt by (simp add: choi_matrix_def)
-  also have "\<dots> = Phi ?E $$ (r mod d, c mod d) - Psi ?E $$ (r mod d, c mod d)"
-    using phi_E_c psi_E_c i_lt j_lt by auto
-  also have "\<dots> = choi_matrix n d Phi $$ (r, c) - choi_matrix n d Psi $$ (r, c)"
-    using r_lt c_lt by (simp add: choi_matrix_def)
-  also have "\<dots> = (choi_matrix n d Phi - choi_matrix n d Psi) $$ (r, c)"
-    using r_lt c_lt by (simp add: choi_matrix_def)
-  finally show "choi_matrix n d (\<lambda>X. Phi X - Psi X) $$ (r, c)
-                  = (choi_matrix n d Phi - choi_matrix n d Psi) $$ (r, c)" .
-qed
 
 text \<open>The Choi matrix is linear in the map.\<close>
 
@@ -2008,7 +1963,6 @@ proof -
   show ?thesis using phi_pair psi_pair pc_eq by simp
 qed
 
-
 subsection \<open>Choi's theorem with (2) isolated (D19-1)\<close>
 
 text \<open>For $f:\{0,\dots,r-1\}\to\{0,\dots,n-1\}$ the block matrix $(E_{f(a)f(b)})_{a,b}\in M_r(M_n)$.
@@ -2018,9 +1972,6 @@ and $f=\mathrm{id}$ with $r=n$, giving $(E_{ij})$.\<close>
 definition unit_blocks :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat" where
   "unit_blocks r n f = Matrix.mat (r * n) (r * n)
      (\<lambda>(x, y). if x mod n = f (x div n) \<and> y mod n = f (y div n) then 1 else 0)"
-
-lemma unit_blocks_carrier [simp]: "unit_blocks r n f \<in> carrier_mat (r * n) (r * n)"
-  by (simp add: unit_blocks_def)
 
 lemma unit_blocks_block:
   assumes "a < r" "b < r" "f a < n" "f b < n"

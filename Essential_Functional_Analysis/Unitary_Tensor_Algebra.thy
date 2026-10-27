@@ -110,16 +110,6 @@ lemma unitary_inv_r_dimrow:
   shows "A * (A\<^sup>\<dagger>) = 1\<^sub>m (dim_row A)"
   using uA unfolding unitary_def by auto
 
-lemma unitary_inv_l_dimrow:
-  assumes uA: "unitary A"
-  shows "(A\<^sup>\<dagger>) * A = 1\<^sub>m (dim_row A)"
-  by (metis uA unitary_def unitary_square_dim)
-
-lemma unitary_inv_r_dimcol:
-  assumes uA: "unitary A"
-  shows "A * (A\<^sup>\<dagger>) = 1\<^sub>m (dim_col A)"
-  by (metis uA unitary_def unitary_square_dim)
-
 lemma unitary_carrier_square_col:
   assumes uA: "unitary A"
   shows "A \<in> carrier_mat (dim_col A) (dim_col A)"
@@ -152,14 +142,6 @@ lemma unitary_mult:
   by (smt (verit, best) UA UB assoc_mult_mat carrier_matD(1,2) 
       dagger_of_prod dimA dimB dim_col_of_dagger mult_carrier_mat right_mult_one_mat
       unitary_carrier_square_col unitary_dagger unitary_def)
-
-lemma unitary_mult2:
-  assumes UA: "unitary A"
-      and UB: "unitary B"
-      and dims: "dim_row A = dim_row B"
-  shows "unitary (A * B)"
-  by (metis UA UB dims unitary_carrier_square_row unitary_mult)
-
 
 section \<open>Kronecker products\<close>
 
@@ -220,11 +202,9 @@ proof (rule eq_matI)
   qed
 qed
 
-
 subsection \<open> Tensor Adjoint \<close>
 
 subsection \<open> Mixed-Product Property \<close>
-
 
 lemma tensor_mat_mult:
   assumes dimAC: "dim_col A = dim_row C"
@@ -347,7 +327,6 @@ proof (rule eq_matI)
   qed
 qed
 
-
 subsection \<open> Corollaries of the Mixed-Product Property \<close>
 
 lemma tensor_adjoint_mult:
@@ -359,7 +338,6 @@ lemma tensor_mult_adjoint:
   "(Tensor.tensor_mat A B) * (Tensor.tensor_mat (A\<^sup>\<dagger>) (B\<^sup>\<dagger>)) =
    Tensor.tensor_mat (A * (A\<^sup>\<dagger>)) (B * (B\<^sup>\<dagger>))"
   by (rule tensor_mat_mult, simp_all add: dagger_def)
-
 
 subsection \<open> Tensor Unitarity \<close>
 
@@ -446,10 +424,8 @@ lemma tensor_mat_unitary_one_right [simp]:
   shows "unitary (Tensor.tensor_mat A (1\<^sub>m n))"
   using id_is_unitary tensor_mat_unitary uA by blast
 
-
 lemma one_smult_mat: "(1::complex) \<cdot>\<^sub>m M = M"
   by (rule eq_matI) simp_all
-
 
 lemma mult_index_lt:
   fixes i j n m :: nat

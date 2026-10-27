@@ -295,26 +295,6 @@ proof -
     using step1 step2 step3 step4 unfolding Tr_lmat_def by simp
 qed
 
-lemma zero_not_in_Sprime:
-  "(0 :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat) \<notin> Sprime"
-proof
-  assume "(0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) \<in> Sprime"
-  then obtain \<sigma> \<tau> where eq: "(0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = tensor_lmat \<sigma> \<tau>"
-                  and tr_s: "Tr_lmat (\<sigma> :: (complex, 'm, 'm) lmat) = 1"
-                  and tr_t: "Tr_lmat (\<tau> :: (complex, 'p, 'p) lmat) = 1"
-    unfolding Sprime_def by auto
-  have "Tr_lmat (0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 0"
-    unfolding Tr_lmat_def by simp
-  also have "Tr_lmat (0 :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)
-              = Tr_lmat (tensor_lmat \<sigma> \<tau> :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat)"
-    using eq by simp
-  also have "\<dots> = Tr_lmat \<sigma> * Tr_lmat \<tau>" by (rule Tr_lmat_tensor)
-  also have "\<dots> = 1" using tr_s tr_t by simp
-  finally have "(0 :: complex) = 1" by simp
-  thus False by simp
-qed
-
-
 subsection \<open>Closedness of the separable cone\<close>
 
 text \<open>Why the separable cone is closed.  Let $S'=\{\sigma\otimes\tau:\ \sigma,\tau\ge0,\ \Tr\sigma=\Tr\tau=1\}$.
@@ -889,7 +869,6 @@ proof -
     using closed_union by simp
 qed
 
-
 subsection \<open>The lmat inner product as a real-trace inner product\<close>
 
 lemma inner_lmat_eq_re_tr_dagger:
@@ -903,7 +882,6 @@ proof -
     by (rule hs_inner_prod_as_trace) simp_all
   finally show ?thesis .
 qed
-
 
 subsection \<open>Separating hyperplane for non-separable states\<close>
 
@@ -960,7 +938,6 @@ proof -
   show ?thesis using inner_\<rho>_neg inner_\<sigma>_nn by blast
 qed
 
-
 subsection \<open>Entanglement witness in real-trace form\<close>
 
 text \<open>Since $\langle a,x\rangle=\mathrm{Re}\Tr(a^*x)$, the separating functional is a matrix $W$ with
@@ -1010,7 +987,6 @@ proof -
     using re_tr_\<sigma> ineq_S by auto
   show ?thesis using W_carr neg_\<rho> nn_\<sigma> by blast
 qed
-
 
 subsection \<open>Hermitian entanglement witness\<close>
 
@@ -1301,7 +1277,6 @@ proof -
   qed
 qed
 
-
 subsection \<open>Hermitian closure of the separable cone\<close>
 
 text \<open>Every element of \<open>separable_cone_lmat\<close> has hermitian unwrap.
@@ -1575,7 +1550,6 @@ proof -
   show ?thesis using W_car W_herm W_\<rho> W_\<sigma>' by blast
 qed
 
-
 subsection \<open>Main separability characterisation\<close>
 
 text \<open>The Horodecki-style witness characterisation: for hermitian
@@ -1631,7 +1605,6 @@ next
     thus False using W_\<rho> by simp
   qed
 qed
-
 
 subsection \<open>Density-matrix specialisation\<close>
 
@@ -1721,7 +1694,6 @@ proof -
     using \<rho>_psd by (simp add: psd_def)
   show ?thesis using separable_iff_witness [OF \<rho>_herm] .
 qed
-
 
 text \<open>The trace is identically \<open>1\<close> on the convex hull of \<open>Sprime\<close>.\<close>
 
@@ -1853,7 +1825,6 @@ next
   thus "\<rho> \<in> convex hull Sprime" using x_in by simp
 qed
 
-
 text \<open>Topology of the separable density-matrix set.\<close>
 
 lemma compact_convex_hull_Sprime:
@@ -1865,12 +1836,6 @@ lemma closed_convex_hull_Sprime:
   "closed (convex hull
               (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
   using compact_convex_hull_Sprime by (rule compact_imp_closed)
-
-lemma bounded_convex_hull_Sprime:
-  "bounded (convex hull
-              (Sprime :: (complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat set))"
-  using compact_convex_hull_Sprime by (rule compact_imp_bounded)
-
 
 text \<open>Strict separation in the inner-product form: by closedness of
 \<open>convex hull Sprime\<close> we get a strictly negative-inner-product
@@ -1900,7 +1865,6 @@ proof -
     using separating_hyperplane_closed_point
             [OF hull_convex hull_closed \<rho>_not_in_hull] by blast
 qed
-
 
 text \<open>The strict Re-trace form of the entanglement witness.\<close>
 

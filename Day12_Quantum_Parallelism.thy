@@ -41,7 +41,6 @@ definition oracle_unitary :: "(nat \<Rightarrow> nat) \<Rightarrow> nat \<Righta
           U *\<^sub>v (tensor_vec (unit_vec (2^N) J) (unit_vec 2 i)) =
           tensor_vec (unit_vec (2^N) J) (unit_vec 2 ((i + f J) mod 2)))"
 
-
 theorem oracle_exists:
   fixes f :: "nat \<Rightarrow> nat"
   assumes f_range: "\<forall>J < 2^(N :: nat). f J < 2"
@@ -266,7 +265,6 @@ proof -
     have idx1_lt: "J * 2 + ?i1 < d" 
       using J i1_lt d_eq by simp
 
-
     have v_dim: "dim_vec ?v = d"
       using tensor_vec_dim d_eq by simp
     have w_dim: "dim_vec ?w = d"
@@ -486,12 +484,6 @@ lemma inner_prod_uniform_unit:
   assumes "J < 2^N"
   shows "\<langle>uniform_vec N | unit_vec (2^N) J\<rangle> = complex_of_real (1 / sqrt 2) ^ N"
   using inner_prod_unit_vec_right[of "uniform_vec N" "2^N" J] assms by (simp add: uniform_vec_def)
-
-lemma half_sqrt2_sq: "(1 / sqrt 2 :: real) * (1 / sqrt 2) = 1 / 2"
-proof -
-  have "sqrt 2 * sqrt 2 = (2::real)" using real_sqrt_pow2[of 2] by (simp add: power2_eq_square)
-  thus ?thesis by (simp add: field_simps)
-qed
 
 lemma uniform_coeff_sq:
   "complex_of_real (1 / sqrt 2) ^ N * complex_of_real (1 / sqrt 2) ^ N = complex_of_real ((1/2) ^ N)"

@@ -27,7 +27,6 @@ which the notes note fails over $\R$ (take $T=\begin{pmatrix}0&1\\-1&0\end{pmatr
 definition hermitian :: "complex Matrix.mat \<Rightarrow> bool" where
   "hermitian A \<equiv> A\<^sup>\<dagger> = A"
 
-
 lemma hermitian_square:
   assumes "hermitian A"
   shows "dim_row A = dim_col A"
@@ -49,7 +48,6 @@ proof -
     using assms(2,3) sq by (simp add: dagger_def)
   finally show ?thesis .
 qed
-
 
 text \<open>A matrix is determined by its quadratic form.  In coordinates
 $\braket u{Tv}=\sum_{k,l}\overline{u_k}\,T_{kl}\,v_l$, so $\braket{e_p}{Te_q}=T_{pq}$; and with
@@ -79,7 +77,6 @@ proof -
     using T_carr by (intro sum.cong refl) (auto simp: mult.assoc)
   finally show ?thesis .
 qed
-
 
 lemma inner_unit_T_unit:
   fixes T :: "complex Matrix.mat"
@@ -173,7 +170,6 @@ proof -
   qed
   finally show ?thesis.
 qed
-
 
 lemma sum_indicator_T_indicator:
   fixes T :: "complex Matrix.mat"
@@ -272,8 +268,6 @@ proof -
     by simp
   finally show ?thesis .
 qed
-
-
 
 text \<open>\begin{noteslemma}
 For $T\in M_n$, if $\braket{x}{Tx}=0$ for all $x\in\C^n$, then $T=0$.
@@ -465,7 +459,6 @@ proof -
   thus ?thesis
     using lhs rhs by simp
 qed
-
 
 text \<open>Sums and real multiples of Hermitian matrices are Hermitian; the identity is Hermitian.\<close>
 
@@ -918,7 +911,6 @@ proof -
     using Uc UU D_len schur T_eq_diag by metis
 qed
 
-
 corollary hermitian_real_eigenvalues:
   fixes H :: "complex Matrix.mat"
   assumes sq: "H \<in> carrier_mat n n"
@@ -948,7 +940,6 @@ proof -
     using qreal q_eq
     using Reals_cnj_iff vv_nonzero vv_real by fastforce 
 qed
-
 
 subsection \<open>Positive semidefinite and positive definite matrices\<close>
 
@@ -993,7 +984,6 @@ definition pd :: "complex Matrix.mat \<Rightarrow> bool" where
 notation psd ("_ \<ge>\<^sub>M 0")
 notation pd  ("_ >\<^sub>M 0")
 
-
 lemma psd_hermitian: "psd P \<Longrightarrow> hermitian P"
   by (simp add: psd_def)
 
@@ -1022,7 +1012,6 @@ proof -
   have herm: "hermitian (M\<^sup>\<dagger> * M)"
     unfolding hermitian_def using M
     by (simp add: dagger_of_dagger_is_id dagger_of_prod)
-
 
   have nonneg:
     "\<forall>x :: complex Matrix.vec. dim_vec x = dim_row (M\<^sup>\<dagger> * M) \<longrightarrow>  Re \<langle>x | (M\<^sup>\<dagger> * M) *\<^sub>v x\<rangle> \<ge> 0"
@@ -1372,7 +1361,6 @@ proof -
   show ?thesis
     unfolding psd_def using herm nonneg by simp
 qed
-
 
 lemma hermitian_spectral_decomp_eq:
   assumes Uc: "U \<in> carrier_mat n n"
@@ -1849,7 +1837,6 @@ proof -
       using Uc xdim ydim
       using Dlen inner_prod_adjoint_swap by auto
 
-
     have qf_eq: "\<langle>x | ?P *\<^sub>v x\<rangle> = \<langle>?y | ?D *\<^sub>v ?y\<rangle>"
       using step1 step2 by simp
 
@@ -2184,7 +2171,6 @@ proof -
   show "psd_sqrt P \<in> carrier_mat n n" and "psd (psd_sqrt P)" and "psd_sqrt P * psd_sqrt P = P"
     unfolding psd_sqrt_def using n by auto
 qed
-
 
 text \<open>The corollary of Day 4: $P>0$ iff $P=P^*$ and all eigenvalues are strictly positive.\<close>
 
@@ -2857,12 +2843,8 @@ lemma projection_idempotent:
   "projection n P \<Longrightarrow> P * P = P"
   by (simp add: projection_def)
 
-lemma projection_zero: "projection n (0\<^sub>m n n)"
-  by (auto simp: projection_def hermitian_def dagger_def)
-
 lemma projection_one: "projection n (1\<^sub>m n)"
   by (auto simp: projection_def hermitian_def dagger_def)
-
 
 lemma projection_psd:
   assumes "projection n P"
@@ -2877,7 +2859,6 @@ proof -
     using P_c by (rule psd_MdagM)
   show ?thesis using eq psd_PdP by simp
 qed
-
 
 text \<open>The theorem of Day 2: a Hermitian idempotent $P$ is the orthogonal projection onto its
 range, i.e. $Pv=v$ for $v$ in the range and $Pw=0$ for $w$ orthogonal to the range.\<close>

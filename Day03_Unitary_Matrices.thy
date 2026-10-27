@@ -28,8 +28,6 @@ The library predicate \<^term>\<open>unitary U\<close> bundles (a) and (c).  The
 \<open>unitary_of_isometry\<close> and \<open>unitary_of_inner_prod_preserving\<close> (proved on Day 4, after
 the polarisation lemma); (d) is self-dual and (f) follows from (e) for $U^*$.\<close>
 
-
-
 text \<open>(b) $U$ is invertible with inverse $U^*$:\<close>
 
 lemma unitary_invertible:
@@ -48,7 +46,6 @@ text \<open>(d) $U^*$ is unitary:\<close>
 
 text \<open>(e), (f) the columns and the rows of $U$ are orthonormal:\<close>
 
-
 lemma unitary_cols_orthonormal:
   assumes U: "unitary U"
       and i: "i < dim_col U"
@@ -57,7 +54,6 @@ lemma unitary_cols_orthonormal:
   by (cases "i = j",
       metis U cpx_vec_length_inner_prod j of_real_power power_0 power_one unitary_unit_col,
       smt U i j orthogonal_col_of_unitary)
-
 
 lemma unitary_rows_orthonormal:
   assumes U: "unitary U"
@@ -70,7 +66,6 @@ lemma unitary_rows_orthonormal:
 
 text \<open>(g), (h) $U$ is an isometry and preserves inner products:\<close>
 
-
 lemma unitary_isometry:
   assumes "unitary U" and "dim_vec v = dim_col U"
   shows "\<parallel>U *\<^sub>v v\<parallel> = \<parallel>v\<parallel>"
@@ -81,7 +76,6 @@ proof -
     by (metis assms(2) carrier_mat_triv col_fst_is_col col_mult2 dim_col dim_col_mat(1) ket_vec_col ket_vec_def
         less_numeral_extra(1))
 qed
-
 
 lemma unitary_preserves_inner_prod:
   assumes U: "unitary U"
@@ -177,13 +171,33 @@ next
   finally show "((\<gamma> \<cdot>\<^sub>m U)\<^sup>\<dagger>) $$ (i,j) = ((cnj \<gamma>) \<cdot>\<^sub>m (U\<^sup>\<dagger>)) $$ (i,j)" .
 qed
 
+text \<open>Scaling an operator by $c$ scales $ABA^*$ and $A^*A$ by $|c|^2$.\<close>
+
+lemma smult_sandwich:
+  fixes A :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat d n" and B: "B \<in> carrier_mat n n"
+  shows "(c \<cdot>\<^sub>m A) * B * ((c \<cdot>\<^sub>m A)\<^sup>\<dagger>) = (c * cnj c) \<cdot>\<^sub>m (A * B * (A\<^sup>\<dagger>))"
+proof -
+  have AB: "A * B \<in> carrier_mat d n" using A B by simp
+  have Ad: "A\<^sup>\<dagger> \<in> carrier_mat n d" by (rule dagger_carrier[OF A])
+  show ?thesis
+    by (simp only: dagger_of_smult mult_smult_assoc_mat[OF A B] mult_smult_assoc_mat[OF AB smult_carrier_mat[OF Ad]]
+                   mult_smult_distrib[OF AB Ad] smult_smult_mat)
+qed
+
+lemma smult_dagger_mult:
+  fixes A :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat d n"
+  shows "((c \<cdot>\<^sub>m A)\<^sup>\<dagger>) * (c \<cdot>\<^sub>m A) = (cnj c * c) \<cdot>\<^sub>m ((A\<^sup>\<dagger>) * A)"
+  by (simp only: dagger_of_smult mult_smult_assoc_mat[OF dagger_carrier[OF A] smult_carrier_mat[OF A]]
+                 mult_smult_distrib[OF dagger_carrier[OF A] A] smult_smult_mat)
+
 definition householder :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
   "householder w \<equiv>
      Matrix.mat (dim_vec w) (dim_vec w)
        (\<lambda>(i,j). (if i = j then 1 else 0) - 2 * (w $ i) * cnj (w $ j))"
 
 notation householder ("U\<^sub>H")
-
 
 lemma householder_index:
   assumes "i < dim_vec w" and "j < dim_vec w"
@@ -219,7 +233,6 @@ next
         (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w)) $$ (i,j)" .
 qed
 
-
 text \<open>For a unit vector $w$, $U_H=I-2\ketbra ww$ is the reflection in the hyperplane $w^\perp$:
 $U_Hx=x-2\braket wx\,w$ fixes $w^\perp$ and sends $w$ to $-w$.  It is Hermitian, and
 \[ U_H^2=I-4\ketbra ww+4\,\ketbra ww\ketbra ww=I-4\ketbra ww+4\braket ww\ketbra ww=I, \]
@@ -247,7 +260,6 @@ proof (rule eq_matI)
     using householder_index ij by simp
   finally show "(householder w)\<^sup>\<dagger> $$ (i,j) = (householder w) $$ (i,j)" .
 qed
-
 
 lemma householder_unitary:
   assumes norm_w: "\<parallel>w\<parallel> = (1 :: real)"
@@ -678,7 +690,6 @@ proof -
     using wdim wnorm by blast
 qed
 
-
 lemma schur_lemma:
   fixes x y :: "complex Matrix.vec"
   assumes n_pos: "n > 0"
@@ -1075,68 +1086,6 @@ computed blockwise:
    =\begin{pmatrix}AB&0\\0&DE\end{pmatrix}; \]
 in particular $U\oplus V$ is unitary when $U$ and $V$ are.\<close>
 
-lemma cpx_mat_cnj_four_block:
-  assumes A: "A \<in> carrier_mat nr1 nc1"
-      and B: "B \<in> carrier_mat nr1 nc2"
-      and C: "C \<in> carrier_mat nr2 nc1"
-      and D: "D \<in> carrier_mat nr2 nc2"
-  shows "(four_block_mat A B C D)\<^sup>\<star> =
-         four_block_mat (A\<^sup>\<star>) (B\<^sup>\<star>) (C\<^sup>\<star>) (D\<^sup>\<star>)"
-proof (rule eq_matI)
-  show "dim_row ((four_block_mat A B C D)\<^sup>\<star>) =
-        dim_row (four_block_mat (A\<^sup>\<star>) (B\<^sup>\<star>) (C\<^sup>\<star>) (D\<^sup>\<star>))"
-    by (simp add: cpx_mat_cnj_def)
-  show "dim_col ((four_block_mat A B C D)\<^sup>\<star>) =
-        dim_col (four_block_mat (A\<^sup>\<star>) (B\<^sup>\<star>) (C\<^sup>\<star>) (D\<^sup>\<star>))"
-    by (simp add: cpx_mat_cnj_def)
-next
-  fix i j
-  assume "i < dim_row (four_block_mat (A\<^sup>\<star>) (B\<^sup>\<star>) (C\<^sup>\<star>) (D\<^sup>\<star>))"
-  then have i: "i < dim_row ((four_block_mat A B C D)\<^sup>\<star>)"
-    by (simp add: cpx_mat_cnj_def)
-  assume "j < dim_col (four_block_mat (A\<^sup>\<star>) (B\<^sup>\<star>) (C\<^sup>\<star>) (D\<^sup>\<star>))"
-  then have j: "j < dim_col ((four_block_mat A B C D)\<^sup>\<star>)"
-    by (simp add: cpx_mat_cnj_def)      
-  have i_bound: "i < nr1 + nr2"
-    and j_bound: "j < nc1 + nc2"
-    using assms A D cpx_mat_cnj_def j i by auto
-  consider
-      (UL) "i < nr1" "j < nc1"
-    | (UR) "i < nr1" "\<not> j < nc1"
-    | (LL) "\<not> i < nr1" "j < nc1"
-    | (LR) "\<not> i < nr1" "\<not> j < nc1"
-    by blast
-  then show "((four_block_mat A B C D)\<^sup>\<star>) $$ (i,j) =
-             (four_block_mat (A\<^sup>\<star>) (B\<^sup>\<star>) (C\<^sup>\<star>) (D\<^sup>\<star>)) $$ (i,j)"
-  proof cases
-    case UL
-    then show ?thesis
-      using assms i_bound j_bound
-      by (simp add: cpx_mat_cnj_def)
-  next
-    case UR
-    then have "j - nc1 < nc2"
-      using j_bound by linarith
-    then show ?thesis
-      using assms UR i_bound j_bound
-      by (simp add: cpx_mat_cnj_def)
-  next
-    case LL
-    then have "i - nr1 < nr2"
-      using i_bound by linarith
-    then show ?thesis
-      using assms LL i_bound j_bound
-      by (simp add: cpx_mat_cnj_def)
-  next
-    case LR
-    then have "i - nr1 < nr2" and "j - nc1 < nc2"
-      using i_bound j_bound by linarith+
-    then show ?thesis
-      using assms LR i_bound j_bound
-      by (simp add: cpx_mat_cnj_def)
-  qed
-qed
-
 lemma dagger_four_block_mat_complex:
   assumes A: "A \<in> carrier_mat nr1 nc1"
       and B: "B \<in> carrier_mat nr1 nc2"
@@ -1290,7 +1239,6 @@ proof -
     "(?M\<^sup>\<dagger>) = four_block_mat (U\<^sup>\<dagger>) (0\<^sub>m n m) (0\<^sub>m m n) (V\<^sup>\<dagger>)"
     using U V
     by (smt (verit, best) dagger_four_block_mat_complex dagger_zero_mat zero_carrier_mat)
-
 
     have left_mult: "(?M\<^sup>\<dagger>) * ?M = 1\<^sub>m (n + m)"
   proof -
@@ -2211,7 +2159,6 @@ proof -
       by (rule similar_matI[OF setc udag_u u_udag T_eq])
     then show ?thesis using char_poly_similar by metis
   qed
-
 
   have "Tr A = sum_list ?eigs"
     using trA trT by simp

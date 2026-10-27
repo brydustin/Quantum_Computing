@@ -1055,3 +1055,20 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   * Statement check: every headline result keeps its name and statement, except that `extreme_CPTP`/
     `extreme_UCP` now unfold to `extreme_point`; HHL unchanged.  Developed in a scratch session
     (`wip/d23`, `WIP=wip/d23 tools/chk.sh VP_D23`) at 5–7 s per check against the notes heap.
+- **Audit loop, tick 1: dead code** (2026-10-27, user: "/loop please do an audit of the Paulsen theories and
+  make sure everything is maximally elegant ...").  `tools/deps/audit.py` ranks the theories by lines,
+  bookkeeping lemmas, nested `foldr` definitions, process comments and facts no proof uses (transitively,
+  with headline results, downstream sessions and text citations as roots).  This tick removed about 1000
+  lines nothing used (`tools/deps/plans/sweep1.py`): leftover `foldr` index lemmas, carrier/index helpers,
+  `choi_matrix_diff`, `amplification_one`, the unital Kraus representation of Day 23 (`ucp_kraus_rep`),
+  Day 32's unused projection algebra, Day 31's 150-line entrywise proofs that the bit-flip channel is
+  positive and trace preserving, which are now one line each from its Kraus operators √(1−p) I, √p X
+  (`bit_flip_channel_kraus`; `smult_sandwich` in Day 3, `kraus_map_dim_two` in Day 17); Day 2's
+  `mat_unit_mult_entry` lost its smt proof.  Kept though unused: the notes' own statements (Day 1's inner
+  product properties, Day 32's |−⟩ facts, Day 23's example maps) and natural API facts (`DIM_lmat`,
+  `unit_block_tensor`).
+  * Remaining targets from the audit, by size of the mess: Day 17's amplification machinery (450 lines of
+    index bookkeeping for Φ^(p) of a Kraus map), Day 19's Choi theorem proofs (`choi_theorem` 225,
+    `kraus_rep_of_psd_choi` 187), Quantum_Channels (every channel proved CPTP entrywise instead of via
+    Kraus operators), Day 14's `pure_density_iff_idempotent` (370), Day 3's Schur proofs (385 + 366 while
+    the AFP has `Schur_Decomposition`), process comments ("Step 1..8") in Days 11, 14, 19, 21.

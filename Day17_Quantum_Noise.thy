@@ -288,6 +288,11 @@ lemma kraus_map_dim_Cons [simp]:
      W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>"
   by (simp add: kraus_map_dim_def)
 
+lemma kraus_map_dim_two:
+  assumes V: "V \<in> carrier_mat d n" and W: "W \<in> carrier_mat d n" and \<rho>: "\<rho> \<in> carrier_mat n n"
+  shows "kraus_map_dim d [V, W] \<rho> = V * \<rho> * (V\<^sup>\<dagger>) + W * \<rho> * (W\<^sup>\<dagger>)"
+  using mult_carrier_mat[OF mult_carrier_mat[OF W \<rho>] dagger_carrier[OF W]] by simp
+
 lemma kraus_map_dim_carrier:
   assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
       and \<rho>_c: "\<rho> \<in> carrier_mat n n"
@@ -493,38 +498,6 @@ lemma amplification_index:
          \<Phi> (block_of_mat n X (i div d) (j div d)) $$
              (i mod d, j mod d)"
   using assms by (simp add: amplification_def)
-
-lemma amplification_one:
-  assumes X: "X \<in> carrier_mat n n"
-      and range: "\<Phi> X \<in> carrier_mat d d"
-  shows "amplification n d 1 \<Phi> X = \<Phi> X"
-proof (rule eq_matI)
-  show "dim_row (amplification n d 1 \<Phi> X) = dim_row (\<Phi> X)"
-    using range by (simp add: amplification_def)
-  show "dim_col (amplification n d 1 \<Phi> X) = dim_col (\<Phi> X)"
-    using range by (simp add: amplification_def)
-next
-  fix i j
-  assume i: "i < dim_row (\<Phi> X)" and j: "j < dim_col (\<Phi> X)"
-  then have id: "i < d" and jd: "j < d"
-    using range by auto
-  have div_i: "i div d = 0"
-    using id by simp
-  have div_j: "j div d = 0"
-    using jd by simp
-  have mod_i: "i mod d = i"
-    using id by simp
-  have mod_j: "j mod d = j"
-    using jd by simp
-  have "amplification n d 1 \<Phi> X $$ (i,j)
-      = \<Phi> (block_of_mat n X (i div d) (j div d)) $$ (i mod d, j mod d)"
-    using id jd by (simp add: amplification_index)
-  also have "\<dots> = \<Phi> (block_of_mat n X 0 0) $$ (i,j)"
-    using div_i div_j mod_i mod_j by simp
-  also have "\<dots> = \<Phi> X $$ (i,j)"
-    using block_of_mat_single[OF X] by simp
-  finally show "amplification n d 1 \<Phi> X $$ (i,j) = \<Phi> X $$ (i,j)".
-qed
 
 text \<open>The amplification of a Kraus map is a Kraus map, with operators $I_p\otimes W_i$:
 \[ \Phi^{(p)}(X)=\sum_i(I_p\otimes W_i)\,X\,(I_p\otimes W_i)^*, \]
@@ -1240,6 +1213,11 @@ lemma sum_wdag_w_Nil [simp]: "sum_wdag_w n [] = 0\<^sub>m n n"
 lemma sum_wdag_w_Cons:
   "sum_wdag_w n (W # Ws) = (W\<^sup>\<dagger>) * W + sum_wdag_w n Ws"
   by (simp add: sum_wdag_w_def)
+
+lemma sum_wdag_w_two:
+  assumes V: "V \<in> carrier_mat d n" and W: "W \<in> carrier_mat d n"
+  shows "sum_wdag_w n [V, W] = (V\<^sup>\<dagger>) * V + (W\<^sup>\<dagger>) * W"
+  using mult_carrier_mat[OF dagger_carrier[OF W] W] by (simp add: sum_wdag_w_Cons)
 
 lemma sum_wdag_w_carrier:
   assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"

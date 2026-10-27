@@ -17,9 +17,6 @@ section \<open>Complex numbers and scalar multiples\<close>
 lemma cnj_mult_self_cmod: "cnj z * z = complex_of_real ((cmod z)\<^sup>2)"
   by (metis complex_norm_square mult.commute)
 
-lemma Re_cnj_mult_self: "Re (cnj z * z) = (cmod z)\<^sup>2"
-  by (simp add: cnj_mult_self_cmod)
-
 lemma smult_smult_mat:
   fixes A :: "complex Matrix.mat"
   shows "a \<cdot>\<^sub>m (b \<cdot>\<^sub>m A) = (a * b) \<cdot>\<^sub>m A"
@@ -266,12 +263,6 @@ lemma foldr_add_mat_cong:
 
 text \<open>Sums over $[0..<N]$, and their entries.\<close>
 
-lemma foldr_upt_add_carrier:
-  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes "\<forall>k < N. f k \<in> carrier_mat d d"
-  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) \<in> carrier_mat d d"
-  using assms by (intro foldr_add_mat_carrier) auto
-
 lemma foldr_upt_add_acc_index:
   fixes f :: "nat \<Rightarrow> complex Matrix.mat"
   assumes carr: "\<forall>k < N. f k \<in> carrier_mat d d"
@@ -320,77 +311,6 @@ proof -
     using r_lt c_lt by simp
   show ?thesis
     using foldr_upt_add_acc_index[OF carr z_c r_lt c_lt] z_idx by simp
-qed
-
-lemma foldr_upt_add_acc_index_dn:
-  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d n"
-      and z_c:  "z \<in> carrier_mat d n"
-      and r_lt: "r < d" and c_lt: "c < n"
-  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] z $$ (r, c)
-           = (\<Sum>k = 0..<N. f k $$ (r, c)) + z $$ (r, c)"
-  using carr z_c
-proof (induction N arbitrary: z)
-  case 0
-  show ?case by simp
-next
-  case (Suc N)
-  have hd_c:   "f N \<in> carrier_mat d n" using Suc.prems(1) by simp
-  have rest_c: "\<forall>k < N. f k \<in> carrier_mat d n" using Suc.prems(1) by simp
-  have fNz_c:  "f N + z \<in> carrier_mat d n"
-    using hd_c Suc.prems(2) by auto
-  have dec: "[0..<Suc N] = [0..<N] @ [N]" by simp
-  have step: "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z
-                = foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z)"
-    using dec by (simp add: foldr_append)
-  have IH: "foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z) $$ (r,c)
-              = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N + z) $$ (r,c)"
-    using Suc.IH[OF rest_c fNz_c] .
-  have idx_split: "(f N + z) $$ (r,c) = f N $$ (r,c) + z $$ (r,c)"
-    using hd_c Suc.prems(2) r_lt c_lt by simp
-  have "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z $$ (r,c)
-          = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N $$ (r,c) + z $$ (r,c))"
-    using step IH idx_split by simp
-  also have "\<dots> = ((\<Sum>k = 0..<N. f k $$ (r,c)) + f N $$ (r,c)) + z $$ (r,c)"
-    by (simp add: add.assoc)
-  also have "\<dots> = (\<Sum>k = 0..<Suc N. f k $$ (r,c)) + z $$ (r,c)"
-    by simp
-  finally show ?case .
-qed
-
-lemma foldr_smult_nth_index:
-  fixes c :: "nat \<Rightarrow> real" and Bs :: "complex Matrix.mat list"
-  assumes Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n"
-      and r_lt: "r < n" and c_lt: "c1 < n"
-  shows "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k) + acc)
-                [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
-           = (\<Sum>k = 0..<length Bs.
-                complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
-proof -
-  let ?f = "\<lambda>k. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k)"
-  have term_c: "\<forall>k < length Bs. ?f k \<in> carrier_mat n n"
-  proof (intro allI impI)
-    fix k assume k_lt: "k < length Bs"
-    have "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
-    thus "?f k \<in> carrier_mat n n" by (intro smult_carrier_mat) auto
-  qed
-  have term_idx: "\<And>k. k < length Bs \<Longrightarrow>
-                    ?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
-  proof -
-    fix k assume k_lt: "k < length Bs"
-    have Bk_c: "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
-    have r_dim: "r < dim_row (Bs ! k)" using Bk_c r_lt by auto
-    have c_dim: "c1 < dim_col (Bs ! k)" using Bk_c c_lt by auto
-    show "?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
-      using index_smult_mat(1)[OF r_dim c_dim] .
-  qed
-  have "foldr (\<lambda>k acc. ?f k + acc) [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
-          = (\<Sum>k = 0..<length Bs. ?f k $$ (r, c1))"
-    using foldr_upt_add_index[OF term_c r_lt c_lt] .
-  also have "\<dots> = (\<Sum>k = 0..<length Bs.
-                     complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
-    by (rule sum.cong) (auto simp: term_idx)
-  finally show ?thesis .
 qed
 
 lemma foldr_smult_index:

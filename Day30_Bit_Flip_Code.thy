@@ -227,13 +227,6 @@ qed (use carrier_matD[OF outer_prod_carrier[of "unit_vec 8 a" 8 "unit_vec 8 a" 8
           carrier_matD[OF outer_prod_carrier[of "unit_vec 8 b" 8 "unit_vec 8 b" 8]]
      in \<open>auto simp: syndrome_proj_def\<close>)
 
-lemma syndrome_proj_as_outer:
-  "P\<^sub>0 = unit_vec 8 0 \<oslash> unit_vec 8 0 + unit_vec 8 7 \<oslash> unit_vec 8 7"
-  "P\<^sub>1 = unit_vec 8 4 \<oslash> unit_vec 8 4 + unit_vec 8 3 \<oslash> unit_vec 8 3"
-  "P\<^sub>2 = unit_vec 8 2 \<oslash> unit_vec 8 2 + unit_vec 8 5 \<oslash> unit_vec 8 5"
-  "P\<^sub>3 = unit_vec 8 1 \<oslash> unit_vec 8 1 + unit_vec 8 6 \<oslash> unit_vec 8 6"
-  by (rule syndrome_proj_two; simp)+
-
 text \<open>The flips are the notes' tensors.\<close>
 
 lemma tensor3_index:

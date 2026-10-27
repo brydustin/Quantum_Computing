@@ -41,7 +41,6 @@ lemma unwrap_lm_carrier [simp]:
      \<in> carrier_mat (CARD('m)) (CARD('n))"
   using unwrap_lm by auto
 
-
 section \<open>Typeclass instances\<close>
 
 text \<open>The unique zero matrix of the right shape.\<close>
@@ -172,7 +171,6 @@ qed
 instance lmat :: (ab_group_add, finite, finite) ab_group_add
   by standard (rule left_minus, rule diff_conv_add_uminus)
 
-
 section \<open>Real scalar multiplication and Hahn-Banach overloading\<close>
 
 text \<open>HOL's @{const Vector_Space.prod} is the abstract real-scalar
@@ -198,7 +196,6 @@ lemma unwrap_lm_prod [simp]:
      = complex_of_real r \<cdot>\<^sub>m unwrap_lm M"
   unfolding prod_lmat_def
   by (subst wrap_lm_inverse) simp_all
-
 
 section \<open>Real-vectorspace locale on the full type\<close>
 
@@ -283,7 +280,6 @@ proof (unfold_locales)
     by (simp only: diff_conv_add_uminus)
 qed
 
-
 section \<open>The Hilbert-Schmidt norm on \<open>(complex, 'm, 'n) lmat\<close>\<close>
 
 text \<open>The Hilbert--Schmidt (Frobenius) norm $\|M\|=(\sum_{i,j}|M_{ij}|^2)^{1/2}$, the Euclidean
@@ -332,7 +328,6 @@ proof -
     by (rule L2_set_triangle_ineq)
   finally show ?thesis unfolding hs_norm_lmat_def .
 qed
-
 
 section \<open>Subspace, seminorm, normed-vectorspace instances\<close>
 
@@ -412,7 +407,6 @@ proof
     using assms xV unfolding cmat_subspace_lmat_def by simp
 qed
 
-
 section \<open>Complex scalar multiplication on lmat\<close>
 
 text \<open>Complex scalar multiplication on \<open>(complex, 'm, 'n) lmat\<close>,
@@ -475,18 +469,6 @@ proof -
     by (rule iffD1[OF unwrap_lm_inject unwrap_eq])
 qed
 
-lemma cmult_lmat_one:
-  fixes x :: "(complex, 'm :: finite, 'n :: finite) lmat"
-  shows "cmult_lmat 1 x = x"
-proof -
-  have one_smult: "(1 :: complex) \<cdot>\<^sub>m unwrap_lm x = unwrap_lm x"
-    by (intro eq_matI) auto
-  have unwrap_eq: "unwrap_lm (cmult_lmat 1 x) = unwrap_lm x"
-    using one_smult by simp
-  show ?thesis
-    by (rule iffD1[OF unwrap_lm_inject unwrap_eq])
-qed
-
 lemma cmult_lmat_uminus_one:
   fixes x :: "(complex, 'm :: finite, 'n :: finite) lmat"
   shows "cmult_lmat (- 1) x = - x"
@@ -510,10 +492,5 @@ lemma hs_norm_lmat_cmult:
   fixes M :: "(complex, 'm :: finite, 'n :: finite) lmat"
   shows "hs_norm_lmat (cmult_lmat c M) = cmod c * hs_norm_lmat M"
   by (rule hs_norm_lmat_scale) (simp_all add: norm_mult)
-
-lemma hs_norm_lmat_cmult_i [simp]:
-  fixes M :: "(complex, 'm :: finite, 'n :: finite) lmat"
-  shows "hs_norm_lmat (cmult_lmat \<i> M) = hs_norm_lmat M"
-  by (simp add: hs_norm_lmat_cmult)
 
 end

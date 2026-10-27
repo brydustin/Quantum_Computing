@@ -255,12 +255,6 @@ lemma operator_tensor_iso_map_carrier [simp]:
   "operator_tensor_iso_map m p c \<in> carrier_mat (m*p) (m*p)"
   by (simp add: operator_tensor_iso_map_def)
 
-lemma operator_tensor_iso_map_entry:
-  assumes "r < m*p" and "s < m*p"
-  shows "operator_tensor_iso_map m p c $$ (r,s) =
-         c $$ ((r div p) * m + (s div p), (r mod p) * p + (s mod p))"
-  using assms by (simp add: operator_tensor_iso_map_def)
-
 lemma operator_tensor_iso_map_row_bound:
   fixes m p r s :: nat
   assumes p_pos: "0 < p" and "r < m*p" and "s < m*p"
@@ -313,12 +307,6 @@ definition bipartite_operator_space ::
 lemma operator_tensor_iso_inv_carrier [simp]:
   "operator_tensor_iso_inv m p x \<in> carrier_mat (m*m) (p*p)"
   by (simp add: operator_tensor_iso_inv_def)
-
-lemma operator_tensor_iso_inv_entry:
-  assumes "a < m*m" and "b < p*p"
-  shows "operator_tensor_iso_inv m p x $$ (a,b) =
-         x $$ ((a div m) * p + (b div p), (a mod m) * p + (b mod p))"
-  using assms by (simp add: operator_tensor_iso_inv_def)
 
 lemma operator_tensor_iso_inv_row_bound:
   fixes m p a b :: nat
@@ -607,8 +595,6 @@ the only linear map that does.\<close>
 definition op_elem :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "op_elem m p Ra Tb = Matrix.mat (m * m) (p * p) (\<lambda>(a, b). Ra $$ (a div m, a mod m) * Tb $$ (b div p, b mod p))"
 
-lemma op_elem_carrier [simp]: "op_elem m p Ra Tb \<in> carrier_mat (m * m) (p * p)" by (simp add: op_elem_def)
-
 theorem gamma_elementary:
   assumes Ra: "Ra \<in> carrier_mat m m" and Tb: "Tb \<in> carrier_mat p p"
   shows "operator_tensor_iso_map m p (op_elem m p Ra Tb) = Ra \<Otimes> Tb"
@@ -846,11 +832,6 @@ lemma dim_row_partial_trace_A [simp]: "dim_row (partial_trace_A m p x) = p"
 
 lemma dim_col_partial_trace_A [simp]: "dim_col (partial_trace_A m p x) = p"
   by (simp add: partial_trace_A_def)
-
-lemma partial_trace_A_carrier [simp]:
-  "partial_trace_A m p x \<in> carrier_mat p p"
-  by auto
-
 
 text \<open>On product operators the partial traces keep one factor and trace out the other:
 \[ \tr_B(R\otimes T)=\Tr(T)\,R,\qquad \tr_A(R\otimes T)=\Tr(R)\,T, \]
@@ -1381,7 +1362,6 @@ proof -
       by (simp add: dagger_def)
   qed
 qed
-
 
 lemma partial_trace_B_is_density:
   fixes X :: "complex Matrix.mat"

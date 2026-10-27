@@ -313,7 +313,7 @@ Theory abbreviations: Ln = the theory of lecture n (`Day01_Inner_Product`, `Day0
 ### Day 31 (11 Nov): operator viewpoint, fidelity
 | id | notes | formal | status |
 |---|---|---|---|
-| D31-1 | error map E(Y) = (1−p)Y + pXYX is CPTP | L31 `bit_flip_channel`, `_trace_preserving`, `_psd`, `_CPTP`, `_UCP` | ✓ |
+| D31-1 | error map E(Y) = (1−p)Y + pXYX is CPTP | L31 `bit_flip_channel`; it is the Kraus map of √(1−p) I, √p X (`bit_flip_channel_kraus`), hence `bit_flip_channel_CPTP` and `bit_flip_channel_UCP` | ✓ |
 | D31-2 | R∘E on the encoded state; code better iff p ≤ ½ | L31 `three_bit_code_recovery` (R(E(ψψ*)) = c₁ψψ* + c₂φφ* for ψ in the code space), `three_bit_code_better_iff`; the notes' formula for a general Y fails off the code space | ✓ |
 | D31-3 | fidelity F = \|⟨ψ′\|ψ⟩\| = √Tr(ρρ′); F = √⟨ψ\|R∘E(\|ψ⟩⟨ψ\|)ψ⟩ | L31 `fidelity`, `fidelity_pure_states`, `fidelity_self`, `fidelity_orthogonal` | ✓ |
 | D31-4 | min F = √(1−p) (do nothing) vs √((1−p)³+3p(1−p)²) (code) | L31 `nothing_min_fidelity`, `code_min_fidelity` (lower bounds attained at e₀ resp. its encoding) | ✓ |

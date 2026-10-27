@@ -108,8 +108,6 @@ proof -
   show ?thesis unfolding projection_def using c h idem by blast
 qed
 
-
-
 lemma rank1_projection_acts_identity:
   fixes \<psi> :: "complex Matrix.vec"
   assumes \<psi>_qs: "quantum_state n \<psi>"
@@ -147,7 +145,6 @@ proof -
   also have "\<dots> = 1" by simp
   finally show ?thesis .
 qed
-
 
 subsection \<open>The bit-flip channel at $p=0$ and $p=1$\<close>
 
@@ -208,7 +205,6 @@ proof -
     using zero_plus .
   finally show ?thesis .
 qed
-
 
 subsection \<open>The phase-flip channel\<close>
 
@@ -364,7 +360,6 @@ proof -
   thus ?thesis by (simp add: phase_flip_channel_def)
 qed
 
-
 subsection \<open>Unitary-conjugation channels\<close>
 
 text \<open>For a unitary $U\in M_n$ and $0\le p\le1$, $\rho\mapsto(1-p)\rho+pU\rho U^\dagger$ is trace
@@ -513,7 +508,6 @@ proof -
   thus ?thesis by (simp add: unitary_conj_channel_def)
 qed
 
-
 lemma bit_flip_eq_unitary_conj:
   "bit_flip_channel p \<rho> = unitary_conj_channel Pauli_X p \<rho>"
   by (simp add: bit_flip_channel_def unitary_conj_channel_def)
@@ -521,7 +515,6 @@ lemma bit_flip_eq_unitary_conj:
 lemma phase_flip_eq_unitary_conj:
   "phase_flip_channel p \<rho> = unitary_conj_channel Pauli_Z p \<rho>"
   by (simp add: phase_flip_channel_def unitary_conj_channel_def)
-
 
 subsection \<open>The bit-phase-flip channel and the identity channel\<close>
 
@@ -555,8 +548,6 @@ lemma bit_phase_flip_channel_psd:
   using p_nn p_le_1 Pauli_Y_carrier \<rho>_c \<rho>_psd
   by (rule unitary_conj_channel_psd)
 
-
-
 definition identity_channel ::
   "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "identity_channel \<rho> \<equiv> \<rho>"
@@ -572,7 +563,6 @@ lemma identity_channel_trace_preserving:
 lemma identity_channel_psd:
   "\<rho> \<in> carrier_mat n n \<Longrightarrow> psd \<rho> \<Longrightarrow> psd (identity_channel \<rho>)"
   by (simp add: identity_channel_def)
-
 
 lemma identity_channel_eq_unitary_conj_zero:
   assumes \<rho>_c: "\<rho> \<in> carrier_mat n n"
@@ -605,7 +595,6 @@ proof -
   finally show ?thesis by (simp add: identity_channel_def)
 qed
 
-
 subsection \<open>Composition of channels\<close>
 
 lemma compose_trace_preserving:
@@ -624,7 +613,6 @@ proof (unfold trace_preserving_def, intro allI impI)
   finally show "Tr (G (F \<rho>)) = Tr \<rho>" .
 qed
 
-
 lemma identity_channel_compose_left:
   "(\<lambda>\<rho>. identity_channel (F \<rho>)) = F"
   by (simp add: identity_channel_def)
@@ -632,8 +620,6 @@ lemma identity_channel_compose_left:
 lemma identity_channel_compose_right:
   "(\<lambda>\<rho>. F (identity_channel \<rho>)) = F"
   by (simp add: identity_channel_def)
-
-
 
 lemma compose_unital_map:
   assumes F_un: "unital_map n n F"
@@ -649,14 +635,12 @@ proof -
   finally show ?thesis by (simp add: unital_map_def)
 qed
 
-
 lemma identity_channel_unital: "unital_map n n identity_channel"
   by (simp add: unital_map_def identity_channel_def)
 
 lemma identity_channel_trace_preserving_full:
   "trace_preserving n identity_channel"
   by (simp add: trace_preserving_def identity_channel_def)
-
 
 lemma identity_channel_completely_positive:
   assumes "0 < n"
@@ -702,7 +686,6 @@ proof -
     using amp_eq by auto
 qed
 
-
 subsection \<open>Conjugation channels are completely positive\<close>
 
 definition conjugation_channel ::
@@ -737,8 +720,6 @@ proof -
   show ?thesis using kraus_cp_no_tp[OF Ws_c npos dpos] .
 qed
 
-
-
 lemma identity_channel_UCP:
   assumes "0 < n"
   shows "identity_channel \<in> UCP n n"
@@ -754,9 +735,6 @@ lemma identity_channel_CPTP:
   using identity_channel_completely_positive[OF assms]
         identity_channel_trace_preserving_full
   by simp
-
-
-
 
 lemma map_conj_cp:
   assumes U_c: "U \<in> carrier_mat d n"
@@ -812,7 +790,6 @@ proof -
   qed
 qed
 
-
 lemma map_conj_unital:
   fixes U :: "complex Matrix.mat"
   assumes U_c: "U \<in> carrier_mat n n"
@@ -827,7 +804,6 @@ proof -
   also have "\<dots> = 1\<^sub>m n" using UUd .
   finally show ?thesis .
 qed
-
 
 subsection \<open>Unitary-conjugation channels are UCP and CPTP\<close>
 
@@ -912,7 +888,6 @@ proof -
   show ?thesis using convex_ucp func_eq by simp
 qed
 
-
 lemma unitary_conj_channel_in_CPTP:
   fixes U :: "complex Matrix.mat" and p :: real
   assumes U_c: "U \<in> carrier_mat n n"
@@ -933,7 +908,6 @@ proof -
   show ?thesis using cp tp by (simp add: CPTP_def)
 qed
 
-
 subsection \<open>The Pauli channels are UCP and CPTP\<close>
 
 lemma bit_flip_channel_eq:
@@ -952,30 +926,6 @@ text \<open>All three are unitary-conjugation channels $\rho\mapsto(1-p)\rho+pU\
 Kraus operators $\sqrt{1-p}\,I$, $\sqrt p\,U$ satisfy
 \[ (1-p)I+p\,U^*U=I=(1-p)I+p\,UU^*, \]
 so each is both unital and trace preserving.\<close>
-
-lemma bit_flip_channel_UCP:
-  fixes p :: real
-  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
-  shows "bit_flip_channel p \<in> UCP 2 2"
-proof -
-  have npos: "(0 :: nat) < 2" by simp
-  show ?thesis
-    using unitary_conj_channel_in_UCP[OF Pauli_X_carrier Pauli_X_unitary
-                                         p_nn p_le npos]
-    by (simp add: bit_flip_channel_eq)
-qed
-
-lemma bit_flip_channel_CPTP:
-  fixes p :: real
-  assumes p_nn: "0 \<le> p" and p_le: "p \<le> 1"
-  shows "bit_flip_channel p \<in> CPTP 2 2"
-proof -
-  have npos: "(0 :: nat) < 2" by simp
-  show ?thesis
-    using unitary_conj_channel_in_CPTP[OF Pauli_X_carrier Pauli_X_unitary
-                                          p_nn p_le npos]
-    by (simp add: bit_flip_channel_eq)
-qed
 
 lemma phase_flip_channel_UCP:
   fixes p :: real
@@ -1024,7 +974,6 @@ proof -
                                           p_nn p_le npos]
     by (simp add: bit_phase_flip_channel_eq)
 qed
-
 
 subsection \<open>Pauli matrices as Kraus operators\<close>
 
@@ -1097,7 +1046,6 @@ proof -
     using all_in sum_eq by blast
 qed
 
-
 subsection \<open>Kraus maps of Kraus-operator lists are CPTP\<close>
 
 lemma Pauli_X_kraus_map_CPTP:
@@ -1123,8 +1071,6 @@ proof -
   show ?thesis
     using kraus_is_cptp[OF Pauli_Z_kraus_operators npos npos] .
 qed
-
-
 
 lemma identity_kraus_operators:
   "kraus_operators n n [1\<^sub>m n]"
@@ -1172,7 +1118,6 @@ proof -
     by (simp add: identity_channel_def)
 qed
 
-
 subsection \<open>Fixed points of Pauli channels\<close>
 
 lemma Pauli_X_conj_commute:
@@ -1213,7 +1158,6 @@ proof -
   finally show ?thesis .
 qed
 
-
 lemma Pauli_Z_conj_commute:
   fixes M :: "complex Matrix.mat"
   assumes M_c: "M \<in> carrier_mat 2 2"
@@ -1252,8 +1196,6 @@ proof -
   finally show ?thesis.
 qed
 
-
-
 lemma unitary_conj_channel_identity_op:
   fixes p :: real
   assumes \<rho>_c: "\<rho> \<in> carrier_mat n n"
@@ -1275,14 +1217,12 @@ proof -
   finally show ?thesis.
 qed
 
-
 lemma unitary_conj_channel_identity_op_eq:
   fixes p :: real
   shows "(\<lambda>\<rho>. if \<rho> \<in> carrier_mat n n
               then unitary_conj_channel (1\<^sub>m n) p \<rho> else identity_channel \<rho>)
          = identity_channel"
   by (rule ext, simp add: unitary_conj_channel_identity_op identity_channel_def)
-
 
 subsection \<open>The maximally mixed state\<close>
 
@@ -1331,7 +1271,6 @@ lemma maximally_mixed_state_density_matrix:
         maximally_mixed_state_trace[OF npos]
   by blast
 
-
 subsection \<open>Fixed points of unitary-conjugation channels\<close>
 
 lemma unitary_conj_commute:
@@ -1373,7 +1312,6 @@ proof -
   also have "\<dots> = M" using M_c by (intro eq_matI) auto
   finally show ?thesis.
 qed
-
 
 lemma maximally_mixed_state_commutes:
   fixes U :: "complex Matrix.mat"
@@ -1420,8 +1358,6 @@ proof -
     using unitary_conj_channel_fixed_point_commute[OF U_c U_unit M_c commute] .
 qed
 
-
-
 lemma bit_flip_channel_fixes_max_mixed:
   fixes p :: real
   shows "bit_flip_channel p (maximally_mixed_state 2)
@@ -1445,7 +1381,6 @@ lemma bit_phase_flip_channel_fixes_max_mixed:
   using unitary_conj_channel_fixes_max_mixed[OF Pauli_Y_carrier
                                                  Pauli_Y_unitary]
   by (simp add: bit_phase_flip_channel_eq)
-
 
 subsection \<open>Channels preserve density matrices\<close>
 
@@ -1497,7 +1432,6 @@ lemma bit_phase_flip_channel_preserves_density_matrix:
   using unitary_conj_channel_preserves_density_matrix
           [OF Pauli_Y_carrier Pauli_Y_unitary p_nn p_le dm]
   by (simp add: bit_phase_flip_channel_eq)
-
 
 subsection \<open>Pauli product identities\<close>
 

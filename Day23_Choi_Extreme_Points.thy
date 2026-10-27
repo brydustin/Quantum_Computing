@@ -823,15 +823,6 @@ lemma pinv_list_index:
   shows "pinv_list D ! i = (if D ! i = 0 then 0 else 1 / (D ! i))"
   using assms unfolding pinv_list_def by simp
 
-lemma pinv_list_nonneg:
-  assumes "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
-  shows "\<And>i. i < length D \<Longrightarrow> 0 \<le> pinv_list D ! i"
-proof -
-  fix i assume i: "i < length D"
-  show "0 \<le> pinv_list D ! i"
-    using assms[OF i] by (simp add: pinv_list_index[OF i])
-qed
-
 lemma diag_pinv_diag_eq:
   fixes D :: "real list"
   shows "diag_mat_of_real D * diag_mat_of_real (pinv_list D) * diag_mat_of_real D = diag_mat_of_real D"
@@ -1308,59 +1299,7 @@ proof -
     using U toC[OF L U] midpoint_pair_adjoint[OF L _ toC] from_cptp by blast
 qed
 
-text \<open>A unital Kraus representation of $\Phi:M_n\to M_d$ is a list of $d\times n$ matrices with
-\[ \Phi(X)=\sum_iV_iXV_i^*\quad(X\in M_n),\qquad \sum_iV_iV_i^*=I_d; \]
-every linear UCP map has one with $nd$ operators.  The adjoints of its operators are Kraus
-operators of $\Phi^*$.\<close>
-
-definition ucp_kraus_rep ::
-  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow>
-       complex Matrix.mat list \<Rightarrow> bool"
-where
-  "ucp_kraus_rep n d \<Phi> Vs \<equiv>
-     (\<forall>V \<in> set Vs. V \<in> carrier_mat d n) \<and>
-     foldr (\<lambda>V acc. V * (V\<^sup>\<dagger>) + acc) Vs (0\<^sub>m d d) = 1\<^sub>m d \<and>
-     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
-
-lemma ucp_has_kraus_rep:
-  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
-                   \<Phi> (A + B) = \<Phi> A + \<Phi> B"
-      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
-      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
-      and npos: "0 < n" and dpos: "0 < d"
-      and ucp: "\<Phi> \<in> UCP n d"
-  shows "\<exists>Vs :: complex Matrix.mat list.
-           ucp_kraus_rep n d \<Phi> Vs \<and> length Vs = n * d"
-proof -
-  have cp: "completely_positive n d \<Phi>"
-    using ucp unfolding UCP_def by auto
-  have unital: "\<Phi> (1\<^sub>m n) = 1\<^sub>m d"
-    using ucp unfolding UCP_def unital_map_def by auto
-  have psd_choi: "psd (choi_matrix n d \<Phi>)"
-    using choi_psd_if_cp[OF npos dpos cp] .
-  obtain Ws :: "complex Matrix.mat list"
-    where Ws_len: "length Ws = n * d"
-      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-      and Ws_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
-    using kraus_rep_of_psd_choi[OF linear smult range npos dpos psd_choi]
-    by blast
-  have I_n_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
-  have phi_I: "\<Phi> (1\<^sub>m n) = kraus_map_dim d Ws (1\<^sub>m n)"
-    using Ws_eq I_n_c by blast
-  have sum_WWdag: "foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d) = 1\<^sub>m d"
-  proof -
-    have "1\<^sub>m d = \<Phi> (1\<^sub>m n)" using unital by simp
-    also have "... = kraus_map_dim d Ws (1\<^sub>m n)" using phi_I .
-    also have "... = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
-      using kraus_map_dim_one[OF Ws_c] .
-    finally show ?thesis by simp
-  qed
-  have rep: "ucp_kraus_rep n d \<Phi> Ws"
-    unfolding ucp_kraus_rep_def
-    using Ws_c sum_WWdag Ws_eq by blast
-  show ?thesis using rep Ws_len by blast
-qed
+text \<open>The adjoints of the Kraus operators of a unital map are Kraus operators of its adjoint.\<close>
 
 lemma kraus_operators_dagger_of_unital:
   assumes Wc: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n" and un: "kraus_map_dim d Ws (1\<^sub>m n) = 1\<^sub>m d"

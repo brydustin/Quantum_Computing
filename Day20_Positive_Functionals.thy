@@ -77,7 +77,6 @@ next
     using term_c rec_c by simp
 qed
 
-
 lemma kraus_adjoint_dim_as_kraus_map_dim:
   fixes Y :: "complex Matrix.mat"
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
@@ -118,23 +117,6 @@ proof -
   also have "\<dots> = 0" by simp
   finally show ?thesis.
 qed
-
-lemma hs_inner_prod_left_zero:
-  fixes X :: "complex Matrix.mat"
-  assumes X_c: "X \<in> carrier_mat m n"
-  shows "\<langle>\<langle> 0\<^sub>m m n | X \<rangle>\<rangle> = 0"
-proof -
-  from X_c have dr: "dim_row X = m" and dc: "dim_col X = n" by auto
-  have "\<langle>\<langle> 0\<^sub>m m n | X \<rangle>\<rangle>
-          = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}.
-                cnj ((0\<^sub>m m n) $$ (i, j)) * X $$ (i, j))"
-    using dr dc by (simp add: hs_inner_prod_def)
-  also have "\<dots> = (\<Sum>i\<in>{0..<m}. \<Sum>j\<in>{0..<n}. (0 :: complex))"
-    by (intro sum.cong refl) simp
-  also have "\<dots> = 0" by simp
-  finally show ?thesis.
-qed
-
 
 lemma hs_inner_prod_kraus_term:
   fixes A X Y :: "complex Matrix.mat"
@@ -350,7 +332,6 @@ proof -
       using amp_eq amp_kr psd_kr by simp
   qed
 qed
-
 
 lemma kraus_map_dim_one_eq_sum_wdag_w_dagger:
   fixes As :: "complex Matrix.mat list"
@@ -739,7 +720,6 @@ subsection \<open>Choi rank\<close>
 text \<open>\<open>choi_rank n d \<Phi>\<close> is the least length of a Kraus list representing $\Phi$ on the
 carrier.  The theorem $\crk(\Phi)=\rank(P_\Phi)$ is \<open>choi_rank_eq_rank\<close>
 (Day 22); the bound $\crk(\Phi)\le nd$ follows from the Kraus-rank bound of Day 21.\<close>
-
 
 definition choi_rank ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> nat" where

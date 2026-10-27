@@ -69,11 +69,6 @@ lemma Mp_full: "Mp p n (carrier_mat n n) = carrier_mat (p * n) (p * n)"
 lemma cp_on_full: "cp_on n d (carrier_mat n n) \<Phi> \<longleftrightarrow> completely_positive n d \<Phi>"
   unfolding cp_on_def p_positive_on_def completely_positive_def p_positive_def Mp_full by blast
 
-lemma cp_on_mono:
-  assumes "cp_on n d OS \<Phi>" and "OS' \<subseteq> OS"
-  shows "cp_on n d OS' \<Phi>"
-  using assms unfolding cp_on_def p_positive_on_def Mp_def by blast
-
 subsection \<open>$M_p(OS)$ is an operator system\<close>
 
 lemma block_of_mat_add:

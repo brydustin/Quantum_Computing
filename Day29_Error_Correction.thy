@@ -102,7 +102,6 @@ lemma hamming_dist_self [simp]:
   "hamming_dist v v = 0"
   by (induction v, auto simp: hamming_dist_Cons)
 
-
 subsection \<open>Code distance\<close>
 
 text \<open>A code of distance at least $2t+1$ can correct $t$ errors (recorded as the definition
@@ -116,7 +115,6 @@ definition code_distance :: "nat list set \<Rightarrow> nat" where
 
 definition corrects_errors :: "nat list set \<Rightarrow> nat \<Rightarrow> bool" where
   "corrects_errors code t \<equiv> code_distance code \<ge> 2*t + 1"
-
 
 subsection \<open>The parity-check and repetition codes\<close>
 
@@ -152,7 +150,6 @@ lemma parity_check_encode_binary:
   shows "\<forall>x \<in> set (parity_check_encode v). x < 2"
   using assms parity_bit_lt_2
   by (auto simp: parity_check_encode_def)
-
 
 text \<open>The parity check $v\mapsto(v,\sum_iv_i)$ produces words of even weight; one flipped bit makes
 the weight odd, so a single error is detected, though not located.\<close>
@@ -200,15 +197,10 @@ proof
   thus False using ci_bin by presburger
 qed
 
-
 definition repetition_encode :: "nat list \<Rightarrow> nat list" where
   "repetition_encode v \<equiv> v @ v"
 
 text \<open>Repetition $v\mapsto(v,v)$ doubles every distance, $d((v,v),(w,w))=2\,d(v,w)$.\<close>
-
-lemma length_repetition_encode [simp]:
-  "length (repetition_encode v) = 2 * length v"
-  by (simp add: repetition_encode_def)
 
 lemma hamming_dist_repetition_doubles:
   assumes "length v = length w"
@@ -227,12 +219,6 @@ lemma hamming_weight_append:
 lemma hamming_weight_repetition_encode:
   "hamming_weight (repetition_encode v) = 2 * hamming_weight v"
   by (simp add: repetition_encode_def hamming_weight_append)
-
-lemma repetition_encode_binary:
-  assumes "\<forall>x \<in> set v. x < 2"
-  shows "\<forall>x \<in> set (repetition_encode v). x < 2"
-  using assms by (auto simp: repetition_encode_def)
-
 
 subsection \<open>Classical codes over $\mathbb Z_2$\<close>
 
@@ -496,18 +482,12 @@ next
   show ?case using IH ab unfolding w by (auto simp: xor_word_def zero_word_def less_2_cases_iff)
 qed
 
-lemma hamming_weight_zero_word [simp]: "hamming_weight (zero_word m) = 0"
-  by (simp add: hamming_weight_def zero_word_def)
-
 lemma hamming_weight_eq_zero_iff: "\<forall>x \<in> set v. x < 2 \<Longrightarrow> hamming_weight v = 0 \<longleftrightarrow> v = zero_word (length v)"
   by (induction v) (auto simp: hamming_weight_def zero_word_def)
 
 definition subspace_code :: "nat \<Rightarrow> nat list set \<Rightarrow> bool" where
   "subspace_code m S \<longleftrightarrow> (\<forall>v \<in> S. length v = m \<and> (\<forall>x \<in> set v. x < 2))
                          \<and> (\<forall>v \<in> S. \<forall>w \<in> S. xor_word v w \<in> S)"
-
-lemma xor_word_bits: "\<forall>x \<in> set (xor_word v w). x < 2"
-  by (auto simp: xor_word_def set_zip)
 
 theorem subspace_code_distance:
   assumes S: "subspace_code m S" and fin: "finite S" and two: "\<exists>v \<in> S. \<exists>w \<in> S. v \<noteq> w"

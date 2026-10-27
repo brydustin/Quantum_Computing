@@ -190,61 +190,6 @@ next
   finally show "((outer_prod \<psi> \<psi>)\<^sup>\<dagger>) $$ (i,j) = (outer_prod \<psi> \<psi>) $$ (i,j)".
 qed
 
-lemma outer_proj_cross_zero:
-  assumes q1: "quantum_state n \<psi>1"
-      and q2: "quantum_state n \<psi>2"
-      and orth: "\<langle>\<psi>1 | \<psi>2\<rangle> = 0"
-  shows "(outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2) = 0\<^sub>m n n"
-proof -
-  have d1: "dim_vec \<psi>1 = n"
-    using q1 by (simp add: quantum_state_def)
-  have d2: "dim_vec \<psi>2 = n"
-    using q2 by (simp add: quantum_state_def)
-  show ?thesis
-  proof (rule eq_matI)
-    show "dim_row ((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) = dim_row (0\<^sub>m n n)"
-      by (simp add: d1 ket_vec_def)
-    show "dim_col ((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) = dim_col (0\<^sub>m n n)"
-      by (simp add: bra_vec_def cpx_mat_cnj_def d2 row_vec_def)
-  next
-    fix r c
-    assume r: "r < dim_row (0\<^sub>m n n)"
-    assume c: "c < dim_col (0\<^sub>m n n)"
-    then have rlt: "r < n" and clt: "c < n"
-      using r by auto
-    have "((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) $$ (r,c)
-        = (\<Sum>j = 0..<n. (outer_prod \<psi>1 \<psi>1) $$ (r,j) * (outer_prod \<psi>2 \<psi>2) $$ (j,c))"
-      using d1 d2 rlt clt
-      by (metis (no_types, lifting) ext atLeast0LessThan bra_bra_vec dagger_of_ket_is_bra dim_col 
-          dim_col_of_dagger index_matrix_prod index_mult_mat(2,3) ket_vec_col)
-    also have "... = (\<Sum>j = 0..<n. (\<psi>1 $ r * cnj (\<psi>1 $ j)) * (\<psi>2 $ j * cnj (\<psi>2 $ c)))"
-    proof (rule sum.cong[OF refl])
-      fix j assume "j \<in> {0..<n}"
-      then have jn: "j < n" by simp
-      have rv: "r < dim_vec \<psi>1" using d1 rlt by simp
-      have jv1: "j < dim_vec \<psi>1" using d1 jn by simp
-      have jv2: "j < dim_vec \<psi>2" using d2 jn by simp
-      have cv: "c < dim_vec \<psi>2" using d2 clt by simp
-      have step_rj: "(outer_prod \<psi>1 \<psi>1) $$ (r,j) = \<psi>1 $ r * cnj (\<psi>1 $ j)"
-        using outer_prod_index[OF rv jv1] .
-      have step_jc: "(outer_prod \<psi>2 \<psi>2) $$ (j,c) = \<psi>2 $ j * cnj (\<psi>2 $ c)"
-        using outer_prod_index[OF jv2 cv] .
-      show "(outer_prod \<psi>1 \<psi>1) $$ (r,j) * (outer_prod \<psi>2 \<psi>2) $$ (j,c)
-          = (\<psi>1 $ r * cnj (\<psi>1 $ j)) * (\<psi>2 $ j * cnj (\<psi>2 $ c))"
-        using step_rj step_jc by simp
-    qed
-    also have "... = (\<psi>1 $ r) * (\<Sum>j = 0..<n. cnj (\<psi>1 $ j) * \<psi>2 $ j) * cnj (\<psi>2 $ c)"
-      by (simp add: sum_distrib_left sum_distrib_right algebra_simps)
-    also have "... = (\<psi>1 $ r) * \<langle>\<psi>1 | \<psi>2\<rangle> * cnj (\<psi>2 $ c)"
-      using d1 d2 by (simp add: inner_prod_def)
-    also have "... = 0"
-      using orth by simp
-    also have "... = (0\<^sub>m n n) $$ (r,c)"
-      using rlt clt by simp
-    finally show "((outer_prod \<psi>1 \<psi>1) * (outer_prod \<psi>2 \<psi>2)) $$ (r,c) = (0\<^sub>m n n) $$ (r,c)".
-  qed
-qed
-
 text \<open>Case I: orthogonal states can be distinguished perfectly.\<close>
 
 lemma orthogonal_states_distinguishable:

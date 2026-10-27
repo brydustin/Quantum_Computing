@@ -64,17 +64,6 @@ proof -
   show ?thesis using Ws_len_le Ws_c Ws_eq by blast
 qed
 
-
-text \<open>Dimension bookkeeping for $T^\dagger$ (the onto statement is not formalised).\<close>
-
-lemma adjoint_image_in_dom:
-  fixes T :: "complex Matrix.mat"
-  assumes sq: "T \<in> carrier_mat m r"
-  shows "\<forall>w :: complex Matrix.vec. dim_vec w = m
-           \<longrightarrow> dim_vec (T\<^sup>\<dagger> *\<^sub>v w) = r"
-  using sq by auto
-
-
 text \<open>$\crk(\Phi)\le nd$: the defining set of the Choi rank is non-empty.\<close>
 
 corollary choi_rank_le:

@@ -29,7 +29,6 @@ matrices.  \<open>('a, 'm, 'n) lmat\<close> is given the typeclass tower \<open>
 \<open>heine_borel\<close>; for \<open>'a = complex\<close> the norm is the Hilbert--Schmidt norm, the inner
 product its real part, and the dimension is $2\,\mathrm{CARD}('m)\,\mathrm{CARD}('n)$.\<close>
 
-
 section \<open>Real scalar multiplication and \<open>real_vector\<close> instance\<close>
 
 text \<open>For \<open>'a :: real_vector\<close>, lift element-wise scalar multiplication
@@ -83,26 +82,7 @@ proof
     done
 qed
 
-
 section \<open>Entries of sums and differences\<close>
-
-lemma unwrap_lm_plus_index [simp]:
-  fixes M N :: "('a :: plus, 'm :: finite, 'n :: finite) lmat"
-  assumes "i < CARD('m)" "j < CARD('n)"
-  shows "unwrap_lm (M + N) $$ (i, j) = unwrap_lm M $$ (i, j) + unwrap_lm N $$ (i, j)"
-  using assms by (simp add: index_add_mat)
-
-lemma unwrap_lm_minus_index [simp]:
-  fixes M N :: "('a :: ab_group_add, 'm :: finite, 'n :: finite) lmat"
-  assumes "i < CARD('m)" "j < CARD('n)"
-  shows "unwrap_lm (M - N) $$ (i, j) = unwrap_lm M $$ (i, j) - unwrap_lm N $$ (i, j)"
-  using assms by (simp add: index_minus_mat)
-
-lemma unwrap_lm_zero_index [simp]:
-  fixes i j :: nat
-  assumes "i < CARD('m :: finite)" "j < CARD('n :: finite)"
-  shows "unwrap_lm (0 :: ('a :: zero, 'm, 'n) lmat) $$ (i, j) = 0"
-  using assms by simp
 
 lemma lmat_eq_iff_entries:
   fixes M N :: "('a, 'm :: finite, 'n :: finite) lmat"
@@ -119,7 +99,6 @@ next
     by (rule eq_matI) (use * in auto)
   thus "M = N" by (metis unwrap_lm_inverse)
 qed
-
 
 section \<open>Distance, uniformity, open: \<open>metric_space\<close> instance\<close>
 
@@ -178,7 +157,6 @@ next
 qed
 
 end
-
 
 section \<open>Norm and \<open>real_normed_vector\<close> instance\<close>
 
@@ -247,7 +225,6 @@ qed
 
 end
 
-
 section \<open>Real inner product\<close>
 
 text \<open>For \<open>'a :: real_inner\<close>, the lmat inner product is the entry-wise
@@ -293,7 +270,6 @@ qed
 
 end
 
-
 section \<open>Basis: matrix units carrying a basis vector\<close>
 
 definition lmat_axis :: "nat \<Rightarrow> nat \<Rightarrow> 'a :: zero
@@ -306,14 +282,6 @@ lemma unwrap_lmat_axis [simp]:
      = Matrix.mat (CARD('m)) (CARD('n))
                    (\<lambda>(r, s). if r = i \<and> s = j then u else 0)"
   unfolding lmat_axis_def by (subst wrap_lm_inverse) auto
-
-lemma lmat_axis_index [simp]:
-  fixes u :: "'a :: zero"
-  assumes "r < CARD('m :: finite)" "s < CARD('n :: finite)"
-  shows "unwrap_lm (lmat_axis i j u :: ('a, 'm, 'n) lmat) $$ (r, s)
-           = (if r = i \<and> s = j then u else 0)"
-  using assms by simp
-
 
 text \<open>Inner product against a single matrix-unit basis vector picks out
 one matrix entry.\<close>
@@ -360,7 +328,6 @@ proof -
   finally show ?thesis .
 qed
 
-
 text \<open>Two matrix-unit basis vectors are equal iff their entries and
 positions match (or both vectors are zero).\<close>
 
@@ -396,7 +363,6 @@ next
     done
 qed
 
-
 text \<open>Inner product between two matrix-unit basis vectors: 1 if same
 position and basis component, 0 otherwise.\<close>
 
@@ -418,7 +384,6 @@ proof -
     by (cases "i = i' \<and> j = j'") auto
   finally show ?thesis .
 qed
-
 
 section \<open>Basis set\<close>
 
@@ -560,7 +525,6 @@ lemma Basis_lmat_perp_zero:
   shows "(\<forall>u \<in> Basis_lmat_set. inner x u = 0) \<longleftrightarrow> x = 0"
   using Basis_lmat_perp_imp_zero zero_inner_Basis_lmat by metis
 
-
 section \<open>Euclidean space instance\<close>
 
 instantiation lmat :: (euclidean_space, finite, finite) euclidean_space
@@ -588,11 +552,9 @@ qed
 
 end
 
-
 section \<open>Heine-Borel\<close>
 
 instance lmat :: (euclidean_space, finite, finite) heine_borel ..
-
 
 section \<open>Dimension\<close>
 
@@ -721,7 +683,6 @@ proof -
   show ?thesis using B_card by simp
 qed
 
-
 section \<open>Component-wise bounds via the L2 norm\<close>
 
 lemma norm_lmat_index_le:
@@ -754,7 +715,6 @@ proof -
   finally show ?thesis .
 qed
 
-
 section \<open>Convergence: lmat sequence convergence implies entry convergence\<close>
 
 lemma tendsto_unwrap_lm_index:
@@ -768,14 +728,6 @@ proof (rule metric_tendsto_imp_tendsto[OF lim])
                     \<le> dist (f x) L"
     by (intro always_eventually allI) (rule dist_lmat_index_le[OF ij])
 qed
-
-lemma LIMSEQ_unwrap_lm_index:
-  fixes f :: "nat \<Rightarrow> ('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat"
-    and L :: "('a, 'm, 'n) lmat"
-  assumes "f \<longlonglongrightarrow> L" "i < CARD('m)" "j < CARD('n)"
-  shows "(\<lambda>n. unwrap_lm (f n) $$ (i, j)) \<longlonglongrightarrow> unwrap_lm L $$ (i, j)"
-  using tendsto_unwrap_lm_index assms by blast
-
 
 section \<open>Entries as continuous functions; wrapping\<close>
 

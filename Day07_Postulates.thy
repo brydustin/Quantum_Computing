@@ -126,7 +126,6 @@ proof -
         (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b))"
     by (smt (verit, best) complex_cnj_mult mult.commute semigroup_mult_class.mult.assoc sum.cong)
 
-
   have step5:
   "(\<Sum>a = 0..<n. \<Sum>b = 0..<m.
       (cnj (h1 $ a) * h2 $ a) * (cnj (k1 $ b) * k2 $ b)) =
@@ -155,7 +154,6 @@ proof -
     using step1 step2 step3 step4 step5 step6
     by argo
 qed
-
 
 lemma length_concat_map_upt:
   "length (concat (map (\<lambda>i. map (\<lambda>j. f i j) [0..<m]) [0..<n])) = n * m"
@@ -263,7 +261,6 @@ proof -
 
     have mod_lt: "p mod m < m"
       by (metis mod_by_0 mod_less_divisor mod_mult_self2_is_0 p_lt zero_less_iff_neq_zero)
-
 
     have "?ts = concat (map (\<lambda>i. map (\<lambda>j. tensor_vec (hs ! i) (ks ! j)) [0..<m]) [0..<n])"
       by simp
@@ -373,13 +370,6 @@ lemma quantum_state_norm1:
   using assms
   by (simp add: quantum_state_def)
 
-lemma quantum_state_dim:
-  assumes "quantum_state n \<psi>"
-  shows "dim_vec \<psi> = n"
-  using assms
-  by (simp add: quantum_state_def)
-
-
 text \<open>A state is a unit vector, and evolution is $\psi\mapsto U\psi$ with $U$ unitary; it stays a state
 since $\norm{U\psi}^2=\braket{\psi}{U^*U\psi}=\norm\psi^2=1$.\<close>
 
@@ -400,7 +390,6 @@ proof
   finally show "\<parallel>U *\<^sub>v \<psi>\<parallel> = 1".
 qed
 
-
 text \<open>A measurement is a list $M_1,\dots,M_k$ with $\sum_iM_i^*M_i=I$.  Outcome $i$ has probability
 \[ p_i=\norm{M_i\psi}^2=\braket{\psi}{M_i^*M_i\,\psi}, \]
 and these add up to $\braket{\psi}{(\sum_iM_i^*M_i)\psi}=\norm\psi^2=1$.\<close>
@@ -412,7 +401,6 @@ definition measurement_system :: "nat \<Rightarrow> complex Matrix.mat list \<Ri
 
 definition meas_prob :: "complex Matrix.mat \<Rightarrow> complex Matrix.vec \<Rightarrow> real" where
   "meas_prob M \<psi> \<equiv> \<parallel>M *\<^sub>v \<psi>\<parallel>\<^sup>2"
-
 
 lemma measurement_probs_sum_one:
   assumes ms: "measurement_system n Ms"

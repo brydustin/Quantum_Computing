@@ -45,7 +45,6 @@ lemma mat_unit_index [simp]:
   shows "(E\<lbrakk>i,j ; m,n\<rbrakk>) $$ (r,c) = (if r = i \<and> c = j then 1 else 0)"
   using assms by (simp add: mat_unit_def)
 
-
 text \<open>Pairing with $E_{ij}$ extracts the $(i,j)$ entry: the matrix analogue of
 $\braket{e_i}{v}=v_i$.\<close>
 
@@ -109,8 +108,6 @@ proof -
   finally show ?thesis.
 qed
 
-
-
 lemma mat_unit_orthonormal:
   assumes i_lt: "i < m"
       and j_lt: "j < n"
@@ -119,8 +116,6 @@ lemma mat_unit_orthonormal:
   shows "\<langle>\<langle> E\<lbrakk>i,j ; m,n\<rbrakk> | E\<lbrakk>k,l ; m,n\<rbrakk> \<rangle>\<rangle> =
          (if i = k \<and> j = l then 1 else 0)"
   by (metis hs_inner_prod_mat_unit_left i_lt j_lt mat_unit_dim_col mat_unit_dim_row mat_unit_index)
-
-
 
 text \<open>Expansion in the basis $\{E_{ij}\}$, stated entrywise because matrices of
 different dimensions cannot be added in the library.\<close>
@@ -184,8 +179,6 @@ proof -
   qed
   finally show ?thesis by simp
 qed
-
-
 
 lemma mat_unit_hs_expansion:
   assumes "r < dim_row x" and "c < dim_col x"
@@ -275,8 +268,6 @@ corollary Tr_mat_unit_offdiag:
   shows "Tr (E\<lbrakk>i,j ; m,n\<rbrakk>) = 0"
   by (simp add: Tr_mat_unit assms)
 
-
-
 lemma Tr_hs_diagonal_sum:
   shows "Tr x =
          (\<Sum>r < dim_row x.
@@ -296,7 +287,6 @@ proof -
     by (intro sum.cong refl, metis cols hs_inner_prod_mat_unit_left lessThan_iff rows)
   finally show ?thesis.
 qed
-
 
 text \<open>The trace is linear.\<close>
 
@@ -322,7 +312,6 @@ proof -
   finally show ?thesis.
 qed
 
-
 lemma Tr_smult: "Tr (a \<cdot>\<^sub>m x) = a * Tr x"
 proof -
   have "Tr (a \<cdot>\<^sub>m x) =
@@ -344,8 +333,6 @@ corollary Tr_uminus: "Tr (- x) = - Tr x"
       index_uminus_mat(2,3) index_zero_mat(2,3)
       right_add_zero_mat uminus_l_inv_mat uminus_uminus_mat)
 
-
-
 corollary Tr_diff:
   assumes rows: "dim_row x = dim_row y"
       and cols: "dim_col x = dim_col y"
@@ -359,7 +346,6 @@ proof -
     by (simp add: Tr_uminus)
   finally show ?thesis.
 qed
-
 
 lemma Tr_zero_mat [simp]:
   shows "Tr (Matrix.mat m n (\<lambda>(r,c). 0)) = 0"
@@ -393,36 +379,6 @@ lemma mat_unit_dagger:
   shows "(E\<lbrakk>i,j ; m,n\<rbrakk>)\<^sup>\<dagger> = E\<lbrakk>j,i ; n,m\<rbrakk>"
   by (rule eq_matI, simp_all, simp add: dagger_def)
 
-
-
-lemma mat_unit_mult_entry:
-  assumes r_lt: "r < m"
-      and c_lt: "c < p"
-      and j_lt: "j < n"
-  shows "(E\<lbrakk>i,j ; m,n\<rbrakk> * E\<lbrakk>k,l ; n,p\<rbrakk>) $$ (r,c) =
-         (if j = k \<and> r = i \<and> c = l then 1 else 0)"  
-proof -
-  have "(E\<lbrakk>i,j ; m,n\<rbrakk> * E\<lbrakk>k,l ; n,p\<rbrakk>) $$ (r,c) =
-        (\<Sum>t<n. (E\<lbrakk>i,j ; m,n\<rbrakk>) $$ (r,t) * (E\<lbrakk>k,l ; n,p\<rbrakk>) $$ (t,c))"
-    using r_lt c_lt by simp
-  also have "... =
-        (\<Sum>t<n. (if r = i \<and> t = j then 1 else 0) *
-               (if t = k \<and> c = l then 1 else 0))"
-    using r_lt c_lt by (intro sum.cong refl) simp
-  also have "... =
-        (if r = i \<and> c = l
-         then (\<Sum>t<n. (if t = j then 1 else 0) * (if t = k then 1 else 0))
-         else 0)"
-    by fastforce
-  also have "... = (if r = i \<and> c = l then (if j = k then 1 else 0) else 0)"
-    by (smt (verit) Tr_hs_diagonal_sum Tr_mat_unit_diag j_lt lambda_one lambda_zero mat_unit_dim_col
-        mat_unit_dim_row mat_unit_orthonormal sum.cong sum.not_neutral_contains_not_neutral)
-  also have "... = (if j = k \<and> r = i \<and> c = l then 1 else 0)"
-    by auto
-  finally show ?thesis.
-qed
-
-
 text \<open>Multiplying by a matrix unit selects a row or a column.\<close>
 
 lemma unit_mult_left_entry:
@@ -446,6 +402,11 @@ proof -
     by (rule sum.cong) auto
   finally show ?thesis using i by simp
 qed
+
+lemma mat_unit_mult_entry:
+  assumes r_lt: "r < m" and c_lt: "c < p" and j_lt: "j < n"
+  shows "(E\<lbrakk>i,j ; m,n\<rbrakk> * E\<lbrakk>k,l ; n,p\<rbrakk>) $$ (r,c) = (if j = k \<and> r = i \<and> c = l then 1 else 0)"
+  using unit_mult_left_entry[OF mat_unit_carrier r_lt c_lt j_lt, of i k l] j_lt c_lt by simp
 
 lemma sandwich_mat_unit_entry:
   assumes V: "V \<in> carrier_mat d n" and W: "W \<in> carrier_mat d n"
@@ -515,7 +476,6 @@ proof -
   finally show ?thesis
     by (metis Arow left_mult_one_mat')
 qed
-
 
 lemma hs_inner_prod_as_trace:
   assumes rows: "dim_row A = dim_row B"
@@ -842,8 +802,6 @@ lemma orthonormal_listD_carrier:
   shows "set vs \<subseteq> carrier_vec n"
   using assms orthonormal_list_def by auto
 
-
-
 definition outer_sum :: "nat \<Rightarrow> complex Matrix.vec list \<Rightarrow> complex Matrix.mat" where
   "outer_sum n vs = mat_of_cols n vs * ((mat_of_cols n vs)\<^sup>\<dagger>)"
 
@@ -860,8 +818,6 @@ lemma outer_sum_hermitian:
   shows "(outer_sum n vs)\<^sup>\<dagger> = outer_sum n vs"
   unfolding outer_sum_def
   by (simp add: dagger_of_prod dagger_of_dagger_is_id)
-
-
 
 lemma cols_mat_dagger_left:
   assumes orth: "orthonormal_list n vs"
@@ -892,8 +848,6 @@ proof (rule eq_matI)
   finally show "(?V\<^sup>\<dagger> * ?V) $$ (l1,l2) = (1\<^sub>m ?k) $$ (l1,l2)" .
 qed
 
-
-
 lemma cols_mat_dagger_right:
   assumes orth: "orthonormal_list n vs"
       and full: "length vs = n"
@@ -910,8 +864,6 @@ proof -
   then show ?thesis
     by (simp add: inverts_mat_def full)
 qed
-
-
 
 text \<open>For a full basis ($k=n$) $V$ is square, so $V^*V=I$ forces $VV^*=I$ as well.  Entrywise
 this is the completeness relation
@@ -938,8 +890,6 @@ proof -
   finally show ?thesis using sum_eq by simp
 qed
 
-
-
 lemma outer_sum_index:
   assumes orth: "orthonormal_list n vs"
       and i_lt: "i < n" and j_lt: "j < n"
@@ -958,8 +908,6 @@ proof -
        (simp add: mat_of_cols_def dagger_def orthonormal_listD_dim[OF orth])
   finally show ?thesis.
 qed
-
-
 
 text \<open>$P$ acts by $Px=\sum_l\braket{v_l}{x}\,v_l$, and $P^2=V(V^*V)V^*=VV^*=P$.\<close>
 
@@ -991,8 +939,6 @@ proof -
   finally show ?thesis.
 qed
 
-
-
 lemma outer_sum_idempotent:
   assumes orth: "orthonormal_list n vs"
   shows "outer_sum n vs * outer_sum n vs = outer_sum n vs"
@@ -1013,8 +959,6 @@ proof -
     by (simp add: outer_sum_def)
   finally show ?thesis .
 qed
-
-
 
 text \<open>For a full basis $P=I$, so each vector is its own expansion $v=\sum_l\braket{v_l}{v}\,v_l$;
 taking $\braket{v}{\cdot}$ gives Parseval, $\norm{v}^2=\sum_l|\braket{v_l}{v}|^2$.\<close>
@@ -1045,7 +989,6 @@ proof -
   finally show ?thesis 
     by simp
 qed
-
 
 corollary parseval_norm:
   assumes orth: "orthonormal_list n vs"
@@ -1080,8 +1023,6 @@ qed
 
 text \<open>The residual $x-Px$ is orthogonal to every $v_l$, because
 $\braket{v_l}{Px}=\braket{v_l}{x}$; hence the orthogonal decomposition $x=Px+(x-Px)$.\<close>
-
-
 
 lemma inner_prod_outer_sum:
   assumes orth: "orthonormal_list n vs"
@@ -1118,8 +1059,6 @@ proof -
   finally show ?thesis.
 qed
 
-
-
 lemma residual_orthogonal:
   assumes orth: "orthonormal_list n vs"
       and xdim: "dim_vec x = n"
@@ -1151,8 +1090,6 @@ proof -
   finally show ?thesis.
 qed
 
-
-
 corollary orthogonal_decomposition:
   assumes xdim: "dim_vec x = n"
   shows "x = outer_sum n vs *\<^sub>v x + (x - outer_sum n vs *\<^sub>v x)"
@@ -1165,8 +1102,6 @@ qed
 
 text \<open>Uniqueness: if $x=v+w$ with $Pv=v$ and $w\perp v_l$ for all $l$, then $v=Px$
 and $w=x-Px$.\<close>
-
-
 
 lemma outer_sum_orthogonal_zero:
   assumes orth: "orthonormal_list n vs"
@@ -1189,8 +1124,6 @@ next
     using i_lt by simp
 qed
 
-
-
 lemma outer_sum_add:
   assumes vdim: "dim_vec v = n" and wdim: "dim_vec w = n"
   shows "outer_sum n vs *\<^sub>v (v + w) = 
@@ -1206,8 +1139,6 @@ proof -
   ultimately show ?thesis
     by (simp add: mult_add_distrib_mat_vec)
 qed
-
-
 
 lemma orthogonal_decomposition_unique:
   assumes orth: "orthonormal_list n vs"

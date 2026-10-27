@@ -35,8 +35,6 @@ algorithm also writes $P$ as a sum of rank-one matrices.  The formal theorem add
 hypothesis $p_{11}>0$, which the notes leave implicit (for $p_{11}=0$ the quotient is
 undefined).\<close>
 
-
-
 theorem cholesky_reduction:
   fixes P :: "complex Matrix.mat"
   assumes sq: "P \<in> carrier_mat n n"
@@ -520,9 +518,6 @@ definition chol_R :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
 definition chol_next :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "chol_next P = Matrix.mat (dim_row P - 1) (dim_row P - 1) (\<lambda>(i, j). (P - chol_R P) $$ (i + 1, j + 1))"
 
-lemma chol_R_carrier [simp]: "chol_R P \<in> carrier_mat (dim_row P) (dim_row P)"
-  by (simp add: chol_R_def)
-
 lemma hermitian_entry:
   assumes "hermitian P" "P \<in> carrier_mat n n" "i < n" "j < n"
   shows "P $$ (i, j) = cnj (P $$ (j, i))"
@@ -768,14 +763,9 @@ text \<open>The direct sum of vectors is JNF's concatenation \<open>@\<^sub>v\<c
 abbreviation direct_sum_vec :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" (infixr "\<oplus>\<^sub>v" 65) where
   "v \<oplus>\<^sub>v w \<equiv> v @\<^sub>v w"
 
-lemma direct_sum_vec_left [simp]:
-  "i < dim_vec v \<Longrightarrow> (v \<oplus>\<^sub>v w) $ i = v $ i"
-  by (simp add: append_vec_def Let_def)
-
 lemma direct_sum_vec_right [simp]:
   "i < dim_vec w \<Longrightarrow> (v \<oplus>\<^sub>v w) $ (dim_vec v + i) = w $ i"
   by (simp add: append_vec_def Let_def)
-
 
 lemma direct_sum_inner_prod:
   assumes vd1: "dim_vec v1 = m" and vd2: "dim_vec v2 = m"
@@ -821,7 +811,6 @@ proof -
   finally show ?thesis
     using vd1 vd2 wd1 wd2 by (simp add: inner_prod_def)
 qed
-
 
 lemma block_mat_apply:
   assumes "dim_vec v = k1" and "dim_vec w = k2"

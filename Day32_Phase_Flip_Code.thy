@@ -48,9 +48,6 @@ definition ket_minus :: "complex Matrix.vec" where
 lemma ket_plus_carrier [simp]: "ket_plus \<in> carrier_vec 2"
   by (simp add: ket_plus_def)
 
-lemma ket_minus_carrier [simp]: "ket_minus \<in> carrier_vec 2"
-  by (simp add: ket_minus_def)
-
 lemma ket_plus_dim [simp]: "dim_vec ket_plus = 2"
   by (simp add: ket_plus_def)
 
@@ -62,12 +59,6 @@ lemma ket_plus_index_0: "ket_plus $ 0 = 1 / sqrt 2"
 
 lemma ket_plus_index_1: "ket_plus $ 1 = 1 / sqrt 2"
   by (simp add: ket_plus_def)
-
-lemma ket_minus_index_0: "ket_minus $ 0 = 1 / sqrt 2"
-  by (simp add: ket_minus_def)
-
-lemma ket_minus_index_1: "ket_minus $ 1 = - 1 / sqrt 2"
-  by (simp add: ket_minus_def)
 
 text \<open>$\ket\pm=\tfrac1{\sqrt2}(\ket0\pm\ket1)$ is an orthonormal basis in which $X$ and $Z$ exchange roles:
 \[ Z\ket+=\ket-,\quad Z\ket-=\ket+,\qquad X\ket+=\ket+,\quad X\ket-=-\ket-. \]
@@ -131,7 +122,6 @@ proof -
   finally show ?thesis .
 qed
 
-
 lemma Pauli_Z_ket_plus: "Pauli_Z *\<^sub>v ket_plus = ket_minus"
 proof (rule eq_vecI)
   show "dim_vec (Pauli_Z *\<^sub>v ket_plus) = dim_vec ket_minus"
@@ -163,7 +153,6 @@ proof -
   also have "\<dots> = ket_plus" by simp
   finally show ?thesis .
 qed
-
 
 lemma Pauli_X_ket_plus: "Pauli_X *\<^sub>v ket_plus = ket_plus"
 proof (rule eq_vecI)
@@ -205,7 +194,6 @@ next
   finally show "(Pauli_X *\<^sub>v ket_minus) $ i = (- ket_minus) $ i" .
 qed
 
-
 text \<open>The code words $\ket{+++}$ and $\ket{---}$ of the three-qubit phase-flip code (an
 earlier version of this file called them \<open>phase_code_zero\<close>/\<open>phase_code_one\<close>; the nine-qubit Shor
 code words are not defined).\<close>
@@ -221,19 +209,6 @@ definition phase_code_one :: "complex Matrix.vec" where
      let v = unit_vec 2 0 - unit_vec 2 1 in
      (1 / (2 * sqrt 2) :: complex)
        \<cdot>\<^sub>v tensor_vec (tensor_vec v v) v"
-
-lemma phase_code_zero_dim [simp]: "dim_vec phase_code_zero = 8"
-  by (simp add: phase_code_zero_def Let_def, simp add: tensor_vec_dim)
-
-lemma phase_code_one_dim [simp]: "dim_vec phase_code_one = 8"
-  by (smt (verit, best) index_minus_vec(2) index_smult_vec(2) index_unit_vec(3) 
-      mult_2 mult_commute_abs numeral_Bit0 phase_code_one_def tensor_vec_dim)
-
-lemma phase_code_zero_carrier [simp]: "phase_code_zero \<in> carrier_vec 8"
-  by (simp add: carrier_dim_vec)
-
-lemma phase_code_one_carrier [simp]: "phase_code_one \<in> carrier_vec 8"
-  by (simp add: carrier_dim_vec)
 
 subsection \<open>Algebra of projections; towards Days 33 and 34\<close>
 
@@ -259,7 +234,6 @@ Of the Knill--Laflamme results, the equivalence of Theorem 1's two readings
 Day 34, with the converse, the construction of $R$ from the conditions, and the equivalence
 itself (\<open>knill_laflamme\<close>).  The elementary algebra of orthogonal
 projections used by the proofs follows.\<close>
-
 
 lemma projection_complement:
   assumes "projection n P"
@@ -323,73 +297,6 @@ lemma orthogonal_projections_carrier_right:
   "orthogonal_projections n P Q \<Longrightarrow> Q \<in> carrier_mat n n"
   by (simp add: orthogonal_projections_def projection_def)
 
-lemma orthogonal_projections_symm:
-  "orthogonal_projections n P Q \<longleftrightarrow> orthogonal_projections n Q P"
-  by (auto simp: orthogonal_projections_def)
-
-
-lemma orthogonal_projections_sum:
-  assumes opq: "orthogonal_projections n P Q"
-  shows "projection n (P + Q)"
-proof -
-  have P_proj: "projection n P"
-    using opq by (simp add: orthogonal_projections_def)
-  have Q_proj: "projection n Q"
-    using opq by (simp add: orthogonal_projections_def)
-  have PQ_zero: "P * Q = 0\<^sub>m n n"
-    using opq by (simp add: orthogonal_projections_def)
-  have QP_zero: "Q * P = 0\<^sub>m n n"
-    using opq by (simp add: orthogonal_projections_def)
-  have P_c: "P \<in> carrier_mat n n" using P_proj by (rule projection_carrier)
-  have Q_c: "Q \<in> carrier_mat n n" using Q_proj by (rule projection_carrier)
-  have P_idem: "P * P = P" using P_proj by (rule projection_idempotent)
-  have Q_idem: "Q * Q = Q" using Q_proj by (rule projection_idempotent)
-  have P_h: "hermitian P" using P_proj by (rule projection_hermitian)
-  have Q_h: "hermitian Q" using Q_proj by (rule projection_hermitian)
-  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
-  have Q_dag: "Q\<^sup>\<dagger> = Q" using Q_h by (simp add: hermitian_def)
-
-  have PQ_c: "P + Q \<in> carrier_mat n n" using P_c Q_c by simp
-
-  have PQ_dag: "(P + Q)\<^sup>\<dagger> = P + Q"
-  proof -
-    have "(P + Q)\<^sup>\<dagger> = (P\<^sup>\<dagger>) + (Q\<^sup>\<dagger>)"
-      using P_c Q_c
-      by (intro eq_matI, auto simp: dagger_def)
-    also have "\<dots> = P + Q" using P_dag Q_dag by simp
-    finally show ?thesis.
-  qed
-  have PQ_h: "hermitian (P + Q)" using PQ_dag by (simp add: hermitian_def)
-
-  have PQ_idem: "(P + Q) * (P + Q) = P + Q"
-  proof -
-    have expand:
-      "(P + Q) * (P + Q) = P * P + P * Q + (Q * P + Q * Q)"
-      using P_c Q_c
-      by (smt (verit) add_carrier_mat add_mult_distrib_mat
-          mult_add_distrib_mat assoc_add_mat)
-    have "P * P + P * Q + (Q * P + Q * Q)
-            = P + 0\<^sub>m n n + (0\<^sub>m n n + Q)"
-      using P_idem Q_idem PQ_zero QP_zero by simp
-    also have "\<dots> = P + Q"
-      using P_c Q_c by (intro eq_matI, auto)
-    finally show ?thesis using expand by simp
-  qed
-  show ?thesis unfolding projection_def using PQ_c PQ_h PQ_idem by blast
-qed
-
-
-lemma orthogonal_projections_decomp_id:
-  assumes "orthogonal_projections n P Q"
-  shows "P + Q + (1\<^sub>m n - P - Q) = 1\<^sub>m n"
-proof -
-  have P_c: "P \<in> carrier_mat n n"
-    using assms by (rule orthogonal_projections_carrier_left)
-  have Q_c: "Q \<in> carrier_mat n n"
-    using assms by (rule orthogonal_projections_carrier_right)
-  show ?thesis using P_c Q_c by (intro eq_matI) auto
-qed
-
 subsection \<open>Pauli magic (D32-6)\<close>
 
 text \<open>\begin{notesprop}
@@ -433,7 +340,6 @@ proof -
   show "\<langle>\<langle> Pauli_Z | Pauli_Z \<rangle>\<rangle> = 2"
     by (simp add: hs_inner_prod_def Pauli_Z_def numeral_2_eq_2)
 qed
-
 
 subsection \<open>The Pauli expansion identity for unitaries (D32-7)\<close>
 

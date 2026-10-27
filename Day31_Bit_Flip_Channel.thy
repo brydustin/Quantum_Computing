@@ -29,155 +29,63 @@ definition bit_flip_channel ::
      complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
      + complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
 
-lemma bit_flip_channel_carrier:
-  assumes "\<rho> \<in> carrier_mat 2 2"
-  shows "bit_flip_channel p \<rho> \<in> carrier_mat 2 2"
+text \<open>The error map is the Kraus map of $\sqrt{1-p}\,I$ and $\sqrt p\,X$, so it is completely positive
+and trace preserving (Day 22); as $XX^*=I$ it is unital too.\<close>
+
+definition bit_flip_kraus :: "real \<Rightarrow> complex Matrix.mat list" where
+  "bit_flip_kraus p = [complex_of_real (sqrt (1 - p)) \<cdot>\<^sub>m 1\<^sub>m 2, complex_of_real (sqrt p) \<cdot>\<^sub>m Pauli_X]"
+
+lemma bit_flip_channel_kraus:
+  assumes p: "0 \<le> p" "p \<le> 1" and \<rho>: "\<rho> \<in> carrier_mat 2 2"
+  shows "bit_flip_channel p \<rho> = kraus_map_dim 2 (bit_flip_kraus p) \<rho>"
 proof -
-  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
-    using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
-    using x_c assms by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
-    using x\<rho>_c xd_c by (rule mult_carrier_mat)
+  have s: "complex_of_real (sqrt (1 - p)) * cnj (complex_of_real (sqrt (1 - p))) = complex_of_real (1 - p)"
+    "complex_of_real (sqrt p) * cnj (complex_of_real (sqrt p)) = complex_of_real p"
+    using p by (simp_all flip: of_real_mult)
   show ?thesis
-    using assms x\<rho>xd_c by (auto simp: bit_flip_channel_def)
+    unfolding bit_flip_kraus_def bit_flip_channel_def
+    by (simp only: kraus_map_dim_two[OF smult_carrier_mat[OF one_carrier_mat] smult_carrier_mat[OF Pauli_X_carrier] \<rho>]
+                   smult_sandwich[OF one_carrier_mat \<rho>] smult_sandwich[OF Pauli_X_carrier \<rho>] s
+                   dagger_of_id_is_id left_mult_one_mat[OF \<rho>] right_mult_one_mat[OF \<rho>])
 qed
 
-
-lemma bit_flip_channel_trace_preserving:
-  fixes p :: real
-  assumes \<rho>_c: "\<rho> \<in> carrier_mat 2 2"
-  shows "Tr (bit_flip_channel p \<rho>) = Tr \<rho>"
+lemma bit_flip_kraus_operators:
+  assumes p: "0 \<le> p" "p \<le> 1"
+  shows "kraus_operators 2 2 (bit_flip_kraus p)"
 proof -
-  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
-    using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
-    using x_c \<rho>_c by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
-    using x\<rho>_c xd_c by (rule mult_carrier_mat)
-  have xdx_eq: "(Pauli_X\<^sup>\<dagger>) * Pauli_X = 1\<^sub>m 2"
-    using Pauli_X_dagger Pauli_X_squared by simp
-
-  (* Tr(X \<rho> X^dagger) = Tr(X^dagger X \<rho>) = Tr(I \<rho>) = Tr \<rho>, by cyclicity. *)
-  have tr_conj: "Tr (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)) = Tr \<rho>"
-  proof -
-    have "Tr (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)) = Tr (Pauli_X\<^sup>\<dagger> * (Pauli_X * \<rho>))"
-    proof (rule Tr_cyclic)
-      show "dim_col (Pauli_X * \<rho>) = dim_row (Pauli_X\<^sup>\<dagger>)"
-        using x\<rho>_c xd_c by (metis carrier_matD)
-      show "dim_row (Pauli_X * \<rho>) = dim_col (Pauli_X\<^sup>\<dagger>)"
-        using x\<rho>_c xd_c by (metis carrier_matD)
-    qed
-    also have "\<dots> = Tr ((Pauli_X\<^sup>\<dagger> * Pauli_X) * \<rho>)"
-      by (metis xd_c x_c \<rho>_c assoc_mult_mat)
-    also have "\<dots> = Tr ((1\<^sub>m 2) * \<rho>)" using xdx_eq by simp
-    also have "\<dots> = Tr \<rho>" using \<rho>_c by simp
-    finally show ?thesis .
-  qed
-
-  have row_eq: "dim_row (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
-                  = dim_row (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
-    using \<rho>_c x\<rho>xd_c by (metis carrier_matD(1) index_smult_mat(2))
-  have col_eq: "dim_col (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
-                  = dim_col (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
-    using \<rho>_c x\<rho>xd_c by (metis carrier_matD(2) index_smult_mat(3))
-  have "Tr (bit_flip_channel p \<rho>)
-          = Tr (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)
-            + Tr (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
-    unfolding bit_flip_channel_def
-    using row_eq col_eq by (rule Tr_add)
-  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
-                  + complex_of_real p * Tr (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
-    by (simp add: Tr_smult)
-  also have "\<dots> = complex_of_real (1 - p) * Tr \<rho>
-                  + complex_of_real p * Tr \<rho>"
-    using tr_conj by simp
-  also have "\<dots> = (complex_of_real (1 - p) + complex_of_real p) * Tr \<rho>"
-    by (simp add: ring_distribs)
-  also have "\<dots> = 1 * Tr \<rho>"
-    by simp
-  also have "\<dots> = Tr \<rho>" by simp
-  finally show ?thesis.
+  have s: "cnj (complex_of_real (sqrt (1 - p))) * complex_of_real (sqrt (1 - p)) = complex_of_real (1 - p)"
+    "cnj (complex_of_real (sqrt p)) * complex_of_real (sqrt p) = complex_of_real p"
+    using p by (simp_all flip: of_real_mult)
+  have "sum_wdag_w 2 (bit_flip_kraus p) = complex_of_real (1 - p) \<cdot>\<^sub>m 1\<^sub>m 2 + complex_of_real p \<cdot>\<^sub>m 1\<^sub>m 2"
+    unfolding bit_flip_kraus_def
+    by (simp only: sum_wdag_w_two[OF smult_carrier_mat[OF one_carrier_mat] smult_carrier_mat[OF Pauli_X_carrier]]
+                   smult_dagger_mult[OF one_carrier_mat] smult_dagger_mult[OF Pauli_X_carrier] s
+                   dagger_of_id_is_id Pauli_X_dagger Pauli_X_squared right_mult_one_mat[OF one_carrier_mat])
+  also have "\<dots> = 1\<^sub>m 2" by (rule eq_matI) (auto simp: algebra_simps)
+  finally show ?thesis
+    unfolding kraus_operators_altdef bit_flip_kraus_def[symmetric] by (simp add: bit_flip_kraus_def)
 qed
 
+lemma bit_flip_channel_CPTP:
+  assumes p: "0 \<le> p" "p \<le> 1"
+  shows "bit_flip_channel p \<in> CPTP 2 2"
+  using kraus_is_cptp[OF bit_flip_kraus_operators[OF p]] bit_flip_channel_kraus[OF p]
+        completely_positive_cong[of 2 "bit_flip_channel p" "kraus_map_dim 2 (bit_flip_kraus p)" 2]
+        trace_preserving_cong[of 2 "bit_flip_channel p" "kraus_map_dim 2 (bit_flip_kraus p)"]
+  by (simp add: CPTP_def)
 
-lemma bit_flip_channel_psd:
-  fixes p :: real
-  assumes p_nn:    "0 \<le> p"
-      and p_le_1:  "p \<le> 1"
-      and \<rho>_c:    "\<rho> \<in> carrier_mat 2 2"
-      and \<rho>_psd:  "psd \<rho>"
-  shows "psd (bit_flip_channel p \<rho>)"
+lemma bit_flip_channel_UCP:
+  assumes p: "0 \<le> p" "p \<le> 1"
+  shows "bit_flip_channel p \<in> UCP 2 2"
 proof -
-  have x_c: "Pauli_X \<in> carrier_mat 2 2" by simp
-  have xd_c: "Pauli_X\<^sup>\<dagger> \<in> carrier_mat 2 2"
-    using x_c by (rule dagger_carrier)
-  have x\<rho>_c: "Pauli_X * \<rho> \<in> carrier_mat 2 2"
-    using x_c \<rho>_c by (rule mult_carrier_mat)
-  have x\<rho>xd_c: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) \<in> carrier_mat 2 2"
-    using x\<rho>_c xd_c by (rule mult_carrier_mat)
-
-  have one_minus_nn: "0 \<le> 1 - p" using p_le_1 by simp
-
-  (* X . \<rho> . X^dagger is PSD: factor \<rho> = Q*Q via the psd-sqrt, then
-     X . Q*Q . X^dagger = (X Q) (X Q)^dagger which is psd by psd_MdagM. *)
-  have conj_psd: "psd (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))"
-  proof -
-    obtain Q where Q_c:    "Q \<in> carrier_mat 2 2"
-               and Q_psd:  "psd Q"
-               and Q_sq:   "Q * Q = \<rho>"
-      using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
-    have Q_dagger: "Q\<^sup>\<dagger> = Q"
-      using Q_psd by (simp add: psd_def hermitian_def)
-    have XQ_c: "Pauli_X * Q \<in> carrier_mat 2 2"
-      using x_c Q_c by (rule mult_carrier_mat)
-    have XQd_c: "(Pauli_X * Q)\<^sup>\<dagger> \<in> carrier_mat 2 2"
-      using XQ_c by (rule dagger_carrier)
-    have eq: "Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>) = (Pauli_X * Q) * ((Pauli_X * Q)\<^sup>\<dagger>)"
-    proof -
-      have dim_eq: "dim_col Pauli_X = dim_row Q"
-        using x_c Q_c by (metis carrier_matD)
-      have dagprod: "(Pauli_X * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (Pauli_X\<^sup>\<dagger>)"
-        using dim_eq by (rule dagger_of_prod)
-      hence dagprod': "(Pauli_X * Q)\<^sup>\<dagger> = Q * (Pauli_X\<^sup>\<dagger>)"
-        using Q_dagger by simp
-      have "(Pauli_X * Q) * ((Pauli_X * Q)\<^sup>\<dagger>)
-              = (Pauli_X * Q) * (Q * (Pauli_X\<^sup>\<dagger>))"
-        using dagprod' by simp
-      also have "\<dots> = Pauli_X * Q * Q * (Pauli_X\<^sup>\<dagger>)"
-        using x_c Q_c xd_c by (metis assoc_mult_mat mult_carrier_mat)
-      also have "\<dots> = Pauli_X * (Q * Q) * (Pauli_X\<^sup>\<dagger>)"
-        using x_c Q_c by (metis assoc_mult_mat)
-      also have "\<dots> = Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)"
-        using Q_sq by simp
-      finally show ?thesis by simp
-    qed
-    have psd_dd: "psd (((Pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((Pauli_X * Q)\<^sup>\<dagger>))"
-      using psd_MdagM[OF XQd_c] .
-    have dd_eq: "(Pauli_X * Q)\<^sup>\<dagger>\<^sup>\<dagger> = Pauli_X * Q"
-      using XQ_c by (simp add: dagger_of_dagger_is_id)
-    have "psd ((Pauli_X * Q) * ((Pauli_X * Q)\<^sup>\<dagger>))"
-      using psd_dd dd_eq by simp
-    thus ?thesis using eq by simp
-  qed
-
-  have term1_psd: "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>)"
-    using one_minus_nn \<rho>_psd \<rho>_c by (rule psd_smult_nonneg)
-  have term2_psd: "psd (complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
-    using p_nn conj_psd x\<rho>xd_c by (rule psd_smult_nonneg)
-
-  have term1_c: "complex_of_real (1 - p) \<cdot>\<^sub>m \<rho> \<in> carrier_mat 2 2"
-    using \<rho>_c by simp
-  have term2_c: "complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>))
-                   \<in> carrier_mat 2 2"
-    using x\<rho>xd_c by simp
-
-  have "psd (complex_of_real (1 - p) \<cdot>\<^sub>m \<rho>
-              + complex_of_real p \<cdot>\<^sub>m (Pauli_X * \<rho> * (Pauli_X\<^sup>\<dagger>)))"
-    using term1_psd term2_psd term1_c term2_c by (rule psd_add_psd)
-  thus ?thesis by (simp add: bit_flip_channel_def)
+  have XX: "Pauli_X * 1\<^sub>m 2 * (Pauli_X\<^sup>\<dagger>) = 1\<^sub>m 2"
+    by (simp add: Pauli_X_dagger carrier_matD[OF Pauli_X_carrier] Pauli_X_squared)
+  have "bit_flip_channel p (1\<^sub>m 2) = 1\<^sub>m 2"
+    unfolding bit_flip_channel_def XX by (intro eq_matI) (auto simp: algebra_simps)
+  thus ?thesis
+    using kraus_is_cptp[OF bit_flip_kraus_operators[OF p]] bit_flip_channel_kraus[OF p]
+          completely_positive_cong[of 2 "bit_flip_channel p" "kraus_map_dim 2 (bit_flip_kraus p)" 2]
+    by (simp add: CPTP_def UCP_def unital_map_def)
 qed
 
 subsection \<open>Fidelity\<close>
@@ -198,7 +106,6 @@ definition fidelity ::
 lemma fidelity_def_eq:
   "fidelity \<psi> \<rho> = sqrt (Re (\<langle>\<psi> | \<rho> *\<^sub>v \<psi>\<rangle>))"
   by (simp add: fidelity_def)
-
 
 lemma fidelity_pure_states:
   fixes \<psi> \<psi>' :: "complex Matrix.vec"
@@ -255,7 +162,6 @@ proof -
   finally show ?thesis.
 qed
 
-
 lemma fidelity_self:
   fixes \<psi> :: "complex Matrix.vec"
   assumes \<psi>_qs: "quantum_state n \<psi>"
@@ -274,7 +180,6 @@ proof -
     by simp
   finally show ?thesis .
 qed
-
 
 lemma fidelity_orthogonal:
   fixes \<psi> \<psi>' :: "complex Matrix.vec"
