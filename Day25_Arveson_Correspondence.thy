@@ -3,7 +3,7 @@
 *)
 
 theory Day25_Arveson_Correspondence
-  imports Day23_Choi_Extreme_Points Day24_Operator_Systems
+  imports Day24_Operator_Systems
 begin
 
 subsection \<open>Arveson's correspondence between maps and functionals\<close>

@@ -11,5 +11,11 @@
 | `paper_listings.py` | the paper's Isabelle listings against the sources |
 | `paper_links.py [REV]` | repoint the paper's source links to a commit (commit the theories first) |
 | `counts.py` | lines and results per level, as in the paper |
+| `deps/scan.sh HEAP OUT [PREFIXES]` | fact-level dependency scan of a built heap (`deps/scan.ML`): per fact, the facts its proof uses and the constants and types of its statement |
+| `deps/uses.py`, `deps/graph.py` | per fact / per block: what a theory uses from other project theories, and from itself |
+| `deps/imports.py SCAN [MOVES]` | minimal project imports of the notes theories, optionally after moving lemmas |
+| `deps/statecheck.py OLD NEW` | statement constants before and after a reorganisation (finds captured variables) |
+| `deps/blocks.py` | split a theory into top-level commands (lexer-aware) |
+| `deps/plans/` | scripted reorganisations, regenerated from git HEAD (`day23.py`) |
 
 Settings (Isabelle binary, AFP path, session list) are in `env.sh`.

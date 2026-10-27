@@ -423,6 +423,30 @@ proof -
 qed
 
 
+text \<open>Multiplying by a matrix unit selects a row or a column.\<close>
+
+lemma unit_mult_left_entry:
+  assumes Bm: "Bm \<in> carrier_mat n m" and r: "r < p" and k: "k < m" and j: "j < n"
+  shows "(E\<lbrakk>i,j ; p,n\<rbrakk> * Bm) $$ (r,k) = (if r = i then Bm $$ (j,k) else 0)"
+proof -
+  have "(E\<lbrakk>i,j ; p,n\<rbrakk> * Bm) $$ (r,k) = (\<Sum>l<n. (if r = i \<and> l = j then 1 else 0) * Bm $$ (l,k))"
+    using Bm r k by (simp add: scalar_prod_def mat_unit_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>l<n. if l = j then (if r = i then Bm $$ (l,k) else 0) else 0)"
+    by (rule sum.cong) auto
+  finally show ?thesis using j by simp
+qed
+
+lemma unit_mult_right_entry:
+  assumes Cm: "Cm \<in> carrier_mat p n" and r: "r < p" and s: "s < m" and i: "i < n"
+  shows "(Cm * E\<lbrakk>i,j ; n,m\<rbrakk>) $$ (r,s) = (if s = j then Cm $$ (r,i) else 0)"
+proof -
+  have "(Cm * E\<lbrakk>i,j ; n,m\<rbrakk>) $$ (r,s) = (\<Sum>l<n. Cm $$ (r,l) * (if l = i \<and> s = j then 1 else 0))"
+    using Cm r s by (simp add: scalar_prod_def mat_unit_def atLeast0LessThan)
+  also have "\<dots> = (\<Sum>l<n. if l = i then (if s = j then Cm $$ (r,l) else 0) else 0)"
+    by (rule sum.cong) auto
+  finally show ?thesis using i by simp
+qed
+
 text \<open>Writing $A=\sum_{i,j}a_{ij}E_{ij}$ and $B=\sum_{k,l}b_{kl}E_{kl}$, the product rule for matrix
 units gives $\Tr(AB)=\sum_{i,j}a_{ij}b_{ji}$, which is symmetric in $A$ and $B$:\<close>
 
@@ -507,6 +531,90 @@ qed
 corollary hs_inner_prod_self_as_trace:
   shows "\<langle>\<langle> A | A \<rangle>\<rangle> = Tr ((A\<^sup>\<dagger>) * A)"
   by (rule hs_inner_prod_as_trace) simp_all
+
+text \<open>The trace pairing is non-degenerate: $\Tr(ME_{sr})=m_{rs}$, so if
+$\Tr(M\rho)=\Tr(N\rho)$ for every $\rho\in M_n$ then $M=N$.\<close>
+
+lemma Tr_mat_unit_mult:
+  fixes M :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat n n"
+      and r_lt: "r < n" and s_lt: "s < n"
+  shows "Tr (M * mat_unit s r n n) = M $$ (r, s)"
+proof -
+  let ?E = "mat_unit s r n n"
+  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+  have ME_c: "M * ?E \<in> carrier_mat n n" using M_c E_c by auto
+  \<comment> \<open>Per-entry: \<open>(M * E)$$(i, j) = M$$(i, s)\<close> if \<open>j = r\<close>, else \<open>0\<close>.\<close>
+  have ME_idx: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
+                    (M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)"
+  proof -
+    fix i j assume i_lt: "i < n" and j_lt: "j < n"
+    have "(M * ?E) $$ (i, j) = (\<Sum>k = 0..<n. M $$ (i, k) * ?E $$ (k, j))"
+      by (rule mat_mult_index_sum[OF M_c E_c i_lt j_lt])
+    also have "\<dots> = (\<Sum>k = 0..<n.
+                       M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))"
+    proof (rule sum.cong[OF refl])
+      fix k assume "k \<in> {0..<n}" hence k_lt: "k < n" by simp
+      show "M $$ (i, k) * ?E $$ (k, j)
+              = M $$ (i, k) * (if k = s \<and> j = r then 1 else 0)"
+        using mat_unit_index[OF k_lt j_lt, of s r] by simp
+    qed
+    also have "\<dots> = (if j = r then M $$ (i, s) else 0)"
+    proof (cases "j = r")
+      case True
+      have "(\<Sum>k = 0..<n.
+              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
+              = (\<Sum>k = 0..<n. if k = s then M $$ (i, k) else 0)"
+        using True by (intro sum.cong refl) (auto)
+      also have "\<dots> = (if s \<in> {0..<n} then M $$ (i, s) else 0)"
+        by (rule sum.delta) simp
+      also have "\<dots> = M $$ (i, s)" using s_lt by simp
+      finally show ?thesis using True by simp
+    next
+      case False
+      have "(\<Sum>k = 0..<n.
+              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
+              = (\<Sum>k = 0..<n. (0::complex))"
+        using False by (intro sum.cong refl) (auto)
+      thus ?thesis using False by simp
+    qed
+    finally show "(M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)" .
+  qed
+  \<comment> \<open>\<open>Tr (M * E) = \<Sum>\<^sub>i (M * E)[i, i] = M[r, s]\<close>.\<close>
+  have ME_dr: "dim_row (M * ?E) = n" using ME_c by auto
+  have ME_dc: "dim_col (M * ?E) = n" using ME_c by auto
+  have "Tr (M * ?E) = (\<Sum>i < n. if i < n then (M * ?E) $$ (i, i) else 0)"
+    unfolding Tr_def using ME_dr ME_dc by simp
+  also have "\<dots> = (\<Sum>i = 0..<n. (M * ?E) $$ (i, i))"
+    by (simp add: lessThan_atLeast0)
+  also have "\<dots> = (\<Sum>i = 0..<n. if i = r then M $$ (i, s) else 0)"
+    by (rule sum.cong[OF refl]) (auto simp: ME_idx)
+  also have "\<dots> = (if r \<in> {0..<n} then M $$ (r, s) else 0)"
+    by (rule sum.delta) simp
+  also have "\<dots> = M $$ (r, s)" using r_lt by simp
+  finally show ?thesis .
+qed
+
+lemma mat_trace_pairing_unique:
+  fixes M N :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat n n"
+      and N_c: "N \<in> carrier_mat n n"
+      and pair_eq: "\<And>rho. rho \<in> carrier_mat n n \<Longrightarrow> Tr (M * rho) = Tr (N * rho)"
+  shows "M = N"
+proof (rule eq_matI)
+  show "dim_row M = dim_row N" using M_c N_c by auto
+  show "dim_col M = dim_col N" using M_c N_c by auto
+  fix r c assume r_a: "r < dim_row N" and c_a: "c < dim_col N"
+  hence r_lt: "r < n" and c_lt: "c < n" using N_c by auto
+  let ?E = "mat_unit c r n n"
+  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
+  have "M $$ (r, c) = Tr (M * ?E)"
+    using Tr_mat_unit_mult[OF M_c r_lt c_lt] by simp
+  also have "\<dots> = Tr (N * ?E)" using pair_eq[OF E_c] .
+  also have "\<dots> = N $$ (r, c)"
+    using Tr_mat_unit_mult[OF N_c r_lt c_lt] by simp
+  finally show "M $$ (r, c) = N $$ (r, c)" .
+qed
 
 subsection \<open>Orthogonal projections and Parseval's identity\<close>
 

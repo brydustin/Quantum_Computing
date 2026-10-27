@@ -1017,3 +1017,21 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
     (scratchpad tools: `engine.py`, `plan.py`, `emit.py`, which also computes minimal imports).  Checks:
     every one of the 1916 facts has the same statement constants as before (no capture by a newly visible
     constant), 2 facts added; the notes build takes 2:17 (was 2:27).
+- **Day 23 follows the notes' proof** (2026-10-27, user: "please do what you think will make it more
+  beautiful and easy to read").  `Day23_Choi_Extreme_Points` went from 5344 to 4758 lines and now reads in
+  the order of the proof: extreme points and the products of a Kraus list; the maps ψ_T (entries,
+  linearity, Lemma A, the trace, Lemma B, the Choi matrix); (⇒) extreme ⟹ independent products; the CP
+  Radon–Nikodym theorem; (⇐); Choi's Theorem 3 for CPTP maps, for UCP maps (D23-1), and D22-6.
+  * The direction theorems were named against their statements (`choi_theorem_3_cptp_forward_complex`
+    proved ⟸).  Now `extreme_CPTP_imp_products_indep` (restated positively, extreme ⟹ independent) and
+    `products_indep_imp_extreme_CPTP`.
+  * General lemmas left Day 23: index and `foldr`-sum bookkeeping to `Matrix_Lemmas`; the trace pairing
+    and products with matrix units to Day 2, `psd_conjugate` to Day 4, `kraus_map_dim_one` to Day 17,
+    `lin_indep_complex_mat_dagger` to Day 21.  `inner_prod_add_right`/`inner_prod_smult_right` were
+    duplicates of Day 1's `inner_prod_right_add'`/`inner_prod_right_smult'` and are gone.  Day 25's
+    Arveson correspondence no longer imports Day 23 (it only needed `psd_conjugate`); Day 26 imports
+    Day 22 directly.
+  * The examples are in the notes' order (Example 3 before Example 4).
+  * Scripted as `tools/deps/plans/day23.py` (regenerates from HEAD), with the dependency tools now kept in
+    `tools/deps/`.  Statement check: all facts unchanged except the restated direction theorem (no `¬`)
+    and the two removed duplicates; HHL unchanged.  check_all as before.

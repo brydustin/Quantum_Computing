@@ -311,6 +311,41 @@ next
     using term_c rec_c by simp
 qed
 
+text \<open>At the identity a Kraus map gives $\sum_iW_iW_i^*$; so it is unital iff
+$\sum_iW_iW_i^*=I_d$.\<close>
+
+lemma kraus_map_dim_one:
+  assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+  shows "kraus_map_dim d Ws (1\<^sub>m n)
+           = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+  using assms
+proof (induction Ws)
+  case Nil
+  show ?case by simp
+next
+  case (Cons W Ws)
+  have W_c: "W \<in> carrier_mat d n" using Cons.prems by simp
+  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d" using W_c by auto
+  have I_n_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
+  have step_W: "W * 1\<^sub>m n * (W\<^sup>\<dagger>) = W * (W\<^sup>\<dagger>)"
+    using W_c by simp
+  have rest_c: "\<forall>W' \<in> set Ws. W' \<in> carrier_mat d n"
+    using Cons.prems by simp
+  have IH: "kraus_map_dim d Ws (1\<^sub>m n)
+              = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+    using Cons.IH[OF rest_c] .
+  have "kraus_map_dim d (W # Ws) (1\<^sub>m n)
+          = W * 1\<^sub>m n * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (1\<^sub>m n)"
+    by simp
+  also have "... = W * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (1\<^sub>m n)"
+    using step_W by simp
+  also have "... = W * (W\<^sup>\<dagger>) + foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+    using IH by simp
+  also have "... = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) (W # Ws) (0\<^sub>m d d)"
+    by simp
+  finally show ?case .
+qed
+
 text \<open>The same computation shows that every Kraus map $\Phi(\rho)=\sum_iW_i\rho W_i^*$, with
 $W_i\in M_{d,n}$, sends positive matrices to positive matrices.\<close>
 

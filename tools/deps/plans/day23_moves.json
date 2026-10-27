@@ -1,0 +1,9 @@
+{"mat_mult_index_sum": "Matrix_Lemmas", "mat_eq_of_mult_vec_eq": "Matrix_Lemmas", "nonzero_entry": "Matrix_Lemmas",
+ "foldr_upt_add_carrier": "Matrix_Lemmas", "foldr_upt_add_acc_index": "Matrix_Lemmas", "foldr_upt_add_index": "Matrix_Lemmas",
+ "foldr_upt_add_acc_index_dn": "Matrix_Lemmas", "foldr_smult_nth_index": "Matrix_Lemmas", "foldr_smult_index": "Matrix_Lemmas",
+ "concat_uniform_length": "Matrix_Lemmas", "concat_uniform_nth": "Matrix_Lemmas", "sum_split_prod_atLeastLessThan": "Matrix_Lemmas",
+ "Tr_mat_unit_mult": "Day02_Trace_Projections", "mat_trace_pairing_unique": "Day02_Trace_Projections",
+ "unit_mult_left_entry": "Day02_Trace_Projections", "unit_mult_right_entry": "Day02_Trace_Projections",
+ "psd_conjugate": "Day04_Hermitian_Matrices", "kraus_map_dim_one": "Day17_Quantum_Noise",
+ "lin_indep_complex_mat_dagger": "Day21_Unitary_Freedom",
+ "inner_prod_add_right": "Day01_Inner_Product", "inner_prod_smult_right": "Day01_Inner_Product"}

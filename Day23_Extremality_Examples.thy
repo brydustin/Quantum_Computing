@@ -13,25 +13,6 @@ $\Phi(X)=\sum_iW_iXW_i^*$ of the formalisation (the notes write $U^*XU$; replace
 
 subsubsection \<open>Linear dependence tests\<close>
 
-lemma foldr_smult_index:
-  assumes Bs: "\<forall>B \<in> set Bs. B \<in> carrier_mat n m" and r: "r < n" and s: "s < m"
-  shows "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n m) $$ (r,s)
-       = (\<Sum>k<length Bs. c k * Bs ! k $$ (r,s))"
-proof -
-  have "\<forall>k \<in> set [0..<length Bs]. c k \<cdot>\<^sub>m (Bs ! k) \<in> carrier_mat n m" using Bs by auto
-  from foldr_add_mat_index_rect[OF this r s]
-  have "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n m) $$ (r,s)
-      = (\<Sum>k<length Bs. (c k \<cdot>\<^sub>m (Bs ! k)) $$ (r,s))"
-    by (simp add: interv_sum_list_conv_sum_set_nat atLeast0LessThan)
-  also have "\<dots> = (\<Sum>k<length Bs. c k * Bs ! k $$ (r,s))"
-  proof (intro sum.cong refl)
-    fix k assume "k \<in> {..<length Bs}"
-    hence "Bs ! k \<in> carrier_mat n m" using Bs by simp
-    thus "(c k \<cdot>\<^sub>m (Bs ! k)) $$ (r,s) = c k * Bs ! k $$ (r,s)" using r s by simp
-  qed
-  finally show ?thesis .
-qed
-
 lemma not_indep_of_dup:
   assumes a: "a < length Bs" and b: "b < length Bs" and ab: "a \<noteq> b" and eq: "Bs ! a = Bs ! b"
   shows "\<not> lin_indep_complex_mat n n Bs"
@@ -107,20 +88,6 @@ proof (intro conjI allI impI)
   hence "(c 0 \<cdot>\<^sub>m B + 0\<^sub>m n n) $$ (r,s) = 0\<^sub>m n n $$ (r,s)" by simp
   hence "c 0 * B $$ (r,s) = 0" using B r s by simp
   thus "c k = 0" using nz k by simp
-qed
-
-lemma nonzero_entry:
-  fixes A :: "complex Matrix.mat"
-  assumes A: "A \<in> carrier_mat m k" and nz: "A \<noteq> 0\<^sub>m m k"
-  obtains r s where "r < m" "s < k" "A $$ (r,s) \<noteq> 0"
-proof -
-  have "\<exists>r < m. \<exists>s < k. A $$ (r,s) \<noteq> 0"
-  proof (rule ccontr)
-    assume "\<not> (\<exists>r < m. \<exists>s < k. A $$ (r,s) \<noteq> 0)"
-    hence "A = 0\<^sub>m m k" using A by (intro eq_matI) auto
-    thus False using nz by simp
-  qed
-  thus thesis using that by blast
 qed
 
 subsubsection \<open>Example 1: unitary conjugation is extreme\<close>
@@ -294,165 +261,6 @@ proof -
   have ind: "lin_indep_complex_mat n n (kraus_products [U1])"
     unfolding kp by (rule single_mat_lin_indep[of _ n 0 0]) (use n in simp_all)
   show ?thesis using choi_theorem_3_cptp_iff[OF n n kraus_is_cptp[OF K n n] rep min] ind by simp
-qed
-
-subsubsection \<open>Example 4: the diagonal map\<close>
-
-lemma unit_mult_left_entry:
-  assumes Bm: "Bm \<in> carrier_mat n m" and r: "r < p" and k: "k < m" and j: "j < n"
-  shows "(E\<lbrakk>i,j ; p,n\<rbrakk> * Bm) $$ (r,k) = (if r = i then Bm $$ (j,k) else 0)"
-proof -
-  have "(E\<lbrakk>i,j ; p,n\<rbrakk> * Bm) $$ (r,k) = (\<Sum>l<n. (if r = i \<and> l = j then 1 else 0) * Bm $$ (l,k))"
-    using Bm r k by (simp add: scalar_prod_def mat_unit_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l<n. if l = j then (if r = i then Bm $$ (l,k) else 0) else 0)"
-    by (rule sum.cong) auto
-  finally show ?thesis using j by simp
-qed
-
-lemma unit_mult_right_entry:
-  assumes Cm: "Cm \<in> carrier_mat p n" and r: "r < p" and s: "s < m" and i: "i < n"
-  shows "(Cm * E\<lbrakk>i,j ; n,m\<rbrakk>) $$ (r,s) = (if s = j then Cm $$ (r,i) else 0)"
-proof -
-  have "(Cm * E\<lbrakk>i,j ; n,m\<rbrakk>) $$ (r,s) = (\<Sum>l<n. Cm $$ (r,l) * (if l = i \<and> s = j then 1 else 0))"
-    using Cm r s by (simp add: scalar_prod_def mat_unit_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>l<n. if l = i then (if s = j then Cm $$ (r,l) else 0) else 0)"
-    by (rule sum.cong) auto
-  finally show ?thesis using i by simp
-qed
-
-definition diag_kraus :: "nat \<Rightarrow> complex Matrix.mat list" where
-  "diag_kraus n = map (\<lambda>i. E\<lbrakk>i,i ; n,n\<rbrakk>) [0..<n]"
-
-lemma diag_kraus_carrier: "\<forall>W \<in> set (diag_kraus n). W \<in> carrier_mat n n"
-  by (auto simp: diag_kraus_def mat_unit_def)
-
-text \<open>The diagonal map has the Kraus operators $E_{ii}$, and $\sum_iE_{ii}XE_{ii}=\diag(x_{11},\dots,x_{nn})$.
-The $E_{ii}$ are independent, but for $n\ge2$ the products $E_{ii}^*E_{jj}=\delta_{ij}E_{ii}$ include
-$0$, so they are dependent and the map is not extreme.\<close>
-
-lemma diag_kraus_map:
-  assumes M: "M \<in> carrier_mat n n"
-  shows "kraus_map_dim n (diag_kraus n) M = Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else 0)"
-proof (rule eq_matI)
-  have c: "\<forall>W \<in> set (diag_kraus n). W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n"
-  proof
-    fix W assume "W \<in> set (diag_kraus n)"
-    hence Wc: "W \<in> carrier_mat n n" using diag_kraus_carrier by blast
-    show "W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n" using Wc M dagger_carrier[OF Wc] by simp
-  qed
-  fix r s assume "r < dim_row (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
-                 "s < dim_col (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
-  hence r: "r < n" and s: "s < n" by simp_all
-  have e: "\<And>i. i < n \<Longrightarrow> (E\<lbrakk>i,i ; n,n\<rbrakk> * M * (E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>)) $$ (r,s) = (if r = i \<and> s = i then M $$ (i,i) else 0)"
-  proof -
-    fix i assume i: "i < n"
-    have c: "E\<lbrakk>i,i ; n,n\<rbrakk> * M \<in> carrier_mat n n" by (rule mult_carrier_mat[OF mat_unit_carrier M])
-    show "(E\<lbrakk>i,i ; n,n\<rbrakk> * M * (E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>)) $$ (r,s) = (if r = i \<and> s = i then M $$ (i,i) else 0)"
-      unfolding mat_unit_dagger unit_mult_right_entry[OF c r s i] using unit_mult_left_entry[OF M r i i] by auto
-  qed
-  have "kraus_map_dim n (diag_kraus n) M $$ (r,s) = (\<Sum>W\<leftarrow>diag_kraus n. (W * M * (W\<^sup>\<dagger>)) $$ (r,s))"
-    unfolding kraus_map_dim_def by (rule foldr_add_mat_index_rect[OF c r s])
-  also have "\<dots> = (\<Sum>i<n. if r = i \<and> s = i then M $$ (i,i) else 0)"
-    by (simp add: diag_kraus_def comp_def e interv_sum_list_conv_sum_set_nat atLeast0LessThan)
-  also have "\<dots> = (if r = s then M $$ (r,r) else 0)"
-  proof (cases "r = s")
-    case True thus ?thesis using r by (simp add: sum.delta)
-  next
-    case False
-    have "\<forall>i \<in> {..<n}. (if r = i \<and> s = i then M $$ (i,i) else 0) = 0" using False by auto
-    hence "(\<Sum>i<n. if r = i \<and> s = i then M $$ (i,i) else 0) = 0" by (rule sum.neutral)
-    thus ?thesis using False by simp
-  qed
-  finally show "kraus_map_dim n (diag_kraus n) M $$ (r,s) = Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else 0) $$ (r,s)"
-    using r s by simp
-next
-  have c: "\<forall>W \<in> set (diag_kraus n). W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n"
-  proof
-    fix W assume "W \<in> set (diag_kraus n)"
-    hence Wc: "W \<in> carrier_mat n n" using diag_kraus_carrier by blast
-    show "W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n" using Wc M dagger_carrier[OF Wc] by simp
-  qed
-  show "dim_row (kraus_map_dim n (diag_kraus n) M) = dim_row (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
-       "dim_col (kraus_map_dim n (diag_kraus n) M) = dim_col (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
-    using foldr_add_mat_carrier_rect[OF c] unfolding kraus_map_dim_def by auto
-qed
-
-lemma diag_kraus_operators: "kraus_operators n n (diag_kraus n)"
-  unfolding kraus_operators_def
-proof (intro conjI)
-  show "\<forall>W \<in> set (diag_kraus n). W \<in> carrier_mat n n" by (rule diag_kraus_carrier)
-  have c: "\<forall>W \<in> set (diag_kraus n). (W\<^sup>\<dagger>) * W \<in> carrier_mat n n"
-  proof
-    fix W assume "W \<in> set (diag_kraus n)"
-    hence Wc: "W \<in> carrier_mat n n" using diag_kraus_carrier by blast
-    show "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n" using Wc dagger_carrier[OF Wc] by simp
-  qed
-  show "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) (diag_kraus n) (0\<^sub>m n n) = 1\<^sub>m n"
-  proof (rule eq_matI)
-    fix r s assume "r < dim_row (1\<^sub>m n :: complex Matrix.mat)" "s < dim_col (1\<^sub>m n :: complex Matrix.mat)"
-    hence r: "r < n" and s: "s < n" by simp_all
-    have e: "\<And>i. i < n \<Longrightarrow> ((E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>) * E\<lbrakk>i,i ; n,n\<rbrakk>) $$ (r,s) = (if r = i \<and> s = i then 1 else 0)"
-    proof -
-      fix i assume i: "i < n"
-      show "((E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>) * E\<lbrakk>i,i ; n,n\<rbrakk>) $$ (r,s) = (if r = i \<and> s = i then 1 else 0)"
-        unfolding mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier r s i] using r s by auto
-    qed
-    have "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) (diag_kraus n) (0\<^sub>m n n) $$ (r,s) = (\<Sum>W\<leftarrow>diag_kraus n. ((W\<^sup>\<dagger>) * W) $$ (r,s))"
-      by (rule foldr_add_mat_index_rect[OF c r s])
-    also have "\<dots> = (\<Sum>i<n. if r = i \<and> s = i then 1 else 0)"
-      by (simp add: diag_kraus_def comp_def e interv_sum_list_conv_sum_set_nat atLeast0LessThan)
-    also have "\<dots> = (if r = s then 1 else 0)" using r by (auto simp: sum.delta)
-    finally show "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) (diag_kraus n) (0\<^sub>m n n) $$ (r,s) = 1\<^sub>m n $$ (r,s)"
-      using r s by simp
-  qed (use foldr_add_mat_carrier_rect[OF c] in auto)
-qed
-
-lemma diag_kraus_lin_indep: "lin_indep_complex_mat n n (diag_kraus n)"
-  unfolding lin_indep_complex_mat_def
-proof (intro conjI allI impI)
-  show "\<forall>W \<in> set (diag_kraus n). W \<in> carrier_mat n n" by (rule diag_kraus_carrier)
-  fix c :: "nat \<Rightarrow> complex" and k
-  assume z: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (diag_kraus n ! k) + acc) [0..<length (diag_kraus n)] (0\<^sub>m n n) = 0\<^sub>m n n"
-     and k: "k < length (diag_kraus n)"
-  hence kn: "k < n" by (simp add: diag_kraus_def)
-  have "0 = foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (diag_kraus n ! k) + acc) [0..<length (diag_kraus n)] (0\<^sub>m n n) $$ (k,k)"
-    unfolding z using kn by simp
-  also have "\<dots> = (\<Sum>k'<n. c k' * diag_kraus n ! k' $$ (k,k))"
-    using foldr_smult_index[OF diag_kraus_carrier kn kn] by (simp add: diag_kraus_def)
-  also have "\<dots> = (\<Sum>k'<n. if k' = k then c k else 0)"
-    by (intro sum.cong refl) (use kn in \<open>auto simp: diag_kraus_def\<close>)
-  also have "\<dots> = c k" using kn by simp
-  finally show "c k = 0" by simp
-qed
-
-theorem diag_not_extreme:
-  assumes n: "2 \<le> n"
-  shows "\<not> extreme_CPTP n n (kraus_map_dim n (diag_kraus n))"
-proof -
-  have n0: "0 < n" using n by simp
-  have K: "kraus_operators n n (diag_kraus n)" by (rule diag_kraus_operators)
-  have rep: "cptp_kraus_rep n n (kraus_map_dim n (diag_kraus n)) (diag_kraus n)"
-    unfolding cptp_kraus_rep_def using K by simp
-  have l: "length (diag_kraus n) = n" by (simp add: diag_kraus_def)
-  have k1: "kraus_products (diag_kraus n) ! 1 = (diag_kraus n ! 1)\<^sup>\<dagger> * diag_kraus n ! 0"
-  proof -
-    have "[0..<n] = 0 # 1 # [2..<n]" using n by (simp add: upt_conv_Cons numeral_2_eq_2)
-    thus ?thesis unfolding kraus_products_def l by simp
-  qed
-  have d: "diag_kraus n ! 1 = E\<lbrakk>1,1 ; n,n\<rbrakk>" "diag_kraus n ! 0 = E\<lbrakk>0,0 ; n,n\<rbrakk>"
-    using n by (simp_all add: diag_kraus_def)
-  have "(diag_kraus n ! 1)\<^sup>\<dagger> * diag_kraus n ! 0 = 0\<^sub>m n n"
-  proof (rule eq_matI)
-    fix r s assume "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)" "s < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
-    hence r: "r < n" and s: "s < n" by simp_all
-    show "((diag_kraus n ! 1)\<^sup>\<dagger> * diag_kraus n ! 0) $$ (r,s) = 0\<^sub>m n n $$ (r,s)"
-      unfolding d mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier r s] using r s n by simp
-  qed (simp_all add: d d[unfolded One_nat_def] mat_unit_def)
-  hence z: "kraus_products (diag_kraus n) ! 1 = 0\<^sub>m n n" using k1 by simp
-  have "1 < length (kraus_products (diag_kraus n))" using n l length_kraus_products[of "diag_kraus n"]
-    using mult_le_mono[OF n n] by simp
-  hence "\<not> lin_indep_complex_mat n n (kraus_products (diag_kraus n))" by (rule not_indep_of_zero[OF _ z])
-  thus ?thesis using choi_theorem_3_cptp_iff[OF n0 n0 kraus_is_cptp[OF K n0 n0] rep diag_kraus_lin_indep] by simp
 qed
 
 subsubsection \<open>Example 3: $X\mapsto\Tr(X)\,I_d$\<close>
@@ -647,6 +455,143 @@ proof
   hence "d * n \<le> 1 * n" by (simp add: tr_kraus_length)
   hence "d \<le> 1" using n by (simp only: mult_le_cancel2)
   thus False using d by simp
+qed
+
+subsubsection \<open>Example 4: the diagonal map\<close>
+
+definition diag_kraus :: "nat \<Rightarrow> complex Matrix.mat list" where
+  "diag_kraus n = map (\<lambda>i. E\<lbrakk>i,i ; n,n\<rbrakk>) [0..<n]"
+
+lemma diag_kraus_carrier: "\<forall>W \<in> set (diag_kraus n). W \<in> carrier_mat n n"
+  by (auto simp: diag_kraus_def mat_unit_def)
+
+text \<open>The diagonal map has the Kraus operators $E_{ii}$, and $\sum_iE_{ii}XE_{ii}=\diag(x_{11},\dots,x_{nn})$.
+The $E_{ii}$ are independent, but for $n\ge2$ the products $E_{ii}^*E_{jj}=\delta_{ij}E_{ii}$ include
+$0$, so they are dependent and the map is not extreme.\<close>
+
+lemma diag_kraus_map:
+  assumes M: "M \<in> carrier_mat n n"
+  shows "kraus_map_dim n (diag_kraus n) M = Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else 0)"
+proof (rule eq_matI)
+  have c: "\<forall>W \<in> set (diag_kraus n). W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n"
+  proof
+    fix W assume "W \<in> set (diag_kraus n)"
+    hence Wc: "W \<in> carrier_mat n n" using diag_kraus_carrier by blast
+    show "W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n" using Wc M dagger_carrier[OF Wc] by simp
+  qed
+  fix r s assume "r < dim_row (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
+                 "s < dim_col (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
+  hence r: "r < n" and s: "s < n" by simp_all
+  have e: "\<And>i. i < n \<Longrightarrow> (E\<lbrakk>i,i ; n,n\<rbrakk> * M * (E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>)) $$ (r,s) = (if r = i \<and> s = i then M $$ (i,i) else 0)"
+  proof -
+    fix i assume i: "i < n"
+    have c: "E\<lbrakk>i,i ; n,n\<rbrakk> * M \<in> carrier_mat n n" by (rule mult_carrier_mat[OF mat_unit_carrier M])
+    show "(E\<lbrakk>i,i ; n,n\<rbrakk> * M * (E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>)) $$ (r,s) = (if r = i \<and> s = i then M $$ (i,i) else 0)"
+      unfolding mat_unit_dagger unit_mult_right_entry[OF c r s i] using unit_mult_left_entry[OF M r i i] by auto
+  qed
+  have "kraus_map_dim n (diag_kraus n) M $$ (r,s) = (\<Sum>W\<leftarrow>diag_kraus n. (W * M * (W\<^sup>\<dagger>)) $$ (r,s))"
+    unfolding kraus_map_dim_def by (rule foldr_add_mat_index_rect[OF c r s])
+  also have "\<dots> = (\<Sum>i<n. if r = i \<and> s = i then M $$ (i,i) else 0)"
+    by (simp add: diag_kraus_def comp_def e interv_sum_list_conv_sum_set_nat atLeast0LessThan)
+  also have "\<dots> = (if r = s then M $$ (r,r) else 0)"
+  proof (cases "r = s")
+    case True thus ?thesis using r by (simp add: sum.delta)
+  next
+    case False
+    have "\<forall>i \<in> {..<n}. (if r = i \<and> s = i then M $$ (i,i) else 0) = 0" using False by auto
+    hence "(\<Sum>i<n. if r = i \<and> s = i then M $$ (i,i) else 0) = 0" by (rule sum.neutral)
+    thus ?thesis using False by simp
+  qed
+  finally show "kraus_map_dim n (diag_kraus n) M $$ (r,s) = Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else 0) $$ (r,s)"
+    using r s by simp
+next
+  have c: "\<forall>W \<in> set (diag_kraus n). W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n"
+  proof
+    fix W assume "W \<in> set (diag_kraus n)"
+    hence Wc: "W \<in> carrier_mat n n" using diag_kraus_carrier by blast
+    show "W * M * (W\<^sup>\<dagger>) \<in> carrier_mat n n" using Wc M dagger_carrier[OF Wc] by simp
+  qed
+  show "dim_row (kraus_map_dim n (diag_kraus n) M) = dim_row (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
+       "dim_col (kraus_map_dim n (diag_kraus n) M) = dim_col (Matrix.mat n n (\<lambda>(r,s). if r = s then M $$ (r,r) else (0::complex)))"
+    using foldr_add_mat_carrier_rect[OF c] unfolding kraus_map_dim_def by auto
+qed
+
+lemma diag_kraus_operators: "kraus_operators n n (diag_kraus n)"
+  unfolding kraus_operators_def
+proof (intro conjI)
+  show "\<forall>W \<in> set (diag_kraus n). W \<in> carrier_mat n n" by (rule diag_kraus_carrier)
+  have c: "\<forall>W \<in> set (diag_kraus n). (W\<^sup>\<dagger>) * W \<in> carrier_mat n n"
+  proof
+    fix W assume "W \<in> set (diag_kraus n)"
+    hence Wc: "W \<in> carrier_mat n n" using diag_kraus_carrier by blast
+    show "(W\<^sup>\<dagger>) * W \<in> carrier_mat n n" using Wc dagger_carrier[OF Wc] by simp
+  qed
+  show "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) (diag_kraus n) (0\<^sub>m n n) = 1\<^sub>m n"
+  proof (rule eq_matI)
+    fix r s assume "r < dim_row (1\<^sub>m n :: complex Matrix.mat)" "s < dim_col (1\<^sub>m n :: complex Matrix.mat)"
+    hence r: "r < n" and s: "s < n" by simp_all
+    have e: "\<And>i. i < n \<Longrightarrow> ((E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>) * E\<lbrakk>i,i ; n,n\<rbrakk>) $$ (r,s) = (if r = i \<and> s = i then 1 else 0)"
+    proof -
+      fix i assume i: "i < n"
+      show "((E\<lbrakk>i,i ; n,n\<rbrakk>\<^sup>\<dagger>) * E\<lbrakk>i,i ; n,n\<rbrakk>) $$ (r,s) = (if r = i \<and> s = i then 1 else 0)"
+        unfolding mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier r s i] using r s by auto
+    qed
+    have "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) (diag_kraus n) (0\<^sub>m n n) $$ (r,s) = (\<Sum>W\<leftarrow>diag_kraus n. ((W\<^sup>\<dagger>) * W) $$ (r,s))"
+      by (rule foldr_add_mat_index_rect[OF c r s])
+    also have "\<dots> = (\<Sum>i<n. if r = i \<and> s = i then 1 else 0)"
+      by (simp add: diag_kraus_def comp_def e interv_sum_list_conv_sum_set_nat atLeast0LessThan)
+    also have "\<dots> = (if r = s then 1 else 0)" using r by (auto simp: sum.delta)
+    finally show "foldr (\<lambda>W acc. (W\<^sup>\<dagger>) * W + acc) (diag_kraus n) (0\<^sub>m n n) $$ (r,s) = 1\<^sub>m n $$ (r,s)"
+      using r s by simp
+  qed (use foldr_add_mat_carrier_rect[OF c] in auto)
+qed
+
+lemma diag_kraus_lin_indep: "lin_indep_complex_mat n n (diag_kraus n)"
+  unfolding lin_indep_complex_mat_def
+proof (intro conjI allI impI)
+  show "\<forall>W \<in> set (diag_kraus n). W \<in> carrier_mat n n" by (rule diag_kraus_carrier)
+  fix c :: "nat \<Rightarrow> complex" and k
+  assume z: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (diag_kraus n ! k) + acc) [0..<length (diag_kraus n)] (0\<^sub>m n n) = 0\<^sub>m n n"
+     and k: "k < length (diag_kraus n)"
+  hence kn: "k < n" by (simp add: diag_kraus_def)
+  have "0 = foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (diag_kraus n ! k) + acc) [0..<length (diag_kraus n)] (0\<^sub>m n n) $$ (k,k)"
+    unfolding z using kn by simp
+  also have "\<dots> = (\<Sum>k'<n. c k' * diag_kraus n ! k' $$ (k,k))"
+    using foldr_smult_index[OF diag_kraus_carrier kn kn] by (simp add: diag_kraus_def)
+  also have "\<dots> = (\<Sum>k'<n. if k' = k then c k else 0)"
+    by (intro sum.cong refl) (use kn in \<open>auto simp: diag_kraus_def\<close>)
+  also have "\<dots> = c k" using kn by simp
+  finally show "c k = 0" by simp
+qed
+
+theorem diag_not_extreme:
+  assumes n: "2 \<le> n"
+  shows "\<not> extreme_CPTP n n (kraus_map_dim n (diag_kraus n))"
+proof -
+  have n0: "0 < n" using n by simp
+  have K: "kraus_operators n n (diag_kraus n)" by (rule diag_kraus_operators)
+  have rep: "cptp_kraus_rep n n (kraus_map_dim n (diag_kraus n)) (diag_kraus n)"
+    unfolding cptp_kraus_rep_def using K by simp
+  have l: "length (diag_kraus n) = n" by (simp add: diag_kraus_def)
+  have k1: "kraus_products (diag_kraus n) ! 1 = (diag_kraus n ! 1)\<^sup>\<dagger> * diag_kraus n ! 0"
+  proof -
+    have "[0..<n] = 0 # 1 # [2..<n]" using n by (simp add: upt_conv_Cons numeral_2_eq_2)
+    thus ?thesis unfolding kraus_products_def l by simp
+  qed
+  have d: "diag_kraus n ! 1 = E\<lbrakk>1,1 ; n,n\<rbrakk>" "diag_kraus n ! 0 = E\<lbrakk>0,0 ; n,n\<rbrakk>"
+    using n by (simp_all add: diag_kraus_def)
+  have "(diag_kraus n ! 1)\<^sup>\<dagger> * diag_kraus n ! 0 = 0\<^sub>m n n"
+  proof (rule eq_matI)
+    fix r s assume "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)" "s < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
+    hence r: "r < n" and s: "s < n" by simp_all
+    show "((diag_kraus n ! 1)\<^sup>\<dagger> * diag_kraus n ! 0) $$ (r,s) = 0\<^sub>m n n $$ (r,s)"
+      unfolding d mat_unit_dagger unit_mult_left_entry[OF mat_unit_carrier r s] using r s n by simp
+  qed (simp_all add: d d[unfolded One_nat_def] mat_unit_def)
+  hence z: "kraus_products (diag_kraus n) ! 1 = 0\<^sub>m n n" using k1 by simp
+  have "1 < length (kraus_products (diag_kraus n))" using n l length_kraus_products[of "diag_kraus n"]
+    using mult_le_mono[OF n n] by simp
+  hence "\<not> lin_indep_complex_mat n n (kraus_products (diag_kraus n))" by (rule not_indep_of_zero[OF _ z])
+  thus ?thesis using choi_theorem_3_cptp_iff[OF n0 n0 kraus_is_cptp[OF K n0 n0] rep diag_kraus_lin_indep] by simp
 qed
 
 end

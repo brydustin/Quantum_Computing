@@ -235,6 +235,62 @@ where
             = 0\<^sub>m d n
         \<longrightarrow> (\<forall>k < length Ws. c k = 0))"
 
+text \<open>Linear independence passes to the adjoints: $\sum_kc_kW_k^*=0$ gives
+$\sum_k\bar c_kW_k=0$.\<close>
+
+lemma lin_indep_complex_mat_dagger:
+  assumes li: "lin_indep_complex_mat d n Ws"
+  shows "lin_indep_complex_mat n d (map (\<lambda>W. W\<^sup>\<dagger>) Ws)"
+  unfolding lin_indep_complex_mat_def
+proof (intro conjI allI impI)
+  have Wc: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n" using li unfolding lin_indep_complex_mat_def by blast
+  show "\<forall>W \<in> set (map (\<lambda>W. W\<^sup>\<dagger>) Ws). W \<in> carrier_mat n d" using Wc by (auto intro: dagger_carrier)
+  fix c :: "nat \<Rightarrow> complex"
+  assume z: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k) + acc) [0..<length (map (\<lambda>W. W\<^sup>\<dagger>) Ws)] (0\<^sub>m n d) = 0\<^sub>m n d"
+  let ?L = "length Ws"
+  have kc: "\<And>k. k < ?L \<Longrightarrow> Ws ! k \<in> carrier_mat d n" using Wc by simp
+  have fz: "foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) = 0\<^sub>m d n"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row (0\<^sub>m d n :: complex Matrix.mat)" "j < dim_col (0\<^sub>m d n :: complex Matrix.mat)"
+    hence i: "i < d" and j: "j < n" by simp_all
+    have "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k) + acc) [0..<?L] (0\<^sub>m n d) $$ (j, i)
+          = (\<Sum>k\<leftarrow>[0..<?L]. (c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k)) $$ (j, i))"
+      by (rule foldr_add_mat_index_rect) (use kc i j in \<open>auto intro!: smult_carrier_mat dagger_carrier\<close>)
+    also have "\<dots> = (\<Sum>k\<leftarrow>[0..<?L]. c k * cnj (Ws ! k $$ (i, j)))"
+    proof (rule arg_cong[where f = sum_list], rule map_cong[OF refl])
+      fix k assume "k \<in> set [0..<?L]"
+      hence k: "k < ?L" by simp
+      show "(c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k)) $$ (j, i) = c k * cnj (Ws ! k $$ (i, j))"
+        using carrier_matD[OF kc[OF k]] i j k by (simp add: dagger_def)
+    qed
+    finally have "(\<Sum>k\<leftarrow>[0..<?L]. c k * cnj (Ws ! k $$ (i, j))) = 0" using z i j by simp
+    hence "cnj (\<Sum>k\<leftarrow>[0..<?L]. c k * cnj (Ws ! k $$ (i, j))) = 0" by simp
+    hence s0: "(\<Sum>k\<leftarrow>[0..<?L]. cnj (c k) * Ws ! k $$ (i, j)) = 0"
+      by (simp add: sum_list_distinct_conv_sum_set)
+    have "foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) $$ (i, j)
+          = (\<Sum>k\<leftarrow>[0..<?L]. (cnj (c k) \<cdot>\<^sub>m (Ws ! k)) $$ (i, j))"
+      by (rule foldr_add_mat_index_rect) (use kc i j in auto)
+    also have "\<dots> = (\<Sum>k\<leftarrow>[0..<?L]. cnj (c k) * Ws ! k $$ (i, j))"
+    proof (rule arg_cong[where f = sum_list], rule map_cong[OF refl])
+      fix k assume "k \<in> set [0..<?L]"
+      hence k: "k < ?L" by simp
+      show "(cnj (c k) \<cdot>\<^sub>m (Ws ! k)) $$ (i, j) = cnj (c k) * Ws ! k $$ (i, j)"
+        using carrier_matD[OF kc[OF k]] i j by simp
+    qed
+    finally show "foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) $$ (i, j) = 0\<^sub>m d n $$ (i, j)"
+      using s0 i j by simp
+  next
+    show "dim_row (foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n)) = dim_row (0\<^sub>m d n :: complex Matrix.mat)"
+         "dim_col (foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n)) = dim_col (0\<^sub>m d n :: complex Matrix.mat)"
+      using carrier_matD[OF foldr_add_mat_carrier_rect[of "[0..<?L]" "\<lambda>k. cnj (c k) \<cdot>\<^sub>m (Ws ! k)" d n]] kc by auto
+  qed
+  have all: "\<And>c'. foldr (\<lambda>k acc. c' k \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) = 0\<^sub>m d n \<Longrightarrow> \<forall>k < ?L. c' k = 0"
+    using li unfolding lin_indep_complex_mat_def by blast
+  have c0: "\<forall>k < ?L. cnj (c k) = 0" by (rule all[OF fz])
+  fix k assume "k < length (map (\<lambda>W. W\<^sup>\<dagger>) Ws)"
+  thus "c k = 0" using c0 by simp
+qed
+
 definition outer_prods :: "complex Matrix.vec list \<Rightarrow> complex Matrix.mat list" where
   "outer_prods vs = map (\<lambda>k. vs ! (k div length vs) \<oslash> vs ! (k mod length vs)) [0..<length vs * length vs]"
 

@@ -30,34 +30,75 @@ independence of the $V_i^*V_j$ force $U_1^*U_1=\tfrac12I_r$, whence $\psi_1=\Phi
 Examples: $X\mapsto U^*XU$ is extreme; $\tfrac12(U_1^*XU_1+U_2^*XU_2)$, $X\mapsto\tr(X)I_d$
 and $X\mapsto\diag(X)$ are not.
 
-What is formalised here is the corollary, i.e. the CPTP form, for a fixed Kraus list
-\<open>Vs\<close> of linearly independent operators (the consequence of $r=\crk(\Phi)$ proved on
-Day 22): extremality (\<open>extreme_CPTP\<close>, comparing maps on $M_n$) holds if and only if
-the products $V_j^\dagger V_i$ are linearly independent over $\C$
-(\<open>choi_theorem_3_cptp_iff\<close>).  The direction ($\Rightarrow$) follows the notes' perturbation argument
-(\<open>kraus_quad_map\<close>, \<open>small_eps_psd\<close>); the direction ($\Leftarrow$) replaces Choi 2 by a
-CP Radon--Nikodym theorem proved below from the Moore--Penrose pseudoinverse of the Choi
-matrix.  Unitary freedom itself is \<open>choi_2_unitary_freedom\<close> (Day 21).  The UCP form and the
-corollaries are at the end of this theory, the examples in Day23\_Extremality\_Examples.\<close>
+The formalisation proves the corollary first, for maps $\Phi(X)=\sum_iV_iXV_i^*$ with a
+fixed linearly independent Kraus list (what $r=\crk(\Phi)$ gives, Day 22), and then the
+theorem by duality.  The direction ($\Rightarrow$) is the notes' perturbation argument, written
+with the maps $\psi_T(X)=\sum_{i,j}T_{ij}V_iXV_j^*$; for ($\Leftarrow$) a CP Radon--Nikodym
+theorem takes the place of Choi 2.  The examples are in the next theory.\<close>
 
+subsection \<open>Extreme points of CPTP and the products of a Kraus list\<close>
 
-subsection \<open>UCP-Kraus representation\<close>
+text \<open>Extremality compares maps on $M_n$: maps that agree on $M_n$ are the same point of
+$\mathrm{CPTP}(M_n,M_d)$.  So a midpoint decomposition $\Phi=\tfrac12(\Phi_1+\Phi_2)$ that
+witnesses non-extremality consists of maps that are CPTP and linear on $M_n$ and differ from
+$\Phi$ at some matrix (\<open>cptp_pair_mid\<close>).\<close>
 
-text \<open>A UCP Kraus representation of $\Phi:M_n\to M_d$ is a list of $d\times n$ matrices with
-\[ \Phi(X)=\sum_iV_iXV_i^*\quad(X\in M_n),\qquad \sum_iV_iV_i^*=I_d. \]
-The Kraus operators of Day 17 satisfy the trace-preserving condition $\sum_iV_i^*V_i=I_n$
-instead; the unital condition is its dual.\<close>
+definition lin_on_carrier ::
+  "nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
+where
+  "lin_on_carrier n \<Phi> \<equiv>
+     (\<forall>X Y. X \<in> carrier_mat n n \<longrightarrow> Y \<in> carrier_mat n n
+            \<longrightarrow> \<Phi> (X + Y) = \<Phi> X + \<Phi> Y) \<and>
+     (\<forall>c X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X)"
 
-definition ucp_kraus_rep ::
+lemma lin_on_carrier_add:
+  assumes "lin_on_carrier n \<Phi>" "X \<in> carrier_mat n n" "Y \<in> carrier_mat n n"
+  shows "\<Phi> (X + Y) = \<Phi> X + \<Phi> Y"
+  using assms unfolding lin_on_carrier_def by blast
+
+lemma lin_on_carrier_smult:
+  assumes "lin_on_carrier n \<Phi>" "X \<in> carrier_mat n n"
+  shows "\<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X"
+  using assms unfolding lin_on_carrier_def by blast
+
+lemma lin_on_carrierI:
+  assumes "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
+                  \<Longrightarrow> \<Phi> (X + Y) = \<Phi> X + \<Phi> Y"
+      and "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X"
+  shows "lin_on_carrier n \<Phi>"
+  using assms unfolding lin_on_carrier_def by blast
+
+definition cptp_pair_mid ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat)
+       \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat)
+       \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
+where
+  "cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2 \<equiv>
+     \<Phi>\<^sub>1 \<in> CPTP n d \<and> \<Phi>\<^sub>2 \<in> CPTP n d \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d) \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d) \<and>
+     lin_on_carrier n \<Phi>\<^sub>1 \<and> lin_on_carrier n \<Phi>\<^sub>2 \<and>
+     (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
+     (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
+         \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
+
+definition extreme_CPTP ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
+where
+  "extreme_CPTP n d \<Phi> \<equiv>
+     \<Phi> \<in> CPTP n d \<and> \<not> (\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2)"
+
+text \<open>A Kraus representation of $\Phi$, and the products $V_j^*V_i\in M_n$ of its operators for
+all pairs $(i,j)$: there are $k^2$ of them, the one at position $ik+j$ being $V_j^*V_i$.\<close>
+
+definition cptp_kraus_rep ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow>
        complex Matrix.mat list \<Rightarrow> bool"
 where
-  "ucp_kraus_rep n d \<Phi> Vs \<equiv>
-     (\<forall>V \<in> set Vs. V \<in> carrier_mat d n) \<and>
-     foldr (\<lambda>V acc. V * (V\<^sup>\<dagger>) + acc) Vs (0\<^sub>m d d) = 1\<^sub>m d \<and>
+  "cptp_kraus_rep n d \<Phi> Vs \<equiv>
+     kraus_operators n d Vs \<and>
      (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
-
-text \<open>The products of a Kraus list are the $n\times n$ matrices $V_j^*V_i$, for all pairs $(i,j)$.\<close>
 
 definition kraus_products ::
   "complex Matrix.mat list \<Rightarrow> complex Matrix.mat list"
@@ -65,91 +106,6 @@ where
   "kraus_products Vs \<equiv>
      concat (map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<length Vs])
                  [0..<length Vs])"
-
-subsection \<open>Unital condition from the Kraus list\<close>
-
-text \<open>At the identity a Kraus map gives $\sum_iW_iW_i^*$; so unitality is $\sum_iW_iW_i^*=I_d$.\<close>
-
-lemma kraus_map_dim_one:
-  assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-  shows "kraus_map_dim d Ws (1\<^sub>m n)
-           = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
-  using assms
-proof (induction Ws)
-  case Nil
-  show ?case by simp
-next
-  case (Cons W Ws)
-  have W_c: "W \<in> carrier_mat d n" using Cons.prems by simp
-  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d" using W_c by auto
-  have I_n_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
-  have step_W: "W * 1\<^sub>m n * (W\<^sup>\<dagger>) = W * (W\<^sup>\<dagger>)"
-    using W_c by simp
-  have rest_c: "\<forall>W' \<in> set Ws. W' \<in> carrier_mat d n"
-    using Cons.prems by simp
-  have IH: "kraus_map_dim d Ws (1\<^sub>m n)
-              = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
-    using Cons.IH[OF rest_c] .
-  have "kraus_map_dim d (W # Ws) (1\<^sub>m n)
-          = W * 1\<^sub>m n * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (1\<^sub>m n)"
-    by simp
-  also have "... = W * (W\<^sup>\<dagger>) + kraus_map_dim d Ws (1\<^sub>m n)"
-    using step_W by simp
-  also have "... = W * (W\<^sup>\<dagger>) + foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
-    using IH by simp
-  also have "... = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) (W # Ws) (0\<^sub>m d d)"
-    by simp
-  finally show ?case .
-qed
-
-
-subsection \<open>UCP-Kraus existence\<close>
-
-text \<open>Every linear UCP map has a UCP Kraus representation with $nd$ operators: Choi's theorem gives
-a Kraus list, and $\Phi(I_n)=I_d$ supplies $\sum_iV_iV_i^*=I_d$.\<close>
-
-lemma ucp_has_kraus_rep:
-  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
-                   \<Phi> (A + B) = \<Phi> A + \<Phi> B"
-      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
-      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
-      and npos: "0 < n" and dpos: "0 < d"
-      and ucp: "\<Phi> \<in> UCP n d"
-  shows "\<exists>Vs :: complex Matrix.mat list.
-           ucp_kraus_rep n d \<Phi> Vs \<and> length Vs = n * d"
-proof -
-  have cp: "completely_positive n d \<Phi>"
-    using ucp unfolding UCP_def by auto
-  have unital: "\<Phi> (1\<^sub>m n) = 1\<^sub>m d"
-    using ucp unfolding UCP_def unital_map_def by auto
-  have psd_choi: "psd (choi_matrix n d \<Phi>)"
-    using choi_psd_if_cp[OF npos dpos cp] .
-  obtain Ws :: "complex Matrix.mat list"
-    where Ws_len: "length Ws = n * d"
-      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-      and Ws_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
-    using kraus_rep_of_psd_choi[OF linear smult range npos dpos psd_choi]
-    by blast
-  have I_n_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
-  have phi_I: "\<Phi> (1\<^sub>m n) = kraus_map_dim d Ws (1\<^sub>m n)"
-    using Ws_eq I_n_c by blast
-  have sum_WWdag: "foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d) = 1\<^sub>m d"
-  proof -
-    have "1\<^sub>m d = \<Phi> (1\<^sub>m n)" using unital by simp
-    also have "... = kraus_map_dim d Ws (1\<^sub>m n)" using phi_I .
-    also have "... = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
-      using kraus_map_dim_one[OF Ws_c] .
-    finally show ?thesis by simp
-  qed
-  have rep: "ucp_kraus_rep n d \<Phi> Ws"
-    unfolding ucp_kraus_rep_def
-    using Ws_c sum_WWdag Ws_eq by blast
-  show ?thesis using rep Ws_len by blast
-qed
-
-
-subsection \<open>Sanity facts about \<open>kraus_products\<close>\<close>
 
 lemma kraus_products_carrier:
   assumes "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -168,14 +124,51 @@ proof
   show "B \<in> carrier_mat n n" using B_eq Vi_c Vjd_c by auto
 qed
 
+lemma length_kraus_products:
+  "length (kraus_products Vs) = length Vs * length Vs"
+proof -
+  let ?k = "length Vs"
+  let ?L = "map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<?k]) [0..<?k]"
+  have uniform: "\<forall>xs \<in> set ?L. length xs = ?k" by auto
+  have outer_len: "length ?L = ?k" by simp
+  have "length (kraus_products Vs) = length (concat ?L)"
+    by (simp add: kraus_products_def)
+  also have "\<dots> = length ?L * ?k"
+    using concat_uniform_length[OF uniform] .
+  also have "\<dots> = ?k * ?k"
+    using outer_len by simp
+  finally show ?thesis .
+qed
 
-subsection \<open>Quadratic Kraus map (perturbation primitive)\<close>
+lemma kraus_products_nth:
+  assumes i_lt: "i < length Vs" and j_lt: "j < length Vs"
+  shows "kraus_products Vs ! (i * length Vs + j) = (Vs!j)\<^sup>\<dagger> * Vs!i"
+proof -
+  let ?k = "length Vs"
+  let ?L = "map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<?k]) [0..<?k]"
+  have uniform: "\<forall>xs \<in> set ?L. length xs = ?k" by auto
+  have outer_len: "length ?L = ?k" by simp
+  have inner_nth: "?L ! i ! j = (Vs!j)\<^sup>\<dagger> * Vs!i"
+    using i_lt j_lt by simp
+  have i_lt': "i < length ?L" using outer_len i_lt by simp
+  have "kraus_products Vs ! (i * ?k + j) = concat ?L ! (i * ?k + j)"
+    by (simp add: kraus_products_def)
+  also have "\<dots> = ?L ! i ! j"
+    using concat_uniform_nth[OF uniform i_lt' j_lt] .
+  also have "\<dots> = (Vs!j)\<^sup>\<dagger> * Vs!i"
+    using inner_nth .
+  finally show ?thesis .
+qed
+
+subsection \<open>Quadratic Kraus maps\<close>
 
 text \<open>The quadratic Kraus map of a list $V_1,\dots,V_k$ and a matrix $T\in M_k$ is
 \[ \psi_T(X)=\sum_{i,j}T_{ij}\,V_iXV_j^*. \]
-For $T=I$ it is the Kraus map of the list, for $T\ge0$ it is again a Kraus map (Lemma A), and
-the perturbations $T_\pm=I\pm\epsilon A$, $A$ Hermitian and $\epsilon$ small, give the midpoint
-decompositions witnessing non-extremality.\<close>
+It is linear in $T$ and in $X$, and $\psi_I$ is the Kraus map of the list.  For $T\ge0$ it is
+completely positive (Lemma A); it is trace preserving when $\sum_{i,j}T_{ij}V_j^*V_i=I_n$; and
+if the $V_i$ are linearly independent, different $T$ give different maps (Lemma B).\<close>
+
+subsubsection \<open>Definition and entries\<close>
 
 definition kraus_quad_row ::
   "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow>
@@ -192,14 +185,6 @@ where
   "kraus_quad_map d Vs Tm rho \<equiv>
      foldr (\<lambda>i acc. kraus_quad_row d Vs Tm rho i + acc)
            [0..<length Vs] (0\<^sub>m d d)"
-
-text \<open>A sum of $d\times d$ matrices is a $d\times d$ matrix.\<close>
-
-lemma foldr_upt_add_carrier:
-  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes "\<forall>k < N. f k \<in> carrier_mat d d"
-  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) \<in> carrier_mat d d"
-  using assms by (intro foldr_add_mat_carrier) auto
 
 lemma kraus_quad_row_carrier:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -240,58 +225,6 @@ proof -
   show ?thesis
     unfolding kraus_quad_map_def
     using foldr_upt_add_carrier[OF term_c] .
-qed
-
-text \<open>Per-entry index formula for the accumulating fold (with arbitrary base).\<close>
-
-lemma foldr_upt_add_acc_index:
-  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d d"
-      and z_c:  "z \<in> carrier_mat d d"
-      and r_lt: "r < d" and c_lt: "c < d"
-  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] z $$ (r, c)
-           = (\<Sum>k = 0..<N. f k $$ (r, c)) + z $$ (r, c)"
-  using carr z_c
-proof (induction N arbitrary: z)
-  case 0
-  show ?case by simp
-next
-  case (Suc N)
-  have hd_c:   "f N \<in> carrier_mat d d" using Suc.prems(1) by simp
-  have rest_c: "\<forall>k < N. f k \<in> carrier_mat d d" using Suc.prems(1) by simp
-  have fNz_c:  "f N + z \<in> carrier_mat d d"
-    using hd_c Suc.prems(2) by auto
-  have dec: "[0..<Suc N] = [0..<N] @ [N]" by simp
-  have step: "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z
-                = foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z)"
-    using dec by (simp add: foldr_append)
-  have IH: "foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z) $$ (r,c)
-              = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N + z) $$ (r,c)"
-    using Suc.IH[OF rest_c fNz_c] .
-  have idx_split: "(f N + z) $$ (r,c) = f N $$ (r,c) + z $$ (r,c)"
-    using hd_c Suc.prems(2) r_lt c_lt by simp
-  have "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z $$ (r,c)
-          = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N $$ (r,c) + z $$ (r,c))"
-    using step IH idx_split by simp
-  also have "\<dots> = ((\<Sum>k = 0..<N. f k $$ (r,c)) + f N $$ (r,c)) + z $$ (r,c)"
-    by (simp add: add.assoc)
-  also have "\<dots> = (\<Sum>k = 0..<Suc N. f k $$ (r,c)) + z $$ (r,c)"
-    by simp
-  finally show ?case .
-qed
-
-lemma foldr_upt_add_index:
-  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d d"
-      and r_lt: "r < d" and c_lt: "c < d"
-  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) $$ (r, c)
-           = (\<Sum>k = 0..<N. f k $$ (r, c))"
-proof -
-  have z_c: "(0\<^sub>m d d :: complex Matrix.mat) \<in> carrier_mat d d" by simp
-  have z_idx: "(0\<^sub>m d d :: complex Matrix.mat) $$ (r,c) = 0"
-    using r_lt c_lt by simp
-  show ?thesis
-    using foldr_upt_add_acc_index[OF carr z_c r_lt c_lt] z_idx by simp
 qed
 
 text \<open>Per-entry formula for @{const kraus_quad_row}.\<close>
@@ -380,6 +313,446 @@ proof -
   finally show ?thesis .
 qed
 
+subsubsection \<open>Linearity, and $T=I$\<close>
+
+text \<open>Linearity in the coefficient matrix.\<close>
+
+lemma kraus_quad_map_add_Tm:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and T1_c: "T1 \<in> carrier_mat (length Vs) (length Vs)"
+      and T2_c: "T2 \<in> carrier_mat (length Vs) (length Vs)"
+  shows "kraus_quad_map d Vs (T1 + T2) rho
+           = kraus_quad_map d Vs T1 rho + kraus_quad_map d Vs T2 rho"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_quad_map d Vs (T1 + T2) rho"
+  let ?R = "kraus_quad_map d Vs T1 rho + kraus_quad_map d Vs T2 rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R1_c: "kraus_quad_map d Vs T1 rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R2_c: "kraus_quad_map d Vs T2 rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d" using R1_c R2_c by auto
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c assume r_lt: "r < dim_row ?R" and c_lt: "c < dim_col ?R"
+  hence r_lt': "r < d" and c_lt': "c < d" using R_c by auto
+  have plus_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                    (T1 + T2) $$ (i, j) = T1 $$ (i, j) + T2 $$ (i, j)"
+    using T1_c T2_c by auto
+  have L_idx: "?L $$ (r, c)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (T1 $$ (i, j) + T2 $$ (i, j))
+                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of "T1 + T2"]
+    by (auto intro!: sum.cong simp: plus_idx)
+  have R_idx: "?R $$ (r, c)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       T1 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+                 + (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       T2 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using R1_c R2_c r_lt' c_lt'
+          kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of T1]
+          kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of T2]
+    by simp
+  have distr: "\<And>i j. (T1 $$ (i,j) + T2 $$ (i,j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)
+                    = T1 $$ (i,j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)
+                    + T2 $$ (i,j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)"
+    by (simp add: ring_distribs)
+  have inner_split:
+    "\<And>i. (\<Sum>j = 0..<?N.
+            (T1 $$ (i, j) + T2 $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+         = (\<Sum>j = 0..<?N. T1 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+         + (\<Sum>j = 0..<?N. T2 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (simp add: distr sum.distrib)
+  show "?L $$ (r, c) = ?R $$ (r, c)"
+    using L_idx R_idx inner_split by (simp add: sum.distrib)
+qed
+
+lemma kraus_quad_map_smult_Tm:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+      and Tm_c: "Tm \<in> carrier_mat (length Vs) (length Vs)"
+  shows "kraus_quad_map d Vs (c \<cdot>\<^sub>m Tm) rho
+           = c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_quad_map d Vs (c \<cdot>\<^sub>m Tm) rho"
+  let ?R = "c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R0_c: "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d" using R0_c by simp
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c1 assume r_lt: "r < dim_row ?R" and c1_lt: "c1 < dim_col ?R"
+  hence r_lt': "r < d" and c1_lt': "c1 < d" using R_c by auto
+  have smult_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                     (c \<cdot>\<^sub>m Tm) $$ (i, j) = c * Tm $$ (i, j)"
+    using Tm_c by auto
+  have L_idx: "?L $$ (r, c1)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (c * Tm $$ (i, j))
+                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c1_lt', of "c \<cdot>\<^sub>m Tm"]
+    by (auto intro!: sum.cong simp: smult_idx)
+  have R_pre: "kraus_quad_map d Vs Tm rho $$ (r, c1)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c1_lt'] .
+  have r_lt_dim: "r < dim_row (kraus_quad_map d Vs Tm rho)" using R0_c r_lt' by auto
+  have c_lt_dim: "c1 < dim_col (kraus_quad_map d Vs Tm rho)" using R0_c c1_lt' by auto
+  have R_idx: "?R $$ (r, c1)
+                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+    using index_smult_mat(1)[OF r_lt_dim c_lt_dim] R_pre by simp
+  have collapse: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      (c * Tm $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))
+                = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+  proof -
+    have step1: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                    (c * Tm $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1)))"
+      by (intro sum.cong refl) (simp add: algebra_simps)
+    have step2: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                    c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1)))
+                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
+      by (simp add: sum_distrib_left)
+    show ?thesis using step1 step2 by simp
+  qed
+  show "?L $$ (r, c1) = ?R $$ (r, c1)"
+    using L_idx R_idx collapse by simp
+qed
+
+text \<open>Vanishing of the quadratic map when the coefficient matrix is zero.\<close>
+
+lemma kraus_quad_map_zero_Tm:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+  shows "kraus_quad_map d Vs (0\<^sub>m (length Vs) (length Vs)) rho = 0\<^sub>m d d"
+proof (rule eq_matI)
+  let ?L = "kraus_quad_map d Vs (0\<^sub>m (length Vs) (length Vs)) rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  show "dim_row ?L = dim_row ((0\<^sub>m d d) :: complex Matrix.mat)"
+    using L_c by auto
+  show "dim_col ?L = dim_col ((0\<^sub>m d d) :: complex Matrix.mat)"
+    using L_c by auto
+  fix r c
+  assume "r < dim_row ((0\<^sub>m d d) :: complex Matrix.mat)"
+         "c < dim_col ((0\<^sub>m d d) :: complex Matrix.mat)"
+  hence r_lt: "r < d" and c_lt: "c < d" by auto
+  have "?L $$ (r, c)
+          = (\<Sum>i = 0..<length Vs. \<Sum>j = 0..<length Vs.
+               (0\<^sub>m (length Vs) (length Vs)) $$ (i, j)
+                 * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (rule kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt])
+  also have "\<dots> = 0"
+    by (rule sum.neutral) (auto intro!: sum.neutral)
+  finally show "?L $$ (r, c) = (0\<^sub>m d d :: complex Matrix.mat) $$ (r, c)"
+    using r_lt c_lt by simp
+qed
+
+text \<open>$\psi_T(\rho)=\sum_{i,j}T_{ij}V_i\rho V_j^*$ is linear in $\rho$.\<close>
+
+lemma kraus_quad_map_add_rho:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho1_c: "rho1 \<in> carrier_mat n n"
+      and rho2_c: "rho2 \<in> carrier_mat n n"
+  shows "kraus_quad_map d Vs Tm (rho1 + rho2)
+           = kraus_quad_map d Vs Tm rho1 + kraus_quad_map d Vs Tm rho2"
+proof (rule eq_matI)
+  let ?L = "kraus_quad_map d Vs Tm (rho1 + rho2)"
+  let ?R = "kraus_quad_map d Vs Tm rho1 + kraus_quad_map d Vs Tm rho2"
+  let ?N = "length Vs"
+  have sum_c: "rho1 + rho2 \<in> carrier_mat n n" using rho1_c rho2_c by auto
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c sum_c])
+  have R1_c: "kraus_quad_map d Vs Tm rho1 \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho1_c])
+  have R2_c: "kraus_quad_map d Vs Tm rho2 \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho2_c])
+  have R_c: "?R \<in> carrier_mat d d" using R1_c R2_c by auto
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+next
+  let ?L = "kraus_quad_map d Vs Tm (rho1 + rho2)"
+  let ?R = "kraus_quad_map d Vs Tm rho1 + kraus_quad_map d Vs Tm rho2"
+  let ?N = "length Vs"
+  have sum_c: "rho1 + rho2 \<in> carrier_mat n n" using rho1_c rho2_c by auto
+  have R1_c: "kraus_quad_map d Vs Tm rho1 \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho1_c])
+  have R2_c: "kraus_quad_map d Vs Tm rho2 \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho2_c])
+  fix r c
+  assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
+  have R_c: "?R \<in> carrier_mat d d" using R1_c R2_c by auto
+  have r_lt: "r < d" using r_a R_c by auto
+  have c_lt: "c < d" using c_a R_c by auto
+  have L_idx: "?L $$ (r, c)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      Tm $$ (i, j) * (Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using kraus_quad_map_index[OF Vs_c sum_c r_lt c_lt] .
+  have R1_idx: "kraus_quad_map d Vs Tm rho1 $$ (r, c)
+                  = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tm $$ (i, j) * (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using kraus_quad_map_index[OF Vs_c rho1_c r_lt c_lt] .
+  have R2_idx: "kraus_quad_map d Vs Tm rho2 $$ (r, c)
+                  = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tm $$ (i, j) * (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    using kraus_quad_map_index[OF Vs_c rho2_c r_lt c_lt] .
+  have R_idx: "?R $$ (r, c)
+                 = kraus_quad_map d Vs Tm rho1 $$ (r, c)
+                   + kraus_quad_map d Vs Tm rho2 $$ (r, c)"
+    using R1_c R2_c r_lt c_lt by auto
+  have term_decomp: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                        (Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                          = (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                          + (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
+  proof -
+    fix i j assume i_lt: "i < ?N" and j_lt: "j < ?N"
+    have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+    have mul1: "Vs!i * (rho1 + rho2) = Vs!i * rho1 + Vs!i * rho2"
+      using Vi_c rho1_c rho2_c by (rule mult_add_distrib_mat)
+    have V1_c: "Vs!i * rho1 \<in> carrier_mat d n" using Vi_c rho1_c by auto
+    have V2_c: "Vs!i * rho2 \<in> carrier_mat d n" using Vi_c rho2_c by auto
+    have mul2: "(Vs!i * rho1 + Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)
+                  = (Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>) + (Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)"
+      using V1_c V2_c Vjd_c by (rule add_mult_distrib_mat)
+    have prod_split: "Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)
+                        = (Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>)
+                        + (Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)"
+      using mul1 mul2 by simp
+    have prod1_c: "(Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using V1_c Vjd_c by auto
+    have prod2_c: "(Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using V2_c Vjd_c by auto
+    have r_dim2: "r < dim_row ((Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>))"
+      using prod2_c r_lt by auto
+    have c_dim2: "c < dim_col ((Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>))"
+      using prod2_c c_lt by auto
+    have add_idx: "((Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>) + (Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                     = ((Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                     + ((Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
+      using index_add_mat(1)[OF r_dim2 c_dim2] .
+    show "(Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+            = (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+            + (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
+      using prod_split add_idx by simp
+  qed
+  have "?L $$ (r, c)
+          = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                Tm $$ (i, j) * ((Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                                 + (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)))"
+    using L_idx
+    by (auto intro!: sum.cong simp: term_decomp)
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      Tm $$ (i, j) * (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                    + Tm $$ (i, j) * (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (intro sum.cong refl) (auto simp: ring_distribs)
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      Tm $$ (i, j) * (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+                + (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      Tm $$ (i, j) * (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+    by (simp add: sum.distrib)
+  also have "\<dots> = ?R $$ (r, c)"
+    using R1_idx R2_idx R_idx by simp
+  finally show "?L $$ (r, c) = ?R $$ (r, c)" .
+qed
+
+lemma kraus_quad_map_smult_rho:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+  shows "kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m rho)
+           = c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
+proof (rule eq_matI)
+  let ?L = "kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m rho)"
+  let ?R = "c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
+  let ?N = "length Vs"
+  have smult_c: "c \<cdot>\<^sub>m rho \<in> carrier_mat n n" using rho_c by auto
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c smult_c])
+  have inner_c: "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d" using inner_c by auto
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+next
+  let ?L = "kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m rho)"
+  let ?R = "c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
+  let ?N = "length Vs"
+  have smult_c: "c \<cdot>\<^sub>m rho \<in> carrier_mat n n" using rho_c by auto
+  have inner_c: "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d" using inner_c by auto
+  fix r col_idx
+  assume r_a: "r < dim_row ?R" and c_a: "col_idx < dim_col ?R"
+  have r_lt: "r < d" using r_a R_c by auto
+  have c_lt: "col_idx < d" using c_a R_c by auto
+  have L_idx: "?L $$ (r, col_idx)
+                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                      Tm $$ (i, j) * (Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx))"
+    using kraus_quad_map_index[OF Vs_c smult_c r_lt c_lt] .
+  have R0_idx: "kraus_quad_map d Vs Tm rho $$ (r, col_idx)
+                  = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx))"
+    using kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt] .
+  have R_idx: "?R $$ (r, col_idx) = c * kraus_quad_map d Vs Tm rho $$ (r, col_idx)"
+    using inner_c r_lt c_lt by auto
+  have term_eq: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                    (Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)
+                      = c * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)"
+  proof -
+    fix i j assume i_lt: "i < ?N" and j_lt: "j < ?N"
+    have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+    have mul1: "Vs!i * (c \<cdot>\<^sub>m rho) = c \<cdot>\<^sub>m (Vs!i * rho)"
+      using Vi_c rho_c by (rule mult_smult_distrib)
+    have Vir_c: "Vs!i * rho \<in> carrier_mat d n" using Vi_c rho_c by auto
+    have mul2: "(c \<cdot>\<^sub>m (Vs!i * rho)) * ((Vs!j)\<^sup>\<dagger>) = c \<cdot>\<^sub>m (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
+      using Vir_c Vjd_c by (rule mult_smult_assoc_mat)
+    have prod_split: "Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)
+                        = c \<cdot>\<^sub>m (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
+      using mul1 mul2 by simp
+    have prod_c: "(Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using Vir_c Vjd_c by auto
+    have r_dim2: "r < dim_row ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>))"
+      using prod_c r_lt by auto
+    have c_dim2: "col_idx < dim_col ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>))"
+      using prod_c c_lt by auto
+    have smult_idx: "(c \<cdot>\<^sub>m ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>))) $$ (r, col_idx)
+                       = c * ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)"
+      using index_smult_mat(1)[OF r_dim2 c_dim2] .
+    show "(Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)
+            = c * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)"
+      using prod_split smult_idx by simp
+  qed
+  have "?L $$ (r, col_idx)
+          = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                Tm $$ (i, j) * (c * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)))"
+    using L_idx by (auto intro!: sum.cong simp: term_eq)
+  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)))"
+    by (intro sum.cong refl) (simp add: mult.left_commute)
+  also have "\<dots> = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx))"
+    by (simp add: sum_distrib_left)
+  also have "\<dots> = c * kraus_quad_map d Vs Tm rho $$ (r, col_idx)"
+    using R0_idx by simp
+  also have "\<dots> = ?R $$ (r, col_idx)"
+    using R_idx by simp
+  finally show "?L $$ (r, col_idx) = ?R $$ (r, col_idx)" .
+qed
+
+text \<open>For $T=I$ the quadratic Kraus map is the Kraus map of the list.\<close>
+
+lemma kraus_quad_map_one_eq_kraus_map_dim:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and rho_c: "rho \<in> carrier_mat n n"
+  shows "kraus_quad_map d Vs (1\<^sub>m (length Vs)) rho = kraus_map_dim d Vs rho"
+proof (rule eq_matI)
+  let ?N = "length Vs"
+  let ?L = "kraus_quad_map d Vs (1\<^sub>m ?N) rho"
+  let ?R = "kraus_map_dim d Vs rho"
+  have L_c: "?L \<in> carrier_mat d d"
+    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
+  have R_c: "?R \<in> carrier_mat d d"
+    by (rule kraus_map_dim_carrier[OF Vs_c rho_c])
+  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
+  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
+  fix r c assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
+  hence r_lt: "r < d" and c_lt: "c < d" using R_c by auto
+  have one_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
+                    (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
+                      = (if i = j then 1 else 0)"
+    by simp
+  have term_zero: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow> i \<noteq> j \<Longrightarrow>
+                      (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
+                        * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) = 0"
+    by simp
+  have term_diag: "\<And>i. i < ?N \<Longrightarrow>
+                      (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, i)
+                        * (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)
+                      = (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)"
+    by simp
+  \<comment> \<open>LHS per-entry: double sum collapses to diagonal.\<close>
+  have L_idx: "?L $$ (r, c)
+                 = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
+  proof -
+    have "?L $$ (r, c)
+            = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                 (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
+                   * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+      using kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt] .
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (if i = j then 1 else 0)
+                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+      by (intro sum.cong refl) auto
+    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
+                       (if i = j then (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) else 0))"
+      by (intro sum.cong refl) (simp split: if_split)
+    also have "\<dots> = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
+    proof (intro sum.cong refl)
+      fix i assume "i \<in> {0..<?N}"
+      hence i_lt: "i < ?N" by simp
+      show "(\<Sum>j = 0..<?N.
+                if i = j then (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) else 0)
+            = (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)"
+        using i_lt by (simp add: sum.delta)
+    qed
+    finally show ?thesis .
+  qed
+  \<comment> \<open>RHS via list-induction on Vs (uses \<open>outer_sum_entry_sum_list-like\<close> reasoning).\<close>
+  have R_idx: "?R $$ (r, c)
+                 = sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs)"
+    using Vs_c rho_c r_lt c_lt
+  proof (induction Vs)
+    case Nil
+    have "kraus_map_dim d [] rho = 0\<^sub>m d d" by simp
+    thus ?case using r_lt c_lt by simp
+  next
+    case (Cons V Vs')
+    have V_c: "V \<in> carrier_mat d n" using Cons.prems by simp
+    have Vs'_c: "\<forall>W \<in> set Vs'. W \<in> carrier_mat d n" using Cons.prems by simp
+    have Vd_c: "V\<^sup>\<dagger> \<in> carrier_mat n d" using V_c by (rule dagger_carrier)
+    have term_c: "V * rho * (V\<^sup>\<dagger>) \<in> carrier_mat d d"
+      using V_c rho_c Vd_c by (intro mult_carrier_mat) auto
+    have IH_c: "kraus_map_dim d Vs' rho \<in> carrier_mat d d"
+      using kraus_map_dim_carrier[OF Vs'_c rho_c] .
+    have "kraus_map_dim d (V # Vs') rho $$ (r, c)
+            = (V * rho * (V\<^sup>\<dagger>) + kraus_map_dim d Vs' rho) $$ (r, c)"
+      by simp
+    also have "\<dots> = (V * rho * (V\<^sup>\<dagger>)) $$ (r, c)
+                  + kraus_map_dim d Vs' rho $$ (r, c)"
+      using term_c IH_c r_lt c_lt by auto
+    also have "\<dots> = (V * rho * (V\<^sup>\<dagger>)) $$ (r, c)
+                  + sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs')"
+      using Cons.IH[OF Vs'_c rho_c r_lt c_lt] by simp
+    also have "\<dots> = sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) (V # Vs'))"
+      by simp
+    finally show ?case .
+  qed
+  have R_sum_eq: "sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs)
+                    = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
+    by (simp add: sum_list_sum_nth atLeast0LessThan)
+  show "?L $$ (r, c) = ?R $$ (r, c)"
+    using L_idx R_idx R_sum_eq by simp
+qed
+
+subsubsection \<open>Positive coefficients give completely positive maps (Lemma A)\<close>
+
+text \<open>Lemma A: for $T\ge0$, $\psi_T$ is completely positive.  Write $T=\sum_lu_lu_l^*$; then
+$\psi_T(X)=\sum_lW_{u_l}XW_{u_l}^*$ is a Kraus map.\<close>
+
 text \<open>The combination $W_u=\sum_iu_iV_i$ of the Kraus operators, a $d\times n$ matrix.\<close>
 
 definition kraus_combo ::
@@ -409,43 +782,7 @@ proof -
     by (rule foldr_add_carrier_dn)
 qed
 
-text \<open>Per-entry formula for @{const kraus_combo}: foldr index lemma in d\<open>\<times>\<close>n.\<close>
-
-lemma foldr_upt_add_acc_index_dn:
-  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
-  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d n"
-      and z_c:  "z \<in> carrier_mat d n"
-      and r_lt: "r < d" and c_lt: "c < n"
-  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] z $$ (r, c)
-           = (\<Sum>k = 0..<N. f k $$ (r, c)) + z $$ (r, c)"
-  using carr z_c
-proof (induction N arbitrary: z)
-  case 0
-  show ?case by simp
-next
-  case (Suc N)
-  have hd_c:   "f N \<in> carrier_mat d n" using Suc.prems(1) by simp
-  have rest_c: "\<forall>k < N. f k \<in> carrier_mat d n" using Suc.prems(1) by simp
-  have fNz_c:  "f N + z \<in> carrier_mat d n"
-    using hd_c Suc.prems(2) by auto
-  have dec: "[0..<Suc N] = [0..<N] @ [N]" by simp
-  have step: "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z
-                = foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z)"
-    using dec by (simp add: foldr_append)
-  have IH: "foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z) $$ (r,c)
-              = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N + z) $$ (r,c)"
-    using Suc.IH[OF rest_c fNz_c] .
-  have idx_split: "(f N + z) $$ (r,c) = f N $$ (r,c) + z $$ (r,c)"
-    using hd_c Suc.prems(2) r_lt c_lt by simp
-  have "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z $$ (r,c)
-          = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N $$ (r,c) + z $$ (r,c))"
-    using step IH idx_split by simp
-  also have "\<dots> = ((\<Sum>k = 0..<N. f k $$ (r,c)) + f N $$ (r,c)) + z $$ (r,c)"
-    by (simp add: add.assoc)
-  also have "\<dots> = (\<Sum>k = 0..<Suc N. f k $$ (r,c)) + z $$ (r,c)"
-    by simp
-  finally show ?case .
-qed
+text \<open>Entries of $W_u$, of $W_u\rho$, and of $W_u\rho W_u^*$.\<close>
 
 lemma kraus_combo_index:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -485,19 +822,6 @@ proof -
     by (rule sum.cong) (auto simp: idx_term)
   finally show ?thesis .
 qed
-
-
-text \<open>A direct per-entry formula for matrix products.\<close>
-
-lemma mat_mult_index_sum:
-  assumes A_c: "A \<in> carrier_mat p q"
-      and B_c: "B \<in> carrier_mat q s"
-      and r_lt: "r < p" and c_lt: "c < s"
-  shows "(A * B) $$ (r, c) = (\<Sum>k = 0..<q. A $$ (r, k) * B $$ (k, c))"
-  using A_c B_c r_lt c_lt
-  by (simp add: times_mat_def scalar_prod_def lessThan_atLeast0)
-
-text \<open>Per-entry formula for \<open>W * rho\<close>, where \<open>W = kraus_combo d n Vs u\<close>.\<close>
 
 lemma kraus_combo_times_rho_index:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -763,64 +1087,6 @@ proof -
   show ?thesis using combined .
 qed
 
-
-text \<open>Linearity of @{const kraus_quad_map} in the coefficient matrix
-(needed for the rank-1 decomposition below).\<close>
-
-lemma kraus_quad_map_add_Tm:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and rho_c: "rho \<in> carrier_mat n n"
-      and T1_c: "T1 \<in> carrier_mat (length Vs) (length Vs)"
-      and T2_c: "T2 \<in> carrier_mat (length Vs) (length Vs)"
-  shows "kraus_quad_map d Vs (T1 + T2) rho
-           = kraus_quad_map d Vs T1 rho + kraus_quad_map d Vs T2 rho"
-proof (rule eq_matI)
-  let ?N = "length Vs"
-  let ?L = "kraus_quad_map d Vs (T1 + T2) rho"
-  let ?R = "kraus_quad_map d Vs T1 rho + kraus_quad_map d Vs T2 rho"
-  have L_c: "?L \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R1_c: "kraus_quad_map d Vs T1 rho \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R2_c: "kraus_quad_map d Vs T2 rho \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R_c: "?R \<in> carrier_mat d d" using R1_c R2_c by auto
-  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
-  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
-  fix r c assume r_lt: "r < dim_row ?R" and c_lt: "c < dim_col ?R"
-  hence r_lt': "r < d" and c_lt': "c < d" using R_c by auto
-  have plus_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
-                    (T1 + T2) $$ (i, j) = T1 $$ (i, j) + T2 $$ (i, j)"
-    using T1_c T2_c by auto
-  have L_idx: "?L $$ (r, c)
-                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       (T1 $$ (i, j) + T2 $$ (i, j))
-                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of "T1 + T2"]
-    by (auto intro!: sum.cong simp: plus_idx)
-  have R_idx: "?R $$ (r, c)
-                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       T1 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
-                 + (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       T2 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    using R1_c R2_c r_lt' c_lt'
-          kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of T1]
-          kraus_quad_map_index[OF Vs_c rho_c r_lt' c_lt', of T2]
-    by simp
-  have distr: "\<And>i j. (T1 $$ (i,j) + T2 $$ (i,j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)
-                    = T1 $$ (i,j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)
-                    + T2 $$ (i,j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r,c)"
-    by (simp add: ring_distribs)
-  have inner_split:
-    "\<And>i. (\<Sum>j = 0..<?N.
-            (T1 $$ (i, j) + T2 $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
-         = (\<Sum>j = 0..<?N. T1 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
-         + (\<Sum>j = 0..<?N. T2 $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    by (simp add: distr sum.distrib)
-  show "?L $$ (r, c) = ?R $$ (r, c)"
-    using L_idx R_idx inner_split by (simp add: sum.distrib)
-qed
-
 text \<open>So for a rank-one coefficient matrix, $\psi_{uu^*}(\rho)=W_u\rho W_u^*$.\<close>
 
 lemma kraus_quad_map_outer_singleton:
@@ -882,37 +1148,8 @@ proof (rule eq_matI)
                   = (?W * rho * (?W\<^sup>\<dagger>)) $$ (r, c)" .
 qed
 
-text \<open>Vanishing of the quadratic map when the coefficient matrix is zero.\<close>
-
-lemma kraus_quad_map_zero_Tm:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and rho_c: "rho \<in> carrier_mat n n"
-  shows "kraus_quad_map d Vs (0\<^sub>m (length Vs) (length Vs)) rho = 0\<^sub>m d d"
-proof (rule eq_matI)
-  let ?L = "kraus_quad_map d Vs (0\<^sub>m (length Vs) (length Vs)) rho"
-  have L_c: "?L \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  show "dim_row ?L = dim_row ((0\<^sub>m d d) :: complex Matrix.mat)"
-    using L_c by auto
-  show "dim_col ?L = dim_col ((0\<^sub>m d d) :: complex Matrix.mat)"
-    using L_c by auto
-  fix r c
-  assume "r < dim_row ((0\<^sub>m d d) :: complex Matrix.mat)"
-         "c < dim_col ((0\<^sub>m d d) :: complex Matrix.mat)"
-  hence r_lt: "r < d" and c_lt: "c < d" by auto
-  have "?L $$ (r, c)
-          = (\<Sum>i = 0..<length Vs. \<Sum>j = 0..<length Vs.
-               (0\<^sub>m (length Vs) (length Vs)) $$ (i, j)
-                 * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    by (rule kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt])
-  also have "\<dots> = 0"
-    by (rule sum.neutral) (auto intro!: sum.neutral)
-  finally show "?L $$ (r, c) = (0\<^sub>m d d :: complex Matrix.mat) $$ (r, c)"
-    using r_lt c_lt by simp
-qed
-
-text \<open>Sum-decomposition: a PSD-style coefficient matrix \<open>outer_sum k us\<close>
-gives @{const kraus_quad_map} as a kraus\_map\_dim of the combos.\<close>
+text \<open>Hence for $T=\sum_lu_lu_l^*$ the map $\psi_T$ is the Kraus map of the
+$W_{u_l}$.\<close>
 
 lemma kraus_quad_map_outer_sum_eq_kraus_map_dim:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -986,12 +1223,6 @@ next
   finally show ?case .
 qed
 
-
-subsection \<open>Lemma A: PSD coefficient matrix gives a CP perturbation\<close>
-
-text \<open>Lemma A: for $T\ge0$, $\psi_T$ is completely positive.  Write $T=\sum_lu_lu_l^*$; then
-$\psi_T(X)=\sum_lW_{u_l}XW_{u_l}^*$ is a Kraus map.\<close>
-
 lemma kraus_perturbation_cp:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
       and Tm_c: "Tm \<in> carrier_mat (length Vs) (length Vs)"
@@ -1031,344 +1262,7 @@ proof -
     using cp_Ws completely_positive_cong[OF agree] by simp
 qed
 
-
-subsection \<open>Small-\<open>\<epsilon>\<close> PSD perturbation of the identity\<close>
-
-text \<open>For Hermitian $A\in M_k$, $I+\delta A\ge0$ when $|\delta|$ is small: with $S=\sum_{i,j}|A_{ij}|$,
-$|\braket x{Ax}|\le S\norm x^2$, so $\epsilon=1/(1+S)$ works.\<close>
-
-text \<open>Bilinearity of the inner product in the right slot.\<close>
-
-lemma inner_prod_add_right:
-  fixes u v w :: "complex Matrix.vec"
-  assumes ud: "dim_vec u = k" and vd: "dim_vec v = k" and wd: "dim_vec w = k"
-  shows "\<langle>u | v + w\<rangle> = \<langle>u | v\<rangle> + \<langle>u | w\<rangle>"
-proof -
-  have vwd: "dim_vec (v + w) = k" using vd wd by auto
-  have "\<langle>u | v + w\<rangle> = (\<Sum>i = 0..<k. cnj (u $ i) * (v + w) $ i)"
-    using inner_prod_sum[OF ud vwd] .
-  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * (v $ i + w $ i))"
-    by (intro sum.cong refl) (simp add: vd wd)
-  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * v $ i + cnj (u $ i) * w $ i)"
-    by (intro sum.cong refl) (simp add: distrib_left)
-  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * v $ i)
-                + (\<Sum>i = 0..<k. cnj (u $ i) * w $ i)"
-    by (rule sum.distrib)
-  also have "\<dots> = \<langle>u | v\<rangle> + \<langle>u | w\<rangle>"
-    using inner_prod_sum[OF ud vd] inner_prod_sum[OF ud wd] by simp
-  finally show ?thesis .
-qed
-
-lemma inner_prod_smult_right:
-  fixes u v :: "complex Matrix.vec"
-  assumes ud: "dim_vec u = k" and vd: "dim_vec v = k"
-  shows "\<langle>u | c \<cdot>\<^sub>v v\<rangle> = c * \<langle>u | v\<rangle>"
-proof -
-  have cvd: "dim_vec (c \<cdot>\<^sub>v v) = k" using vd by auto
-  have "\<langle>u | c \<cdot>\<^sub>v v\<rangle> = (\<Sum>i = 0..<k. cnj (u $ i) * (c \<cdot>\<^sub>v v) $ i)"
-    using inner_prod_sum[OF ud cvd] .
-  also have "\<dots> = (\<Sum>i = 0..<k. cnj (u $ i) * (c * v $ i))"
-    by (intro sum.cong refl) (simp add: vd)
-  also have "\<dots> = (\<Sum>i = 0..<k. c * (cnj (u $ i) * v $ i))"
-    by (intro sum.cong refl) (simp add: ac_simps)
-  also have "\<dots> = c * (\<Sum>i = 0..<k. cnj (u $ i) * v $ i)"
-    by (simp add: sum_distrib_left)
-  also have "\<dots> = c * \<langle>u | v\<rangle>"
-    using inner_prod_sum[OF ud vd] by simp
-  finally show ?thesis .
-qed
-
-text \<open>The hermitian sum.\<close>
-
-text \<open>Entry-wise bound on the quadratic form of a hermitian matrix.\<close>
-
-lemma quad_form_bound_by_entry_sum:
-  fixes A :: "complex Matrix.mat" and x :: "complex Matrix.vec"
-  assumes A_c: "A \<in> carrier_mat k k" and x_d: "dim_vec x = k"
-  shows "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
-           \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j))) * Re \<langle>x | x\<rangle>"
-proof -
-  let ?S = "(\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j)))"
-  let ?Rxx = "Re \<langle>x | x\<rangle>"
-  \<comment> \<open>Per-entry: \<open>(A*x)_i = \<Sum>_j A_{ij} x_j\<close>.\<close>
-  have Ax_idx: "\<And>i. i < k \<Longrightarrow>
-                  (A *\<^sub>v x) $ i = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)"
-  proof -
-    fix i assume i_lt: "i < k"
-    have "(A *\<^sub>v x) $ i = Matrix.row A i \<bullet> x"
-      using A_c x_d i_lt by simp
-    also have "\<dots> = (\<Sum>j = 0..<k. Matrix.row A i $ j * x $ j)"
-      using A_c x_d by (simp add: scalar_prod_def)
-    also have "\<dots> = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)"
-      using A_c i_lt by (intro sum.cong refl) auto
-    finally show "(A *\<^sub>v x) $ i = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)" .
-  qed
-  \<comment> \<open>Expand \<open>\<langle>x | A*x\<rangle>\<close> as a double sum.\<close>
-  have Ax_dim: "dim_vec (A *\<^sub>v x) = k" using A_c x_d by simp
-  have q: "\<langle>x | A *\<^sub>v x\<rangle>
-             = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cnj (x $ i) * A $$ (i,j) * x $ j)"
-  proof -
-    have "\<langle>x | A *\<^sub>v x\<rangle> = (\<Sum>i = 0..<k. cnj (x $ i) * (A *\<^sub>v x) $ i)"
-      using x_d Ax_dim inner_prod_sum by blast
-    also have "\<dots> = (\<Sum>i = 0..<k.
-                       cnj (x $ i) * (\<Sum>j = 0..<k. A $$ (i,j) * x $ j))"
-      by (intro sum.cong refl) (auto simp: Ax_idx)
-    also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
-                       cnj (x $ i) * (A $$ (i,j) * x $ j))"
-      by (simp add: sum_distrib_left)
-    also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
-                       cnj (x $ i) * A $$ (i,j) * x $ j)"
-      by (intro sum.cong refl) (simp add: mult.assoc)
-    finally show ?thesis .
-  qed
-  \<comment> \<open>Triangle: \<open>cmod\<close> of a double sum bound by sum of \<open>cmod\<close>s.\<close>
-  have tri: "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
-               \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
-                     cmod (cnj (x $ i) * A $$ (i,j) * x $ j))"
-  proof -
-    have "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
-             \<le> (\<Sum>i = 0..<k. cmod (\<Sum>j = 0..<k.
-                  cnj (x $ i) * A $$ (i,j) * x $ j))"
-      using q norm_sum by (simp add: q) (rule norm_sum)
-    also have "\<dots> \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
-                       cmod (cnj (x $ i) * A $$ (i,j) * x $ j))"
-      by (intro sum_mono norm_sum)
-    finally show ?thesis .
-  qed
-  \<comment> \<open>Per-entry factorisation: \<open>cmod (cnj x_i * A_{ij} * x_j) = |x_i| |A_{ij}| |x_j|\<close>.\<close>
-  have entry_eq: "\<And>i j. cmod (cnj (x $ i) * A $$ (i,j) * x $ j)
-                          = cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)"
-    by (simp add: norm_mult)
-  \<comment> \<open>Each cross-term bounded by \<open>cmod(A_{ij}) * Re\<langle>x|x\<rangle>\<close>.\<close>
-  have xx_real: "Re \<langle>x | x\<rangle> = (\<Sum>p = 0..<k. (cmod (x $ p))\<^sup>2)"
-  proof -
-    have "Re \<langle>x | x\<rangle> = (\<Sum>p<k. Re (cnj (x $ p) * x $ p))"
-      using x_d by (simp add: inner_prod_def lessThan_atLeast0)
-    also have "\<dots> = (\<Sum>p<k. (cmod (x $ p))\<^sup>2)"
-    proof (intro sum.cong refl)
-      fix p assume "p \<in> {..<k}"
-      have "cnj (x $ p) * x $ p = x $ p * cnj (x $ p)" by (rule mult.commute)
-      also have "\<dots> = complex_of_real ((cmod (x $ p))\<^sup>2)"
-        using complex_norm_square[of "x $ p"] by simp
-      finally have "Re (cnj (x $ p) * x $ p) = (cmod (x $ p))\<^sup>2" by simp
-      thus "Re (cnj (x $ p) * x $ p) = (cmod (x $ p))\<^sup>2" .
-    qed
-    finally show ?thesis by (simp add: lessThan_atLeast0)
-  qed
-  have x_sq_bound: "\<And>i. i < k \<Longrightarrow> (cmod (x $ i))\<^sup>2 \<le> Re \<langle>x | x\<rangle>"
-  proof -
-    fix i assume i_lt: "i < k"
-    have iI: "i \<in> {0..<k}" using i_lt by simp
-    have nn: "\<And>p. p \<in> {0..<k} - {i} \<Longrightarrow> 0 \<le> (cmod (x $ p))\<^sup>2"
-      by simp
-    have "(cmod (x $ i))\<^sup>2 \<le> (\<Sum>p = 0..<k. (cmod (x $ p))\<^sup>2)"
-      by (rule member_le_sum[OF iI nn]) auto
-    thus "(cmod (x $ i))\<^sup>2 \<le> Re \<langle>x | x\<rangle>" using xx_real by simp
-  qed
-  have x_cmod_bound: "\<And>i. i < k \<Longrightarrow> cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)"
-  proof -
-    fix i assume i_lt: "i < k"
-    have "cmod (x $ i) = sqrt ((cmod (x $ i))\<^sup>2)" by simp
-    also have "\<dots> \<le> sqrt (Re \<langle>x | x\<rangle>)"
-      using x_sq_bound[OF i_lt] real_sqrt_le_mono by blast
-    finally show "cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)" .
-  qed
-  have prod_bound: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow>
-                       cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>"
-  proof -
-    fix i j assume i_lt: "i < k" and j_lt: "j < k"
-    have nn: "0 \<le> Re \<langle>x | x\<rangle>" using inner_prod_with_itself_Re by blast
-    have i_b: "cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)" using x_cmod_bound[OF i_lt] .
-    have j_b: "cmod (x $ j) \<le> sqrt (Re \<langle>x | x\<rangle>)" using x_cmod_bound[OF j_lt] .
-    have sqrt_nn: "0 \<le> sqrt (Re \<langle>x | x\<rangle>)" using nn by auto
-    have cj_nn: "0 \<le> cmod (x $ j)" by simp
-    have "cmod (x $ i) * cmod (x $ j)
-            \<le> sqrt (Re \<langle>x | x\<rangle>) * sqrt (Re \<langle>x | x\<rangle>)"
-      by (rule mult_mono[OF i_b j_b sqrt_nn cj_nn])
-    also have "\<dots> = Re \<langle>x | x\<rangle>"
-      using nn by simp
-    finally show "cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>" .
-  qed
-  have inner_bound:
-    "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow>
-       cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
-       \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
-  proof -
-    fix i j assume i_lt: "i < k" and j_lt: "j < k"
-    have nn: "0 \<le> cmod (A $$ (i,j))" by simp
-    have rxx_nn: "0 \<le> Re \<langle>x | x\<rangle>"
-      using inner_prod_with_itself_Re by blast
-    have step: "cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>"
-      by (rule prod_bound[OF i_lt j_lt])
-    have "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
-            = cmod (A $$ (i,j)) * (cmod (x $ i) * cmod (x $ j))"
-      by (simp add: ac_simps)
-    also have "\<dots> \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
-      using step nn by (rule mult_left_mono)
-    finally show "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
-                    \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>" .
-  qed
-  \<comment> \<open>Assemble.\<close>
-  have "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
-          \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
-                cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j))"
-    using tri entry_eq by simp
-  also have "\<dots> \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
-                     cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>)"
-  proof (rule sum_mono)
-    fix i assume "i \<in> {0..<k}"
-    hence i_lt: "i < k" by simp
-    show "(\<Sum>j = 0..<k. cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j))
-            \<le> (\<Sum>j = 0..<k. cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>)"
-    proof (rule sum_mono)
-      fix j assume "j \<in> {0..<k}"
-      hence j_lt: "j < k" by simp
-      show "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
-              \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
-        by (rule inner_bound[OF i_lt j_lt])
-    qed
-  qed
-  also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j))) * Re \<langle>x | x\<rangle>"
-    by (simp add: sum_distrib_right)
-  finally show ?thesis .
-qed
-
-text \<open>So for small $\epsilon>0$ both $I\pm\epsilon A$ are positive.\<close>
-
-lemma small_eps_psd:
-  fixes A :: "complex Matrix.mat"
-  assumes A_c: "A \<in> carrier_mat k k" and herm: "hermitian A"
-  shows "\<exists>\<epsilon> > 0. \<forall>d :: real. \<bar>d\<bar> \<le> \<epsilon> \<longrightarrow>
-                     psd (1\<^sub>m k + complex_of_real d \<cdot>\<^sub>m A)"
-proof -
-  define S where "S = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j)))"
-  have S_nn: "S \<ge> 0" unfolding S_def by (simp add: sum_nonneg)
-  define eps where "eps = 1 / (1 + S)"
-  have eps_pos: "eps > 0" unfolding eps_def using S_nn by simp
-  have S_eps_le1: "S * eps \<le> 1"
-  proof -
-    have "S * eps = S / (1 + S)" by (simp add: eps_def field_simps)
-    also have "\<dots> \<le> 1" using S_nn by simp
-    finally show ?thesis .
-  qed
-  show ?thesis
-  proof (intro exI[where x = eps] conjI allI impI)
-    show "eps > 0" using eps_pos .
-    fix d :: real assume d_le: "\<bar>d\<bar> \<le> eps"
-    let ?M = "1\<^sub>m k + complex_of_real d \<cdot>\<^sub>m A"
-    have I_c: "(1\<^sub>m k :: complex Matrix.mat) \<in> carrier_mat k k" by simp
-    have dA_c: "complex_of_real d \<cdot>\<^sub>m A \<in> carrier_mat k k"
-      using A_c by simp
-    have M_c: "?M \<in> carrier_mat k k"
-      using I_c dA_c by auto
-    have herm_M: "hermitian ?M"
-    proof -
-      have herm_dA: "hermitian (complex_of_real d \<cdot>\<^sub>m A)"
-        by (rule hermitian_real_scale[OF herm A_c])
-      show ?thesis
-        by (rule hermitian_plus[OF hermitian_identity herm_dA I_c dA_c])
-    qed
-    have quad_nn: "\<forall>x :: complex Matrix.vec.
-                     dim_vec x = dim_row ?M \<longrightarrow> 0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>"
-    proof (intro allI impI)
-      fix x :: "complex Matrix.vec"
-      assume xd: "dim_vec x = dim_row ?M"
-      have dim_M_k: "dim_row ?M = k" using M_c by auto
-      have x_d: "dim_vec x = k" using xd dim_M_k by simp
-      \<comment> \<open>Split \<open>?M*x = x + d \<cdot>v (A*x)\<close>.\<close>
-      have Ax_dim: "dim_vec (A *\<^sub>v x) = k" using A_c x_d by simp
-      have dAx_dim: "dim_vec (complex_of_real d \<cdot>\<^sub>m A *\<^sub>v x) = k"
-        using A_c x_d by simp
-      have x_cv: "x \<in> carrier_vec k"
-        using x_d by (intro carrier_vecI) simp
-      have Ix_eq: "(1\<^sub>m k :: complex Matrix.mat) *\<^sub>v x = x"
-        using one_mult_mat_vec[OF x_cv] .
-      have dAx_eq: "(complex_of_real d \<cdot>\<^sub>m A) *\<^sub>v x
-                      = complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
-        using smult_mat_mult_vec[OF A_c x_cv] .
-      have Mx_eq: "?M *\<^sub>v x = x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
-      proof -
-        have "?M *\<^sub>v x = (1\<^sub>m k :: complex Matrix.mat) *\<^sub>v x
-                       + (complex_of_real d \<cdot>\<^sub>m A) *\<^sub>v x"
-          using add_mult_distrib_mat_vec[OF I_c dA_c x_cv] .
-        also have "\<dots> = x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
-          using Ix_eq dAx_eq by simp
-        finally show ?thesis .
-      qed
-      have inner_split: "\<langle>x | ?M *\<^sub>v x\<rangle>
-                            = \<langle>x | x\<rangle> + complex_of_real d * \<langle>x | A *\<^sub>v x\<rangle>"
-      proof -
-        have dAx_dimv: "dim_vec (complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)) = k"
-          using Ax_dim by auto
-        have "\<langle>x | ?M *\<^sub>v x\<rangle>
-                = \<langle>x | x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
-          using Mx_eq by simp
-        also have "\<dots> = \<langle>x | x\<rangle>
-                        + \<langle>x | complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
-          using inner_prod_add_right[OF x_d x_d dAx_dimv] .
-        also have "\<dots> = \<langle>x | x\<rangle>
-                        + complex_of_real d * \<langle>x | A *\<^sub>v x\<rangle>"
-          using inner_prod_smult_right[OF x_d Ax_dim] by simp
-        finally show ?thesis .
-      qed
-      have rxx_nn: "0 \<le> Re \<langle>x | x\<rangle>"
-        using inner_prod_with_itself_Re by blast
-      \<comment> \<open>Apply the entry-sum bound.\<close>
-      have qbound: "cmod (\<langle>x | A *\<^sub>v x\<rangle>) \<le> S * Re \<langle>x | x\<rangle>"
-        using quad_form_bound_by_entry_sum[OF A_c x_d]
-        unfolding S_def .
-      have re_abs: "\<bar>Re (\<langle>x | A *\<^sub>v x\<rangle>)\<bar> \<le> cmod (\<langle>x | A *\<^sub>v x\<rangle>)"
-        by (rule abs_Re_le_cmod)
-      have re_bound: "\<bar>Re (\<langle>x | A *\<^sub>v x\<rangle>)\<bar> \<le> S * Re \<langle>x | x\<rangle>"
-        using re_abs qbound by linarith
-      \<comment> \<open>Final estimate.\<close>
-      have re_Mx: "Re \<langle>x | ?M *\<^sub>v x\<rangle>
-                     = Re \<langle>x | x\<rangle> + d * Re \<langle>x | A *\<^sub>v x\<rangle>"
-        using inner_split by simp
-      have abs_bound: "\<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar> \<le> \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
-      proof -
-        have "\<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar> = \<bar>d\<bar> * \<bar>Re \<langle>x | A *\<^sub>v x\<rangle>\<bar>"
-          by (simp add: abs_mult)
-        also have "\<dots> \<le> \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
-          using re_bound by (intro mult_left_mono) auto
-        finally show ?thesis .
-      qed
-      have d_re_bound: "d * Re \<langle>x | A *\<^sub>v x\<rangle> \<ge> - (\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>))"
-      proof -
-        have "d * Re \<langle>x | A *\<^sub>v x\<rangle> \<ge> - \<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar>" by simp
-        thus ?thesis using abs_bound by linarith
-      qed
-      have eps_re_bound: "\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>) \<le> Re \<langle>x | x\<rangle>"
-      proof -
-        have step: "\<bar>d\<bar> * S \<le> 1"
-        proof -
-          have "\<bar>d\<bar> * S \<le> eps * S"
-            using d_le S_nn by (intro mult_right_mono) auto
-          also have "\<dots> = S * eps" by (simp add: mult.commute)
-          also have "\<dots> \<le> 1" using S_eps_le1 .
-          finally show ?thesis .
-        qed
-        have "\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>) = (\<bar>d\<bar> * S) * Re \<langle>x | x\<rangle>"
-          by (simp add: mult.assoc)
-        also have "\<dots> \<le> 1 * Re \<langle>x | x\<rangle>"
-          using step rxx_nn by (intro mult_right_mono) auto
-        finally show ?thesis by simp
-      qed
-      have "0 \<le> Re \<langle>x | x\<rangle> - \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
-        using eps_re_bound rxx_nn by linarith
-      also have "\<dots> \<le> Re \<langle>x | x\<rangle> + d * Re \<langle>x | A *\<^sub>v x\<rangle>"
-        using d_re_bound by linarith
-      also have "\<dots> = Re \<langle>x | ?M *\<^sub>v x\<rangle>"
-        using re_Mx by simp
-      finally show "0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>" .
-    qed
-    show "psd ?M"
-      unfolding psd_def using herm_M quad_nn by blast
-  qed
-qed
-
-
-subsection \<open>Symmetric / anti-hermitian split of the coefficient matrix\<close>
+subsubsection \<open>The pair sum and the trace\<close>
 
 text \<open>The pair sum $\sum_{i,j}A_{ij}V_j^*V_i\in M_n$.  A dependence among the products is a non-zero
 coefficient matrix $A$ for which it vanishes.\<close>
@@ -1424,7 +1318,7 @@ proof -
     using foldr_upt_add_carrier[OF term_c] .
 qed
 
-text \<open>Per-entry index for the dual sum.\<close>
+text \<open>Entries of the pair sum.\<close>
 
 lemma kraus_pair_row_index:
   assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
@@ -1690,545 +1584,6 @@ proof (rule eq_matI)
   finally show "?L $$ (r, c) = ?R $$ (r, c)" .
 qed
 
-
-subsection \<open>From a dependence among the products to a Hermitian coefficient matrix\<close>
-
-text \<open>Generic concat-nth for uniform-length rows.\<close>
-
-lemma concat_uniform_length:
-  assumes "\<forall>xs \<in> set L. length xs = m"
-  shows "length (concat L) = length L * m"
-  using assms by (induct L) auto
-
-lemma concat_uniform_nth:
-  assumes uniform: "\<forall>xs \<in> set L. length xs = m"
-      and i_lt: "i < length L"
-      and j_lt: "j < m"
-  shows "concat L ! (i * m + j) = L ! i ! j"
-  using uniform i_lt
-proof (induction L arbitrary: i)
-  case Nil thus ?case by simp
-next
-  case (Cons l L)
-  hence l_len: "length l = m" and rest_uniform: "\<forall>xs \<in> set L. length xs = m"
-    by simp_all
-  show ?case
-  proof (cases i)
-    case 0
-    show ?thesis using 0 l_len j_lt by (simp add: nth_append)
-  next
-    case (Suc i')
-    hence i'_lt: "i' < length L" using Cons.prems by simp
-    have idx_shift: "i * m + j = m + (i' * m + j)"
-      using Suc by (simp add: algebra_simps)
-    have lhs_split: "concat (l # L) ! (i * m + j)
-                       = concat L ! (i' * m + j)"
-      using l_len idx_shift j_lt by (simp add: nth_append)
-    have rhs: "(l # L) ! i ! j = L ! i' ! j"
-      using Suc by simp
-    show ?thesis using lhs_split rhs Cons.IH[OF rest_uniform i'_lt] by simp
-  qed
-qed
-
-text \<open>There are $k^2$ products, the one at position $ik+j$ being $V_j^*V_i$.\<close>
-
-lemma length_kraus_products:
-  "length (kraus_products Vs) = length Vs * length Vs"
-proof -
-  let ?k = "length Vs"
-  let ?L = "map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<?k]) [0..<?k]"
-  have uniform: "\<forall>xs \<in> set ?L. length xs = ?k" by auto
-  have outer_len: "length ?L = ?k" by simp
-  have "length (kraus_products Vs) = length (concat ?L)"
-    by (simp add: kraus_products_def)
-  also have "\<dots> = length ?L * ?k"
-    using concat_uniform_length[OF uniform] .
-  also have "\<dots> = ?k * ?k"
-    using outer_len by simp
-  finally show ?thesis .
-qed
-
-lemma kraus_products_nth:
-  assumes i_lt: "i < length Vs" and j_lt: "j < length Vs"
-  shows "kraus_products Vs ! (i * length Vs + j) = (Vs!j)\<^sup>\<dagger> * Vs!i"
-proof -
-  let ?k = "length Vs"
-  let ?L = "map (\<lambda>i. map (\<lambda>j. (Vs!j)\<^sup>\<dagger> * Vs!i) [0..<?k]) [0..<?k]"
-  have uniform: "\<forall>xs \<in> set ?L. length xs = ?k" by auto
-  have outer_len: "length ?L = ?k" by simp
-  have inner_nth: "?L ! i ! j = (Vs!j)\<^sup>\<dagger> * Vs!i"
-    using i_lt j_lt by simp
-  have i_lt': "i < length ?L" using outer_len i_lt by simp
-  have "kraus_products Vs ! (i * ?k + j) = concat ?L ! (i * ?k + j)"
-    by (simp add: kraus_products_def)
-  also have "\<dots> = ?L ! i ! j"
-    using concat_uniform_nth[OF uniform i_lt' j_lt] .
-  also have "\<dots> = (Vs!j)\<^sup>\<dagger> * Vs!i"
-    using inner_nth .
-  finally show ?thesis .
-qed
-
-text \<open>Entries of a combination $\sum_kc_kB_k$.\<close>
-
-lemma foldr_smult_nth_index:
-  fixes c :: "nat \<Rightarrow> real" and Bs :: "complex Matrix.mat list"
-  assumes Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n"
-      and r_lt: "r < n" and c_lt: "c1 < n"
-  shows "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k) + acc)
-                [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
-           = (\<Sum>k = 0..<length Bs.
-                complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
-proof -
-  let ?f = "\<lambda>k. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k)"
-  have term_c: "\<forall>k < length Bs. ?f k \<in> carrier_mat n n"
-  proof (intro allI impI)
-    fix k assume k_lt: "k < length Bs"
-    have "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
-    thus "?f k \<in> carrier_mat n n" by (intro smult_carrier_mat) auto
-  qed
-  have term_idx: "\<And>k. k < length Bs \<Longrightarrow>
-                    ?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
-  proof -
-    fix k assume k_lt: "k < length Bs"
-    have Bk_c: "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
-    have r_dim: "r < dim_row (Bs ! k)" using Bk_c r_lt by auto
-    have c_dim: "c1 < dim_col (Bs ! k)" using Bk_c c_lt by auto
-    show "?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
-      using index_smult_mat(1)[OF r_dim c_dim] .
-  qed
-  have "foldr (\<lambda>k acc. ?f k + acc) [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
-          = (\<Sum>k = 0..<length Bs. ?f k $$ (r, c1))"
-    using foldr_upt_add_index[OF term_c r_lt c_lt] .
-  also have "\<dots> = (\<Sum>k = 0..<length Bs.
-                     complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
-    by (rule sum.cong) (auto simp: term_idx)
-  finally show ?thesis .
-qed
-
-text \<open>Reindexing $\kappa=ik+j$.\<close>
-
-lemma sum_split_prod_atLeastLessThan:
-  fixes f :: "nat \<Rightarrow> 'a::comm_monoid_add"
-  shows "(\<Sum>\<kappa> = 0..<N * k. f \<kappa>) = (\<Sum>i = 0..<N. \<Sum>j = 0..<k. f (i * k + j))"
-proof -
-  have step1: "(\<Sum>\<kappa> < N * k. f \<kappa>) = (\<Sum>i < N. \<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>)"
-    by (rule sum.nat_group[symmetric])
-  have step2: "\<And>i. (\<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
-  proof -
-    fix i
-    have "(\<Sum>\<kappa> \<in> {0 + i*k..<k + i*k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
-      by (rule sum.shift_bounds_nat_ivl)
-    thus "(\<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
-      by (simp add: add.commute)
-  qed
-  have step3: "\<And>i j. f (j + i * k) = f (i * k + j)"
-    by (simp add: add.commute)
-  have "(\<Sum>\<kappa> < N * k. f \<kappa>) = (\<Sum>i < N. \<Sum>j = 0..<k. f (i * k + j))"
-    using step1 step2 step3 by (simp cong: sum.cong)
-  thus ?thesis by (simp add: atLeast0LessThan)
-qed
-
-text \<open>A non-trivial complex relation among the products
-$V_j^\dagger V_i$ gives a non-zero complex coefficient matrix with vanishing pair sum, and
-then (closure of the family under adjoints) a non-zero \emph{Hermitian} one.\<close>
-
-lemma mat_lin_indep_complex_neg_witness:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and npos: "0 < n"
-      and dep: "\<not> lin_indep_complex_mat n n (kraus_products Vs)"
-  shows "\<exists>A_orig :: complex Matrix.mat.
-            A_orig \<in> carrier_mat (length Vs) (length Vs)
-          \<and> A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)
-          \<and> kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-proof -
-  let ?k = "length Vs"
-  let ?L = "?k * ?k"
-  let ?B = "kraus_products Vs"
-  have B_c: "\<forall>B \<in> set ?B. B \<in> carrier_mat n n" by (rule kraus_products_carrier[OF Vs_c])
-  have B_len: "length ?B = ?L" by (simp add: length_kraus_products)
-  from dep have "\<not> ((\<forall>B \<in> set ?B. B \<in> carrier_mat n n) \<and>
-                    (\<forall>c :: nat \<Rightarrow> complex.
-                       foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n
-                       \<longrightarrow> (\<forall>k < length ?B. c k = 0)))"
-    unfolding lin_indep_complex_mat_def .
-  with B_c obtain c :: "nat \<Rightarrow> complex" where
-        c_fold: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
-    and c_nontriv: "\<exists>k < length ?B. c k \<noteq> 0"
-    by blast
-  obtain k0 where k0_lt: "k0 < ?L" and c_k0: "c k0 \<noteq> 0" using c_nontriv B_len by auto
-  define i0 where "i0 = k0 div ?k"
-  define j0 where "j0 = k0 mod ?k"
-  have k_pos: "0 < ?k" using k0_lt by (cases ?k) auto
-  have i0_lt: "i0 < ?k" unfolding i0_def using k0_lt k_pos by (simp add: less_mult_imp_div_less)
-  have j0_lt: "j0 < ?k" unfolding j0_def using k_pos by simp
-  have k0_decomp: "k0 = i0 * ?k + j0" unfolding i0_def j0_def by simp
-  define A_orig where "A_orig = Matrix.mat ?k ?k (\<lambda>(i, j). c (i * ?k + j))"
-  have A_c: "A_orig \<in> carrier_mat ?k ?k" unfolding A_orig_def by simp
-  have A_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A_orig $$ (i, j) = c (i * ?k + j)"
-    unfolding A_orig_def by simp
-  have A_nontriv: "A_orig \<noteq> 0\<^sub>m ?k ?k"
-  proof
-    assume "A_orig = 0\<^sub>m ?k ?k"
-    hence "A_orig $$ (i0, j0) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i0, j0)" by simp
-    hence "c k0 = 0" using A_idx[OF i0_lt j0_lt] k0_decomp i0_lt j0_lt by simp
-    thus False using c_k0 by simp
-  qed
-  have foldr_idx_gen: "\<And>r c1. r < n \<Longrightarrow> c1 < n \<Longrightarrow>
-        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
-          = (\<Sum>k = 0..<length ?B. c k * (?B!k) $$ (r, c1))"
-  proof -
-    fix r c1 assume r_lt: "r < n" and c_lt: "c1 < n"
-    have carr: "\<forall>k < length ?B. c k \<cdot>\<^sub>m (?B!k) \<in> carrier_mat n n" using B_c by auto
-    have idx: "\<And>x. x < length ?B \<Longrightarrow> (c x \<cdot>\<^sub>m (?B!x)) $$ (r, c1) = c x * (?B!x) $$ (r, c1)"
-    proof -
-      fix x assume "x < length ?B"
-      hence "?B!x \<in> carrier_mat n n" using B_c nth_mem by blast
-      thus "(c x \<cdot>\<^sub>m (?B!x)) $$ (r, c1) = c x * (?B!x) $$ (r, c1)" using r_lt c_lt by simp
-    qed
-    have "(\<Sum>k = 0..<length ?B. (c k \<cdot>\<^sub>m (?B!k)) $$ (r, c1))
-            = (\<Sum>k = 0..<length ?B. c k * (?B!k) $$ (r, c1))"
-      by (rule sum.cong) (auto simp: idx)
-    thus "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
-          = (\<Sum>k = 0..<length ?B. c k * (?B!k) $$ (r, c1))"
-      using foldr_upt_add_index[OF carr r_lt c_lt] by simp
-  qed
-  have pair_sum_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-  proof (rule eq_matI)
-    let ?S = "kraus_pair_sum n Vs A_orig"
-    have S_c: "?S \<in> carrier_mat n n" by (rule kraus_pair_sum_carrier[OF Vs_c])
-    show "dim_row ?S = dim_row (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
-    show "dim_col ?S = dim_col (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
-    fix r c1 assume r_a: "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)"
-                and c_a: "c1 < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
-    hence r_lt: "r < n" and c_lt: "c1 < n" by auto
-    have lhs_idx': "?S $$ (r, c1)
-                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k. c (i * ?k + j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
-      using kraus_pair_sum_index[OF Vs_c r_lt c_lt] by (auto intro!: sum.cong simp: A_idx)
-    have foldr_zero: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) $$ (r, c1) = 0"
-      using c_fold r_lt c_lt by simp
-    have sum_kappa_zero: "(\<Sum>\<kappa> = 0..<?L. c \<kappa> * (?B!\<kappa>) $$ (r, c1)) = 0"
-      using foldr_idx_gen[OF r_lt c_lt] foldr_zero B_len by simp
-    have sum_decomp: "(\<Sum>\<kappa> = 0..<?L. c \<kappa> * (?B!\<kappa>) $$ (r, c1))
-                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k. c (i * ?k + j) * (?B!(i * ?k + j)) $$ (r, c1))"
-      by (rule sum_split_prod_atLeastLessThan)
-    have inner_eq: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
-                      (?B!(i * ?k + j)) $$ (r, c1) = ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1)"
-      using kraus_products_nth by metis
-    have sum_decomp': "(\<Sum>\<kappa> = 0..<?L. c \<kappa> * (?B!\<kappa>) $$ (r, c1))
-                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k. c (i * ?k + j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
-      using sum_decomp by (auto intro!: sum.cong simp: inner_eq)
-    have "?S $$ (r, c1) = 0" using lhs_idx' sum_decomp' sum_kappa_zero by simp
-    thus "?S $$ (r, c1) = (0\<^sub>m n n :: complex Matrix.mat) $$ (r, c1)" using r_lt c_lt by simp
-  qed
-  show ?thesis using A_c A_nontriv pair_sum_zero by blast
-qed
-
-lemma herm_witness_of_complex:
-  fixes A_orig :: "complex Matrix.mat"
-  assumes Vs_c:  "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and A_c:   "A_orig \<in> carrier_mat (length Vs) (length Vs)"
-      and A_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
-      and A_nontriv: "A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)"
-  shows "\<exists>H. H \<in> carrier_mat (length Vs) (length Vs)
-           \<and> hermitian H
-           \<and> H \<noteq> 0\<^sub>m (length Vs) (length Vs)
-           \<and> kraus_pair_sum n Vs H = 0\<^sub>m n n"
-proof -
-  let ?k = "length Vs"
-  let ?Atr = "Matrix.mat ?k ?k (\<lambda>(i,j). cnj (A_orig $$ (j, i)))"
-  have Atr_c: "?Atr \<in> carrier_mat ?k ?k" by simp
-  have Atr_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> ?Atr $$ (i, j) = cnj (A_orig $$ (j, i))"
-    by auto
-  have pairsum_Atr: "kraus_pair_sum n Vs ?Atr = 0\<^sub>m n n"
-  proof -
-    have "kraus_pair_sum n Vs ?Atr = (kraus_pair_sum n Vs A_orig)\<^sup>\<dagger>"
-      using kraus_pair_sum_dagger[OF Vs_c A_c] by simp
-    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)\<^sup>\<dagger>" using A_zero by simp
-    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)" by (rule eq_matI) (auto simp: dagger_def)
-    finally show ?thesis .
-  qed
-  define Asym  where "Asym  = A_orig + ?Atr"
-  define Askew where "Askew = A_orig + (-1) \<cdot>\<^sub>m ?Atr"
-  define Hskew where "Hskew = \<i> \<cdot>\<^sub>m Askew"
-  have Asym_c:  "Asym  \<in> carrier_mat ?k ?k" unfolding Asym_def using A_c Atr_c by auto
-  have nAtr_c: "(-1::complex) \<cdot>\<^sub>m ?Atr \<in> carrier_mat ?k ?k" using Atr_c by auto
-  have Askew_c: "Askew \<in> carrier_mat ?k ?k" unfolding Askew_def using A_c nAtr_c by auto
-  have Hskew_c: "Hskew \<in> carrier_mat ?k ?k" unfolding Hskew_def using Askew_c by auto
-  have ps_Asym: "kraus_pair_sum n Vs Asym = 0\<^sub>m n n"
-  proof -
-    have "kraus_pair_sum n Vs Asym = kraus_pair_sum n Vs A_orig + kraus_pair_sum n Vs ?Atr"
-      unfolding Asym_def by (rule kraus_pair_sum_add_A[OF Vs_c A_c Atr_c])
-    also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n" using A_zero pairsum_Atr by simp
-    also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n" by (rule eq_matI) auto
-    finally show ?thesis .
-  qed
-  have ps_Hskew: "kraus_pair_sum n Vs Hskew = 0\<^sub>m n n"
-  proof -
-    have ps_nAtr: "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr) = 0\<^sub>m n n"
-    proof -
-      have "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr) = (-1::complex) \<cdot>\<^sub>m kraus_pair_sum n Vs ?Atr"
-        by (rule kraus_pair_sum_smult_A[OF Vs_c Atr_c])
-      also have "\<dots> = (-1::complex) \<cdot>\<^sub>m 0\<^sub>m n n" using pairsum_Atr by simp
-      also have "\<dots> = 0\<^sub>m n n" by (rule eq_matI) auto
-      finally show ?thesis .
-    qed
-    have ps_Askew: "kraus_pair_sum n Vs Askew = 0\<^sub>m n n"
-    proof -
-      have "kraus_pair_sum n Vs Askew
-              = kraus_pair_sum n Vs A_orig + kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr)"
-        unfolding Askew_def by (rule kraus_pair_sum_add_A[OF Vs_c A_c nAtr_c])
-      also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n" using A_zero ps_nAtr by simp
-      also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n" by (rule eq_matI) auto
-      finally show ?thesis .
-    qed
-    have "kraus_pair_sum n Vs Hskew = \<i> \<cdot>\<^sub>m kraus_pair_sum n Vs Askew"
-      unfolding Hskew_def by (rule kraus_pair_sum_smult_A[OF Vs_c Askew_c])
-    also have "\<dots> = \<i> \<cdot>\<^sub>m 0\<^sub>m n n" using ps_Askew by simp
-    also have "\<dots> = 0\<^sub>m n n" by (rule eq_matI) auto
-    finally show ?thesis .
-  qed
-  have herm_Asym: "hermitian Asym"
-    unfolding hermitian_def
-  proof (rule eq_matI)
-    show "dim_row (Asym\<^sup>\<dagger>) = dim_row Asym" using Asym_c by simp
-    show "dim_col (Asym\<^sup>\<dagger>) = dim_col Asym" using Asym_c by simp
-    fix i j assume "i < dim_row Asym" "j < dim_col Asym"
-    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Asym_c by auto
-    have Asym_ij: "Asym $$ (i, j) = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))"
-      unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
-    have Asym_ji: "Asym $$ (j, i) = A_orig $$ (j, i) + cnj (A_orig $$ (i, j))"
-      unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
-    have "Asym\<^sup>\<dagger> $$ (i, j) = cnj (Asym $$ (j, i))" using i_lt j_lt Asym_c by (simp add: dagger_def)
-    also have "\<dots> = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))" using Asym_ji by simp
-    finally show "Asym\<^sup>\<dagger> $$ (i, j) = Asym $$ (i, j)" using Asym_ij by simp
-  qed
-  have herm_Hskew: "hermitian Hskew"
-    unfolding hermitian_def
-  proof (rule eq_matI)
-    show "dim_row (Hskew\<^sup>\<dagger>) = dim_row Hskew" using Hskew_c by simp
-    show "dim_col (Hskew\<^sup>\<dagger>) = dim_col Hskew" using Hskew_c by simp
-    fix i j assume "i < dim_row Hskew" "j < dim_col Hskew"
-    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Hskew_c by auto
-    have As_idx: "Askew $$ (i, j) = A_orig $$ (i, j) - cnj (A_orig $$ (j, i))"
-      unfolding Askew_def using i_lt j_lt A_c Atr_c by simp
-    have As_idx_swap: "Askew $$ (j, i) = A_orig $$ (j, i) - cnj (A_orig $$ (i, j))"
-      unfolding Askew_def using i_lt j_lt A_c Atr_c by simp
-    have "Hskew\<^sup>\<dagger> $$ (i, j) = cnj (Hskew $$ (j, i))" using i_lt j_lt Hskew_c by (simp add: dagger_def)
-    also have "\<dots> = cnj (\<i> * Askew $$ (j, i))" unfolding Hskew_def using i_lt j_lt Askew_c by simp
-    also have "\<dots> = - \<i> * cnj (Askew $$ (j, i))" by (simp add: complex_cnj_mult)
-    also have "\<dots> = - \<i> * (cnj (A_orig $$ (j, i)) - A_orig $$ (i, j))" using As_idx_swap by simp
-    also have "\<dots> = \<i> * (A_orig $$ (i, j) - cnj (A_orig $$ (j, i)))" by (simp add: algebra_simps)
-    also have "\<dots> = \<i> * Askew $$ (i, j)" using As_idx by simp
-    also have "\<dots> = Hskew $$ (i, j)" unfolding Hskew_def using i_lt j_lt Askew_c by simp
-    finally show "Hskew\<^sup>\<dagger> $$ (i, j) = Hskew $$ (i, j)" .
-  qed
-  show ?thesis
-  proof (cases "Asym = 0\<^sub>m ?k ?k")
-    case False
-    show ?thesis using Asym_c herm_Asym False ps_Asym by blast
-  next
-    case True
-    have At_eq_neg: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> cnj (A_orig $$ (j, i)) = - A_orig $$ (i, j)"
-    proof -
-      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
-      have "Asym $$ (i, j) = 0" using True i_lt j_lt by simp
-      hence "A_orig $$ (i, j) + cnj (A_orig $$ (j, i)) = 0"
-        unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
-      thus "cnj (A_orig $$ (j, i)) = - A_orig $$ (i, j)" by (simp add: add_eq_0_iff)
-    qed
-    have Askew_eq_2A: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> Askew $$ (i, j) = 2 * A_orig $$ (i, j)"
-    proof -
-      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
-      have "Askew $$ (i, j) = A_orig $$ (i, j) - cnj (A_orig $$ (j, i))"
-        unfolding Askew_def using i_lt j_lt A_c Atr_c by simp
-      also have "\<dots> = A_orig $$ (i, j) - (- A_orig $$ (i, j))" using At_eq_neg[OF i_lt j_lt] by simp
-      also have "\<dots> = 2 * A_orig $$ (i, j)" by simp
-      finally show "Askew $$ (i, j) = 2 * A_orig $$ (i, j)" .
-    qed
-    have Hskew_nz: "Hskew \<noteq> 0\<^sub>m ?k ?k"
-    proof
-      assume Hzero: "Hskew = 0\<^sub>m ?k ?k"
-      have all_zero: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A_orig $$ (i, j) = 0"
-      proof -
-        fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
-        have "Hskew $$ (i, j) = 0" using Hzero i_lt j_lt by simp
-        hence "\<i> * Askew $$ (i, j) = 0" unfolding Hskew_def using i_lt j_lt Askew_c by simp
-        hence "\<i> * (2 * A_orig $$ (i, j)) = 0" using Askew_eq_2A[OF i_lt j_lt] by simp
-        thus "A_orig $$ (i, j) = 0" by simp
-      qed
-      have "A_orig = 0\<^sub>m ?k ?k"
-      proof (rule eq_matI)
-        show "dim_row A_orig = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by simp
-        show "dim_col A_orig = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by simp
-        fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
-        hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
-        show "A_orig $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
-          using all_zero[OF i_lt j_lt] i_lt j_lt by simp
-      qed
-      thus False using A_nontriv by simp
-    qed
-    show ?thesis using Hskew_c herm_Hskew Hskew_nz ps_Hskew by blast
-  qed
-qed
-
-subsection \<open>The quadratic Kraus map: scaling, and $T=I$\<close>
-
-text \<open>Scalar-multiplication linearity of @{const kraus_quad_map} in \<open>T\<close>.\<close>
-
-lemma kraus_quad_map_smult_Tm:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and rho_c: "rho \<in> carrier_mat n n"
-      and Tm_c: "Tm \<in> carrier_mat (length Vs) (length Vs)"
-  shows "kraus_quad_map d Vs (c \<cdot>\<^sub>m Tm) rho
-           = c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
-proof (rule eq_matI)
-  let ?N = "length Vs"
-  let ?L = "kraus_quad_map d Vs (c \<cdot>\<^sub>m Tm) rho"
-  let ?R = "c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
-  have L_c: "?L \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R0_c: "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R_c: "?R \<in> carrier_mat d d" using R0_c by simp
-  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
-  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
-  fix r c1 assume r_lt: "r < dim_row ?R" and c1_lt: "c1 < dim_col ?R"
-  hence r_lt': "r < d" and c1_lt': "c1 < d" using R_c by auto
-  have smult_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
-                     (c \<cdot>\<^sub>m Tm) $$ (i, j) = c * Tm $$ (i, j)"
-    using Tm_c by auto
-  have L_idx: "?L $$ (r, c1)
-                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       (c * Tm $$ (i, j))
-                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
-    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c1_lt', of "c \<cdot>\<^sub>m Tm"]
-    by (auto intro!: sum.cong simp: smult_idx)
-  have R_pre: "kraus_quad_map d Vs Tm rho $$ (r, c1)
-                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
-    using kraus_quad_map_index[OF Vs_c rho_c r_lt' c1_lt'] .
-  have r_lt_dim: "r < dim_row (kraus_quad_map d Vs Tm rho)" using R0_c r_lt' by auto
-  have c_lt_dim: "c1 < dim_col (kraus_quad_map d Vs Tm rho)" using R0_c c1_lt' by auto
-  have R_idx: "?R $$ (r, c1)
-                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
-    using index_smult_mat(1)[OF r_lt_dim c_lt_dim] R_pre by simp
-  have collapse: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                      (c * Tm $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))
-                = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
-  proof -
-    have step1: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                    (c * Tm $$ (i, j)) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))
-                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                      c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1)))"
-      by (intro sum.cong refl) (simp add: algebra_simps)
-    have step2: "(\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                    c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1)))
-                 = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c1))"
-      by (simp add: sum_distrib_left)
-    show ?thesis using step1 step2 by simp
-  qed
-  show "?L $$ (r, c1) = ?R $$ (r, c1)"
-    using L_idx R_idx collapse by simp
-qed
-
-text \<open>For $T=I$ the quadratic Kraus map is the Kraus map of the list.\<close>
-
-lemma kraus_quad_map_one_eq_kraus_map_dim:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and rho_c: "rho \<in> carrier_mat n n"
-  shows "kraus_quad_map d Vs (1\<^sub>m (length Vs)) rho = kraus_map_dim d Vs rho"
-proof (rule eq_matI)
-  let ?N = "length Vs"
-  let ?L = "kraus_quad_map d Vs (1\<^sub>m ?N) rho"
-  let ?R = "kraus_map_dim d Vs rho"
-  have L_c: "?L \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R_c: "?R \<in> carrier_mat d d"
-    by (rule kraus_map_dim_carrier[OF Vs_c rho_c])
-  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
-  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
-  fix r c assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
-  hence r_lt: "r < d" and c_lt: "c < d" using R_c by auto
-  have one_idx: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
-                    (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
-                      = (if i = j then 1 else 0)"
-    by simp
-  have term_zero: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow> i \<noteq> j \<Longrightarrow>
-                      (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
-                        * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) = 0"
-    by simp
-  have term_diag: "\<And>i. i < ?N \<Longrightarrow>
-                      (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, i)
-                        * (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)
-                      = (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)"
-    by simp
-  \<comment> \<open>LHS per-entry: double sum collapses to diagonal.\<close>
-  have L_idx: "?L $$ (r, c)
-                 = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
-  proof -
-    have "?L $$ (r, c)
-            = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                 (1\<^sub>m ?N :: complex Matrix.mat) $$ (i, j)
-                   * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-      using kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt] .
-    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       (if i = j then 1 else 0)
-                         * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-      by (intro sum.cong refl) auto
-    also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       (if i = j then (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) else 0))"
-      by (intro sum.cong refl) (simp split: if_split)
-    also have "\<dots> = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
-    proof (intro sum.cong refl)
-      fix i assume "i \<in> {0..<?N}"
-      hence i_lt: "i < ?N" by simp
-      show "(\<Sum>j = 0..<?N.
-                if i = j then (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c) else 0)
-            = (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c)"
-        using i_lt by (simp add: sum.delta)
-    qed
-    finally show ?thesis .
-  qed
-  \<comment> \<open>RHS via list-induction on Vs (uses \<open>outer_sum_entry_sum_list-like\<close> reasoning).\<close>
-  have R_idx: "?R $$ (r, c)
-                 = sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs)"
-    using Vs_c rho_c r_lt c_lt
-  proof (induction Vs)
-    case Nil
-    have "kraus_map_dim d [] rho = 0\<^sub>m d d" by simp
-    thus ?case using r_lt c_lt by simp
-  next
-    case (Cons V Vs')
-    have V_c: "V \<in> carrier_mat d n" using Cons.prems by simp
-    have Vs'_c: "\<forall>W \<in> set Vs'. W \<in> carrier_mat d n" using Cons.prems by simp
-    have Vd_c: "V\<^sup>\<dagger> \<in> carrier_mat n d" using V_c by (rule dagger_carrier)
-    have term_c: "V * rho * (V\<^sup>\<dagger>) \<in> carrier_mat d d"
-      using V_c rho_c Vd_c by (intro mult_carrier_mat) auto
-    have IH_c: "kraus_map_dim d Vs' rho \<in> carrier_mat d d"
-      using kraus_map_dim_carrier[OF Vs'_c rho_c] .
-    have "kraus_map_dim d (V # Vs') rho $$ (r, c)
-            = (V * rho * (V\<^sup>\<dagger>) + kraus_map_dim d Vs' rho) $$ (r, c)"
-      by simp
-    also have "\<dots> = (V * rho * (V\<^sup>\<dagger>)) $$ (r, c)
-                  + kraus_map_dim d Vs' rho $$ (r, c)"
-      using term_c IH_c r_lt c_lt by auto
-    also have "\<dots> = (V * rho * (V\<^sup>\<dagger>)) $$ (r, c)
-                  + sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs')"
-      using Cons.IH[OF Vs'_c rho_c r_lt c_lt] by simp
-    also have "\<dots> = sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) (V # Vs'))"
-      by simp
-    finally show ?case .
-  qed
-  have R_sum_eq: "sum_list (map (\<lambda>W. (W * rho * (W\<^sup>\<dagger>)) $$ (r, c)) Vs)
-                    = (\<Sum>i = 0..<?N. (Vs!i * rho * ((Vs!i)\<^sup>\<dagger>)) $$ (r, c))"
-    by (simp add: sum_list_sum_nth atLeast0LessThan)
-  show "?L $$ (r, c) = ?R $$ (r, c)"
-    using L_idx R_idx R_sum_eq by simp
-qed
-
 text \<open>The pair-sum at the identity coefficient is exactly @{const sum_wdag_w}.\<close>
 
 lemma kraus_pair_sum_one_eq_sum_wdag_w:
@@ -2307,295 +1662,6 @@ proof (rule eq_matI)
     by (simp add: sum_list_sum_nth atLeast0LessThan)
   show "?L $$ (r, c) = ?R $$ (r, c)"
     using L_idx R_idx R_sum_eq by simp
-qed
-
-
-subsection \<open>Minimality and the distinctness lemma (Lemma B)\<close>
-
-
-
-
-
-text \<open>A convenient form of minimality: if the per-entry sum vanishes for
-all \<open>(r,p)\<close>, then all coefficients are zero.\<close>
-
-lemma lin_indep_zero_combo:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and minimal: "lin_indep_complex_mat d n Vs"
-      and coeff_kills: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
-                           (\<Sum>i = 0..<length Vs. c i * (Vs!i) $$ (r, p)) = 0"
-  shows "\<forall>i < length Vs. c i = 0"
-proof -
-  let ?N = "length Vs"
-  let ?f = "\<lambda>k. c k \<cdot>\<^sub>m (Vs!k)"
-  have term_c: "\<forall>k < ?N. ?f k \<in> carrier_mat d n"
-  proof (intro allI impI)
-    fix k assume k_lt: "k < ?N"
-    have "Vs!k \<in> carrier_mat d n" using Vs_c k_lt nth_mem by blast
-    thus "?f k \<in> carrier_mat d n" by (intro smult_carrier_mat) auto
-  qed
-  have foldr_c: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) \<in> carrier_mat d n"
-    using term_c by (intro foldr_add_carrier_dn) auto
-  have foldr_zero: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) = 0\<^sub>m d n"
-  proof (rule eq_matI)
-    show "dim_row (foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n))
-            = dim_row (0\<^sub>m d n :: complex Matrix.mat)"
-      using foldr_c by auto
-    show "dim_col (foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n))
-            = dim_col (0\<^sub>m d n :: complex Matrix.mat)"
-      using foldr_c by auto
-    fix r p
-    assume r_a: "r < dim_row (0\<^sub>m d n :: complex Matrix.mat)"
-       and p_a: "p < dim_col (0\<^sub>m d n :: complex Matrix.mat)"
-    hence r_lt: "r < d" and p_lt: "p < n" by auto
-    have z_c: "(0\<^sub>m d n :: complex Matrix.mat) \<in> carrier_mat d n" by simp
-    have idx_step: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
-                      = (\<Sum>k = 0..<?N. ?f k $$ (r, p))
-                        + (0\<^sub>m d n :: complex Matrix.mat) $$ (r, p)"
-      using foldr_upt_add_acc_index_dn[OF term_c z_c r_lt p_lt] .
-    have z_idx: "(0\<^sub>m d n :: complex Matrix.mat) $$ (r, p) = 0"
-      using r_lt p_lt by simp
-    have term_idx: "(\<Sum>k = 0..<?N. ?f k $$ (r, p))
-                      = (\<Sum>k = 0..<?N. c k * (Vs!k) $$ (r, p))"
-    proof (rule sum.cong[OF refl])
-      fix k assume "k \<in> {0..<?N}" hence k_lt: "k < ?N" by simp
-      have Vk_c: "Vs!k \<in> carrier_mat d n" using Vs_c k_lt nth_mem by blast
-      have r_dim: "r < dim_row (Vs!k)" using Vk_c r_lt by auto
-      have p_dim: "p < dim_col (Vs!k)" using Vk_c p_lt by auto
-      show "?f k $$ (r, p) = c k * (Vs!k) $$ (r, p)"
-        using index_smult_mat(1)[OF r_dim p_dim] .
-    qed
-    have "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
-            = (\<Sum>k = 0..<?N. c k * (Vs!k) $$ (r, p))"
-      using idx_step z_idx term_idx by simp
-    also have "\<dots> = 0" using coeff_kills[OF r_lt p_lt] .
-    finally show "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
-                    = (0\<^sub>m d n :: complex Matrix.mat) $$ (r, p)"
-      using r_lt p_lt by simp
-  qed
-  show ?thesis
-    using minimal foldr_zero unfolding lin_indep_complex_mat_def by simp
-qed
-
-text \<open>The per-entry computation for the rank-1 \<open>\<rho> = mat_unit p q n n\<close>.\<close>
-
-lemma kraus_quad_map_mat_unit_index:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and i_lt: "i < length Vs" and j_lt: "j < length Vs"
-      and p_lt: "p < n" and q_lt: "q < n"
-      and r_lt: "r < d" and c_lt: "c < d"
-  shows "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-           = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
-proof -
-  have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
-  have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
-  have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
-  have unit_c: "mat_unit p q n n \<in> carrier_mat n n"
-    by (simp add: mat_unit_def)
-  have ViE_c: "Vs!i * mat_unit p q n n \<in> carrier_mat d n"
-    using Vi_c unit_c by auto
-  \<comment> \<open>\<open>(V\<^sub>i * E\<^sub>{pq}) $$ (r,b)\<close> is \<open>V\<^sub>i $$ (r,p)\<close> if \<open>b = q\<close>, else 0.\<close>
-  have ViE_idx: "\<And>b. b < n \<Longrightarrow>
-                   (Vs!i * mat_unit p q n n) $$ (r, b)
-                     = (if b = q then (Vs!i) $$ (r, p) else 0)"
-  proof -
-    fix b assume b_lt: "b < n"
-    have "(Vs!i * mat_unit p q n n) $$ (r, b)
-            = (\<Sum>a = 0..<n. (Vs!i) $$ (r, a) * (mat_unit p q n n) $$ (a, b))"
-      by (rule mat_mult_index_sum[OF Vi_c unit_c r_lt b_lt])
-    also have "\<dots> = (\<Sum>a = 0..<n.
-                       (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))"
-    proof (rule sum.cong[OF refl])
-      fix a assume "a \<in> {0..<n}" hence a_lt: "a < n" by simp
-      show "(Vs!i) $$ (r, a) * (mat_unit p q n n) $$ (a, b)
-              = (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0)"
-        using mat_unit_index[OF a_lt b_lt, of p q] by simp
-    qed
-    also have "\<dots> = (if b = q then (Vs!i) $$ (r, p) else 0)"
-    proof (cases "b = q")
-      case True
-      have "(\<Sum>a = 0..<n.
-              (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))
-              = (\<Sum>a = 0..<n.
-                   (if a = p then (Vs!i) $$ (r, a) else 0))"
-        using True by (intro sum.cong refl) (auto)
-      also have "\<dots> = (if p \<in> {0..<n} then (Vs!i) $$ (r, p) else 0)"
-        by (rule sum.delta) simp
-      also have "\<dots> = (Vs!i) $$ (r, p)" using p_lt by simp
-      finally show ?thesis using True by simp
-    next
-      case False
-      have "(\<Sum>a = 0..<n.
-              (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))
-              = (\<Sum>a = 0..<n. (0::complex))"
-        using False by (intro sum.cong refl) (auto)
-      thus ?thesis using False by simp
-    qed
-    finally show "(Vs!i * mat_unit p q n n) $$ (r, b)
-                    = (if b = q then (Vs!i) $$ (r, p) else 0)" .
-  qed
-  \<comment> \<open>Now the outer product.\<close>
-  have "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-          = (\<Sum>b = 0..<n.
-              (Vs!i * mat_unit p q n n) $$ (r, b) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c))"
-    by (rule mat_mult_index_sum[OF ViE_c Vjd_c r_lt c_lt])
-  also have "\<dots> = (\<Sum>b = 0..<n.
-                     (if b = q then (Vs!i) $$ (r, p) else 0) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c))"
-    by (rule sum.cong[OF refl]) (auto simp: ViE_idx)
-  also have "\<dots> = (\<Sum>b = 0..<n.
-                     (if b = q then (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c)
-                              else 0))"
-    by (intro sum.cong refl) (simp split: if_split)
-  also have "\<dots> = (if q \<in> {0..<n} then (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (q, c)
-                                   else 0)"
-    by (rule sum.delta) simp
-  also have "\<dots> = (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (q, c)"
-    using q_lt by simp
-  also have "((Vs!j)\<^sup>\<dagger>) $$ (q, c) = cnj ((Vs!j) $$ (c, q))"
-    using Vj_c q_lt c_lt by (simp add: dagger_def)
-  finally show "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                  = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))" by simp
-qed
-
-text \<open>Lemma B: if the $V_i$ are linearly independent and $A\ne0$, then $\psi_A\ne0$.  With
-$\rho=E_{pq}$, $(V_iE_{pq}V_j^*)_{rc}=(V_i)_{rp}\overline{(V_j)_{cq}}$; if $\psi_A(E_{pq})=0$ for all $p,q$,
-independence of the $V_i$, used once for each index, forces $A=0$.\<close>
-
-lemma kraus_quad_map_nonzero_witness:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and minimal: "lin_indep_complex_mat d n Vs"
-      and A_c: "A \<in> carrier_mat (length Vs) (length Vs)"
-      and A_nz: "A \<noteq> 0\<^sub>m (length Vs) (length Vs)"
-      and npos: "0 < n" and dpos: "0 < d"
-  shows "\<exists>rho \<in> carrier_mat n n. kraus_quad_map d Vs A rho \<noteq> 0\<^sub>m d d"
-proof (rule ccontr)
-  let ?k = "length Vs"
-  assume not_ex: "\<not> (\<exists>rho \<in> carrier_mat n n. kraus_quad_map d Vs A rho \<noteq> 0\<^sub>m d d)"
-  hence all_zero: "\<And>rho. rho \<in> carrier_mat n n \<Longrightarrow>
-                       kraus_quad_map d Vs A rho = 0\<^sub>m d d"
-    by auto
-  \<comment> \<open>Step 1: pick \<open>\<rho> = mat_unit p q n n\<close>, get a per-entry vanishing identity.\<close>
-  have entry_zero:
-    "\<And>p q r c. p < n \<Longrightarrow> q < n \<Longrightarrow> r < d \<Longrightarrow> c < d \<Longrightarrow>
-       (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-          A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))) = 0"
-  proof -
-    fix p q r c
-    assume p_lt: "p < n" and q_lt: "q < n" and r_lt: "r < d" and c_lt: "c < d"
-    have unit_c: "mat_unit p q n n \<in> carrier_mat n n"
-      by (simp add: mat_unit_def)
-    have qm_zero: "kraus_quad_map d Vs A (mat_unit p q n n) = 0\<^sub>m d d"
-      using all_zero[OF unit_c] .
-    have qm_zero_idx: "kraus_quad_map d Vs A (mat_unit p q n n) $$ (r, c) = 0"
-      using qm_zero r_lt c_lt by simp
-    have qm_idx: "kraus_quad_map d Vs A (mat_unit p q n n) $$ (r, c)
-                    = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                        A $$ (i, j)
-                          * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-      using kraus_quad_map_index[OF Vs_c unit_c r_lt c_lt] .
-    have sum_eq: "(\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                     A $$ (i, j)
-                       * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
-                  = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-                       A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q)))"
-    proof (rule sum.cong[OF refl])
-      fix i assume "i \<in> {0..<?k}" hence i_lt: "i < ?k" by simp
-      show "(\<Sum>j = 0..<?k.
-              A $$ (i, j) * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
-              = (\<Sum>j = 0..<?k.
-                   A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q)))"
-      proof (rule sum.cong[OF refl])
-        fix j assume "j \<in> {0..<?k}" hence j_lt: "j < ?k" by simp
-        have prod_eq: "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                         = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
-          by (rule kraus_quad_map_mat_unit_index
-                    [OF Vs_c i_lt j_lt p_lt q_lt r_lt c_lt])
-        show "A $$ (i, j) * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                = A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
-          using prod_eq by (simp add: mult.assoc)
-      qed
-    qed
-    show "(\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
-            A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))) = 0"
-      using qm_zero_idx qm_idx sum_eq by simp
-  qed
-  \<comment> \<open>Step 2: for each fixed \<open>(c, q)\<close>, the coefficients
-      \<open>e i = \<Sum>j A(i,j) cnj(V_j$$(c,q))\<close> satisfy
-      \<open>\<Sum>i e i V_i = 0\<close>, so all \<open>e i = 0\<close> by minimality.\<close>
-  have inner_zero: "\<And>i c q. i < ?k \<Longrightarrow> c < d \<Longrightarrow> q < n \<Longrightarrow>
-                       (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
-  proof -
-    fix i c q assume i_lt: "i < ?k" and c_lt: "c < d" and q_lt: "q < n"
-    let ?e = "\<lambda>i'. (\<Sum>j = 0..<?k. A $$ (i', j) * cnj ((Vs!j) $$ (c, q)))"
-    have e_zero_combo: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
-                           (\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p)) = 0"
-    proof -
-      fix r p assume r_lt: "r < d" and p_lt: "p < n"
-      have step1: "(\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p))
-                     = (\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
-                         A $$ (i', j) * cnj ((Vs!j) $$ (c, q))
-                          * (Vs!i') $$ (r, p))"
-        by (simp add: sum_distrib_right)
-      have step2: "(\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
-                       A $$ (i', j) * cnj ((Vs!j) $$ (c, q))
-                        * (Vs!i') $$ (r, p))
-                    = (\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
-                         A $$ (i', j) * (Vs!i') $$ (r, p)
-                          * cnj ((Vs!j) $$ (c, q)))"
-        by (intro sum.cong refl) (simp add: ac_simps)
-      have step3: "(\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
-                       A $$ (i', j) * (Vs!i') $$ (r, p)
-                        * cnj ((Vs!j) $$ (c, q))) = 0"
-        by (rule entry_zero[OF p_lt q_lt r_lt c_lt])
-      show "(\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p)) = 0"
-        using step1 step2 step3 by simp
-    qed
-    have all_e: "\<forall>i' < ?k. ?e i' = 0"
-      by (rule lin_indep_zero_combo[OF Vs_c minimal e_zero_combo])
-    show "(\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
-      using all_e i_lt by simp
-  qed
-  \<comment> \<open>Step 3: take \<open>cnj\<close> to get \<open>\<Sum>j cnj(A(i,j)) V_j$$(c,q) = 0\<close>
-      for all \<open>(c,q)\<close>.\<close>
-  have cnj_inner_zero: "\<And>i c q. i < ?k \<Longrightarrow> c < d \<Longrightarrow> q < n \<Longrightarrow>
-                          (\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q)) = 0"
-  proof -
-    fix i c q assume i_lt: "i < ?k" and c_lt: "c < d" and q_lt: "q < n"
-    have "cnj (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q)))
-            = (\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q))"
-      by (simp add: complex_cnj_mult)
-    moreover have "cnj (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
-      using inner_zero[OF i_lt c_lt q_lt] by simp
-    ultimately show "(\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q)) = 0"
-      by simp
-  qed
-  \<comment> \<open>Step 4: for each fixed \<open>i\<close>, the coefficients
-      \<open>g j := cnj(A(i,j))\<close> satisfy \<open>\<Sum>j g j V_j = 0\<close>, so \<open>g j = 0\<close>
-      by minimality. Hence \<open>A(i,j) = 0\<close>.\<close>
-  have A_entry_zero: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A $$ (i, j) = 0"
-  proof -
-    fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
-    let ?g = "\<lambda>k. cnj (A $$ (i, k))"
-    have g_zero_combo: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
-                           (\<Sum>j' = 0..<?k. ?g j' * (Vs!j') $$ (r, p)) = 0"
-      using cnj_inner_zero[OF i_lt] by simp
-    have all_g: "\<forall>j' < ?k. ?g j' = 0"
-      by (rule lin_indep_zero_combo[OF Vs_c minimal g_zero_combo])
-    hence "cnj (A $$ (i, j)) = 0" using j_lt by simp
-    thus "A $$ (i, j) = 0" by simp
-  qed
-  \<comment> \<open>Therefore \<open>A = 0\<close>, contradiction.\<close>
-  have "A = 0\<^sub>m ?k ?k"
-  proof (rule eq_matI)
-    show "dim_row A = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by auto
-    show "dim_col A = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by auto
-    fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
-                   "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
-    hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
-    show "A $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
-      using A_entry_zero[OF i_lt j_lt] i_lt j_lt by simp
-  qed
-  thus False using A_nz by simp
 qed
 
 text \<open>Trace of the quadratic Kraus map: by cyclicity $\Tr(V_i\rho V_j^*)=\Tr(V_j^*V_i\rho)$, so
@@ -2902,25 +1968,294 @@ proof (intro allI impI)
   finally show "Tr (kraus_quad_map d Vs Tmat rho) = Tr rho" .
 qed
 
+subsubsection \<open>Independent Kraus operators give different maps (Lemma B)\<close>
 
-subsection \<open>CPTP-Kraus representation and extreme CPTP maps\<close>
+text \<open>A convenient form of minimality: if the per-entry sum vanishes for
+all \<open>(r,p)\<close>, then all coefficients are zero.\<close>
 
-text \<open>A \<open>cptp_kraus_rep n d \<Phi> Vs\<close> says \<open>Vs\<close> is a Kraus operator list
-(trace-preserving) and \<open>\<Phi>\<close> equals the corresponding @{const kraus_map_dim}
-on every \<open>X \<in> carrier_mat n n\<close>.\<close>
+lemma lin_indep_zero_combo:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and minimal: "lin_indep_complex_mat d n Vs"
+      and coeff_kills: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
+                           (\<Sum>i = 0..<length Vs. c i * (Vs!i) $$ (r, p)) = 0"
+  shows "\<forall>i < length Vs. c i = 0"
+proof -
+  let ?N = "length Vs"
+  let ?f = "\<lambda>k. c k \<cdot>\<^sub>m (Vs!k)"
+  have term_c: "\<forall>k < ?N. ?f k \<in> carrier_mat d n"
+  proof (intro allI impI)
+    fix k assume k_lt: "k < ?N"
+    have "Vs!k \<in> carrier_mat d n" using Vs_c k_lt nth_mem by blast
+    thus "?f k \<in> carrier_mat d n" by (intro smult_carrier_mat) auto
+  qed
+  have foldr_c: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) \<in> carrier_mat d n"
+    using term_c by (intro foldr_add_carrier_dn) auto
+  have foldr_zero: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) = 0\<^sub>m d n"
+  proof (rule eq_matI)
+    show "dim_row (foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n))
+            = dim_row (0\<^sub>m d n :: complex Matrix.mat)"
+      using foldr_c by auto
+    show "dim_col (foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n))
+            = dim_col (0\<^sub>m d n :: complex Matrix.mat)"
+      using foldr_c by auto
+    fix r p
+    assume r_a: "r < dim_row (0\<^sub>m d n :: complex Matrix.mat)"
+       and p_a: "p < dim_col (0\<^sub>m d n :: complex Matrix.mat)"
+    hence r_lt: "r < d" and p_lt: "p < n" by auto
+    have z_c: "(0\<^sub>m d n :: complex Matrix.mat) \<in> carrier_mat d n" by simp
+    have idx_step: "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
+                      = (\<Sum>k = 0..<?N. ?f k $$ (r, p))
+                        + (0\<^sub>m d n :: complex Matrix.mat) $$ (r, p)"
+      using foldr_upt_add_acc_index_dn[OF term_c z_c r_lt p_lt] .
+    have z_idx: "(0\<^sub>m d n :: complex Matrix.mat) $$ (r, p) = 0"
+      using r_lt p_lt by simp
+    have term_idx: "(\<Sum>k = 0..<?N. ?f k $$ (r, p))
+                      = (\<Sum>k = 0..<?N. c k * (Vs!k) $$ (r, p))"
+    proof (rule sum.cong[OF refl])
+      fix k assume "k \<in> {0..<?N}" hence k_lt: "k < ?N" by simp
+      have Vk_c: "Vs!k \<in> carrier_mat d n" using Vs_c k_lt nth_mem by blast
+      have r_dim: "r < dim_row (Vs!k)" using Vk_c r_lt by auto
+      have p_dim: "p < dim_col (Vs!k)" using Vk_c p_lt by auto
+      show "?f k $$ (r, p) = c k * (Vs!k) $$ (r, p)"
+        using index_smult_mat(1)[OF r_dim p_dim] .
+    qed
+    have "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
+            = (\<Sum>k = 0..<?N. c k * (Vs!k) $$ (r, p))"
+      using idx_step z_idx term_idx by simp
+    also have "\<dots> = 0" using coeff_kills[OF r_lt p_lt] .
+    finally show "foldr (\<lambda>k acc. ?f k + acc) [0..<?N] (0\<^sub>m d n) $$ (r, p)
+                    = (0\<^sub>m d n :: complex Matrix.mat) $$ (r, p)"
+      using r_lt p_lt by simp
+  qed
+  show ?thesis
+    using minimal foldr_zero unfolding lin_indep_complex_mat_def by simp
+qed
 
-definition cptp_kraus_rep ::
-  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow>
-       complex Matrix.mat list \<Rightarrow> bool"
-where
-  "cptp_kraus_rep n d \<Phi> Vs \<equiv>
-     kraus_operators n d Vs \<and>
-     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
+text \<open>The per-entry computation for the rank-1 \<open>\<rho> = mat_unit p q n n\<close>.\<close>
 
-subsection \<open>The Choi matrix of a @{const kraus_quad_map}\<close>
+lemma kraus_quad_map_mat_unit_index:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and i_lt: "i < length Vs" and j_lt: "j < length Vs"
+      and p_lt: "p < n" and q_lt: "q < n"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+           = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
+proof -
+  have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
+  have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
+  have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
+  have unit_c: "mat_unit p q n n \<in> carrier_mat n n"
+    by (simp add: mat_unit_def)
+  have ViE_c: "Vs!i * mat_unit p q n n \<in> carrier_mat d n"
+    using Vi_c unit_c by auto
+  \<comment> \<open>\<open>(V\<^sub>i * E\<^sub>{pq}) $$ (r,b)\<close> is \<open>V\<^sub>i $$ (r,p)\<close> if \<open>b = q\<close>, else 0.\<close>
+  have ViE_idx: "\<And>b. b < n \<Longrightarrow>
+                   (Vs!i * mat_unit p q n n) $$ (r, b)
+                     = (if b = q then (Vs!i) $$ (r, p) else 0)"
+  proof -
+    fix b assume b_lt: "b < n"
+    have "(Vs!i * mat_unit p q n n) $$ (r, b)
+            = (\<Sum>a = 0..<n. (Vs!i) $$ (r, a) * (mat_unit p q n n) $$ (a, b))"
+      by (rule mat_mult_index_sum[OF Vi_c unit_c r_lt b_lt])
+    also have "\<dots> = (\<Sum>a = 0..<n.
+                       (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))"
+    proof (rule sum.cong[OF refl])
+      fix a assume "a \<in> {0..<n}" hence a_lt: "a < n" by simp
+      show "(Vs!i) $$ (r, a) * (mat_unit p q n n) $$ (a, b)
+              = (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0)"
+        using mat_unit_index[OF a_lt b_lt, of p q] by simp
+    qed
+    also have "\<dots> = (if b = q then (Vs!i) $$ (r, p) else 0)"
+    proof (cases "b = q")
+      case True
+      have "(\<Sum>a = 0..<n.
+              (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))
+              = (\<Sum>a = 0..<n.
+                   (if a = p then (Vs!i) $$ (r, a) else 0))"
+        using True by (intro sum.cong refl) (auto)
+      also have "\<dots> = (if p \<in> {0..<n} then (Vs!i) $$ (r, p) else 0)"
+        by (rule sum.delta) simp
+      also have "\<dots> = (Vs!i) $$ (r, p)" using p_lt by simp
+      finally show ?thesis using True by simp
+    next
+      case False
+      have "(\<Sum>a = 0..<n.
+              (Vs!i) $$ (r, a) * (if a = p \<and> b = q then 1 else 0))
+              = (\<Sum>a = 0..<n. (0::complex))"
+        using False by (intro sum.cong refl) (auto)
+      thus ?thesis using False by simp
+    qed
+    finally show "(Vs!i * mat_unit p q n n) $$ (r, b)
+                    = (if b = q then (Vs!i) $$ (r, p) else 0)" .
+  qed
+  \<comment> \<open>Now the outer product.\<close>
+  have "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+          = (\<Sum>b = 0..<n.
+              (Vs!i * mat_unit p q n n) $$ (r, b) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c))"
+    by (rule mat_mult_index_sum[OF ViE_c Vjd_c r_lt c_lt])
+  also have "\<dots> = (\<Sum>b = 0..<n.
+                     (if b = q then (Vs!i) $$ (r, p) else 0) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c))"
+    by (rule sum.cong[OF refl]) (auto simp: ViE_idx)
+  also have "\<dots> = (\<Sum>b = 0..<n.
+                     (if b = q then (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (b, c)
+                              else 0))"
+    by (intro sum.cong refl) (simp split: if_split)
+  also have "\<dots> = (if q \<in> {0..<n} then (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (q, c)
+                                   else 0)"
+    by (rule sum.delta) simp
+  also have "\<dots> = (Vs!i) $$ (r, p) * ((Vs!j)\<^sup>\<dagger>) $$ (q, c)"
+    using q_lt by simp
+  also have "((Vs!j)\<^sup>\<dagger>) $$ (q, c) = cnj ((Vs!j) $$ (c, q))"
+    using Vj_c q_lt c_lt by (simp add: dagger_def)
+  finally show "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                  = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))" by simp
+qed
 
-text \<open>More generally $P_{\psi_T}=VTV^*$, where the columns of $V$ are the vectorised $V_i$: the bridge from
-a factorisation of Choi matrices back to quadratic Kraus maps.\<close>
+text \<open>Lemma B: if the $V_i$ are linearly independent and $A\ne0$, then $\psi_A\ne0$.  With
+$\rho=E_{pq}$, $(V_iE_{pq}V_j^*)_{rc}=(V_i)_{rp}\overline{(V_j)_{cq}}$; if $\psi_A(E_{pq})=0$ for all $p,q$,
+independence of the $V_i$, used once for each index, forces $A=0$.\<close>
+
+lemma kraus_quad_map_nonzero_witness:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and minimal: "lin_indep_complex_mat d n Vs"
+      and A_c: "A \<in> carrier_mat (length Vs) (length Vs)"
+      and A_nz: "A \<noteq> 0\<^sub>m (length Vs) (length Vs)"
+      and npos: "0 < n" and dpos: "0 < d"
+  shows "\<exists>rho \<in> carrier_mat n n. kraus_quad_map d Vs A rho \<noteq> 0\<^sub>m d d"
+proof (rule ccontr)
+  let ?k = "length Vs"
+  assume not_ex: "\<not> (\<exists>rho \<in> carrier_mat n n. kraus_quad_map d Vs A rho \<noteq> 0\<^sub>m d d)"
+  hence all_zero: "\<And>rho. rho \<in> carrier_mat n n \<Longrightarrow>
+                       kraus_quad_map d Vs A rho = 0\<^sub>m d d"
+    by auto
+  \<comment> \<open>Step 1: pick \<open>\<rho> = mat_unit p q n n\<close>, get a per-entry vanishing identity.\<close>
+  have entry_zero:
+    "\<And>p q r c. p < n \<Longrightarrow> q < n \<Longrightarrow> r < d \<Longrightarrow> c < d \<Longrightarrow>
+       (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+          A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))) = 0"
+  proof -
+    fix p q r c
+    assume p_lt: "p < n" and q_lt: "q < n" and r_lt: "r < d" and c_lt: "c < d"
+    have unit_c: "mat_unit p q n n \<in> carrier_mat n n"
+      by (simp add: mat_unit_def)
+    have qm_zero: "kraus_quad_map d Vs A (mat_unit p q n n) = 0\<^sub>m d d"
+      using all_zero[OF unit_c] .
+    have qm_zero_idx: "kraus_quad_map d Vs A (mat_unit p q n n) $$ (r, c) = 0"
+      using qm_zero r_lt c_lt by simp
+    have qm_idx: "kraus_quad_map d Vs A (mat_unit p q n n) $$ (r, c)
+                    = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                        A $$ (i, j)
+                          * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
+      using kraus_quad_map_index[OF Vs_c unit_c r_lt c_lt] .
+    have sum_eq: "(\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                     A $$ (i, j)
+                       * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+                  = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+                       A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q)))"
+    proof (rule sum.cong[OF refl])
+      fix i assume "i \<in> {0..<?k}" hence i_lt: "i < ?k" by simp
+      show "(\<Sum>j = 0..<?k.
+              A $$ (i, j) * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
+              = (\<Sum>j = 0..<?k.
+                   A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q)))"
+      proof (rule sum.cong[OF refl])
+        fix j assume "j \<in> {0..<?k}" hence j_lt: "j < ?k" by simp
+        have prod_eq: "(Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                         = (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
+          by (rule kraus_quad_map_mat_unit_index
+                    [OF Vs_c i_lt j_lt p_lt q_lt r_lt c_lt])
+        show "A $$ (i, j) * (Vs!i * mat_unit p q n n * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
+                = A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))"
+          using prod_eq by (simp add: mult.assoc)
+      qed
+    qed
+    show "(\<Sum>i = 0..<?k. \<Sum>j = 0..<?k.
+            A $$ (i, j) * (Vs!i) $$ (r, p) * cnj ((Vs!j) $$ (c, q))) = 0"
+      using qm_zero_idx qm_idx sum_eq by simp
+  qed
+  \<comment> \<open>Step 2: for each fixed \<open>(c, q)\<close>, the coefficients
+      \<open>e i = \<Sum>j A(i,j) cnj(V_j$$(c,q))\<close> satisfy
+      \<open>\<Sum>i e i V_i = 0\<close>, so all \<open>e i = 0\<close> by minimality.\<close>
+  have inner_zero: "\<And>i c q. i < ?k \<Longrightarrow> c < d \<Longrightarrow> q < n \<Longrightarrow>
+                       (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
+  proof -
+    fix i c q assume i_lt: "i < ?k" and c_lt: "c < d" and q_lt: "q < n"
+    let ?e = "\<lambda>i'. (\<Sum>j = 0..<?k. A $$ (i', j) * cnj ((Vs!j) $$ (c, q)))"
+    have e_zero_combo: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
+                           (\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p)) = 0"
+    proof -
+      fix r p assume r_lt: "r < d" and p_lt: "p < n"
+      have step1: "(\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p))
+                     = (\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                         A $$ (i', j) * cnj ((Vs!j) $$ (c, q))
+                          * (Vs!i') $$ (r, p))"
+        by (simp add: sum_distrib_right)
+      have step2: "(\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                       A $$ (i', j) * cnj ((Vs!j) $$ (c, q))
+                        * (Vs!i') $$ (r, p))
+                    = (\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                         A $$ (i', j) * (Vs!i') $$ (r, p)
+                          * cnj ((Vs!j) $$ (c, q)))"
+        by (intro sum.cong refl) (simp add: ac_simps)
+      have step3: "(\<Sum>i' = 0..<?k. \<Sum>j = 0..<?k.
+                       A $$ (i', j) * (Vs!i') $$ (r, p)
+                        * cnj ((Vs!j) $$ (c, q))) = 0"
+        by (rule entry_zero[OF p_lt q_lt r_lt c_lt])
+      show "(\<Sum>i' = 0..<?k. ?e i' * (Vs!i') $$ (r, p)) = 0"
+        using step1 step2 step3 by simp
+    qed
+    have all_e: "\<forall>i' < ?k. ?e i' = 0"
+      by (rule lin_indep_zero_combo[OF Vs_c minimal e_zero_combo])
+    show "(\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
+      using all_e i_lt by simp
+  qed
+  \<comment> \<open>Step 3: take \<open>cnj\<close> to get \<open>\<Sum>j cnj(A(i,j)) V_j$$(c,q) = 0\<close>
+      for all \<open>(c,q)\<close>.\<close>
+  have cnj_inner_zero: "\<And>i c q. i < ?k \<Longrightarrow> c < d \<Longrightarrow> q < n \<Longrightarrow>
+                          (\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q)) = 0"
+  proof -
+    fix i c q assume i_lt: "i < ?k" and c_lt: "c < d" and q_lt: "q < n"
+    have "cnj (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q)))
+            = (\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q))"
+      by (simp add: complex_cnj_mult)
+    moreover have "cnj (\<Sum>j = 0..<?k. A $$ (i, j) * cnj ((Vs!j) $$ (c, q))) = 0"
+      using inner_zero[OF i_lt c_lt q_lt] by simp
+    ultimately show "(\<Sum>j = 0..<?k. cnj (A $$ (i, j)) * (Vs!j) $$ (c, q)) = 0"
+      by simp
+  qed
+  \<comment> \<open>Step 4: for each fixed \<open>i\<close>, the coefficients
+      \<open>g j := cnj(A(i,j))\<close> satisfy \<open>\<Sum>j g j V_j = 0\<close>, so \<open>g j = 0\<close>
+      by minimality. Hence \<open>A(i,j) = 0\<close>.\<close>
+  have A_entry_zero: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A $$ (i, j) = 0"
+  proof -
+    fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+    let ?g = "\<lambda>k. cnj (A $$ (i, k))"
+    have g_zero_combo: "\<And>r p. r < d \<Longrightarrow> p < n \<Longrightarrow>
+                           (\<Sum>j' = 0..<?k. ?g j' * (Vs!j') $$ (r, p)) = 0"
+      using cnj_inner_zero[OF i_lt] by simp
+    have all_g: "\<forall>j' < ?k. ?g j' = 0"
+      by (rule lin_indep_zero_combo[OF Vs_c minimal g_zero_combo])
+    hence "cnj (A $$ (i, j)) = 0" using j_lt by simp
+    thus "A $$ (i, j) = 0" by simp
+  qed
+  \<comment> \<open>Therefore \<open>A = 0\<close>, contradiction.\<close>
+  have "A = 0\<^sub>m ?k ?k"
+  proof (rule eq_matI)
+    show "dim_row A = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by auto
+    show "dim_col A = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by auto
+    fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+                   "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+    hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
+    show "A $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
+      using A_entry_zero[OF i_lt j_lt] i_lt j_lt by simp
+  qed
+  thus False using A_nz by simp
+qed
+
+subsubsection \<open>The Choi matrix\<close>
+
+text \<open>The Choi matrix of $\psi_T$ is $VTV^*$, where the columns of $V$ are the vectorised
+$V_i$: the bridge from factorisations of Choi matrices back to quadratic Kraus maps.\<close>
 
 definition kraus_vec_mat :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat"
   where "kraus_vec_mat d n Vs = mat_of_cols (n*d) (map (vec_of_kraus d n) Vs)"
@@ -2956,8 +2291,6 @@ proof -
     using kraus_vec_mat_index[OF c_lt k_lt] by simp
   finally show ?thesis .
 qed
-
-text \<open>In the notation of \<open>kraus_vec_mat\<close>: $P_{\psi_T}=VTV^*$.\<close>
 
 lemma choi_matrix_kraus_quad_eq:
   fixes Tmat :: "complex Matrix.mat"
@@ -3117,986 +2450,552 @@ next
     using lhs_entry rhs_simp by simp
 qed
 
+subsection \<open>Extreme maps have independent products\<close>
 
-subsection \<open>CP Radon--Nikodym --- the dominated-PSD kernel\<close>
+text \<open>The notes' direction ($\Rightarrow$), by contraposition.  A dependence among the products
+gives a non-zero Hermitian $H$ with $\sum_{i,j}H_{ij}V_j^*V_i=0$.  For small $\epsilon>0$ the maps
+\[ \Phi_\pm(X)=\sum_{i,j}(\delta_{ij}\pm\epsilon H_{ij})\,V_iXV_j^* \]
+are completely positive (Lemma A, as $I\pm\epsilon H\ge0$) and trace preserving, differ from
+$\Phi$ (Lemma B), and $\Phi=\tfrac12(\Phi_++\Phi_-)$.  So $\Phi$ is not extreme.\<close>
 
+subsubsection \<open>A Hermitian dependence\<close>
 
+text \<open>A non-trivial complex relation among the products
+$V_j^\dagger V_i$ gives a non-zero complex coefficient matrix with vanishing pair sum, and
+then (closure of the family under adjoints) a non-zero \emph{Hermitian} one.\<close>
 
-text \<open>Congruence preserves positivity: $P\ge0$ implies $M^*PM\ge0$, since
-$\braket x{M^*PMx}=\braket{Mx}{P\,Mx}$.\<close>
-
-lemma psd_conjugate:
-  fixes P :: "complex Matrix.mat" and M :: "complex Matrix.mat"
-  assumes P_c: "P \<in> carrier_mat k k"
-      and P_psd: "psd P"
-      and M_c: "M \<in> carrier_mat k n"
-  shows "psd (M\<^sup>\<dagger> * P * M)"
+lemma mat_lin_indep_complex_neg_witness:
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and npos: "0 < n"
+      and dep: "\<not> lin_indep_complex_mat n n (kraus_products Vs)"
+  shows "\<exists>A_orig :: complex Matrix.mat.
+            A_orig \<in> carrier_mat (length Vs) (length Vs)
+          \<and> A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)
+          \<and> kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
 proof -
-  have Mdag_c: "M\<^sup>\<dagger> \<in> carrier_mat n k" using M_c by auto
-  have MdagP_c: "M\<^sup>\<dagger> * P \<in> carrier_mat n k" using Mdag_c P_c by simp
-  have prod_c: "M\<^sup>\<dagger> * P * M \<in> carrier_mat n n" using MdagP_c M_c by simp
-  have P_herm: "hermitian P" using P_psd by (rule psd_hermitian)
-
-  have herm: "hermitian (M\<^sup>\<dagger> * P * M)"
+  let ?k = "length Vs"
+  let ?L = "?k * ?k"
+  let ?B = "kraus_products Vs"
+  have B_c: "\<forall>B \<in> set ?B. B \<in> carrier_mat n n" by (rule kraus_products_carrier[OF Vs_c])
+  have B_len: "length ?B = ?L" by (simp add: length_kraus_products)
+  from dep have "\<not> ((\<forall>B \<in> set ?B. B \<in> carrier_mat n n) \<and>
+                    (\<forall>c :: nat \<Rightarrow> complex.
+                       foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n
+                       \<longrightarrow> (\<forall>k < length ?B. c k = 0)))"
+    unfolding lin_indep_complex_mat_def .
+  with B_c obtain c :: "nat \<Rightarrow> complex" where
+        c_fold: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) = 0\<^sub>m n n"
+    and c_nontriv: "\<exists>k < length ?B. c k \<noteq> 0"
+    by blast
+  obtain k0 where k0_lt: "k0 < ?L" and c_k0: "c k0 \<noteq> 0" using c_nontriv B_len by auto
+  define i0 where "i0 = k0 div ?k"
+  define j0 where "j0 = k0 mod ?k"
+  have k_pos: "0 < ?k" using k0_lt by (cases ?k) auto
+  have i0_lt: "i0 < ?k" unfolding i0_def using k0_lt k_pos by (simp add: less_mult_imp_div_less)
+  have j0_lt: "j0 < ?k" unfolding j0_def using k_pos by simp
+  have k0_decomp: "k0 = i0 * ?k + j0" unfolding i0_def j0_def by simp
+  define A_orig where "A_orig = Matrix.mat ?k ?k (\<lambda>(i, j). c (i * ?k + j))"
+  have A_c: "A_orig \<in> carrier_mat ?k ?k" unfolding A_orig_def by simp
+  have A_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A_orig $$ (i, j) = c (i * ?k + j)"
+    unfolding A_orig_def by simp
+  have A_nontriv: "A_orig \<noteq> 0\<^sub>m ?k ?k"
+  proof
+    assume "A_orig = 0\<^sub>m ?k ?k"
+    hence "A_orig $$ (i0, j0) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i0, j0)" by simp
+    hence "c k0 = 0" using A_idx[OF i0_lt j0_lt] k0_decomp i0_lt j0_lt by simp
+    thus False using c_k0 by simp
+  qed
+  have foldr_idx_gen: "\<And>r c1. r < n \<Longrightarrow> c1 < n \<Longrightarrow>
+        foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
+          = (\<Sum>k = 0..<length ?B. c k * (?B!k) $$ (r, c1))"
   proof -
-    have dimMP: "dim_col (M\<^sup>\<dagger>) = dim_row P" using Mdag_c P_c by auto
-    have dimMPM: "dim_col (M\<^sup>\<dagger> * P) = dim_row M" using MdagP_c M_c by auto
-    have step1: "(M\<^sup>\<dagger> * P)\<^sup>\<dagger> = (P\<^sup>\<dagger>) * ((M\<^sup>\<dagger>)\<^sup>\<dagger>)"
-      using dimMP by (rule dagger_of_prod)
-    have step2: "(M\<^sup>\<dagger> * P * M)\<^sup>\<dagger> = (M\<^sup>\<dagger>) * ((M\<^sup>\<dagger> * P)\<^sup>\<dagger>)"
-      using dimMPM by (rule dagger_of_prod)
-    have Mdd: "(M\<^sup>\<dagger>)\<^sup>\<dagger> = M" using M_c by (subst dagger_of_dagger_is_id, simp)
-    have Pd: "P\<^sup>\<dagger> = P" using P_herm by (simp add: hermitian_def)
-    have "(M\<^sup>\<dagger> * P * M)\<^sup>\<dagger> = (M\<^sup>\<dagger>) * ((P\<^sup>\<dagger>) * ((M\<^sup>\<dagger>)\<^sup>\<dagger>))"
-      using step1 step2 by simp
-    also have "\<dots> = (M\<^sup>\<dagger>) * (P * M)"
-      using Mdd Pd by simp
-    also have "\<dots> = M\<^sup>\<dagger> * P * M"
-      using Mdag_c P_c M_c by (metis assoc_mult_mat)
-    finally show ?thesis by (simp add: hermitian_def)
-  qed
-
-  have nn: "\<forall>x :: complex Matrix.vec.
-              dim_vec x = dim_row (M\<^sup>\<dagger> * P * M) \<longrightarrow>
-                0 \<le> Re \<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle>"
-  proof (intro allI impI)
-    fix x :: "complex Matrix.vec"
-    assume "dim_vec x = dim_row (M\<^sup>\<dagger> * P * M)"
-    hence x_dim: "dim_vec x = n" using prod_c by auto
-    have x_car: "x \<in> carrier_vec n" using x_dim by auto
-    let ?y = "M *\<^sub>v x"
-    have y_dim: "dim_vec ?y = k" using M_c x_car by auto
-    have y_dim_row: "dim_vec ?y = dim_row P" using P_c y_dim by simp
-
-    have rewrite: "(M\<^sup>\<dagger> * P * M) *\<^sub>v x = M\<^sup>\<dagger> *\<^sub>v (P *\<^sub>v ?y)"
+    fix r c1 assume r_lt: "r < n" and c_lt: "c1 < n"
+    have carr: "\<forall>k < length ?B. c k \<cdot>\<^sub>m (?B!k) \<in> carrier_mat n n" using B_c by auto
+    have idx: "\<And>x. x < length ?B \<Longrightarrow> (c x \<cdot>\<^sub>m (?B!x)) $$ (r, c1) = c x * (?B!x) $$ (r, c1)"
     proof -
-      have a1: "(M\<^sup>\<dagger> * P) *\<^sub>v ?y = M\<^sup>\<dagger> *\<^sub>v (P *\<^sub>v ?y)"
-        using Mdag_c P_c y_dim
-        by (intro assoc_mult_mat_vec) (auto simp: carrier_vecI)
-      have a2: "(M\<^sup>\<dagger> * P * M) *\<^sub>v x = (M\<^sup>\<dagger> * P) *\<^sub>v (M *\<^sub>v x)"
-        using MdagP_c M_c x_car
-        by (intro assoc_mult_mat_vec) auto
-      show ?thesis using a1 a2 by simp
+      fix x assume "x < length ?B"
+      hence "?B!x \<in> carrier_mat n n" using B_c nth_mem by blast
+      thus "(c x \<cdot>\<^sub>m (?B!x)) $$ (r, c1) = c x * (?B!x) $$ (r, c1)" using r_lt c_lt by simp
     qed
-
-    have inner_eq: "\<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle> = \<langle>?y | P *\<^sub>v ?y\<rangle>"
-    proof -
-      have Pyy_dim: "dim_vec (P *\<^sub>v ?y) = k" using P_c y_dim by auto
-      have "\<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle> = \<langle>x | M\<^sup>\<dagger> *\<^sub>v (P *\<^sub>v ?y)\<rangle>"
-        using rewrite by simp
-      also have "\<dots> = \<langle>(M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v x | P *\<^sub>v ?y\<rangle>"
-        using inner_prod_adjoint_swap[OF Mdag_c x_dim Pyy_dim] .
-      also have "\<dots> = \<langle>M *\<^sub>v x | P *\<^sub>v ?y\<rangle>"
-        using M_c by (simp add: dagger_of_dagger_is_id)
-      finally show ?thesis by simp
-    qed
-    have "0 \<le> Re \<langle>?y | P *\<^sub>v ?y\<rangle>"
-      using P_psd y_dim_row unfolding psd_def by blast
-    thus "0 \<le> Re \<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle>"
-      using inner_eq by simp
+    have "(\<Sum>k = 0..<length ?B. (c k \<cdot>\<^sub>m (?B!k)) $$ (r, c1))
+            = (\<Sum>k = 0..<length ?B. c k * (?B!k) $$ (r, c1))"
+      by (rule sum.cong) (auto simp: idx)
+    thus "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) $$ (r, c1)
+          = (\<Sum>k = 0..<length ?B. c k * (?B!k) $$ (r, c1))"
+      using foldr_upt_add_index[OF carr r_lt c_lt] by simp
   qed
+  have pair_sum_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
+  proof (rule eq_matI)
+    let ?S = "kraus_pair_sum n Vs A_orig"
+    have S_c: "?S \<in> carrier_mat n n" by (rule kraus_pair_sum_carrier[OF Vs_c])
+    show "dim_row ?S = dim_row (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
+    show "dim_col ?S = dim_col (0\<^sub>m n n :: complex Matrix.mat)" using S_c by auto
+    fix r c1 assume r_a: "r < dim_row (0\<^sub>m n n :: complex Matrix.mat)"
+                and c_a: "c1 < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
+    hence r_lt: "r < n" and c_lt: "c1 < n" by auto
+    have lhs_idx': "?S $$ (r, c1)
+                      = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k. c (i * ?k + j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+      using kraus_pair_sum_index[OF Vs_c r_lt c_lt] by (auto intro!: sum.cong simp: A_idx)
+    have foldr_zero: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (?B!k) + acc) [0..<length ?B] (0\<^sub>m n n) $$ (r, c1) = 0"
+      using c_fold r_lt c_lt by simp
+    have sum_kappa_zero: "(\<Sum>\<kappa> = 0..<?L. c \<kappa> * (?B!\<kappa>) $$ (r, c1)) = 0"
+      using foldr_idx_gen[OF r_lt c_lt] foldr_zero B_len by simp
+    have sum_decomp: "(\<Sum>\<kappa> = 0..<?L. c \<kappa> * (?B!\<kappa>) $$ (r, c1))
+                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k. c (i * ?k + j) * (?B!(i * ?k + j)) $$ (r, c1))"
+      by (rule sum_split_prod_atLeastLessThan)
+    have inner_eq: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow>
+                      (?B!(i * ?k + j)) $$ (r, c1) = ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1)"
+      using kraus_products_nth by metis
+    have sum_decomp': "(\<Sum>\<kappa> = 0..<?L. c \<kappa> * (?B!\<kappa>) $$ (r, c1))
+                     = (\<Sum>i = 0..<?k. \<Sum>j = 0..<?k. c (i * ?k + j) * ((Vs!j)\<^sup>\<dagger> * Vs!i) $$ (r, c1))"
+      using sum_decomp by (auto intro!: sum.cong simp: inner_eq)
+    have "?S $$ (r, c1) = 0" using lhs_idx' sum_decomp' sum_kappa_zero by simp
+    thus "?S $$ (r, c1) = (0\<^sub>m n n :: complex Matrix.mat) $$ (r, c1)" using r_lt c_lt by simp
+  qed
+  show ?thesis using A_c A_nontriv pair_sum_zero by blast
+qed
 
+lemma herm_witness_of_complex:
+  fixes A_orig :: "complex Matrix.mat"
+  assumes Vs_c:  "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and A_c:   "A_orig \<in> carrier_mat (length Vs) (length Vs)"
+      and A_zero: "kraus_pair_sum n Vs A_orig = 0\<^sub>m n n"
+      and A_nontriv: "A_orig \<noteq> 0\<^sub>m (length Vs) (length Vs)"
+  shows "\<exists>H. H \<in> carrier_mat (length Vs) (length Vs)
+           \<and> hermitian H
+           \<and> H \<noteq> 0\<^sub>m (length Vs) (length Vs)
+           \<and> kraus_pair_sum n Vs H = 0\<^sub>m n n"
+proof -
+  let ?k = "length Vs"
+  let ?Atr = "Matrix.mat ?k ?k (\<lambda>(i,j). cnj (A_orig $$ (j, i)))"
+  have Atr_c: "?Atr \<in> carrier_mat ?k ?k" by simp
+  have Atr_idx: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> ?Atr $$ (i, j) = cnj (A_orig $$ (j, i))"
+    by auto
+  have pairsum_Atr: "kraus_pair_sum n Vs ?Atr = 0\<^sub>m n n"
+  proof -
+    have "kraus_pair_sum n Vs ?Atr = (kraus_pair_sum n Vs A_orig)\<^sup>\<dagger>"
+      using kraus_pair_sum_dagger[OF Vs_c A_c] by simp
+    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)\<^sup>\<dagger>" using A_zero by simp
+    also have "\<dots> = (0\<^sub>m n n :: complex Matrix.mat)" by (rule eq_matI) (auto simp: dagger_def)
+    finally show ?thesis .
+  qed
+  define Asym  where "Asym  = A_orig + ?Atr"
+  define Askew where "Askew = A_orig + (-1) \<cdot>\<^sub>m ?Atr"
+  define Hskew where "Hskew = \<i> \<cdot>\<^sub>m Askew"
+  have Asym_c:  "Asym  \<in> carrier_mat ?k ?k" unfolding Asym_def using A_c Atr_c by auto
+  have nAtr_c: "(-1::complex) \<cdot>\<^sub>m ?Atr \<in> carrier_mat ?k ?k" using Atr_c by auto
+  have Askew_c: "Askew \<in> carrier_mat ?k ?k" unfolding Askew_def using A_c nAtr_c by auto
+  have Hskew_c: "Hskew \<in> carrier_mat ?k ?k" unfolding Hskew_def using Askew_c by auto
+  have ps_Asym: "kraus_pair_sum n Vs Asym = 0\<^sub>m n n"
+  proof -
+    have "kraus_pair_sum n Vs Asym = kraus_pair_sum n Vs A_orig + kraus_pair_sum n Vs ?Atr"
+      unfolding Asym_def by (rule kraus_pair_sum_add_A[OF Vs_c A_c Atr_c])
+    also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n" using A_zero pairsum_Atr by simp
+    also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n" by (rule eq_matI) auto
+    finally show ?thesis .
+  qed
+  have ps_Hskew: "kraus_pair_sum n Vs Hskew = 0\<^sub>m n n"
+  proof -
+    have ps_nAtr: "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr) = 0\<^sub>m n n"
+    proof -
+      have "kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr) = (-1::complex) \<cdot>\<^sub>m kraus_pair_sum n Vs ?Atr"
+        by (rule kraus_pair_sum_smult_A[OF Vs_c Atr_c])
+      also have "\<dots> = (-1::complex) \<cdot>\<^sub>m 0\<^sub>m n n" using pairsum_Atr by simp
+      also have "\<dots> = 0\<^sub>m n n" by (rule eq_matI) auto
+      finally show ?thesis .
+    qed
+    have ps_Askew: "kraus_pair_sum n Vs Askew = 0\<^sub>m n n"
+    proof -
+      have "kraus_pair_sum n Vs Askew
+              = kraus_pair_sum n Vs A_orig + kraus_pair_sum n Vs ((-1::complex) \<cdot>\<^sub>m ?Atr)"
+        unfolding Askew_def by (rule kraus_pair_sum_add_A[OF Vs_c A_c nAtr_c])
+      also have "\<dots> = 0\<^sub>m n n + 0\<^sub>m n n" using A_zero ps_nAtr by simp
+      also have "(0\<^sub>m n n :: complex Matrix.mat) + 0\<^sub>m n n = 0\<^sub>m n n" by (rule eq_matI) auto
+      finally show ?thesis .
+    qed
+    have "kraus_pair_sum n Vs Hskew = \<i> \<cdot>\<^sub>m kraus_pair_sum n Vs Askew"
+      unfolding Hskew_def by (rule kraus_pair_sum_smult_A[OF Vs_c Askew_c])
+    also have "\<dots> = \<i> \<cdot>\<^sub>m 0\<^sub>m n n" using ps_Askew by simp
+    also have "\<dots> = 0\<^sub>m n n" by (rule eq_matI) auto
+    finally show ?thesis .
+  qed
+  have herm_Asym: "hermitian Asym"
+    unfolding hermitian_def
+  proof (rule eq_matI)
+    show "dim_row (Asym\<^sup>\<dagger>) = dim_row Asym" using Asym_c by simp
+    show "dim_col (Asym\<^sup>\<dagger>) = dim_col Asym" using Asym_c by simp
+    fix i j assume "i < dim_row Asym" "j < dim_col Asym"
+    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Asym_c by auto
+    have Asym_ij: "Asym $$ (i, j) = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))"
+      unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
+    have Asym_ji: "Asym $$ (j, i) = A_orig $$ (j, i) + cnj (A_orig $$ (i, j))"
+      unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
+    have "Asym\<^sup>\<dagger> $$ (i, j) = cnj (Asym $$ (j, i))" using i_lt j_lt Asym_c by (simp add: dagger_def)
+    also have "\<dots> = A_orig $$ (i, j) + cnj (A_orig $$ (j, i))" using Asym_ji by simp
+    finally show "Asym\<^sup>\<dagger> $$ (i, j) = Asym $$ (i, j)" using Asym_ij by simp
+  qed
+  have herm_Hskew: "hermitian Hskew"
+    unfolding hermitian_def
+  proof (rule eq_matI)
+    show "dim_row (Hskew\<^sup>\<dagger>) = dim_row Hskew" using Hskew_c by simp
+    show "dim_col (Hskew\<^sup>\<dagger>) = dim_col Hskew" using Hskew_c by simp
+    fix i j assume "i < dim_row Hskew" "j < dim_col Hskew"
+    hence i_lt: "i < ?k" and j_lt: "j < ?k" using Hskew_c by auto
+    have As_idx: "Askew $$ (i, j) = A_orig $$ (i, j) - cnj (A_orig $$ (j, i))"
+      unfolding Askew_def using i_lt j_lt A_c Atr_c by simp
+    have As_idx_swap: "Askew $$ (j, i) = A_orig $$ (j, i) - cnj (A_orig $$ (i, j))"
+      unfolding Askew_def using i_lt j_lt A_c Atr_c by simp
+    have "Hskew\<^sup>\<dagger> $$ (i, j) = cnj (Hskew $$ (j, i))" using i_lt j_lt Hskew_c by (simp add: dagger_def)
+    also have "\<dots> = cnj (\<i> * Askew $$ (j, i))" unfolding Hskew_def using i_lt j_lt Askew_c by simp
+    also have "\<dots> = - \<i> * cnj (Askew $$ (j, i))" by (simp add: complex_cnj_mult)
+    also have "\<dots> = - \<i> * (cnj (A_orig $$ (j, i)) - A_orig $$ (i, j))" using As_idx_swap by simp
+    also have "\<dots> = \<i> * (A_orig $$ (i, j) - cnj (A_orig $$ (j, i)))" by (simp add: algebra_simps)
+    also have "\<dots> = \<i> * Askew $$ (i, j)" using As_idx by simp
+    also have "\<dots> = Hskew $$ (i, j)" unfolding Hskew_def using i_lt j_lt Askew_c by simp
+    finally show "Hskew\<^sup>\<dagger> $$ (i, j) = Hskew $$ (i, j)" .
+  qed
   show ?thesis
-    unfolding psd_def using herm nn by blast
-qed
-
-
-subsubsection \<open>Diagonal pseudo-inverse list and its identity\<close>
-
-text \<open>The pseudoinverse of a real diagonal: $d_i^+=1/d_i$ for $d_i\ne0$ and $d_i^+=0$ otherwise.\<close>
-
-definition pinv_list :: "real list \<Rightarrow> real list" where
-  "pinv_list D = map (\<lambda>d. if d = 0 then 0 else 1/d) D"
-
-lemma pinv_list_length [simp]: "length (pinv_list D) = length D"
-  unfolding pinv_list_def by simp
-
-lemma pinv_list_index:
-  assumes "i < length D"
-  shows "pinv_list D ! i = (if D ! i = 0 then 0 else 1 / (D ! i))"
-  using assms unfolding pinv_list_def by simp
-
-lemma pinv_list_nonneg:
-  assumes "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
-  shows "\<And>i. i < length D \<Longrightarrow> 0 \<le> pinv_list D ! i"
-proof -
-  fix i assume i: "i < length D"
-  show "0 \<le> pinv_list D ! i"
-    using assms[OF i] by (simp add: pinv_list_index[OF i])
-qed
-
-text \<open>$DD^+D=D$, entry by entry: $0\cdot0\cdot0=0$ and $d_i\cdot d_i^{-1}\cdot d_i=d_i$.\<close>
-
-lemma diag_pinv_diag_eq:
-  fixes D :: "real list"
-  shows "diag_mat_of_real D
-           * diag_mat_of_real (pinv_list D)
-           * diag_mat_of_real D
-         = diag_mat_of_real D"
-proof (rule eq_matI)
-  let ?n = "length D"
-  let ?Dm = "diag_mat_of_real D"
-  let ?Pm = "diag_mat_of_real (pinv_list D)"
-  let ?DP = "?Dm * ?Pm"
-  let ?DPD = "?DP * ?Dm"
-  have Dm_c: "?Dm \<in> carrier_mat ?n ?n" by simp
-  have Pm_c: "?Pm \<in> carrier_mat ?n ?n"
-    using diag_mat_of_real_carrier[of "pinv_list D"] by simp
-  have DP_c: "?DP \<in> carrier_mat ?n ?n"
-    using Dm_c Pm_c by (rule mult_carrier_mat)
-  have DPD_c: "?DPD \<in> carrier_mat ?n ?n"
-    using DP_c Dm_c by (rule mult_carrier_mat)
-  show "dim_row ?DPD = dim_row ?Dm" using DPD_c by simp
-  show "dim_col ?DPD = dim_col ?Dm" using DPD_c by simp
-  fix i j assume i_a: "i < dim_row ?Dm" and j_a: "j < dim_col ?Dm"
-  hence i_lt: "i < ?n" and j_lt: "j < ?n" by auto
-
-  \<comment> \<open>A pointwise version of \<open>DP_idx\<close>: for any row index \<open>i'\<close> and any
-      column index \<open>c\<close>, the matrix-product entry is the diagonal-extracted
-      value.  We will instantiate with \<open>i' = i\<close> at two different column
-      indices below.\<close>
-  have DP_at: "\<And>c. c < ?n \<Longrightarrow> ?DP $$ (i, c) = ?Dm $$ (i, i) * ?Pm $$ (i, c)"
-  proof -
-    fix c assume c_lt: "c < ?n"
-    have "?DP $$ (i, c) = (\<Sum>l = 0..<?n. ?Dm $$ (i, l) * ?Pm $$ (l, c))"
-      using i_lt c_lt Dm_c Pm_c
-      by (simp add: scalar_prod_def lessThan_atLeast0)
-    also have "\<dots> = (\<Sum>l = 0..<?n.
-                       (if l = i then ?Dm $$ (i, i) * ?Pm $$ (i, c) else 0))"
-      using i_lt c_lt
-      by (intro sum.cong refl) auto
-    also have "\<dots> = ?Dm $$ (i, i) * ?Pm $$ (i, c)"
-      using i_lt by (simp add: sum.delta)
-    finally show "?DP $$ (i, c) = ?Dm $$ (i, i) * ?Pm $$ (i, c)" .
+  proof (cases "Asym = 0\<^sub>m ?k ?k")
+    case False
+    show ?thesis using Asym_c herm_Asym False ps_Asym by blast
+  next
+    case True
+    have At_eq_neg: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> cnj (A_orig $$ (j, i)) = - A_orig $$ (i, j)"
+    proof -
+      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+      have "Asym $$ (i, j) = 0" using True i_lt j_lt by simp
+      hence "A_orig $$ (i, j) + cnj (A_orig $$ (j, i)) = 0"
+        unfolding Asym_def using i_lt j_lt A_c Atr_c by simp
+      thus "cnj (A_orig $$ (j, i)) = - A_orig $$ (i, j)" by (simp add: add_eq_0_iff)
+    qed
+    have Askew_eq_2A: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> Askew $$ (i, j) = 2 * A_orig $$ (i, j)"
+    proof -
+      fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+      have "Askew $$ (i, j) = A_orig $$ (i, j) - cnj (A_orig $$ (j, i))"
+        unfolding Askew_def using i_lt j_lt A_c Atr_c by simp
+      also have "\<dots> = A_orig $$ (i, j) - (- A_orig $$ (i, j))" using At_eq_neg[OF i_lt j_lt] by simp
+      also have "\<dots> = 2 * A_orig $$ (i, j)" by simp
+      finally show "Askew $$ (i, j) = 2 * A_orig $$ (i, j)" .
+    qed
+    have Hskew_nz: "Hskew \<noteq> 0\<^sub>m ?k ?k"
+    proof
+      assume Hzero: "Hskew = 0\<^sub>m ?k ?k"
+      have all_zero: "\<And>i j. i < ?k \<Longrightarrow> j < ?k \<Longrightarrow> A_orig $$ (i, j) = 0"
+      proof -
+        fix i j assume i_lt: "i < ?k" and j_lt: "j < ?k"
+        have "Hskew $$ (i, j) = 0" using Hzero i_lt j_lt by simp
+        hence "\<i> * Askew $$ (i, j) = 0" unfolding Hskew_def using i_lt j_lt Askew_c by simp
+        hence "\<i> * (2 * A_orig $$ (i, j)) = 0" using Askew_eq_2A[OF i_lt j_lt] by simp
+        thus "A_orig $$ (i, j) = 0" by simp
+      qed
+      have "A_orig = 0\<^sub>m ?k ?k"
+      proof (rule eq_matI)
+        show "dim_row A_orig = dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by simp
+        show "dim_col A_orig = dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)" using A_c by simp
+        fix i j assume "i < dim_row (0\<^sub>m ?k ?k :: complex Matrix.mat)" "j < dim_col (0\<^sub>m ?k ?k :: complex Matrix.mat)"
+        hence i_lt: "i < ?k" and j_lt: "j < ?k" by auto
+        show "A_orig $$ (i, j) = (0\<^sub>m ?k ?k :: complex Matrix.mat) $$ (i, j)"
+          using all_zero[OF i_lt j_lt] i_lt j_lt by simp
+      qed
+      thus False using A_nontriv by simp
+    qed
+    show ?thesis using Hskew_c herm_Hskew Hskew_nz ps_Hskew by blast
   qed
+qed
 
-  have DPD_idx: "?DPD $$ (i, j)
-                  = ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j)"
+subsubsection \<open>Small perturbations of the identity\<close>
+
+text \<open>For Hermitian $A\in M_k$, $I+\delta A\ge0$ when $|\delta|$ is small: with $S=\sum_{i,j}|A_{ij}|$,
+$|\braket x{Ax}|\le S\norm x^2$, so $\epsilon=1/(1+S)$ works.\<close>
+
+text \<open>Entry-wise bound on the quadratic form of a hermitian matrix.\<close>
+
+lemma quad_form_bound_by_entry_sum:
+  fixes A :: "complex Matrix.mat" and x :: "complex Matrix.vec"
+  assumes A_c: "A \<in> carrier_mat k k" and x_d: "dim_vec x = k"
+  shows "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+           \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j))) * Re \<langle>x | x\<rangle>"
+proof -
+  let ?S = "(\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j)))"
+  let ?Rxx = "Re \<langle>x | x\<rangle>"
+  \<comment> \<open>Per-entry: \<open>(A*x)_i = \<Sum>_j A_{ij} x_j\<close>.\<close>
+  have Ax_idx: "\<And>i. i < k \<Longrightarrow>
+                  (A *\<^sub>v x) $ i = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)"
   proof -
-    have "?DPD $$ (i, j) = (\<Sum>l = 0..<?n. ?DP $$ (i, l) * ?Dm $$ (l, j))"
-      using i_lt j_lt DP_c Dm_c
-      by (simp add: scalar_prod_def lessThan_atLeast0)
-    also have "\<dots> = (\<Sum>l = 0..<?n.
-                       ?Dm $$ (i, i) * ?Pm $$ (i, l) * ?Dm $$ (l, j))"
-      using DP_at
-      by (intro sum.cong refl) auto
-    also have "\<dots> = (\<Sum>l = 0..<?n.
-                       (if l = i then ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j) else 0))"
-      using i_lt j_lt
-      by (intro sum.cong refl) auto
-    also have "\<dots> = ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j)"
-      using i_lt by (simp add: sum.delta)
+    fix i assume i_lt: "i < k"
+    have "(A *\<^sub>v x) $ i = Matrix.row A i \<bullet> x"
+      using A_c x_d i_lt by simp
+    also have "\<dots> = (\<Sum>j = 0..<k. Matrix.row A i $ j * x $ j)"
+      using A_c x_d by (simp add: scalar_prod_def)
+    also have "\<dots> = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)"
+      using A_c i_lt by (intro sum.cong refl) auto
+    finally show "(A *\<^sub>v x) $ i = (\<Sum>j = 0..<k. A $$ (i, j) * x $ j)" .
+  qed
+  \<comment> \<open>Expand \<open>\<langle>x | A*x\<rangle>\<close> as a double sum.\<close>
+  have Ax_dim: "dim_vec (A *\<^sub>v x) = k" using A_c x_d by simp
+  have q: "\<langle>x | A *\<^sub>v x\<rangle>
+             = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cnj (x $ i) * A $$ (i,j) * x $ j)"
+  proof -
+    have "\<langle>x | A *\<^sub>v x\<rangle> = (\<Sum>i = 0..<k. cnj (x $ i) * (A *\<^sub>v x) $ i)"
+      using x_d Ax_dim inner_prod_sum by blast
+    also have "\<dots> = (\<Sum>i = 0..<k.
+                       cnj (x $ i) * (\<Sum>j = 0..<k. A $$ (i,j) * x $ j))"
+      by (intro sum.cong refl) (auto simp: Ax_idx)
+    also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                       cnj (x $ i) * (A $$ (i,j) * x $ j))"
+      by (simp add: sum_distrib_left)
+    also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                       cnj (x $ i) * A $$ (i,j) * x $ j)"
+      by (intro sum.cong refl) (simp add: mult.assoc)
     finally show ?thesis .
   qed
-
-  \<comment> \<open>And on the diagonal, the scalar identity \<open>D\<^sub>i \<cdot> D\<^sub>i\<^sup>+ \<cdot> D\<^sub>i = D\<^sub>i\<close>.\<close>
-  have scalar_id: "D ! i * pinv_list D ! i * D ! i = D ! i"
-  proof (cases "D ! i = 0")
-    case True
-    show ?thesis using True by simp
-  next
-    case False
-    have "pinv_list D ! i = 1 / D ! i"
-      using i_lt False by (simp add: pinv_list_index)
-    thus ?thesis using False by simp
+  \<comment> \<open>Triangle: \<open>cmod\<close> of a double sum bound by sum of \<open>cmod\<close>s.\<close>
+  have tri: "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+               \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                     cmod (cnj (x $ i) * A $$ (i,j) * x $ j))"
+  proof -
+    have "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+             \<le> (\<Sum>i = 0..<k. cmod (\<Sum>j = 0..<k.
+                  cnj (x $ i) * A $$ (i,j) * x $ j))"
+      using q norm_sum by (simp add: q) (rule norm_sum)
+    also have "\<dots> \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                       cmod (cnj (x $ i) * A $$ (i,j) * x $ j))"
+      by (intro sum_mono norm_sum)
+    finally show ?thesis .
   qed
-
-  show "?DPD $$ (i, j) = ?Dm $$ (i, j)"
-  proof (cases "i = j")
-    case True
-    have e1: "?Dm $$ (i, i) = complex_of_real (D ! i)" using i_lt by simp
-    have e2: "?Pm $$ (i, i) = complex_of_real (pinv_list D ! i)" using i_lt by simp
-    have e3: "?Dm $$ (i, j) = complex_of_real (D ! i)" using True i_lt by simp
-    have "?DPD $$ (i, j) = complex_of_real (D ! i)
-                            * complex_of_real (pinv_list D ! i)
-                            * complex_of_real (D ! i)"
-      using DPD_idx e1 e2 e3 by simp
-    also have "\<dots> = complex_of_real (D ! i * pinv_list D ! i * D ! i)"
+  \<comment> \<open>Per-entry factorisation: \<open>cmod (cnj x_i * A_{ij} * x_j) = |x_i| |A_{ij}| |x_j|\<close>.\<close>
+  have entry_eq: "\<And>i j. cmod (cnj (x $ i) * A $$ (i,j) * x $ j)
+                          = cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)"
+    by (simp add: norm_mult)
+  \<comment> \<open>Each cross-term bounded by \<open>cmod(A_{ij}) * Re\<langle>x|x\<rangle>\<close>.\<close>
+  have xx_real: "Re \<langle>x | x\<rangle> = (\<Sum>p = 0..<k. (cmod (x $ p))\<^sup>2)"
+  proof -
+    have "Re \<langle>x | x\<rangle> = (\<Sum>p<k. Re (cnj (x $ p) * x $ p))"
+      using x_d by (simp add: inner_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>p<k. (cmod (x $ p))\<^sup>2)"
+    proof (intro sum.cong refl)
+      fix p assume "p \<in> {..<k}"
+      have "cnj (x $ p) * x $ p = x $ p * cnj (x $ p)" by (rule mult.commute)
+      also have "\<dots> = complex_of_real ((cmod (x $ p))\<^sup>2)"
+        using complex_norm_square[of "x $ p"] by simp
+      finally have "Re (cnj (x $ p) * x $ p) = (cmod (x $ p))\<^sup>2" by simp
+      thus "Re (cnj (x $ p) * x $ p) = (cmod (x $ p))\<^sup>2" .
+    qed
+    finally show ?thesis by (simp add: lessThan_atLeast0)
+  qed
+  have x_sq_bound: "\<And>i. i < k \<Longrightarrow> (cmod (x $ i))\<^sup>2 \<le> Re \<langle>x | x\<rangle>"
+  proof -
+    fix i assume i_lt: "i < k"
+    have iI: "i \<in> {0..<k}" using i_lt by simp
+    have nn: "\<And>p. p \<in> {0..<k} - {i} \<Longrightarrow> 0 \<le> (cmod (x $ p))\<^sup>2"
       by simp
-    also have "\<dots> = complex_of_real (D ! i)"
-      using arg_cong[where f = complex_of_real, OF scalar_id] .
-    also have "\<dots> = ?Dm $$ (i, j)" using True i_lt by simp
-    finally show ?thesis .
-  next
-    case False
-    have e3: "?Dm $$ (i, j) = 0" using False i_lt j_lt by simp
-    have "?DPD $$ (i, j) = 0" using DPD_idx e3 by simp
-    also have "\<dots> = ?Dm $$ (i, j)" using e3 by simp
-    finally show ?thesis .
+    have "(cmod (x $ i))\<^sup>2 \<le> (\<Sum>p = 0..<k. (cmod (x $ p))\<^sup>2)"
+      by (rule member_le_sum[OF iI nn]) auto
+    thus "(cmod (x $ i))\<^sup>2 \<le> Re \<langle>x | x\<rangle>" using xx_real by simp
   qed
-qed
-
-
-text \<open>For Hermitian $A=UDU^*$ set $A^+=UD^+U^*$; then $AA^+A=UDD^+DU^*=A$.\<close>
-
-lemma A_Aplus_A_eq:
-  fixes U :: "complex Matrix.mat" and D :: "real list"
-  assumes Uc: "U \<in> carrier_mat k k"
-      and UU: "unitary U"
-      and Dlen: "length D = k"
-  shows "(U * diag_mat_of_real D * (U\<^sup>\<dagger>))
-           * (U * diag_mat_of_real (pinv_list D) * (U\<^sup>\<dagger>))
-           * (U * diag_mat_of_real D * (U\<^sup>\<dagger>))
-         = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
-proof -
-  let ?Dm = "diag_mat_of_real D"
-  let ?Pm = "diag_mat_of_real (pinv_list D)"
-  let ?Ud = "U\<^sup>\<dagger>"
-  have Dm_c: "?Dm \<in> carrier_mat k k" using Dlen by auto
-  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
-  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
-  have UdU: "?Ud * U = 1\<^sub>m k"
+  have x_cmod_bound: "\<And>i. i < k \<Longrightarrow> cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)"
   proof -
-    have "?Ud * U = 1\<^sub>m (dim_col U)"
-      using unitary_inv_l_dimcol[OF UU] .
-    thus ?thesis using Uc by simp
+    fix i assume i_lt: "i < k"
+    have "cmod (x $ i) = sqrt ((cmod (x $ i))\<^sup>2)" by simp
+    also have "\<dots> \<le> sqrt (Re \<langle>x | x\<rangle>)"
+      using x_sq_bound[OF i_lt] real_sqrt_le_mono by blast
+    finally show "cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)" .
   qed
-
-  \<comment> \<open>Build up by regrouping factors.\<close>
-  have UDm_c: "U * ?Dm \<in> carrier_mat k k" using Uc Dm_c by simp
-  have UDmUd_c: "U * ?Dm * ?Ud \<in> carrier_mat k k" using UDm_c Ud_c by simp
-  have UPm_c: "U * ?Pm \<in> carrier_mat k k" using Uc Pm_c by simp
-  have UPmUd_c: "U * ?Pm * ?Ud \<in> carrier_mat k k" using UPm_c Ud_c by simp
-  have DmPm_c: "?Dm * ?Pm \<in> carrier_mat k k" using Dm_c Pm_c by simp
-  have DmPmDm_c: "?Dm * ?Pm * ?Dm \<in> carrier_mat k k" using DmPm_c Dm_c by simp
-
-  \<comment> \<open>Lift \<open>?Ud * U = 1\<^sub>m k\<close> through the matrix product, collapsing
-      the central factors.\<close>
-  have step_AAp: "(U * ?Dm * ?Ud) * (U * ?Pm * ?Ud) = U * (?Dm * ?Pm) * ?Ud"
+  have prod_bound: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow>
+                       cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>"
   proof -
-    have a1: "U * ?Dm * ?Ud * (U * ?Pm * ?Ud)
-                = U * ?Dm * ?Ud * (U * ?Pm) * ?Ud"
-      using UDmUd_c UPm_c Ud_c by (metis assoc_mult_mat)
-    have a2: "U * ?Dm * ?Ud * (U * ?Pm) = U * ?Dm * ?Ud * U * ?Pm"
-      using UDmUd_c Uc Pm_c by (metis assoc_mult_mat)
-    have a3: "U * ?Dm * ?Ud * U = U * ?Dm * (?Ud * U)"
-      using UDm_c Ud_c Uc by (metis assoc_mult_mat)
-    have a4: "U * ?Dm * (?Ud * U) = U * ?Dm"
-      using UDm_c UdU right_mult_one_mat[OF UDm_c] by simp
-    have "U * ?Dm * ?Ud * (U * ?Pm * ?Ud)
-            = U * ?Dm * ?Ud * U * ?Pm * ?Ud"
-      using a1 a2 by simp
-    also have "\<dots> = U * ?Dm * ?Pm * ?Ud"
-      using a3 a4 by simp
-    also have "\<dots> = U * (?Dm * ?Pm) * ?Ud"
-      using Uc Dm_c Pm_c by (metis assoc_mult_mat)
-    finally show ?thesis .
+    fix i j assume i_lt: "i < k" and j_lt: "j < k"
+    have nn: "0 \<le> Re \<langle>x | x\<rangle>" using inner_prod_with_itself_Re by blast
+    have i_b: "cmod (x $ i) \<le> sqrt (Re \<langle>x | x\<rangle>)" using x_cmod_bound[OF i_lt] .
+    have j_b: "cmod (x $ j) \<le> sqrt (Re \<langle>x | x\<rangle>)" using x_cmod_bound[OF j_lt] .
+    have sqrt_nn: "0 \<le> sqrt (Re \<langle>x | x\<rangle>)" using nn by auto
+    have cj_nn: "0 \<le> cmod (x $ j)" by simp
+    have "cmod (x $ i) * cmod (x $ j)
+            \<le> sqrt (Re \<langle>x | x\<rangle>) * sqrt (Re \<langle>x | x\<rangle>)"
+      by (rule mult_mono[OF i_b j_b sqrt_nn cj_nn])
+    also have "\<dots> = Re \<langle>x | x\<rangle>"
+      using nn by simp
+    finally show "cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>" .
   qed
-
-  have step_AApA: "(U * (?Dm * ?Pm) * ?Ud) * (U * ?Dm * ?Ud)
-                     = U * (?Dm * ?Pm * ?Dm) * ?Ud"
+  have inner_bound:
+    "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow>
+       cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+       \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
   proof -
-    have UDmPm_c: "U * (?Dm * ?Pm) \<in> carrier_mat k k" using Uc DmPm_c by simp
-    have UDmPm_Ud_c: "U * (?Dm * ?Pm) * ?Ud \<in> carrier_mat k k" using UDmPm_c Ud_c by simp
-    have b1: "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm * ?Ud)
-                = U * (?Dm * ?Pm) * ?Ud * (U * ?Dm) * ?Ud"
-      using UDmPm_Ud_c UDm_c Ud_c by (metis assoc_mult_mat)
-    have b2: "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm)
-                = U * (?Dm * ?Pm) * ?Ud * U * ?Dm"
-      using UDmPm_Ud_c Uc Dm_c by (metis assoc_mult_mat)
-    have b3: "U * (?Dm * ?Pm) * ?Ud * U = U * (?Dm * ?Pm) * (?Ud * U)"
-      using UDmPm_c Ud_c Uc by (metis assoc_mult_mat)
-    have b4: "U * (?Dm * ?Pm) * (?Ud * U) = U * (?Dm * ?Pm)"
-      using UDmPm_c UdU right_mult_one_mat[OF UDmPm_c] by simp
-    have "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm * ?Ud)
-            = U * (?Dm * ?Pm) * ?Ud * U * ?Dm * ?Ud"
-      using b1 b2 by simp
-    also have "\<dots> = U * (?Dm * ?Pm) * ?Dm * ?Ud"
-      using b3 b4 by simp
-    also have "\<dots> = U * (?Dm * ?Pm * ?Dm) * ?Ud"
-      using Uc DmPm_c Dm_c by (metis assoc_mult_mat)
-    finally show ?thesis .
+    fix i j assume i_lt: "i < k" and j_lt: "j < k"
+    have nn: "0 \<le> cmod (A $$ (i,j))" by simp
+    have rxx_nn: "0 \<le> Re \<langle>x | x\<rangle>"
+      using inner_prod_with_itself_Re by blast
+    have step: "cmod (x $ i) * cmod (x $ j) \<le> Re \<langle>x | x\<rangle>"
+      by (rule prod_bound[OF i_lt j_lt])
+    have "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+            = cmod (A $$ (i,j)) * (cmod (x $ i) * cmod (x $ j))"
+      by (simp add: ac_simps)
+    also have "\<dots> \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
+      using step nn by (rule mult_left_mono)
+    finally show "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+                    \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>" .
   qed
-
-  have "(U * ?Dm * ?Ud) * (U * ?Pm * ?Ud) * (U * ?Dm * ?Ud)
-          = (U * (?Dm * ?Pm) * ?Ud) * (U * ?Dm * ?Ud)"
-    using step_AAp by simp
-  also have "\<dots> = U * (?Dm * ?Pm * ?Dm) * ?Ud"
-    using step_AApA .
-  also have "\<dots> = U * ?Dm * ?Ud"
-    using diag_pinv_diag_eq[of D] by simp
+  \<comment> \<open>Assemble.\<close>
+  have "cmod (\<langle>x | A *\<^sub>v x\<rangle>)
+          \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j))"
+    using tri entry_eq by simp
+  also have "\<dots> \<le> (\<Sum>i = 0..<k. \<Sum>j = 0..<k.
+                     cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>)"
+  proof (rule sum_mono)
+    fix i assume "i \<in> {0..<k}"
+    hence i_lt: "i < k" by simp
+    show "(\<Sum>j = 0..<k. cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j))
+            \<le> (\<Sum>j = 0..<k. cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>)"
+    proof (rule sum_mono)
+      fix j assume "j \<in> {0..<k}"
+      hence j_lt: "j < k" by simp
+      show "cmod (x $ i) * cmod (A $$ (i,j)) * cmod (x $ j)
+              \<le> cmod (A $$ (i,j)) * Re \<langle>x | x\<rangle>"
+        by (rule inner_bound[OF i_lt j_lt])
+    qed
+  qed
+  also have "\<dots> = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j))) * Re \<langle>x | x\<rangle>"
+    by (simp add: sum_distrib_right)
   finally show ?thesis .
 qed
 
+text \<open>So for small $\epsilon>0$ both $I\pm\epsilon A$ are positive.\<close>
 
-text \<open>Two square matrices agreeing on every vector are equal.\<close>
-
-lemma mat_eq_of_mult_vec_eq:
-  fixes M N :: "complex Matrix.mat"
-  assumes M_c: "M \<in> carrier_mat k k"
-      and N_c: "N \<in> carrier_mat k k"
-      and eq: "\<And>x. x \<in> carrier_vec k \<Longrightarrow> M *\<^sub>v x = N *\<^sub>v x"
-  shows "M = N"
-proof (rule eq_matI)
-  show "dim_row M = dim_row N" using M_c N_c by auto
-  show "dim_col M = dim_col N" using M_c N_c by auto
-  fix i j assume "i < dim_row N" and "j < dim_col N"
-  hence ilt: "i < k" and jlt: "j < k" using N_c by auto
-  have one_c: "1\<^sub>m k \<in> carrier_mat k k" by auto
-  have e_c: "Matrix.col (1\<^sub>m k) j \<in> carrier_vec k" by (rule carrier_vecI) simp
-  have "Matrix.col M j = Matrix.col (M * 1\<^sub>m k) j"
-    using right_mult_one_mat[OF M_c] by simp
-  also have "\<dots> = M *\<^sub>v Matrix.col (1\<^sub>m k) j"
-    by (rule col_mult2[OF M_c one_c jlt])
-  also have "\<dots> = N *\<^sub>v Matrix.col (1\<^sub>m k) j"
-    by (rule eq[OF e_c])
-  also have "\<dots> = Matrix.col (N * 1\<^sub>m k) j"
-    by (rule col_mult2[OF N_c one_c jlt, symmetric])
-  also have "\<dots> = Matrix.col N j"
-    using right_mult_one_mat[OF N_c] by simp
-  finally have cols: "Matrix.col M j = Matrix.col N j" .
-  have "M $$ (i, j) = Matrix.col M j $ i" using ilt jlt M_c by auto
-  also have "\<dots> = Matrix.col N j $ i" using cols by simp
-  also have "\<dots> = N $$ (i, j)" using ilt jlt N_c by auto
-  finally show "M $$ (i, j) = N $$ (i, j)" .
-qed
-
-text \<open>If $0\le B\le A$ then $B=AA^+B$: with $Q=A^+A$, $AQ=A$, so $x-Qx\in\ker A\subseteq\ker B$, whence
-$B=BQ$, and taking adjoints $B=QB=AA^+B$.\<close>
-
-lemma A_Aplus_B_eq_B:
-  fixes U :: "complex Matrix.mat" and D :: "real list" and B :: "complex Matrix.mat"
-  assumes Uc: "U \<in> carrier_mat k k"
-      and UU: "unitary U"
-      and Dlen: "length D = k"
-      and Dnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> D ! i"
-      and B_c: "B \<in> carrier_mat k k"
-      and B_psd: "psd B"
-      and dom_psd: "psd ((U * diag_mat_of_real D * (U\<^sup>\<dagger>)) - B)"
-  shows "(U * diag_mat_of_real D * (U\<^sup>\<dagger>))
-            * (U * diag_mat_of_real (pinv_list D) * (U\<^sup>\<dagger>)) * B = B"
+lemma small_eps_psd:
+  fixes A :: "complex Matrix.mat"
+  assumes A_c: "A \<in> carrier_mat k k" and herm: "hermitian A"
+  shows "\<exists>\<epsilon> > 0. \<forall>d :: real. \<bar>d\<bar> \<le> \<epsilon> \<longrightarrow>
+                     psd (1\<^sub>m k + complex_of_real d \<cdot>\<^sub>m A)"
 proof -
-  let ?Dm  = "diag_mat_of_real D"
-  let ?Pm  = "diag_mat_of_real (pinv_list D)"
-  let ?Ud  = "U\<^sup>\<dagger>"
-  let ?A   = "U * ?Dm * ?Ud"
-  let ?Ap  = "U * ?Pm * ?Ud"
-  let ?Q   = "?Ap * ?A"
-
-  have Dm_c: "?Dm \<in> carrier_mat k k" using Dlen by auto
-  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
-  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
-  have A_c: "?A \<in> carrier_mat k k" using Uc Dm_c Ud_c by simp
-  have Ap_c: "?Ap \<in> carrier_mat k k" using Uc Pm_c Ud_c by simp
-  have Q_c: "?Q \<in> carrier_mat k k" using Ap_c A_c by simp
-  have BQ_c: "B * ?Q \<in> carrier_mat k k" using B_c Q_c by simp
-
-  have Pnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> pinv_list D ! i"
+  define S where "S = (\<Sum>i = 0..<k. \<Sum>j = 0..<k. cmod (A $$ (i,j)))"
+  have S_nn: "S \<ge> 0" unfolding S_def by (simp add: sum_nonneg)
+  define eps where "eps = 1 / (1 + S)"
+  have eps_pos: "eps > 0" unfolding eps_def using S_nn by simp
+  have S_eps_le1: "S * eps \<le> 1"
   proof -
-    fix i assume "i < k"
-    thus "0 \<le> pinv_list D ! i" using Dnn Dlen by (simp add: pinv_list_index)
-  qed
-  have A_psd: "psd ?A"
-    by (rule psd_U_diag_Udag[OF Uc Dlen]) (use Dnn in auto)
-  have Ap_psd: "psd ?Ap"
-  proof (rule psd_U_diag_Udag[OF Uc])
-    show "length (pinv_list D) = k" using Dlen by simp
-  next
-    fix i assume "i < k" thus "0 \<le> pinv_list D ! i" by (rule Pnn)
-  qed
-  have A_herm: "?A\<^sup>\<dagger> = ?A"
-    using psd_hermitian[OF A_psd] unfolding hermitian_def .
-  have Ap_herm: "?Ap\<^sup>\<dagger> = ?Ap"
-    using psd_hermitian[OF Ap_psd] unfolding hermitian_def .
-  have B_herm: "B\<^sup>\<dagger> = B"
-    using psd_hermitian[OF B_psd] unfolding hermitian_def .
-
-  \<comment> \<open>\<open>A Q = A\<close> from \<open>A A\<^sup>+ A = A\<close>.\<close>
-  have AApA: "?A * ?Ap * ?A = ?A" by (rule A_Aplus_A_eq[OF Uc UU Dlen])
-  have AQ: "?A * ?Q = ?A"
-  proof -
-    have "?A * ?Q = ?A * ?Ap * ?A"
-      by (rule assoc_mult_mat[OF A_c Ap_c A_c, symmetric])
-    also have "\<dots> = ?A" by (rule AApA)
+    have "S * eps = S / (1 + S)" by (simp add: eps_def field_simps)
+    also have "\<dots> \<le> 1" using S_nn by simp
     finally show ?thesis .
   qed
-
-  \<comment> \<open>Pointwise: \<open>B x = B Q x\<close>, since \<open>x - Q x \<in> ker A \<subseteq> ker B\<close>.\<close>
-  have pointwise: "\<And>x. x \<in> carrier_vec k \<Longrightarrow> B *\<^sub>v x = (B * ?Q) *\<^sub>v x"
-  proof -
-    fix x :: "complex Matrix.vec" assume x_c: "x \<in> carrier_vec k"
-    let ?y = "x - ?Q *\<^sub>v x"
-    have Qx_c: "?Q *\<^sub>v x \<in> carrier_vec k" using Q_c x_c by auto
-    have y_c: "?y \<in> carrier_vec k" using x_c Qx_c by auto
-    have y_dim: "dim_vec ?y = k" by (rule carrier_vecD[OF y_c])
-    have Ax_c: "?A *\<^sub>v x \<in> carrier_vec k" using A_c x_c by auto
-    have Ay: "?A *\<^sub>v ?y = 0\<^sub>v k"
+  show ?thesis
+  proof (intro exI[where x = eps] conjI allI impI)
+    show "eps > 0" using eps_pos .
+    fix d :: real assume d_le: "\<bar>d\<bar> \<le> eps"
+    let ?M = "1\<^sub>m k + complex_of_real d \<cdot>\<^sub>m A"
+    have I_c: "(1\<^sub>m k :: complex Matrix.mat) \<in> carrier_mat k k" by simp
+    have dA_c: "complex_of_real d \<cdot>\<^sub>m A \<in> carrier_mat k k"
+      using A_c by simp
+    have M_c: "?M \<in> carrier_mat k k"
+      using I_c dA_c by auto
+    have herm_M: "hermitian ?M"
     proof -
-      have e1: "?A *\<^sub>v (?Q *\<^sub>v x) = (?A * ?Q) *\<^sub>v x"
-        by (rule assoc_mult_mat_vec[OF A_c Q_c x_c, symmetric])
-      have e2: "(?A * ?Q) *\<^sub>v x = ?A *\<^sub>v x" using AQ by simp
-      have "?A *\<^sub>v ?y = ?A *\<^sub>v x - ?A *\<^sub>v (?Q *\<^sub>v x)"
-        by (rule mult_minus_distrib_mat_vec[OF A_c x_c Qx_c])
-      also have "\<dots> = ?A *\<^sub>v x - ?A *\<^sub>v x" using e1 e2 by simp
-      also have "\<dots> = 0\<^sub>v k" using Ax_c by simp
-      finally show ?thesis .
+      have herm_dA: "hermitian (complex_of_real d \<cdot>\<^sub>m A)"
+        by (rule hermitian_real_scale[OF herm A_c])
+      show ?thesis
+        by (rule hermitian_plus[OF hermitian_identity herm_dA I_c dA_c])
     qed
-    have By: "B *\<^sub>v ?y = 0\<^sub>v k"
-      by (rule loewner_ker_subset[OF A_c B_c B_psd dom_psd y_dim Ay])
-    have Bx_c: "B *\<^sub>v x \<in> carrier_vec k" using B_c x_c by auto
-    have BQx_c: "B *\<^sub>v (?Q *\<^sub>v x) \<in> carrier_vec k" using B_c Qx_c by auto
-    have diff0: "B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x) = 0\<^sub>v k"
-      using mult_minus_distrib_mat_vec[OF B_c x_c Qx_c] By by simp
-    have "B *\<^sub>v x = B *\<^sub>v (?Q *\<^sub>v x)"
-    proof (rule eq_vecI)
-      show "dim_vec (B *\<^sub>v x) = dim_vec (B *\<^sub>v (?Q *\<^sub>v x))"
-        using Bx_c BQx_c by auto
-    next
-      fix i assume "i < dim_vec (B *\<^sub>v (?Q *\<^sub>v x))"
-      hence ilt: "i < k" using B_c by auto
-      have "(B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x)) $ i = 0"
-        using diff0 ilt by simp
-      moreover have "(B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x)) $ i
-                       = (B *\<^sub>v x) $ i - (B *\<^sub>v (?Q *\<^sub>v x)) $ i"
-        using ilt B_c by simp
-      ultimately show "(B *\<^sub>v x) $ i = (B *\<^sub>v (?Q *\<^sub>v x)) $ i" by simp
+    have quad_nn: "\<forall>x :: complex Matrix.vec.
+                     dim_vec x = dim_row ?M \<longrightarrow> 0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>"
+    proof (intro allI impI)
+      fix x :: "complex Matrix.vec"
+      assume xd: "dim_vec x = dim_row ?M"
+      have dim_M_k: "dim_row ?M = k" using M_c by auto
+      have x_d: "dim_vec x = k" using xd dim_M_k by simp
+      \<comment> \<open>Split \<open>?M*x = x + d \<cdot>v (A*x)\<close>.\<close>
+      have Ax_dim: "dim_vec (A *\<^sub>v x) = k" using A_c x_d by simp
+      have dAx_dim: "dim_vec (complex_of_real d \<cdot>\<^sub>m A *\<^sub>v x) = k"
+        using A_c x_d by simp
+      have x_cv: "x \<in> carrier_vec k"
+        using x_d by (intro carrier_vecI) simp
+      have Ix_eq: "(1\<^sub>m k :: complex Matrix.mat) *\<^sub>v x = x"
+        using one_mult_mat_vec[OF x_cv] .
+      have dAx_eq: "(complex_of_real d \<cdot>\<^sub>m A) *\<^sub>v x
+                      = complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
+        using smult_mat_mult_vec[OF A_c x_cv] .
+      have Mx_eq: "?M *\<^sub>v x = x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
+      proof -
+        have "?M *\<^sub>v x = (1\<^sub>m k :: complex Matrix.mat) *\<^sub>v x
+                       + (complex_of_real d \<cdot>\<^sub>m A) *\<^sub>v x"
+          using add_mult_distrib_mat_vec[OF I_c dA_c x_cv] .
+        also have "\<dots> = x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)"
+          using Ix_eq dAx_eq by simp
+        finally show ?thesis .
+      qed
+      have inner_split: "\<langle>x | ?M *\<^sub>v x\<rangle>
+                            = \<langle>x | x\<rangle> + complex_of_real d * \<langle>x | A *\<^sub>v x\<rangle>"
+      proof -
+        have dAx_dimv: "dim_vec (complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)) = k"
+          using Ax_dim by auto
+        have "\<langle>x | ?M *\<^sub>v x\<rangle>
+                = \<langle>x | x + complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
+          using Mx_eq by simp
+        also have "\<dots> = \<langle>x | x\<rangle>
+                        + \<langle>x | complex_of_real d \<cdot>\<^sub>v (A *\<^sub>v x)\<rangle>"
+          by (rule inner_prod_right_add') (simp only: x_d dAx_dimv)
+        also have "\<dots> = \<langle>x | x\<rangle>
+                        + complex_of_real d * \<langle>x | A *\<^sub>v x\<rangle>"
+          using inner_prod_right_smult' by simp
+        finally show ?thesis .
+      qed
+      have rxx_nn: "0 \<le> Re \<langle>x | x\<rangle>"
+        using inner_prod_with_itself_Re by blast
+      \<comment> \<open>Apply the entry-sum bound.\<close>
+      have qbound: "cmod (\<langle>x | A *\<^sub>v x\<rangle>) \<le> S * Re \<langle>x | x\<rangle>"
+        using quad_form_bound_by_entry_sum[OF A_c x_d]
+        unfolding S_def .
+      have re_abs: "\<bar>Re (\<langle>x | A *\<^sub>v x\<rangle>)\<bar> \<le> cmod (\<langle>x | A *\<^sub>v x\<rangle>)"
+        by (rule abs_Re_le_cmod)
+      have re_bound: "\<bar>Re (\<langle>x | A *\<^sub>v x\<rangle>)\<bar> \<le> S * Re \<langle>x | x\<rangle>"
+        using re_abs qbound by linarith
+      \<comment> \<open>Final estimate.\<close>
+      have re_Mx: "Re \<langle>x | ?M *\<^sub>v x\<rangle>
+                     = Re \<langle>x | x\<rangle> + d * Re \<langle>x | A *\<^sub>v x\<rangle>"
+        using inner_split by simp
+      have abs_bound: "\<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar> \<le> \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
+      proof -
+        have "\<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar> = \<bar>d\<bar> * \<bar>Re \<langle>x | A *\<^sub>v x\<rangle>\<bar>"
+          by (simp add: abs_mult)
+        also have "\<dots> \<le> \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
+          using re_bound by (intro mult_left_mono) auto
+        finally show ?thesis .
+      qed
+      have d_re_bound: "d * Re \<langle>x | A *\<^sub>v x\<rangle> \<ge> - (\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>))"
+      proof -
+        have "d * Re \<langle>x | A *\<^sub>v x\<rangle> \<ge> - \<bar>d * Re \<langle>x | A *\<^sub>v x\<rangle>\<bar>" by simp
+        thus ?thesis using abs_bound by linarith
+      qed
+      have eps_re_bound: "\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>) \<le> Re \<langle>x | x\<rangle>"
+      proof -
+        have step: "\<bar>d\<bar> * S \<le> 1"
+        proof -
+          have "\<bar>d\<bar> * S \<le> eps * S"
+            using d_le S_nn by (intro mult_right_mono) auto
+          also have "\<dots> = S * eps" by (simp add: mult.commute)
+          also have "\<dots> \<le> 1" using S_eps_le1 .
+          finally show ?thesis .
+        qed
+        have "\<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>) = (\<bar>d\<bar> * S) * Re \<langle>x | x\<rangle>"
+          by (simp add: mult.assoc)
+        also have "\<dots> \<le> 1 * Re \<langle>x | x\<rangle>"
+          using step rxx_nn by (intro mult_right_mono) auto
+        finally show ?thesis by simp
+      qed
+      have "0 \<le> Re \<langle>x | x\<rangle> - \<bar>d\<bar> * (S * Re \<langle>x | x\<rangle>)"
+        using eps_re_bound rxx_nn by linarith
+      also have "\<dots> \<le> Re \<langle>x | x\<rangle> + d * Re \<langle>x | A *\<^sub>v x\<rangle>"
+        using d_re_bound by linarith
+      also have "\<dots> = Re \<langle>x | ?M *\<^sub>v x\<rangle>"
+        using re_Mx by simp
+      finally show "0 \<le> Re \<langle>x | ?M *\<^sub>v x\<rangle>" .
     qed
-    also have "\<dots> = (B * ?Q) *\<^sub>v x"
-      by (rule assoc_mult_mat_vec[OF B_c Q_c x_c, symmetric])
-    finally show "B *\<^sub>v x = (B * ?Q) *\<^sub>v x" .
+    show "psd ?M"
+      unfolding psd_def using herm_M quad_nn by blast
   qed
-  have B_eq_BQ: "B = B * ?Q"
-    by (rule mat_eq_of_mult_vec_eq[OF B_c BQ_c pointwise])
-
-  \<comment> \<open>Adjoint: \<open>B = B\<^sup>\<dagger> = (B Q)\<^sup>\<dagger> = Q\<^sup>\<dagger> B = A A\<^sup>+ B\<close>.\<close>
-  have Q_dag: "?Q\<^sup>\<dagger> = ?A * ?Ap"
-  proof -
-    have "?Q\<^sup>\<dagger> = ?A\<^sup>\<dagger> * (?Ap\<^sup>\<dagger>)"
-      by (rule dagger_of_prod) (use Ap_c A_c in auto)
-    also have "\<dots> = ?A * ?Ap" using A_herm Ap_herm by simp
-    finally show ?thesis .
-  qed
-  have "B = B\<^sup>\<dagger>" using B_herm by simp
-  also have "\<dots> = (B * ?Q)\<^sup>\<dagger>"
-    by (rule arg_cong[where f = dagger, OF B_eq_BQ])
-  also have "\<dots> = ?Q\<^sup>\<dagger> * (B\<^sup>\<dagger>)"
-    by (rule dagger_of_prod) (use B_c Q_c in auto)
-  also have "\<dots> = ?A * ?Ap * B" using Q_dag B_herm by simp
-  finally show ?thesis by (rule sym)
 qed
 
-text \<open>Spectral decomposition of a psd matrix with non-negative diagonal.\<close>
-
-text \<open>Dominated positive matrices factor through the dominating frame: if $0\le B\le VV^*$ then
-\[ B=VTV^*,\qquad T=V^*A^+BA^+V\ge0,\quad A=VV^*. \]\<close>
-
-lemma dominated_outer_sum_param:
-  fixes vs :: "complex Matrix.vec list"
-    and B :: "complex Matrix.mat"
-  assumes vs_dim: "\<forall>v \<in> set vs. dim_vec v = k"
-      and k_pos: "0 < k"
-      and B_c: "B \<in> carrier_mat k k"
-      and B_psd: "psd B"
-      and B_dom: "psd (outer_sum k vs - B)"
-  shows "\<exists>T. T \<in> carrier_mat (length vs) (length vs) \<and> psd T \<and>
-              B = (mat_of_cols k vs) * T * ((mat_of_cols k vs)\<^sup>\<dagger>)"
-proof -
-  let ?m = "length vs"
-  let ?V = "mat_of_cols k vs"
-  let ?Vd = "(mat_of_cols k vs)\<^sup>\<dagger>"
-  let ?A = "outer_sum k vs"
-  have V_c: "?V \<in> carrier_mat k ?m" by (rule mat_of_cols_carrier(1))
-  have Vd_c: "?Vd \<in> carrier_mat ?m k" using V_c by (rule dagger_carrier)
-  have A_eq: "?V * ?Vd = ?A" by (simp add: outer_sum_def)
-  have A_c: "?A \<in> carrier_mat k k" using V_c Vd_c A_eq by auto
-  have A_psd: "psd ?A" by (rule outer_sum_psd[OF refl vs_dim])
-  have A_herm: "?A\<^sup>\<dagger> = ?A" by (rule outer_sum_hermitian)
-  have B_herm: "B\<^sup>\<dagger> = B"
-    using psd_hermitian[OF B_psd] unfolding hermitian_def .
-
-  obtain U :: "complex Matrix.mat" and D :: "real list"
-    where Uc: "U \<in> carrier_mat k k" and UU: "unitary U" and Dlen: "length D = k"
-      and Dnn0: "\<forall>i < k. 0 \<le> D ! i"
-      and A_spec: "?A = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
-    using psd_spectral_decomp_nonneg[OF A_c A_psd] by blast
-  have Dnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> D ! i" using Dnn0 by simp
-
-  let ?Pm = "diag_mat_of_real (pinv_list D)"
-  let ?Ud = "U\<^sup>\<dagger>"
-  let ?Ap = "U * ?Pm * ?Ud"
-  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
-  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
-  have Ap_c: "?Ap \<in> carrier_mat k k" using Uc Pm_c Ud_c by simp
-  have Pnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> pinv_list D ! i"
-  proof -
-    fix i assume "i < k"
-    thus "0 \<le> pinv_list D ! i" using Dnn Dlen by (simp add: pinv_list_index)
-  qed
-  have Ap_psd: "psd ?Ap"
-  proof (rule psd_U_diag_Udag[OF Uc])
-    show "length (pinv_list D) = k" using Dlen by simp
-  next
-    fix i assume "i < k" thus "0 \<le> pinv_list D ! i" by (rule Pnn)
-  qed
-  have Ap_herm: "?Ap\<^sup>\<dagger> = ?Ap"
-    using psd_hermitian[OF Ap_psd] unfolding hermitian_def .
-
-  \<comment> \<open>\<open>A A\<^sup>+ B = B\<close> and, by adjoints, \<open>B A\<^sup>+ A = B\<close>.\<close>
-  have dom': "psd ((U * diag_mat_of_real D * (U\<^sup>\<dagger>)) - B)"
-    using B_dom A_spec by simp
-  have AApB: "?A * ?Ap * B = B"
-    using A_Aplus_B_eq_B[OF Uc UU Dlen Dnn B_c B_psd dom'] A_spec by simp
-  have AAp_c: "?A * ?Ap \<in> carrier_mat k k" using A_c Ap_c by simp
-  have BApA: "B * ?Ap * ?A = B"
-  proof -
-    have "B = (?A * ?Ap * B)\<^sup>\<dagger>" using AApB B_herm by simp
-    also have "\<dots> = B\<^sup>\<dagger> * ((?A * ?Ap)\<^sup>\<dagger>)"
-      by (rule dagger_of_prod) (use AAp_c B_c in auto)
-    also have "(?A * ?Ap)\<^sup>\<dagger> = ?Ap\<^sup>\<dagger> * (?A\<^sup>\<dagger>)"
-      by (rule dagger_of_prod) (use A_c Ap_c in auto)
-    also have "B\<^sup>\<dagger> * (?Ap\<^sup>\<dagger> * (?A\<^sup>\<dagger>)) = B * (?Ap * ?A)"
-      using B_herm Ap_herm A_herm by simp
-    also have "\<dots> = B * ?Ap * ?A"
-      by (rule assoc_mult_mat[OF B_c Ap_c A_c, symmetric])
-    finally show ?thesis by (rule sym)
-  qed
-
-  \<comment> \<open>The parameter \<open>T = V\<^sup>\<dagger> A\<^sup>+ B A\<^sup>+ V\<close>.\<close>
-  let ?Y1 = "?Vd * ?Ap"
-  let ?Y2 = "?Y1 * B"
-  let ?Y3 = "?Y2 * ?Ap"
-  let ?Tm = "?Y3 * ?V"
-  have Y1_c: "?Y1 \<in> carrier_mat ?m k" using Vd_c Ap_c by simp
-  have Y2_c: "?Y2 \<in> carrier_mat ?m k" using Y1_c B_c by simp
-  have Y3_c: "?Y3 \<in> carrier_mat ?m k" using Y2_c Ap_c by simp
-  have Tm_c: "?Tm \<in> carrier_mat ?m ?m" using Y3_c V_c by simp
-
-  have ApV_c: "?Ap * ?V \<in> carrier_mat k ?m" using Ap_c V_c by simp
-  have ApV_dag: "(?Ap * ?V)\<^sup>\<dagger> = ?Y1"
-  proof -
-    have "(?Ap * ?V)\<^sup>\<dagger> = ?Vd * (?Ap\<^sup>\<dagger>)"
-      by (rule dagger_of_prod) (use Ap_c V_c in auto)
-    also have "\<dots> = ?Y1" using Ap_herm by simp
-    finally show ?thesis .
-  qed
-  have Tm_psd: "psd ?Tm"
-  proof -
-    have "psd ((?Ap * ?V)\<^sup>\<dagger> * B * (?Ap * ?V))"
-      by (rule psd_conjugate[OF B_c B_psd ApV_c])
-    also have "(?Ap * ?V)\<^sup>\<dagger> * B * (?Ap * ?V) = ?Y2 * (?Ap * ?V)"
-      using ApV_dag by simp
-    also have "\<dots> = ?Tm"
-      by (rule assoc_mult_mat[OF Y2_c Ap_c V_c, symmetric])
-    finally show ?thesis .
-  qed
-
-  \<comment> \<open>\<open>V T V\<^sup>\<dagger> = (V V\<^sup>\<dagger>) A\<^sup>+ B A\<^sup>+ (V V\<^sup>\<dagger>) = A A\<^sup>+ B A\<^sup>+ A = B\<close>.\<close>
-  have VY1: "?V * ?Y1 = ?A * ?Ap"
-  proof -
-    have "?V * ?Y1 = ?V * ?Vd * ?Ap"
-      by (rule assoc_mult_mat[OF V_c Vd_c Ap_c, symmetric])
-    also have "\<dots> = ?A * ?Ap" using A_eq by simp
-    finally show ?thesis .
-  qed
-  have VY2: "?V * ?Y2 = B"
-  proof -
-    have "?V * ?Y2 = ?V * ?Y1 * B"
-      by (rule assoc_mult_mat[OF V_c Y1_c B_c, symmetric])
-    also have "\<dots> = ?A * ?Ap * B" using VY1 by simp
-    also have "\<dots> = B" by (rule AApB)
-    finally show ?thesis .
-  qed
-  have VY3: "?V * ?Y3 = B * ?Ap"
-  proof -
-    have "?V * ?Y3 = ?V * ?Y2 * ?Ap"
-      by (rule assoc_mult_mat[OF V_c Y2_c Ap_c, symmetric])
-    also have "\<dots> = B * ?Ap" using VY2 by simp
-    finally show ?thesis .
-  qed
-  have BAp_c: "B * ?Ap \<in> carrier_mat k k" using B_c Ap_c by simp
-  have VTVd: "?V * ?Tm * ?Vd = B"
-  proof -
-    have "?V * ?Tm = ?V * ?Y3 * ?V"
-      by (rule assoc_mult_mat[OF V_c Y3_c V_c, symmetric])
-    also have "\<dots> = B * ?Ap * ?V" using VY3 by simp
-    finally have VT: "?V * ?Tm = B * ?Ap * ?V" .
-    have "?V * ?Tm * ?Vd = B * ?Ap * ?V * ?Vd" using VT by simp
-    also have "\<dots> = B * ?Ap * (?V * ?Vd)"
-      by (rule assoc_mult_mat[OF BAp_c V_c Vd_c])
-    also have "\<dots> = B * ?Ap * ?A" using A_eq by simp
-    also have "\<dots> = B" by (rule BApA)
-    finally show ?thesis .
-  qed
-  show ?thesis
-    by (intro exI[of _ ?Tm] conjI Tm_c Tm_psd VTVd[symmetric])
-qed
-
-
-subsection \<open>Linearity of @{const kraus_quad_map} in its matrix argument\<close>
-
-text \<open>$\psi_T(\rho)=\sum_{i,j}T_{ij}V_i\rho V_j^*$ is linear in $\rho$.\<close>
-
-lemma kraus_quad_map_add_rho:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and rho1_c: "rho1 \<in> carrier_mat n n"
-      and rho2_c: "rho2 \<in> carrier_mat n n"
-  shows "kraus_quad_map d Vs Tm (rho1 + rho2)
-           = kraus_quad_map d Vs Tm rho1 + kraus_quad_map d Vs Tm rho2"
-proof (rule eq_matI)
-  let ?L = "kraus_quad_map d Vs Tm (rho1 + rho2)"
-  let ?R = "kraus_quad_map d Vs Tm rho1 + kraus_quad_map d Vs Tm rho2"
-  let ?N = "length Vs"
-  have sum_c: "rho1 + rho2 \<in> carrier_mat n n" using rho1_c rho2_c by auto
-  have L_c: "?L \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c sum_c])
-  have R1_c: "kraus_quad_map d Vs Tm rho1 \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho1_c])
-  have R2_c: "kraus_quad_map d Vs Tm rho2 \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho2_c])
-  have R_c: "?R \<in> carrier_mat d d" using R1_c R2_c by auto
-  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
-  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
-next
-  let ?L = "kraus_quad_map d Vs Tm (rho1 + rho2)"
-  let ?R = "kraus_quad_map d Vs Tm rho1 + kraus_quad_map d Vs Tm rho2"
-  let ?N = "length Vs"
-  have sum_c: "rho1 + rho2 \<in> carrier_mat n n" using rho1_c rho2_c by auto
-  have R1_c: "kraus_quad_map d Vs Tm rho1 \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho1_c])
-  have R2_c: "kraus_quad_map d Vs Tm rho2 \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho2_c])
-  fix r c
-  assume r_a: "r < dim_row ?R" and c_a: "c < dim_col ?R"
-  have R_c: "?R \<in> carrier_mat d d" using R1_c R2_c by auto
-  have r_lt: "r < d" using r_a R_c by auto
-  have c_lt: "c < d" using c_a R_c by auto
-  have L_idx: "?L $$ (r, c)
-                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                      Tm $$ (i, j) * (Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    using kraus_quad_map_index[OF Vs_c sum_c r_lt c_lt] .
-  have R1_idx: "kraus_quad_map d Vs Tm rho1 $$ (r, c)
-                  = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       Tm $$ (i, j) * (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    using kraus_quad_map_index[OF Vs_c rho1_c r_lt c_lt] .
-  have R2_idx: "kraus_quad_map d Vs Tm rho2 $$ (r, c)
-                  = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       Tm $$ (i, j) * (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    using kraus_quad_map_index[OF Vs_c rho2_c r_lt c_lt] .
-  have R_idx: "?R $$ (r, c)
-                 = kraus_quad_map d Vs Tm rho1 $$ (r, c)
-                   + kraus_quad_map d Vs Tm rho2 $$ (r, c)"
-    using R1_c R2_c r_lt c_lt by auto
-  have term_decomp: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
-                        (Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                          = (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                          + (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
-  proof -
-    fix i j assume i_lt: "i < ?N" and j_lt: "j < ?N"
-    have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
-    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
-    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
-    have mul1: "Vs!i * (rho1 + rho2) = Vs!i * rho1 + Vs!i * rho2"
-      using Vi_c rho1_c rho2_c by (rule mult_add_distrib_mat)
-    have V1_c: "Vs!i * rho1 \<in> carrier_mat d n" using Vi_c rho1_c by auto
-    have V2_c: "Vs!i * rho2 \<in> carrier_mat d n" using Vi_c rho2_c by auto
-    have mul2: "(Vs!i * rho1 + Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)
-                  = (Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>) + (Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)"
-      using V1_c V2_c Vjd_c by (rule add_mult_distrib_mat)
-    have prod_split: "Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)
-                        = (Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>)
-                        + (Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)"
-      using mul1 mul2 by simp
-    have prod1_c: "(Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
-      using V1_c Vjd_c by auto
-    have prod2_c: "(Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
-      using V2_c Vjd_c by auto
-    have r_dim2: "r < dim_row ((Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>))"
-      using prod2_c r_lt by auto
-    have c_dim2: "c < dim_col ((Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>))"
-      using prod2_c c_lt by auto
-    have add_idx: "((Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>) + (Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                     = ((Vs!i * rho1) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                     + ((Vs!i * rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
-      using index_add_mat(1)[OF r_dim2 c_dim2] .
-    show "(Vs!i * (rho1 + rho2) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-            = (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-            + (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)"
-      using prod_split add_idx by simp
-  qed
-  have "?L $$ (r, c)
-          = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                Tm $$ (i, j) * ((Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                                 + (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)))"
-    using L_idx
-    by (auto intro!: sum.cong simp: term_decomp)
-  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                      Tm $$ (i, j) * (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c)
-                    + Tm $$ (i, j) * (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    by (intro sum.cong refl) (auto simp: ring_distribs)
-  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                      Tm $$ (i, j) * (Vs!i * rho1 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))
-                + (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                      Tm $$ (i, j) * (Vs!i * rho2 * ((Vs!j)\<^sup>\<dagger>)) $$ (r, c))"
-    by (simp add: sum.distrib)
-  also have "\<dots> = ?R $$ (r, c)"
-    using R1_idx R2_idx R_idx by simp
-  finally show "?L $$ (r, c) = ?R $$ (r, c)" .
-qed
-
-lemma kraus_quad_map_smult_rho:
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and rho_c: "rho \<in> carrier_mat n n"
-  shows "kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m rho)
-           = c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
-proof (rule eq_matI)
-  let ?L = "kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m rho)"
-  let ?R = "c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
-  let ?N = "length Vs"
-  have smult_c: "c \<cdot>\<^sub>m rho \<in> carrier_mat n n" using rho_c by auto
-  have L_c: "?L \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c smult_c])
-  have inner_c: "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R_c: "?R \<in> carrier_mat d d" using inner_c by auto
-  show "dim_row ?L = dim_row ?R" using L_c R_c by auto
-  show "dim_col ?L = dim_col ?R" using L_c R_c by auto
-next
-  let ?L = "kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m rho)"
-  let ?R = "c \<cdot>\<^sub>m kraus_quad_map d Vs Tm rho"
-  let ?N = "length Vs"
-  have smult_c: "c \<cdot>\<^sub>m rho \<in> carrier_mat n n" using rho_c by auto
-  have inner_c: "kraus_quad_map d Vs Tm rho \<in> carrier_mat d d"
-    by (rule kraus_quad_map_carrier[OF Vs_c rho_c])
-  have R_c: "?R \<in> carrier_mat d d" using inner_c by auto
-  fix r col_idx
-  assume r_a: "r < dim_row ?R" and c_a: "col_idx < dim_col ?R"
-  have r_lt: "r < d" using r_a R_c by auto
-  have c_lt: "col_idx < d" using c_a R_c by auto
-  have L_idx: "?L $$ (r, col_idx)
-                 = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                      Tm $$ (i, j) * (Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx))"
-    using kraus_quad_map_index[OF Vs_c smult_c r_lt c_lt] .
-  have R0_idx: "kraus_quad_map d Vs Tm rho $$ (r, col_idx)
-                  = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx))"
-    using kraus_quad_map_index[OF Vs_c rho_c r_lt c_lt] .
-  have R_idx: "?R $$ (r, col_idx) = c * kraus_quad_map d Vs Tm rho $$ (r, col_idx)"
-    using inner_c r_lt c_lt by auto
-  have term_eq: "\<And>i j. i < ?N \<Longrightarrow> j < ?N \<Longrightarrow>
-                    (Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)
-                      = c * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)"
-  proof -
-    fix i j assume i_lt: "i < ?N" and j_lt: "j < ?N"
-    have Vi_c: "Vs!i \<in> carrier_mat d n" using Vs_c i_lt nth_mem by blast
-    have Vj_c: "Vs!j \<in> carrier_mat d n" using Vs_c j_lt nth_mem by blast
-    have Vjd_c: "(Vs!j)\<^sup>\<dagger> \<in> carrier_mat n d" using Vj_c by (rule dagger_carrier)
-    have mul1: "Vs!i * (c \<cdot>\<^sub>m rho) = c \<cdot>\<^sub>m (Vs!i * rho)"
-      using Vi_c rho_c by (rule mult_smult_distrib)
-    have Vir_c: "Vs!i * rho \<in> carrier_mat d n" using Vi_c rho_c by auto
-    have mul2: "(c \<cdot>\<^sub>m (Vs!i * rho)) * ((Vs!j)\<^sup>\<dagger>) = c \<cdot>\<^sub>m (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
-      using Vir_c Vjd_c by (rule mult_smult_assoc_mat)
-    have prod_split: "Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)
-                        = c \<cdot>\<^sub>m (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>))"
-      using mul1 mul2 by simp
-    have prod_c: "(Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>) \<in> carrier_mat d d"
-      using Vir_c Vjd_c by auto
-    have r_dim2: "r < dim_row ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>))"
-      using prod_c r_lt by auto
-    have c_dim2: "col_idx < dim_col ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>))"
-      using prod_c c_lt by auto
-    have smult_idx: "(c \<cdot>\<^sub>m ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>))) $$ (r, col_idx)
-                       = c * ((Vs!i * rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)"
-      using index_smult_mat(1)[OF r_dim2 c_dim2] .
-    show "(Vs!i * (c \<cdot>\<^sub>m rho) * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)
-            = c * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)"
-      using prod_split smult_idx by simp
-  qed
-  have "?L $$ (r, col_idx)
-          = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                Tm $$ (i, j) * (c * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)))"
-    using L_idx by (auto intro!: sum.cong simp: term_eq)
-  also have "\<dots> = (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                       c * (Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx)))"
-    by (intro sum.cong refl) (simp add: mult.left_commute)
-  also have "\<dots> = c * (\<Sum>i = 0..<?N. \<Sum>j = 0..<?N.
-                          Tm $$ (i, j) * (Vs!i * rho * ((Vs!j)\<^sup>\<dagger>)) $$ (r, col_idx))"
-    by (simp add: sum_distrib_left)
-  also have "\<dots> = c * kraus_quad_map d Vs Tm rho $$ (r, col_idx)"
-    using R0_idx by simp
-  also have "\<dots> = ?R $$ (r, col_idx)"
-    using R_idx by simp
-  finally show "?L $$ (r, col_idx) = ?R $$ (r, col_idx)" .
-qed
-
-subsection \<open>CP Radon--Nikodym\<close>
-
-text \<open>CP Radon--Nikodym at the level of Choi matrices: if $0\le_{cp}\Psi\le_{cp}\Phi$ with
-$P_\Phi=VV^*$, the factorisation above gives $P_\Psi=VTV^*=P_{\psi_T}$ with $T\ge0$.\<close>
-
-lemma cp_radon_nikodym_choi:
-  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
-      and Psi_cp: "completely_positive n d Psi"
-      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
-      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
-      and npos: "0 < n"
-      and dpos: "0 < d"
-  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
-              choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs T)"
-proof -
-  let ?k = "length Vs"
-  let ?us = "map (vec_of_kraus d n) Vs"
-  let ?V = "kraus_vec_mat d n Vs"
-  have V_eq: "?V = mat_of_cols (n*d) ?us"
-    by (simp add: kraus_vec_mat_def)
-  have Phi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X \<in> carrier_mat d d"
-  proof -
-    fix X :: "complex Matrix.mat" assume X_c: "X \<in> carrier_mat n n"
-    have "Phi X = kraus_map_dim d Vs X" by (rule Phi_kraus[OF X_c])
-    thus "Phi X \<in> carrier_mat d d"
-      using kraus_map_dim_carrier[OF Vs_c X_c] by simp
-  qed
-  have P_Phi_eq: "choi_matrix n d Phi = outer_sum (n*d) ?us"
-  proof -
-    have "choi_matrix n d Phi = choi_matrix n d (kraus_map_dim d Vs)"
-      by (rule choi_matrix_cong) (rule Phi_kraus)
-    also have "\<dots> = outer_sum (n*d) ?us"
-      by (rule choi_matrix_kraus_eq[OF Vs_c npos dpos])
-    finally show ?thesis .
-  qed
-  have us_dim: "\<forall>v \<in> set ?us. dim_vec v = n*d" by simp
-  have nd_pos: "0 < n*d" using npos dpos by simp
-  have P_Psi_psd: "psd (choi_matrix n d Psi)"
-    using choi_psd_if_cp[OF npos dpos Psi_cp] .
-  have P_Psi_c: "choi_matrix n d Psi \<in> carrier_mat (n*d) (n*d)" by simp
-  have P_diff_psd: "psd (choi_matrix n d (\<lambda>X. Phi X - Psi X))"
-    using choi_psd_if_cp[OF npos dpos diff_cp] .
-  have P_diff_eq: "choi_matrix n d (\<lambda>X. Phi X - Psi X)
-                     = choi_matrix n d Phi - choi_matrix n d Psi"
-    by (rule choi_matrix_diff[OF Phi_range Psi_range npos dpos])
-  have dom_psd: "psd (outer_sum (n*d) ?us - choi_matrix n d Psi)"
-    using P_diff_psd P_diff_eq P_Phi_eq by simp
-  obtain Tm :: "complex Matrix.mat"
-    where Tm_c: "Tm \<in> carrier_mat (length ?us) (length ?us)"
-    and Tm_psd: "psd Tm"
-    and P_Psi_param: "choi_matrix n d Psi
-                        = (mat_of_cols (n*d) ?us) * Tm
-                          * ((mat_of_cols (n*d) ?us)\<^sup>\<dagger>)"
-    using dominated_outer_sum_param[OF us_dim nd_pos P_Psi_c P_Psi_psd dom_psd]
-    by blast
-  have length_us: "length ?us = ?k" by simp
-  have Tm_c': "Tm \<in> carrier_mat ?k ?k" using Tm_c length_us by simp
-  have P_kqm_eq: "choi_matrix n d (kraus_quad_map d Vs Tm) = ?V * Tm * (?V\<^sup>\<dagger>)"
-    by (rule choi_matrix_kraus_quad_eq[OF Vs_c Tm_c' npos dpos])
-  have P_match: "choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs Tm)"
-    using P_Psi_param P_kqm_eq V_eq by simp
-  show ?thesis
-    using Tm_c' Tm_psd P_match by blast
-qed
-
-
-
-text \<open>CP Radon--Nikodym for maps: if $\Psi$ is moreover linear on $M_n$, equal Choi matrices give equal maps,
-so $\Psi(X)=\sum_{i,j}T_{ij}V_iXV_j^*$.  (Linearity is a hypothesis, as \<open>completely_positive\<close>
-only constrains amplifications.)\<close>
-
-lemma cp_radon_nikodym_linear:
-  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-    and Vs :: "complex Matrix.mat list"
-  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
-      and Psi_cp: "completely_positive n d Psi"
-      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
-      and Psi_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
-                          \<Longrightarrow> Psi (X + Y) = Psi X + Psi Y"
-      and Psi_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> Psi (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m Psi X"
-      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
-      and npos: "0 < n"
-      and dpos: "0 < d"
-  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
-              (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> Psi X = kraus_quad_map d Vs T X)"
-proof -
-  obtain Tm where Tm_c: "Tm \<in> carrier_mat (length Vs) (length Vs)"
-    and Tm_psd: "psd Tm"
-    and P_match: "choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs Tm)"
-    using cp_radon_nikodym_choi
-            [OF Vs_c Phi_kraus Psi_cp Psi_range diff_cp npos dpos]
-    by blast
-  have kqm_range: "\<And>X. X \<in> carrier_mat n n
-                       \<Longrightarrow> kraus_quad_map d Vs Tm X \<in> carrier_mat d d"
-    using kraus_quad_map_carrier[OF Vs_c] by blast
-  have kqm_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
-                       \<Longrightarrow> kraus_quad_map d Vs Tm (X + Y)
-                            = kraus_quad_map d Vs Tm X + kraus_quad_map d Vs Tm Y"
-    using kraus_quad_map_add_rho[OF Vs_c] by blast
-  have kqm_smult: "\<And>c X. X \<in> carrier_mat n n
-                          \<Longrightarrow> kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m X)
-                              = c \<cdot>\<^sub>m kraus_quad_map d Vs Tm X"
-    using kraus_quad_map_smult_rho[OF Vs_c] by blast
-  have ptwise: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X = kraus_quad_map d Vs Tm X"
-    by (rule map_eq_from_choi_when_linear
-              [OF Psi_add Psi_smult Psi_range
-                  kqm_add kqm_smult kqm_range P_match npos dpos]) blast
-  show ?thesis
-    using Tm_c Tm_psd ptwise by blast
-qed
-
-
-
-
-subsection \<open>Choi's Theorem 3 --- reverse direction\<close>
-
-
-text \<open>Extremality is a property of maps on $M_n$: maps that agree on $M_n$ are the same point of
-$\mathrm{CPTP}(M_n,M_d)$.  A midpoint decomposition $\Phi=\tfrac12(\Phi_1+\Phi_2)$ is therefore witnessed
-by maps that are CPTP and linear on $M_n$ and differ from $\Phi$ at some matrix.\<close>
-
-text \<open>\<open>cptp_pair_mid\<close> collects the data of a midpoint pair witnessing non-extremality: both maps
-CPTP and linear on $M_n$, different at some matrix, with $\Phi=\tfrac12(\Phi_1+\Phi_2)$.\<close>
-
-definition lin_on_carrier ::
-  "nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
-where
-  "lin_on_carrier n \<Phi> \<equiv>
-     (\<forall>X Y. X \<in> carrier_mat n n \<longrightarrow> Y \<in> carrier_mat n n
-            \<longrightarrow> \<Phi> (X + Y) = \<Phi> X + \<Phi> Y) \<and>
-     (\<forall>c X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X)"
-
-lemma lin_on_carrier_add:
-  assumes "lin_on_carrier n \<Phi>" "X \<in> carrier_mat n n" "Y \<in> carrier_mat n n"
-  shows "\<Phi> (X + Y) = \<Phi> X + \<Phi> Y"
-  using assms unfolding lin_on_carrier_def by blast
-
-lemma lin_on_carrier_smult:
-  assumes "lin_on_carrier n \<Phi>" "X \<in> carrier_mat n n"
-  shows "\<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X"
-  using assms unfolding lin_on_carrier_def by blast
-
-lemma lin_on_carrierI:
-  assumes "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
-                  \<Longrightarrow> \<Phi> (X + Y) = \<Phi> X + \<Phi> Y"
-      and "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<Phi> X"
-  shows "lin_on_carrier n \<Phi>"
-  using assms unfolding lin_on_carrier_def by blast
-
-definition cptp_pair_mid ::
-  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat)
-       \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat)
-       \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
-where
-  "cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2 \<equiv>
-     \<Phi>\<^sub>1 \<in> CPTP n d \<and> \<Phi>\<^sub>2 \<in> CPTP n d \<and>
-     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>1 X \<in> carrier_mat d d) \<and>
-     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi>\<^sub>2 X \<in> carrier_mat d d) \<and>
-     lin_on_carrier n \<Phi>\<^sub>1 \<and> lin_on_carrier n \<Phi>\<^sub>2 \<and>
-     (\<exists>X\<^sub>1 \<in> carrier_mat n n. \<Phi>\<^sub>1 X\<^sub>1 \<noteq> \<Phi> X\<^sub>1) \<and>
-     (\<exists>X\<^sub>2 \<in> carrier_mat n n. \<Phi> X\<^sub>2 \<noteq> \<Phi>\<^sub>2 X\<^sub>2) \<and>
-     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow>
-         \<Phi> X = (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>1 X + (1/2 :: complex) \<cdot>\<^sub>m \<Phi>\<^sub>2 X)"
-
-definition extreme_CPTP ::
-  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool"
-where
-  "extreme_CPTP n d \<Phi> \<equiv>
-     \<Phi> \<in> CPTP n d \<and> \<not> (\<exists>\<Phi>\<^sub>1 \<Phi>\<^sub>2. cptp_pair_mid n d \<Phi> \<Phi>\<^sub>1 \<Phi>\<^sub>2)"
-
-text \<open>The reverse direction of Choi's Theorem 3.  For a Hermitian $H\ne0$ with
-$\sum_{i,j}H_{ij}V_j^*V_i=0$ and small $\epsilon>0$, the maps
-\[ \Phi_\pm(X)=\sum_{i,j}(\delta_{ij}\pm\epsilon H_{ij})\,V_iXV_j^* \]
-are CPTP (\<open>small_eps_psd\<close>), differ from $\Phi$ (\<open>kraus_quad_map_nonzero_witness\<close>), and have
-$\Phi=\tfrac12(\Phi_++\Phi_-)$; so $\Phi$ is not extreme.\<close>
+subsubsection \<open>The perturbed maps\<close>
 
 lemma not_extreme_CPTP_of_herm_witness:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
@@ -4423,16 +3322,17 @@ proof -
     using \<Phi>_in pair_witness by blast
 qed
 
-theorem choi_theorem_3_cptp_reverse:
+theorem extreme_CPTP_imp_products_indep:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
     and Vs :: "complex Matrix.mat list"
   assumes npos: "0 < n" and dpos: "0 < d"
       and \<Phi>_in: "\<Phi> \<in> CPTP n d"
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
       and minimal: "lin_indep_complex_mat d n Vs"
-      and dep: "\<not> lin_indep_complex_mat n n (kraus_products Vs)"
-  shows "\<not> extreme_CPTP n d \<Phi>"
-proof -
+      and ext: "extreme_CPTP n d \<Phi>"
+  shows "lin_indep_complex_mat n n (kraus_products Vs)"
+proof (rule ccontr)
+  assume dep: "\<not> lin_indep_complex_mat n n (kraus_products Vs)"
   have Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
     using rep by (simp add: cptp_kraus_rep_def kraus_operators_def)
   obtain A_orig :: "complex Matrix.mat"
@@ -4444,104 +3344,623 @@ proof -
     where H: "H \<in> carrier_mat (length Vs) (length Vs)" "hermitian H"
              "H \<noteq> 0\<^sub>m (length Vs) (length Vs)" "kraus_pair_sum n Vs H = 0\<^sub>m n n"
     using herm_witness_of_complex[OF Vs_c A_c A_pair A_nz] by blast
-  show ?thesis
+  have "\<not> extreme_CPTP n d \<Phi>"
     by (rule not_extreme_CPTP_of_herm_witness[OF npos dpos \<Phi>_in rep minimal H])
+  thus False using ext by simp
 qed
 
-subsection \<open>Trace pairing duality and TP-converse\<close>
+subsection \<open>A CP Radon--Nikodym theorem\<close>
 
-text \<open>If $\Tr(M\rho)=\Tr(N\rho)$ for every $\rho\in M_n$ then $M=N$ (take $\rho=E_{ab}$).\<close>
+text \<open>The notes prove ($\Leftarrow$) with Choi 2.  Here a CP Radon--Nikodym theorem takes its
+place: if $0\le_{cp}\Psi\le_{cp}\Phi$ and $\Phi$ has the Kraus operators $V_i$, then
+$\Psi=\psi_T$ for some $T\ge0$.  For Choi matrices this says that $0\le B\le VV^*$ implies
+$B=VTV^*$ with $T\ge0$, which is proved with the Moore--Penrose pseudoinverse.\<close>
 
-lemma Tr_mat_unit_mult:
-  fixes M :: "complex Matrix.mat"
-  assumes M_c: "M \<in> carrier_mat n n"
-      and r_lt: "r < n" and s_lt: "s < n"
-  shows "Tr (M * mat_unit s r n n) = M $$ (r, s)"
+subsubsection \<open>Dominated positive matrices\<close>
+
+text \<open>The pseudoinverse of a real diagonal: $d_i^+=1/d_i$ for $d_i\ne0$ and $d_i^+=0$ otherwise.\<close>
+
+definition pinv_list :: "real list \<Rightarrow> real list" where
+  "pinv_list D = map (\<lambda>d. if d = 0 then 0 else 1/d) D"
+
+lemma pinv_list_length [simp]: "length (pinv_list D) = length D"
+  unfolding pinv_list_def by simp
+
+lemma pinv_list_index:
+  assumes "i < length D"
+  shows "pinv_list D ! i = (if D ! i = 0 then 0 else 1 / (D ! i))"
+  using assms unfolding pinv_list_def by simp
+
+lemma pinv_list_nonneg:
+  assumes "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
+  shows "\<And>i. i < length D \<Longrightarrow> 0 \<le> pinv_list D ! i"
 proof -
-  let ?E = "mat_unit s r n n"
-  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
-  have ME_c: "M * ?E \<in> carrier_mat n n" using M_c E_c by auto
-  \<comment> \<open>Per-entry: \<open>(M * E)$$(i, j) = M$$(i, s)\<close> if \<open>j = r\<close>, else \<open>0\<close>.\<close>
-  have ME_idx: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
-                    (M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)"
+  fix i assume i: "i < length D"
+  show "0 \<le> pinv_list D ! i"
+    using assms[OF i] by (simp add: pinv_list_index[OF i])
+qed
+
+text \<open>$DD^+D=D$, entry by entry: $0\cdot0\cdot0=0$ and $d_i\cdot d_i^{-1}\cdot d_i=d_i$.\<close>
+
+lemma diag_pinv_diag_eq:
+  fixes D :: "real list"
+  shows "diag_mat_of_real D
+           * diag_mat_of_real (pinv_list D)
+           * diag_mat_of_real D
+         = diag_mat_of_real D"
+proof (rule eq_matI)
+  let ?n = "length D"
+  let ?Dm = "diag_mat_of_real D"
+  let ?Pm = "diag_mat_of_real (pinv_list D)"
+  let ?DP = "?Dm * ?Pm"
+  let ?DPD = "?DP * ?Dm"
+  have Dm_c: "?Dm \<in> carrier_mat ?n ?n" by simp
+  have Pm_c: "?Pm \<in> carrier_mat ?n ?n"
+    using diag_mat_of_real_carrier[of "pinv_list D"] by simp
+  have DP_c: "?DP \<in> carrier_mat ?n ?n"
+    using Dm_c Pm_c by (rule mult_carrier_mat)
+  have DPD_c: "?DPD \<in> carrier_mat ?n ?n"
+    using DP_c Dm_c by (rule mult_carrier_mat)
+  show "dim_row ?DPD = dim_row ?Dm" using DPD_c by simp
+  show "dim_col ?DPD = dim_col ?Dm" using DPD_c by simp
+  fix i j assume i_a: "i < dim_row ?Dm" and j_a: "j < dim_col ?Dm"
+  hence i_lt: "i < ?n" and j_lt: "j < ?n" by auto
+
+  \<comment> \<open>A pointwise version of \<open>DP_idx\<close>: for any row index \<open>i'\<close> and any
+      column index \<open>c\<close>, the matrix-product entry is the diagonal-extracted
+      value.  We will instantiate with \<open>i' = i\<close> at two different column
+      indices below.\<close>
+  have DP_at: "\<And>c. c < ?n \<Longrightarrow> ?DP $$ (i, c) = ?Dm $$ (i, i) * ?Pm $$ (i, c)"
   proof -
-    fix i j assume i_lt: "i < n" and j_lt: "j < n"
-    have "(M * ?E) $$ (i, j) = (\<Sum>k = 0..<n. M $$ (i, k) * ?E $$ (k, j))"
-      by (rule mat_mult_index_sum[OF M_c E_c i_lt j_lt])
-    also have "\<dots> = (\<Sum>k = 0..<n.
-                       M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))"
-    proof (rule sum.cong[OF refl])
-      fix k assume "k \<in> {0..<n}" hence k_lt: "k < n" by simp
-      show "M $$ (i, k) * ?E $$ (k, j)
-              = M $$ (i, k) * (if k = s \<and> j = r then 1 else 0)"
-        using mat_unit_index[OF k_lt j_lt, of s r] by simp
-    qed
-    also have "\<dots> = (if j = r then M $$ (i, s) else 0)"
-    proof (cases "j = r")
-      case True
-      have "(\<Sum>k = 0..<n.
-              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
-              = (\<Sum>k = 0..<n. if k = s then M $$ (i, k) else 0)"
-        using True by (intro sum.cong refl) (auto)
-      also have "\<dots> = (if s \<in> {0..<n} then M $$ (i, s) else 0)"
-        by (rule sum.delta) simp
-      also have "\<dots> = M $$ (i, s)" using s_lt by simp
-      finally show ?thesis using True by simp
-    next
-      case False
-      have "(\<Sum>k = 0..<n.
-              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
-              = (\<Sum>k = 0..<n. (0::complex))"
-        using False by (intro sum.cong refl) (auto)
-      thus ?thesis using False by simp
-    qed
-    finally show "(M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)" .
+    fix c assume c_lt: "c < ?n"
+    have "?DP $$ (i, c) = (\<Sum>l = 0..<?n. ?Dm $$ (i, l) * ?Pm $$ (l, c))"
+      using i_lt c_lt Dm_c Pm_c
+      by (simp add: scalar_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>l = 0..<?n.
+                       (if l = i then ?Dm $$ (i, i) * ?Pm $$ (i, c) else 0))"
+      using i_lt c_lt
+      by (intro sum.cong refl) auto
+    also have "\<dots> = ?Dm $$ (i, i) * ?Pm $$ (i, c)"
+      using i_lt by (simp add: sum.delta)
+    finally show "?DP $$ (i, c) = ?Dm $$ (i, i) * ?Pm $$ (i, c)" .
   qed
-  \<comment> \<open>\<open>Tr (M * E) = \<Sum>\<^sub>i (M * E)[i, i] = M[r, s]\<close>.\<close>
-  have ME_dr: "dim_row (M * ?E) = n" using ME_c by auto
-  have ME_dc: "dim_col (M * ?E) = n" using ME_c by auto
-  have "Tr (M * ?E) = (\<Sum>i < n. if i < n then (M * ?E) $$ (i, i) else 0)"
-    unfolding Tr_def using ME_dr ME_dc by simp
-  also have "\<dots> = (\<Sum>i = 0..<n. (M * ?E) $$ (i, i))"
-    by (simp add: lessThan_atLeast0)
-  also have "\<dots> = (\<Sum>i = 0..<n. if i = r then M $$ (i, s) else 0)"
-    by (rule sum.cong[OF refl]) (auto simp: ME_idx)
-  also have "\<dots> = (if r \<in> {0..<n} then M $$ (r, s) else 0)"
-    by (rule sum.delta) simp
-  also have "\<dots> = M $$ (r, s)" using r_lt by simp
+
+  have DPD_idx: "?DPD $$ (i, j)
+                  = ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j)"
+  proof -
+    have "?DPD $$ (i, j) = (\<Sum>l = 0..<?n. ?DP $$ (i, l) * ?Dm $$ (l, j))"
+      using i_lt j_lt DP_c Dm_c
+      by (simp add: scalar_prod_def lessThan_atLeast0)
+    also have "\<dots> = (\<Sum>l = 0..<?n.
+                       ?Dm $$ (i, i) * ?Pm $$ (i, l) * ?Dm $$ (l, j))"
+      using DP_at
+      by (intro sum.cong refl) auto
+    also have "\<dots> = (\<Sum>l = 0..<?n.
+                       (if l = i then ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j) else 0))"
+      using i_lt j_lt
+      by (intro sum.cong refl) auto
+    also have "\<dots> = ?Dm $$ (i, i) * ?Pm $$ (i, i) * ?Dm $$ (i, j)"
+      using i_lt by (simp add: sum.delta)
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>And on the diagonal, the scalar identity \<open>D\<^sub>i \<cdot> D\<^sub>i\<^sup>+ \<cdot> D\<^sub>i = D\<^sub>i\<close>.\<close>
+  have scalar_id: "D ! i * pinv_list D ! i * D ! i = D ! i"
+  proof (cases "D ! i = 0")
+    case True
+    show ?thesis using True by simp
+  next
+    case False
+    have "pinv_list D ! i = 1 / D ! i"
+      using i_lt False by (simp add: pinv_list_index)
+    thus ?thesis using False by simp
+  qed
+
+  show "?DPD $$ (i, j) = ?Dm $$ (i, j)"
+  proof (cases "i = j")
+    case True
+    have e1: "?Dm $$ (i, i) = complex_of_real (D ! i)" using i_lt by simp
+    have e2: "?Pm $$ (i, i) = complex_of_real (pinv_list D ! i)" using i_lt by simp
+    have e3: "?Dm $$ (i, j) = complex_of_real (D ! i)" using True i_lt by simp
+    have "?DPD $$ (i, j) = complex_of_real (D ! i)
+                            * complex_of_real (pinv_list D ! i)
+                            * complex_of_real (D ! i)"
+      using DPD_idx e1 e2 e3 by simp
+    also have "\<dots> = complex_of_real (D ! i * pinv_list D ! i * D ! i)"
+      by simp
+    also have "\<dots> = complex_of_real (D ! i)"
+      using arg_cong[where f = complex_of_real, OF scalar_id] .
+    also have "\<dots> = ?Dm $$ (i, j)" using True i_lt by simp
+    finally show ?thesis .
+  next
+    case False
+    have e3: "?Dm $$ (i, j) = 0" using False i_lt j_lt by simp
+    have "?DPD $$ (i, j) = 0" using DPD_idx e3 by simp
+    also have "\<dots> = ?Dm $$ (i, j)" using e3 by simp
+    finally show ?thesis .
+  qed
+qed
+
+text \<open>For Hermitian $A=UDU^*$ set $A^+=UD^+U^*$; then $AA^+A=UDD^+DU^*=A$.\<close>
+
+lemma A_Aplus_A_eq:
+  fixes U :: "complex Matrix.mat" and D :: "real list"
+  assumes Uc: "U \<in> carrier_mat k k"
+      and UU: "unitary U"
+      and Dlen: "length D = k"
+  shows "(U * diag_mat_of_real D * (U\<^sup>\<dagger>))
+           * (U * diag_mat_of_real (pinv_list D) * (U\<^sup>\<dagger>))
+           * (U * diag_mat_of_real D * (U\<^sup>\<dagger>))
+         = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+proof -
+  let ?Dm = "diag_mat_of_real D"
+  let ?Pm = "diag_mat_of_real (pinv_list D)"
+  let ?Ud = "U\<^sup>\<dagger>"
+  have Dm_c: "?Dm \<in> carrier_mat k k" using Dlen by auto
+  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
+  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
+  have UdU: "?Ud * U = 1\<^sub>m k"
+  proof -
+    have "?Ud * U = 1\<^sub>m (dim_col U)"
+      using unitary_inv_l_dimcol[OF UU] .
+    thus ?thesis using Uc by simp
+  qed
+
+  \<comment> \<open>Build up by regrouping factors.\<close>
+  have UDm_c: "U * ?Dm \<in> carrier_mat k k" using Uc Dm_c by simp
+  have UDmUd_c: "U * ?Dm * ?Ud \<in> carrier_mat k k" using UDm_c Ud_c by simp
+  have UPm_c: "U * ?Pm \<in> carrier_mat k k" using Uc Pm_c by simp
+  have UPmUd_c: "U * ?Pm * ?Ud \<in> carrier_mat k k" using UPm_c Ud_c by simp
+  have DmPm_c: "?Dm * ?Pm \<in> carrier_mat k k" using Dm_c Pm_c by simp
+  have DmPmDm_c: "?Dm * ?Pm * ?Dm \<in> carrier_mat k k" using DmPm_c Dm_c by simp
+
+  \<comment> \<open>Lift \<open>?Ud * U = 1\<^sub>m k\<close> through the matrix product, collapsing
+      the central factors.\<close>
+  have step_AAp: "(U * ?Dm * ?Ud) * (U * ?Pm * ?Ud) = U * (?Dm * ?Pm) * ?Ud"
+  proof -
+    have a1: "U * ?Dm * ?Ud * (U * ?Pm * ?Ud)
+                = U * ?Dm * ?Ud * (U * ?Pm) * ?Ud"
+      using UDmUd_c UPm_c Ud_c by (metis assoc_mult_mat)
+    have a2: "U * ?Dm * ?Ud * (U * ?Pm) = U * ?Dm * ?Ud * U * ?Pm"
+      using UDmUd_c Uc Pm_c by (metis assoc_mult_mat)
+    have a3: "U * ?Dm * ?Ud * U = U * ?Dm * (?Ud * U)"
+      using UDm_c Ud_c Uc by (metis assoc_mult_mat)
+    have a4: "U * ?Dm * (?Ud * U) = U * ?Dm"
+      using UDm_c UdU right_mult_one_mat[OF UDm_c] by simp
+    have "U * ?Dm * ?Ud * (U * ?Pm * ?Ud)
+            = U * ?Dm * ?Ud * U * ?Pm * ?Ud"
+      using a1 a2 by simp
+    also have "\<dots> = U * ?Dm * ?Pm * ?Ud"
+      using a3 a4 by simp
+    also have "\<dots> = U * (?Dm * ?Pm) * ?Ud"
+      using Uc Dm_c Pm_c by (metis assoc_mult_mat)
+    finally show ?thesis .
+  qed
+
+  have step_AApA: "(U * (?Dm * ?Pm) * ?Ud) * (U * ?Dm * ?Ud)
+                     = U * (?Dm * ?Pm * ?Dm) * ?Ud"
+  proof -
+    have UDmPm_c: "U * (?Dm * ?Pm) \<in> carrier_mat k k" using Uc DmPm_c by simp
+    have UDmPm_Ud_c: "U * (?Dm * ?Pm) * ?Ud \<in> carrier_mat k k" using UDmPm_c Ud_c by simp
+    have b1: "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm * ?Ud)
+                = U * (?Dm * ?Pm) * ?Ud * (U * ?Dm) * ?Ud"
+      using UDmPm_Ud_c UDm_c Ud_c by (metis assoc_mult_mat)
+    have b2: "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm)
+                = U * (?Dm * ?Pm) * ?Ud * U * ?Dm"
+      using UDmPm_Ud_c Uc Dm_c by (metis assoc_mult_mat)
+    have b3: "U * (?Dm * ?Pm) * ?Ud * U = U * (?Dm * ?Pm) * (?Ud * U)"
+      using UDmPm_c Ud_c Uc by (metis assoc_mult_mat)
+    have b4: "U * (?Dm * ?Pm) * (?Ud * U) = U * (?Dm * ?Pm)"
+      using UDmPm_c UdU right_mult_one_mat[OF UDmPm_c] by simp
+    have "U * (?Dm * ?Pm) * ?Ud * (U * ?Dm * ?Ud)
+            = U * (?Dm * ?Pm) * ?Ud * U * ?Dm * ?Ud"
+      using b1 b2 by simp
+    also have "\<dots> = U * (?Dm * ?Pm) * ?Dm * ?Ud"
+      using b3 b4 by simp
+    also have "\<dots> = U * (?Dm * ?Pm * ?Dm) * ?Ud"
+      using Uc DmPm_c Dm_c by (metis assoc_mult_mat)
+    finally show ?thesis .
+  qed
+
+  have "(U * ?Dm * ?Ud) * (U * ?Pm * ?Ud) * (U * ?Dm * ?Ud)
+          = (U * (?Dm * ?Pm) * ?Ud) * (U * ?Dm * ?Ud)"
+    using step_AAp by simp
+  also have "\<dots> = U * (?Dm * ?Pm * ?Dm) * ?Ud"
+    using step_AApA .
+  also have "\<dots> = U * ?Dm * ?Ud"
+    using diag_pinv_diag_eq[of D] by simp
   finally show ?thesis .
 qed
 
-lemma mat_trace_pairing_unique:
-  fixes M N :: "complex Matrix.mat"
-  assumes M_c: "M \<in> carrier_mat n n"
-      and N_c: "N \<in> carrier_mat n n"
-      and pair_eq: "\<And>rho. rho \<in> carrier_mat n n \<Longrightarrow> Tr (M * rho) = Tr (N * rho)"
-  shows "M = N"
-proof (rule eq_matI)
-  show "dim_row M = dim_row N" using M_c N_c by auto
-  show "dim_col M = dim_col N" using M_c N_c by auto
-  fix r c assume r_a: "r < dim_row N" and c_a: "c < dim_col N"
-  hence r_lt: "r < n" and c_lt: "c < n" using N_c by auto
-  let ?E = "mat_unit c r n n"
-  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
-  have "M $$ (r, c) = Tr (M * ?E)"
-    using Tr_mat_unit_mult[OF M_c r_lt c_lt] by simp
-  also have "\<dots> = Tr (N * ?E)" using pair_eq[OF E_c] .
-  also have "\<dots> = N $$ (r, c)"
-    using Tr_mat_unit_mult[OF N_c r_lt c_lt] by simp
-  finally show "M $$ (r, c) = N $$ (r, c)" .
+text \<open>If $0\le B\le A$ then $B=AA^+B$: with $Q=A^+A$, $AQ=A$, so $x-Qx\in\ker A\subseteq\ker B$, whence
+$B=BQ$, and taking adjoints $B=QB=AA^+B$.\<close>
+
+lemma A_Aplus_B_eq_B:
+  fixes U :: "complex Matrix.mat" and D :: "real list" and B :: "complex Matrix.mat"
+  assumes Uc: "U \<in> carrier_mat k k"
+      and UU: "unitary U"
+      and Dlen: "length D = k"
+      and Dnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> D ! i"
+      and B_c: "B \<in> carrier_mat k k"
+      and B_psd: "psd B"
+      and dom_psd: "psd ((U * diag_mat_of_real D * (U\<^sup>\<dagger>)) - B)"
+  shows "(U * diag_mat_of_real D * (U\<^sup>\<dagger>))
+            * (U * diag_mat_of_real (pinv_list D) * (U\<^sup>\<dagger>)) * B = B"
+proof -
+  let ?Dm  = "diag_mat_of_real D"
+  let ?Pm  = "diag_mat_of_real (pinv_list D)"
+  let ?Ud  = "U\<^sup>\<dagger>"
+  let ?A   = "U * ?Dm * ?Ud"
+  let ?Ap  = "U * ?Pm * ?Ud"
+  let ?Q   = "?Ap * ?A"
+
+  have Dm_c: "?Dm \<in> carrier_mat k k" using Dlen by auto
+  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
+  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
+  have A_c: "?A \<in> carrier_mat k k" using Uc Dm_c Ud_c by simp
+  have Ap_c: "?Ap \<in> carrier_mat k k" using Uc Pm_c Ud_c by simp
+  have Q_c: "?Q \<in> carrier_mat k k" using Ap_c A_c by simp
+  have BQ_c: "B * ?Q \<in> carrier_mat k k" using B_c Q_c by simp
+
+  have Pnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> pinv_list D ! i"
+  proof -
+    fix i assume "i < k"
+    thus "0 \<le> pinv_list D ! i" using Dnn Dlen by (simp add: pinv_list_index)
+  qed
+  have A_psd: "psd ?A"
+    by (rule psd_U_diag_Udag[OF Uc Dlen]) (use Dnn in auto)
+  have Ap_psd: "psd ?Ap"
+  proof (rule psd_U_diag_Udag[OF Uc])
+    show "length (pinv_list D) = k" using Dlen by simp
+  next
+    fix i assume "i < k" thus "0 \<le> pinv_list D ! i" by (rule Pnn)
+  qed
+  have A_herm: "?A\<^sup>\<dagger> = ?A"
+    using psd_hermitian[OF A_psd] unfolding hermitian_def .
+  have Ap_herm: "?Ap\<^sup>\<dagger> = ?Ap"
+    using psd_hermitian[OF Ap_psd] unfolding hermitian_def .
+  have B_herm: "B\<^sup>\<dagger> = B"
+    using psd_hermitian[OF B_psd] unfolding hermitian_def .
+
+  \<comment> \<open>\<open>A Q = A\<close> from \<open>A A\<^sup>+ A = A\<close>.\<close>
+  have AApA: "?A * ?Ap * ?A = ?A" by (rule A_Aplus_A_eq[OF Uc UU Dlen])
+  have AQ: "?A * ?Q = ?A"
+  proof -
+    have "?A * ?Q = ?A * ?Ap * ?A"
+      by (rule assoc_mult_mat[OF A_c Ap_c A_c, symmetric])
+    also have "\<dots> = ?A" by (rule AApA)
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>Pointwise: \<open>B x = B Q x\<close>, since \<open>x - Q x \<in> ker A \<subseteq> ker B\<close>.\<close>
+  have pointwise: "\<And>x. x \<in> carrier_vec k \<Longrightarrow> B *\<^sub>v x = (B * ?Q) *\<^sub>v x"
+  proof -
+    fix x :: "complex Matrix.vec" assume x_c: "x \<in> carrier_vec k"
+    let ?y = "x - ?Q *\<^sub>v x"
+    have Qx_c: "?Q *\<^sub>v x \<in> carrier_vec k" using Q_c x_c by auto
+    have y_c: "?y \<in> carrier_vec k" using x_c Qx_c by auto
+    have y_dim: "dim_vec ?y = k" by (rule carrier_vecD[OF y_c])
+    have Ax_c: "?A *\<^sub>v x \<in> carrier_vec k" using A_c x_c by auto
+    have Ay: "?A *\<^sub>v ?y = 0\<^sub>v k"
+    proof -
+      have e1: "?A *\<^sub>v (?Q *\<^sub>v x) = (?A * ?Q) *\<^sub>v x"
+        by (rule assoc_mult_mat_vec[OF A_c Q_c x_c, symmetric])
+      have e2: "(?A * ?Q) *\<^sub>v x = ?A *\<^sub>v x" using AQ by simp
+      have "?A *\<^sub>v ?y = ?A *\<^sub>v x - ?A *\<^sub>v (?Q *\<^sub>v x)"
+        by (rule mult_minus_distrib_mat_vec[OF A_c x_c Qx_c])
+      also have "\<dots> = ?A *\<^sub>v x - ?A *\<^sub>v x" using e1 e2 by simp
+      also have "\<dots> = 0\<^sub>v k" using Ax_c by simp
+      finally show ?thesis .
+    qed
+    have By: "B *\<^sub>v ?y = 0\<^sub>v k"
+      by (rule loewner_ker_subset[OF A_c B_c B_psd dom_psd y_dim Ay])
+    have Bx_c: "B *\<^sub>v x \<in> carrier_vec k" using B_c x_c by auto
+    have BQx_c: "B *\<^sub>v (?Q *\<^sub>v x) \<in> carrier_vec k" using B_c Qx_c by auto
+    have diff0: "B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x) = 0\<^sub>v k"
+      using mult_minus_distrib_mat_vec[OF B_c x_c Qx_c] By by simp
+    have "B *\<^sub>v x = B *\<^sub>v (?Q *\<^sub>v x)"
+    proof (rule eq_vecI)
+      show "dim_vec (B *\<^sub>v x) = dim_vec (B *\<^sub>v (?Q *\<^sub>v x))"
+        using Bx_c BQx_c by auto
+    next
+      fix i assume "i < dim_vec (B *\<^sub>v (?Q *\<^sub>v x))"
+      hence ilt: "i < k" using B_c by auto
+      have "(B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x)) $ i = 0"
+        using diff0 ilt by simp
+      moreover have "(B *\<^sub>v x - B *\<^sub>v (?Q *\<^sub>v x)) $ i
+                       = (B *\<^sub>v x) $ i - (B *\<^sub>v (?Q *\<^sub>v x)) $ i"
+        using ilt B_c by simp
+      ultimately show "(B *\<^sub>v x) $ i = (B *\<^sub>v (?Q *\<^sub>v x)) $ i" by simp
+    qed
+    also have "\<dots> = (B * ?Q) *\<^sub>v x"
+      by (rule assoc_mult_mat_vec[OF B_c Q_c x_c, symmetric])
+    finally show "B *\<^sub>v x = (B * ?Q) *\<^sub>v x" .
+  qed
+  have B_eq_BQ: "B = B * ?Q"
+    by (rule mat_eq_of_mult_vec_eq[OF B_c BQ_c pointwise])
+
+  \<comment> \<open>Adjoint: \<open>B = B\<^sup>\<dagger> = (B Q)\<^sup>\<dagger> = Q\<^sup>\<dagger> B = A A\<^sup>+ B\<close>.\<close>
+  have Q_dag: "?Q\<^sup>\<dagger> = ?A * ?Ap"
+  proof -
+    have "?Q\<^sup>\<dagger> = ?A\<^sup>\<dagger> * (?Ap\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use Ap_c A_c in auto)
+    also have "\<dots> = ?A * ?Ap" using A_herm Ap_herm by simp
+    finally show ?thesis .
+  qed
+  have "B = B\<^sup>\<dagger>" using B_herm by simp
+  also have "\<dots> = (B * ?Q)\<^sup>\<dagger>"
+    by (rule arg_cong[where f = dagger, OF B_eq_BQ])
+  also have "\<dots> = ?Q\<^sup>\<dagger> * (B\<^sup>\<dagger>)"
+    by (rule dagger_of_prod) (use B_c Q_c in auto)
+  also have "\<dots> = ?A * ?Ap * B" using Q_dag B_herm by simp
+  finally show ?thesis by (rule sym)
 qed
 
+text \<open>Dominated positive matrices factor through the dominating frame: if $0\le B\le VV^*$ then
+\[ B=VTV^*,\qquad T=V^*A^+BA^+V\ge0,\quad A=VV^*. \]\<close>
 
-subsection \<open>Choi's Theorem 3 --- forward direction\<close>
+lemma dominated_outer_sum_param:
+  fixes vs :: "complex Matrix.vec list"
+    and B :: "complex Matrix.mat"
+  assumes vs_dim: "\<forall>v \<in> set vs. dim_vec v = k"
+      and k_pos: "0 < k"
+      and B_c: "B \<in> carrier_mat k k"
+      and B_psd: "psd B"
+      and B_dom: "psd (outer_sum k vs - B)"
+  shows "\<exists>T. T \<in> carrier_mat (length vs) (length vs) \<and> psd T \<and>
+              B = (mat_of_cols k vs) * T * ((mat_of_cols k vs)\<^sup>\<dagger>)"
+proof -
+  let ?m = "length vs"
+  let ?V = "mat_of_cols k vs"
+  let ?Vd = "(mat_of_cols k vs)\<^sup>\<dagger>"
+  let ?A = "outer_sum k vs"
+  have V_c: "?V \<in> carrier_mat k ?m" by (rule mat_of_cols_carrier(1))
+  have Vd_c: "?Vd \<in> carrier_mat ?m k" using V_c by (rule dagger_carrier)
+  have A_eq: "?V * ?Vd = ?A" by (simp add: outer_sum_def)
+  have A_c: "?A \<in> carrier_mat k k" using V_c Vd_c A_eq by auto
+  have A_psd: "psd ?A" by (rule outer_sum_psd[OF refl vs_dim])
+  have A_herm: "?A\<^sup>\<dagger> = ?A" by (rule outer_sum_hermitian)
+  have B_herm: "B\<^sup>\<dagger> = B"
+    using psd_hermitian[OF B_psd] unfolding hermitian_def .
 
-text \<open>The forward direction: if the products $V_j^*V_i$ are linearly independent, $\Phi$ is extreme.
-If $\Phi=\tfrac12(\Phi_1+\Phi_2)$, then $\tfrac12\Phi_1\le_{cp}\Phi$, and the CP Radon--Nikodym theorem
-(\<open>cp_radon_nikodym_linear\<close>) writes $\Phi_1(X)=\sum_{i,j}T_{ij}V_iXV_j^*$ with $T\ge0$; trace
-preservation and independence force $T=I$, i.e.\ $\Phi_1=\Phi$.\<close>
+  obtain U :: "complex Matrix.mat" and D :: "real list"
+    where Uc: "U \<in> carrier_mat k k" and UU: "unitary U" and Dlen: "length D = k"
+      and Dnn0: "\<forall>i < k. 0 \<le> D ! i"
+      and A_spec: "?A = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+    using psd_spectral_decomp_nonneg[OF A_c A_psd] by blast
+  have Dnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> D ! i" using Dnn0 by simp
 
-theorem choi_theorem_3_cptp_forward_complex:
+  let ?Pm = "diag_mat_of_real (pinv_list D)"
+  let ?Ud = "U\<^sup>\<dagger>"
+  let ?Ap = "U * ?Pm * ?Ud"
+  have Ud_c: "?Ud \<in> carrier_mat k k" using Uc by auto
+  have Pm_c: "?Pm \<in> carrier_mat k k" using Dlen by auto
+  have Ap_c: "?Ap \<in> carrier_mat k k" using Uc Pm_c Ud_c by simp
+  have Pnn: "\<And>i. i < k \<Longrightarrow> 0 \<le> pinv_list D ! i"
+  proof -
+    fix i assume "i < k"
+    thus "0 \<le> pinv_list D ! i" using Dnn Dlen by (simp add: pinv_list_index)
+  qed
+  have Ap_psd: "psd ?Ap"
+  proof (rule psd_U_diag_Udag[OF Uc])
+    show "length (pinv_list D) = k" using Dlen by simp
+  next
+    fix i assume "i < k" thus "0 \<le> pinv_list D ! i" by (rule Pnn)
+  qed
+  have Ap_herm: "?Ap\<^sup>\<dagger> = ?Ap"
+    using psd_hermitian[OF Ap_psd] unfolding hermitian_def .
+
+  \<comment> \<open>\<open>A A\<^sup>+ B = B\<close> and, by adjoints, \<open>B A\<^sup>+ A = B\<close>.\<close>
+  have dom': "psd ((U * diag_mat_of_real D * (U\<^sup>\<dagger>)) - B)"
+    using B_dom A_spec by simp
+  have AApB: "?A * ?Ap * B = B"
+    using A_Aplus_B_eq_B[OF Uc UU Dlen Dnn B_c B_psd dom'] A_spec by simp
+  have AAp_c: "?A * ?Ap \<in> carrier_mat k k" using A_c Ap_c by simp
+  have BApA: "B * ?Ap * ?A = B"
+  proof -
+    have "B = (?A * ?Ap * B)\<^sup>\<dagger>" using AApB B_herm by simp
+    also have "\<dots> = B\<^sup>\<dagger> * ((?A * ?Ap)\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use AAp_c B_c in auto)
+    also have "(?A * ?Ap)\<^sup>\<dagger> = ?Ap\<^sup>\<dagger> * (?A\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use A_c Ap_c in auto)
+    also have "B\<^sup>\<dagger> * (?Ap\<^sup>\<dagger> * (?A\<^sup>\<dagger>)) = B * (?Ap * ?A)"
+      using B_herm Ap_herm A_herm by simp
+    also have "\<dots> = B * ?Ap * ?A"
+      by (rule assoc_mult_mat[OF B_c Ap_c A_c, symmetric])
+    finally show ?thesis by (rule sym)
+  qed
+
+  \<comment> \<open>The parameter \<open>T = V\<^sup>\<dagger> A\<^sup>+ B A\<^sup>+ V\<close>.\<close>
+  let ?Y1 = "?Vd * ?Ap"
+  let ?Y2 = "?Y1 * B"
+  let ?Y3 = "?Y2 * ?Ap"
+  let ?Tm = "?Y3 * ?V"
+  have Y1_c: "?Y1 \<in> carrier_mat ?m k" using Vd_c Ap_c by simp
+  have Y2_c: "?Y2 \<in> carrier_mat ?m k" using Y1_c B_c by simp
+  have Y3_c: "?Y3 \<in> carrier_mat ?m k" using Y2_c Ap_c by simp
+  have Tm_c: "?Tm \<in> carrier_mat ?m ?m" using Y3_c V_c by simp
+
+  have ApV_c: "?Ap * ?V \<in> carrier_mat k ?m" using Ap_c V_c by simp
+  have ApV_dag: "(?Ap * ?V)\<^sup>\<dagger> = ?Y1"
+  proof -
+    have "(?Ap * ?V)\<^sup>\<dagger> = ?Vd * (?Ap\<^sup>\<dagger>)"
+      by (rule dagger_of_prod) (use Ap_c V_c in auto)
+    also have "\<dots> = ?Y1" using Ap_herm by simp
+    finally show ?thesis .
+  qed
+  have Tm_psd: "psd ?Tm"
+  proof -
+    have "psd ((?Ap * ?V)\<^sup>\<dagger> * B * (?Ap * ?V))"
+      by (rule psd_conjugate[OF B_c B_psd ApV_c])
+    also have "(?Ap * ?V)\<^sup>\<dagger> * B * (?Ap * ?V) = ?Y2 * (?Ap * ?V)"
+      using ApV_dag by simp
+    also have "\<dots> = ?Tm"
+      by (rule assoc_mult_mat[OF Y2_c Ap_c V_c, symmetric])
+    finally show ?thesis .
+  qed
+
+  \<comment> \<open>\<open>V T V\<^sup>\<dagger> = (V V\<^sup>\<dagger>) A\<^sup>+ B A\<^sup>+ (V V\<^sup>\<dagger>) = A A\<^sup>+ B A\<^sup>+ A = B\<close>.\<close>
+  have VY1: "?V * ?Y1 = ?A * ?Ap"
+  proof -
+    have "?V * ?Y1 = ?V * ?Vd * ?Ap"
+      by (rule assoc_mult_mat[OF V_c Vd_c Ap_c, symmetric])
+    also have "\<dots> = ?A * ?Ap" using A_eq by simp
+    finally show ?thesis .
+  qed
+  have VY2: "?V * ?Y2 = B"
+  proof -
+    have "?V * ?Y2 = ?V * ?Y1 * B"
+      by (rule assoc_mult_mat[OF V_c Y1_c B_c, symmetric])
+    also have "\<dots> = ?A * ?Ap * B" using VY1 by simp
+    also have "\<dots> = B" by (rule AApB)
+    finally show ?thesis .
+  qed
+  have VY3: "?V * ?Y3 = B * ?Ap"
+  proof -
+    have "?V * ?Y3 = ?V * ?Y2 * ?Ap"
+      by (rule assoc_mult_mat[OF V_c Y2_c Ap_c, symmetric])
+    also have "\<dots> = B * ?Ap" using VY2 by simp
+    finally show ?thesis .
+  qed
+  have BAp_c: "B * ?Ap \<in> carrier_mat k k" using B_c Ap_c by simp
+  have VTVd: "?V * ?Tm * ?Vd = B"
+  proof -
+    have "?V * ?Tm = ?V * ?Y3 * ?V"
+      by (rule assoc_mult_mat[OF V_c Y3_c V_c, symmetric])
+    also have "\<dots> = B * ?Ap * ?V" using VY3 by simp
+    finally have VT: "?V * ?Tm = B * ?Ap * ?V" .
+    have "?V * ?Tm * ?Vd = B * ?Ap * ?V * ?Vd" using VT by simp
+    also have "\<dots> = B * ?Ap * (?V * ?Vd)"
+      by (rule assoc_mult_mat[OF BAp_c V_c Vd_c])
+    also have "\<dots> = B * ?Ap * ?A" using A_eq by simp
+    also have "\<dots> = B" by (rule BApA)
+    finally show ?thesis .
+  qed
+  show ?thesis
+    by (intro exI[of _ ?Tm] conjI Tm_c Tm_psd VTVd[symmetric])
+qed
+
+subsubsection \<open>Completely positive maps below a Kraus map\<close>
+
+text \<open>CP Radon--Nikodym at the level of Choi matrices: if $0\le_{cp}\Psi\le_{cp}\Phi$ with
+$P_\Phi=VV^*$, the factorisation above gives $P_\Psi=VTV^*=P_{\psi_T}$ with $T\ge0$.\<close>
+
+lemma cp_radon_nikodym_choi:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Vs :: "complex Matrix.mat list"
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
+      and Psi_cp: "completely_positive n d Psi"
+      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
+      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
+              choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs T)"
+proof -
+  let ?k = "length Vs"
+  let ?us = "map (vec_of_kraus d n) Vs"
+  let ?V = "kraus_vec_mat d n Vs"
+  have V_eq: "?V = mat_of_cols (n*d) ?us"
+    by (simp add: kraus_vec_mat_def)
+  have Phi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X \<in> carrier_mat d d"
+  proof -
+    fix X :: "complex Matrix.mat" assume X_c: "X \<in> carrier_mat n n"
+    have "Phi X = kraus_map_dim d Vs X" by (rule Phi_kraus[OF X_c])
+    thus "Phi X \<in> carrier_mat d d"
+      using kraus_map_dim_carrier[OF Vs_c X_c] by simp
+  qed
+  have P_Phi_eq: "choi_matrix n d Phi = outer_sum (n*d) ?us"
+  proof -
+    have "choi_matrix n d Phi = choi_matrix n d (kraus_map_dim d Vs)"
+      by (rule choi_matrix_cong) (rule Phi_kraus)
+    also have "\<dots> = outer_sum (n*d) ?us"
+      by (rule choi_matrix_kraus_eq[OF Vs_c npos dpos])
+    finally show ?thesis .
+  qed
+  have us_dim: "\<forall>v \<in> set ?us. dim_vec v = n*d" by simp
+  have nd_pos: "0 < n*d" using npos dpos by simp
+  have P_Psi_psd: "psd (choi_matrix n d Psi)"
+    using choi_psd_if_cp[OF npos dpos Psi_cp] .
+  have P_Psi_c: "choi_matrix n d Psi \<in> carrier_mat (n*d) (n*d)" by simp
+  have P_diff_psd: "psd (choi_matrix n d (\<lambda>X. Phi X - Psi X))"
+    using choi_psd_if_cp[OF npos dpos diff_cp] .
+  have P_diff_eq: "choi_matrix n d (\<lambda>X. Phi X - Psi X)
+                     = choi_matrix n d Phi - choi_matrix n d Psi"
+    by (rule choi_matrix_diff[OF Phi_range Psi_range npos dpos])
+  have dom_psd: "psd (outer_sum (n*d) ?us - choi_matrix n d Psi)"
+    using P_diff_psd P_diff_eq P_Phi_eq by simp
+  obtain Tm :: "complex Matrix.mat"
+    where Tm_c: "Tm \<in> carrier_mat (length ?us) (length ?us)"
+    and Tm_psd: "psd Tm"
+    and P_Psi_param: "choi_matrix n d Psi
+                        = (mat_of_cols (n*d) ?us) * Tm
+                          * ((mat_of_cols (n*d) ?us)\<^sup>\<dagger>)"
+    using dominated_outer_sum_param[OF us_dim nd_pos P_Psi_c P_Psi_psd dom_psd]
+    by blast
+  have length_us: "length ?us = ?k" by simp
+  have Tm_c': "Tm \<in> carrier_mat ?k ?k" using Tm_c length_us by simp
+  have P_kqm_eq: "choi_matrix n d (kraus_quad_map d Vs Tm) = ?V * Tm * (?V\<^sup>\<dagger>)"
+    by (rule choi_matrix_kraus_quad_eq[OF Vs_c Tm_c' npos dpos])
+  have P_match: "choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs Tm)"
+    using P_Psi_param P_kqm_eq V_eq by simp
+  show ?thesis
+    using Tm_c' Tm_psd P_match by blast
+qed
+
+text \<open>CP Radon--Nikodym for maps: if $\Psi$ is moreover linear on $M_n$, equal Choi matrices give equal maps,
+so $\Psi(X)=\sum_{i,j}T_{ij}V_iXV_j^*$.  (Linearity is a hypothesis, as \<open>completely_positive\<close>
+only constrains amplifications.)\<close>
+
+lemma cp_radon_nikodym_linear:
+  fixes Phi Psi :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+    and Vs :: "complex Matrix.mat list"
+  assumes Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and Phi_kraus: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Phi X = kraus_map_dim d Vs X"
+      and Psi_cp: "completely_positive n d Psi"
+      and Psi_range: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X \<in> carrier_mat d d"
+      and Psi_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
+                          \<Longrightarrow> Psi (X + Y) = Psi X + Psi Y"
+      and Psi_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> Psi (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m Psi X"
+      and diff_cp: "completely_positive n d (\<lambda>X. Phi X - Psi X)"
+      and npos: "0 < n"
+      and dpos: "0 < d"
+  shows "\<exists>T. T \<in> carrier_mat (length Vs) (length Vs) \<and> psd T \<and>
+              (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> Psi X = kraus_quad_map d Vs T X)"
+proof -
+  obtain Tm where Tm_c: "Tm \<in> carrier_mat (length Vs) (length Vs)"
+    and Tm_psd: "psd Tm"
+    and P_match: "choi_matrix n d Psi = choi_matrix n d (kraus_quad_map d Vs Tm)"
+    using cp_radon_nikodym_choi
+            [OF Vs_c Phi_kraus Psi_cp Psi_range diff_cp npos dpos]
+    by blast
+  have kqm_range: "\<And>X. X \<in> carrier_mat n n
+                       \<Longrightarrow> kraus_quad_map d Vs Tm X \<in> carrier_mat d d"
+    using kraus_quad_map_carrier[OF Vs_c] by blast
+  have kqm_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
+                       \<Longrightarrow> kraus_quad_map d Vs Tm (X + Y)
+                            = kraus_quad_map d Vs Tm X + kraus_quad_map d Vs Tm Y"
+    using kraus_quad_map_add_rho[OF Vs_c] by blast
+  have kqm_smult: "\<And>c X. X \<in> carrier_mat n n
+                          \<Longrightarrow> kraus_quad_map d Vs Tm (c \<cdot>\<^sub>m X)
+                              = c \<cdot>\<^sub>m kraus_quad_map d Vs Tm X"
+    using kraus_quad_map_smult_rho[OF Vs_c] by blast
+  have ptwise: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> Psi X = kraus_quad_map d Vs Tm X"
+    by (rule map_eq_from_choi_when_linear
+              [OF Psi_add Psi_smult Psi_range
+                  kqm_add kqm_smult kqm_range P_match npos dpos]) blast
+  show ?thesis
+    using Tm_c Tm_psd ptwise by blast
+qed
+
+subsection \<open>Independent products give extreme maps\<close>
+
+text \<open>The notes' direction ($\Leftarrow$).  If $\Phi=\tfrac12(\Phi_1+\Phi_2)$, then
+$\tfrac12\Phi_1\le_{cp}\Phi$, and the CP Radon--Nikodym theorem writes
+$\Phi_1(X)=\sum_{i,j}T_{ij}V_iXV_j^*$ with $T\ge0$; trace preservation and the independence of
+the products force $T=I$, i.e.\ $\Phi_1=\Phi$.\<close>
+
+theorem products_indep_imp_extreme_CPTP:
   fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
     and Vs :: "complex Matrix.mat list"
   assumes npos: "0 < n" and dpos: "0 < d"
@@ -5029,8 +4448,7 @@ proof (rule ccontr)
   thus False using c_k0_nz by simp
 qed
 
-
-subsection \<open>Choi's Theorem 3 (statement)\<close>
+subsection \<open>Choi's Theorem 3\<close>
 
 text \<open>Conventions.  For CPTP maps ($\sum_iV_i^*V_i=I_n$) the products are $V_j^*V_i\in M_n$: the
 perturbation $\Phi_\epsilon(X)=\sum_{i,j}(\delta_{ij}+\epsilon a_{ij})V_iXV_j^*$ stays trace preserving iff
@@ -5050,14 +4468,11 @@ theorem choi_theorem_3_cptp_iff:
       and rep:  "cptp_kraus_rep n d \<Phi> Vs"
       and minimal: "lin_indep_complex_mat d n Vs"
   shows "extreme_CPTP n d \<Phi> \<longleftrightarrow> lin_indep_complex_mat n n (kraus_products Vs)"
-  using choi_theorem_3_cptp_reverse[OF npos dpos \<Phi>_in rep minimal]
-        choi_theorem_3_cptp_forward_complex[OF npos dpos \<Phi>_in rep]
+  using extreme_CPTP_imp_products_indep[OF npos dpos \<Phi>_in rep minimal]
+        products_indep_imp_extreme_CPTP[OF npos dpos \<Phi>_in rep]
   by blast
 
-text \<open>The UCP form, by duality with this one, is \<open>choi_theorem_3_ucp\<close> below.\<close>
-
-
-subsection \<open>Choi's Theorem 3 for unital maps (D23-1)\<close>
+subsubsection \<open>Unital maps (D23-1)\<close>
 
 text \<open>The notes state Choi's Theorem 3 for UCP maps; @{thm [source] choi_theorem_3_cptp_iff} proves
 the CPTP form.  The UCP form follows by the duality of Day 22: $\Gamma(\Phi)=\Phi^*$ maps midpoint
@@ -5204,59 +4619,58 @@ theorem extreme_UCP_iff_adjoint:
   unfolding extreme_UCP_def extreme_CPTP_def
   using U adjoint_ucp_imp_cptp[OF L U n d] ucp_mid_imp_cptp_mid[OF L _ n d] cptp_mid_imp_ucp_mid[OF L _ n d] by blast
 
-text \<open>Linear independence passes to the adjoints: $\sum_kc_kW_k^*=0$ gives $\sum_k\bar c_kW_k=0$.\<close>
+text \<open>A unital Kraus representation of $\Phi:M_n\to M_d$ is a list of $d\times n$ matrices with
+\[ \Phi(X)=\sum_iV_iXV_i^*\quad(X\in M_n),\qquad \sum_iV_iV_i^*=I_d; \]
+every linear UCP map has one with $nd$ operators.  The adjoints of its operators are Kraus
+operators of $\Phi^*$.\<close>
 
-lemma lin_indep_complex_mat_dagger:
-  assumes li: "lin_indep_complex_mat d n Ws"
-  shows "lin_indep_complex_mat n d (map (\<lambda>W. W\<^sup>\<dagger>) Ws)"
-  unfolding lin_indep_complex_mat_def
-proof (intro conjI allI impI)
-  have Wc: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n" using li unfolding lin_indep_complex_mat_def by blast
-  show "\<forall>W \<in> set (map (\<lambda>W. W\<^sup>\<dagger>) Ws). W \<in> carrier_mat n d" using Wc by (auto intro: dagger_carrier)
-  fix c :: "nat \<Rightarrow> complex"
-  assume z: "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k) + acc) [0..<length (map (\<lambda>W. W\<^sup>\<dagger>) Ws)] (0\<^sub>m n d) = 0\<^sub>m n d"
-  let ?L = "length Ws"
-  have kc: "\<And>k. k < ?L \<Longrightarrow> Ws ! k \<in> carrier_mat d n" using Wc by simp
-  have fz: "foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) = 0\<^sub>m d n"
-  proof (rule eq_matI)
-    fix i j assume "i < dim_row (0\<^sub>m d n :: complex Matrix.mat)" "j < dim_col (0\<^sub>m d n :: complex Matrix.mat)"
-    hence i: "i < d" and j: "j < n" by simp_all
-    have "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k) + acc) [0..<?L] (0\<^sub>m n d) $$ (j, i)
-          = (\<Sum>k\<leftarrow>[0..<?L]. (c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k)) $$ (j, i))"
-      by (rule foldr_add_mat_index_rect) (use kc i j in \<open>auto intro!: smult_carrier_mat dagger_carrier\<close>)
-    also have "\<dots> = (\<Sum>k\<leftarrow>[0..<?L]. c k * cnj (Ws ! k $$ (i, j)))"
-    proof (rule arg_cong[where f = sum_list], rule map_cong[OF refl])
-      fix k assume "k \<in> set [0..<?L]"
-      hence k: "k < ?L" by simp
-      show "(c k \<cdot>\<^sub>m (map (\<lambda>W. W\<^sup>\<dagger>) Ws ! k)) $$ (j, i) = c k * cnj (Ws ! k $$ (i, j))"
-        using carrier_matD[OF kc[OF k]] i j k by (simp add: dagger_def)
-    qed
-    finally have "(\<Sum>k\<leftarrow>[0..<?L]. c k * cnj (Ws ! k $$ (i, j))) = 0" using z i j by simp
-    hence "cnj (\<Sum>k\<leftarrow>[0..<?L]. c k * cnj (Ws ! k $$ (i, j))) = 0" by simp
-    hence s0: "(\<Sum>k\<leftarrow>[0..<?L]. cnj (c k) * Ws ! k $$ (i, j)) = 0"
-      by (simp add: sum_list_distinct_conv_sum_set)
-    have "foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) $$ (i, j)
-          = (\<Sum>k\<leftarrow>[0..<?L]. (cnj (c k) \<cdot>\<^sub>m (Ws ! k)) $$ (i, j))"
-      by (rule foldr_add_mat_index_rect) (use kc i j in auto)
-    also have "\<dots> = (\<Sum>k\<leftarrow>[0..<?L]. cnj (c k) * Ws ! k $$ (i, j))"
-    proof (rule arg_cong[where f = sum_list], rule map_cong[OF refl])
-      fix k assume "k \<in> set [0..<?L]"
-      hence k: "k < ?L" by simp
-      show "(cnj (c k) \<cdot>\<^sub>m (Ws ! k)) $$ (i, j) = cnj (c k) * Ws ! k $$ (i, j)"
-        using carrier_matD[OF kc[OF k]] i j by simp
-    qed
-    finally show "foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) $$ (i, j) = 0\<^sub>m d n $$ (i, j)"
-      using s0 i j by simp
-  next
-    show "dim_row (foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n)) = dim_row (0\<^sub>m d n :: complex Matrix.mat)"
-         "dim_col (foldr (\<lambda>k acc. cnj (c k) \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n)) = dim_col (0\<^sub>m d n :: complex Matrix.mat)"
-      using carrier_matD[OF foldr_add_mat_carrier_rect[of "[0..<?L]" "\<lambda>k. cnj (c k) \<cdot>\<^sub>m (Ws ! k)" d n]] kc by auto
+definition ucp_kraus_rep ::
+  "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow>
+       complex Matrix.mat list \<Rightarrow> bool"
+where
+  "ucp_kraus_rep n d \<Phi> Vs \<equiv>
+     (\<forall>V \<in> set Vs. V \<in> carrier_mat d n) \<and>
+     foldr (\<lambda>V acc. V * (V\<^sup>\<dagger>) + acc) Vs (0\<^sub>m d d) = 1\<^sub>m d \<and>
+     (\<forall>X. X \<in> carrier_mat n n \<longrightarrow> \<Phi> X = kraus_map_dim d Vs X)"
+
+lemma ucp_has_kraus_rep:
+  fixes \<Phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
+  assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n \<Longrightarrow>
+                   \<Phi> (A + B) = \<Phi> A + \<Phi> B"
+      and smult:  "\<And>c A. A \<in> carrier_mat n n \<Longrightarrow> \<Phi> (c \<cdot>\<^sub>m A) = c \<cdot>\<^sub>m \<Phi> A"
+      and range:  "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A \<in> carrier_mat d d"
+      and npos: "0 < n" and dpos: "0 < d"
+      and ucp: "\<Phi> \<in> UCP n d"
+  shows "\<exists>Vs :: complex Matrix.mat list.
+           ucp_kraus_rep n d \<Phi> Vs \<and> length Vs = n * d"
+proof -
+  have cp: "completely_positive n d \<Phi>"
+    using ucp unfolding UCP_def by auto
+  have unital: "\<Phi> (1\<^sub>m n) = 1\<^sub>m d"
+    using ucp unfolding UCP_def unital_map_def by auto
+  have psd_choi: "psd (choi_matrix n d \<Phi>)"
+    using choi_psd_if_cp[OF npos dpos cp] .
+  obtain Ws :: "complex Matrix.mat list"
+    where Ws_len: "length Ws = n * d"
+      and Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Ws_eq: "\<forall>A. A \<in> carrier_mat n n \<longrightarrow> \<Phi> A = kraus_map_dim d Ws A"
+    using kraus_rep_of_psd_choi[OF linear smult range npos dpos psd_choi]
+    by blast
+  have I_n_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by auto
+  have phi_I: "\<Phi> (1\<^sub>m n) = kraus_map_dim d Ws (1\<^sub>m n)"
+    using Ws_eq I_n_c by blast
+  have sum_WWdag: "foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d) = 1\<^sub>m d"
+  proof -
+    have "1\<^sub>m d = \<Phi> (1\<^sub>m n)" using unital by simp
+    also have "... = kraus_map_dim d Ws (1\<^sub>m n)" using phi_I .
+    also have "... = foldr (\<lambda>W acc. W * (W\<^sup>\<dagger>) + acc) Ws (0\<^sub>m d d)"
+      using kraus_map_dim_one[OF Ws_c] .
+    finally show ?thesis by simp
   qed
-  have all: "\<And>c'. foldr (\<lambda>k acc. c' k \<cdot>\<^sub>m (Ws ! k) + acc) [0..<?L] (0\<^sub>m d n) = 0\<^sub>m d n \<Longrightarrow> \<forall>k < ?L. c' k = 0"
-    using li unfolding lin_indep_complex_mat_def by blast
-  have c0: "\<forall>k < ?L. cnj (c k) = 0" by (rule all[OF fz])
-  fix k assume "k < length (map (\<lambda>W. W\<^sup>\<dagger>) Ws)"
-  thus "c k = 0" using c0 by simp
+  have rep: "ucp_kraus_rep n d \<Phi> Ws"
+    unfolding ucp_kraus_rep_def
+    using Ws_c sum_WWdag Ws_eq by blast
+  show ?thesis using rep Ws_len by blast
 qed
 
 lemma kraus_operators_dagger_of_unital:
@@ -5302,7 +4716,7 @@ proof -
   thus ?thesis using extreme_UCP_iff_adjoint[OF L U n d] by simp
 qed
 
-subsection \<open>Linear independence bounds the number of Kraus operators (D22-6)\<close>
+subsubsection \<open>An extreme channel has Choi rank at most $n$ (D22-6)\<close>
 
 text \<open>Corollary to Choi's Theorem 3 (D22-6): an extreme CPTP map $M_n\to M_d$ with a minimal
 Kraus representation $(V_i)_{i<r}$ has $r^2\le n^2$, i.e.\ $\mathrm{cr}(\Phi)\le n$.\<close>

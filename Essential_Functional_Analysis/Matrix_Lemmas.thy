@@ -123,6 +123,61 @@ lemma mat_mult_entry:
   shows "(A * B) $$ (k,j) = (\<Sum>l<s. A $$ (k,l) * B $$ (l,j))"
   using assms by (simp add: scalar_prod_def atLeast0LessThan)
 
+text \<open>The same with the sum over $\{0..<q\}$; square matrices that agree on
+every vector are equal; a non-zero matrix has a non-zero entry.\<close>
+
+lemma mat_mult_index_sum:
+  assumes A_c: "A \<in> carrier_mat p q"
+      and B_c: "B \<in> carrier_mat q s"
+      and r_lt: "r < p" and c_lt: "c < s"
+  shows "(A * B) $$ (r, c) = (\<Sum>k = 0..<q. A $$ (r, k) * B $$ (k, c))"
+  using A_c B_c r_lt c_lt
+  by (simp add: times_mat_def scalar_prod_def lessThan_atLeast0)
+
+lemma mat_eq_of_mult_vec_eq:
+  fixes M N :: "complex Matrix.mat"
+  assumes M_c: "M \<in> carrier_mat k k"
+      and N_c: "N \<in> carrier_mat k k"
+      and eq: "\<And>x. x \<in> carrier_vec k \<Longrightarrow> M *\<^sub>v x = N *\<^sub>v x"
+  shows "M = N"
+proof (rule eq_matI)
+  show "dim_row M = dim_row N" using M_c N_c by auto
+  show "dim_col M = dim_col N" using M_c N_c by auto
+  fix i j assume "i < dim_row N" and "j < dim_col N"
+  hence ilt: "i < k" and jlt: "j < k" using N_c by auto
+  have one_c: "1\<^sub>m k \<in> carrier_mat k k" by auto
+  have e_c: "Matrix.col (1\<^sub>m k) j \<in> carrier_vec k" by (rule carrier_vecI) simp
+  have "Matrix.col M j = Matrix.col (M * 1\<^sub>m k) j"
+    using right_mult_one_mat[OF M_c] by simp
+  also have "\<dots> = M *\<^sub>v Matrix.col (1\<^sub>m k) j"
+    by (rule col_mult2[OF M_c one_c jlt])
+  also have "\<dots> = N *\<^sub>v Matrix.col (1\<^sub>m k) j"
+    by (rule eq[OF e_c])
+  also have "\<dots> = Matrix.col (N * 1\<^sub>m k) j"
+    by (rule col_mult2[OF N_c one_c jlt, symmetric])
+  also have "\<dots> = Matrix.col N j"
+    using right_mult_one_mat[OF N_c] by simp
+  finally have cols: "Matrix.col M j = Matrix.col N j" .
+  have "M $$ (i, j) = Matrix.col M j $ i" using ilt jlt M_c by auto
+  also have "\<dots> = Matrix.col N j $ i" using cols by simp
+  also have "\<dots> = N $$ (i, j)" using ilt jlt N_c by auto
+  finally show "M $$ (i, j) = N $$ (i, j)" .
+qed
+
+lemma nonzero_entry:
+  fixes A :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat m k" and nz: "A \<noteq> 0\<^sub>m m k"
+  obtains r s where "r < m" "s < k" "A $$ (r,s) \<noteq> 0"
+proof -
+  have "\<exists>r < m. \<exists>s < k. A $$ (r,s) \<noteq> 0"
+  proof (rule ccontr)
+    assume "\<not> (\<exists>r < m. \<exists>s < k. A $$ (r,s) \<noteq> 0)"
+    hence "A = 0\<^sub>m m k" using A by (intro eq_matI) auto
+    thus False using nz by simp
+  qed
+  thus thesis using that by blast
+qed
+
 lemma foldr_add_mat_carrier:
   fixes f :: "'a \<Rightarrow> complex Matrix.mat"
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat n n"
@@ -179,6 +234,154 @@ lemma foldr_add_mat_cong:
   assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x = g x"
   shows "foldr (\<lambda>x acc. f x + acc) xs z = foldr (\<lambda>x acc. g x + acc) xs z"
   using assms by (induction xs) auto
+
+text \<open>Sums over $[0..<N]$, and their entries.\<close>
+
+lemma foldr_upt_add_carrier:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>k < N. f k \<in> carrier_mat d d"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) \<in> carrier_mat d d"
+  using assms by (intro foldr_add_mat_carrier) auto
+
+lemma foldr_upt_add_acc_index:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d d"
+      and z_c:  "z \<in> carrier_mat d d"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] z $$ (r, c)
+           = (\<Sum>k = 0..<N. f k $$ (r, c)) + z $$ (r, c)"
+  using carr z_c
+proof (induction N arbitrary: z)
+  case 0
+  show ?case by simp
+next
+  case (Suc N)
+  have hd_c:   "f N \<in> carrier_mat d d" using Suc.prems(1) by simp
+  have rest_c: "\<forall>k < N. f k \<in> carrier_mat d d" using Suc.prems(1) by simp
+  have fNz_c:  "f N + z \<in> carrier_mat d d"
+    using hd_c Suc.prems(2) by auto
+  have dec: "[0..<Suc N] = [0..<N] @ [N]" by simp
+  have step: "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z
+                = foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z)"
+    using dec by (simp add: foldr_append)
+  have IH: "foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z) $$ (r,c)
+              = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N + z) $$ (r,c)"
+    using Suc.IH[OF rest_c fNz_c] .
+  have idx_split: "(f N + z) $$ (r,c) = f N $$ (r,c) + z $$ (r,c)"
+    using hd_c Suc.prems(2) r_lt c_lt by simp
+  have "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z $$ (r,c)
+          = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N $$ (r,c) + z $$ (r,c))"
+    using step IH idx_split by simp
+  also have "\<dots> = ((\<Sum>k = 0..<N. f k $$ (r,c)) + f N $$ (r,c)) + z $$ (r,c)"
+    by (simp add: add.assoc)
+  also have "\<dots> = (\<Sum>k = 0..<Suc N. f k $$ (r,c)) + z $$ (r,c)"
+    by simp
+  finally show ?case .
+qed
+
+lemma foldr_upt_add_index:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d d"
+      and r_lt: "r < d" and c_lt: "c < d"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] (0\<^sub>m d d) $$ (r, c)
+           = (\<Sum>k = 0..<N. f k $$ (r, c))"
+proof -
+  have z_c: "(0\<^sub>m d d :: complex Matrix.mat) \<in> carrier_mat d d" by simp
+  have z_idx: "(0\<^sub>m d d :: complex Matrix.mat) $$ (r,c) = 0"
+    using r_lt c_lt by simp
+  show ?thesis
+    using foldr_upt_add_acc_index[OF carr z_c r_lt c_lt] z_idx by simp
+qed
+
+lemma foldr_upt_add_acc_index_dn:
+  fixes f :: "nat \<Rightarrow> complex Matrix.mat"
+  assumes carr: "\<forall>k < N. f k \<in> carrier_mat d n"
+      and z_c:  "z \<in> carrier_mat d n"
+      and r_lt: "r < d" and c_lt: "c < n"
+  shows "foldr (\<lambda>k acc. f k + acc) [0..<N] z $$ (r, c)
+           = (\<Sum>k = 0..<N. f k $$ (r, c)) + z $$ (r, c)"
+  using carr z_c
+proof (induction N arbitrary: z)
+  case 0
+  show ?case by simp
+next
+  case (Suc N)
+  have hd_c:   "f N \<in> carrier_mat d n" using Suc.prems(1) by simp
+  have rest_c: "\<forall>k < N. f k \<in> carrier_mat d n" using Suc.prems(1) by simp
+  have fNz_c:  "f N + z \<in> carrier_mat d n"
+    using hd_c Suc.prems(2) by auto
+  have dec: "[0..<Suc N] = [0..<N] @ [N]" by simp
+  have step: "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z
+                = foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z)"
+    using dec by (simp add: foldr_append)
+  have IH: "foldr (\<lambda>k acc. f k + acc) [0..<N] (f N + z) $$ (r,c)
+              = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N + z) $$ (r,c)"
+    using Suc.IH[OF rest_c fNz_c] .
+  have idx_split: "(f N + z) $$ (r,c) = f N $$ (r,c) + z $$ (r,c)"
+    using hd_c Suc.prems(2) r_lt c_lt by simp
+  have "foldr (\<lambda>k acc. f k + acc) [0..<Suc N] z $$ (r,c)
+          = (\<Sum>k = 0..<N. f k $$ (r,c)) + (f N $$ (r,c) + z $$ (r,c))"
+    using step IH idx_split by simp
+  also have "\<dots> = ((\<Sum>k = 0..<N. f k $$ (r,c)) + f N $$ (r,c)) + z $$ (r,c)"
+    by (simp add: add.assoc)
+  also have "\<dots> = (\<Sum>k = 0..<Suc N. f k $$ (r,c)) + z $$ (r,c)"
+    by simp
+  finally show ?case .
+qed
+
+lemma foldr_smult_nth_index:
+  fixes c :: "nat \<Rightarrow> real" and Bs :: "complex Matrix.mat list"
+  assumes Bs_c: "\<forall>B \<in> set Bs. B \<in> carrier_mat n n"
+      and r_lt: "r < n" and c_lt: "c1 < n"
+  shows "foldr (\<lambda>k acc. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k) + acc)
+                [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
+           = (\<Sum>k = 0..<length Bs.
+                complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
+proof -
+  let ?f = "\<lambda>k. complex_of_real (c k) \<cdot>\<^sub>m (Bs ! k)"
+  have term_c: "\<forall>k < length Bs. ?f k \<in> carrier_mat n n"
+  proof (intro allI impI)
+    fix k assume k_lt: "k < length Bs"
+    have "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
+    thus "?f k \<in> carrier_mat n n" by (intro smult_carrier_mat) auto
+  qed
+  have term_idx: "\<And>k. k < length Bs \<Longrightarrow>
+                    ?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
+  proof -
+    fix k assume k_lt: "k < length Bs"
+    have Bk_c: "Bs ! k \<in> carrier_mat n n" using Bs_c k_lt nth_mem by blast
+    have r_dim: "r < dim_row (Bs ! k)" using Bk_c r_lt by auto
+    have c_dim: "c1 < dim_col (Bs ! k)" using Bk_c c_lt by auto
+    show "?f k $$ (r, c1) = complex_of_real (c k) * (Bs ! k) $$ (r, c1)"
+      using index_smult_mat(1)[OF r_dim c_dim] .
+  qed
+  have "foldr (\<lambda>k acc. ?f k + acc) [0..<length Bs] (0\<^sub>m n n) $$ (r, c1)
+          = (\<Sum>k = 0..<length Bs. ?f k $$ (r, c1))"
+    using foldr_upt_add_index[OF term_c r_lt c_lt] .
+  also have "\<dots> = (\<Sum>k = 0..<length Bs.
+                     complex_of_real (c k) * (Bs ! k) $$ (r, c1))"
+    by (rule sum.cong) (auto simp: term_idx)
+  finally show ?thesis .
+qed
+
+lemma foldr_smult_index:
+  assumes Bs: "\<forall>B \<in> set Bs. B \<in> carrier_mat n m" and r: "r < n" and s: "s < m"
+  shows "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n m) $$ (r,s)
+       = (\<Sum>k<length Bs. c k * Bs ! k $$ (r,s))"
+proof -
+  have "\<forall>k \<in> set [0..<length Bs]. c k \<cdot>\<^sub>m (Bs ! k) \<in> carrier_mat n m" using Bs by auto
+  from foldr_add_mat_index_rect[OF this r s]
+  have "foldr (\<lambda>k acc. c k \<cdot>\<^sub>m (Bs ! k) + acc) [0..<length Bs] (0\<^sub>m n m) $$ (r,s)
+      = (\<Sum>k<length Bs. (c k \<cdot>\<^sub>m (Bs ! k)) $$ (r,s))"
+    by (simp add: interv_sum_list_conv_sum_set_nat atLeast0LessThan)
+  also have "\<dots> = (\<Sum>k<length Bs. c k * Bs ! k $$ (r,s))"
+  proof (intro sum.cong refl)
+    fix k assume "k \<in> {..<length Bs}"
+    hence "Bs ! k \<in> carrier_mat n m" using Bs by simp
+    thus "(c k \<cdot>\<^sub>m (Bs ! k)) $$ (r,s) = c k * Bs ! k $$ (r,s)" using r s by simp
+  qed
+  finally show ?thesis .
+qed
 
 subsection \<open>Algebra of \<open>foldr\<close>-sums of matrices\<close>
 
@@ -316,6 +519,65 @@ proof -
   have "\<And>i. (\<Sum>j<e. if i = a \<and> j = b then v else 0) = (if i = a then v else 0)"
     using b by (case_tac "i = a") (simp_all add: sum.delta)
   thus ?thesis using a by (simp add: sum.delta)
+qed
+
+text \<open>Concatenating rows of equal length, and the reindexing
+$\kappa=ik+j$.\<close>
+
+lemma concat_uniform_length:
+  assumes "\<forall>xs \<in> set L. length xs = m"
+  shows "length (concat L) = length L * m"
+  using assms by (induct L) auto
+
+lemma concat_uniform_nth:
+  assumes uniform: "\<forall>xs \<in> set L. length xs = m"
+      and i_lt: "i < length L"
+      and j_lt: "j < m"
+  shows "concat L ! (i * m + j) = L ! i ! j"
+  using uniform i_lt
+proof (induction L arbitrary: i)
+  case Nil thus ?case by simp
+next
+  case (Cons l L)
+  hence l_len: "length l = m" and rest_uniform: "\<forall>xs \<in> set L. length xs = m"
+    by simp_all
+  show ?case
+  proof (cases i)
+    case 0
+    show ?thesis using 0 l_len j_lt by (simp add: nth_append)
+  next
+    case (Suc i')
+    hence i'_lt: "i' < length L" using Cons.prems by simp
+    have idx_shift: "i * m + j = m + (i' * m + j)"
+      using Suc by (simp add: algebra_simps)
+    have lhs_split: "concat (l # L) ! (i * m + j)
+                       = concat L ! (i' * m + j)"
+      using l_len idx_shift j_lt by (simp add: nth_append)
+    have rhs: "(l # L) ! i ! j = L ! i' ! j"
+      using Suc by simp
+    show ?thesis using lhs_split rhs Cons.IH[OF rest_uniform i'_lt] by simp
+  qed
+qed
+
+lemma sum_split_prod_atLeastLessThan:
+  fixes f :: "nat \<Rightarrow> 'a::comm_monoid_add"
+  shows "(\<Sum>\<kappa> = 0..<N * k. f \<kappa>) = (\<Sum>i = 0..<N. \<Sum>j = 0..<k. f (i * k + j))"
+proof -
+  have step1: "(\<Sum>\<kappa> < N * k. f \<kappa>) = (\<Sum>i < N. \<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>)"
+    by (rule sum.nat_group[symmetric])
+  have step2: "\<And>i. (\<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
+  proof -
+    fix i
+    have "(\<Sum>\<kappa> \<in> {0 + i*k..<k + i*k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
+      by (rule sum.shift_bounds_nat_ivl)
+    thus "(\<Sum>\<kappa> \<in> {i*k..<i*k + k}. f \<kappa>) = (\<Sum>j = 0..<k. f (j + i*k))"
+      by (simp add: add.commute)
+  qed
+  have step3: "\<And>i j. f (j + i * k) = f (i * k + j)"
+    by (simp add: add.commute)
+  have "(\<Sum>\<kappa> < N * k. f \<kappa>) = (\<Sum>i < N. \<Sum>j = 0..<k. f (i * k + j))"
+    using step1 step2 step3 by (simp cong: sum.cong)
+  thus ?thesis by (simp add: atLeast0LessThan)
 qed
 
 lemma idx8: "k < (8::nat) \<Longrightarrow> k = 0 \<or> k = 1 \<or> k = 2 \<or> k = 3 \<or> k = 4 \<or> k = 5 \<or> k = 6 \<or> k = 7"

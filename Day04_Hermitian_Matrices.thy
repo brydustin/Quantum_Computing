@@ -1060,6 +1060,84 @@ proof -
     unfolding psd_def using herm nonneg by simp
 qed
 
+text \<open>Congruence preserves positivity: $P\ge0$ implies $M^*PM\ge0$, since
+$\braket x{M^*PMx}=\braket{Mx}{P\,Mx}$.\<close>
+
+lemma psd_conjugate:
+  fixes P :: "complex Matrix.mat" and M :: "complex Matrix.mat"
+  assumes P_c: "P \<in> carrier_mat k k"
+      and P_psd: "psd P"
+      and M_c: "M \<in> carrier_mat k n"
+  shows "psd (M\<^sup>\<dagger> * P * M)"
+proof -
+  have Mdag_c: "M\<^sup>\<dagger> \<in> carrier_mat n k" using M_c by auto
+  have MdagP_c: "M\<^sup>\<dagger> * P \<in> carrier_mat n k" using Mdag_c P_c by simp
+  have prod_c: "M\<^sup>\<dagger> * P * M \<in> carrier_mat n n" using MdagP_c M_c by simp
+  have P_herm: "hermitian P" using P_psd by (rule psd_hermitian)
+
+  have herm: "hermitian (M\<^sup>\<dagger> * P * M)"
+  proof -
+    have dimMP: "dim_col (M\<^sup>\<dagger>) = dim_row P" using Mdag_c P_c by auto
+    have dimMPM: "dim_col (M\<^sup>\<dagger> * P) = dim_row M" using MdagP_c M_c by auto
+    have step1: "(M\<^sup>\<dagger> * P)\<^sup>\<dagger> = (P\<^sup>\<dagger>) * ((M\<^sup>\<dagger>)\<^sup>\<dagger>)"
+      using dimMP by (rule dagger_of_prod)
+    have step2: "(M\<^sup>\<dagger> * P * M)\<^sup>\<dagger> = (M\<^sup>\<dagger>) * ((M\<^sup>\<dagger> * P)\<^sup>\<dagger>)"
+      using dimMPM by (rule dagger_of_prod)
+    have Mdd: "(M\<^sup>\<dagger>)\<^sup>\<dagger> = M" using M_c by (subst dagger_of_dagger_is_id, simp)
+    have Pd: "P\<^sup>\<dagger> = P" using P_herm by (simp add: hermitian_def)
+    have "(M\<^sup>\<dagger> * P * M)\<^sup>\<dagger> = (M\<^sup>\<dagger>) * ((P\<^sup>\<dagger>) * ((M\<^sup>\<dagger>)\<^sup>\<dagger>))"
+      using step1 step2 by simp
+    also have "\<dots> = (M\<^sup>\<dagger>) * (P * M)"
+      using Mdd Pd by simp
+    also have "\<dots> = M\<^sup>\<dagger> * P * M"
+      using Mdag_c P_c M_c by (metis assoc_mult_mat)
+    finally show ?thesis by (simp add: hermitian_def)
+  qed
+
+  have nn: "\<forall>x :: complex Matrix.vec.
+              dim_vec x = dim_row (M\<^sup>\<dagger> * P * M) \<longrightarrow>
+                0 \<le> Re \<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle>"
+  proof (intro allI impI)
+    fix x :: "complex Matrix.vec"
+    assume "dim_vec x = dim_row (M\<^sup>\<dagger> * P * M)"
+    hence x_dim: "dim_vec x = n" using prod_c by auto
+    have x_car: "x \<in> carrier_vec n" using x_dim by auto
+    let ?y = "M *\<^sub>v x"
+    have y_dim: "dim_vec ?y = k" using M_c x_car by auto
+    have y_dim_row: "dim_vec ?y = dim_row P" using P_c y_dim by simp
+
+    have rewrite: "(M\<^sup>\<dagger> * P * M) *\<^sub>v x = M\<^sup>\<dagger> *\<^sub>v (P *\<^sub>v ?y)"
+    proof -
+      have a1: "(M\<^sup>\<dagger> * P) *\<^sub>v ?y = M\<^sup>\<dagger> *\<^sub>v (P *\<^sub>v ?y)"
+        using Mdag_c P_c y_dim
+        by (intro assoc_mult_mat_vec) (auto simp: carrier_vecI)
+      have a2: "(M\<^sup>\<dagger> * P * M) *\<^sub>v x = (M\<^sup>\<dagger> * P) *\<^sub>v (M *\<^sub>v x)"
+        using MdagP_c M_c x_car
+        by (intro assoc_mult_mat_vec) auto
+      show ?thesis using a1 a2 by simp
+    qed
+
+    have inner_eq: "\<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle> = \<langle>?y | P *\<^sub>v ?y\<rangle>"
+    proof -
+      have Pyy_dim: "dim_vec (P *\<^sub>v ?y) = k" using P_c y_dim by auto
+      have "\<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle> = \<langle>x | M\<^sup>\<dagger> *\<^sub>v (P *\<^sub>v ?y)\<rangle>"
+        using rewrite by simp
+      also have "\<dots> = \<langle>(M\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v x | P *\<^sub>v ?y\<rangle>"
+        using inner_prod_adjoint_swap[OF Mdag_c x_dim Pyy_dim] .
+      also have "\<dots> = \<langle>M *\<^sub>v x | P *\<^sub>v ?y\<rangle>"
+        using M_c by (simp add: dagger_of_dagger_is_id)
+      finally show ?thesis by simp
+    qed
+    have "0 \<le> Re \<langle>?y | P *\<^sub>v ?y\<rangle>"
+      using P_psd y_dim_row unfolding psd_def by blast
+    thus "0 \<le> Re \<langle>x | (M\<^sup>\<dagger> * P * M) *\<^sub>v x\<rangle>"
+      using inner_eq by simp
+  qed
+
+  show ?thesis
+    unfolding psd_def using herm nn by blast
+qed
+
 text \<open>$P\ge 0$ iff $P$ is Hermitian with non-negative eigenvalues:\<close>
 
 theorem psd_iff_nonneg_eigenvalues:

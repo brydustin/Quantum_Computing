@@ -5,6 +5,7 @@
 theory Day26_Arveson_Extension
   imports
     Essential_Functional_Analysis.Lmat_Euclidean
+    Day22_Minimal_Kraus
     Day25_Arveson_Correspondence
     "HOL-Analysis.Convex"
     "HOL-Analysis.Convex_Euclidean_Space"
