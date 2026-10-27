@@ -293,6 +293,11 @@ lemma kraus_map_dim_two:
   shows "kraus_map_dim d [V, W] \<rho> = V * \<rho> * (V\<^sup>\<dagger>) + W * \<rho> * (W\<^sup>\<dagger>)"
   using mult_carrier_mat[OF mult_carrier_mat[OF W \<rho>] dagger_carrier[OF W]] by simp
 
+lemma kraus_map_dim_single:
+  assumes W: "W \<in> carrier_mat d n" and \<rho>: "\<rho> \<in> carrier_mat n n"
+  shows "kraus_map_dim d [W] \<rho> = W * \<rho> * (W\<^sup>\<dagger>)"
+  using mult_carrier_mat[OF mult_carrier_mat[OF W \<rho>] dagger_carrier[OF W]] by simp
+
 lemma kraus_map_dim_carrier:
   assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
       and \<rho>_c: "\<rho> \<in> carrier_mat n n"

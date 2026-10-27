@@ -1083,3 +1083,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   boilerplate).  Trap met: a double delta sum Σ_a Σ_b needs the condition on the inner index as the OUTER
   `if` (`if b = c' then if a = c then … else 0 else 0`), otherwise `sum.delta` cannot fire; plan script
   `tools/deps/plans/day17.py`, helpers in `planlib.py`.
+- **Audit tick 3: Quantum_Channels** (2026-10-27).  The appendix proved every channel positive and
+  trace preserving entrywise (1495 lines).  Now one notion carries it: the mixed unitary channel
+  ρ ↦ (1−p)ρ + pUρU* is the Kraus map of √(1−p) I, √p U (`mixed_unitary_channel_kraus`), whose
+  operators are Kraus operators for unitary U, so CPTP and UCP membership, preservation of density
+  matrices and the fixed points (everything commuting with U, in particular the maximally mixed state)
+  are each a few lines; the bit-flip, phase-flip and bit-phase-flip channels are the cases U = X, Z, Y
+  and inherit everything by instantiation (`pauli_channels_CPTP` etc.).  Rank-one projections come from
+  Day 13/14's pure densities; conjugation by a unitary and the identity channel are singleton Kraus maps.
+  The theory is 290 lines.  `kraus_map_dim_single` joined Day 17 and `kraus_map_dim_density_matrix`
+  ("Kraus maps carry density matrices to density matrices") Day 19.  Plan: `tools/deps/plans/channels.py`.

@@ -1421,6 +1421,15 @@ proof (unfold trace_preserving_def, intro allI impI)
   finally show "Tr (kraus_map_dim d Ws \<rho>) = Tr \<rho>" .
 qed
 
+text \<open>So Kraus maps carry density matrices to density matrices.\<close>
+
+lemma kraus_map_dim_density_matrix:
+  assumes Ws: "kraus_operators n d Ws" and \<rho>: "density_matrix n \<rho>"
+  shows "density_matrix d (kraus_map_dim d Ws \<rho>)"
+  using Ws \<rho> kraus_is_trace_preserving[OF Ws]
+  unfolding density_matrix_def kraus_operators_def trace_preserving_def
+  by (auto intro: kraus_map_dim_carrier kraus_map_dim_psd)
+
 subsection \<open>Composition of Kraus maps\<close>
 
 definition kraus_compose :: "complex Matrix.mat list \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list" where
