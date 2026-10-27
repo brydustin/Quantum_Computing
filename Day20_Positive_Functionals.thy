@@ -432,7 +432,7 @@ proof -
       have E_c: "?E \<in> carrier_mat d d"
         by (simp add: mat_unit_def)
       have Tr_ME: "Tr (?M * ?E) = ?M $$ (i, j)"
-        using Tr_mult_mat_unit[OF M_c jd id].
+        using Tr_mat_unit_mult[OF M_c id jd] .
       have Tr_E: "Tr ?E = (if j = i then 1 else 0)"
         using Tr_mat_unit[OF jd id].
       have eq: "Tr (?M * ?E) = Tr ?E"
@@ -479,48 +479,11 @@ lemma phi_entry_double_sum:
   shows "\<phi> M $$ (r, c) =
          (\<Sum>i<n. \<Sum>j<n. M $$ (i, j) * \<phi> (mat_unit i j n n) $$ (r, c))"
 proof -
-  have ps_valid: "\<forall>p \<in> set (mat_unit_pairs n). fst p < n \<and> snd p < n"
-    using mat_unit_pairs_set by auto
-  have phi_pc: "\<phi> M = pair_comb \<phi> M n d (mat_unit_pairs n)"
-    using linear_eq_pair_comb[OF f_add f_smult f_car M_c npos dpos] .
-  have fE_car: "\<And>a b. a < n \<Longrightarrow> b < n
-                  \<Longrightarrow> \<phi> (mat_unit a b n n) \<in> carrier_mat d d"
-  proof -
-    fix a b :: nat
-    assume "a < n" "b < n"
-    have "mat_unit a b n n \<in> carrier_mat n n"
-      by (simp add: mat_unit_def)
-    thus "\<phi> (mat_unit a b n n) \<in> carrier_mat d d"
-      using f_car by blast
-  qed
-
-  let ?term = "\<lambda>p. M $$ p * \<phi> (mat_unit (fst p) (snd p) n n) $$ (r, c)"
-  have entry_eq:
-    "\<phi> M $$ (r, c) = (\<Sum>p \<leftarrow> mat_unit_pairs n. ?term p)"
-  proof -
-    have pc_entry:
-      "pair_comb \<phi> M n d (mat_unit_pairs n) $$ (r, c)
-         = (\<Sum>p \<leftarrow> mat_unit_pairs n. ?term p)"
-    proof (rule pair_comb_entry)
-      fix a b :: nat
-      assume "a < n" "b < n"
-      thus "\<phi> (mat_unit a b n n) \<in> carrier_mat d d"
-        using fE_car by blast
-    qed (use ps_valid r_lt c_lt in auto)
-    show ?thesis using pc_entry phi_pc by simp
-  qed
-  also have "\<dots> = (\<Sum>p \<in> set (mat_unit_pairs n). ?term p)"
-    using mat_unit_pairs_distinct
-    by (rule sum_list_distinct_conv_sum_set)
-  also have "\<dots> = (\<Sum>p \<in> {0..<n} \<times> {0..<n}. ?term p)"
-    using mat_unit_pairs_set
-    by (intro sum.cong) (auto)
-  also have "\<dots> = (\<Sum>i \<in> {0..<n}. \<Sum>j \<in> {0..<n}. ?term (i, j))"
-    by (simp add: sum.cartesian_product')
-  also have "\<dots> = (\<Sum>i<n. \<Sum>j<n.
-                    M $$ (i, j) * \<phi> (mat_unit i j n n) $$ (r, c))"
-    by (simp add: atLeast0LessThan)
-  finally show ?thesis.
+  have L: "lin_on n d (carrier_mat n n) \<phi>" unfolding lin_on_def using f_add f_smult f_car by auto
+  show ?thesis
+    unfolding lin_expansion[OF L M_c]
+    by (subst msum_pairs_index)
+       (use r_lt c_lt in \<open>auto intro!: sum.cong simp: f_car[OF mat_unit_carrier] carrier_matD[OF f_car[OF mat_unit_carrier]]\<close>)
 qed
 
 theorem positive_scalar_is_cp:

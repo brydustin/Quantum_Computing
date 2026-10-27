@@ -464,6 +464,47 @@ lemma msum_mult_left:
   shows "A * msum r c g xs = msum m c (\<lambda>x. A * g x) xs"
   unfolding msum_def by (rule foldr_add_mat_mult_left[OF assms])
 
+text \<open>Sums of matrices over a list: congruence, additivity, scalars, concatenation.\<close>
+
+lemma msum_cong: "(\<And>x. x \<in> set xs \<Longrightarrow> g x = h x) \<Longrightarrow> msum r c g xs = msum r c h xs"
+  by (induction xs) auto
+
+lemma msum_add:
+  assumes g: "\<forall>x \<in> set xs. g x \<in> carrier_mat r c" and h: "\<forall>x \<in> set xs. h x \<in> carrier_mat r c"
+  shows "msum r c (\<lambda>x. g x + h x) xs = msum r c g xs + msum r c h xs"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (msum r c g xs + msum r c h xs)" "j < dim_col (msum r c g xs + msum r c h xs)"
+  hence i: "i < r" and j: "j < c" by auto
+  have gh: "\<forall>x \<in> set xs. g x + h x \<in> carrier_mat r c" using h by (auto intro: add_carrier_mat)
+  have e: "(g x + h x) $$ (i, j) = g x $$ (i, j) + h x $$ (i, j)" if "x \<in> set xs" for x
+    using h that i j by auto
+  show "msum r c (\<lambda>x. g x + h x) xs $$ (i, j) = (msum r c g xs + msum r c h xs) $$ (i, j)"
+    using i j by (simp add: msum_index[OF gh i j] msum_index[OF g i j] msum_index[OF h i j] sum_list_addf e cong: map_cong)
+qed auto
+
+lemma msum_smult:
+  assumes g: "\<forall>x \<in> set xs. g x \<in> carrier_mat r c"
+  shows "msum r c (\<lambda>x. a \<cdot>\<^sub>m g x) xs = a \<cdot>\<^sub>m msum r c g xs"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (a \<cdot>\<^sub>m msum r c g xs)" "j < dim_col (a \<cdot>\<^sub>m msum r c g xs)"
+  hence i: "i < r" and j: "j < c" by auto
+  have ag: "\<forall>x \<in> set xs. a \<cdot>\<^sub>m g x \<in> carrier_mat r c" using g by auto
+  have e: "(a \<cdot>\<^sub>m g x) $$ (i, j) = a * g x $$ (i, j)" if "x \<in> set xs" for x using g that i j by auto
+  show "msum r c (\<lambda>x. a \<cdot>\<^sub>m g x) xs $$ (i, j) = (a \<cdot>\<^sub>m msum r c g xs) $$ (i, j)"
+    using i j by (simp add: msum_index[OF ag i j] msum_index[OF g i j] sum_list_const_mult e cong: map_cong)
+qed auto
+
+lemma msum_append:
+  assumes g: "\<forall>x \<in> set xs. g x \<in> carrier_mat r c" and g': "\<forall>x \<in> set ys. g x \<in> carrier_mat r c"
+  shows "msum r c g (xs @ ys) = msum r c g xs + msum r c g ys"
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (msum r c g xs + msum r c g ys)" "j < dim_col (msum r c g xs + msum r c g ys)"
+  hence i: "i < r" and j: "j < c" by auto
+  have ga: "\<forall>x \<in> set (xs @ ys). g x \<in> carrier_mat r c" using g g' by auto
+  show "msum r c g (xs @ ys) $$ (i, j) = (msum r c g xs + msum r c g ys) $$ (i, j)"
+    using i j by (simp add: msum_index[OF ga i j] msum_index[OF g i j] msum_index[OF g' i j])
+qed auto
+
 section \<open>Finite sums and index arithmetic\<close>
 
 lemma sum_list_product_upt:

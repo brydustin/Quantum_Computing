@@ -1093,3 +1093,19 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Day 13/14's pure densities; conjugation by a unitary and the identity channel are singleton Kraus maps.
   The theory is 290 lines.  `kraus_map_dim_single` joined Day 17 and `kraus_map_dim_density_matrix`
   ("Kraus maps carry density matrices to density matrices") Day 19.  Plan: `tools/deps/plans/channels.py`.
+- **Audit tick 4: Day 19's Choi theorem** (2026-10-27).  The theory went from 2260 to about 920 lines
+  and now reads as the notes' proof.  Three ideas that were already there carry it: the Choi matrix is
+  the block matrix (Φ(E_ij)) (`choi_block`), a linear map is its values on the matrix units
+  (`lin_expansion`), and a positive matrix is a sum of rank ones (`psd_kraus_decomp`).  So two linear
+  maps with the same Choi matrix agree (`map_eq_from_choi_when_linear`, 8 lines, hypotheses now
+  `lin_on`); (3)⇒(4) folds the vectors of P_Φ = Σ v_k v_k* into d×n matrices (`kraus_of_vec`) and
+  compares Choi matrices (`kraus_rep_of_psd_choi`, 20 lines instead of 187); Choi's theorem and its
+  CPTP form are 15 and 30 lines (were 225 and 143); P_Φ = Φ^(n)(seed) is a 6-line entry computation
+  (`choi_seed_block` from `unit_blocks_block`).  Gone: the `pair_comb` enumeration of matrix-unit pairs
+  (250 lines, a second formulation of `lin_expansion`; Day 20's `phi_entry_double_sum` uses the latter
+  now), `conjugation_mat_unit_entry` (102 lines, Day 2's `sandwich_mat_unit_entry`), `Tr_mult_mat_unit`
+  (Day 2's `Tr_mat_unit_mult`).  Linearity of Kraus maps and their `append` lemmas go through
+  `msum` (`kraus_map_dim_msum`; `msum_add/smult/append` in Matrix_Lemmas).  Trap: `msum_add` by
+  induction with `assoc_add_mat[symmetric]` + `comm_add_mat` loops for 10 minutes; entrywise proofs
+  via `msum_index` are instant.  Plan: `tools/deps/plans/day19.py` (scratch mode checks the assembled
+  theory on the Day 18 heap before installing).

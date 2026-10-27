@@ -298,6 +298,9 @@ lemma kraus_map_dim_single:
   shows "kraus_map_dim d [W] \<rho> = W * \<rho> * (W\<^sup>\<dagger>)"
   using mult_carrier_mat[OF mult_carrier_mat[OF W \<rho>] dagger_carrier[OF W]] by simp
 
+lemma kraus_map_dim_msum: "kraus_map_dim d Ws \<rho> = msum d d (\<lambda>W. W * \<rho> * (W\<^sup>\<dagger>)) Ws"
+  by (simp add: kraus_map_dim_def msum_def)
+
 lemma kraus_map_dim_carrier:
   assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
       and \<rho>_c: "\<rho> \<in> carrier_mat n n"
@@ -679,52 +682,6 @@ proof -
   qed
 qed
 
-lemma kraus_map_dim_append:
-  fixes Ws Vs :: "complex Matrix.mat list"
-  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
-      and Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
-      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
-  shows "kraus_map_dim d (Ws @ Vs) \<rho>
-         = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>"
-  using Ws_c
-proof (induction Ws)
-  case Nil
-  have Vs_km_c: "kraus_map_dim d Vs \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Vs_c \<rho>_c] .
-  show ?case
-    using Vs_km_c by (intro eq_matI) auto
-next
-  case (Cons W Ws)
-  hence W_c: "W \<in> carrier_mat d n"
-    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n" by auto
-  have Wd_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W_c by (rule dagger_carrier)
-  have W\<rho>_c: "W * \<rho> \<in> carrier_mat d n"
-    using W_c \<rho>_c by (rule mult_carrier_mat)
-  have W\<rho>Wd_c: "W * \<rho> * (W\<^sup>\<dagger>) \<in> carrier_mat d d"
-    using W\<rho>_c Wd_c by (rule mult_carrier_mat)
-  have Ws_km_c: "kraus_map_dim d Ws \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Ws_c' \<rho>_c] .
-  have Vs_km_c: "kraus_map_dim d Vs \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Vs_c \<rho>_c] .
-  have IH: "kraus_map_dim d (Ws @ Vs) \<rho>
-              = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>"
-    using Cons.IH Ws_c' by simp
-
-  have "kraus_map_dim d ((W # Ws) @ Vs) \<rho>
-          = W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d (Ws @ Vs) \<rho>"
-    by simp
-  also have "\<dots> = W * \<rho> * (W\<^sup>\<dagger>)
-                  + (kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>)"
-    using IH by simp
-  also have "\<dots> = (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)
-                  + kraus_map_dim d Vs \<rho>"
-    using W\<rho>Wd_c Ws_km_c Vs_km_c by simp
-  also have "\<dots> = kraus_map_dim d (W # Ws) \<rho> + kraus_map_dim d Vs \<rho>"
-    by simp
-  finally show ?case.
-qed
-
 text \<open>Since @{const amplification} only evaluates @{term \<Phi>} on
 \<open>n\<times>n\<close> blocks, two maps that agree on @{term \<open>carrier_mat n n\<close>}
 yield the same amplification, hence the same notion of complete
@@ -802,6 +759,16 @@ next
     using IH WrW_c rec_c i_lt j_lt by simp
 qed
 
+lemma kraus_map_dim_append:
+  fixes Ws Vs :: "complex Matrix.mat list"
+  assumes Ws_c: "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"
+      and Vs_c: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
+      and \<rho>_c: "\<rho> \<in> carrier_mat n n"
+  shows "kraus_map_dim d (Ws @ Vs) \<rho>
+         = kraus_map_dim d Ws \<rho> + kraus_map_dim d Vs \<rho>"
+  unfolding kraus_map_dim_msum
+  by (rule msum_append) (use Ws_c Vs_c \<rho>_c in \<open>auto intro!: mult_carrier_mat dagger_carrier\<close>)
+
 text \<open>The sum $\sum_iW_i^*W_i$ over a Kraus list.\<close>
 
 definition sum_wdag_w :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat" where
@@ -819,6 +786,9 @@ lemma sum_wdag_w_two:
   assumes V: "V \<in> carrier_mat d n" and W: "W \<in> carrier_mat d n"
   shows "sum_wdag_w n [V, W] = (V\<^sup>\<dagger>) * V + (W\<^sup>\<dagger>) * W"
   using mult_carrier_mat[OF dagger_carrier[OF W] W] by (simp add: sum_wdag_w_Cons)
+
+lemma sum_wdag_w_msum: "sum_wdag_w n Ws = msum n n (\<lambda>W. (W\<^sup>\<dagger>) * W) Ws"
+  by (simp add: sum_wdag_w_def msum_def)
 
 lemma sum_wdag_w_carrier:
   assumes "\<forall>W \<in> set Ws. W \<in> carrier_mat d n"

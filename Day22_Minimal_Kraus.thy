@@ -66,7 +66,6 @@ definition affine_map_mat ::
        complex_of_real t \<cdot>\<^sub>m tmap A
        + (1 - complex_of_real t) \<cdot>\<^sub>m tmap B"
 
-
 subsection \<open>The convex sets UCP and CPTP\<close>
 
 definition UCP ::
@@ -76,8 +75,6 @@ definition UCP ::
 definition CPTP ::
   "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) set" where
   "CPTP n d \<equiv> {\<Phi>. completely_positive n d \<Phi> \<and> trace_preserving n \<Phi>}"
-
-
 
 lemma amplification_smult:
   assumes dpos: "0 < d"
@@ -107,7 +104,6 @@ next
     using ipd jpd imodd jmodd FB
     by (simp add: amplification_def)
 qed
-
 
 text \<open>UCP is convex.  The range hypotheses are explicit because \<open>completely_positive\<close> does
 not constrain the values of $\Phi_i$ off the carrier.\<close>
@@ -248,7 +244,6 @@ proof -
 
   show ?thesis using \<Psi>_cp \<Psi>_unital by (simp add: UCP_def)
 qed
-
 
 text \<open>CPTP is convex.\<close>
 
@@ -512,9 +507,7 @@ proof -
   also have "\<dots> = choi_matrix n d (kraus_map_dim d Vs)" by (rule choi_matrix_kraus_eq[OF Vs_c npos dpos, symmetric])
   finally have choi: "choi_matrix n d (kraus_map_dim d ?Ws) = choi_matrix n d (kraus_map_dim d Vs)" .
   show ?thesis
-    by (rule map_eq_from_choi_when_linear[OF _ _ _ _ _ _ choi npos dpos Xc])
-       (auto intro: kraus_map_dim_add[OF _ _ Ws_c] kraus_map_dim_smult[OF _ Ws_c] kraus_map_dim_carrier[OF Ws_c]
-                    kraus_map_dim_add[OF _ _ Vs_c] kraus_map_dim_smult[OF _ Vs_c] kraus_map_dim_carrier[OF Vs_c])
+    by (rule map_eq_from_choi_when_linear[OF kraus_lin_on[OF Ws_c] kraus_lin_on[OF Vs_c] choi Xc])
 qed
 
 subsubsection \<open>A unitary with a prescribed first row\<close>
@@ -651,7 +644,6 @@ next
     thus False using minimal Ws'_len rpos by (cases "length Vs") simp_all
   qed
 qed
-
 
 subsection \<open>Choi's rank theorem $\mathrm{cr}(\Phi)=\operatorname{rank}P_\Phi$ (D20-4)\<close>
 
@@ -983,7 +975,6 @@ proof -
     using rank_ge_indep_in_colspace[OF Pc liw insp] len by simp
   show ?thesis using le1 ge1 by simp
 qed
-
 
 subsection \<open>The adjoint map, an affine bijection from UCP onto CPTP (D22-5)\<close>
 

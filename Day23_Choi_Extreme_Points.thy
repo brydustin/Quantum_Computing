@@ -1137,8 +1137,7 @@ proof -
     using PT choi_matrix_kraus_quad_map[OF Vs T' n d] by (simp add: kraus_vec_mat_def)
   have Lq: "lin_on n d (carrier_mat n n) (kraus_quad_map d Vs T)" by (rule kraus_quad_map_lin_on[OF Vs])
   have "\<Psi> X = kraus_quad_map d Vs T X" if X: "X \<in> carrier_mat n n" for X
-    by (rule map_eq_from_choi_when_linear[OF lin_on_choi_hyps(1,2)[OF L] _ lin_on_choi_hyps(1,2)[OF Lq] _ eqc n d X])
-       (use L Lq in \<open>auto simp: lin_on_def\<close>)
+    by (rule map_eq_from_choi_when_linear[OF L Lq eqc X])
   thus ?thesis using T' psdT by blast
 qed
 
