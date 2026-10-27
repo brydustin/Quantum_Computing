@@ -72,7 +72,6 @@ proof -
   have \<psi>\<^sub>1_qs: "quantum_state n \<psi>\<^sub>1"
     unfolding quantum_state_def using n0 by (simp add: \<psi>\<^sub>1_def)
 
-  \<comment> \<open>Compute \<open>\<langle>\<psi>\<^sub>2 | \<psi>\<^sub>2\<rangle> = 1\<close> by splitting the sum at indices 0 and 1.\<close>
   have \<psi>\<^sub>2_dim: "dim_vec \<psi>\<^sub>2 = n" by (simp add: \<psi>\<^sub>2_def)
   have \<psi>\<^sub>2_entry: "\<And>i. i < n \<Longrightarrow> \<psi>\<^sub>2 $ i = (if i = 0 \<or> i = 1 then r else 0)"
     by (simp add: \<psi>\<^sub>2_def)
@@ -115,7 +114,6 @@ proof -
   have \<psi>\<^sub>2_qs: "quantum_state n \<psi>\<^sub>2"
     unfolding quantum_state_def using \<psi>\<^sub>2_dim \<psi>\<^sub>2_norm by simp
 
-  \<comment> \<open>Compute \<open>\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> = r\<close>.\<close>
   have inner_\<psi>\<^sub>1_\<psi>\<^sub>2: "\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> = r"
   proof -
     have "\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>2\<rangle> = (\<Sum>i = 0..<n. cnj (\<psi>\<^sub>1 $ i) * \<psi>\<^sub>2 $ i)"
@@ -136,6 +134,10 @@ proof -
   show thesis by simp
 qed
 
+text \<open>The notes' argument: a cloner $U$ with ancilla $\varphi$ makes $\varphi$ a unit vector, and
+$\braket{\psi_1}{\psi_2}=\braket{U(\psi_1\otimes\varphi)}{U(\psi_2\otimes\varphi)}=\braket{\psi_1}{\psi_2}^2$ for
+unit $\psi_1,\psi_2$, so $\braket{\psi_1}{\psi_2}\in\{0,1\}$; two states with inner product strictly between
+exist once $n\ge2$.\<close>
 
 theorem no_cloning:
   assumes n2: "2 \<le> n"
@@ -151,8 +153,6 @@ proof
     unfolding is_cloner_def by auto
   from U_carr have U_dc: "dim_col U = n^2" by simp
 
-  \<comment> \<open>Pick two unit vectors \<open>\<psi>\<^sub>1\<close>, \<open>\<psi>\<^sub>2\<close> whose inner product
-      \<open>c\<close> is neither 0 nor 1.\<close>
   obtain \<psi>\<^sub>1 \<psi>\<^sub>2 :: "complex Matrix.vec"
     where \<psi>\<^sub>1_qs: "quantum_state n \<psi>\<^sub>1"
       and \<psi>\<^sub>2_qs: "quantum_state n \<psi>\<^sub>2"
@@ -170,9 +170,6 @@ proof
     using \<psi>\<^sub>1_qs
     by (metis cpx_vec_length_inner_prod of_real_1 one_power2 quantum_state_norm1)
 
-  \<comment> \<open>Step 1: derive that \<open>\<phi>\<close> is itself a unit vector.  Apply the
-      cloner identity to \<open>\<psi>\<^sub>1\<close>, take the inner product with itself,
-      and use unitarity plus \<open>tensor_inner_prod\<close>.\<close>
   have \<phi>_unit: "\<langle>\<phi> | \<phi>\<rangle> = 1"
   proof -
     have tv1_dim: "dim_vec (tensor_vec \<psi>\<^sub>1 \<phi>) = n^2"
@@ -197,9 +194,6 @@ proof
       using inner_self_\<psi>\<^sub>1 by simp
   qed
 
-  \<comment> \<open>Step 2: apply the cloner identity to \<open>\<psi>\<^sub>1\<close> and \<open>\<psi>\<^sub>2\<close>, chain
-      inner-product equalities via unitarity and \<open>tensor_inner_prod\<close>,
-      obtaining \<open>c = c*c\<close>.\<close>
   have tv1_dim: "dim_vec (tensor_vec \<psi>\<^sub>1 \<phi>) = n^2"
     using \<psi>\<^sub>1_dim \<phi>_dim by (simp add: tensor_vec_dim power2_eq_square)
   have tv2_dim: "dim_vec (tensor_vec \<psi>\<^sub>2 \<phi>) = n^2"
@@ -223,8 +217,6 @@ proof
   also have "\<dots> = c * c" by (simp add: c_def)
   finally have c_eq_sq: "c = c * c".
 
-  \<comment> \<open>Step 3: \<open>c = c * c\<close> forces \<open>c \<in> {0, 1}\<close>, contradicting
-      the choice of \<open>\<psi>\<^sub>1\<close>, \<open>\<psi>\<^sub>2\<close>.\<close>
   have "c * (c - 1) = 0"
     using c_eq_sq by (simp add: algebra_simps)
   hence "c = 0 \<or> c = 1" by auto

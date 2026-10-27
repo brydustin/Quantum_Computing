@@ -1122,3 +1122,14 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   by `map` over `[0..<n]` with the conditional column lemma in the simpset; `simp` with ρ = UDU* and the
   trace facts chained; `blast` for an ∃E with a matrix equality in scope; `simp flip: of_real_mult`
   against the `of_real` homomorphism rules.  Explicit `trans`/`exI`/`iffD1` steps are instant.
+- **Audit tick 6: Householder unitaries; process comments** (2026-10-27).  Day 3 proved
+  `householder_unitary` (246 lines), `householder_mult_vec_index` (79) and `householder_mult_vec` (25) entry
+  by entry.  With U_w = I − 2P for the projection P = |w⟩⟨w| (which is idempotent for a unit vector,
+  `outer_prod_idempotent`, Day 2) they are matrix algebra: U_w² = I − 4P + 4P² = I (20 lines), and
+  U_w x = x − 2⟨w|x⟩w from `outer_prod_mult_vec` (8 lines); `householder_hermitian` is one line.  The AFP's
+  `Schur_Decomposition` gives only a similarity, so the notes' unitary Schur theorem (Schur's lemma 366 lines,
+  the induction 385) stays as ours; a later tick may shorten it.  The "Step 1..8" comments of Day 21's
+  `loewner_ker_subset` and Day 11's `no_cloning` are gone (the text before each lemma states the argument;
+  `no_cloning` got one), as are the "Compute …"/"Show equality entry-by-entry" notes of Day 12.
+  `planlib.strip_comments` removes inline comments by a predicate on their text, respecting nested
+  cartouches.  Plan: `tools/deps/plans/day3.py`.

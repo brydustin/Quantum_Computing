@@ -721,6 +721,27 @@ lemma outer_prod_carrier:
   shows "v \<oslash> w \<in> carrier_mat n m"
   using assms by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def carrier_matI)
 
+text \<open>$\ketbra ww$ is idempotent for a unit vector $w$: $(ww^*)(ww^*)=w(w^*w)w^*$.\<close>
+
+lemma outer_prod_idempotent:
+  fixes w :: "complex Matrix.vec"
+  assumes "\<parallel>w\<parallel> = 1"
+  shows "(w \<oslash> w) * (w \<oslash> w) = w \<oslash> w"
+proof (rule eq_matI)
+  let ?n = "dim_vec w"
+  have P: "w \<oslash> w \<in> carrier_mat ?n ?n" by (rule outer_prod_carrier) simp_all
+  have one: "\<langle>w|w\<rangle> = 1" using assms by (simp flip: cpx_vec_length_inner_prod)
+  fix i j assume "i < dim_row (w \<oslash> w)" "j < dim_col (w \<oslash> w)"
+  hence i: "i < ?n" and j: "j < ?n" using P by auto
+  have "((w \<oslash> w) * (w \<oslash> w)) $$ (i, j) = (\<Sum>k<?n. (w $ i * cnj (w $ j)) * (cnj (w $ k) * w $ k))"
+    by (simp only: mat_mult_entry[OF P P i j]) (intro sum.cong refl, simp add: outer_prod_index i j mult_ac)
+  also have "\<dots> = w $ i * cnj (w $ j) * (\<Sum>k<?n. cnj (w $ k) * w $ k)" by (simp add: sum_distrib_left)
+  also have "(\<Sum>k<?n. cnj (w $ k) * w $ k) = \<langle>w|w\<rangle>"
+    by (simp only: inner_prod_sum[OF refl refl] atLeast0LessThan)
+  finally show "((w \<oslash> w) * (w \<oslash> w)) $$ (i, j) = (w \<oslash> w) $$ (i, j)"
+    using one i j by (simp add: outer_prod_index)
+qed (use outer_prod_carrier[of w "dim_vec w" w "dim_vec w"] in auto)
+
 text \<open>Conjugating a rank-one matrix: $W|\varphi\rangle\langle\varphi|W^*=|W\varphi\rangle\langle W\varphi|$.\<close>
 
 lemma conj_outer_prod:

@@ -249,278 +249,51 @@ next
         (1\<^sub>m (dim_vec w) - 2 \<cdot>\<^sub>m (w \<oslash> w)) $$ (i,j)" .
 qed
 
-text \<open>For a unit vector $w$, $U_H=I-2\ketbra ww$ is the reflection in the hyperplane $w^\perp$:
-$U_Hx=x-2\braket wx\,w$ fixes $w^\perp$ and sends $w$ to $-w$.  It is Hermitian, and
-\[ U_H^2=I-4\ketbra ww+4\,\ketbra ww\ketbra ww=I-4\ketbra ww+4\braket ww\ketbra ww=I, \]
-so it is unitary.\<close>
+lemma householder_hermitian: "(householder w)\<^sup>\<dagger> = householder w"
+  by (rule eq_matI) (auto simp: householder_def dagger_def)
 
-lemma householder_hermitian:
-  shows "(householder w)\<^sup>\<dagger> = householder w"
-proof (rule eq_matI)
-  let ?n = "dim_vec w"
-  show "dim_row ((householder w)\<^sup>\<dagger>) = dim_row (householder w)"
-    by (simp add: householder_def Let_def)
-  show "dim_col ((householder w)\<^sup>\<dagger>) = dim_col (householder w)"
-    by (simp add: householder_def Let_def)
-  fix i j
-  assume "i < dim_row (householder w)" "j < dim_col (householder w)"
-  then have ij: "i < ?n" "j < ?n"
-    by (simp_all add: householder_def Let_def)
-  have "(householder w)\<^sup>\<dagger> $$ (i,j) = cnj ((householder w) $$ (j,i))"
-    by (simp add: dagger_def householder_def Let_def ij)
-  also have "\<dots> = cnj ((if j = i then 1 else 0) - 2 * (w $ j) * cnj (w $ i))"
-    using householder_index ij by simp
-  also have "\<dots> = (if i = j then 1 else 0) - 2 * (w $ i) * cnj (w $ j)"
-    by (cases "i = j") auto
-  also have "\<dots> = (householder w) $$ (i,j)"
-    using householder_index ij by simp
-  finally show "(householder w)\<^sup>\<dagger> $$ (i,j) = (householder w) $$ (i,j)" .
-qed
+text \<open>$U_w^2=(I-2P)^2=I-4P+4P^2=I$ for the projection $P=\ketbra ww$, and $U_w$ is Hermitian.\<close>
 
 lemma householder_unitary:
   assumes norm_w: "\<parallel>w\<parallel> = (1 :: real)"
   shows "unitary (householder w)"
 proof -
-  let ?U = "householder w"
   let ?n = "dim_vec w"
+  define P where "P = w \<oslash> w"
+  have P: "P \<in> carrier_mat ?n ?n" unfolding P_def by (rule outer_prod_carrier) simp_all
+  have P2: "2 \<cdot>\<^sub>m P \<in> carrier_mat ?n ?n" by (rule smult_carrier_mat[OF P])
+  have PP: "P * P = P" unfolding P_def by (rule outer_prod_idempotent[OF norm_w])
+  have H: "householder w = 1\<^sub>m ?n - 2 \<cdot>\<^sub>m P" unfolding P_def by (rule householder_outer_prod)
+  have "householder w * householder w = (1\<^sub>m ?n - 2 \<cdot>\<^sub>m P) * (1\<^sub>m ?n - 2 \<cdot>\<^sub>m P)"
+    by (simp only: H)
+  also have "\<dots> = (1\<^sub>m ?n - 2 \<cdot>\<^sub>m P) - (2 \<cdot>\<^sub>m P) * (1\<^sub>m ?n - 2 \<cdot>\<^sub>m P)"
+    by (simp only: minus_mult_distrib_mat[OF one_carrier_mat P2 minus_carrier_mat[OF P2]]
+                   left_mult_one_mat[OF minus_carrier_mat[OF P2]])
+  also have "(2 \<cdot>\<^sub>m P) * (1\<^sub>m ?n - 2 \<cdot>\<^sub>m P) = 2 \<cdot>\<^sub>m P - 4 \<cdot>\<^sub>m P"
+    by (simp add: mult_minus_distrib_mat[OF P2 one_carrier_mat P2] right_mult_one_mat[OF P2]
+                  mult_smult_assoc_mat[OF P P2] mult_smult_distrib[OF P P] PP smult_smult_mat)
+  finally have HH: "householder w * householder w = 1\<^sub>m ?n"
+    using carrier_matD[OF P] by (intro eq_matI) auto
+  have dims: "dim_row (householder w) = ?n" "dim_col (householder w) = ?n" by (simp_all add: householder_def)
+  show ?thesis unfolding unitary_def by (simp add: householder_hermitian HH dims)
+qed
 
-  have dims[simp]: "dim_row ?U = ?n" "dim_col ?U = ?n"
-    by (simp_all add: householder_def)
+text \<open>$U_wx=x-2\braket wx\,w$: the reflection of $x$ in the hyperplane $w^\perp$.\<close>
 
-  have norm_sum: "(\<Sum>k<?n. w $ k * cnj (w $ k)) = (1 :: complex)"
-  proof -
-    have "(\<Sum>k<?n. w $ k * cnj (w $ k)) = of_real (\<parallel>w\<parallel>^2)"
-      by (metis (no_types, lifting) atLeast0LessThan cpx_vec_length_inner_prod
-          inner_prod_def mult_commute_abs sum.cong)
-    also have "... = (1 :: complex)"
-      using norm_w by simp
-    finally show ?thesis .
-  qed
-
-  have UU: "?U * ?U = 1\<^sub>m ?n"
-  proof (rule eq_matI)
-    show "dim_row (?U * ?U) = dim_row (1\<^sub>m ?n)"
-      by simp
-    show "dim_col (?U * ?U) = dim_col (1\<^sub>m ?n)"
-      by simp
-  next
-    fix i j
-    assume i_bnd: "i < dim_row (1\<^sub>m (dim_vec w))"
-    assume j_bnd: "j < dim_col (1\<^sub>m (dim_vec w))"
-
-    have ij: "i < dim_row (?U * ?U)" "j < dim_col (?U * ?U)"
-      using i_bnd j_bnd by auto
-    then have ij': "i < ?n" "j < ?n"
-      by simp_all
-
-    have "((?U) * (?U)) $$ (i,j)
-    = (\<Sum>k<?n.
-         (((if i = k then (1 :: complex) else 0) - 2 * (w $ i) * cnj (w $ k)) *
-          (((if k = j then (1 :: complex) else 0) - 2 * (w $ k) * cnj (w $ j)))))"
-      using ij'
-      by (simp add: householder_def)
-    also have "... =
-      (\<Sum>k<?n.
-         (if i = k then (1 :: complex) else 0) * (if k = j then (1 :: complex) else 0)
-       - ((if i = k then (1 :: complex) else 0) * (2 * (w $ k) * cnj (w $ j)))
-       - ((2 * (w $ i) * cnj (w $ k)) * (if k = j then (1 :: complex) else 0))
-       + (2 * (w $ i) * cnj (w $ k)) * (2 * (w $ k) * cnj (w $ j)))"
-      by (simp add: algebra_simps)
-    also have "... =
-      (\<Sum>k<?n.
-         (if i = k then (1 :: complex) else 0) * (if k = j then (1 :: complex) else 0)
-       - (2 * (if i = k then (1 :: complex) else 0) * (w $ k) * cnj (w $ j))
-       - (2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
-       + (4 * (w $ i) * cnj (w $ k) * (w $ k) * cnj (w $ j)))"
-      by (simp add: algebra_simps)
-    also have "... =
-         (\<Sum>k<?n. (if i = k then (1 :: complex) else 0) * (if k = j then (1 :: complex) else 0))
-       - (\<Sum>k<?n. 2 * (if i = k then (1 :: complex) else 0) * (w $ k) * cnj (w $ j))
-       - (\<Sum>k<?n. 2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
-       + (\<Sum>k<?n. 4 * (w $ i) * cnj (w $ k) * (w $ k) * cnj (w $ j))"
-      by (simp add: sum.distrib sum_subtractf)
-
-    also have "... =
-         (if i = j then (1 :: complex) else 0)
-       - (\<Sum>k<?n. 2 * (if i = k then (1 :: complex) else 0) * (w $ k) * cnj (w $ j))
-       - (\<Sum>k<?n. 2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
-       + (\<Sum>k<?n. 4 * (w $ i) * cnj (w $ k) * (w $ k) * cnj (w $ j))"
-    proof -
-      have delta_sum:
-        "(\<Sum>k<?n. (if i = k then (1 :: complex) else 0) *
-                 (if k = j then (1 :: complex) else 0))
-         = (if i = j then (1 :: complex) else 0)"
-      proof (cases "i = j")
-        case True
-        then have ij_eq: "i = j" .
-
-        have "(\<Sum>k<?n. (if i = k then (1 :: complex) else 0) *
-                        (if k = j then (1 :: complex) else 0))
-            = (\<Sum>k<?n. (if i = k then (1 :: complex) else 0) *
-                      (if k = i then (1 :: complex) else 0))"
-          using ij_eq by simp
-        also have "... = (\<Sum>k<?n. (if i = k then (1 :: complex) else 0) * (1 :: complex))"
-        proof (rule sum.cong)
-          show "{..< ?n} = {..< ?n}" by simp
-          fix k
-          assume k_bnd: "k \<in> {..< ?n}"
-          then have "k < ?n"
-            by simp
-          show "(if i = k then (1 :: complex) else 0) *
-                (if k = i then (1 :: complex) else 0)
-              = (if i = k then (1 :: complex) else 0) * (1 :: complex)"
-          proof (cases "i = k")
-            case True
-            then show ?thesis
-              by simp
-          next
-            case False
-            then have "(if i = k then (1 :: complex) else 0) = 0"
-              by simp
-            then have "(if i = k then (1 :: complex) else 0) *
-                       (if k = i then (1 :: complex) else 0)
-                     = 0 * 0"
-              using False by simp
-            also have "... = 0 * (1 :: complex)"
-              by simp
-            also have "... = (if i = k then (1 :: complex) else 0) * (1 :: complex)"
-              using False by simp
-            finally show ?thesis .
-          qed
-        qed
-        also have "... = (\<Sum>k<?n. (if i = k then (1 :: complex) else 0))"
-          by simp
-        also have "... = (1 :: complex)"
-        proof -
-          have "i < ?n"
-            using ij' by simp
-          then show ?thesis
-            by simp
-        qed
-        also have "... = (if i = j then (1 :: complex) else 0)"
-          using ij_eq by simp
-        finally show ?thesis .
-      next
-        case False
-        then have ij_neq: "i \<noteq> j" .
-
-        have "(\<Sum>k<?n. (if i = k then (1 :: complex) else 0) *
-                        (if k = j then (1 :: complex) else 0)) = 0"
-        proof -
-          have "\<forall>k<?n. (if i = k then (1 :: complex) else 0) *
-                       (if k = j then (1 :: complex) else 0) = 0"
-          proof clarify
-            fix k
-            assume k_bnd: "k < ?n"
-            show "(if i = k then (1 :: complex) else 0) *
-                  (if k = j then (1 :: complex) else 0) = 0"
-            proof (cases "i = k")
-              case True
-              then have k_not_j: "k \<noteq> j"
-                using ij_neq by simp
-              then have "(if k = j then (1 :: complex) else 0) = 0"
-                by simp
-              then have "(if i = k then (1 :: complex) else 0) *
-                         (if k = j then (1 :: complex) else 0)
-                       = (if i = k then (1 :: complex) else 0) * 0"
-                by simp
-              also have "... = 0"
-                by simp
-              finally show ?thesis .
-            next
-              case False
-              then have "(if i = k then (1 :: complex) else 0) = 0"
-                by simp
-              then show ?thesis
-                by simp
-            qed
-          qed
-          moreover have "\<forall>k\<in>{..< ?n}. (if i = k then (1 :: complex) else 0) *
-                                   (if k = j then (1 :: complex) else 0) = 0"
-            using calculation by auto
-          ultimately show ?thesis
-            by (simp add: sum.neutral)
-        qed
-        also have "... = (if i = j then (1 :: complex) else 0)"
-          using ij_neq by simp
-        finally show ?thesis .
-      qed
-
-      show ?thesis
-        using delta_sum by simp
-    qed
-
-    also have "... =
-         (if i = j then (1 :: complex) else 0)
-       - 2 * (w $ i) * cnj (w $ j)
-       - (\<Sum>k<?n. 2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
-       + (\<Sum>k<?n. 4 * (w $ i) * cnj (w $ k) * (w $ k) * cnj (w $ j))"
-    proof -
-      have "(\<Sum>k<?n. 2 * (if i = k then (1 :: complex) else 0) * (w $ k) * cnj (w $ j))
-          = (\<Sum>k<?n. (if i = k then 2 * (w $ k) * cnj (w $ j) else 0))"
-        by (smt (verit) mult_cancel_left1 mult_cancel_right1 sum.cong)
-      also have "... = 2 * (w $ i) * cnj (w $ j)"
-        using ij' by simp
-      finally have "(\<Sum>k<?n. 2 * (if i = k then (1 :: complex) else 0) * (w $ k) * cnj (w $ j))
-                  = 2 * (w $ i) * cnj (w $ j)" .
-      then show ?thesis
-        by simp
-    qed
-
-    also have "... =
-         (if i = j then (1 :: complex) else 0)
-       - 2 * (w $ i) * cnj (w $ j)
-       - 2 * (w $ i) * cnj (w $ j)
-       + (\<Sum>k<?n. 4 * (w $ i) * cnj (w $ k) * (w $ k) * cnj (w $ j))"
-    proof -
-      have "(\<Sum>k<?n. 2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
-          = (\<Sum>k<?n. (if k = j then 2 * (w $ i) * cnj (w $ k) else 0))"
-        by (smt (verit, best) mult_cancel_left1 mult_cancel_right1 sum.cong)
-      also have "... = 2 * (w $ i) * cnj (w $ j)"
-        using ij' by simp
-      finally have "(\<Sum>k<?n. 2 * (w $ i) * cnj (w $ k) * (if k = j then (1 :: complex) else 0))
-                  = 2 * (w $ i) * cnj (w $ j)" .
-      then show ?thesis
-        by simp
-    qed
-
-    also have "... =
-         (if i = j then (1 :: complex) else 0)
-       - 2 * (w $ i) * cnj (w $ j)
-       - 2 * (w $ i) * cnj (w $ j)
-       + (4 * (w $ i) * cnj (w $ j) * (\<Sum>k<?n. cnj (w $ k) * (w $ k)))"
-      by (simp add: sum_distrib_left sum_distrib_right algebra_simps)
-    also have "... =
-         (if i = j then (1 :: complex) else 0)
-       - 2 * (w $ i) * cnj (w $ j)
-       - 2 * (w $ i) * cnj (w $ j)
-       + (4 * (w $ i) * cnj (w $ j) * (\<Sum>k<?n. w $ k * cnj (w $ k)))"
-      by (simp add: mult.commute)
-    also have "... =
-         (if i = j then (1 :: complex) else 0)
-       - 2 * (w $ i) * cnj (w $ j)
-       - 2 * (w $ i) * cnj (w $ j)
-       + 4 * (w $ i) * cnj (w $ j)"
-      using norm_sum by simp
-    also have "... = (if i = j then (1 :: complex) else 0)"
-      by (simp add: algebra_simps)
-    also have "... = (1\<^sub>m ?n) $$ (i,j)"
-      using ij' by simp
-    finally show "(?U * ?U) $$ (i,j) = (1\<^sub>m ?n) $$ (i,j)" .
-  qed
-
-  have dagger_eq: "?U\<^sup>\<dagger> = ?U"
-    by (rule householder_hermitian)
-
-  have left_unit: "?U\<^sup>\<dagger> * ?U = 1\<^sub>m (dim_col ?U)"
-    using UU dagger_eq by simp
-
-  have right_unit: "?U * (?U\<^sup>\<dagger>) = 1\<^sub>m (dim_row ?U)"
-    using UU dagger_eq by simp
-
-  show ?thesis
-    unfolding unitary_def
-    using left_unit right_unit by simp
+lemma householder_mult_vec:
+  fixes w x :: "complex Matrix.vec"
+  assumes xdim: "dim_vec x = dim_vec w"
+  shows "householder w *\<^sub>v x =
+         x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w"
+proof -
+  let ?n = "dim_vec w"
+  have P: "w \<oslash> w \<in> carrier_mat ?n ?n" by (rule outer_prod_carrier) simp_all
+  have x: "x \<in> carrier_vec ?n" by (rule carrier_vecI[OF xdim])
+  have "householder w *\<^sub>v x = 1\<^sub>m ?n *\<^sub>v x - (2 \<cdot>\<^sub>m (w \<oslash> w)) *\<^sub>v x"
+    by (simp only: householder_outer_prod minus_mult_distrib_mat_vec[OF one_carrier_mat smult_carrier_mat[OF P] x])
+  also have "(2 \<cdot>\<^sub>m (w \<oslash> w)) *\<^sub>v x = 2 \<cdot>\<^sub>v (\<langle>w|x\<rangle> \<cdot>\<^sub>v w)"
+    by (simp only: smult_mat_mult_vec[OF P x] outer_prod_mult_vec[OF xdim])
+  finally show ?thesis using x by (simp add: smult_smult_assoc)
 qed
 
 lemma householder_mult_vec_index:
@@ -529,103 +302,12 @@ lemma householder_mult_vec_index:
       and i: "i < dim_vec w"
   shows "(householder w *\<^sub>v x) $ i =
          x $ i - 2 * (w $ i) * \<langle>w | x\<rangle>"
-proof -
-  let ?n = "dim_vec w"
+  using i xdim by (simp add: householder_mult_vec mult_ac)
 
-  have householder_rows: "dim_row (householder w) = ?n"
-    by (simp add: householder_def)
-  have householder_cols: "dim_col (householder w) = ?n"
-    by (simp add: householder_def)
-
-  have "((householder w) *\<^sub>v x) $ i =
-        Matrix.row (householder w) i \<bullet> x"
-    by (rule index_mult_mat_vec) (use i householder_rows in simp)
-  also have "\<dots> =
-        (\<Sum>j<?n. (householder w) $$ (i,j) * (x $ j))"
-    using xdim householder_cols
-    by (simp add: scalar_prod_def Matrix.row_def lessThan_atLeast0)
-  also have "\<dots> =
-        (\<Sum>j<?n.
-          (((if i = j then (1 :: complex) else 0)
-             - 2 * (w $ i) * cnj (w $ j)) * (x $ j)))"
-  proof (rule sum.cong)
-    show "{..< ?n} = {..< ?n}"
-      by simp
-  next
-    fix j
-    assume j: "j \<in> {..< ?n}"
-    then have j_lt: "j < ?n"
-      by simp
-    have "(householder w) $$ (i,j) =
-          (if i = j then (1 :: complex) else 0)
-          - 2 * (w $ i) * cnj (w $ j)"
-      using householder_index[OF i j_lt] .
-    then show "(householder w) $$ (i,j) * x $ j =
-          (((if i = j then (1 :: complex) else 0)
-             - 2 * (w $ i) * cnj (w $ j)) * (x $ j))"
-      by simp
-  qed
-  also have "\<dots> =
-        (\<Sum>j<?n. (x $ j * (if i = j then (1 :: complex) else 0)))
-        - (\<Sum>j<?n. 2 * (w $ i) * cnj (w $ j) * (x $ j))"
-    by (simp add: sum_subtractf algebra_simps)
-  also have "\<dots> =
-        x $ i - (\<Sum>j<?n. 2 * (w $ i) * cnj (w $ j) * (x $ j))"
-  proof -
-    have i_mem: "i \<in> {..< ?n}"
-      using i by simp
-    have finite_n: "finite {..< ?n}"
-      by simp
-    have delta_sum:
-      "(\<Sum>j<?n. (x $ j * (if i = j then (1 :: complex) else 0))) = x $ i"
-    proof -
-      have "(\<Sum>j<?n. (x $ j * (if i = j then (1 :: complex) else 0))) =
-            x $ i * (if i = i then (1 :: complex) else 0)
-            + (\<Sum>j\<in>{..< ?n} - {i}.
-                x $ j * (if i = j then (1 :: complex) else 0))"
-        by (subst sum.remove[OF finite_n i_mem]) simp
-      also have "\<dots> = x $ i + 0"
-        by (simp add: sum.neutral)
-      also have "\<dots> = x $ i"
-        by simp
-      finally show ?thesis .
-    qed
-    then show ?thesis
-      by simp
-  qed
-  also have "\<dots> =
-        x $ i - 2 * (w $ i) * (\<Sum>j<?n. cnj (w $ j) * (x $ j))"
-    by (simp add: sum_distrib_left algebra_simps)
-  also have "\<dots> =
-        x $ i - 2 * (w $ i) * \<langle>w | x\<rangle>"
-    using xdim by (simp add: inner_prod_def lessThan_atLeast0)
-  finally show ?thesis .
-qed
-
-lemma householder_mult_vec:
-  fixes w x :: "complex Matrix.vec"
-  assumes xdim: "dim_vec x = dim_vec w"
-  shows "householder w *\<^sub>v x =
-         x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w"
-proof (rule eq_vecI)
-  show "dim_vec (householder w *\<^sub>v x) =
-        dim_vec (x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w)"
-    using xdim by (simp add: householder_def)
-next
-  fix i
-  assume i: "i < dim_vec (x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w)"
-  then have iw: "i < dim_vec w"
-    using xdim by simp
-
-  have "(householder w *\<^sub>v x) $ i =
-        x $ i - 2 * (w $ i) * \<langle>w | x\<rangle>"
-    using householder_mult_vec_index[OF xdim iw] .
-  also have "\<dots> =
-        (x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w) $ i"
-    using iw xdim by (simp add: algebra_simps)
-  finally show "(householder w *\<^sub>v x) $ i =
-        (x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w) $ i" .
-qed
+text \<open>For a unit vector $w$, $U_H=I-2\ketbra ww$ is the reflection in the hyperplane $w^\perp$:
+$U_Hx=x-2\braket wx\,w$ fixes $w^\perp$ and sends $w$ to $-w$.  It is Hermitian, and
+\[ U_H^2=I-4\ketbra ww+4\,\ketbra ww\ketbra ww=I-4\ketbra ww+4\braket ww\ketbra ww=I, \]
+so it is unitary.\<close>
 
 text \<open>\begin{noteslemma}[Schur]
 Given $x,y\in\C^n$ with $\norm{x}=\norm{y}$ there are $w\in\C^n$ with $\norm{w}=1$ and

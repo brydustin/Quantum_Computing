@@ -895,11 +895,9 @@ proof -
   have AmBx_dim: "dim_vec ((A - B) *\<^sub>v x) = k" using AmB_c x_dim by auto
   have x_car: "x \<in> carrier_vec k" using x_dim by auto
 
-  \<comment> \<open>Step 1: \<open>\<langle>x | A x\<rangle> = 0\<close> because \<open>A x = 0\<close>.\<close>
   have Ax_inner_zero: "\<langle>x | A *\<^sub>v x\<rangle> = 0"
     using Ax_zero x_dim by (simp add: inner_prod_def)
 
-  \<comment> \<open>Step 2: linearity: \<open>\<langle>x | (A-B) x\<rangle> = \<langle>x | A x\<rangle> - \<langle>x | B x\<rangle>\<close>.\<close>
   have AmBx_eq: "(A - B) *\<^sub>v x = A *\<^sub>v x - B *\<^sub>v x"
     using minus_mult_distrib_mat_vec[OF A_c B_c x_car] .
   have dim_AB_eq: "dim_vec (A *\<^sub>v x) = dim_vec (B *\<^sub>v x)"
@@ -913,7 +911,6 @@ proof -
     finally show ?thesis .
   qed
 
-  \<comment> \<open>Step 3: PSD on both sides forces \<open>Re \<langle>x | B x\<rangle> = 0\<close>.\<close>
   have dim_B: "dim_vec x = dim_row B" using x_dim B_c by auto
   have dim_AmB: "dim_vec x = dim_row (A - B)" using x_dim AmB_c by auto
   have Re_B_nn: "Re \<langle>x | B *\<^sub>v x\<rangle> \<ge> 0"
@@ -925,7 +922,6 @@ proof -
   have Re_B_zero: "Re \<langle>x | B *\<^sub>v x\<rangle> = 0"
     using Re_B_nn Re_AmB_nn Re_neg by linarith
 
-  \<comment> \<open>Step 4: Hermiticity of B makes \<open>\<langle>x | B x\<rangle>\<close> real, so it equals 0.\<close>
   have B_herm: "hermitian B" using B_psd by (rule psd_hermitian)
   have B_real: "\<langle>x | B *\<^sub>v x\<rangle> \<in> \<real>"
     using hermitian_iff_real_quad_form[OF B_c] B_herm x_dim by blast
@@ -933,7 +929,6 @@ proof -
     using B_real Re_B_zero
     by (auto simp: complex_is_Real_iff complex_eq_iff)
 
-  \<comment> \<open>Step 5: PSD-Kraus decomposition gives \<open>B = N N\<^sup>\<dagger>\<close>.\<close>
   obtain vs where vs_len: "length vs = k"
               and vs_dim_all: "\<forall>v \<in> set vs. dim_vec v = k"
               and outer_eq: "outer_sum k vs = B"
@@ -945,7 +940,6 @@ proof -
   have B_eq: "B = N * (N\<^sup>\<dagger>)"
     using outer_eq[symmetric] by (simp add: outer_sum_def N_def)
 
-  \<comment> \<open>Step 6: \<open>\<langle>x | B x\<rangle> = \<langle>N\<^sup>\<dagger> x | N\<^sup>\<dagger> x\<rangle>\<close>.\<close>
   let ?y = "N\<^sup>\<dagger> *\<^sub>v x"
   have y_dim: "dim_vec ?y = k" using Ndag_c x_dim by auto
   have Bx_eq: "B *\<^sub>v x = N *\<^sub>v ?y"
@@ -963,7 +957,6 @@ proof -
     finally show ?thesis by simp
   qed
 
-  \<comment> \<open>Step 7: \<open>\<langle>?y | ?y\<rangle> = 0 \<Longrightarrow> ?y = 0\<close>.\<close>
   have y_inner_zero: "\<langle>?y | ?y\<rangle> = 0"
     using y_inner_eq B_inner_zero by simp
   have y_zero: "?y = 0\<^sub>v k"
@@ -975,7 +968,6 @@ proof -
     thus False using y_inner_zero by simp
   qed
 
-  \<comment> \<open>Step 8: \<open>B x = N (N\<^sup>\<dagger> x) = N \<cdot> 0 = 0\<close>.\<close>
   have N_zero: "N *\<^sub>v 0\<^sub>v k = 0\<^sub>v k"
   proof (rule eq_vecI)
     show "dim_vec (N *\<^sub>v 0\<^sub>v k) = dim_vec (0\<^sub>v k)" using N_c by simp

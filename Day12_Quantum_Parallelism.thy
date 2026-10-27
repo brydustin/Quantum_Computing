@@ -94,13 +94,11 @@ proof -
       using J_def i_def by (metis mult_div_mod_eq mult.commute)
     have fJ_lt: "f J < 2" using f_range J_lt d0_def by blast
 
-    \<comment> \<open>Compute \<open>\<sigma> l\<close>.\<close>      
     have s1: "\<sigma> l = J * 2 + (i + f J) mod 2"
       unfolding \<sigma>_def J_def[symmetric] i_def[symmetric] by simp
     let ?i1 = "(i + f J) mod 2"
     have i1_lt: "?i1 < 2" by simp
 
-    \<comment> \<open>Decompose \<open>\<sigma> l\<close> in the same div/mod form.\<close>
     have div_sub: "(J * 2 + ?i1) div 2 = J"
       using i1_lt by simp
     have mod_sub: "(J * 2 + ?i1) mod 2 = ?i1"
@@ -144,9 +142,6 @@ proof -
         by simp
     next
       assume kne: "k \<noteq> \<sigma> m"
-      \<comment> \<open>We also cannot have \<open>m = \<sigma> k\<close>, since otherwise
-          \<open>\<sigma> m\<close> would equal \<open>\<sigma> (\<sigma> k)\<close>, which by
-          involution equals \<open>k\<close>, contradicting \<open>kne\<close>.\<close>
       have "m \<noteq> \<sigma> k"
       proof
         assume "m = \<sigma> k"
@@ -303,7 +298,6 @@ proof -
     have \<sigma>_at: "\<sigma> (J * 2 + i) = J * 2 + ?i1"
       unfolding \<sigma>_def using i by simp
 
-    \<comment> \<open>Show equality entry-by-entry.\<close>
     show "U *\<^sub>v ?v = ?w"
     proof (rule eq_vecI)
       show "dim_vec (U *\<^sub>v ?v) = dim_vec ?w"
