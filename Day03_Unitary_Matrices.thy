@@ -107,6 +107,22 @@ proof -
   finally show ?thesis .
 qed
 
+text \<open>Conjugation by a unitary is injective: $U^*(UXU^*)U=X$.\<close>
+
+lemma unitary_conj_cancel:
+  fixes U X :: "complex Matrix.mat"
+  assumes U: "U \<in> carrier_mat n n" and Uu: "unitary U" and X: "X \<in> carrier_mat n n"
+  shows "(U\<^sup>\<dagger>) * (U * X * (U\<^sup>\<dagger>)) * U = X"
+proof -
+  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U])
+  have UdU: "U\<^sup>\<dagger> * U = 1\<^sub>m n" using Uu U by (simp add: unitary_def)
+  have "(U\<^sup>\<dagger>) * (U * X * (U\<^sup>\<dagger>)) * U = (((U\<^sup>\<dagger>) * U) * X * (U\<^sup>\<dagger>)) * U"
+    by (simp only: assoc_mult_mat[OF Ud mult_carrier_mat[OF U X] Ud, symmetric] assoc_mult_mat[OF Ud U X, symmetric])
+  also have "\<dots> = X * ((U\<^sup>\<dagger>) * U)"
+    by (simp add: UdU left_mult_one_mat[OF X] assoc_mult_mat[OF X Ud U])
+  finally show ?thesis by (simp add: UdU right_mult_one_mat[OF X])
+qed
+
 subsection \<open>Householder unitaries\<close>
 
 text \<open>\begin{notesdef}

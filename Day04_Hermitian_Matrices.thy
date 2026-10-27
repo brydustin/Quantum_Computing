@@ -1851,6 +1851,21 @@ proof -
     unfolding psd_def using herm nn P_c by simp
 qed
 
+text \<open>$\Tr(UDU^*)=\sum_iD_i$.\<close>
+
+lemma Tr_unitary_diag:
+  assumes U: "U \<in> carrier_mat n n" and Uu: "unitary U" and D: "length D = n"
+  shows "Tr (U * diag_mat_of_real D * (U\<^sup>\<dagger>)) = complex_of_real (sum_list D)"
+proof -
+  have Dc: "diag_mat_of_real D \<in> carrier_mat n n" using diag_mat_of_real_carrier[of D] D by simp
+  have "Tr (U * diag_mat_of_real D * (U\<^sup>\<dagger>)) = Tr (diag_mat_of_real D)"
+    using Tr_unitary_conjugation[OF unitary_dagger[OF Uu], of "diag_mat_of_real D"] U D
+    by (simp add: dagger_of_dagger_is_id)
+  also have "\<dots> = complex_of_real (sum_list D)"
+    using D by (simp add: Tr_def diag_mat_of_real_def mat_diag_def sum_list_sum_nth atLeast0LessThan)
+  finally show ?thesis .
+qed
+
 lemma diag_mat_of_real_sqrt_square:
   assumes D_nonneg: "\<And>i. i < length D \<Longrightarrow> 0 \<le> D ! i"
   shows "diag_mat_of_real (map sqrt D) * diag_mat_of_real (map sqrt D) = diag_mat_of_real D"

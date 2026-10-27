@@ -1109,3 +1109,16 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   induction with `assoc_add_mat[symmetric]` + `comm_add_mat` loops for 10 minutes; entrywise proofs
   via `msum_index` are instant.  Plan: `tools/deps/plans/day19.py` (scratch mode checks the assembled
   theory on the Day 18 heap before installing).
+- **Audit tick 5: Day 14** (2026-10-27).  `spectral_ensemble_exists` (233 lines) and
+  `pure_density_iff_idempotent` (370) both computed eigenvectors of ρ = UDU* entry by entry.  One lemma
+  carries both now: UDU* = Σ_i D_i |u_i⟩⟨u_i| for the columns u_i of U (`unitary_diag_ensemble`), which
+  are unit vectors (`unitary_col_quantum_state`), with Tr(UDU*) = Σ D_i (`Tr_unitary_diag`, Day 4).  The
+  spectral ensemble is then the list of (D_i, u_i) (25 lines); for the idempotence theorem, ρ² = ρ gives
+  D² = D after cancelling U (`unitary_conj_cancel`, Day 3), so every D_i is 0 or 1 and the trace makes
+  exactly one of them 1 (`sum_zero_one_eq_one`, Matrix_Lemmas), whence ρ = |u_j⟩⟨u_j| (45 lines).
+  `tensor_pure_density` (88 lines) is one line from `outer_sum_tensor`, which now precedes it.  The
+  eleven "Step k" comments of `pure_ensemble_parallel` are gone (its text block states the argument).
+  Day 14: 1272 → about 820 lines.  Traps (each a 5-minute hang): `auto`/`clarsimp` on an ensemble built
+  by `map` over `[0..<n]` with the conditional column lemma in the simpset; `simp` with ρ = UDU* and the
+  trace facts chained; `blast` for an ∃E with a matrix equality in scope; `simp flip: of_real_mult`
+  against the `of_real` homomorphism rules.  Explicit `trans`/`exI`/`iffD1` steps are instant.

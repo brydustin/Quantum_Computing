@@ -526,6 +526,23 @@ proof -
   thus ?thesis using a by (simp add: sum.delta)
 qed
 
+text \<open>A list of $0$s and $1$s summing to $1$ has exactly one $1$.\<close>
+
+lemma sum_zero_one_eq_one:
+  fixes D :: "real list"
+  assumes D01: "\<And>i. i < n \<Longrightarrow> D ! i = 0 \<or> D ! i = 1" and D: "length D = n" and s: "sum_list D = 1"
+  shows "\<exists>j<n. D ! j = 1 \<and> (\<forall>i<n. i \<noteq> j \<longrightarrow> D ! i = 0)"
+proof -
+  let ?S = "{i. i < n \<and> D ! i = 1}"
+  have "sum_list D = (\<Sum>i<n. D ! i)" using D by (simp add: sum_list_sum_nth atLeast0LessThan)
+  also have "\<dots> = (\<Sum>i \<in> ?S. 1)" using D01 by (intro sum.mono_neutral_cong_right) auto
+  finally have "card ?S = 1" using s by simp
+  then obtain j where S: "?S = {j}" by (rule card_1_singletonE)
+  have "j < n" "D ! j = 1" using S by auto
+  moreover have "D ! i = 0" if "i < n" "i \<noteq> j" for i using S D01[OF that(1)] that by auto
+  ultimately show ?thesis by blast
+qed
+
 text \<open>Concatenating rows of equal length, and the reindexing
 $\kappa=ik+j$.\<close>
 
