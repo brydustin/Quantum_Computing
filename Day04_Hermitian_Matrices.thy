@@ -772,6 +772,24 @@ notation pd  ("_ >\<^sub>M 0")
 lemma psd_hermitian: "psd P \<Longrightarrow> hermitian P"
   by (simp add: psd_def)
 
+text \<open>A positive $1\times1$ matrix is a non-negative real number.\<close>
+
+lemma psd_one_by_one:
+  fixes A :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat 1 1" and psd: "psd A"
+  shows "A $$ (0, 0) \<in> \<real>" and "0 \<le> Re (A $$ (0, 0))"
+proof -
+  have "cnj (A $$ (0, 0)) = A $$ (0, 0)"
+    by (rule hermitian_index[OF psd_hermitian[OF psd], symmetric]) (simp_all add: carrier_matD[OF A])
+  thus "A $$ (0, 0) \<in> \<real>" unfolding Reals_cnj_iff .
+  have e: "dim_vec (unit_vec 1 0 :: complex Matrix.vec) = 1" by simp
+  have "\<langle>unit_vec 1 0 | A *\<^sub>v unit_vec 1 0\<rangle> = A $$ (0, 0)"
+    unfolding inner_prod_sum[OF e dim_mult_mat_vec[of A "unit_vec 1 0", unfolded carrier_matD(1)[OF A]]]
+    by (simp add: mult_mat_vec_index[OF A] eval_nat_numeral)
+  thus "0 \<le> Re (A $$ (0, 0))"
+    using psd[unfolded psd_def, THEN conjunct2, rule_format, of "unit_vec 1 0"] A by simp
+qed
+
 text \<open>The notes' definition, without the explicit Hermiticity conjunct: $P\ge0$ iff every
 quadratic form $\braket{x}{Px}$ is a non-negative real number.\<close>
 

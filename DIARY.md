@@ -1351,3 +1351,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `inner_prod_right_minus'[OF d]` whose statement mentions β — unfold β afterwards by `simp`;
   `S0[unfolded sum_list_nonneg_eq_0_iff[OF nn]]` silently did nothing, `sum_list_nonneg_eq_0_iff[THEN
   iffD1, OF nn S0]` works.  Plan: `tools/deps/plans/day14b.py`; scratch `wip/d23/D14b.thy`.
+- **Audit tick 27: Day 20's positive scalar maps are completely positive** (2026-10-28).
+  `positive_scalar_is_cp` (185 lines, a 130-line entry computation) is now: ⟨x|P_φ x⟩ = Σᵢⱼ x̄ᵢxⱼ φ(Eᵢⱼ)₀₀
+  = φ(|x̄⟩⟨x̄|)₀₀ by Day 19's `lin_expansion` + `msum_index` + `sum_list_product_upt`, and a positive
+  1×1 matrix is a non-negative real (new Day 4 `psd_one_by_one`); so the Choi matrix is positive and
+  `choi_theorem` finishes: 45 lines.  The tick-23 `MdagM_psd` (Day 7) was a special case of Day 4's
+  `psd_MdagM` and is gone; Day 9 uses the general fact.  Day 20 676 → 542.  Traps (recorded in the
+  proof-traps memory): `zero_less_one` cannot be `OF`-applied to a nat premise here, `blast` loops on
+  `Reals_cnj_iff` with an equality fact, `eval_nat_numeral` defeats pre-instantiated rules mentioning
+  `1`, `auto` does not instantiate `∀P` premises — use `[unfolded …, THEN conjunct2, rule_format, OF …]`.
+  Plan: `tools/deps/plans/day20.py`; scratch `wip/d23/D20.thy` (imports Days 9 and 20).

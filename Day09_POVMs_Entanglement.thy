@@ -34,7 +34,7 @@ proof -
         = foldr (\<lambda>M acc. M\<^sup>\<dagger> * M + acc) Ms (0\<^sub>m n n)"
     by (simp add: foldr_map o_def)
   thus ?thesis using ms unfolding povm_def measurement_system_def
-    by (auto intro!: mult_carrier_mat dagger_carrier MdagM_psd)
+    by (auto intro!: mult_carrier_mat dagger_carrier psd_MdagM)
 qed
 
 text \<open>Conversely, every POVM comes from a measurement: $P_i\ge0$ has the positive square root
