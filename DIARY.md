@@ -1367,3 +1367,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   computation under `psd_iff_quad_form_nonneg` — ⟨x|M*Mx⟩ = ⟨Mx|Mx⟩, ⟨x|M*PMx⟩ = ⟨Mx|P(Mx)⟩,
   ⟨x|cAx⟩ = c⟨x|Ax⟩ — 11, 14 and 11 lines.  Day 4 2115 → 1897, every statement unchanged.  Plan:
   `tools/deps/plans/day4c.py`; scratch `wip/d23/D04c.thy`.
+- **Audit tick 29: Day 4's polarization trio** (2026-10-28).  `polarization_helper` (53 lines of
+  indicator double sums) is sesquilinearity on two unit vectors: `inner_prod_expand` (IMD), the
+  scalar rules and `inner_unit_T_unit` — 20 lines; `quadratic_form_zero` (51) reads the four instances
+  a,b ∈ {(1,0),(0,1),(1,1),(1,i)} off it — 18; `hermitian_iff_real_quad_form` (82, five metis/smt) is
+  cnj⟨x|Ax⟩ = ⟨x|A*x⟩ one way and A − A* has zero quadratic form the other — 30.  The indicator-sum
+  helper `sum_indicator_T_indicator` (45) is then dead and gone.  Day 4 1897 → 1742.  Traps:
+  `algebra` diverges on complex entry equations with `cnj 𝗂`; `subst` ignores chained facts; apply the
+  sesquilinearity rules by `unfolding`/`subst`/`simp only:` before `simp` unfolds ⟨u|v⟩.  Plan:
+  `tools/deps/plans/day4d.py`; scratch `wip/d23/D04d.thy`.

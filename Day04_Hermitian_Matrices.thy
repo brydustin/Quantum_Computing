@@ -95,51 +95,6 @@ proof -
   finally show ?thesis .
 qed
 
-lemma sum_indicator_T_indicator:
-  fixes T :: "complex Matrix.mat"
-  assumes p: "p < n" and q: "q < n"
-  shows "(\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-            (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-            (if l = q then (1 :: complex) else 0))
-       = T $$ (p, q)"
-proof -
-  have inner: "\<And>k. (\<Sum>l = 0..<n.
-                (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                (if l = q then (1 :: complex) else 0))
-              = (if k = p then T $$ (k, q) else 0)"
-  proof -
-    fix k
-    show "(\<Sum>l = 0..<n.
-            (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-            (if l = q then (1 :: complex) else 0))
-          = (if k = p then T $$ (k, q) else 0)"
-    proof (cases "k = p")
-      case True
-      have "(\<Sum>l = 0..<n.
-              (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-              (if l = q then (1 :: complex) else 0))
-            = (\<Sum>l = 0..<n. T $$ (k, l) * (if l = q then (1 :: complex) else 0))"
-        using True by simp
-      also have "\<dots> = (\<Sum>l = 0..<n. (if l = q then T $$ (k, l) else 0))"
-        by (rule sum.cong[OF refl]) auto
-      also have "\<dots> = T $$ (k, q)" using q by simp
-      finally show ?thesis using True by simp
-    next
-      case False
-      then have "\<And>l. (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                       (if l = q then (1 :: complex) else 0) = 0" by simp
-      then show ?thesis using False by simp
-    qed
-  qed
-  have "(\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                (if k = p then (1 :: complex) else 0) * T $$ (k, l) *
-                (if l = q then (1 :: complex) else 0))
-       = (\<Sum>k = 0..<n. (if k = p then T $$ (k, q) else 0))"
-    using inner by (intro sum.cong refl)
-  also have "\<dots> = T $$ (p, q)" using p by simp
-  finally show ?thesis .
-qed
-
 lemma polarization_helper:
   fixes T :: "complex Matrix.mat" and a b c d :: complex
   assumes sq: "T \<in> carrier_mat n n"
@@ -149,48 +104,18 @@ lemma polarization_helper:
         = cnj a * c * T $$ (i, i) + cnj a * d * T $$ (i, j)
         + cnj b * c * T $$ (j, i) + cnj b * d * T $$ (j, j)"
 proof -
-  let ?u = "a \<cdot>\<^sub>v unit_vec n i + b \<cdot>\<^sub>v unit_vec n j :: complex Matrix.vec"
-  let ?v = "c \<cdot>\<^sub>v unit_vec n i + d \<cdot>\<^sub>v unit_vec n j :: complex Matrix.vec"
-  have udim: "dim_vec ?u = n" by simp
-  have vdim: "dim_vec ?v = n" by simp
-  have u_cnj: "\<And>k. k < n \<Longrightarrow>
-      cnj (?u $ k) = cnj a * (if k = i then 1 else 0) + cnj b * (if k = j then 1 else 0)"
-    using i j by auto
-  have v_idx: "\<And>l. l < n \<Longrightarrow>
-      ?v $ l = c * (if l = i then 1 else 0) + d * (if l = j then 1 else 0)"
-    using i j by auto
-
-  have "\<langle>?u | T *\<^sub>v ?v\<rangle>
-      = (\<Sum>k = 0..<n. \<Sum>l = 0..<n. cnj (?u $ k) * T $$ (k, l) * ?v $ l)"
-    using inner_T_double_sum[OF sq udim vdim] .
-  also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                  (cnj a * (if k = i then 1 else 0) + cnj b * (if k = j then 1 else 0)) *
-                  T $$ (k, l) *
-                  (c * (if l = i then 1 else 0) + d * (if l = j then 1 else 0)))"
-    using u_cnj v_idx by (intro sum.cong refl) auto
-  also have "\<dots> = (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                cnj a * c * ((if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-              + cnj a * d * ((if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
-              + cnj b * c * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-              + cnj b * d * ((if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0)))"
-    by (intro sum.cong refl) (simp add: distrib_left distrib_right ac_simps)
-  also have "\<dots> = cnj a * c * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                                  (if k = i then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-              + cnj a * d * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                                  (if k = i then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))
-              + cnj b * c * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                                  (if k = j then 1 else 0) * T $$ (k, l) * (if l = i then 1 else 0))
-              + cnj b * d * (\<Sum>k = 0..<n. \<Sum>l = 0..<n.
-                                  (if k = j then 1 else 0) * T $$ (k, l) * (if l = j then 1 else 0))"
-    by (simp add: sum.distrib sum_distrib_left)
-  also have "\<dots> = cnj a * c * T $$ (i, i) + cnj a * d * T $$ (i, j)
-              + cnj b * c * T $$ (j, i) + cnj b * d * T $$ (j, j)"
-    using sum_indicator_T_indicator[OF i i, of T]
-          sum_indicator_T_indicator[OF i j, of T]
-          sum_indicator_T_indicator[OF j i, of T]
-          sum_indicator_T_indicator[OF j j, of T]
-    by simp
-  finally show ?thesis .
+  have Tv: "T *\<^sub>v (c \<cdot>\<^sub>v unit_vec n i + d \<cdot>\<^sub>v unit_vec n j)
+        = c \<cdot>\<^sub>v (T *\<^sub>v unit_vec n i) + d \<cdot>\<^sub>v (T *\<^sub>v unit_vec n j)"
+    by (simp add: mult_add_distrib_mat_vec[OF sq] mult_mat_vec_smult_vec[OF sq])
+  have "\<langle>a \<cdot>\<^sub>v unit_vec n i + b \<cdot>\<^sub>v unit_vec n j | T *\<^sub>v (c \<cdot>\<^sub>v unit_vec n i + d \<cdot>\<^sub>v unit_vec n j)\<rangle>
+        = cnj a * c * \<langle>unit_vec n i | T *\<^sub>v unit_vec n i\<rangle> + cnj a * d * \<langle>unit_vec n i | T *\<^sub>v unit_vec n j\<rangle>
+        + cnj b * c * \<langle>unit_vec n j | T *\<^sub>v unit_vec n i\<rangle> + cnj b * d * \<langle>unit_vec n j | T *\<^sub>v unit_vec n j\<rangle>"
+    unfolding Tv
+    by (subst inner_prod_expand)
+       (simp_all only: inner_prod_distrib_left inner_prod_right_smult' index_unit_vec(3) index_smult_vec(2)
+                       dim_mult_mat_vec carrier_matD[OF sq] mult_ac)
+  thus ?thesis
+    unfolding inner_unit_T_unit[OF sq i i] inner_unit_T_unit[OF sq i j] inner_unit_T_unit[OF sq j i] inner_unit_T_unit[OF sq j j] .
 qed
 
 text \<open>\begin{noteslemma}
@@ -203,50 +128,19 @@ lemma quadratic_form_zero:
       and zero: "\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | T *\<^sub>v x\<rangle> = 0"
   shows "T = 0\<^sub>m n n"
 proof (rule eq_matI)
-  show "dim_row T = dim_row (0\<^sub>m n n)" using sq by simp
-  show "dim_col T = dim_col (0\<^sub>m n n)" using sq by simp
-next
-  fix i j
-  assume "i < dim_row (0\<^sub>m n n)" "j < dim_col (0\<^sub>m n n)"
-  then have inb: "i < n" "j < n" using sq by simp_all
-
-  let ?ei = "unit_vec n i :: complex Matrix.vec"
-  let ?ej = "unit_vec n j :: complex Matrix.vec"
-
-  have ei_dim: "dim_vec ?ei = n" by simp
-  have ej_dim: "dim_vec ?ej = n" by simp
-  have eiej_dim: "dim_vec (?ei + ?ej) = n" by simp
-  have eiiej_dim: "dim_vec (?ei + \<i> \<cdot>\<^sub>v ?ej) = n" by simp
-
-  have diag_i: "T $$ (i, i) = 0"
-    using zero[rule_format, of ?ei] inner_unit_T_unit[OF sq inb(1) inb(1)] ei_dim by simp
-  have diag_j: "T $$ (j, j) = 0"
-    using zero[rule_format, of ?ej] inner_unit_T_unit[OF sq inb(2) inb(2)] ej_dim by simp
-
-  have q_sum_zero: "\<langle>?ei + ?ej | T *\<^sub>v (?ei + ?ej)\<rangle> = 0"
-    using zero[rule_format, of "?ei + ?ej"] eiej_dim by simp
-  have q_isum_zero: "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle> = 0"
-    using zero[rule_format, of "?ei + \<i> \<cdot>\<^sub>v ?ej"] eiiej_dim by simp
-
-  have sum_expand: "\<langle>?ei + ?ej | T *\<^sub>v (?ei + ?ej)\<rangle>
-                  = T $$ (i, i) + T $$ (i, j) + T $$ (j, i) + T $$ (j, j)"
-    using polarization_helper[OF sq inb(1) inb(2), of 1 1 1 1] by simp
-
-  have sum_eq: "T $$ (i, j) + T $$ (j, i) = 0"
-    using q_sum_zero sum_expand diag_i diag_j by simp
-
-  have isum_expand: "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle>
-                   = T $$ (i, i) + \<i> * T $$ (i, j) - \<i> * T $$ (j, i) + T $$ (j, j)"
-    using polarization_helper[OF sq inb(1) inb(2), of 1 \<i> 1 \<i>] by simp
-
-  have diff_eq: "T $$ (i, j) - T $$ (j, i) = 0"
-    using q_isum_zero isum_expand diag_i diag_j by (simp add: field_simps)
-
-  have "2 * T $$ (i, j) = 0"
-    using sum_eq diff_eq by (simp add: algebra_simps)
-  hence "T $$ (i, j) = 0" by simp
-  thus "T $$ (i, j) = 0\<^sub>m n n $$ (i, j)" using inb by simp
-qed
+  fix i j assume "i < dim_row (0\<^sub>m n n)" "j < dim_col (0\<^sub>m n n)"
+  hence ij: "i < n" "j < n" by simp_all
+  have q: "cnj a * c * T $$ (i, i) + cnj a * d * T $$ (i, j) + cnj b * c * T $$ (j, i) + cnj b * d * T $$ (j, j) = 0"
+    if "a = c" "b = d" for a b c d
+    using zero[rule_format, of "a \<cdot>\<^sub>v unit_vec n i + b \<cdot>\<^sub>v unit_vec n j"] that
+    unfolding polarization_helper[OF sq ij] by simp
+  have Tii: "T $$ (i, i) = 0" using q[of 1 1 0 0] by simp
+  have Tjj: "T $$ (j, j) = 0" using q[of 0 0 1 1] by simp
+  have s: "T $$ (i, j) + T $$ (j, i) = 0" using q[of 1 1 1 1] by (simp add: Tii Tjj)
+  have d: "T $$ (i, j) = T $$ (j, i)" using q[of 1 1 \<i> \<i>] by (simp add: Tii Tjj algebra_simps)
+  have "T $$ (j, i) * 2 = 0" using s unfolding d mult_2_right .
+  thus "T $$ (i, j) = 0\<^sub>m n n $$ (i, j)" using ij d by simp
+qed (use sq in auto)
 
 lemma mult_mat_vec_index:
   fixes A :: "'a::{comm_ring_1} Matrix.mat"
@@ -412,83 +306,34 @@ qed
 lemma hermitian_iff_real_quad_form:
   assumes sq: "A \<in> carrier_mat n n"
   shows "hermitian A \<longleftrightarrow> (\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | A *\<^sub>v x\<rangle> \<in> \<real>)"
-proof
-  assume hA: "hermitian A"
-  show "\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | A *\<^sub>v x\<rangle> \<in> \<real>"
-  proof (intro allI impI)
-    fix x :: "complex Matrix.vec"
-    assume xdim: "dim_vec x = n"
-    have xcar: "x \<in> carrier_vec n"
-      by (simp add: carrier_vecI xdim)
-    have "cnj \<langle>x | A *\<^sub>v x\<rangle> = \<langle>x | A *\<^sub>v x\<rangle>"
+proof -
+  have swap: "cnj \<langle>x | A *\<^sub>v x\<rangle> = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>" if x: "dim_vec x = n" for x
+    using inner_prod_cnj[of x "A *\<^sub>v x"] inner_prod_adjoint_swap[OF dagger_carrier[OF sq] x x] sq x
+    by (simp add: dagger_of_dagger_is_id)
+  show ?thesis
+  proof
+    assume "hermitian A"
+    thus "\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | A *\<^sub>v x\<rangle> \<in> \<real>"
+      unfolding hermitian_def Reals_cnj_iff using swap by simp
+  next
+    assume real: "\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | A *\<^sub>v x\<rangle> \<in> \<real>"
+    have "\<langle>x | (A - (A\<^sup>\<dagger>)) *\<^sub>v x\<rangle> = 0" if x: "dim_vec x = n" for x
     proof -
-      have "cnj \<langle>x | A *\<^sub>v x\<rangle> = \<langle>A *\<^sub>v x | x\<rangle>"
-        by (metis carrier_matD(1) dim_mult_mat_vec inner_prod_cnj sq xdim)
-      also have "... = \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>"
-        using hA hermitian_def inner_prod_adjoint_swap sq xdim by auto
-      also have "... = \<langle>x | A *\<^sub>v x\<rangle>"
-        using hA by (simp add: hermitian_def)
-      finally show ?thesis .
+      have d: "dim_vec (A *\<^sub>v x) = dim_vec (A\<^sup>\<dagger> *\<^sub>v x)" using sq by simp
+      show ?thesis
+        unfolding minus_mult_distrib_mat_vec[OF sq dagger_carrier[OF sq] carrier_vecI[OF x]]
+                  inner_prod_right_minus'[OF d] swap[OF x, symmetric]
+        using real[rule_format, OF x] unfolding Reals_cnj_iff by simp
     qed
-    then show "\<langle>x | A *\<^sub>v x\<rangle> \<in> \<real>"
-      using Reals_cnj_iff by blast
+    hence z: "A - (A\<^sup>\<dagger>) = 0\<^sub>m n n"
+      by (intro quadratic_form_zero[OF minus_carrier_mat[OF dagger_carrier[OF sq]]]) blast
+    show "hermitian A" unfolding hermitian_def
+    proof (intro eq_matI)
+      fix i j assume "i < dim_row A" "j < dim_col A"
+      with z show "A\<^sup>\<dagger> $$ (i, j) = A $$ (i, j)"
+        using sq by (auto dest!: arg_cong[where f = "\<lambda>M. M $$ (i, j)"])
+    qed (use sq in auto)
   qed
-next
-  assume qreal: "\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | A *\<^sub>v x\<rangle> \<in> \<real>"
-  let ?T = "A - (A\<^sup>\<dagger>)"
-
-  have Tcar: "?T \<in> carrier_mat n n"
-    using sq by auto
-
-  have qzero: "\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> \<langle>x | ?T *\<^sub>v x\<rangle> = 0"
-  proof (intro allI impI)
-    fix x :: "complex Matrix.vec"
-    assume xdim: "dim_vec x = n"
-    have xcar: "x \<in> carrier_vec n"
-      by (simp add: carrier_dim_vec xdim)
-
-    have qA_real: "\<langle>x | A *\<^sub>v x\<rangle> \<in> \<real>"
-      using qreal xdim by blast
-    have "\<langle>x | ?T *\<^sub>v x\<rangle> = \<langle>x | A *\<^sub>v x\<rangle> - \<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle>"
-      by (metis carrier_matD(1,2) dagger_def dim_mult_mat_vec inner_prod_right_minus'
-          mat_carrier minus_mult_distrib_mat_vec sq xcar)
-    also have "... = \<langle>x | A *\<^sub>v x\<rangle> - cnj \<langle>x | A *\<^sub>v x\<rangle>"
-    proof -
-      have "\<langle>x | A\<^sup>\<dagger> *\<^sub>v x\<rangle> = \<langle>A *\<^sub>v x | x\<rangle>"
-        by (metis carrier_matD(1,2) dim_mult_mat_vec dim_row_of_dagger 
-            inner_prod_adjoint_swap inner_prod_cnj sq xdim)        
-      also have "... = cnj \<langle>x | A *\<^sub>v x\<rangle>"
-        by (metis carrier_matD(1) dim_mult_mat_vec inner_prod_cnj sq xdim)
-      finally show ?thesis by simp
-    qed
-    also have "... = 0"
-      using Reals_cnj_iff qA_real by force
-    finally show "\<langle>x | ?T *\<^sub>v x\<rangle> = 0" .
-  qed
-
-  have "?T = 0\<^sub>m n n"
-    using quadratic_form_zero[OF Tcar qzero].
-  hence "A = (A\<^sup>\<dagger>)"
-  proof -
-    have Adagcar: "A\<^sup>\<dagger> \<in> carrier_mat n n" using sq by auto
-    have "A = (A - (A\<^sup>\<dagger>)) + (A\<^sup>\<dagger>)"
-    proof -
-      have "A = A + 0\<^sub>m n n"
-        using sq by simp
-      also have "... = A + (-(A\<^sup>\<dagger>) + (A\<^sup>\<dagger>))"
-        using Adagcar by force
-      also have "... = (A - (A\<^sup>\<dagger>)) + (A\<^sup>\<dagger>)"
-        by (smt (verit, best) Adagcar add_uminus_minus_mat assoc_add_mat sq uminus_carrier_mat)
-      finally show ?thesis.
-    qed
-    also have "\<dots> = (0\<^sub>m n n) + (A\<^sup>\<dagger>)"
-      using \<open>?T = 0\<^sub>m n n\<close> by simp
-    also have "\<dots> = (A\<^sup>\<dagger>)"
-      using Adagcar by auto
-    finally show ?thesis.
-  qed
-  then show "hermitian A"
-    by (simp add: hermitian_def)
 qed
 
 subsection \<open>The spectral theorem for Hermitian matrices\<close>
