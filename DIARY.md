@@ -1448,3 +1448,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `tools/deps/plans/day17_28.py`; its `--scratch` mode writes `wip/d23/D28b.thy` with primed copies
   of every touched lemma and the replacements applied, so textual replacements inside long proofs
   are checked before the strict build.
+- **Audit tick 40: Day 15's trace lemmas** (2026-10-28).  `trace_tensor` (92 lines with a hand-built
+  bijection $\{..<m\}\times\{..<p\}\to\{..<mp\}$) is 13 lines through Day 6's `sum_div_mod` and
+  `sum_product`; `trace_via_onb` (64 lines) is 22 through JNF's `col_mult2`/`col_mat_of_cols` and
+  Day 4's `mat_of_cols_dagger_mult_vec_index`; the two `operator_tensor_iso_*_zero` smt calls are
+  `eq_matI` with the bound lemmas.  New Day 2 `Tr_carrier` ($\Tr A=\sum_iA_{ii}$ for square $A$;
+  the 37 `Tr_def` unfoldings elsewhere can take it later).  Day 15 1202 → 1096 lines, metis/smt
+  5 → 0.  Traps met: `auto simp: carrier_dim_vec` loops against `carrier_vecD`; the simp normal
+  forms of `(M * N) $$ (i,j)` and `(M *v v) $ i` differ once dims are known, so entry steps go
+  through `simp only:` with instantiated column lemmas; a chk.sh timeout prints `EXIT 124`, not
+  `FAILED`.  Plan: `tools/deps/plans/day15c.py`; scratch `wip/d23/D15d.thy`.

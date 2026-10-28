@@ -20,60 +20,28 @@ theorem trace_via_onb:
   shows "Tr A = (\<Sum>i<n. \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>)"
 proof -
   let ?V = "mat_of_cols n vs"
-  have U: "unitary ?V"
-    using orth full by (rule orthonormal_mat_unitary)
-  have Vrow: "dim_row ?V = n"
-    by (simp add: mat_of_cols_def)
-  have Vcol: "dim_col ?V = n"
-    using full by (simp add: mat_of_cols_def)
-  have Arow: "dim_row A = n" and Acol: "dim_col A = n"
-    using sq by auto
-
-  have diag:
-    "\<And>i. i < n \<Longrightarrow>
-      ((?V\<^sup>\<dagger> * A * ?V) $$ (i, i)) = \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>"
-  proof -
-    fix i assume i_lt: "i < n"
-    have vi_dim: "dim_vec (vs ! i) = n"
-      using orth full i_lt by (simp add: orthonormal_listD_dim)
-    have AV_entry:
-      "\<And>k. k < n \<Longrightarrow> (A * ?V) $$ (k, i) = (A *\<^sub>v vs ! i) $ k"
-    proof -
-      fix k assume k_lt: "k < n"
-      have "(A * ?V) $$ (k, i) = (\<Sum>j<n. A $$ (k, j) * ?V $$ (j, i))"
-        using Arow Acol Vrow Vcol k_lt i_lt by simp
-      also have "\<dots> = (\<Sum>j<n. A $$ (k, j) * (vs ! i) $ j)"
-        using full i_lt by (intro sum.cong refl) (simp add: mat_of_cols_def)
-      also have "\<dots> = (A *\<^sub>v vs ! i) $ k"
-        using Arow Acol vi_dim k_lt
-        by (simp add: scalar_prod_def lessThan_atLeast0)
-      finally show "(A * ?V) $$ (k, i) = (A *\<^sub>v vs ! i) $ k" .
-    qed
-
-    have "((?V\<^sup>\<dagger> * A * ?V) $$ (i, i)) =
-          ((?V\<^sup>\<dagger> * (A * ?V)) $$ (i, i))"
-      using sq Vrow Vcol by (metis Vrow assoc_mult_mat carrier_mat_triv dim_col_of_dagger)
-    also have "\<dots> = (\<Sum>k<n. (?V\<^sup>\<dagger>) $$ (i, k) * (A * ?V) $$ (k, i))"
-      using Arow Acol Vrow Vcol i_lt by simp
-    also have "\<dots> = (\<Sum>k<n. cnj ((vs ! i) $ k) * (A *\<^sub>v vs ! i) $ k)"
-      using full i_lt by (intro sum.cong refl, metis AV_entry Vcol case_prod_conv dagger_def 
-                          index_mat(1) lessThan_iff mat_of_cols_carrier(2) mat_of_cols_def) 
-    also have "\<dots> = \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>"
-      using Arow vi_dim by (simp add: inner_prod_def lessThan_atLeast0)
-    finally show "((?V\<^sup>\<dagger> * A * ?V) $$ (i, i)) =  \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>".
-  qed
-
-  have "Tr (?V\<^sup>\<dagger> * A * ?V) =
-        (\<Sum>i<n. ((?V\<^sup>\<dagger> * A * ?V) $$ (i, i)))"
-    using Vrow Vcol Arow Acol by (simp add: Tr_def)
+  have Vc: "?V \<in> carrier_mat n n" using mat_of_cols_carrier(1)[of n vs] full by simp
+  have vs: "\<And>i. i < n \<Longrightarrow> vs ! i \<in> carrier_vec n"
+    using orthonormal_listD_dim[OF orth] full by (intro carrier_vecI) simp
+  have "Tr A = Tr (?V\<^sup>\<dagger> * A * ?V)"
+    using Tr_unitary_conjugation[OF orthonormal_mat_unitary[OF orth full]] sq Vc by simp
+  also have "\<dots> = (\<Sum>i<n. (?V\<^sup>\<dagger> * (A * ?V)) $$ (i, i))"
+    unfolding assoc_mult_mat[OF dagger_carrier[OF Vc] sq Vc]
+    by (rule Tr_carrier[OF mult_carrier_mat[OF dagger_carrier[OF Vc] mult_carrier_mat[OF sq Vc]]])
   also have "\<dots> = (\<Sum>i<n. \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>)"
-    by (intro sum.cong refl) (simp add: diag)
-  finally have "Tr (?V\<^sup>\<dagger> * A * ?V) =
-                (\<Sum>i<n. \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>)" .
-  moreover have "Tr (?V\<^sup>\<dagger> * A * ?V) = Tr A"
-    using U Arow Acol Vrow by (subst Tr_unitary_conjugation, simp_all)
-  ultimately show ?thesis
-    by simp
+  proof (intro sum.cong refl)
+    fix i assume "i \<in> {..<n}"
+    hence i: "i < n" by simp
+    have i1: "i < dim_row (?V\<^sup>\<dagger>)" and i2: "i < dim_col (A * ?V)" and il: "i < length vs"
+      using Vc sq i full by simp_all
+    have "(?V\<^sup>\<dagger> * (A * ?V)) $$ (i, i) = (?V\<^sup>\<dagger> *\<^sub>v (A *\<^sub>v vs ! i)) $ i"
+      by (simp only: index_mult_mat(1)[OF i1 i2] col_mult2[OF sq Vc i] col_mat_of_cols[OF il vs[OF i]]
+                     index_mult_mat_vec[OF i1])
+    also have "\<dots> = \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>"
+      by (intro mat_of_cols_dagger_mult_vec_index) (use sq full i orth in \<open>auto simp: orthonormal_list_def\<close>)
+    finally show "(?V\<^sup>\<dagger> * (A * ?V)) $$ (i, i) = \<langle>vs ! i | A *\<^sub>v vs ! i\<rangle>" .
+  qed
+  finally show ?thesis .
 qed
 
 text \<open>\begin{notesprop}
@@ -87,89 +55,16 @@ theorem trace_tensor:
       and m_pos: "0 < m" and p_pos: "0 < p"
   shows "Tr (R \<Otimes> T) = Tr R * Tr T"
 proof -
-  have drR: "dim_row R = m" using Rsq by auto
-  have dcR: "dim_col R = m" using Rsq by auto
-  have drT: "dim_row T = p" using Tsq by auto
-  have dcT: "dim_col T = p" using Tsq by auto
-  have RT_car: "R \<Otimes> T \<in> carrier_mat (m*p) (m*p)"
-    using Rsq Tsq by auto
-
-  \<comment> \<open>Diagonal entries factor via \<open>index_tensor_mat\<close>.\<close>
-  have ent: "\<And>i k. i < m \<Longrightarrow> k < p \<Longrightarrow>
-             (R \<Otimes> T) $$ (i * p + k, i * p + k) = R $$ (i, i) * T $$ (k, k)"
-  proof -
-    fix i k assume i_lt: "i < m" and k_lt: "k < p"
-    have rb: "i * p + k < m * p"
-    proof -
-      have "i * p + k < (i + 1) * p" using k_lt by simp
-      moreover have "(i + 1) * p \<le> m * p"
-      proof -
-        have "i + 1 \<le> m" using i_lt by simp
-        thus "(i + 1) * p \<le> m * p" by (rule mult_le_mono1)
-      qed
-      ultimately show ?thesis by linarith
-    qed
-    have dv: "(i * p + k) div p = i" using k_lt by simp
-    have md: "(i * p + k) mod p = k" using k_lt by simp
-    have "(R \<Otimes> T) $$ (i * p + k, i * p + k)
-          = R $$ ((i*p+k) div p, (i*p+k) div p)
-            * T $$ ((i*p+k) mod p, (i*p+k) mod p)"
-      using index_tensor_mat[OF drR dcR drT dcT rb rb m_pos p_pos] .
-    also have "\<dots> = R $$ (i, i) * T $$ (k, k)"
-      using dv md by simp
-    finally show "(R \<Otimes> T) $$ (i * p + k, i * p + k) = R $$ (i, i) * T $$ (k, k)" .
-  qed
-
-  \<comment> \<open>Bijection \<open>{..<m}\<close> x \<open>{..<p}\<close> -> \<open>{..<m*p}\<close> via (i, k) |-> i*p + k.\<close>
-  have bij: "bij_betw (\<lambda>(i, k). i * p + k) ({..<m} \<times> {..<p}) {..<m*p}"
-  proof (rule bij_betwI[where g = "\<lambda>r. (r div p, r mod p)"])
-    show "(\<lambda>(i, k). i * p + k) \<in> {..<m} \<times> {..<p} \<rightarrow> {..<m*p}"
-    proof
-      fix z assume z_in: "z \<in> {..<m} \<times> {..<p}"
-      then obtain i k where z: "z = (i, k)" and i_lt: "i < m" and k_lt: "k < p"
-        by blast
-      have "i * p + k < (i + 1) * p" using k_lt by simp
-      moreover have "(i + 1) * p \<le> m * p"
-      proof -
-        have "i + 1 \<le> m" using i_lt by simp
-        thus "(i + 1) * p \<le> m * p" by (rule mult_le_mono1)
-      qed
-      ultimately have "i * p + k < m * p" by linarith
-      thus "(case z of (i, k) \<Rightarrow> i * p + k) \<in> {..<m*p}"
-        using z by simp
-    qed
-  next
-    show "(\<lambda>r. (r div p, r mod p)) \<in> {..<m*p} \<rightarrow> {..<m} \<times> {..<p}"
-      using p_pos by (auto simp: less_mult_imp_div_less)
-  next
-    fix z assume z_in: "z \<in> {..<m} \<times> {..<p}"
-    then obtain i k where z: "z = (i, k)" and i_lt: "i < m" and k_lt: "k < p"
-      by blast
-    show "(\<lambda>r. (r div p, r mod p)) ((\<lambda>(i, k). i * p + k) z) = z"
-      using z k_lt by simp
-  next
-    fix r assume r_in: "r \<in> {..<m*p}"
-    show "(\<lambda>(i, k). i * p + k) ((\<lambda>r. (r div p, r mod p)) r) = r"
-      by simp
-  qed
-
-  have "Tr (R \<Otimes> T) = (\<Sum>r<m*p. (R \<Otimes> T) $$ (r, r))"
-    using RT_car by (simp add: Tr_def, 
-        smt (verit, del_insts) carrier_matD(1,2) 
-             dim_col_tensor_mat dim_row_tensor_mat lessThan_iff sum.cong)
-  also have "\<dots> = (\<Sum>(i, k) \<in> {..<m} \<times> {..<p}.
-                    (R \<Otimes> T) $$ (i * p + k, i * p + k))"
-    using sum.reindex_bij_betw[OF bij, symmetric, of "\<lambda>r. (R \<Otimes> T) $$ (r, r)"]
-    by (simp add: case_prod_beta)
-  also have "\<dots> = (\<Sum>(i, k) \<in> {..<m} \<times> {..<p}. R $$ (i, i) * T $$ (k, k))"
-    by (intro sum.cong refl) (auto simp: ent)
+  have ent: "\<And>i j. i < m * p \<Longrightarrow> j < m * p \<Longrightarrow>
+             (R \<Otimes> T) $$ (i, j) = R $$ (i div p, j div p) * T $$ (i mod p, j mod p)"
+    using index_tensor_mat[OF carrier_matD[OF Rsq] carrier_matD[OF Tsq] _ _ m_pos p_pos] .
+  have RT: "R \<Otimes> T \<in> carrier_mat (m * p) (m * p)" using Rsq Tsq by auto
+  have "Tr (R \<Otimes> T) = (\<Sum>r<m * p. R $$ (r div p, r div p) * T $$ (r mod p, r mod p))"
+    unfolding Tr_carrier[OF RT] by (intro sum.cong refl) (simp add: ent)
   also have "\<dots> = (\<Sum>i<m. \<Sum>k<p. R $$ (i, i) * T $$ (k, k))"
-    by (simp add: sum.cartesian_product)
-  also have "\<dots> = (\<Sum>i<m. R $$ (i, i)) * (\<Sum>k<p. T $$ (k, k))"
-    by (simp add: sum_product)
-  also have "\<dots> = Tr R * Tr T"
-    using Rsq Tsq by (simp add: Tr_def)
-  finally show ?thesis.
+    by (rule sum_div_mod[where n = m and m = p and g = "\<lambda>i k. R $$ (i, i) * T $$ (k, k)"])
+  also have "\<dots> = Tr R * Tr T" unfolding Tr_carrier[OF Rsq] Tr_carrier[OF Tsq] by (simp add: sum_product)
+  finally show ?thesis .
 qed
 
 subsection \<open>The isomorphism $L(\Hil_A)\otimes L(\Hil_B)\cong L(\Hil_A\otimes\Hil_B)$\<close>
@@ -323,8 +218,8 @@ qed
 lemma operator_tensor_iso_map_zero:
   assumes p_pos: "0 < p"
   shows "operator_tensor_iso_map m p (0\<^sub>m (m*m) (p*p)) = 0\<^sub>m (m*p) (m*p)"
-  by (smt (verit) add_inv_exists_mat assoc_add_mat operator_tensor_iso_map_add 
-      operator_tensor_iso_map_carrier p_pos right_add_zero_mat zero_carrier_mat)  
+  using operator_tensor_iso_map_row_bound[OF p_pos] operator_tensor_iso_map_col_bound[OF p_pos]
+  by (intro eq_matI) (auto simp: operator_tensor_iso_map_def)
 
 lemma operator_tensor_iso_map_smult:
   assumes p_pos: "0 < p"
@@ -377,9 +272,8 @@ qed
 lemma operator_tensor_iso_inv_zero:
   assumes m_pos: "0 < m" and p_pos: "0 < p"
   shows "operator_tensor_iso_inv m p (0\<^sub>m (m*p) (m*p)) = 0\<^sub>m (m*m) (p*p)"
-  by (smt (verit) add_inv_exists_mat assoc_add_mat m_pos operator_tensor_iso_inv_add 
-      operator_tensor_iso_inv_carrier p_pos right_add_zero_mat zero_carrier_mat)
- 
+  using operator_tensor_iso_inv_row_bound[OF m_pos p_pos] operator_tensor_iso_inv_col_bound[OF m_pos p_pos]
+  by (intro eq_matI) (auto simp: operator_tensor_iso_inv_def)
 
 lemma operator_tensor_iso_inv_smult:
   assumes m_pos: "0 < m"

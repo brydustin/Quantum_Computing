@@ -136,6 +136,13 @@ Hilbert--Schmidt coefficients.\<close>
 definition Tr :: "complex Matrix.mat \<Rightarrow> complex" where
   "Tr x = (\<Sum>r < dim_row x. if r < dim_col x then x $$ (r,r) else 0)"
 
+text \<open>$\Tr(A)=\sum_iA_{ii}$ for a square matrix $A$.\<close>
+
+lemma Tr_carrier:
+  assumes "A \<in> carrier_mat n n"
+  shows "Tr A = (\<Sum>i<n. A $$ (i, i))"
+  using assms unfolding Tr_def by simp
+
 lemma Tr_mat_unit:
   assumes i_lt: "i < m"
       and j_lt: "j < n"
