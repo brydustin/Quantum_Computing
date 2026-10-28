@@ -3,7 +3,7 @@
 *)
 
 theory Quantum_Channels
-  imports Quantum_Computing_by_VP.Day31_Bit_Flip_Channel
+  imports Quantum_Computing_CP_Maps.Day31_Bit_Flip_Channel
 begin
 
 section \<open>Extensions beyond the notes\<close>

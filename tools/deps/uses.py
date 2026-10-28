@@ -4,7 +4,7 @@ with the entities from outside THEORY; PREFIX limits the owners shown (default: 
 project sessions)."""
 import sys, collections
 scan, thy = sys.argv[1], sys.argv[2]
-prefixes = tuple(sys.argv[3:]) or ("Quantum_Computing_by_VP.", "Essential_Functional_Analysis.")
+prefixes = tuple(sys.argv[3:]) or ("Quantum_Computing_CP_Maps.", "Essential_Functional_Analysis.")
 facts = collections.OrderedDict()
 for l in open(scan):
     t, fact, kind, owner, name = l.rstrip("\n").split("\t")

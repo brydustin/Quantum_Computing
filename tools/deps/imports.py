@@ -4,7 +4,7 @@ MOVES ({base name: new theory}).  Prints the theories whose project imports woul
 Blind spots: notation, abbreviations, text antiquotations (check with grep)."""
 import collections, json, os, re, sys
 P = os.path.join(os.path.dirname(__file__), "../..")
-SESS = ("Quantum_Computing_by_VP", "Essential_Functional_Analysis")
+SESS = ("Quantum_Computing_CP_Maps", "Essential_Functional_Analysis")
 moves = json.load(open(sys.argv[2])) if len(sys.argv) > 2 else {}
 root = open(os.path.join(P, "ROOT")).read()
 order = re.findall(r"^\s+(Day\d\d_\w+|Quantum_Channels|QC_Notes_Overview)\s*$", root, re.M)

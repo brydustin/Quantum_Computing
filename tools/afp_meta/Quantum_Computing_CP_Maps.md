@@ -1,13 +1,13 @@
-# AFP submission: Quantum_Computing_by_VP
+# AFP submission: Quantum_Computing_CP_Maps
 
 Fields of the submission form at https://isa-afp.org/submission/
 
 - **Title:** Lectures on Quantum Computing and Completely Positive Maps
-- **Short name:** Quantum_Computing_by_VP
+- **Short name:** Quantum_Computing_CP_Maps
 - **Author:** Dustin Bryant (brydustin@gmail.com)
 - **Topics (suggested):** Mathematics/Physics/Quantum information; Computer science/Algorithms/Quantum computing; Mathematics/Algebra
 - **License:** BSD
-- **Archive:** `Quantum_Computing_by_VP.tar.gz` (the folder `Quantum_Computing_by_VP/`)
+- **Archive:** `Quantum_Computing_CP_Maps.tar.gz` (the folder `Quantum_Computing_CP_Maps/`)
 - **Depends on (AFP):** Two_Hermitian_Results (parent of the first session), Isabelle_Marries_Dirac,
   Jordan_Normal_Form, Quantum_Fourier_Transform; Isabelle: HOL-Analysis, HOL-Hahn_Banach
 
@@ -24,7 +24,9 @@ theorem (via Hahn–Banach on matrix spaces), separability and entanglement witn
 positive-map criterion, the Horodecki–Peres criterion for two qubits), and quantum error
 correction (classical codes, the bit-flip, phase-flip and Shor codes, the Knill–Laflamme
 conditions). The document restates the notes' definitions and results before their formal
-statements; the leading principal minors test of Day 5 is imported from Two_Hermitian_Results.
+statements; the leading principal minors test of Day 5 is imported from Two_Hermitian_Results. A
+prerequisite session, Essential Functional Analysis, collects reusable matrix analysis:
+unitary and Kronecker-product algebra, and matrices of fixed dimension as a Euclidean space.
 
 ## Comment for the editors
 
@@ -32,7 +34,7 @@ statements; the leading principal minors test of Day 5 is imported from Two_Herm
 - Two sessions.  Essential_Functional_Analysis (directory `Essential_Functional_Analysis/`, own
   document): general matrix lemmas, unitary and Kronecker-product algebra, and matrices of fixed
   dimension with the Hilbert-Schmidt norm as a normed and a Euclidean space, independent of the
-  lectures; its parent is Two_Hermitian_Results.  Quantum_Computing_by_VP, built on it: every
+  lectures; its parent is Two_Hermitian_Results.  Quantum_Computing_CP_Maps, built on it: every
   lecture, one theory per lecture, and the document; Day 5 imports the leading principal minors
   test of Two_Hermitian_Results.
 - The notes are by Vern Paulsen (notes taken by Brandon Lee); they are cited, not reproduced:

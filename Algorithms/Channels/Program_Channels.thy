@@ -1,5 +1,5 @@
 theory Program_Channels
-  imports Quantum_Computing_by_VP.Day32_Recovery_Proposition Quantum_Computing_by_VP.Day23_Choi_Extreme_Points
+  imports Quantum_Computing_CP_Maps.Day32_Recovery_Proposition Quantum_Computing_CP_Maps.Day23_Choi_Extreme_Points
     HHL_Algorithm.HHL_Program
 begin
 

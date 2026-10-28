@@ -1,6 +1,6 @@
 theory Phase_Estimation
-  imports Quantum_Computing_by_VP.Day08_Measurements Quantum_Computing_by_VP.Day09_POVMs_Entanglement
-    Quantum_Computing_by_VP.Day10_Quantum_Gates Hermitian_Functional_Calculus.Trotter_Product_Formula
+  imports Quantum_Computing_CP_Maps.Day08_Measurements Quantum_Computing_CP_Maps.Day09_POVMs_Entanglement
+    Quantum_Computing_CP_Maps.Day10_Quantum_Gates Hermitian_Functional_Calculus.Trotter_Product_Formula
     "HOL-Analysis.Convex"
 begin
 

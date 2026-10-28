@@ -1568,3 +1568,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Knill–Laflamme, Day 21 average-conjecture constructions and wide_factor (an SVD), Day 21 unitary
   freedom, Day 28 cone hull, Day 23 dominated outer sum / pseudo-inverse, Day 32 recovery, Day 18
   density-preserving characterisation, Day 8 unambiguous discrimination, Days 3/5 Schur and Cholesky).
+- **Submission preparation** (2026-10-28).  The notes session is renamed `Quantum_Computing_by_VP` →
+  `Quantum_Computing_CP_Maps` (the AFP short name; no initials of the notes' author), in ROOTs,
+  imports, `tools/check`, the build/export/jEdit/scan scripts and the AFP metadata (DIARY entries and
+  the per-tick plan scripts keep the old name as history).  Title page: subtitle "A formalisation in
+  Isabelle/HOL of Vern Paulsen's Houston 2011 lecture notes", author, date, abstract; the abstract
+  drops the NOTES_AUDIT sentence, words the prerequisite session plainly and corrects "two companion
+  entries" to the one that builds on it (HHL).  The AFP abstract gains a sentence on the reusable
+  prerequisite session.

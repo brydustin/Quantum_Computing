@@ -8,7 +8,7 @@ Fields of the submission form at https://isa-afp.org/submission/
 - **Topics (suggested):** Computer science/Algorithms/Quantum computing; Computer science/Programming languages/Logics; Mathematics/Physics/Quantum information
 - **License:** BSD
 - **Archive:** `HHL_Algorithm.tar.gz` (the folder `HHL_Algorithm/`)
-- **Depends on (AFP):** Hermitian_Functional_Calculus and Quantum_Computing_by_VP (submitted at the
+- **Depends on (AFP):** Hermitian_Functional_Calculus and Quantum_Computing_CP_Maps (submitted at the
   same time), QHLProver, Isabelle_Marries_Dirac, Jordan_Normal_Form, Quantum_Fourier_Transform;
   for the extra sessions Real_Impl (HHL_Algorithm_Demo) and Compressed_Oracles (HHL_Algorithm_Search)
 
@@ -36,7 +36,7 @@ from Compressed_Oracles.
 - Builds with Isabelle2025-2 and the AFP of 2026-04-09; no `sorry`. The only oracle is
   Types_To_Sets' `cancel_type_definition`, inherited in session HHL_Algorithm_Search from
   Compressed_Oracles' search bound.
-- Depends on the entries Hermitian_Functional_Calculus and Quantum_Computing_by_VP, submitted at the
+- Depends on the entries Hermitian_Functional_Calculus and Quantum_Computing_CP_Maps, submitted at the
   same time; please review those first.
 - Sessions: HHL_Algorithm (main, with document), HHL_Algorithm_Demo (needs Real_Impl, which
   replaces the code setup of the reals), HHL_Algorithm_Channels (loads the notes' channel

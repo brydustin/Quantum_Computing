@@ -3,7 +3,7 @@
 Source of truth: `QC_Notes.pdf` (Vern Paulsen, *Lectures on Quantum Computing and
 Completely Positive Maps*, Houston, Fall 2011; notes by Brandon Lee), transcribed in
 `QC_Notes_overleaf.tex`.  Formalisation: the session
-`Quantum_Computing_by_VP` (see `ROOT`).
+`Quantum_Computing_CP_Maps` (see `ROOT`).
 
 Verification status (2026-10-19): all sessions build
 with `quick_and_dirty = false`; no `sorry`, no `axiomatization`, no `oops`; a
@@ -351,7 +351,7 @@ entries: `Hermitian_Functional_Calculus` (directory `Hermitian_Functional_Calcul
 calculus, `Matrix_Sums`, `Trotter_Product_Formula`, `Suzuki_Order`, `Suzuki_Error`; built on the AFP
 alone, with QHLProver's spectral theorem) and `HHL_Algorithm` (directory `Algorithms/`, with the
 sessions `HHL_Algorithm_Demo`, `_Channels`, `_Search`).  The notes form the third entry,
-`Quantum_Computing_by_VP`.  `tools/afp_export.sh` assembles the three entries.
+`Quantum_Computing_CP_Maps`.  `tools/afp_export.sh` assembles the three entries.
 
 | Theory | Content |
 |---|---|

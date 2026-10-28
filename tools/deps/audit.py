@@ -14,8 +14,8 @@ own = {}
 for scan in sys.argv[1:]:
     for l in open(scan):
         thy, fact, kind, owner, name = l.rstrip("\n").split("\t")
-        if kind == "dep": used.add(name.split(".")[-1] if owner.startswith(("Quantum_Computing_by_VP", "Essential_Functional_Analysis")) else name)
-        if kind == "const" and owner.startswith(("Quantum_Computing_by_VP", "Essential_Functional_Analysis")):
+        if kind == "dep": used.add(name.split(".")[-1] if owner.startswith(("Quantum_Computing_CP_Maps", "Essential_Functional_Analysis")) else name)
+        if kind == "const" and owner.startswith(("Quantum_Computing_CP_Maps", "Essential_Functional_Analysis")):
             used.add(name.split(".")[-1])          # a constant used in a statement keeps its definition
         own[fact.split(".", 1)[1]] = thy.split(".")[-1]
 root = open(os.path.join(P, "ROOT")).read()

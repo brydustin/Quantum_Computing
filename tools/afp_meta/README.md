@@ -8,7 +8,7 @@ and no oracles except the one noted for HHL_Algorithm_Search.
 | Folder | Entry | Depends on (new) | Contents |
 |---|---|---|---|
 | `1_Hermitian_Functional_Calculus` | Hermitian_Functional_Calculus | – | functional calculus of Hermitian matrices, Lie–Trotter and Suzuki product formulas |
-| `2_Quantum_Computing_by_VP` | Quantum_Computing_by_VP | – | Vern Paulsen's 2011 lecture notes on quantum computing and completely positive maps |
+| `2_Quantum_Computing_CP_Maps` | Quantum_Computing_CP_Maps | – | Vern Paulsen's 2011 lecture notes on quantum computing and completely positive maps |
 | `3_HHL_Algorithm` | HHL_Algorithm | entries 1 and 2 | quantum phase estimation and the HHL algorithm |
 
 Each folder holds the archive to upload (`<Entry>.tar.gz`), the same entry unpacked, the PDF of
@@ -20,7 +20,7 @@ Submitting: https://isa-afp.org/submission/ — entries 1 and 2 are independent 
 (or together with 3); entry 3 needs both, so mention in its comment that they were submitted at
 the same time.  Before submitting, decide the open points:
 
-- entry 2 is fixed: short name `Quantum_Computing_by_VP`, title "Lectures on Quantum Computing and
+- entry 2 is fixed: short name `Quantum_Computing_CP_Maps`, title "Lectures on Quantum Computing and
   Completely Positive Maps"; the names and titles of entries 1 and 3 are suggestions;
 - ask Vern Paulsen whether he agrees with an entry built on, and named after, his notes;
 - the topics are suggestions from the AFP's topic list;

@@ -15,7 +15,7 @@ put() {  # put ENTRY PATH...: tracked sources (no PDFs, no build output) under E
   done
 }
 STRIP=Hermitian_Functional_Calculus/ put Hermitian_Functional_Calculus Hermitian_Functional_Calculus
-STRIP= put Quantum_Computing_by_VP ROOT ':(glob)*.thy' document Essential_Functional_Analysis
+STRIP= put Quantum_Computing_CP_Maps ROOT ':(glob)*.thy' document Essential_Functional_Analysis
 STRIP=Algorithms/ put HHL_Algorithm Algorithms
 # AFP options: documents come from the AFP's settings; keep only document = false and a timeout
 python3 - "$OUT" <<'PY'
@@ -29,11 +29,11 @@ for f in glob.glob(sys.argv[1] + '/*/ROOT'):
     s = re.sub(r'options \[([^\]]*)\]', opts, s, flags=re.S)
     open(f, 'w').write(s)
 PY
-for e in Hermitian_Functional_Calculus Quantum_Computing_by_VP HHL_Algorithm; do
+for e in Hermitian_Functional_Calculus Quantum_Computing_CP_Maps HHL_Algorithm; do
   echo "$e: $(find "$OUT/$e" -name '*.thy' | wc -l) theories, $(cat $(find "$OUT/$e" -name '*.thy') | wc -l) lines"
   tar -C "$OUT" -czf "$OUT/$e.tar.gz" "$e"
 done
 [ $B = 1 ] || exit 0
 "$ISABELLE" build $F -o document=pdf -o "document_variants=document:outline=/proof,/ML" -o browser_info \
-  -d "$AFP" -d "$OUT/Hermitian_Functional_Calculus" -d "$OUT/Quantum_Computing_by_VP" -d "$OUT/HHL_Algorithm" \
-  -D "$OUT/Hermitian_Functional_Calculus" -D "$OUT/Quantum_Computing_by_VP" -D "$OUT/HHL_Algorithm"
+  -d "$AFP" -d "$OUT/Hermitian_Functional_Calculus" -d "$OUT/Quantum_Computing_CP_Maps" -d "$OUT/HHL_Algorithm" \
+  -D "$OUT/Hermitian_Functional_Calculus" -D "$OUT/Quantum_Computing_CP_Maps" -D "$OUT/HHL_Algorithm"

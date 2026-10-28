@@ -20,7 +20,7 @@ session Essential_Functional_Analysis in "Essential_Functional_Analysis" = Two_H
   document_files
     "root.tex"
 
-session Quantum_Computing_by_VP in "." = Essential_Functional_Analysis +
+session Quantum_Computing_CP_Maps in "." = Essential_Functional_Analysis +
   description "
     Vern Paulsen's lecture notes on quantum computing and completely positive maps
     (Houston, 2011), formalised lecture by lecture."

@@ -6,7 +6,7 @@ begin
 
 ML_file "../project_checks.ML"
 
-ML \<open>Project_Checks.run {name = "Algorithms", audit = ["Quantum_Computing_by_VP", "Hermitian_Functional_Calculus", "HHL_Algorithm"], allow = [], targets = ["HHL_Algorithm"], ignore = [], strict = true} \<^theory>\<close>
+ML \<open>Project_Checks.run {name = "Algorithms", audit = ["Quantum_Computing_CP_Maps", "Hermitian_Functional_Calculus", "HHL_Algorithm"], allow = [], targets = ["HHL_Algorithm"], ignore = [], strict = true} \<^theory>\<close>
 
 text \<open>The functional calculus against the notes: overlaps of two independent entries, reported only.\<close>
 
