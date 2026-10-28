@@ -199,6 +199,22 @@ proof -
     unfolding meas_prob_def by (simp add: cpx_vec_length_inner_prod[symmetric])
 qed
 
+text \<open>In particular $M^*M\ge0$.\<close>
+
+lemma MdagM_psd:
+  fixes M :: "complex Matrix.mat"
+  assumes M: "M \<in> carrier_mat n n"
+  shows "psd (M\<^sup>\<dagger> * M)"
+  unfolding psd_def
+proof (intro conjI allI impI)
+  show "hermitian (M\<^sup>\<dagger> * M)"
+    unfolding hermitian_def using M by (simp add: dagger_of_prod dagger_of_dagger_is_id)
+  fix x :: "complex Matrix.vec" assume "dim_vec x = dim_row (M\<^sup>\<dagger> * M)"
+  hence "dim_vec x = n" using M by simp
+  thus "0 \<le> Re \<langle>x | (M\<^sup>\<dagger> * M) *\<^sub>v x\<rangle>"
+    using meas_prob_quad_form[OF M, unfolded meas_prob_def, symmetric] by simp
+qed
+
 lemma measurement_probs_sum_one:
   assumes ms: "measurement_system n Ms"
       and st: "quantum_state n \<psi>"

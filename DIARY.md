@@ -1310,3 +1310,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   (Unitary_Tensor_Algebra), which Day 2 does not import — the strict build caught it; grep where a lemma
   lives before planning a block into an earlier Day.  Plan: `tools/deps/plans/day8b.py`; scratch
   `wip/d23/D08b.thy`.
+- **Audit tick 23: Day 9's tensor action, POVMs and the Bell state** (2026-10-28).  `tensor_mat_vec_mult`
+  ((A⊗B)(v⊗w) = Av⊗Bw, 155 lines of `sum.nat_group`/`reindex_bij_witness`) is the tick-20 reindexing again:
+  `index_tensor_mat` + `tensor_vec_index` put the entry sum into the form g (k div mc) (k mod mc), Day 6's
+  `sum_div_mod` splits it and `sum_product` factors it (36 lines; the degenerate nc = 0 ∨ mc = 0 case is
+  one `auto`).  `measurement_induces_povm` (68, one 14-fact metis) is `foldr_map` plus the new Day 7 fact
+  `MdagM_psd` (M*M ≥ 0, from `meas_prob_quad_form`): 11 lines.  `bell_state_norm` (57, five smt/metis)
+  reads the Bell state through Day 6's `tensor_unit_vec` as (e₀+e₃)/√2 and evaluates the norm with
+  `eval_nat_numeral`: 8 lines.  Day 9 572 → 348, metis/smt 9 → 2.  Plan: `tools/deps/plans/day9.py`;
+  scratch `wip/d23/D09.thy`.
