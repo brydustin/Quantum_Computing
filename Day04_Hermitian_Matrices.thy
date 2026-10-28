@@ -1074,6 +1074,43 @@ proof -
     using U Uu D nn hermitian_spectral_decomp_eq[OF U sq Uu spec] by (intro exI[of _ U] exI[of _ D]) simp
 qed
 
+text \<open>A positive matrix is dominated by a multiple of $I$: $I-cA\ge0$ for some $c>0$.\<close>
+
+lemma psd_scale_below_one:
+  fixes A :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat n n" and psd: "psd A"
+  shows "\<exists>c > 0. psd (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m A)"
+proof -
+  obtain U D where U: "U \<in> carrier_mat n n" and UU: "unitary U" and D: "length D = n"
+    and AUDU: "A = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
+    using psd_spectral_decomp_nonneg[OF A psd] by blast
+  define c where "c = 1 / (1 + sum_list (map abs D))"
+  have S: "0 \<le> sum_list (map abs D)" by (rule sum_list_nonneg) auto
+  have c: "0 < c" unfolding c_def using S by (auto intro: add_pos_nonneg)
+  have cD: "c * D ! i \<le> 1" if "i < n" for i
+  proof -
+    have "\<bar>D ! i\<bar> \<le> sum_list (map abs D)" using that D by (intro member_le_sum_list) auto
+    hence "D ! i \<le> 1 + sum_list (map abs D)" by linarith
+    thus ?thesis unfolding c_def using S by (simp add: pos_divide_le_eq add_pos_nonneg)
+  qed
+  define D' where "D' = map (\<lambda>d. 1 - c * d) D"
+  have D': "length D' = n" "\<And>i. i < n \<Longrightarrow> 0 \<le> D' ! i" using cD D by (simp_all add: D'_def)
+  have Dc: "diag_mat_of_real D \<in> carrier_mat n n" using diag_mat_of_real_carrier[of D] unfolding D .
+  have diagD': "diag_mat_of_real D' = 1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D"
+    using D D' by (intro eq_matI) (auto simp: diag_mat_of_real_def mat_diag_def D'_def)
+  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U])
+  have "U * diag_mat_of_real D' * (U\<^sup>\<dagger>) = U * (U\<^sup>\<dagger>) - complex_of_real c \<cdot>\<^sub>m (U * diag_mat_of_real D * (U\<^sup>\<dagger>))"
+    unfolding diagD'
+    by (simp only: mult_minus_distrib_mat[OF U one_carrier_mat smult_carrier_mat[OF Dc]]
+                   minus_mult_distrib_mat[OF U smult_carrier_mat[OF mult_carrier_mat[OF U Dc]] Ud]
+                   right_mult_one_mat[OF U] mult_smult_distrib[OF U Dc] mult_smult_assoc_mat[OF mult_carrier_mat[OF U Dc] Ud])
+  hence eq: "1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m A = U * diag_mat_of_real D' * (U\<^sup>\<dagger>)"
+    using unitary_inv_r_dimrow[OF UU] U AUDU by simp
+  have "psd (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m A)"
+    unfolding eq by (rule psd_U_diag_Udag[OF U D'(1) D'(2)])
+  thus ?thesis using c by blast
+qed
+
 text \<open>The direction $\Rightarrow$, from the spectral theorem:
 $P=\sum_j\lambda_j\ketbra{u_j}{u_j}=\sum_j\ketbra{\lambda_j^{1/2}u_j}{\lambda_j^{1/2}u_j}$, the columns of
 $U\sqrt D$.\<close>

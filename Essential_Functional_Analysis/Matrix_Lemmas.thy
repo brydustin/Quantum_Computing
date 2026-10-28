@@ -422,6 +422,22 @@ next
   finally show ?case by simp
 qed
 
+lemma foldr_add_mat_smult:
+  fixes f :: "'a \<Rightarrow> complex Matrix.mat"
+  assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat m n"
+  shows "foldr (\<lambda>x acc. a \<cdot>\<^sub>m f x + acc) xs (0\<^sub>m m n) = a \<cdot>\<^sub>m foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n)"
+  using assms
+proof (induction xs)
+  case Nil show ?case by (intro eq_matI) auto
+next
+  case (Cons x xs)
+  have fx: "f x \<in> carrier_mat m n" and F: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n"
+    using Cons.prems by (simp, intro foldr_add_mat_carrier_rect) auto
+  have IH: "foldr (\<lambda>x acc. a \<cdot>\<^sub>m f x + acc) xs (0\<^sub>m m n) = a \<cdot>\<^sub>m foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n)"
+    using Cons.prems by (intro Cons.IH) auto
+  show ?case unfolding foldr.simps o_apply IH using fx F by (intro eq_matI) (auto simp: distrib_left)
+qed
+
 lemma foldr_list_as_index:
   fixes g :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   shows "foldr (\<lambda>A acc. g A + acc) As z = foldr (\<lambda>l acc. g (As ! l) + acc) [0..<length As] z"

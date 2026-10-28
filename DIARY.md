@@ -1297,3 +1297,16 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   fact for `ψ ⊘ ψ` no longer rewrites — `define P where "P = ψ ⊘ ψ"` and work with `P`; `using d by auto`
   for `ψ ∈ carrier_vec n` from `dim_vec ψ = n` fails (auto orients `n = dim_vec ψ`), use
   `carrier_vecI[OF d]`.  Plan: `tools/deps/plans/day8.py`; scratch `wip/d23/D08.thy`.
+- **Audit tick 22: Day 8's theorem on linearly independent states** (2026-10-28).
+  `lin_indep_states_unambiguous` (348 lines) keeps the notes' construction — dual vectors φᵢ with
+  ⟨φᵢ|ψⱼ⟩ = δᵢⱼ from the inverse Gram matrix, Mᵢ = √c |e₀⟩⟨φᵢ|, M_k = (I − cT)^{1/2} with T = Σ|φᵢ⟩⟨φᵢ| —
+  but through three general facts that now live where they belong: Day 2 `outer_prod_mult`
+  ((ab*)(cd*) = ⟨b|c⟩ ad*, which also makes `outer_prod_idempotent` a two-line corollary), Day 4
+  `psd_scale_below_one` (A ≥ 0 ⟹ ∃c>0. I − cA ≥ 0, the spectral scaling that was inlined), and
+  `Matrix_Lemmas.foldr_add_mat_smult`.  Mᵢ*Mᵢ = c|φᵢ⟩⟨φᵢ| is one `unfolding` chain (Day 3
+  `smult_dagger_mult`, `outer_prod_dagger`, `outer_prod_mult`), the foldr over the Mᵢ is `foldr_map` +
+  `foldr_add_mat_cong` + `foldr_add_mat_smult` + `outer_sum_as_foldr`.  134 lines; Day 8 1034 → 516
+  over ticks 21–22, metis/smt 25 → 2.  Trap: the scratch imports Day 8 and so saw `one_smult_mat`
+  (Unitary_Tensor_Algebra), which Day 2 does not import — the strict build caught it; grep where a lemma
+  lives before planning a block into an earlier Day.  Plan: `tools/deps/plans/day8b.py`; scratch
+  `wip/d23/D08b.thy`.

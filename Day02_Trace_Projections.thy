@@ -602,6 +602,29 @@ proof -
   finally show ?thesis .
 qed
 
+text \<open>$(ab^*)(cd^*)=\braket bc\,ad^*$.\<close>
+
+lemma outer_prod_mult:
+  fixes a b c d :: "complex Matrix.vec"
+  assumes bc: "dim_vec b = dim_vec c"
+  shows "(a \<oslash> b) * (c \<oslash> d) = \<langle>b | c\<rangle> \<cdot>\<^sub>m (a \<oslash> d)"
+proof (rule eq_matI)
+  have A: "a \<oslash> b \<in> carrier_mat (dim_vec a) (dim_vec b)" by (rule outer_prod_carrier[OF refl refl])
+  have C: "c \<oslash> d \<in> carrier_mat (dim_vec b) (dim_vec d)" by (rule outer_prod_carrier[OF bc[symmetric] refl])
+  have AD: "a \<oslash> d \<in> carrier_mat (dim_vec a) (dim_vec d)" by (rule outer_prod_carrier[OF refl refl])
+  fix i j assume "i < dim_row (\<langle>b | c\<rangle> \<cdot>\<^sub>m (a \<oslash> d))" "j < dim_col (\<langle>b | c\<rangle> \<cdot>\<^sub>m (a \<oslash> d))"
+  hence i: "i < dim_vec a" and j: "j < dim_vec d" by (simp_all only: index_smult_mat(2,3) carrier_matD[OF AD])
+  have ij: "i < dim_row (a \<oslash> d)" "j < dim_col (a \<oslash> d)" by (simp_all only: carrier_matD[OF AD] i j)
+  have "((a \<oslash> b) * (c \<oslash> d)) $$ (i, j) = (\<Sum>k<dim_vec b. (a $ i * cnj (b $ k)) * (c $ k * cnj (d $ j)))"
+    by (simp only: mat_mult_entry[OF A C i j]) (intro sum.cong refl, simp add: outer_prod_index i j bc)
+  also have "\<dots> = (a $ i * cnj (d $ j)) * (\<Sum>k<dim_vec b. cnj (b $ k) * c $ k)"
+    by (simp add: sum_distrib_left mult_ac)
+  also have "(\<Sum>k<dim_vec b. cnj (b $ k) * c $ k) = \<langle>b | c\<rangle>"
+    by (simp only: inner_prod_sum[OF refl bc[symmetric]] atLeast0LessThan)
+  finally show "((a \<oslash> b) * (c \<oslash> d)) $$ (i, j) = (\<langle>b | c\<rangle> \<cdot>\<^sub>m (a \<oslash> d)) $$ (i, j)"
+    by (simp only: index_smult_mat(1)[OF ij] outer_prod_index[OF i j] mult_ac)
+qed auto
+
 text \<open>$\Tr(A\,\ketbra vv)=\braket v{Av}$.\<close>
 
 lemma Tr_mult_outer:
@@ -633,20 +656,10 @@ lemma outer_prod_idempotent:
   fixes w :: "complex Matrix.vec"
   assumes "\<parallel>w\<parallel> = 1"
   shows "(w \<oslash> w) * (w \<oslash> w) = w \<oslash> w"
-proof (rule eq_matI)
-  let ?n = "dim_vec w"
-  have P: "w \<oslash> w \<in> carrier_mat ?n ?n" by (rule outer_prod_carrier) simp_all
-  have one: "\<langle>w|w\<rangle> = 1" using assms by (simp flip: cpx_vec_length_inner_prod)
-  fix i j assume "i < dim_row (w \<oslash> w)" "j < dim_col (w \<oslash> w)"
-  hence i: "i < ?n" and j: "j < ?n" using P by auto
-  have "((w \<oslash> w) * (w \<oslash> w)) $$ (i, j) = (\<Sum>k<?n. (w $ i * cnj (w $ j)) * (cnj (w $ k) * w $ k))"
-    by (simp only: mat_mult_entry[OF P P i j]) (intro sum.cong refl, simp add: outer_prod_index i j mult_ac)
-  also have "\<dots> = w $ i * cnj (w $ j) * (\<Sum>k<?n. cnj (w $ k) * w $ k)" by (simp add: sum_distrib_left)
-  also have "(\<Sum>k<?n. cnj (w $ k) * w $ k) = \<langle>w|w\<rangle>"
-    by (simp only: inner_prod_sum[OF refl refl] atLeast0LessThan)
-  finally show "((w \<oslash> w) * (w \<oslash> w)) $$ (i, j) = (w \<oslash> w) $$ (i, j)"
-    using one i j by (simp add: outer_prod_index)
-qed (use outer_prod_carrier[of w "dim_vec w" w "dim_vec w"] in auto)
+proof -
+  have "\<langle>w|w\<rangle> = 1" using assms by (simp flip: cpx_vec_length_inner_prod)
+  thus ?thesis unfolding outer_prod_mult[OF refl] by (intro eq_matI) auto
+qed
 
 text \<open>$I-P$ is again a projection when $P$ is.\<close>
 

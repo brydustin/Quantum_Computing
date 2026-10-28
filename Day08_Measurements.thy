@@ -169,317 +169,103 @@ proof -
       using det_0_iff_vec_prod_zero_field[OF Gc] by auto
     have xd: "dim_vec x = k" using xc by auto
     have Vx: "dim_vec (?V *\<^sub>v x) = n" using Vc xd by auto
-    have "\<langle>?V *\<^sub>v x | ?V *\<^sub>v x\<rangle> = \<langle>(?V\<^sup>\<dagger>)\<^sup>\<dagger> *\<^sub>v x | ?V *\<^sub>v x\<rangle>"
-      by (simp add: dagger_of_dagger_is_id)
-    also have "\<dots> = \<langle>x | ?V\<^sup>\<dagger> *\<^sub>v (?V *\<^sub>v x)\<rangle>"
-      using inner_prod_adjoint_swap[OF Vd_c xd Vx] by simp
-    also have "\<dots> = \<langle>x | ?G *\<^sub>v x\<rangle>" using Vc Vd_c xc by (simp add: assoc_mult_mat_vec)
+    have "\<langle>?V *\<^sub>v x | ?V *\<^sub>v x\<rangle> = \<langle>x | ?G *\<^sub>v x\<rangle>"
+      using inner_prod_adjoint_swap[OF Vd_c xd Vx] Vc Vd_c xc by (simp add: dagger_of_dagger_is_id assoc_mult_mat_vec)
     also have "\<dots> = 0" unfolding inner_prod_def using Gx xd by simp
     finally have "?V *\<^sub>v x = 0\<^sub>v n" using Vx inner_prod_self_eq_zero_iff[of "?V *\<^sub>v x"] by simp
     with inj[OF xc] xnz show False by simp
   qed
   obtain B :: "complex Matrix.mat"
-    where Bc: "B \<in> carrier_mat k k" and GB: "?G * B = 1\<^sub>m k" and BG: "B * ?G = 1\<^sub>m k"
+    where Bc: "B \<in> carrier_mat k k" and GB: "?G * B = 1\<^sub>m k"
     using det_non_zero_imp_unit[OF Gc dG, of "()"] by (auto simp: Units_def ring_mat_def)
   \<comment> \<open>The dual vectors: columns of \<open>V B\<close>.\<close>
   let ?P = "?V * B"
   have Pc: "?P \<in> carrier_mat n k" using Vc Bc by auto
-  have Pd_c: "?P\<^sup>\<dagger> \<in> carrier_mat k n" using dagger_carrier[OF Pc] .
   let ?\<phi>s = "cols ?P"
   have \<phi>len: "length ?\<phi>s = k" using Pc Bc by simp
   have \<phi>d: "\<forall>\<phi> \<in> set ?\<phi>s. dim_vec \<phi> = n" using Pc by (auto simp: cols_def)
   have P_eq: "mat_of_cols n ?\<phi>s = ?P" using Pc mat_of_cols_cols[of ?P] by auto
   have Bd_G: "B\<^sup>\<dagger> * ?G = 1\<^sub>m k"
   proof -
-    have "B\<^sup>\<dagger> * ?G = (B\<^sup>\<dagger>) * (?G\<^sup>\<dagger>)" using Gh by simp
-    also have "\<dots> = (?G * B)\<^sup>\<dagger>" using dagger_of_prod[of ?G B] Gc Bc by auto
-    also have "\<dots> = (1\<^sub>m k :: complex Matrix.mat)\<^sup>\<dagger>" using GB by simp
-    also have "\<dots> = 1\<^sub>m k" by (rule eq_matI) (auto simp: dagger_def)
-    finally show ?thesis .
+    have "B\<^sup>\<dagger> * ?G = (?G * B)\<^sup>\<dagger>" using dagger_of_prod[of ?G B] Gc Bc Gh by auto
+    thus ?thesis unfolding GB using Bc by (intro eq_matI) (auto simp: dagger_def)
   qed
-  have dual: "\<And>i j. i < k \<Longrightarrow> j < k \<Longrightarrow> \<langle>?\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)"
+  have dual: "\<langle>?\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)" if i: "i < k" and j: "j < k" for i j
   proof -
-    fix i j assume i: "i < k" and j: "j < k"
-    have \<psi>j: "\<psi>s ! j \<in> set \<psi>s" using j k by simp
-    have \<psi>jd: "dim_vec (\<psi>s ! j) = n" using \<psi>d \<psi>j by simp
+    have \<psi>j: "dim_vec (\<psi>s ! j) = n" using \<psi>d j k by simp
+    have PV_c: "(?P\<^sup>\<dagger>) * ?V \<in> carrier_mat k k" using dagger_carrier[OF Pc] Vc by auto
     have "\<langle>?\<phi>s ! i | \<psi>s ! j\<rangle> = (((mat_of_cols n ?\<phi>s)\<^sup>\<dagger>) *\<^sub>v (\<psi>s ! j)) $ i"
-      using mat_of_cols_dagger_mult_vec_index[OF \<psi>jd \<phi>d, of i] \<phi>len i by simp
+      using mat_of_cols_dagger_mult_vec_index[OF \<psi>j \<phi>d, of i] \<phi>len i by simp
     also have "\<dots> = ((?P\<^sup>\<dagger>) *\<^sub>v Matrix.col ?V j) $ i"
-      using P_eq col_mat_of_cols[of j \<psi>s n] j k \<psi>jd by auto
+      using P_eq col_mat_of_cols[of j \<psi>s n] j k \<psi>j by auto
     also have "(?P\<^sup>\<dagger>) *\<^sub>v Matrix.col ?V j = Matrix.col ((?P\<^sup>\<dagger>) * ?V) j"
-      using col_mult2[OF Pd_c Vc j] by simp
+      using col_mult2[OF dagger_carrier[OF Pc] Vc j] by simp
     also have "Matrix.col ((?P\<^sup>\<dagger>) * ?V) j $ i = ((?P\<^sup>\<dagger>) * ?V) $$ (i, j)"
-    proof -
-      have PV_c: "(?P\<^sup>\<dagger>) * ?V \<in> carrier_mat k k" using Pd_c Vc by auto
-      thus ?thesis using i j carrier_matD[OF PV_c] by (simp add: Matrix.col_def)
-    qed
+      using i j carrier_matD[OF PV_c] by (simp add: Matrix.col_def)
     also have "(?P\<^sup>\<dagger>) * ?V = B\<^sup>\<dagger> * ?G"
-    proof -
-      have "?P\<^sup>\<dagger> = (B\<^sup>\<dagger>) * (?V\<^sup>\<dagger>)" using dagger_of_prod[of ?V B] Vc Bc by auto
-      hence "(?P\<^sup>\<dagger>) * ?V = ((B\<^sup>\<dagger>) * (?V\<^sup>\<dagger>)) * ?V" by simp
-      also have "\<dots> = (B\<^sup>\<dagger>) * ((?V\<^sup>\<dagger>) * ?V)"
-        using assoc_mult_mat[OF dagger_carrier[OF Bc] Vd_c Vc] .
-      finally show ?thesis .
-    qed
-    also have "\<dots> = 1\<^sub>m k" by (rule Bd_G)
-    finally show "\<langle>?\<phi>s ! i | \<psi>s ! j\<rangle> = (if i = j then 1 else 0)" using i j by simp
+      using dagger_of_prod[of ?V B] Vc Bc assoc_mult_mat[OF dagger_carrier[OF Bc] Vd_c Vc] by auto
+    finally show ?thesis unfolding Bd_G using i j by simp
   qed
-  \<comment> \<open>Scale so that \<open>I - c T\<close> is positive, with \<open>T = \<Sum> |\<phi>\<^sub>i\<rangle>\<langle>\<phi>\<^sub>i|\<close>.\<close>
+  \<comment> \<open>Scale \<open>T = \<Sum>|\<phi>\<^sub>i\<rangle>\<langle>\<phi>\<^sub>i|\<close> so that \<open>I - c T\<close> is positive; \<open>Q\<close> is its square root.\<close>
   let ?T = "outer_sum n ?\<phi>s"
   have Tc: "?T \<in> carrier_mat n n" by (intro carrier_matI) auto
-  have Tpsd: "psd ?T" using outer_sum_psd[OF \<phi>len \<phi>d] .
-  obtain U :: "complex Matrix.mat" and D :: "real list"
-    where Uc: "U \<in> carrier_mat n n" and UU: "unitary U" and Dlen: "length D = n"
-      and Dnn: "\<forall>i<n. 0 \<le> D ! i" and TUDU: "?T = U * diag_mat_of_real D * (U\<^sup>\<dagger>)"
-    using psd_spectral_decomp_nonneg[OF Tc Tpsd] by blast
-  define Dmax where "Dmax = sum_list (map abs D)"
-  define c where "c = 1 / (1 + Dmax)"
-  have Dmax0: "0 \<le> Dmax" unfolding Dmax_def by (rule sum_list_nonneg) auto
-  have cpos: "0 < c" unfolding c_def using Dmax0 by simp
-  have cD1: "\<And>i. i < n \<Longrightarrow> c * D ! i \<le> 1"
-  proof -
-    fix i assume i: "i < n"
-    have "\<bar>D ! i\<bar> \<in> set (map abs D)" using i Dlen by auto
-    hence "\<bar>D ! i\<bar> \<le> Dmax" unfolding Dmax_def by (intro member_le_sum_list) auto
-    hence "D ! i \<le> Dmax" by linarith
-    hence "c * D ! i \<le> c * Dmax" using cpos by (simp add: mult_left_mono)
-    also have "\<dots> = Dmax / (1 + Dmax)" unfolding c_def by simp
-    also have "\<dots> \<le> 1" using Dmax0 by (simp add: divide_le_eq)
-    finally show "c * D ! i \<le> 1" .
-  qed
-  define D' where "D' = map (\<lambda>d. 1 - c * d) D"
-  have D'len: "length D' = n" using Dlen by (simp add: D'_def)
-  have D'nn: "\<And>i. i < n \<Longrightarrow> 0 \<le> D' ! i" using cD1 Dlen by (simp add: D'_def)
-  have Dc: "diag_mat_of_real D \<in> carrier_mat n n" using diag_mat_of_real_carrier[of D] Dlen by metis
-  have diagD': "diag_mat_of_real D' = 1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D"
-  proof (rule eq_matI)
-    show "dim_row (diag_mat_of_real D') = dim_row (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D)"
-      using D'len Dlen by simp
-    show "dim_col (diag_mat_of_real D') = dim_col (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D)"
-      using D'len Dlen by simp
-    fix i j assume "i < dim_row (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D)"
-                   "j < dim_col (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D)"
-    hence ij: "i < n" "j < n" using Dlen by auto
-    show "diag_mat_of_real D' $$ (i, j) = (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) $$ (i, j)"
-      using ij Dlen D'len by (cases "i = j") (auto simp: D'_def)
-  qed
-  have UUd: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using unitary_inv_r_dimrow[OF UU] Uc by auto
-  have Ud_c: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by (simp add: dagger_def)
-  have ImcT: "1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T = U * diag_mat_of_real D' * (U\<^sup>\<dagger>)"
-  proof -
-    have one_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
-    have cDc: "complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D \<in> carrier_mat n n" using Dc by auto
-    have U1c: "U * 1\<^sub>m n \<in> carrier_mat n n" using Uc by auto
-    have UcDc: "U * (complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) \<in> carrier_mat n n" using Uc cDc by auto
-    have UDc: "U * diag_mat_of_real D \<in> carrier_mat n n" using Uc Dc by auto
-    have "U * diag_mat_of_real D' * (U\<^sup>\<dagger>)
-            = U * (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)"
-      by (simp only: diagD')
-    also have "\<dots> = (U * 1\<^sub>m n - U * (complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D)) * (U\<^sup>\<dagger>)"
-      by (simp only: mult_minus_distrib_mat[OF Uc one_c cDc])
-    also have "\<dots> = U * 1\<^sub>m n * (U\<^sup>\<dagger>) - U * (complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)"
-      by (simp only: minus_mult_distrib_mat[OF U1c UcDc Ud_c])
-    also have "U * 1\<^sub>m n * (U\<^sup>\<dagger>) = 1\<^sub>m n" using Uc UUd by simp
-    also have "U * (complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>) = complex_of_real c \<cdot>\<^sub>m ?T"
-    proof -
-      have "U * (complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) = complex_of_real c \<cdot>\<^sub>m (U * diag_mat_of_real D)"
-        by (rule mult_smult_distrib[OF Uc Dc])
-      hence "U * (complex_of_real c \<cdot>\<^sub>m diag_mat_of_real D) * (U\<^sup>\<dagger>)
-               = (complex_of_real c \<cdot>\<^sub>m (U * diag_mat_of_real D)) * (U\<^sup>\<dagger>)" by simp
-      also have "\<dots> = complex_of_real c \<cdot>\<^sub>m (U * diag_mat_of_real D * (U\<^sup>\<dagger>))"
-        by (rule mult_smult_assoc_mat[OF UDc Ud_c])
-      finally show ?thesis using TUDU by simp
-    qed
-    finally show ?thesis by simp
-  qed
-
+  obtain c where cpos: "0 < c" and ImcT_psd: "psd (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)"
+    using psd_scale_below_one[OF Tc outer_sum_psd[OF \<phi>len \<phi>d]] by blast
   have ImcT_c: "1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T \<in> carrier_mat n n" using Tc by auto
-  have ImcT_psd: "psd (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)"
-    unfolding ImcT using psd_U_diag_Udag[OF Uc D'len] D'nn by blast
   let ?Q = "psd_sqrt (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)"
   have Qc: "?Q \<in> carrier_mat n n" and Qpsd: "psd ?Q" and QQ: "?Q * ?Q = 1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T"
     using psd_sqrt_props[OF ImcT_c ImcT_psd] by auto
   have Qh: "?Q\<^sup>\<dagger> = ?Q" using psd_hermitian[OF Qpsd] by (simp add: hermitian_def)
   \<comment> \<open>The measurement operators \<open>M\<^sub>i = \<surd>c |e\<^sub>0\<rangle>\<langle>\<phi>\<^sub>i|\<close> and \<open>M\<^sub>k = Q\<close>.\<close>
   let ?u = "unit_vec n 0"
-  have ud: "dim_vec ?u = n" by simp
-  have un: "\<parallel>?u\<parallel> = 1" using npos by simp
-  have uu: "\<langle>?u | ?u\<rangle> = 1"
-  proof -
-    have "\<langle>?u | ?u\<rangle> = complex_of_real (\<parallel>?u\<parallel>\<^sup>2)" by (simp only: cpx_vec_length_inner_prod[symmetric])
-    thus ?thesis using un by simp
-  qed
+  have ud: "dim_vec ?u = n" and un: "\<parallel>?u\<parallel> = 1" using npos by simp_all
+  have uu: "\<langle>?u | ?u\<rangle> = 1" using un by (simp flip: cpx_vec_length_inner_prod)
   define Mi where "Mi = (\<lambda>\<phi> :: complex Matrix.vec. complex_of_real (sqrt c) \<cdot>\<^sub>m (?u \<oslash> \<phi>))"
   define Ms where "Ms = map Mi ?\<phi>s @ [?Q]"
-  have lenMs: "length Ms = k + 1" by (simp add: Ms_def \<phi>len carrier_matD[OF Bc])
-  have Ms_nth: "\<And>i. i < k \<Longrightarrow> Ms ! i = Mi (?\<phi>s ! i)" by (simp add: Ms_def \<phi>len nth_append carrier_matD[OF Bc])
-  have Mi_c: "\<And>\<phi>. dim_vec \<phi> = n \<Longrightarrow> Mi \<phi> \<in> carrier_mat n n"
-    using outer_prod_carrier[OF ud] by (auto simp: Mi_def)
-  have sqc: "sqrt c * sqrt c = c" using cpos by simp
-  have MiMi: "\<And>\<phi>. dim_vec \<phi> = n \<Longrightarrow> (Mi \<phi>)\<^sup>\<dagger> * Mi \<phi> = complex_of_real c \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)"
+  have lenMs: "length Ms = k + 1" by (simp add: Ms_def carrier_matD[OF Bc])
+  have Ms_nth: "Ms ! i = Mi (?\<phi>s ! i)" if "i < k" for i by (simp add: Ms_def carrier_matD[OF Bc] nth_append that)
+  have Mi_c: "Mi \<phi> \<in> carrier_mat n n" if "dim_vec \<phi> = n" for \<phi>
+    using outer_prod_carrier[OF ud that] by (auto simp: Mi_def)
+  have sc: "complex_of_real (sqrt c) * complex_of_real (sqrt c) = complex_of_real c"
+    using cpos by (simp flip: of_real_mult)
+  have MiMi: "(Mi \<phi>)\<^sup>\<dagger> * Mi \<phi> = complex_of_real c \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)" if that: "dim_vec \<phi> = n" for \<phi>
+    unfolding Mi_def smult_dagger_mult[OF outer_prod_carrier[OF ud that]] outer_prod_dagger
+              outer_prod_mult[OF refl] uu
+    by (intro eq_matI) (auto simp: sc)
+  have Mi_prob: "meas_prob (Mi \<phi>) \<psi> = c * (cmod \<langle>\<phi> | \<psi>\<rangle>)\<^sup>2"
+    if \<phi>: "dim_vec \<phi> = n" and \<psi>: "dim_vec \<psi> = n" for \<phi> \<psi>
   proof -
-    fix \<phi> :: "complex Matrix.vec" assume \<phi>: "dim_vec \<phi> = n"
-    have c1: "?u \<oslash> \<phi> \<in> carrier_mat n n" using outer_prod_carrier[OF ud \<phi>] .
-    have c2: "\<phi> \<oslash> ?u \<in> carrier_mat n n" using outer_prod_carrier[OF \<phi> ud] .
-    have dag: "(Mi \<phi>)\<^sup>\<dagger> = complex_of_real (sqrt c) \<cdot>\<^sub>m (\<phi> \<oslash> ?u)"
-      unfolding Mi_def by (simp add: dagger_of_smult outer_prod_dagger)
-    have prod: "(\<phi> \<oslash> ?u) * (?u \<oslash> \<phi>) = \<phi> \<oslash> \<phi>"
-    proof (rule eq_matI)
-      show "dim_row ((\<phi> \<oslash> ?u) * (?u \<oslash> \<phi>)) = dim_row (\<phi> \<oslash> \<phi>)"
-        using c1 c2 outer_prod_carrier[OF \<phi> \<phi>] by auto
-      show "dim_col ((\<phi> \<oslash> ?u) * (?u \<oslash> \<phi>)) = dim_col (\<phi> \<oslash> \<phi>)"
-        using c1 c2 outer_prod_carrier[OF \<phi> \<phi>] by auto
-      fix i j assume "i < dim_row (\<phi> \<oslash> \<phi>)" "j < dim_col (\<phi> \<oslash> \<phi>)"
-      hence ij: "i < n" "j < n" using outer_prod_carrier[OF \<phi> \<phi>] by auto
-      have dA: "dim_row (\<phi> \<oslash> ?u) = n" "dim_col (\<phi> \<oslash> ?u) = n" using c2 by auto
-      have dB: "dim_row (?u \<oslash> \<phi>) = n" "dim_col (?u \<oslash> \<phi>) = n" using c1 by auto
-      have "((\<phi> \<oslash> ?u) * (?u \<oslash> \<phi>)) $$ (i, j) = Matrix.row (\<phi> \<oslash> ?u) i \<bullet> Matrix.col (?u \<oslash> \<phi>) j"
-        using ij by (simp only: index_mult_mat(1) dA dB)
-      also have "\<dots> = (\<Sum>l = 0..<n. Matrix.row (\<phi> \<oslash> ?u) i $ l * Matrix.col (?u \<oslash> \<phi>) j $ l)"
-        by (simp only: scalar_prod_def dim_col dB)
-      also have "\<dots> = (\<Sum>l = 0..<n. (\<phi> $ i * cnj (?u $ l)) * (?u $ l * cnj (\<phi> $ j)))"
-      proof (rule sum.cong[OF refl])
-        fix l assume "l \<in> {0..<n}"
-        hence l: "l < n" by simp
-        have r: "Matrix.row (\<phi> \<oslash> ?u) i $ l = (\<phi> \<oslash> ?u) $$ (i, l)"
-          using ij l by (simp only: index_row(1) dA)
-        have cc: "Matrix.col (?u \<oslash> \<phi>) j $ l = (?u \<oslash> \<phi>) $$ (l, j)"
-          using ij l by (simp only: index_col dB)
-        have o1: "(\<phi> \<oslash> ?u) $$ (i, l) = \<phi> $ i * cnj (?u $ l)"
-          by (rule outer_prod_index) (simp only: \<phi> ij, simp only: ud l)
-        have o2: "(?u \<oslash> \<phi>) $$ (l, j) = ?u $ l * cnj (\<phi> $ j)"
-          by (rule outer_prod_index) (simp only: ud l, simp only: \<phi> ij)
-        show "Matrix.row (\<phi> \<oslash> ?u) i $ l * Matrix.col (?u \<oslash> \<phi>) j $ l
-                = (\<phi> $ i * cnj (?u $ l)) * (?u $ l * cnj (\<phi> $ j))"
-          by (simp only: r cc o1 o2)
-      qed
-      also have "\<dots> = \<phi> $ i * cnj (\<phi> $ j) * (\<Sum>l = 0..<n. cnj (?u $ l) * ?u $ l)"
-        by (simp add: sum_distrib_left algebra_simps)
-      also have "(\<Sum>l = 0..<n. cnj (?u $ l) * ?u $ l) = (\<Sum>l = 0..<n. if l = 0 then 1 else 0)"
-        by (rule sum.cong[OF refl]) simp
-      also have "\<dots> = 1" using npos by simp
-      also have "\<phi> $ i * cnj (\<phi> $ j) * 1 = (\<phi> \<oslash> \<phi>) $$ (i, j)"
-        using outer_prod_index[of i \<phi> j \<phi>] ij \<phi> by simp
-      finally show "((\<phi> \<oslash> ?u) * (?u \<oslash> \<phi>)) $$ (i, j) = (\<phi> \<oslash> \<phi>) $$ (i, j)" .
-    qed
-    have sc: "complex_of_real (sqrt c) * complex_of_real (sqrt c) = complex_of_real c"
-      using sqc cpos by (simp flip: of_real_mult)
-    have smm: "\<And>a b (A :: complex Matrix.mat). a \<cdot>\<^sub>m (b \<cdot>\<^sub>m A) = (a * b) \<cdot>\<^sub>m A"
-      by (rule eq_matI) (simp_all add: mult.assoc)
-    have "(Mi \<phi>)\<^sup>\<dagger> * Mi \<phi> = (complex_of_real (sqrt c) \<cdot>\<^sub>m (\<phi> \<oslash> ?u)) * Mi \<phi>"
-      by (simp only: dag)
-    also have "\<dots> = (complex_of_real (sqrt c) \<cdot>\<^sub>m (\<phi> \<oslash> ?u)) * (complex_of_real (sqrt c) \<cdot>\<^sub>m (?u \<oslash> \<phi>))"
-      by (simp only: Mi_def)
-    also have "\<dots> = complex_of_real (sqrt c) \<cdot>\<^sub>m ((\<phi> \<oslash> ?u) * (complex_of_real (sqrt c) \<cdot>\<^sub>m (?u \<oslash> \<phi>)))"
-      by (rule mult_smult_assoc_mat[OF c2 smult_carrier_mat[OF c1]])
-    also have "(\<phi> \<oslash> ?u) * (complex_of_real (sqrt c) \<cdot>\<^sub>m (?u \<oslash> \<phi>))
-                 = complex_of_real (sqrt c) \<cdot>\<^sub>m ((\<phi> \<oslash> ?u) * (?u \<oslash> \<phi>))"
-      by (rule mult_smult_distrib[OF c2 c1])
-    also have "\<dots> = complex_of_real (sqrt c) \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)" by (simp only: prod)
-    also have "complex_of_real (sqrt c) \<cdot>\<^sub>m (complex_of_real (sqrt c) \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>))
-                 = (complex_of_real (sqrt c) * complex_of_real (sqrt c)) \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)"
-      by (rule smm)
-    also have "\<dots> = complex_of_real c \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)" by (simp only: sc)
-    finally show "(Mi \<phi>)\<^sup>\<dagger> * Mi \<phi> = complex_of_real c \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)" .
-  qed
-  have Mi_prob: "\<And>\<phi> \<psi>. dim_vec \<phi> = n \<Longrightarrow> dim_vec \<psi> = n \<Longrightarrow>
-                   meas_prob (Mi \<phi>) \<psi> = c * (cmod \<langle>\<phi> | \<psi>\<rangle>)\<^sup>2"
-  proof -
-    fix \<phi> \<psi> :: "complex Matrix.vec" assume \<phi>: "dim_vec \<phi> = n" and \<psi>: "dim_vec \<psi> = n"
-    have c1: "?u \<oslash> \<phi> \<in> carrier_mat n n" using outer_prod_carrier[OF ud \<phi>] .
-    have "Mi \<phi> *\<^sub>v \<psi> = complex_of_real (sqrt c) \<cdot>\<^sub>v ((?u \<oslash> \<phi>) *\<^sub>v \<psi>)"
-      unfolding Mi_def using smult_mat_mult_vec[OF c1] \<psi> by auto
-    also have "(?u \<oslash> \<phi>) *\<^sub>v \<psi> = \<langle>\<phi> | \<psi>\<rangle> \<cdot>\<^sub>v ?u"
-      using outer_prod_mult_vec[of \<psi> \<phi> ?u] \<phi> \<psi> by simp
-    finally have "\<parallel>Mi \<phi> *\<^sub>v \<psi>\<parallel> = sqrt c * (cmod \<langle>\<phi> | \<psi>\<rangle> * 1)"
-      using cpos un by (simp add: cpx_vec_length_smult)
-    thus "meas_prob (Mi \<phi>) \<psi> = c * (cmod \<langle>\<phi> | \<psi>\<rangle>)\<^sup>2"
-      unfolding meas_prob_def using sqc by (simp add: power_mult_distrib power2_eq_square)
+    have "Mi \<phi> *\<^sub>v \<psi> = complex_of_real (sqrt c) \<cdot>\<^sub>v (\<langle>\<phi> | \<psi>\<rangle> \<cdot>\<^sub>v ?u)"
+      unfolding Mi_def
+      using smult_mat_mult_vec[OF outer_prod_carrier[OF ud \<phi>] carrier_vecI[OF \<psi>]] outer_prod_mult_vec[of \<psi> \<phi> ?u] \<phi> \<psi>
+      by simp
+    hence "\<parallel>Mi \<phi> *\<^sub>v \<psi>\<parallel> = sqrt c * cmod \<langle>\<phi> | \<psi>\<rangle>" using cpos un by (simp add: cpx_vec_length_smult)
+    thus ?thesis unfolding meas_prob_def using cpos by (simp add: power_mult_distrib)
   qed
   \<comment> \<open>The operators form a measurement system.\<close>
-  have Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
-    using Mi_c \<phi>d Qc by (auto simp: Ms_def)
+  have Ms_c: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n" using Mi_c \<phi>d Qc by (auto simp: Ms_def)
+  have oc: "\<forall>\<phi> \<in> set ?\<phi>s. \<phi> \<oslash> \<phi> \<in> carrier_mat n n" using \<phi>d by (auto intro: outer_prod_carrier)
   have fold_map: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n) = complex_of_real c \<cdot>\<^sub>m ?T"
-  proof (rule eq_matI)
-    have carr: "\<forall>\<phi> \<in> set ?\<phi>s. (Mi \<phi>)\<^sup>\<dagger> * Mi \<phi> \<in> carrier_mat n n"
-      using Mi_c \<phi>d by (meson mult_carrier_mat dagger_carrier)
-    have fold_c: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n) \<in> carrier_mat n n"
-      using foldr_add_mat_carrier[OF carr] by (simp add: foldr_map o_def)
-    show "dim_row (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n)) = dim_row (complex_of_real c \<cdot>\<^sub>m ?T)"
-      using fold_c Tc by auto
-    show "dim_col (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n)) = dim_col (complex_of_real c \<cdot>\<^sub>m ?T)"
-      using fold_c Tc by auto
-    fix i j assume "i < dim_row (complex_of_real c \<cdot>\<^sub>m ?T)" "j < dim_col (complex_of_real c \<cdot>\<^sub>m ?T)"
-    hence ij: "i < n" "j < n" using Tc by auto
-    have "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n) $$ (i, j)
-            = foldr (\<lambda>\<phi> acc. (Mi \<phi>)\<^sup>\<dagger> * Mi \<phi> + acc) ?\<phi>s (0\<^sub>m n n) $$ (i, j)"
-      by (simp add: foldr_map o_def)
-    also have "\<dots> = sum_list (map (\<lambda>\<phi>. ((Mi \<phi>)\<^sup>\<dagger> * Mi \<phi>) $$ (i, j)) ?\<phi>s)"
-      using foldr_add_mat_index[OF carr ij] .
-    also have "\<dots> = sum_list (map (\<lambda>\<phi>. complex_of_real c * (\<phi> $ i * cnj (\<phi> $ j))) ?\<phi>s)"
-    proof (intro arg_cong[where f = sum_list] map_cong refl)
-      fix \<phi> assume "\<phi> \<in> set ?\<phi>s"
-      hence d: "dim_vec \<phi> = n" using \<phi>d by blast
-      have cc: "\<phi> \<oslash> \<phi> \<in> carrier_mat n n" using outer_prod_carrier[OF d d] .
-      have "((Mi \<phi>)\<^sup>\<dagger> * Mi \<phi>) $$ (i, j) = (complex_of_real c \<cdot>\<^sub>m (\<phi> \<oslash> \<phi>)) $$ (i, j)"
-        by (simp only: MiMi[OF d])
-      also have "\<dots> = complex_of_real c * (\<phi> \<oslash> \<phi>) $$ (i, j)"
-        by (rule index_smult_mat(1)) (simp_all only: carrier_matD[OF cc] ij)
-      also have "(\<phi> \<oslash> \<phi>) $$ (i, j) = \<phi> $ i * cnj (\<phi> $ j)"
-        using outer_prod_index[of i \<phi> j \<phi>] ij d by simp
-      finally show "((Mi \<phi>)\<^sup>\<dagger> * Mi \<phi>) $$ (i, j) = complex_of_real c * (\<phi> $ i * cnj (\<phi> $ j))" .
-    qed
-    also have "\<dots> = complex_of_real c * sum_list (map (\<lambda>\<phi>. \<phi> $ i * cnj (\<phi> $ j)) ?\<phi>s)"
-      by (simp add: sum_list_const_mult)
-    also have "\<dots> = complex_of_real c * ?T $$ (i, j)"
-      using outer_sum_entry_sum_list[OF \<phi>d ij] by simp
-    finally show "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n) $$ (i, j)
-                    = (complex_of_real c \<cdot>\<^sub>m ?T) $$ (i, j)"
-      using ij Tc by simp
-  qed
+    by (simp only: foldr_map o_def foldr_add_mat_cong[OF MiMi[OF \<phi>d[rule_format]]]
+                   foldr_add_mat_smult[OF oc] outer_sum_as_foldr[OF \<phi>d, symmetric])
   have ms: "measurement_system n Ms"
   proof -
-    have QdQ: "(?Q\<^sup>\<dagger>) * ?Q + 0\<^sub>m n n = 1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T"
-      using Qh QQ ImcT_c by simp
     have "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)
-            = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s)
-                (foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) [?Q] (0\<^sub>m n n))"
-      unfolding Ms_def by (rule foldr_append)
-    also have "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) [?Q] (0\<^sub>m n n) = 1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T"
-      by (simp only: foldr.simps o_apply id_apply QdQ)
-    also have "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)
-                 = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n)
-                     + (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)"
-      using Mi_c \<phi>d ImcT_c by (intro foldr_MdagM_shift) auto
-    also have "\<dots> = complex_of_real c \<cdot>\<^sub>m ?T + (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)"
-      using fold_map by simp
-    also have "\<dots> = 1\<^sub>m n"
-    proof (rule eq_matI)
-      show "dim_row (complex_of_real c \<cdot>\<^sub>m ?T + (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)) = dim_row (1\<^sub>m n :: complex Matrix.mat)" using Tc by auto
-      show "dim_col (complex_of_real c \<cdot>\<^sub>m ?T + (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)) = dim_col (1\<^sub>m n :: complex Matrix.mat)" using Tc by auto
-      fix i j assume "i < dim_row (1\<^sub>m n :: complex Matrix.mat)" "j < dim_col (1\<^sub>m n :: complex Matrix.mat)"
-      thus "(complex_of_real c \<cdot>\<^sub>m ?T + (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)) $$ (i, j) = (1\<^sub>m n :: complex Matrix.mat) $$ (i, j)"
-        using Tc by (simp add: algebra_simps)
-    qed
+            = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)"
+      unfolding Ms_def foldr_append by (simp add: Qh QQ ImcT_c)
+    also have "\<dots> = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) (map Mi ?\<phi>s) (0\<^sub>m n n) + (1\<^sub>m n - complex_of_real c \<cdot>\<^sub>m ?T)"
+      using Mi_c \<phi>d by (intro foldr_MdagM_shift[OF _ ImcT_c]) auto
+    also have "\<dots> = 1\<^sub>m n" unfolding fold_map using Tc by (intro eq_matI) auto
     finally show ?thesis unfolding measurement_system_def using Ms_c by blast
   qed
   \<comment> \<open>Outcome \<open>i < k\<close> occurs only for \<open>\<psi>\<^sub>i\<close>, and then with positive probability.\<close>
+  have \<phi>i: "dim_vec (?\<phi>s ! i) = n" if "i < k" for i
+    using \<phi>d[rule_format, OF nth_mem] that by (simp add: carrier_matD[OF Bc])
+  have \<psi>i: "dim_vec (\<psi>s ! i) = n" if "i < k" for i using \<psi>d[rule_format, OF nth_mem] k that by simp
   have off: "\<forall>i<k. \<forall>j<k. i \<noteq> j \<longrightarrow> meas_prob (Ms ! i) (\<psi>s ! j) = 0"
-  proof (intro allI impI)
-    fix i j assume i: "i < k" and j: "j < k" and ij: "i \<noteq> j"
-    have \<phi>i: "dim_vec (?\<phi>s ! i) = n" using \<phi>d \<phi>len i by (simp add: carrier_matD[OF Bc] carrier_matD[OF Pc])
-    have \<psi>j: "dim_vec (\<psi>s ! j) = n" using \<psi>d k j by simp
-    show "meas_prob (Ms ! i) (\<psi>s ! j) = 0"
-      using Ms_nth[OF i] Mi_prob[OF \<phi>i \<psi>j] dual[OF i j] ij by simp
-  qed
+    by (simp add: Ms_nth Mi_prob[OF \<phi>i \<psi>i] dual)
   have diag: "\<forall>i<k. 0 < meas_prob (Ms ! i) (\<psi>s ! i)"
-  proof (intro allI impI)
-    fix i assume i: "i < k"
-    have \<phi>i: "dim_vec (?\<phi>s ! i) = n" using \<phi>d \<phi>len i by (simp add: carrier_matD[OF Bc] carrier_matD[OF Pc])
-    have \<psi>i: "dim_vec (\<psi>s ! i) = n" using \<psi>d k i by simp
-    show "0 < meas_prob (Ms ! i) (\<psi>s ! i)"
-      using Ms_nth[OF i] Mi_prob[OF \<phi>i \<psi>i] dual[OF i i] cpos by simp
-  qed
+    by (simp add: Ms_nth Mi_prob[OF \<phi>i \<psi>i] dual cpos)
   show ?thesis using ms lenMs off diag by blast
 qed
 
