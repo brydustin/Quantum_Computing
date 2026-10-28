@@ -1271,3 +1271,18 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `unit_block_tensor` (it says what `unit_block` is), the Day 23/32 example computations and the whole
   of the `Quantum_Channels` appendix — those are results, not scaffolding.  Plan:
   `tools/deps/plans/sweep2.py`.
+- **Audit tick 20: Day 7's tensor lemmas and the measurement sum** (2026-10-28).  `tensor_inner_prod`
+  (128 lines of `sum.nat_group` + `reindex_bij_witness`) is one reindexing: ⟨h₁⊗k₁|h₂⊗k₂⟩ is a sum over
+  r < n·m of entries at (r div m, r mod m), which Day 6's `sum_div_mod` turns into a double sum and
+  `sum_product` factors (18 lines).  `tensor_onb` (126) reads position p of the product list through
+  `nth_concat_map_upt` and multiplies the two deltas; p div m = q div m ∧ p mod m = q mod m ⟹ p = q is
+  `div_mult_mod_eq[of p m, unfolded that]` (46).  `nth_concat_map_upt` itself 55 → 21.
+  `measurement_probs_sum_one` (150 lines, two inner inductions, six metis calls) is one induction over
+  the list: `meas_prob_quad_form` (moved up beside `meas_prob`) turns each probability into ⟨ψ|M*Mψ⟩,
+  `add_mult_distrib_mat_vec` + `inner_prod_right_add'` collect the foldr, and ∑M*M = I leaves ⟨ψ|ψ⟩ = 1
+  (31).  Day 7 579 → 238.  Traps: `div_mult_mod_eq` is a simp rule, so `using div_mult_mod_eq[of p m]
+  by auto` rewrites the fact to True — `[unfolded that]` then `simp`; `simp` may unfold ⟨u|v⟩ into
+  `vec n (cnj ∘ u) ∙ v` before `inner_prod_right_add'` can fire — `subst` it first; `auto intro!:
+  foldr_add_mat_carrier` also needs `mult_carrier_mat dagger_carrier` as intro rules.  Scans: the HHL
+  scan now covers the whole `HHL_Algorithm` heap (30 theories; before, the 15 that Channels imports),
+  with separate Channels/Demo/Search scans.  Plan: `tools/deps/plans/day7.py`; scratch `wip/d23/D07.thy`.
