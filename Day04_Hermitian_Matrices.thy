@@ -1086,82 +1086,45 @@ lemma pd_iff_pos_eigenvalues:
              v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> 0 < Re mu))"
 proof
   assume pd: "pd P"
-  have dr: "dim_row P = n" using sq by auto
-  have herm: "hermitian P" using pd by (simp add: pd_def)
-  have ev: "\<forall>mu :: complex. \<forall>v :: complex Matrix.vec.
-             v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> 0 < Re mu"
-  proof (intro allI impI, elim conjE)
-    fix mu :: complex and v :: "complex Matrix.vec"
-    assume vnz: "v \<noteq> 0\<^sub>v n" and vd: "dim_vec v = n" and eig: "P *\<^sub>v v = mu \<cdot>\<^sub>v v"
-    have pos: "0 < Re \<langle>v | P *\<^sub>v v\<rangle>" using pd vd vnz dr unfolding pd_def by auto
-    have vv_re: "0 < Re \<langle>v | v\<rangle>"
-    proof -
-      have "\<langle>v | v\<rangle> \<noteq> 0" using vnz vd inner_prod_self_eq_zero_iff[of v] by simp
-      moreover have "Im \<langle>v | v\<rangle> = 0" by (rule inner_prod_with_itself_Im)
-      moreover have "0 \<le> Re \<langle>v | v\<rangle>" by (rule inner_prod_with_itself_Re)
-      ultimately show ?thesis by (metis complex_eq_iff less_eq_real_def zero_complex.simps(1) zero_complex.simps(2))
-    qed
-    have "\<langle>v | P *\<^sub>v v\<rangle> = mu * \<langle>v | v\<rangle>" using eig by (simp add: inner_prod_right_smult')
-    hence "Re \<langle>v | P *\<^sub>v v\<rangle> = Re mu * Re \<langle>v | v\<rangle>"
-      using inner_prod_with_itself_Im[of v] by simp
-    with pos have "0 < Re mu * Re \<langle>v | v\<rangle>" by simp
-    thus "0 < Re mu" using vv_re zero_less_mult_pos2 by blast
+  have "0 < Re mu" if vnz: "v \<noteq> 0\<^sub>v n" and vd: "dim_vec v = n" and eig: "P *\<^sub>v v = mu \<cdot>\<^sub>v v"
+    for mu :: complex and v :: "complex Matrix.vec"
+  proof -
+    have "0 < Re \<langle>v | P *\<^sub>v v\<rangle>" using pd vd vnz sq unfolding pd_def by auto
+    also have "Re \<langle>v | P *\<^sub>v v\<rangle> = Re mu * Re \<langle>v | v\<rangle>"
+      unfolding eig inner_prod_right_smult' using inner_prod_with_itself_Im[of v] by simp
+    finally show ?thesis
+      using inner_prod_with_itself_Re_non0[of v] vnz vd zero_less_mult_pos2 by auto
   qed
-  show "hermitian P \<and> (\<forall>mu :: complex. \<forall>v :: complex Matrix.vec.
+  thus "hermitian P \<and> (\<forall>mu :: complex. \<forall>v :: complex Matrix.vec.
              v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> 0 < Re mu)"
-    using herm ev by blast
+    using pd unfolding pd_def by blast
 next
   assume rhs: "hermitian P \<and> (\<forall>mu :: complex. \<forall>v :: complex Matrix.vec.
              v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> 0 < Re mu)"
-  have herm: "hermitian P" using rhs by blast
-  have ev: "\<And>mu v. v \<noteq> 0\<^sub>v n \<Longrightarrow> dim_vec v = n \<Longrightarrow> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<Longrightarrow> 0 < Re mu"
-    using rhs by blast
+  hence ev: "\<And>mu v. v \<noteq> 0\<^sub>v n \<Longrightarrow> dim_vec v = n \<Longrightarrow> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<Longrightarrow> 0 < Re mu"
+    by blast
   have psd: "psd P"
-  proof -
-    have "\<forall>mu :: complex. \<forall>v :: complex Matrix.vec.
-            v \<noteq> 0\<^sub>v n \<and> dim_vec v = n \<and> P *\<^sub>v v = mu \<cdot>\<^sub>v v \<longrightarrow> 0 \<le> Re mu"
-    proof (intro allI impI, elim conjE)
-      fix mu :: complex and v :: "complex Matrix.vec"
-      assume "v \<noteq> 0\<^sub>v n" "dim_vec v = n" "P *\<^sub>v v = mu \<cdot>\<^sub>v v"
-      from ev[OF this] show "0 \<le> Re mu" by simp
-    qed
-    thus ?thesis using psd_iff_nonneg_eigenvalues[OF sq] herm by blast
-  qed
+    unfolding psd_iff_nonneg_eigenvalues[OF sq] using rhs ev by (auto simp: less_imp_le)
   let ?Q = "psd_sqrt P"
   have Qc: "?Q \<in> carrier_mat n n" and Qpsd: "psd ?Q" and QQ: "?Q * ?Q = P"
     using psd_sqrt_props[OF sq psd] by auto
   have Qh: "?Q\<^sup>\<dagger> = ?Q" using psd_hermitian[OF Qpsd] by (simp add: hermitian_def)
-  have dr: "dim_row P = n" using sq by auto
-  show "pd P"
-    unfolding pd_def dr
+  show "pd P" unfolding pd_def carrier_matD(1)[OF sq]
   proof (intro conjI allI impI)
-    show "hermitian P" by (rule herm)
     fix x :: "complex Matrix.vec" assume xd: "dim_vec x = n" and xnz: "x \<noteq> 0\<^sub>v n"
-    have xc: "x \<in> carrier_vec n" using xd by auto
-    have Qx: "dim_vec (?Q *\<^sub>v x) = n" using Qc xd by auto
-    have qf: "\<langle>x | P *\<^sub>v x\<rangle> = \<langle>?Q *\<^sub>v x | ?Q *\<^sub>v x\<rangle>"
-    proof -
-      have "\<langle>x | P *\<^sub>v x\<rangle> = \<langle>x | ?Q *\<^sub>v (?Q *\<^sub>v x)\<rangle>"
-        using QQ Qc xc by (metis assoc_mult_mat_vec)
-      also have "\<dots> = \<langle>?Q\<^sup>\<dagger> *\<^sub>v x | ?Q *\<^sub>v x\<rangle>"
-        using inner_prod_adjoint_swap[OF Qc xd Qx] .
-      finally show ?thesis using Qh by simp
-    qed
+    have Px: "P *\<^sub>v x = ?Q *\<^sub>v (?Q *\<^sub>v x)"
+      using assoc_mult_mat_vec[OF Qc Qc carrier_vecI[OF xd]] unfolding QQ .
+    have Qx: "dim_vec (?Q *\<^sub>v x) = n" using Qc by simp
     have "?Q *\<^sub>v x \<noteq> 0\<^sub>v n"
     proof
-      assume Qx0: "?Q *\<^sub>v x = 0\<^sub>v n"
-      have "P *\<^sub>v x = ?Q *\<^sub>v (?Q *\<^sub>v x)" using QQ Qc xc by (metis assoc_mult_mat_vec)
-      also have "\<dots> = 0\<^sub>v n" using Qx0 Qc by auto
-      also have "\<dots> = (0 :: complex) \<cdot>\<^sub>v x" using xd by auto
-      finally have "P *\<^sub>v x = (0 :: complex) \<cdot>\<^sub>v x" .
+      assume "?Q *\<^sub>v x = 0\<^sub>v n"
+      hence "P *\<^sub>v x = (0 :: complex) \<cdot>\<^sub>v x" unfolding Px using Qc xd by (intro eq_vecI) auto
       from ev[OF xnz xd this] show False by simp
     qed
-    hence "\<langle>?Q *\<^sub>v x | ?Q *\<^sub>v x\<rangle> \<noteq> 0" using Qx inner_prod_self_eq_zero_iff[of "?Q *\<^sub>v x"] by simp
-    moreover have "Im \<langle>?Q *\<^sub>v x | ?Q *\<^sub>v x\<rangle> = 0" by (rule inner_prod_with_itself_Im)
-    moreover have "0 \<le> Re \<langle>?Q *\<^sub>v x | ?Q *\<^sub>v x\<rangle>" by (rule inner_prod_with_itself_Re)
-    ultimately show "0 < Re \<langle>x | P *\<^sub>v x\<rangle>"
-      using qf by (metis complex_eq_iff less_eq_real_def zero_complex.simps(1) zero_complex.simps(2))
-  qed
+    hence "0 < Re \<langle>?Q *\<^sub>v x | ?Q *\<^sub>v x\<rangle>" using inner_prod_with_itself_Re_non0[of "?Q *\<^sub>v x"] Qx by simp
+    thus "0 < Re \<langle>x | P *\<^sub>v x\<rangle>"
+      unfolding Px inner_prod_adjoint_swap[OF Qc xd Qx] Qh .
+  qed (use rhs in blast)
 qed
 
 lemma outer_sum_singleton_index:

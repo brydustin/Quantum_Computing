@@ -1388,3 +1388,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Day 2 1214 → 1186.  Trap: `unfolding` applies all its equations to normal form at once, so a rewrite
   that consumes `W * |φ⟩` must come in a later `unfolding` than the associativity instance that
   mentions it.  Plan: `tools/deps/plans/day2b.py`; scratch `wip/d23/D02b.thy`.
+- **Audit tick 32: positive definite iff positive eigenvalues** (2026-10-28).  Day 4's
+  `pd_iff_pos_eigenvalues` (87 lines) keeps its argument — ⟨v|Pv⟩ = μ⟨v|v⟩ one way, P = Q² with Q the
+  square root the other — but through IMD's `inner_prod_with_itself_Re_non0` (⟨v|v⟩ has positive real
+  part for v ≠ 0) in place of two eight-line `complex_eq_iff` detours: 47 lines, three metis calls gone.
+  Day 4 1742 → 1705.  Trap: `unfolding QQ[symmetric]` with `QQ: psd_sqrt P * psd_sqrt P = P` loops
+  (the right-hand side contains P) — rewrite the instantiated fact with `QQ` instead.  Plan:
+  `tools/deps/plans/day4e.py`; scratch `wip/d23/D04e.thy`.
