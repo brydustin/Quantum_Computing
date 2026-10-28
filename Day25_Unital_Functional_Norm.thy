@@ -48,10 +48,6 @@ lemma inner_add_smult_expand:
   unfolding inner_prod_def using assms
   by (simp add: sum.distrib sum_distrib_left algebra_simps)
 
-lemma smult_mat_vec: "A \<in> carrier_mat n m \<Longrightarrow> dim_vec v = m \<Longrightarrow> (c \<cdot>\<^sub>m A) *\<^sub>v v = c \<cdot>\<^sub>v (A *\<^sub>v v)"
-  by (smt (verit, ccfv_SIG) carrier_matD(1) carrier_vec_dim_vec dim_mult_mat_vec eq_vecI index_mult_mat_vec index_smult_mat(2)
-      index_smult_vec(1,2) row_carrier_vec row_smult smult_scalar_prod_distrib)
-
 lemma entry_le_vnorm: "i < dim_vec v \<Longrightarrow> cmod (v $ i) \<le> \<parallel>v\<parallel>"
 proof -
   assume i: "i < dim_vec v"
@@ -168,7 +164,7 @@ proof (rule op_norm_le)
   show "c \<cdot>\<^sub>m A \<in> carrier_mat n n" using A by simp
   show "0 \<le> cmod c * op_norm n A" using op_norm_nonneg[OF A] by simp
   fix v :: "complex Matrix.vec" assume v: "dim_vec v = n"
-  have "\<parallel>(c \<cdot>\<^sub>m A) *\<^sub>v v\<parallel> = cmod c * \<parallel>A *\<^sub>v v\<parallel>" by (simp add: smult_mat_vec[OF A v] cpx_vec_length_smult)
+  have "\<parallel>(c \<cdot>\<^sub>m A) *\<^sub>v v\<parallel> = cmod c * \<parallel>A *\<^sub>v v\<parallel>" by (simp add: smult_mat_mult_vec[OF A carrier_vecI[OF v]] cpx_vec_length_smult)
   also have "\<dots> \<le> cmod c * (op_norm n A * \<parallel>v\<parallel>)" by (intro mult_left_mono op_norm_mult[OF A v]) simp
   finally show "\<parallel>(c \<cdot>\<^sub>m A) *\<^sub>v v\<parallel> \<le> cmod c * op_norm n A * \<parallel>v\<parallel>" by (simp add: mult.assoc)
 qed
@@ -232,7 +228,7 @@ proof -
     have "(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v x + e \<cdot>\<^sub>v (A *\<^sub>v x)"
       by (metis (no_types, lifting) ext Ac I TSc add_mult_distrib_mat_vec assms(3) 
           carrier_matD(2) carrier_mat_triv hermitian_square
-          index_one_mat(2) index_smult_mat(2,3) one_mult_mat_vec smult_mat_vec x xc)     
+          index_one_mat(2) index_smult_mat(2,3) one_mult_mat_vec smult_mat_mult_vec x xc)     
     hence "\<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> = complex_of_real c * \<langle>x|x\<rangle> + e * \<langle>x|A *\<^sub>v x\<rangle>"
       by (metis Ac carrier_matD(1) dim_mult_mat_vec index_smult_vec(2) inner_prod_right_add' inner_prod_right_smult' x)
     hence "Re \<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> = c * \<parallel>x\<parallel>\<^sup>2 + Re e * Re \<langle>x|A *\<^sub>v x\<rangle> - Im e * Im \<langle>x|A *\<^sub>v x\<rangle>"
@@ -282,7 +278,7 @@ next
     using L A operator_systemD(5)[OF OS] wf unfolding Y_def lin_fun_on_def by simp
   have Ynorm: "\<parallel>Y *\<^sub>v x\<parallel> \<le> ?r * \<parallel>x\<parallel>" if x: "dim_vec x = n" for x
   proof -
-    have "\<parallel>Y *\<^sub>v x\<parallel> = cmod ?w * \<parallel>A *\<^sub>v x\<parallel>" unfolding Y_def by (simp add: smult_mat_vec[OF Ac x] cpx_vec_length_smult)
+    have "\<parallel>Y *\<^sub>v x\<parallel> = cmod ?w * \<parallel>A *\<^sub>v x\<parallel>" unfolding Y_def by (simp add: smult_mat_mult_vec[OF Ac carrier_vecI[OF x]] cpx_vec_length_smult)
     thus ?thesis using op_norm_mult[OF Ac x] w1 by simp
   qed
   have zb: "cmod \<langle>x|Y *\<^sub>v x\<rangle> \<le> ?r * \<parallel>x\<parallel>\<^sup>2" if x: "dim_vec x = n" for x
@@ -301,7 +297,7 @@ next
     have xc: "x \<in> carrier_vec n" by (rule carrier_vecI[OF x])
     have "(a \<cdot>\<^sub>m Y + b \<cdot>\<^sub>m (Y\<^sup>\<dagger>)) *\<^sub>v x = a \<cdot>\<^sub>v (Y *\<^sub>v x) + b \<cdot>\<^sub>v (Y\<^sup>\<dagger> *\<^sub>v x)"
       using add_mult_distrib_mat_vec[OF smult_carrier_mat[OF Yc] smult_carrier_mat[OF Ydc] xc]
-      by (simp add: smult_mat_vec[OF Yc x] smult_mat_vec[OF Ydc x])
+      by (simp add: smult_mat_mult_vec[OF Yc xc] smult_mat_mult_vec[OF Ydc xc])
     thus ?thesis using Yc Ydc x
       by (metis (no_types, lifting) carrier_matD(1) dim_mult_mat_vec index_smult_vec(2) 
           inner_prod_adjoint_swap inner_prod_cnj  inner_prod_right_add' inner_prod_right_smult')
@@ -398,7 +394,7 @@ proof (intro ballI impI)
       have xc: "x \<in> carrier_vec n" by (rule carrier_vecI[OF x])
       have e: "M *\<^sub>v x = P *\<^sub>v x + ?z \<cdot>\<^sub>v x"
         unfolding M_def using add_mult_distrib_mat_vec[OF smult_carrier_mat[OF Pc] smult_carrier_mat[OF one_carrier_mat] xc]
-        by (simp add: smult_mat_vec[OF Pc x] smult_mat_vec[OF one_carrier_mat x] xc)
+        by (simp add: smult_mat_mult_vec[OF Pc xc] smult_mat_mult_vec[OF one_carrier_mat xc] xc)
       have px: "\<langle>P *\<^sub>v x|x\<rangle> = \<langle>x|P *\<^sub>v x\<rangle>"
         using adjoint_inner[OF Pc x] ps inner_prod_cnj[of x "P *\<^sub>v x"] Pc x unfolding psd_def hermitian_def by simp
       define q where "q = Re \<langle>x|P *\<^sub>v x\<rangle>"

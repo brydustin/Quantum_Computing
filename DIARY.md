@@ -1423,3 +1423,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `auto`; the two smt calls about ∥v∥ > 0 are the new Day 1 `cpx_vec_length_pos`.  Day 3 metis/smt
   15 → 6, 950 → 934 lines, every statement unchanged.  Plan: `tools/deps/plans/day3b.py`; scratch
   `wip/d23/D03d.thy`.
+- **Audit tick 37: Day 25's `smult_mat_vec`** (2026-10-28).  Day 25_UFN's `smult_mat_vec` was Day 3's
+  `smult_mat_mult_vec` with a `dim_vec` premise in place of the carrier one; the duplicate goes and its
+  five uses take the Day 3 fact (`carrier_vecI` where only a dimension fact was in hand).  Statement
+  check: only `smult_mat_vec` missing, HHL/Demo/Channels/Search unchanged.  Plan:
+  `tools/deps/plans/day25.py` (textual, validated by the strict build).
