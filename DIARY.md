@@ -1428,3 +1428,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   five uses take the Day 3 fact (`carrier_vecI` where only a dimension fact was in hand).  Statement
   check: only `smult_mat_vec` missing, HHL/Demo/Channels/Search unchanged.  Plan:
   `tools/deps/plans/day25.py` (textual, validated by the strict build).
+- **Audit tick 38: Day 3's orthonormal-basis extension** (2026-10-28).  `unit_vec_extends_to_onb`
+  (143 lines of Gram–Schmidt bookkeeping) is now 25 lines: JNF's `basis_completion` and
+  `gram_schmidt` give a pairwise-orthogonal list headed by $v$, and the new `corthogonal_normalize`
+  (normalising a corthogonal list gives an orthonormal list; IMD's `inner_prod_distrib_left` for
+  the scalars) finishes.  `vec_normalize_unit` loses its unused carrier premise;
+  `trace_eq_sum_eigenvalues` takes the Schur form from `schur_theorem` and `similar_matI`.  Day 3
+  934 → 803 lines, metis/smt 6 → 0 (Days 1–3 are metis-free); statement check: `corthogonal_normalize`
+  added, `vec_normalize_unit` changed as intended.  The strict check caught a first version's Day 1
+  helper `inner_prod_left_smult'` as a duplicate of IMD's `No_Cloning.inner_prod_distrib_left`
+  (grep all of IMD, not one file).  Plan: `tools/deps/plans/day3c.py`; scratch `wip/d23/D03e.thy`.

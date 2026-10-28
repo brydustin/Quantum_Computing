@@ -572,22 +572,49 @@ lemma vec_normalize_carrier[simp]:
   using assms by (simp add: vec_normalize_def)
 
 lemma vec_normalize_unit:
-  assumes vdim: "v \<in> carrier_vec n" and vnorm: "\<parallel>v\<parallel> = 1"
+  assumes "\<parallel>v\<parallel> = 1"
   shows "vec_normalize v = v"
+  using assms by (simp add: vec_normalize_def)
+
+text \<open>Normalising a list of pairwise orthogonal nonzero vectors gives an orthonormal list.\<close>
+
+lemma corthogonal_normalize:
+  assumes ws: "set ws \<subseteq> carrier_vec n" and orth: "corthogonal ws"
+  shows "orthonormal_list n (map vec_normalize ws)"
 proof -
-  have vne: "v \<noteq> 0\<^sub>v n"
-  proof
-    assume h: "v = 0\<^sub>v n"
-    from h vdim have "v = 0\<^sub>v (dim_vec v)" by auto
-    then have "\<parallel>v\<parallel> = 0" using cpx_vec_length_zero_iff by blast
-    then show False using vnorm by simp
+  have c: "\<And>i. i < length ws \<Longrightarrow> ws ! i \<in> carrier_vec n"
+    using ws by (simp add: subset_iff)
+  have ne: "\<And>i. i < length ws \<Longrightarrow> ws ! i \<noteq> 0\<^sub>v n"
+  proof (rule notI)
+    fix i assume i: "i < length ws" and "ws ! i = 0\<^sub>v n"
+    then have "ws ! i \<bullet>c ws ! i = 0" by (simp add: scalar_prod_def)
+    with corthogonalD[OF orth i i] show False by simp
   qed
-  have "vec_normalize v = (1 / \<parallel>v\<parallel>) \<cdot>\<^sub>v v"
-    using vne vdim by (simp add: vec_normalize_def)
-  also have "\<dots> = 1 \<cdot>\<^sub>v v"
-    using vnorm by simp
-  also have "\<dots> = v" by simp
-  finally show ?thesis .
+  have nz: "\<And>i. i < length ws \<Longrightarrow> vec_normalize (ws ! i) = (1 / \<parallel>ws ! i\<parallel>) \<cdot>\<^sub>v ws ! i"
+    using carrier_vecD[OF c] ne by (simp add: vec_normalize_def)
+  show ?thesis unfolding orthonormal_list_def
+  proof (intro conjI ballI allI impI)
+    fix w assume "w \<in> set (map vec_normalize ws)"
+    then show "dim_vec w = n" using ws by (auto simp: subset_iff)
+  next
+    fix i j assume "i < length (map vec_normalize ws)" "j < length (map vec_normalize ws)"
+    then have i: "i < length ws" and j: "j < length ws" by simp_all
+    show "\<langle>map vec_normalize ws ! i | map vec_normalize ws ! j\<rangle> = (if i = j then 1 else 0)"
+    proof (cases "i = j")
+      case True
+      then show ?thesis using normalized_vec_norm[OF c[OF j] ne[OF j]] i j
+        by (simp flip: cpx_vec_length_inner_prod)
+    next
+      case False
+      have 0: "\<langle>ws ! i | ws ! j\<rangle> = 0"
+        using corthogonalD[OF orth j i] False
+        by (simp add: cscalar_prod_is_inner_prod_swap[OF c[OF j] c[OF i]])
+      have dims: "dim_vec (ws ! i) = dim_vec (ws ! j)" using c[OF i] c[OF j] by simp
+      show ?thesis using False
+        unfolding nth_map[OF i] nth_map[OF j] nz[OF i] nz[OF j]
+                  inner_prod_right_smult' inner_prod_distrib_left[OF dims] 0 by simp
+    qed
+  qed
 qed
 
 text \<open>Any unit vector extends to an orthonormal basis (needed for the induction).\<close>
@@ -597,141 +624,23 @@ lemma unit_vec_extends_to_onb:
       and vnorm: "\<parallel>v\<parallel> = 1"
   shows "\<exists>vs. orthonormal_list n vs \<and> length vs = n \<and> vs ! 0 = v"
 proof -
-  have vne: "v \<noteq> 0\<^sub>v n"
-  proof
-    assume h: "v = 0\<^sub>v n"
-    from h vdim have "v = 0\<^sub>v (dim_vec v)" by auto
-    then have "\<parallel>v\<parallel> = 0" using cpx_vec_length_zero_iff by blast
-    then show False using vnorm by simp
-  qed
-  have n_pos: "n > 0"
-  proof (rule ccontr)
-    assume "\<not> 0 < n"
-    then have n0: "n = 0" by simp
-    with vdim have "dim_vec v = 0" by auto
-    then have "v = 0\<^sub>v 0"
-      by (intro eq_vecI) auto
-    then show False using vne n0 by simp
-  qed
-  interpret cof_vec_space n "TYPE(complex)".
+  interpret cof_vec_space n "TYPE(complex)" .
+  have vne: "v \<noteq> 0\<^sub>v n" using vnorm by (auto simp: cpx_vec_length_def)
+  have n_pos: "0 < n" using vnorm vdim by (cases n) (auto simp: cpx_vec_length_def)
   define b where "b = basis_completion v"
-  define ws where "ws = gram_schmidt n b"
   from basis_completion[OF vdim vne, folded b_def]
-  have b_dist: "distinct b"
-    and b_indep: "\<not> lin_dep (set b)"
-    and b_sub: "set b \<subseteq> carrier_vec n"
-    and b_hd: "hd b = v"
-    and b_len: "length b = n"
+  have b: "set b \<subseteq> carrier_vec n" "distinct b" "\<not> lin_dep (set b)" "length b = n" "hd b = v"
     by auto
-  from b_len n_pos obtain bs where b_eq: "b = v # bs"
-    using b_hd by (cases b; auto)
-  from gram_schmidt_result[OF b_sub b_dist b_indep refl, folded ws_def]
-  have ws_sub: "set ws \<subseteq> carrier_vec n"
-    and ws_corth: "corthogonal ws"
-    and ws_len: "length ws = n"
-    by (auto simp: b_len)
-  from gram_schmidt_hd[OF vdim, of bs, folded b_eq]
-  have ws_hd: "hd ws = v" unfolding ws_def .
-  have ws_carrier: "\<And>i. i < n \<Longrightarrow> ws ! i \<in> carrier_vec n"
-    using ws_sub ws_len by (simp add: subset_iff)
-  have ws_self_ne0: "\<And>i. i < n \<Longrightarrow> ws ! i \<bullet>c ws ! i \<noteq> 0"
-    using ws_corth ws_len corthogonalD by fastforce
-  have ws_nonzero: "\<And>i. i < n \<Longrightarrow> ws ! i \<noteq> 0\<^sub>v n"
-  proof -
-    fix i assume i: "i < n"
-    show "ws ! i \<noteq> 0\<^sub>v n"
-    proof
-      assume h: "ws ! i = 0\<^sub>v n"
-      have "ws ! i \<bullet>c ws ! i = 0"
-        using h by (simp add: scalar_prod_def)
-      then show False using ws_self_ne0[OF i] by simp
-    qed
-  qed
+  obtain bs where bs: "b = v # bs" using b(4,5) n_pos by (cases b) auto
+  define ws where "ws = gram_schmidt n b"
+  from gram_schmidt_result[OF b(1,2,3) ws_def]
+  have ws: "corthogonal ws" "set ws \<subseteq> carrier_vec n" "length ws = n" by (auto simp: b(4))
   have ws0: "ws ! 0 = v"
-    using ws_hd ws_len n_pos
-    by (metis hd_conv_nth length_greater_0_conv)
-  define vs where "vs = map vec_normalize ws"
-  have vs_len: "length vs = n" using ws_len by (simp add: vs_def)
-  have vs_nth: "\<And>i. i < n \<Longrightarrow> vs ! i = vec_normalize (ws ! i)"
-    using ws_len by (simp add: vs_def)
-  have vs_nth_carrier: "\<And>i. i < n \<Longrightarrow> vs ! i \<in> carrier_vec n"
-    using vs_nth ws_carrier vec_normalize_carrier by simp
-  have vs0: "vs ! 0 = v"
-    using vs_nth[OF n_pos] ws0 vec_normalize_unit[OF vdim vnorm] by simp
-  have vs_nth_unit: "\<And>i. i < n \<Longrightarrow> \<parallel>vs ! i\<parallel> = 1"
-  proof -
-    fix i assume i: "i < n"
-    have "\<parallel>vs ! i\<parallel> = \<parallel>vec_normalize (ws ! i)\<parallel>"
-      using vs_nth[OF i] by simp
-    also have "\<dots> = 1"
-      using normalized_vec_norm[OF ws_carrier[OF i] ws_nonzero[OF i]] .
-    finally show "\<parallel>vs ! i\<parallel> = 1" .
-  qed
-  have vs_nth_def: "\<And>i. i < n \<Longrightarrow> vs ! i = (1 / \<parallel>ws ! i\<parallel>) \<cdot>\<^sub>v (ws ! i)"
-  proof -
-    fix i assume i: "i < n"
-    have "vs ! i = vec_normalize (ws ! i)"
-      using vs_nth[OF i] .
-    also have "\<dots> = (1 / \<parallel>ws ! i\<parallel>) \<cdot>\<^sub>v (ws ! i)"
-      using ws_nonzero[OF i] ws_carrier[OF i]
-      by (simp add: vec_normalize_def)
-    finally show "vs ! i = (1 / \<parallel>ws ! i\<parallel>) \<cdot>\<^sub>v (ws ! i)" .
-  qed
-  have cross_zero: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> i \<noteq> j \<Longrightarrow> \<langle>vs ! i | vs ! j\<rangle> = 0"
-  proof -
-    fix i j assume i: "i < n" and j: "j < n" and ij: "i \<noteq> j"
-    have i_lt: "i < length ws" using ws_len i by simp
-    have j_lt: "j < length ws" using ws_len j by simp
-    have wij_cscal: "ws ! i \<bullet>c ws ! j = 0"
-      using corthogonalD[OF ws_corth i_lt j_lt] ij by simp
-    have wij_inner: "\<langle>ws ! j | ws ! i\<rangle> = 0"
-      using cscalar_prod_is_inner_prod_swap[OF ws_carrier[OF i] ws_carrier[OF j]] wij_cscal
-      by simp
-    have wji_inner: "\<langle>ws ! i | ws ! j\<rangle> = 0"
-      using wij_inner inner_prod_cnj ws_carrier[OF i] ws_carrier[OF j]
-      by (metis carrier_vecD complex_cnj_zero)
-    have dim_i: "dim_vec (ws ! i) = n" using ws_carrier[OF i] by auto
-    have dim_j: "dim_vec (ws ! j) = n" using ws_carrier[OF j] by auto
-    let ?a = "1 / \<parallel>ws ! i\<parallel>"
-    let ?b = "1 / \<parallel>ws ! j\<parallel>"
-    have "\<langle>vs ! i | vs ! j\<rangle> = \<langle>(of_real ?a) \<cdot>\<^sub>v (ws ! i) | (of_real ?b) \<cdot>\<^sub>v (ws ! j)\<rangle>"
-      using vs_nth_def[OF i] vs_nth_def[OF j] by simp
-    also have "\<dots> = (\<Sum>k<n. cnj ((of_real ?a) * (ws ! i) $ k) * ((of_real ?b) * (ws ! j) $ k))"
-      using dim_i dim_j
-      by (simp add: inner_prod_def lessThan_atLeast0)
-    also have "\<dots> = (\<Sum>k<n. (of_real ?a) * (of_real ?b) * (cnj ((ws ! i) $ k) * (ws ! j) $ k))"
-      by (simp add: ac_simps)
-    also have "\<dots> = (of_real ?a) * (of_real ?b) * (\<Sum>k<n. cnj ((ws ! i) $ k) * (ws ! j) $ k)"
-      by (simp add: sum_distrib_left)
-    also have "(\<Sum>k<n. cnj ((ws ! i) $ k) * (ws ! j) $ k) = \<langle>ws ! i | ws ! j\<rangle>"
-      using dim_j by (simp add: inner_prod_def lessThan_atLeast0)
-    also have "\<dots> = 0" using wji_inner .
-    finally show "\<langle>vs ! i | vs ! j\<rangle> = 0" by simp
-  qed
-  have diag_one: "\<And>i. i < n \<Longrightarrow> \<langle>vs ! i | vs ! i\<rangle> = 1"
-  proof -
-    fix i assume i: "i < n"
-    have "(complex_of_real \<parallel>vs ! i\<parallel>)\<^sup>2 = \<langle>vs ! i | vs ! i\<rangle>"
-      using cpx_vec_length_inner_prod by simp
-    moreover have "\<parallel>vs ! i\<parallel> = 1" using vs_nth_unit[OF i] .
-    ultimately show "\<langle>vs ! i | vs ! i\<rangle> = 1" by simp
-  qed
-  have orth: "orthonormal_list n vs"
-    unfolding orthonormal_list_def
-  proof (intro conjI ballI allI impI)
-    fix w assume "w \<in> set vs"
-    then obtain i where "i < length vs" and "w = vs ! i"
-      by (metis in_set_conv_nth)
-    then show "dim_vec w = n"
-      using vs_len vs_nth_carrier by auto
-  next
-    fix i j
-    assume i: "i < length vs" and j: "j < length vs"
-    then have i': "i < n" and j': "j < n" using vs_len by simp_all
-    show "\<langle>vs ! i | vs ! j\<rangle> = (if i = j then 1 else 0)"
-      using cross_zero[OF i' j'] diag_one[OF i'] by (cases "i = j"; simp)
-  qed
-  show ?thesis using orth vs_len vs0 by blast
+    using gram_schmidt_hd[OF vdim, of bs] ws(3) n_pos unfolding ws_def bs
+    by (cases "gram_schmidt n (v # bs)") auto
+  show ?thesis
+    using corthogonal_normalize[OF ws(2,1)] ws(3) ws0 n_pos vec_normalize_unit[OF vnorm]
+    by (intro exI[of _ "map vec_normalize ws"]) simp
 qed
 
 text \<open>Schur's theorem by induction: a unit eigenvector $v_1$ of $A$ extends to an orthonormal basis,
@@ -874,61 +783,21 @@ corollary trace_eq_sum_eigenvalues:
     and "char_poly A = (\<Prod>e \<leftarrow> eigs. [:-e, 1:])"
 proof -
   obtain U T :: "complex Matrix.mat"
-    where Uc: "U \<in> carrier_mat n n"
-      and Tc: "T \<in> carrier_mat n n"
-      and UU: "unitary U"
-      and UT: "upper_triangular T"
-      and schur: "U\<^sup>\<dagger> * A * U = T"
-    using schur_decomposition[OF sq]
-    by (metis schur_induct sq) 
-
+    where Uc: "U \<in> carrier_mat n n" and Tc: "T \<in> carrier_mat n n" and UU: "unitary U"
+      and UT: "upper_triangular T" and schur: "U\<^sup>\<dagger> * A * U = T"
+    using schur_theorem[OF sq] by blast
   let ?eigs = "map (\<lambda>i. T $$ (i,i)) [0..<n]"
-
-  have len: "length ?eigs = n"
-    by simp
-
   have trT: "Tr T = sum_list ?eigs"
-  proof -
-    have "sum_list ?eigs = (\<Sum>i<n. T $$ (i,i))"
-      by (simp add: interv_sum_list_conv_sum_set_nat lessThan_atLeast0)
-    also have "\<dots> = Tr T"
-      using Tc by (simp add: Tr_def)
-    finally show ?thesis by simp
-  qed
-
+    using Tc by (simp add: Tr_def interv_sum_list_conv_sum_set_nat lessThan_atLeast0)
   have trA: "Tr A = Tr T"
-    using sq Uc UU schur Tr_unitary_conjugation by auto
-
+    using Tr_unitary_conjugation[OF UU, of A, unfolded schur] sq Uc by simp
   have cpT: "char_poly T = (\<Prod>e \<leftarrow> ?eigs. [:-e, 1:])"
-  proof -
-    have "diag_mat T = ?eigs"
-      using Tc unfolding diag_mat_def by simp
-    then show ?thesis
-      using char_poly_upper_triangular[OF Tc UT] by simp
-  qed
-
-  have cpA: "char_poly A = char_poly T"
-  proof -
-    have Udag: "U\<^sup>\<dagger> \<in> carrier_mat n n"
-      using Uc by (metis carrier_matD carrier_matI dim_col_of_dagger dim_row_of_dagger)
-    have udag_u: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n"
-      using UU Uc unfolding unitary_def by auto
-    have u_udag: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n"
-      using UU Uc unfolding unitary_def by auto
-    have setc: "{T, A, U\<^sup>\<dagger>, U} \<subseteq> carrier_mat n n"
-      using Tc sq Udag Uc by simp
-    have T_eq: "T = (U\<^sup>\<dagger>) * A * U" using schur by simp
-    have "similar_mat T A"
-      by (rule similar_matI[OF setc udag_u u_udag T_eq])
-    then show ?thesis using char_poly_similar by metis
-  qed
-
-  have "Tr A = sum_list ?eigs"
-    using trA trT by simp
-  moreover have "char_poly A = (\<Prod>e \<leftarrow> ?eigs. [:-e, 1:])"
-    using cpA cpT by simp
-  ultimately show ?thesis
-    using len that by blast
+    using char_poly_upper_triangular[OF Tc UT] Tc by (simp add: diag_mat_def)
+  have "similar_mat T A"
+    using UU Uc Tc sq dagger_carrier[OF Uc] schur
+    by (intro similar_matI[where P = "U\<^sup>\<dagger>" and Q = U and n = n]) (auto simp: unitary_def)
+  hence cpA: "char_poly A = char_poly T" by (rule char_poly_similar[symmetric])
+  show ?thesis by (rule that[of ?eigs]) (simp_all add: trA trT cpA cpT)
 qed
 
 end
