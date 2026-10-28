@@ -36,7 +36,6 @@ relations are the bilinearity lemmas below; the product basis theorem is \<open>
 (Day 7); the unique decomposition along a basis of $Y$ is not stated for vectors (its
 operator analogue is in theory Day15\_Partial\_Traces).\<close>
 
-
 lemma tensor_vec_dim:
   assumes vd: "dim_vec v = n" "dim_vec w = m"
   shows "dim_vec (tensor_vec v w) = n * m"
@@ -51,7 +50,6 @@ proof -
   show ?thesis
     using assms len by (simp add: tensor_vec_def)
 qed
-
 
 lemma tensor_vec_index:
   assumes "dim_vec v = n" "dim_vec w = m" "i < n * m"
@@ -87,7 +85,6 @@ proof -
     using div_bound mod_bound assms(1,2) by (simp add: list_of_vec_index)
   finally show ?thesis .
 qed
-
 
 text \<open>In coordinates $(v\otimes w)_{im+j}=v_i\,w_j$, the first factor giving the major index; for
 $v,w\in\C^2$,
@@ -129,7 +126,6 @@ proof -
     have b_bound: "?b < m"
       by (metis gr0I i_bound less_zeroE mod_less_divisor mult_not_zero)
 
-
     have dim_v12: "dim_vec (v1 + v2) = n" using vd by simp
     have lhs_i:  "tensor_vec (v1 + v2) w $ i = ((v1 + v2) $ ?a) * (w $ ?b)"
       using tensor_vec_index[OF dim_v12 vd(3) i_bound] .
@@ -153,10 +149,6 @@ proof -
                   (tensor_vec v1 w + tensor_vec v2 w) $ i" .
   qed
 qed
-
-
-
-
 
 lemma tensor_vec_bilinear_right:
   assumes vd: "dim_vec v = n" "dim_vec w1 = m" "dim_vec w2 = m"
@@ -275,7 +267,6 @@ next
     using i by simp
   finally show "tensor_vec v (\<alpha> \<cdot>\<^sub>v w) $ i = (\<alpha> \<cdot>\<^sub>v tensor_vec v w) $ i" .
 qed
-
 
 text \<open>The Schmidt rank, the least length of a representation by elementary tensors.  It is
 \<open>LEAST\<close>, not \<open>Min\<close> of the set of lengths: that set is infinite (zero terms can be added),
@@ -420,6 +411,18 @@ next
   finally show ?case using Suc by simp
 qed
 
+text \<open>The same for two indices at once.\<close>
+
+lemma sum_div_mod2:
+  fixes g :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a::comm_monoid_add"
+  shows "(\<Sum>r<n * m. \<Sum>s<n' * m'. g (r div m) (r mod m) (s div m') (s mod m')) =
+         (\<Sum>i<n. \<Sum>a<m. \<Sum>j<n'. \<Sum>b<m'. g i a j b)"
+proof -
+  have inner: "(\<Sum>s<n' * m'. g i a (s div m') (s mod m')) = (\<Sum>j<n'. \<Sum>b<m'. g i a j b)" for i a
+    by (rule sum_div_mod)
+  show ?thesis unfolding inner by (rule sum_div_mod[where g = "\<lambda>i a. \<Sum>j<n'. \<Sum>b<m'. g i a j b"])
+qed
+
 theorem tensor_universal_property:
   assumes b: "bilinear_on n m \<beta>"
   shows "\<exists>L. linear_on (n * m) L \<and> (\<forall>v w. dim_vec v = n \<longrightarrow> dim_vec w = m \<longrightarrow> L (tensor_vec v w) = \<beta> v w)
@@ -457,7 +460,6 @@ proof -
   qed
   show ?thesis using lin el un by blast
 qed
-
 
 definition bilinear_vec_on :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec) \<Rightarrow> bool" where
   "bilinear_vec_on n m p \<beta> \<longleftrightarrow>
@@ -524,7 +526,6 @@ proof -
   qed
   show ?thesis using lin el un by blast
 qed
-
 
 subsection \<open>Coordinates in a tensor product\<close>
 
@@ -883,7 +884,6 @@ $\psi$ is a product $\psi_1\otimes\psi_2$ iff $\operatorname{rank}_S(\psi)=1$; o
 Here: every $u\in\C^n\otimes\C^m$ has an expression of length $n$, so the least length exists;
 $\operatorname{rank}_S(u)=0$ iff $u=0$; for $u\ne0$, $\operatorname{rank}_S(u)=1$ iff $u$ is a product
 and $u$ is entangled iff $\operatorname{rank}_S(u)>1$; the Bell state has Schmidt rank $2$.\<close>
-
 
 text \<open>A representation of $u\in\C^n\otimes\C^m$ by $k$ elementary tensors.\<close>
 

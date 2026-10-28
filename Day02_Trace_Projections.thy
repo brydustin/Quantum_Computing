@@ -334,37 +334,24 @@ qed
 text \<open>Writing $A=\sum_{i,j}a_{ij}E_{ij}$ and $B=\sum_{k,l}b_{kl}E_{kl}$, the product rule for matrix
 units gives $\Tr(AB)=\sum_{i,j}a_{ij}b_{ji}$, which is symmetric in $A$ and $B$:\<close>
 
+lemma Tr_mult_entry:
+  fixes A B :: "complex Matrix.mat"
+  assumes A: "A \<in> carrier_mat n k" and B: "B \<in> carrier_mat k n"
+  shows "Tr (A * B) = (\<Sum>i<n. \<Sum>l<k. A $$ (i, l) * B $$ (l, i))"
+proof -
+  have "Tr (A * B) = (\<Sum>i<n. (A * B) $$ (i, i))" using A B by (simp add: Tr_def)
+  also have "\<dots> = (\<Sum>i<n. \<Sum>l<k. A $$ (i, l) * B $$ (l, i))"
+    using A B by (intro sum.cong refl) (simp add: scalar_prod_def atLeast0LessThan)
+  finally show ?thesis .
+qed
+
 lemma Tr_cyclic:
   assumes AB: "dim_col A = dim_row B"
       and BA: "dim_row A = dim_col B"
   shows "Tr (A * B) = Tr (B * A)"
-proof -
-  let ?m = "dim_row A"
-  let ?n = "dim_col A"
-
-  have "Tr (A * B) = (\<Sum>i<?m. (A * B) $$ (i,i))"
-    using AB BA by (simp add: Tr_def)
-  also have "... = (\<Sum>i<?m. \<Sum>k<?n. A $$ (i,k) * B $$ (k,i))"
-    using AB BA by (intro sum.cong refl, simp)
-  also have "... = (\<Sum>k<?n. \<Sum>i<?m. A $$ (i,k) * B $$ (k,i))"
-    by (rule sum.swap)
-  also have "... = (\<Sum>k<?n. \<Sum>i<?m. B $$ (k,i) * A $$ (i,k))"
-  proof (rule sum.cong[OF refl])
-    fix k
-    assume "k \<in> {..<dim_col A}"
-    then have k_lt: "k < ?n"
-      by (metis lessThan_iff)
-
-    show "(\<Sum>i<?m. A $$ (i,k) * B $$ (k,i)) =
-          (\<Sum>i<?m. B $$ (k,i) * A $$ (i,k))"
-      by (metis mult.commute)
-  qed
-  also have "... = (\<Sum>k<?n. (B * A) $$ (k,k))"
-    using AB BA by (intro sum.cong refl, simp add:  mult.commute)
-  also have "... = Tr (B * A)"
-    using AB BA by (simp add: Tr_def)
-  finally show ?thesis.
-qed
+  using Tr_mult_entry[OF carrier_mat_triv carrier_matI[OF AB[symmetric] BA[symmetric]]]
+        Tr_mult_entry[OF carrier_matI[OF AB[symmetric] BA[symmetric]] carrier_mat_triv]
+  by (simp add: sum.swap[of _ "{..<dim_row A}" "{..<dim_col A}"] mult.commute)
 
 text \<open>Hence the trace is invariant under unitary conjugation,
 $\Tr(U^*AU)=\Tr(AUU^*)=\Tr A$, and the Hilbert--Schmidt inner product is a trace:

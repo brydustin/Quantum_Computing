@@ -1319,3 +1319,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   reads the Bell state through Day 6's `tensor_unit_vec` as (e₀+e₃)/√2 and evaluates the norm with
   `eval_nat_numeral`: 8 lines.  Day 9 572 → 348, metis/smt 9 → 2.  Plan: `tools/deps/plans/day9.py`;
   scratch `wip/d23/D09.thy`.
+- **Audit tick 24: Day 15's measurement identity and the positivity of the partial trace** (2026-10-28).
+  Both long proofs (`partial_trace_measurement` 230 lines, `partial_trace_B_is_density` 222) reindexed
+  double sums over m·p with `bij_betw` and `sum.mono_neutral_right`; both are now the tick-20 reindexing
+  with the new Day 6 `sum_div_mod2` (two indices at once).  Day 2 gets `Tr_mult_entry`
+  (Tr(AB) = Σᵢₖ aᵢₖbₖᵢ, from which `Tr_cyclic` is a three-line corollary), Day 15 gets the general
+  `Tr_tensor_one_partial_trace_B` (Tr((N⊗I)ρ) = Tr(N Tr_B ρ), 25 lines) of which the measurement theorem
+  is a one-liner; positivity is ⟨v|Tr_B(X)v⟩ = Σₐ⟨v⊗eₐ|X(v⊗eₐ)⟩ with `tensor_vec (unit_vec p a)` as the
+  test vector (45 lines).  Day 15 1772 → 1416.  Traps: `term` is a keyword and cannot name a fact; when
+  a summand contains `if r mod p = a`, simp rewrites `r mod p` to `a` before `div_mult_mod_eq` can fold
+  `r div p * p + r mod p` — `unfolding div_mult_mod_eq` first, then `simp`; `(∑b<p. ∑j<m. if b = a …)` needs
+  the sums swapped (`sum.swap`) before `sum.delta`, and `intro sum.cong refl` over sums with different
+  index sets produces an unprovable `{..<p} = {..<m}` — use `rule sum.cong[OF refl]` per level; a chain
+  `by (simp …, intro …, simp …)` loses the `using` facts after the first method.  Plan:
+  `tools/deps/plans/day15.py`; scratch `wip/d23/D15.thy`.
