@@ -250,29 +250,7 @@ qed
 lemma outer_sum_singleton_mult_vec:
   assumes \<psi>_dim: "dim_vec \<psi> = n" and \<gamma>_dim: "dim_vec \<gamma> = n"
   shows "outer_sum n [\<psi>] *\<^sub>v \<gamma> = \<langle>\<psi>|\<gamma>\<rangle> \<cdot>\<^sub>v \<psi>"
-proof (rule eq_vecI)
-  show "dim_vec (outer_sum n [\<psi>] *\<^sub>v \<gamma>) = dim_vec (\<langle>\<psi>|\<gamma>\<rangle> \<cdot>\<^sub>v \<psi>)"
-    using \<psi>_dim by simp
-next
-  fix i assume i: "i < dim_vec (\<langle>\<psi>|\<gamma>\<rangle> \<cdot>\<^sub>v \<psi>)"
-  hence ilt: "i < n" using \<psi>_dim by simp
-  have os_car: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
-  have dcg: "dim_vec \<gamma> = n" using \<gamma>_dim .
-  have "(outer_sum n [\<psi>] *\<^sub>v \<gamma>) $ i
-        = (\<Sum>k = 0..<n. outer_sum n [\<psi>] $$ (i, k) * \<gamma> $ k)"
-    using ilt \<gamma>_dim os_car by (simp add: scalar_prod_def)
-  also have "\<dots> = (\<Sum>k = 0..<n. \<psi> $ i * cnj (\<psi> $ k) * \<gamma> $ k)"
-    by (intro sum.cong refl) (simp add: outer_sum_singleton_index[OF ilt])
-  also have "\<dots> = (\<Sum>k = 0..<n. \<psi> $ i * (cnj (\<psi> $ k) * \<gamma> $ k))"
-    by (intro sum.cong refl) (simp add: mult.assoc)
-  also have "\<dots> = \<psi> $ i * (\<Sum>k = 0..<n. cnj (\<psi> $ k) * \<gamma> $ k)"
-    by (simp add: sum_distrib_left)
-  also have "\<dots> = \<psi> $ i * \<langle>\<psi>|\<gamma>\<rangle>"
-    using \<gamma>_dim by (simp add: inner_prod_def lessThan_atLeast0)
-  also have "\<dots> = \<langle>\<psi>|\<gamma>\<rangle> * \<psi> $ i" by (simp add: mult.commute)
-  also have "\<dots> = (\<langle>\<psi>|\<gamma>\<rangle> \<cdot>\<^sub>v \<psi>) $ i" using ilt \<psi>_dim by simp
-  finally show "(outer_sum n [\<psi>] *\<^sub>v \<gamma>) $ i = (\<langle>\<psi>|\<gamma>\<rangle> \<cdot>\<^sub>v \<psi>) $ i" .
-qed
+  unfolding outer_sum_singleton_eq[OF \<psi>_dim] by (rule outer_prod_mult_vec) (simp add: \<psi>_dim \<gamma>_dim)
 
 lemma ensemble_density_quad_form:
   assumes E_dim: "\<forall>(p, \<psi>) \<in> set E. dim_vec \<psi> = n"
@@ -282,113 +260,21 @@ lemma ensemble_density_quad_form:
   using E_dim
 proof (induction E)
   case Nil
-  have ed_nil: "ensemble_density n [] = 0\<^sub>m n n"
-    by (simp add: ensemble_density_def)
-  have "ensemble_density n [] *\<^sub>v \<gamma> = 0\<^sub>v n"
-  proof (rule eq_vecI)
-    show "dim_vec (ensemble_density n [] *\<^sub>v \<gamma>) = dim_vec (0\<^sub>v n)"
-      using ed_nil by simp
-  next
-    fix i assume i: "i < dim_vec (0\<^sub>v n)"
-    hence ilt: "i < n" by simp
-    have "(ensemble_density n [] *\<^sub>v \<gamma>) $ i
-          = (\<Sum>k = 0..<n. (0\<^sub>m n n) $$ (i, k) * \<gamma> $ k)"
-      using ed_nil ilt \<gamma>_dim by (simp add: scalar_prod_def)
-    also have "\<dots> = 0" using ilt by simp
-    also have "\<dots> = (0\<^sub>v n) $ i" using ilt by simp
-    finally show "(ensemble_density n [] *\<^sub>v \<gamma>) $ i = (0\<^sub>v n) $ i" .
-  qed
-  hence "\<langle>\<gamma> | ensemble_density n [] *\<^sub>v \<gamma>\<rangle> = \<langle>\<gamma> | 0\<^sub>v n\<rangle>" by simp
-  also have "\<dots> = 0" using \<gamma>_dim by (simp add: inner_prod_def)
-  finally show ?case by simp
+  show ?case using \<gamma>_dim by (simp add: ensemble_density_def inner_prod_def scalar_prod_def)
 next
-  case (Cons a E')
-  obtain p \<psi>\<^sub>0 where a: "a = (p, \<psi>\<^sub>0)" by (cases a) auto
-  have \<psi>\<^sub>0_dim: "dim_vec \<psi>\<^sub>0 = n" using Cons.prems a by auto
-  have rest_dim: "\<forall>(p, \<psi>) \<in> set E'. dim_vec \<psi> = n"
-    using Cons.prems by auto
-  have IH: "\<langle>\<gamma> | ensemble_density n E' *\<^sub>v \<gamma>\<rangle> =
-            (\<Sum>(q, \<phi>) \<leftarrow> E'. complex_of_real q * \<langle>\<phi>|\<gamma>\<rangle> * cnj \<langle>\<phi>|\<gamma>\<rangle>)"
-    by (rule Cons.IH[OF rest_dim])
-
-  let ?pM = "complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>\<^sub>0]"
-  let ?ED = "ensemble_density n E'"
-  have pM_car: "?pM \<in> carrier_mat n n" by auto
-  have ED_car: "?ED \<in> carrier_mat n n"
-    by (rule ensemble_density_carrier_dim)
-  have \<gamma>_car: "\<gamma> \<in> carrier_vec n" using \<gamma>_dim by auto
-
-  have split: "ensemble_density n ((p, \<psi>\<^sub>0) # E') *\<^sub>v \<gamma>
-               = ?pM *\<^sub>v \<gamma> + ?ED *\<^sub>v \<gamma>"
-  proof -
-    have "ensemble_density n ((p, \<psi>\<^sub>0) # E') *\<^sub>v \<gamma>
-          = (?pM + ?ED) *\<^sub>v \<gamma>"
-      by (simp add: ensemble_density_Cons)
-    also have "\<dots> = ?pM *\<^sub>v \<gamma> + ?ED *\<^sub>v \<gamma>"
-      by (rule add_mult_distrib_mat_vec[OF pM_car ED_car \<gamma>_car])
-    finally show ?thesis .
-  qed
-
-  have pM_mv: "?pM *\<^sub>v \<gamma> = complex_of_real p \<cdot>\<^sub>v (outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>)"
-  proof (rule eq_vecI)
-    show "dim_vec (?pM *\<^sub>v \<gamma>) = dim_vec (complex_of_real p \<cdot>\<^sub>v (outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>))"
-      by simp
-  next
-    fix i assume i: "i < dim_vec (complex_of_real p \<cdot>\<^sub>v (outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>))"
-    hence ilt: "i < n" by simp
-    have os_car: "outer_sum n [\<psi>\<^sub>0] \<in> carrier_mat n n" by auto
-    have "(?pM *\<^sub>v \<gamma>) $ i
-          = (\<Sum>k = 0..<n. ?pM $$ (i, k) * \<gamma> $ k)"
-      using ilt \<gamma>_dim pM_car by (simp add: scalar_prod_def)
-    also have "\<dots> = (\<Sum>k = 0..<n.
-                      complex_of_real p * (outer_sum n [\<psi>\<^sub>0] $$ (i, k)) * \<gamma> $ k)"
-      using ilt os_car by (intro sum.cong refl) simp
-    also have "\<dots> = (\<Sum>k = 0..<n.
-                      complex_of_real p * (outer_sum n [\<psi>\<^sub>0] $$ (i, k) * \<gamma> $ k))"
-      by (intro sum.cong refl) (simp add: mult.assoc)
-    also have "\<dots> = complex_of_real p
-                      * (\<Sum>k = 0..<n. outer_sum n [\<psi>\<^sub>0] $$ (i, k) * \<gamma> $ k)"
-      by (simp add: sum_distrib_left)
-    also have "\<dots> = complex_of_real p * ((outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>) $ i)"
-      using ilt \<gamma>_dim os_car by (simp add: scalar_prod_def)
-    also have "\<dots> = (complex_of_real p \<cdot>\<^sub>v (outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>)) $ i"
-      using ilt os_car by simp
-    finally show "(?pM *\<^sub>v \<gamma>) $ i = (complex_of_real p \<cdot>\<^sub>v (outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>)) $ i" .
-  qed
-
-  have pM_inner: "\<langle>\<gamma> | ?pM *\<^sub>v \<gamma>\<rangle>
-                 = complex_of_real p * \<langle>\<psi>\<^sub>0|\<gamma>\<rangle> * cnj \<langle>\<psi>\<^sub>0|\<gamma>\<rangle>"
-  proof -
-    have "\<langle>\<gamma> | ?pM *\<^sub>v \<gamma>\<rangle>
-          = \<langle>\<gamma> | complex_of_real p \<cdot>\<^sub>v (outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>)\<rangle>"
-      using pM_mv by simp
-    also have "\<dots> = complex_of_real p * \<langle>\<gamma> | outer_sum n [\<psi>\<^sub>0] *\<^sub>v \<gamma>\<rangle>"
-      by (rule inner_prod_right_smult')
-    also have "\<dots> = complex_of_real p * \<langle>\<gamma> | \<langle>\<psi>\<^sub>0|\<gamma>\<rangle> \<cdot>\<^sub>v \<psi>\<^sub>0\<rangle>"
-      using outer_sum_singleton_mult_vec[OF \<psi>\<^sub>0_dim \<gamma>_dim] by simp
-    also have "\<dots> = complex_of_real p * (\<langle>\<psi>\<^sub>0|\<gamma>\<rangle> * \<langle>\<gamma>|\<psi>\<^sub>0\<rangle>)"
-      by (simp add: inner_prod_right_smult')
-    also have "\<dots> = complex_of_real p * \<langle>\<psi>\<^sub>0|\<gamma>\<rangle> * \<langle>\<gamma>|\<psi>\<^sub>0\<rangle>"
-      by (simp add: mult.assoc)
-    also have "\<dots> = complex_of_real p * \<langle>\<psi>\<^sub>0|\<gamma>\<rangle> * cnj \<langle>\<psi>\<^sub>0|\<gamma>\<rangle>"
-      using inner_prod_cnj[of \<psi>\<^sub>0 \<gamma>] \<psi>\<^sub>0_dim \<gamma>_dim by simp
-    finally show ?thesis .
-  qed
-
-  have dim_eq: "dim_vec (?pM *\<^sub>v \<gamma>) = dim_vec (?ED *\<^sub>v \<gamma>)"
-    using pM_car ED_car by auto
-
-  have "\<langle>\<gamma> | ensemble_density n ((p, \<psi>\<^sub>0) # E') *\<^sub>v \<gamma>\<rangle>
-        = \<langle>\<gamma> | ?pM *\<^sub>v \<gamma> + ?ED *\<^sub>v \<gamma>\<rangle>"
-    using split by simp
-  also have "\<dots> = \<langle>\<gamma> | ?pM *\<^sub>v \<gamma>\<rangle> + \<langle>\<gamma> | ?ED *\<^sub>v \<gamma>\<rangle>"
-    by (rule inner_prod_right_add'[OF dim_eq])
-  also have "\<dots> = complex_of_real p * \<langle>\<psi>\<^sub>0|\<gamma>\<rangle> * cnj \<langle>\<psi>\<^sub>0|\<gamma>\<rangle>
-                 + (\<Sum>(q, \<phi>) \<leftarrow> E'. complex_of_real q * \<langle>\<phi>|\<gamma>\<rangle> * cnj \<langle>\<phi>|\<gamma>\<rangle>)"
-    using pM_inner IH by simp
-  also have "\<dots> = (\<Sum>(q, \<phi>) \<leftarrow> (p, \<psi>\<^sub>0) # E'. complex_of_real q * \<langle>\<phi>|\<gamma>\<rangle> * cnj \<langle>\<phi>|\<gamma>\<rangle>)"
-    by simp
-  finally show ?case using a by simp
+  case (Cons a E)
+  obtain p \<psi> where a: "a = (p, \<psi>)" by (cases a) auto
+  have \<psi>: "dim_vec \<psi> = n" and E: "\<forall>(p, \<psi>) \<in> set E. dim_vec \<psi> = n" using Cons.prems a by auto
+  have \<gamma>: "\<gamma> \<in> carrier_vec n" using \<gamma>_dim by auto
+  have P: "outer_sum n [\<psi>] \<in> carrier_mat n n" by auto
+  let ?c = "complex_of_real p * \<langle>\<psi>|\<gamma>\<rangle>" and ?r = "ensemble_density n E *\<^sub>v \<gamma>"
+  have "ensemble_density n ((p, \<psi>) # E) *\<^sub>v \<gamma> = ?c \<cdot>\<^sub>v \<psi> + ?r"
+    unfolding ensemble_density_Cons add_mult_distrib_mat_vec[OF smult_carrier_mat[OF P] ensemble_density_carrier_dim \<gamma>]
+      smult_mat_mult_vec[OF P \<gamma>] outer_sum_singleton_mult_vec[OF \<psi> \<gamma>_dim] smult_smult_assoc ..
+  moreover have "dim_vec (?c \<cdot>\<^sub>v \<psi>) = dim_vec ?r" using \<psi> ensemble_density_carrier_dim[of n E] by simp
+  ultimately have "\<langle>\<gamma> | ensemble_density n ((p, \<psi>) # E) *\<^sub>v \<gamma>\<rangle> = ?c * \<langle>\<gamma>|\<psi>\<rangle> + \<langle>\<gamma>|?r\<rangle>"
+    by (simp only: inner_prod_right_add' inner_prod_right_smult')
+  thus ?case using Cons.IH[OF E] inner_prod_cnj[of \<psi> \<gamma>] \<psi> \<gamma>_dim a by (simp add: mult.assoc)
 qed
 
 theorem pure_ensemble_parallel:

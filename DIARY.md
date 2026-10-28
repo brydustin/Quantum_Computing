@@ -1520,3 +1520,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `sweep8.py`.  Lessons: `A * A\<^sup>\<dagger>` is ambiguous (parenthesise the dagger); conditional
   `simp add: assoc_mult_mat` cannot discharge `A * B ∈ carrier_mat …` (instantiate the rules); a
   shape grep containing `$$` must be `grep -F`.
+- **Audit tick 49: Day 14's ensemble quadratic form** (2026-10-28).  $\braket\gamma{\rho\gamma}=\sum_ip_i
+  |\braket{\psi_i}\gamma|^2$ by induction with one vector identity per step,
+  $\rho_{(p,\psi)\#E}\,\gamma=(p\braket\psi\gamma)\psi+\rho_E\gamma$ (Day 3 `smult_mat_mult_vec`, Day 4
+  `outer_sum_singleton_eq`, Day 2 `outer_prod_mult_vec`, JNF `smult_smult_assoc`), then
+  sesquilinearity under `simp only:` (117 lines → 24); `outer_sum_singleton_mult_vec` is a corollary of
+  the Day 2/4 outer-product facts (26 → 4).  Statement check clean.  Plan: `tools/deps/plans/sweep9.py`.
