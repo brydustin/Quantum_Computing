@@ -400,186 +400,45 @@ theorem pure_ensemble_parallel:
       and ppos: "0 < p"
   shows "\<exists>\<beta>. \<psi>\<^sub>i = \<beta> \<cdot>\<^sub>v \<psi>"
 proof -
-  have \<psi>_dim: "dim_vec \<psi> = n" using st by (simp add: quantum_state_def)
-  have \<psi>_norm: "\<parallel>\<psi>\<parallel> = 1" using st by (simp add: quantum_state_def)
-  have \<psi>_inner: "\<langle>\<psi>|\<psi>\<rangle> = 1"
-    using \<psi>_norm cpx_vec_length_inner_prod[of \<psi>]
-    by (metis of_real_1 one_power2)
-
-  have E_qs: "\<forall>(p, \<phi>) \<in> set E. quantum_state n \<phi>"
-    using ens by (auto simp: ensemble_def)
-  have E_p_nn: "\<forall>(p, \<phi>) \<in> set E. 0 \<le> p"
-    using ens by (auto simp: ensemble_def)
-  have E_dim: "\<forall>(q, \<phi>) \<in> set E. dim_vec \<phi> = n"
-    using E_qs by (auto simp: quantum_state_def)
-
-  have \<psi>\<^sub>i_qs: "quantum_state n \<psi>\<^sub>i" using E_qs mem by fastforce
-  have \<psi>\<^sub>i_dim: "dim_vec \<psi>\<^sub>i = n"
-    using \<psi>\<^sub>i_qs by (simp add: quantum_state_def)
-
+  have \<psi>d: "dim_vec \<psi> = n" using st by (simp add: quantum_state_def)
+  have \<psi>1: "\<langle>\<psi>|\<psi>\<rangle> = 1"
+    using st unfolding quantum_state_def by (simp flip: cpx_vec_length_inner_prod)
+  have E: "\<forall>(q, \<phi>) \<in> set E. 0 \<le> q \<and> dim_vec \<phi> = n"
+    using ens by (auto simp: ensemble_def quantum_state_def)
+  have E': "\<forall>(q, \<phi>) \<in> set E. dim_vec \<phi> = n" using E by auto
+  have \<psi>id: "dim_vec \<psi>\<^sub>i = n" using E mem by auto
   define \<beta> where "\<beta> = \<langle>\<psi>|\<psi>\<^sub>i\<rangle>"
   define w where "w = \<psi>\<^sub>i - \<beta> \<cdot>\<^sub>v \<psi>"
-  have w_dim: "dim_vec w = n"
-    unfolding w_def using \<psi>_dim \<psi>\<^sub>i_dim by simp
-  have \<psi>_\<beta>\<psi>_dim: "dim_vec (\<beta> \<cdot>\<^sub>v \<psi>) = dim_vec \<psi>\<^sub>i"
-    using \<psi>_dim \<psi>\<^sub>i_dim by simp
-
-  have \<psi>_perp_w: "\<langle>\<psi>|w\<rangle> = 0"
-  proof -
-    have "\<langle>\<psi>|w\<rangle> = \<langle>\<psi>|\<psi>\<^sub>i\<rangle> - \<langle>\<psi>|\<beta> \<cdot>\<^sub>v \<psi>\<rangle>"
-      unfolding w_def
-      by (rule inner_prod_right_minus'[OF \<psi>_\<beta>\<psi>_dim[symmetric]])
-    also have "\<dots> = \<langle>\<psi>|\<psi>\<^sub>i\<rangle> - \<beta> * \<langle>\<psi>|\<psi>\<rangle>"
-      by (simp add: inner_prod_right_smult')
-    also have "\<dots> = \<beta> - \<beta>" using \<psi>_inner by (simp add: \<beta>_def)
-    also have "\<dots> = 0" by simp
-    finally show ?thesis .
-  qed
-
-  have pd_w_zero: "pure_density \<psi> *\<^sub>v w = 0\<^sub>v n"
-  proof -
-    have "pure_density \<psi> *\<^sub>v w = outer_sum n [\<psi>] *\<^sub>v w"
-      by (simp add: pure_density_def \<psi>_dim)
-    also have "\<dots> = \<langle>\<psi>|w\<rangle> \<cdot>\<^sub>v \<psi>"
-      by (rule outer_sum_singleton_mult_vec[OF \<psi>_dim w_dim])
-    also have "\<dots> = 0 \<cdot>\<^sub>v \<psi>" using \<psi>_perp_w by simp
-    also have "\<dots> = 0\<^sub>v n"
-      using \<psi>_dim by (intro eq_vecI) simp_all
-    finally show ?thesis .
-  qed
-
-  have quad_zero: "\<langle>w | ensemble_density n E *\<^sub>v w\<rangle> = 0"
-  proof -
-    have "\<langle>w | ensemble_density n E *\<^sub>v w\<rangle> = \<langle>w | pure_density \<psi> *\<^sub>v w\<rangle>"
-      using dens by simp
-    also have "\<dots> = \<langle>w | 0\<^sub>v n\<rangle>" using pd_w_zero by simp
-    also have "\<dots> = 0" using w_dim by (simp add: inner_prod_def)
-    finally show ?thesis .
-  qed
-
-  have sum_cplx_zero:
-    "(\<Sum>(q, \<phi>) \<leftarrow> E. complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>) = 0"
-    using ensemble_density_quad_form[OF E_dim w_dim] quad_zero by simp
-
-  have termwise: "\<And>q \<phi>. complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>
-                        = complex_of_real (q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)"
-  proof -
-    fix q :: real and \<phi> :: "complex Matrix.vec"
-    have "\<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle> = complex_of_real ((cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)"
-      using complex_norm_square[of "\<langle>\<phi>|w\<rangle>"] by simp
-    hence "complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>
-           = complex_of_real q * complex_of_real ((cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)"
-      by (simp add: mult.assoc)
-    also have "\<dots> = complex_of_real (q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)"
-      by simp
-    finally show "complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>
-                 = complex_of_real (q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)" .
-  qed
-
-  have cplx_eq_real:
-    "(\<Sum>(q, \<phi>) \<leftarrow> E. complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>)
-      = complex_of_real (\<Sum>(q, \<phi>) \<leftarrow> E. q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)"
-  proof -
-    have "(\<Sum>(q, \<phi>) \<leftarrow> E. complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>)
-          = (\<Sum>(q, \<phi>) \<leftarrow> E. complex_of_real (q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2))"
-      by (intro arg_cong[where f=sum_list] map_cong refl)
-         (simp add: termwise case_prod_beta)
-    also have "\<dots> = complex_of_real (\<Sum>(q, \<phi>) \<leftarrow> E. q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)"
-    proof (induct E)
-      case Nil show ?case by simp
-    next
-      case (Cons a E'') thus ?case by (cases a) simp
-    qed
-    finally show ?thesis .
-  qed
-
-  have sum_real_zero: "(\<Sum>(q, \<phi>) \<leftarrow> E. q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2) = 0"
-    using sum_cplx_zero cplx_eq_real
-    by auto
-
-  have terms_nn: "\<forall>(q, \<phi>) \<in> set E. 0 \<le> q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2"
-    using E_p_nn by (auto simp:)
-
-  have each_zero: "\<forall>(q, \<phi>) \<in> set E. q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2 = 0"
-  proof -
-    let ?xs = "map (\<lambda>(q, \<phi>). q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2) E"
-    have nn: "\<And>x. x \<in> set ?xs \<Longrightarrow> 0 \<le> x"
-      using terms_nn by (auto simp: case_prod_beta)
-    have sum0: "sum_list ?xs = 0"
-      using sum_real_zero by (simp add: o_def case_prod_beta)
-    have "\<forall>x \<in> set ?xs. x = 0"
-      using sum_list_nonneg_eq_0_iff[OF nn] sum0 by blast
-    thus ?thesis by (auto simp: case_prod_beta)
-  qed
-
-  have \<psi>\<^sub>i_perp_w: "\<langle>\<psi>\<^sub>i|w\<rangle> = 0"
-  proof -
-    have "p * (cmod \<langle>\<psi>\<^sub>i|w\<rangle>)\<^sup>2 = 0"
-      using each_zero mem by auto
-    hence "(cmod \<langle>\<psi>\<^sub>i|w\<rangle>)\<^sup>2 = 0" using ppos by simp
-    hence "cmod \<langle>\<psi>\<^sub>i|w\<rangle> = 0" by simp
-    thus ?thesis by simp
-  qed
-
-  have \<psi>\<^sub>i\<psi>_cnj: "\<langle>\<psi>\<^sub>i|\<psi>\<rangle> = cnj \<beta>"
-    unfolding \<beta>_def using inner_prod_cnj[of \<psi> \<psi>\<^sub>i] \<psi>_dim \<psi>\<^sub>i_dim by simp
-
-  have \<psi>\<^sub>i_inner_sq: "\<langle>\<psi>\<^sub>i|\<psi>\<^sub>i\<rangle> = \<beta> * cnj \<beta>"
-  proof -
-    have dim_eq: "dim_vec \<psi>\<^sub>i = dim_vec (\<beta> \<cdot>\<^sub>v \<psi>)" using \<psi>_dim \<psi>\<^sub>i_dim by simp
-    have "0 = \<langle>\<psi>\<^sub>i|w\<rangle>" using \<psi>\<^sub>i_perp_w by simp
-    also have "\<dots> = \<langle>\<psi>\<^sub>i|\<psi>\<^sub>i\<rangle> - \<langle>\<psi>\<^sub>i|\<beta> \<cdot>\<^sub>v \<psi>\<rangle>"
-      unfolding w_def
-      by (rule inner_prod_right_minus'[OF dim_eq])
-    also have "\<dots> = \<langle>\<psi>\<^sub>i|\<psi>\<^sub>i\<rangle> - \<beta> * \<langle>\<psi>\<^sub>i|\<psi>\<rangle>"
-      by (simp add: inner_prod_right_smult')
-    also have "\<dots> = \<langle>\<psi>\<^sub>i|\<psi>\<^sub>i\<rangle> - \<beta> * cnj \<beta>"
-      using \<psi>\<^sub>i\<psi>_cnj by simp
-    finally show ?thesis by simp
-  qed
-
-  have w_inner_zero: "\<langle>w|w\<rangle> = 0"
-  proof -
-    have dim_eq: "dim_vec (\<beta> \<cdot>\<^sub>v \<psi>) = dim_vec \<psi>\<^sub>i" using \<psi>_dim \<psi>\<^sub>i_dim by simp
-    have w_equiv: "w = \<psi>\<^sub>i - \<beta> \<cdot>\<^sub>v \<psi>" by (simp add: w_def)
-    have "\<langle>w|w\<rangle> = \<langle>\<psi>\<^sub>i - \<beta> \<cdot>\<^sub>v \<psi>| w\<rangle>" using w_equiv by simp
-    also have "\<dots> = \<langle>\<psi>\<^sub>i|w\<rangle> - \<langle>\<beta> \<cdot>\<^sub>v \<psi>|w\<rangle>"
-      by (rule inner_prod_left_minus'[OF dim_eq[symmetric]])
-         (simp add: w_dim \<psi>\<^sub>i_dim)
-    also have "\<langle>\<beta> \<cdot>\<^sub>v \<psi>|w\<rangle> = cnj \<beta> * \<langle>\<psi>|w\<rangle>"
-    proof -
-      have "dim_vec \<psi> = dim_vec w" using \<psi>_dim w_dim by simp
-      thus ?thesis by (rule No_Cloning.inner_prod_distrib_left)
-    qed
-    also have "cnj \<beta> * \<langle>\<psi>|w\<rangle> = 0" using \<psi>_perp_w by simp
-    finally show ?thesis using \<psi>\<^sub>i_perp_w by simp
-  qed
-
-  have w_zero: "w = 0\<^sub>v n"
-  proof -
-    have "(complex_of_real (\<parallel>w\<parallel>))\<^sup>2 = \<langle>w|w\<rangle>"
-      using cpx_vec_length_inner_prod[of w] by simp
-    hence "(complex_of_real (\<parallel>w\<parallel>))\<^sup>2 = 0" using w_inner_zero by simp
-    hence "(\<parallel>w\<parallel>)\<^sup>2 = 0"
-      by (metis of_real_0 of_real_eq_iff of_real_power)
-    hence "\<parallel>w\<parallel> = 0" by simp
-    thus "w = 0\<^sub>v n"
-      using w_dim cpx_vec_length_zero_iff by metis
-  qed
-
+  have wd: "dim_vec w = n" and d: "dim_vec \<psi>\<^sub>i = dim_vec (\<beta> \<cdot>\<^sub>v \<psi>)"
+    and wd': "dim_vec \<psi>\<^sub>i = dim_vec w" and \<psi>wd: "dim_vec \<psi> = dim_vec w"
+    by (simp_all add: w_def \<psi>id \<psi>d)
+  have \<psi>w: "\<langle>\<psi>|w\<rangle> = 0"
+    unfolding w_def inner_prod_right_minus'[OF d] inner_prod_right_smult' \<psi>1 by (simp add: \<beta>_def)
+  have "\<langle>w | ensemble_density n E *\<^sub>v w\<rangle> = \<langle>w | \<langle>\<psi>|w\<rangle> \<cdot>\<^sub>v \<psi>\<rangle>"
+    unfolding dens pure_density_def Let_def \<psi>d by (simp add: outer_sum_singleton_mult_vec[OF \<psi>d wd])
+  also have "\<dots> = 0" unfolding \<psi>w by (simp add: inner_prod_right_smult')
+  finally have quad0: "\<langle>w | ensemble_density n E *\<^sub>v w\<rangle> = 0" .
+  have "complex_of_real (\<Sum>(q, \<phi>) \<leftarrow> E. q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2)
+        = (\<Sum>(q, \<phi>) \<leftarrow> E. complex_of_real q * \<langle>\<phi>|w\<rangle> * cnj \<langle>\<phi>|w\<rangle>)"
+    by (induction E) (auto simp: case_prod_beta complex_norm_square[symmetric] mult.assoc)
+  hence S0: "(\<Sum>(q, \<phi>) \<leftarrow> E. q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2) = 0"
+    using quad0 ensemble_density_quad_form[OF E' wd] by simp
+  have nn: "0 \<le> x" if "x \<in> set (map (\<lambda>(q, \<phi>). q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2) E)" for x
+    using that E by auto
+  have "\<forall>x \<in> set (map (\<lambda>(q, \<phi>). q * (cmod \<langle>\<phi>|w\<rangle>)\<^sup>2) E). x = 0"
+    by (rule sum_list_nonneg_eq_0_iff[THEN iffD1, OF nn S0])
+  hence "p * (cmod \<langle>\<psi>\<^sub>i|w\<rangle>)\<^sup>2 = 0" using mem by auto
+  hence \<psi>iw: "\<langle>\<psi>\<^sub>i|w\<rangle> = 0" using ppos by simp
+  have "\<langle>\<psi>\<^sub>i - \<beta> \<cdot>\<^sub>v \<psi> | w\<rangle> = \<langle>\<psi>\<^sub>i|w\<rangle> - cnj \<beta> * \<langle>\<psi>|w\<rangle>"
+    by (simp only: inner_prod_left_minus'[OF d wd'] inner_prod_distrib_left[OF \<psi>wd])
+  hence "\<langle>w|w\<rangle> = 0" unfolding \<psi>iw \<psi>w w_def[symmetric] by simp
+  hence w0: "w = 0\<^sub>v n" using inner_prod_self_eq_zero_iff[of w] wd by simp
   have "\<psi>\<^sub>i = \<beta> \<cdot>\<^sub>v \<psi>"
-  proof (rule eq_vecI)
-    show "dim_vec \<psi>\<^sub>i = dim_vec (\<beta> \<cdot>\<^sub>v \<psi>)" using \<psi>_dim \<psi>\<^sub>i_dim by simp
-  next
-    fix i assume i: "i < dim_vec (\<beta> \<cdot>\<^sub>v \<psi>)"
-    hence ilt: "i < n" using \<psi>_dim by simp
-    have "(\<psi>\<^sub>i - \<beta> \<cdot>\<^sub>v \<psi>) $ i = 0" using w_zero ilt by (simp add: w_def)
-    moreover have "(\<psi>\<^sub>i - \<beta> \<cdot>\<^sub>v \<psi>) $ i = \<psi>\<^sub>i $ i - \<beta> * \<psi> $ i"
-      using ilt \<psi>_dim \<psi>\<^sub>i_dim by (simp add: minus_vec_def)
-    ultimately have "\<psi>\<^sub>i $ i = \<beta> * \<psi> $ i" by simp
-    thus "\<psi>\<^sub>i $ i = (\<beta> \<cdot>\<^sub>v \<psi>) $ i"
-      using ilt \<psi>_dim by simp
-  qed
+  proof (intro eq_vecI)
+    fix i assume "i < dim_vec (\<beta> \<cdot>\<^sub>v \<psi>)"
+    with w0 show "\<psi>\<^sub>i $ i = (\<beta> \<cdot>\<^sub>v \<psi>) $ i"
+      using \<psi>id \<psi>d by (auto dest!: arg_cong[where f = "\<lambda>v. v $ i"] simp: w_def)
+  qed (simp add: \<psi>id \<psi>d)
   thus ?thesis by blast
 qed
 

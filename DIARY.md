@@ -1343,3 +1343,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   it duplicating `mult_index_lt` (Unitary_Tensor_Algebra, 38 existing uses) after a full build — grep
   the bundle before adding any helper.  Plan: `tools/deps/plans/day15b.py`; scratch `wip/d23/D15b.thy`
   (imports Days 15 and 32: Day 32 imports only Day 10).
+- **Audit tick 26: Day 14's pure ensembles are parallel** (2026-10-28).  `pure_ensemble_parallel`
+  (192 lines) now reads as the notes argue it: w = ψᵢ − ⟨ψ|ψᵢ⟩ψ is orthogonal to ψ, so
+  ⟨w|ρw⟩ = ⟨w|(|ψ⟩⟨ψ|)w⟩ = 0; by `ensemble_density_quad_form` that is Σ q|⟨φ|w⟩|² = 0 with
+  non-negative terms (`sum_list_nonneg_eq_0_iff`), so ⟨ψᵢ|w⟩ = 0 and ⟨w|w⟩ = 0: 50 lines, the one
+  `metis` gone.  Day 14 702 → 560.  Traps: `unfolding w_def … β_def` in one step defeats an instance
+  `inner_prod_right_minus'[OF d]` whose statement mentions β — unfold β afterwards by `simp`;
+  `S0[unfolded sum_list_nonneg_eq_0_iff[OF nn]]` silently did nothing, `sum_list_nonneg_eq_0_iff[THEN
+  iffD1, OF nn S0]` works.  Plan: `tools/deps/plans/day14b.py`; scratch `wip/d23/D14b.thy`.
