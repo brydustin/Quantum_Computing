@@ -1361,3 +1361,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `Reals_cnj_iff` with an equality fact, `eval_nat_numeral` defeats pre-instantiated rules mentioning
   `1`, `auto` does not instantiate `∀P` premises — use `[unfolded …, THEN conjunct2, rule_format, OF …]`.
   Plan: `tools/deps/plans/day20.py`; scratch `wip/d23/D20.thy` (imports Days 9 and 20).
+- **Audit tick 28: Day 4 bookkeeping through the quadratic form** (2026-10-28).  `inner_prod_adjoint_swap`
+  (83 lines of hand-expanded double sums) is `inner_prod_sum` + `mult_mat_vec_index` + `sum.swap`: 17
+  lines.  `psd_MdagM` (47), `psd_conjugate` (75) and `psd_smult_nonneg` (81) each are one quadratic-form
+  computation under `psd_iff_quad_form_nonneg` — ⟨x|M*Mx⟩ = ⟨Mx|Mx⟩, ⟨x|M*PMx⟩ = ⟨Mx|P(Mx)⟩,
+  ⟨x|cAx⟩ = c⟨x|Ax⟩ — 11, 14 and 11 lines.  Day 4 2115 → 1897, every statement unchanged.  Plan:
+  `tools/deps/plans/day4c.py`; scratch `wip/d23/D04c.thy`.
