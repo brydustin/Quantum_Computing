@@ -274,7 +274,7 @@ proof -
     ultimately show "\<exists>c\<ge>0. Im (f Hm) = 0 \<and> \<bar>Re (f Hm)\<bar> \<le> c * Re (f (1\<^sub>m ?N))" using c0 by blast
   qed
   have freal: "\<And>Hm. Hm \<in> TS \<Longrightarrow> hermitian Hm \<Longrightarrow> f Hm = complex_of_real (Re (f Hm))"
-    using fherm by (metis complex_eq_iff Im_complex_of_real Re_complex_of_real)
+    using fherm by (auto simp: complex_eq_iff)
   show ?thesis
   proof (cases "Re (f (1\<^sub>m ?N)) = 0")
     case True
@@ -534,7 +534,7 @@ proof -
       have r: "Tr (W * Hm) \<in> \<real>" by (rule Tr_herm_mult_real[OF Wc Hc Wh Hh])
       have "Re (Tr (W * Hm)) = ga Hm"
         using Wa[rule_format, of "wrap_lm Hm"] unwrap_wrap_lm[OF Hc] Hh unfolding ga_def by simp
-      thus "Tr (W * Hm) = complex_of_real (ga Hm)" using r by (metis Reals_cases Re_complex_of_real)
+      thus "Tr (W * Hm) = complex_of_real (ga Hm)" using of_real_Re[OF r] by simp
     qed
     define lam where "lam = ga (1\<^sub>m ?N) / Re (f (1\<^sub>m ?N))"
     have lam: "0 < lam" unfolding lam_def using gaI fI by simp
@@ -686,7 +686,7 @@ proof -
   then obtain Ws where Wc: "\<forall>W \<in> set Ws. W \<in> carrier_mat CARD('d) CARD('n)"
     and Wk: "\<forall>A. A \<in> carrier_mat CARD('n) CARD('n) \<longrightarrow> \<Psi> A = kraus_map_dim CARD('d) Ws A"
     using kraus_rep_of_psd_choi[OF add sm rg] by fastforce
-  show ?thesis using Wc Wk ext operator_systemD(1)[OF OS] by (metis subsetD)
+  show ?thesis by (intro exI[of _ Ws] conjI Wc) (use Wk ext operator_systemD(1)[OF OS] in auto)
 qed
 
 subsection \<open>Factoring a CP map through a unital or a trace-preserving one (D26-1)\<close>
@@ -758,14 +758,7 @@ proof -
       by (rule sum.cong) (unfold blk_emb_gram_entry[OF x y], auto)
     also have "\<dots> = (if y div n = x div n \<and> x mod n = y mod n then 1 else 0)" using xk by simp
     also have "\<dots> = 1\<^sub>m (k * n) $$ (x, y)"
-    proof -
-      have "(y div n = x div n \<and> x mod n = y mod n) \<longleftrightarrow> x = y"
-      proof
-        assume h: "y div n = x div n \<and> x mod n = y mod n"
-        show "x = y" using div_mult_mod_eq[of x n] div_mult_mod_eq[of y n] h by simp
-      qed simp
-      thus ?thesis using x y by simp
-    qed
+      using x y nat_eq_iff_div_mod[of x y n] by auto
     finally show "?F $$ (x, y) = 1\<^sub>m (k * n) $$ (x, y)" .
   qed (use Fc in simp_all)
   thus ?thesis unfolding e .

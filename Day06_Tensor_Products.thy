@@ -56,9 +56,8 @@ lemma tensor_vec_index:
   shows "tensor_vec v w $ i = v $ (i div m) * w $ (i mod m)"
 proof -
   have m_pos: "m > 0" using assms(3) by (cases m) auto
-  have n_pos: "n > 0" using assms(3) by (cases n) auto
   have lw_nonempty: "list_of_vec w \<noteq> []"
-    using assms(2) m_pos by (metis length_greater_0_conv length_list_of_vec)
+    using assms(2) m_pos by (simp flip: length_greater_0_conv)
   have len_v: "length (list_of_vec v) = n" using assms(1) by simp
   have len_w: "length (list_of_vec w) = m" using assms(2) by simp
   have mult_inst: "Matrix_Tensor.mult (1::complex) (*)"

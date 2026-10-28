@@ -43,7 +43,6 @@ where
      clinear_functional_on V g \<and>
      (\<exists>C \<ge> 0. \<forall>x \<in> V. cmod (g x) \<le> C * hs_norm_lmat x)"
 
-
 subsection \<open>Real-part functional and linearform/continuous instances\<close>
 
 definition re_part_lmat ::
@@ -105,7 +104,6 @@ proof -
   show ?thesis using lin re_bnd by (rule continuousI)
 qed
 
-
 subsection \<open>Application of HOL/Hahn\_Banach (norm-preserving extension)\<close>
 
 text \<open>Apply HOL/Hahn\_Banach to extend the real-linearform
@@ -137,7 +135,6 @@ proof -
     using norm_Hahn_Banach[OF nv V_sub lin cont] by blast
   show ?thesis using F_lin F_cont F_ext by blast
 qed
-
 
 subsection \<open>Bohnenblust-Sobczyk: complex extension from real extension\<close>
 
@@ -294,9 +291,7 @@ lemma bs_complex_extension_tight_bound:
   shows "cmod (bs_complex_extension F x) \<le> C * hs_norm_lmat x"
 proof (cases "bs_complex_extension F x = 0")
   case True
-  have h_nn: "0 \<le> hs_norm_lmat x" by (rule hs_norm_lmat_nonneg)
-  have "\<bar>F x\<bar> \<le> C * hs_norm_lmat x" by (rule F_C)
-  hence "0 \<le> C * hs_norm_lmat x" by (smt (verit) abs_ge_zero)
+  have "0 \<le> C * hs_norm_lmat x" by (rule order_trans[OF abs_ge_zero F_C])
   thus ?thesis using True by simp
 next
   case False
@@ -312,7 +307,7 @@ next
     also have "\<dots> = (cnj ?z * ?z) / complex_of_real (cmod ?z)"
       by simp
     also have "\<dots> = complex_of_real ((cmod ?z)\<^sup>2) / complex_of_real (cmod ?z)"
-      by (metis complex_norm_square mult.commute)
+      unfolding complex_norm_square by (simp only: mult.commute)
     also have "\<dots> = complex_of_real (cmod ?z)"
       using nz by (simp add: power2_eq_square)
     finally show ?thesis .
@@ -393,7 +388,6 @@ proof
   finally show "bs_complex_extension F x = g x" .
 qed
 
-
 subsection \<open>The matrix-space Hahn-Banach theorem\<close>
 
 text \<open>Combine all the steps: a bounded complex-linear functional on
@@ -433,7 +427,6 @@ proof -
     by (rule bs_complex_extension_extends[OF g_clin V_clos_i F_ext])
   show ?thesis using f_bclin f_ext by blast
 qed
-
 
 text \<open>The explicit-bound form of the matrix Hahn-Banach theorem:
 any \<open>C\<close>-bound on \<open>\<bar>Re \<circ> g\<bar>\<close> over the subspace \<open>V\<close> lifts
@@ -533,8 +526,7 @@ the interpretation we get \<open>fn_norm_le_cong\<close> (\<open>\<bar>F x\<bar>
     next
       case (2 x)
       have h_pos: "0 < hs_norm_lmat x"
-        using \<open>x \<noteq> 0\<close> hs_norm_lmat_zero_iff hs_norm_lmat_nonneg[of x]
-        by (smt (verit, best))
+        using \<open>x \<noteq> 0\<close> hs_norm_lmat_nonneg[of x] by (simp add: hs_norm_lmat_zero_iff order_le_less)
       have re_bnd: "\<bar>re_part_lmat g x\<bar> \<le> C * hs_norm_lmat x"
         using re_C \<open>x \<in> V\<close> by blast
       have "b = \<bar>re_part_lmat g x\<bar> / hs_norm_lmat x" using 2 by simp

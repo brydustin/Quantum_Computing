@@ -562,6 +562,17 @@ qed
 lemma Re_of_real_eq: "complex_of_real r = z \<Longrightarrow> r = Re z"
   by (drule arg_cong[where f = Re]) simp
 
+text \<open>A number is determined by its quotient and remainder.\<close>
+
+lemma nat_eq_iff_div_mod:
+  fixes x y k :: nat
+  shows "x = y \<longleftrightarrow> x div k = y div k \<and> x mod k = y mod k"
+proof
+  assume "x div k = y div k \<and> x mod k = y mod k"
+  hence "x div k * k + x mod k = y div k * k + y mod k" by simp
+  thus "x = y" by (simp only: div_mult_mod_eq)
+qed simp
+
 text \<open>Concatenating rows of equal length, and the reindexing
 $\kappa=ik+j$.\<close>
 

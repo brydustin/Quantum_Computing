@@ -268,13 +268,7 @@ next
     by (rule ensemble_density_carrier) (use Cons.prems in auto)
 
   have Tr_os: "Tr (outer_sum n [\<psi>]) = 1"
-  proof -
-    have "Tr (outer_sum n [\<psi>]) = \<langle>\<psi> | \<psi>\<rangle>"
-      by (rule Tr_outer_sum_single[OF d\<psi>])
-    also have "\<dots> = 1"
-      using q by (metis cpx_vec_length_inner_prod of_real_1 one_power2 quantum_state_norm1)
-    finally show ?thesis .
-  qed
+    using quantum_state_norm1[OF q] unfolding Tr_outer_sum_single[OF d\<psi>] cpx_vec_length_one_iff .
 
   have "Tr (ensemble_density n ((p, \<psi>) # E))
         = Tr (complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] + ensemble_density n E)"
@@ -531,7 +525,7 @@ lemma pure_density_smult_unit:
 proof -
   let ?n = "dim_vec \<psi>"
   have cc: "c * cnj c = 1"
-    using c by (metis complex_norm_square of_real_1 one_power2)
+    unfolding complex_norm_square[symmetric] c by simp
   show ?thesis
     unfolding pure_density_def Let_def
   proof (rule eq_matI)

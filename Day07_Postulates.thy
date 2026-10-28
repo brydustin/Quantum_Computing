@@ -45,6 +45,17 @@ proof -
   finally show ?thesis unfolding inner_prod_def assms atLeast0LessThan .
 qed
 
+text \<open>Hence $\|h\otimes k\|=\|h\|\,\|k\|$.\<close>
+
+lemma tensor_vec_norm: "\<parallel>tensor_vec h k\<parallel> = \<parallel>h\<parallel> * \<parallel>k\<parallel>"
+proof (rule power2_eq_imp_eq)
+  have "\<langle>tensor_vec h k | tensor_vec h k\<rangle> = \<langle>h | h\<rangle> * \<langle>k | k\<rangle>"
+    by (rule tensor_inner_prod[OF refl refl refl refl])
+  thus "\<parallel>tensor_vec h k\<parallel>\<^sup>2 = (\<parallel>h\<parallel> * \<parallel>k\<parallel>)\<^sup>2"
+    unfolding cpx_vec_length_inner_prod[symmetric] of_real_power[symmetric] of_real_mult[symmetric]
+      of_real_eq_iff power_mult_distrib .
+qed (simp_all add: cpx_vec_length_nonneg mult_nonneg_nonneg)
+
 text \<open>Position $p$ of the product list $[h_i\otimes k_j]_{i<n,\,j<m}$ holds $h_{p\div m}\otimes k_{p\bmod m}$.\<close>
 
 lemma length_concat_map_upt:

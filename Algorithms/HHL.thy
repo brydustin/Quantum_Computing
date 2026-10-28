@@ -12,11 +12,6 @@ $A^{-1}b/\norm{A^{-1}b}$.  The space is register $\otimes$ (system $\otimes$ anc
 
 subsection \<open>Block-diagonal controlled operations\<close>
 
-lemma div_mod_eq_iff:
-  fixes r c m :: nat
-  shows "r = c \<longleftrightarrow> r div m = c div m \<and> r mod m = c mod m"
-  by (metis div_mult_mod_eq)
-
 lemma ctrl_blocks_cong:
   assumes "\<And>k. k < N \<Longrightarrow> B k = B' k"
   shows "ctrl_blocks N m B = ctrl_blocks N m B'"
@@ -34,7 +29,7 @@ proof (rule eq_matI)
   hence r: "r < N * m" and c: "c < N * m" by simp_all
   hence m: "0 < m" by (cases m) auto
   show "ctrl_blocks N m (\<lambda>_. 1\<^sub>m m) $$ (r, c) = 1\<^sub>m (N * m) $$ (r, c)"
-    using r c m div_mod_eq_iff[of r c m] by (auto simp: ctrl_blocks_index)
+    using r c m nat_eq_iff_div_mod[of r c m] by (auto simp: ctrl_blocks_index)
 qed simp_all
 
 lemma sum_if_const: "(\<Sum>i\<in>A. if P then f i else 0) = (if P then (\<Sum>i\<in>A. f i) else 0)"

@@ -67,24 +67,7 @@ proof -
 qed
 
 lemma tensor_e_norm: "\<parallel>tensor_vec e0 e0\<parallel> = 1" "\<parallel>tensor_vec e1 e1\<parallel> = 1"
-proof -
-  have n1: "\<And>v. \<langle>v|v\<rangle> = 1 \<Longrightarrow> \<parallel>v\<parallel> = 1"
-  proof -
-    fix v assume "\<langle>v|v\<rangle> = 1"
-    hence "complex_of_real (\<parallel>v\<parallel>\<^sup>2) = 1" using cpx_vec_length_inner_prod[of v] by simp
-    hence "\<parallel>v\<parallel>\<^sup>2 = 1" by (metis of_real_eq_1_iff)
-    moreover have "\<parallel>v\<parallel> \<ge> 0" unfolding cpx_vec_length_def by (simp add: sum_nonneg)
-    ultimately show "\<parallel>v\<parallel> = 1" by (smt (verit) power2_eq_1_iff)
-  qed
-  have t: "\<And>a. dim_vec a = 2 \<Longrightarrow> \<langle>a|a\<rangle> = 1 \<Longrightarrow> \<langle>tensor_vec a a|tensor_vec a a\<rangle> = 1"
-  proof -
-    fix a :: "complex Matrix.vec" assume d: "dim_vec a = 2" and a: "\<langle>a|a\<rangle> = 1"
-    have "\<langle>tensor_vec a a|tensor_vec a a\<rangle> = \<langle>a|a\<rangle> * \<langle>a|a\<rangle>" by (rule tensor_inner_prod[OF d d d d])
-    thus "\<langle>tensor_vec a a|tensor_vec a a\<rangle> = 1" unfolding a by simp
-  qed
-  show "\<parallel>tensor_vec e0 e0\<parallel> = 1" "\<parallel>tensor_vec e1 e1\<parallel> = 1"
-    by (rule n1, rule t, simp_all)+
-qed
+  using e_inner(1,4) unfolding tensor_vec_norm cpx_vec_length_one_iff[symmetric] by simp_all
 
 text \<open>D9-6: A measures $\ketbra00,\ketbra11$ on the shared state $\gamma$: each outcome has
 probability $\tfrac12$, and $\gamma$ collapses to $e_0\otimes e_0$ resp.\ $e_1\otimes e_1$, after

@@ -388,10 +388,8 @@ Key examples: $\C^{n+k}=\C^n\oplus\C^k$, and a linear map
 $T:\C^{n_1+k_1}\to\C^{n_2+k_2}$ has the block form
 $T=\begin{pmatrix}T_{11}&T_{12}\\T_{21}&T_{22}\end{pmatrix}$ with
 $T\binom{v}{w}=\binom{T_{11}v+T_{12}w}{T_{21}v+T_{22}w}$.
-Formally the direct sum of vectors is the concatenation \<open>v \<oplus>\<^sub>v w\<close>, and block
-matrices are the library's \<open>four_block_mat\<close>.\<close>
-
-text \<open>The direct sum of vectors is JNF's concatenation \<open>@\<^sub>v\<close>.\<close>
+Formally the direct sum of vectors is JNF's concatenation \<open>@\<^sub>v\<close>, written
+\<open>v \<oplus>\<^sub>v w\<close>, and block matrices are the library's \<open>four_block_mat\<close>.\<close>
 
 abbreviation direct_sum_vec :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" (infixr "\<oplus>\<^sub>v" 65) where
   "v \<oplus>\<^sub>v w \<equiv> v @\<^sub>v w"
@@ -448,77 +446,7 @@ lemma block_mat_apply:
       and "T21 \<in> carrier_mat n2 k1" and "T22 \<in> carrier_mat n2 k2"
   shows "four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w) =
          (T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)"
-proof -
-  have v_carrier: "v \<in> carrier_vec k1"
-    using assms(1) by (rule carrier_vecI)
-  have w_carrier: "w \<in> carrier_vec k2"
-    using assms(2) by (rule carrier_vecI)
-  have vw_append: "v \<oplus>\<^sub>v w = v @\<^sub>v w"
-    by (rule refl)
-
-  have left_dim:
-    "dim_vec (four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) = n1 + n2"
-    using assms by simp
-  have right_dim:
-    "dim_vec ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) = n1 + n2"
-    using assms by simp
-
-  show ?thesis
-  proof
-    show "dim_vec (four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) =
-          dim_vec ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w))"
-      using left_dim right_dim by simp
-  next
-    fix i
-    assume i: "i < dim_vec ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v
-                             (T21 *\<^sub>v v + T22 *\<^sub>v w))"
-    then have i_bound: "i < n1 + n2"
-      using right_dim by simp
-    show "(four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) $ i =
-          ((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) $ i"
-    proof (cases "i < n1")
-      case True
-      have row_top:
-        "Matrix.row (four_block_mat T11 T12 T21 T22) i = Matrix.row T11 i @\<^sub>v Matrix.row T12 i"
-        using assms True row_four_block_mat[of T11 n1 k1 T12 k2 T21 n2 T22 i]
-        by simp
-      have lhs_i:
-        "(four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) $ i =
-         Matrix.row T11 i \<bullet> v + Matrix.row T12 i \<bullet> w"
-        using assms True v_carrier w_carrier vw_append row_top
-        by (metis dim_mult_mat_vec i_bound index_mult_mat_vec
-            left_dim row_carrier_vec scalar_prod_append)
-      have rhs_i:
-        "((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) $ i =
-         Matrix.row T11 i \<bullet> v + Matrix.row T12 i \<bullet> w"
-        using assms True
-        by simp
-      show ?thesis
-        using lhs_i rhs_i by simp
-    next
-      case False
-      let ?j = "i - n1"
-      have j_bound: "?j < n2"
-        using False i_bound by simp
-      have row_bottom:
-        "Matrix.row (four_block_mat T11 T12 T21 T22) i = Matrix.row T21 ?j @\<^sub>v Matrix.row T22 ?j"
-        using assms False i_bound row_four_block_mat[of T11 n1 k1 T12 k2 T21 n2 T22 i]
-        by simp
-      have lhs_i:
-        "(four_block_mat T11 T12 T21 T22 *\<^sub>v (v \<oplus>\<^sub>v w)) $ i =
-         Matrix.row T21 ?j \<bullet> v + Matrix.row T22 ?j \<bullet> w"
-        using assms False i_bound v_carrier w_carrier vw_append row_bottom
-        by (metis dim_mult_mat_vec index_mult_mat_vec j_bound left_dim row_carrier_vec scalar_prod_append)
-      have rhs_i:
-        "((T11 *\<^sub>v v + T12 *\<^sub>v w) \<oplus>\<^sub>v (T21 *\<^sub>v v + T22 *\<^sub>v w)) $ i =
-         Matrix.row T21 ?j \<bullet> v + Matrix.row T22 ?j \<bullet> w"
-        using assms False j_bound
-        by (simp add: append_vec_def Let_def)
-      show ?thesis
-        using lhs_i rhs_i by simp
-    qed
-  qed
-qed
+  by (rule four_block_mat_mult_vec[OF assms(3-6) carrier_vecI[OF assms(1)] carrier_vecI[OF assms(2)]])
 
 subsection \<open>A basis of $V\oplus W$ (D5-5)\<close>
 

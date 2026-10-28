@@ -185,17 +185,7 @@ proof (rule eq_matI)
     also have "\<dots> = (if i div m = j div m \<and> i mod m = j mod m then 1 else 0)"
       by simp
     also have "\<dots> = (if i = j then 1 else 0)"
-    proof -
-      have "i div m = j div m \<and> i mod m = j mod m \<longleftrightarrow> i = j"
-      proof
-        assume "i div m = j div m \<and> i mod m = j mod m"
-        then have "m * (i div m) + i mod m = m * (j div m) + j mod m"
-          by simp
-        then show "i = j"
-          by (simp add: mult_div_mod_eq[symmetric])
-      qed simp
-      then show ?thesis by simp
-    qed
+      unfolding nat_eq_iff_div_mod[symmetric] ..
     also have "\<dots> = (1\<^sub>m (n * m)) $$ (i, j)"
       using ij by simp
     finally show ?thesis.

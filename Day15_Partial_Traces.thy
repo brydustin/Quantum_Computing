@@ -484,16 +484,9 @@ proof (rule eq_matI)
     "j < dim_col (op_elem m p (unit_mat m m (a div m) (a mod m)) (unit_mat p p (b div p) (b mod p)))"
   hence ij: "i < m * m" "j < p * p" by (simp_all add: op_elem_def)
   have m0: "0 < m" and p0: "0 < p" using a b by (auto intro: gr0I)
-  have e: "x = y \<longleftrightarrow> x div k = y div k \<and> x mod k = y mod k" for x y k :: nat
-  proof
-    assume h: "x div k = y div k \<and> x mod k = y mod k"
-    have "x = x div k * k + x mod k" by simp
-    also have "\<dots> = y div k * k + y mod k" using h by simp
-    also have "\<dots> = y" by simp
-    finally show "x = y" .
-  qed simp
   show "unit_mat (m * m) (p * p) a b $$ (i, j) = op_elem m p (unit_mat m m (a div m) (a mod m)) (unit_mat p p (b div p) (b mod p)) $$ (i, j)"
-    using ij m0 p0 a b by (auto simp: unit_mat_def op_elem_def less_mult_imp_div_less e[of i a m] e[of j b p])
+    using ij m0 p0 a b
+    by (auto simp: unit_mat_def op_elem_def less_mult_imp_div_less nat_eq_iff_div_mod[of i a m] nat_eq_iff_div_mod[of j b p])
 qed (simp_all add: op_elem_def unit_mat_def)
 
 text \<open>A linear map on $M_{K_1\times K_2}$ is determined by its values on the unit matrices.\<close>

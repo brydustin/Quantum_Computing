@@ -152,17 +152,10 @@ lemma tensor_of_states_is_state:
   assumes "quantum_state n \<psi>1" and "quantum_state m \<psi>2"
   shows "quantum_state (n*m) (tensor_vec \<psi>1 \<psi>2)"
 proof -
-  have d1: "dim_vec \<psi>1 = n" and d2: "dim_vec \<psi>2 = m"
-    using assms by (auto simp: quantum_state_def)
-  have norm1: "\<parallel>\<psi>1\<parallel> = 1" and norm2: "\<parallel>\<psi>2\<parallel> = 1"
-    using assms by (auto simp: quantum_state_def)
-  have dim: "dim_vec (tensor_vec \<psi>1 \<psi>2) = n * m"
-    using d1 d2 by (rule tensor_vec_dim)
-  have norm_tensor: "\<parallel>tensor_vec \<psi>1 \<psi>2\<parallel> = 1"
-    by (smt (verit) cpx_vec_length_inner_prod inner_prod_csqrt norm1 norm2 of_real_eq_1_iff 
-        one_power2 power2_eq_square tensor_inner_prod)
+  have d1: "dim_vec \<psi>1 = n" and n1: "\<parallel>\<psi>1\<parallel> = 1" and d2: "dim_vec \<psi>2 = m" and n2: "\<parallel>\<psi>2\<parallel> = 1"
+    using assms unfolding quantum_state_def by auto
   show ?thesis
-    unfolding quantum_state_def using dim norm_tensor by simp
+    unfolding quantum_state_def tensor_vec_dim[OF d1 d2] tensor_vec_norm n1 n2 by simp
 qed
 
 lemma tensor_mat_vec_mult:
@@ -227,12 +220,8 @@ proof -
   have phi_norm: "\<parallel>\<phi>\<parallel> = 1" using phi_st by (auto simp: quantum_state_def)
   have mix: "(M \<Otimes> 1\<^sub>m m) *\<^sub>v (tensor_vec \<psi> \<phi>) = tensor_vec (M *\<^sub>v \<psi>) \<phi>"
     using tensor_mat_vec_mult_right_id[OF M_sq psi_dim phi_dim] .
-  have norm_prod: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2 * \<parallel>\<phi>\<parallel>^2"
-    by (smt (verit) Re_complex_of_real cpx_vec_length_inner_prod of_real_mult tensor_inner_prod)
-  have eq: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2"
-    using norm_prod phi_norm by simp
   show ?thesis
-    unfolding meas_prob_def using mix eq by simp
+    unfolding meas_prob_def mix tensor_vec_norm phi_norm by simp
 qed
 
 subsection \<open>Entanglement\<close>

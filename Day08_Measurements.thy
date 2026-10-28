@@ -439,14 +439,14 @@ lemma norm_sq_minus_component:
   shows "\<parallel>w - \<langle>u|w\<rangle> \<cdot>\<^sub>v u\<parallel>\<^sup>2 = \<parallel>w\<parallel>\<^sup>2 - (cmod \<langle>u|w\<rangle>)\<^sup>2"
 proof -
   let ?a = "\<langle>u|w\<rangle>"
-  have uu: "\<langle>u|u\<rangle> = 1" using u cpx_vec_length_inner_prod[of u] by simp
+  have uu: "\<langle>u|u\<rangle> = 1" using u unfolding cpx_vec_length_one_iff .
   have wu: "\<langle>w|u\<rangle> = cnj ?a" by (rule inner_prod_cnj) (use d1 d2 in simp)
   have e: "\<langle>w - ?a \<cdot>\<^sub>v u | w - ?a \<cdot>\<^sub>v u\<rangle> = \<langle>w|w\<rangle> - ?a * \<langle>w|u\<rangle> - cnj ?a * ?a + ?a * cnj ?a * \<langle>u|u\<rangle>"
     by (rule inner_minus_smult[OF d1 d2])
   have "complex_of_real (\<parallel>w - ?a \<cdot>\<^sub>v u\<parallel>\<^sup>2) = complex_of_real (\<parallel>w\<parallel>\<^sup>2) - ?a * cnj ?a"
     unfolding cpx_vec_length_inner_prod e wu uu by simp
   also have "?a * cnj ?a = complex_of_real ((cmod ?a)\<^sup>2)" using complex_norm_square[of ?a] by simp
-  finally show ?thesis by (metis of_real_diff of_real_eq_iff)
+  finally show ?thesis unfolding of_real_diff[symmetric] of_real_eq_iff .
 qed
 
 text \<open>D8-2: if outcome $i$ certainly occurs on $\psi_1$, it occurs on $\psi_2$ with probability
@@ -500,7 +500,6 @@ corollary nonorthogonal_not_distinguishable:
   assumes ms: "measurement_system n Ms" and q1: "quantum_state n \<psi>1" and q2: "quantum_state n \<psi>2"
       and no: "\<langle>\<psi>1|\<psi>2\<rangle> \<noteq> 0" and i: "i < length Ms" and p1: "meas_prob (Ms ! i) \<psi>1 = 1"
   shows "meas_prob (Ms ! i) \<psi>2 > 0"
-  using nonorthogonal_outcome_prob[OF ms q1 q2 i p1] no
-  by (smt (verit) zero_less_power norm_eq_zero zero_less_norm_iff)
+  by (rule less_le_trans[OF _ nonorthogonal_outcome_prob[OF ms q1 q2 i p1]]) (simp add: no)
 
 end

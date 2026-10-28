@@ -1263,7 +1263,8 @@ proof -
     assume "\<not> ?thesis"
     hence "map_adjoint d n (map_adjoint n d \<Phi>\<^sub>1) = map_adjoint d n (map_adjoint n d \<Phi>)"
       by (intro map_adjoint_cong) blast
-    hence "\<Phi>\<^sub>1 X1 = \<Phi> X1" using map_adjoint_adjoint[OF L1 X1] map_adjoint_adjoint[OF L X1] by metis
+    from fun_cong[OF this, of X1] have "\<Phi>\<^sub>1 X1 = \<Phi> X1"
+      unfolding map_adjoint_adjoint[OF L1 X1] map_adjoint_adjoint[OF L X1] .
     thus False using ne by blast
   qed
   have "map_adjoint n d \<Phi> Y
@@ -1357,9 +1358,8 @@ corollary extreme_CPTP_kraus_length_le:
 proof -
   have "lin_indep_complex_mat n n (kraus_products Vs)"
     using choi_theorem_3_cptp_iff[OF npos dpos \<Phi>_in rep minimal] ext by simp
-  hence "length Vs * length Vs \<le> n * n"
-    using lin_indep_mats_length_le length_kraus_products by metis
-  thus ?thesis using power2_le_imp_le[of "length Vs" n] by (simp add: power2_eq_square)
+  hence "length (kraus_products Vs) \<le> n * n" by (rule lin_indep_mats_length_le)
+  thus ?thesis using power2_le_imp_le[of "length Vs" n] by (simp add: power2_eq_square length_kraus_products)
 qed
 
 corollary extreme_CPTP_choi_rank_le:

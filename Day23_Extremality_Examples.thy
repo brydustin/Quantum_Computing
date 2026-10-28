@@ -222,7 +222,7 @@ theorem avg2_proportional_extreme:
   shows "extreme_CPTP n n (kraus_map_dim n (avg2 U1 (z \<cdot>\<^sub>m U1)))"
 proof -
   have U2: "z \<cdot>\<^sub>m U1 \<in> carrier_mat n n" using U1 by simp
-  have ll: "cnj z * z = 1" using lam by (metis complex_norm_square mult.commute of_real_1 power_one)
+  have ll: "cnj z * z = 1" unfolding cnj_mult_self_cmod lam by simp
   have U1d: "U1\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U1(1)])
   have U2u: "unitary (z \<cdot>\<^sub>m U1)"
   proof -
@@ -287,7 +287,7 @@ proof -
   have "(1 / sqrt (real d)) * (1 / sqrt (real d)) = 1 / real d"
     by (simp add: power2_eq_square[symmetric] power_divide)
   hence "complex_of_real (1 / sqrt (real d)) * complex_of_real (1 / sqrt (real d)) = 1 / of_nat d"
-    by (metis of_real_mult of_real_divide of_real_1 of_real_of_nat_eq)
+    by (simp only: of_real_mult[symmetric]) simp
   thus "cnj (complex_of_real (1 / sqrt (real d))) * complex_of_real (1 / sqrt (real d)) = 1 / of_nat d"
        "complex_of_real (1 / sqrt (real d)) * cnj (complex_of_real (1 / sqrt (real d))) = 1 / of_nat d"
     by simp_all
@@ -433,7 +433,7 @@ proof (intro conjI allI impI)
   proof (intro sum.cong refl)
     fix k' assume "k' \<in> {..<d * n}"
     hence k': "k' < d * n" by simp
-    have "k' div n = k div n \<and> k' mod n = k mod n \<longleftrightarrow> k' = k" by (metis div_mult_mod_eq)
+    have "k' div n = k div n \<and> k' mod n = k mod n \<longleftrightarrow> k' = k" by (rule nat_eq_iff_div_mod[symmetric])
     thus "c k' * tr_kraus n d ! k' $$ (?a, ?b) = (if k' = k then c k * complex_of_real (1 / sqrt (real d)) else 0)"
       unfolding nth[OF k'] using a b by (auto simp: mat_unit_def)
   qed

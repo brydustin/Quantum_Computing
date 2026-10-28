@@ -464,7 +464,7 @@ proof (rule ccontr)
     "x = Matrix.vec ?m (\<lambda>k. if k = i then 1 else if k = j then -1 else 0)"
   have xc: "x \<in> carrier_vec ?m" by (simp add: x_def)
   have xi: "x $ i = 1" using i ij by (simp add: x_def)
-  have xnz: "x \<noteq> 0\<^sub>v ?m" using xi i by (metis index_zero_vec(1) one_neq_zero)
+  have xnz: "x \<noteq> 0\<^sub>v ?m" using xi i by auto
   have "mat_of_cols n vs *\<^sub>v x = 0\<^sub>v n"
   proof (rule eq_vecI)
     fix r assume "r < dim_vec (0\<^sub>v n :: complex Matrix.vec)"
@@ -738,7 +738,7 @@ proof -
   have insp: "\<And>w. w \<in> set ?ws \<Longrightarrow> w \<in> module.span class_ring (module_vec TYPE(complex) (n*d)) (set (cols (choi_matrix n d \<Phi>)))"
   proof -
     fix w assume "w \<in> set ?ws"
-    then obtain l where l: "l < length As" and wl: "w = ?ws ! l" by (metis in_set_conv_nth length_map)
+    then obtain l where l: "l < length As" and wl: "w = ?ws ! l" by (auto simp: in_set_conv_nth)
     have wc: "w \<in> carrier_vec (n*d)" unfolding wl using l by (intro carrier_vecI) simp
     \<comment> \<open>\<open>w = col W l = (W W\<^sup>\<dagger>) (W B e\<^sub>l)\<close>\<close>
     let ?x = "?W *\<^sub>v (B *\<^sub>v unit_vec (length As) l)"

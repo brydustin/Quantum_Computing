@@ -1494,3 +1494,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   statement check: nothing added, missing or changed.  Plan: `tools/deps/plans/sweep4.py`, whose
   `--scratch` now writes one check theory per day: a single scratch importing all five days checks
   Day 4's proofs under Day 31's simp set, where untouched steps fail.
+- **Audit ticks 45–46: the lecture theories without metis** (2026-10-28).  Day 5's block form
+  $T(v\oplus w)$ was JNF's `four_block_mat_mult_vec` all along (70 lines → 1; the doubled direct-sum
+  text merged); Day 7 gains `tensor_vec_norm` ($\|h\otimes k\|=\|h\|\,\|k\|$), which makes Day 9's
+  tensor-of-states, composite-measurement and Bell-norm facts one `unfolding` each; Day 8 ends with
+  `of_real_eq_iff` and `less_le_trans`, Day 13's unit trace is `Tr_outer_sum_single` +
+  `cpx_vec_length_one_iff`, Days 22–26 use `cnj_mult_self_cmod`, `of_real_Re`, `fun_cong`,
+  `lin_indep_mats_length_le`.  The bundle gains `nat_eq_iff_div_mod` ($x=y$ iff equal quotient and
+  remainder), replacing local proofs in Days 15, 23_EE, 26, `tensor_mat_id` and HHL's
+  `div_mod_eq_iff` (deleted after the strict DUP check flagged it).  25 metis/smt sites → 0; all 45
+  lecture theories are now metis/smt-free.  Plans: `tools/deps/plans/sweep5.py`, `sweep6.py`.
+  Lessons: `thm[of …]` instantiates in order of first occurrence, not `fixes` order; the HHL theories
+  sit directly in `Algorithms/`, so helper greps must include `Algorithms/*.thy`.
