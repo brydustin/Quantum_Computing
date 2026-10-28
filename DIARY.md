@@ -1475,3 +1475,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Day 21_AC metis/smt 9 → 0; statement check: `cmod_sq_sum'` added, nothing changed.  Plan:
   `tools/deps/plans/day21c.py` (scratch mode as in tick 39).  Lesson: a conjunction in a `using`
   fact is not split by `simp`; use `auto`.
+- **Audit tick 43: sweep of Days 1, 11, 32, 33, 34** (2026-10-28).  Day 1 gains `cpx_vec_length_nonneg`
+  (Day 25's `vnorm_nonneg`, moved and renamed), `cpx_vec_length_one_iff` ($\|v\|=1\iff\braket vv=1$)
+  and the `cmod_sq_sum` pair (moved up from Day 21); every unit-norm conversion in Days 11 and 32 is
+  then one `unfolding`, the `in_set_conv_nth` obtains of Days 33/34 are `auto`, the Hilbert–Schmidt
+  self-inner-product facts are three-line unfoldings, the Shor-code index arithmetic is `simp only:
+  power_add[symmetric]` and `list_eq_iff_nth_eq`.  22 metis/smt sites → 0 in the five theories;
+  statement check (rename mapped): `cpx_vec_length_one_iff` added, nothing changed.  Plan:
+  `tools/deps/plans/sweep3.py` (scratch mode over five theories; replacements taken from HEAD by line
+  range, so an off-by-one swallows a `qed` — check the generated scratch before running it; identical
+  lines in two lemmas need deduplicated replacement).

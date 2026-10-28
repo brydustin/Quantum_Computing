@@ -105,12 +105,6 @@ next
   finally show ?thesis using False by simp
 qed
 
-lemma cmod_sq_sum: "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. f k * cnj (f k))"
-  by (simp only: of_real_sum complex_norm_square)
-
-lemma cmod_sq_sum': "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. cnj (f k) * f k)"
-  unfolding cmod_sq_sum by (simp add: mult.commute)
-
 lemma omega_pow_mix:
   "(\<Sum>l<n. (\<Sum>m<n. omega_pow n l m * x m) * cnj (\<Sum>m<n. omega_pow n l m * y m)) = of_nat n * (\<Sum>m<n. x m * cnj (y m))"
 proof -

@@ -58,8 +58,7 @@ proof -
   have r_sq_real: "(1 / sqrt 2) * (1 / sqrt 2) = (1::real) / 2"
     using sqrt2_sq by simp
   have r_sq: "r * r = 1 / 2"
-    unfolding r_def
-    by (metis numeral_One of_real_divide of_real_mult of_real_numeral r_sq_real)   
+    unfolding r_def of_real_mult[symmetric] r_sq_real by simp
   have cnj_r: "cnj r = r"
     unfolding r_def by simp
   have r_ne_0: "r \<noteq> 0"
@@ -103,14 +102,8 @@ proof -
     finally show ?thesis by simp
   qed
 
-  \<comment> \<open>\<open>\<parallel>\<psi>\<^sub>2\<parallel> = 1\<close> follows from \<open>\<langle>\<psi>\<^sub>2|\<psi>\<^sub>2\<rangle> = 1\<close> via
-      \<open>cpx_vec_length_inner_prod\<close> and non-negativity of the norm.\<close>
-  have \<psi>\<^sub>2_norm_sq: "\<parallel>\<psi>\<^sub>2\<parallel>\<^sup>2 = 1"
-    using inner_\<psi>\<^sub>2_self
-    by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
   have \<psi>\<^sub>2_norm: "\<parallel>\<psi>\<^sub>2\<parallel> = 1"
-    by (metis Re_complex_of_real \<psi>\<^sub>2_norm_sq bell_state_norm 
-        cpx_vec_length_inner_prod inner_prod_csqrt power_one)   
+    unfolding cpx_vec_length_one_iff using inner_\<psi>\<^sub>2_self by simp
   have \<psi>\<^sub>2_qs: "quantum_state n \<psi>\<^sub>2"
     unfolding quantum_state_def using \<psi>\<^sub>2_dim \<psi>\<^sub>2_norm by simp
 
@@ -167,8 +160,7 @@ proof
   from \<psi>\<^sub>2_qs have \<psi>\<^sub>2_dim: "dim_vec \<psi>\<^sub>2 = n" by (simp add: quantum_state_def)
 
   have inner_self_\<psi>\<^sub>1: "\<langle>\<psi>\<^sub>1 | \<psi>\<^sub>1\<rangle> = 1"
-    using \<psi>\<^sub>1_qs
-    by (metis cpx_vec_length_inner_prod of_real_1 one_power2 quantum_state_norm1)
+    using quantum_state_norm1[OF \<psi>\<^sub>1_qs] unfolding cpx_vec_length_one_iff .
 
   have \<phi>_unit: "\<langle>\<phi> | \<phi>\<rangle> = 1"
   proof -

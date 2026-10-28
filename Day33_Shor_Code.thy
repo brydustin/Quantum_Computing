@@ -33,7 +33,7 @@ lemma qubit_op_carrier:
   shows "qubit_op i U \<in> carrier_mat 512 512"
 proof -
   have "Suc i + (8 - i) = 9" using i by simp
-  hence "(2::nat) ^ Suc i * 2 ^ (8 - i) = 2 ^ 9" by (metis power_add)
+  hence "(2::nat) ^ Suc i * 2 ^ (8 - i) = 2 ^ 9" by (simp only: power_add[symmetric])
   hence e: "(2::nat) ^ i * 2 * 2 ^ (8 - i) = 512" by (simp add: mult_ac)
   show ?thesis unfolding qubit_op_def using U e by auto
 qed
@@ -297,7 +297,7 @@ lemma label_vec_inner:
 proof -
   have len: "length l = 3" "length l' = 3" using l l' by (simp_all add: valid_label_def)
   have mem: "\<And>k. k < 3 \<Longrightarrow> snd (l ! k) \<in> {0,1,2,4} \<and> snd (l' ! k) \<in> {0,1,2,4}"
-    using l l' len unfolding valid_label_def by (metis nth_mem)
+    using l l' len unfolding valid_label_def by auto
   have g: "\<And>k. k < 3 \<Longrightarrow> \<langle>ghz_vec_of (l ! k) | ghz_vec_of (l' ! k)\<rangle> = (if l ! k = l' ! k then 2 else 0)"
   proof -
     fix k :: nat assume k: "k < 3"
@@ -317,8 +317,7 @@ proof -
   have eqv: "l = l' \<longleftrightarrow> l ! 0 = l' ! 0 \<and> l ! 1 = l' ! 1 \<and> l ! 2 = l' ! 2"
   proof
     assume "l ! 0 = l' ! 0 \<and> l ! 1 = l' ! 1 \<and> l ! 2 = l' ! 2"
-    moreover have "\<And>k :: nat. k < 3 \<Longrightarrow> k = 0 \<or> k = 1 \<or> k = 2" by auto
-    ultimately show "l = l'" using len by (metis nth_equalityI)
+    thus "l = l'" using len by (auto simp: list_eq_iff_nth_eq less_Suc_eq numeral_eq_Suc)
   qed simp
   show ?thesis unfolding e1 e2 g0 g1 g2 eqv by simp
 qed
@@ -585,7 +584,7 @@ lemma qubit_op_unitary: "unitary U \<Longrightarrow> unitary (qubit_op i U)"
 lemma shor_errors_unitary: "U \<in> set shor_errors \<Longrightarrow> U \<in> carrier_mat 512 512 \<and> unitary U"
 proof -
   assume "U \<in> set shor_errors"
-  then obtain j where j: "j < 22" and U: "U = shor_errors ! j" by (metis in_set_conv_nth shor_lengths(1))
+  then obtain j where j: "j < 22" and U: "U = shor_errors ! j" using shor_lengths(1) by (auto simp: in_set_conv_nth)
   show ?thesis unfolding U
     by (rule shor_errors_cases[OF j, of True])
        (simp_all add: qubit_op_carrier qubit_op_unitary Pauli_X_unitary Pauli_Y_unitary Pauli_Z_unitary)
@@ -756,7 +755,7 @@ lemma qubit_op_one:
   shows "qubit_op i (1\<^sub>m 2) = 1\<^sub>m 512"
 proof -
   have "Suc i + (8 - i) = 9" using i by simp
-  hence "(2::nat) ^ Suc i * 2 ^ (8 - i) = 2 ^ 9" by (metis power_add)
+  hence "(2::nat) ^ Suc i * 2 ^ (8 - i) = 2 ^ 9" by (simp only: power_add[symmetric])
   hence e: "(2::nat) ^ i * 2 * 2 ^ (8 - i) = 512" by (simp add: mult_ac)
   show ?thesis unfolding qubit_op_def tensor_mat_id e ..
 qed

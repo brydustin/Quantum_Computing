@@ -66,7 +66,7 @@ proof -
   have inV: "\<And>v. v \<in> set vs \<Longrightarrow> P *\<^sub>v v = v"
   proof -
     fix v assume v: "v \<in> set vs"
-    then obtain l where l: "l < length vs" and vl: "v = vs ! l" by (metis in_set_conv_nth)
+    then obtain l where l: "l < length vs" and vl: "v = vs ! l" by (auto simp: in_set_conv_nth)
     show "P *\<^sub>v v = v"
     proof (rule projection_fixed_of_orth_kernel[OF P])
       show "dim_vec v = n" using vsd v by simp
@@ -90,7 +90,6 @@ proof -
 qed
 
 subsection \<open>Linearity facts for the composite map $\mathcal R\circ\mathbb E$\<close>
-
 
 definition recover_after :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "recover_after n As Es M = kraus_map_dim n As (kraus_map_dim n Es M)"
@@ -563,7 +562,6 @@ proof -
   qed
 qed
 
-
 subsection \<open>Sufficiency of the Knill--Laflamme conditions (D34-2)\<close>
 
 text \<open>D34-2, sufficiency: if $PE_i^*E_jP=\alpha_{ij}P$ then a recovery channel exists.  Diagonalise
@@ -885,9 +883,9 @@ proof -
   proof -
     have Ppsd: "psd P" using psd_MdagM[OF Pc] unfolding Ph PP .
     have "Tr P \<noteq> 0" using psd_Tr_zero_imp_zero[OF Pc Ppsd] Pnz by blast
-    moreover have "Tr P = complex_of_real (Re (Tr P))"
-      by (rule Tr_hermitian_real[OF Pc]) (simp add: hermitian_def Ph)
-    ultimately have "Re (Tr P) \<noteq> 0" by (metis of_real_0)
+    moreover have "complex_of_real (Re (Tr P)) = Tr P"
+      by (rule Tr_hermitian_real[OF Pc, symmetric]) (simp add: hermitian_def Ph)
+    ultimately have "Re (Tr P) \<noteq> 0" unfolding of_real_eq_0_iff[where 'a = complex, symmetric] by simp
     thus ?thesis using Tr_psd_Re_nonneg[OF Ppsd Pc] by simp
   qed
   have d_nonneg: "\<And>k. k < ?r \<Longrightarrow> 0 \<le> d k"
@@ -925,7 +923,7 @@ proof -
     show "projection n P" by (rule P)
   next
     fix U assume "U \<in> set Us"
-    then obtain a where a: "a < length ks" and "U = Us ! a" unfolding Us_len[symmetric] by (metis in_set_conv_nth)
+    then obtain a where a: "a < length ks" and "U = Us ! a" unfolding Us_len[symmetric] by (auto simp: in_set_conv_nth)
     thus "U \<in> carrier_mat n n" using Us_nth[OF a] Fkc ks_nth[OF a] by simp
   next
     fix a b assume a: "a < length Us" and b: "b < length Us"
@@ -969,7 +967,7 @@ proof -
     proof (cases "0 < d k")
       case True
       have "k \<in> set ks" unfolding ks_def using k True by simp
-      then obtain a where a: "a < length ks" and ka: "ks ! a = k" by (metis in_set_conv_nth)
+      then obtain a where a: "a < length ks" and ka: "ks ! a = k" by (auto simp: in_set_conv_nth)
       have aU: "a < length Us" using a Us_len by simp
       have Ua: "Us ! a = c k \<cdot>\<^sub>m Fs ! k" using Us_nth[OF a] ka by simp
       have Fk: "Fs ! k = complex_of_real (sqrt (d k)) \<cdot>\<^sub>m (Us ! a)"

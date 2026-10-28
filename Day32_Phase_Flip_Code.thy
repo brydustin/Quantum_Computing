@@ -79,13 +79,7 @@ proof -
       unfolding ket_plus_def by (simp add: of_real_mult [symmetric])
     finally show ?thesis .
   qed
-  have "(\<parallel>ket_plus\<parallel>)\<^sup>2 = 1"
-    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
-  thus ?thesis
-    by (metis cpx_vec_length_inner_prod cpx_vec_length_zero_iff
-        inner_prod_csqrt ket_plus_carrier ket_plus_dim norm_eq_zero
-        norm_of_real normalized_vec_norm of_real_eq_0_iff of_real_eq_1_iff
-        power2_eq_1_iff real_sqrt_abs)
+  thus ?thesis unfolding cpx_vec_length_one_iff .
 qed
 
 lemma ket_minus_unit: "\<parallel>ket_minus\<parallel> = 1"
@@ -102,11 +96,7 @@ proof -
       unfolding ket_minus_def by (simp add: of_real_mult [symmetric])
     finally show ?thesis .
   qed
-  have "(\<parallel>ket_minus\<parallel>)\<^sup>2 = 1"
-    using inner by (metis cpx_vec_length_inner_prod of_real_1 of_real_eq_iff)
-  thus ?thesis
-    by (metis cpx_vec_length_inner_prod inner_prod_csqrt ket_plus_unit
-        of_real_eq_1_iff power_one)
+  thus ?thesis unfolding cpx_vec_length_one_iff .
 qed
 
 lemma ket_plus_minus_orthog: "\<langle>ket_plus | ket_minus\<rangle> = 0"
@@ -147,7 +137,7 @@ proof -
   have "Pauli_Z *\<^sub>v ket_minus = Pauli_Z *\<^sub>v (Pauli_Z *\<^sub>v ket_plus)"
     using Pauli_Z_ket_plus by simp
   also have "\<dots> = (Pauli_Z * Pauli_Z) *\<^sub>v ket_plus"
-    by (metis assoc_mult_mat_vec Pauli_Z_carrier ket_plus_carrier)
+    by (rule assoc_mult_mat_vec[OF Pauli_Z_carrier Pauli_Z_carrier ket_plus_carrier, symmetric])
   also have "\<dots> = (1\<^sub>m 2) *\<^sub>v ket_plus"
     using Pauli_Z_squared by simp
   also have "\<dots> = ket_plus" by simp

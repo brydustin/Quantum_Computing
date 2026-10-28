@@ -24,9 +24,6 @@ definition fun_norm :: "nat \<Rightarrow> complex Matrix.mat set \<Rightarrow> (
 
 subsubsection \<open>Vectors\<close>
 
-lemma vnorm_nonneg: "\<parallel>v\<parallel> \<ge> 0"
-  unfolding cpx_vec_length_def by (simp add: sum_nonneg)
-
 lemma cauchy_schwarz_norm:
   assumes "dim_vec v = dim_vec w"
   shows "cmod \<langle>v|w\<rangle> \<le> \<parallel>v\<parallel> * \<parallel>w\<parallel>"
@@ -38,7 +35,7 @@ proof -
       unfolding cpx_vec_length_inner_prod[symmetric] by (simp del: cpx_vec_length_inner_prod)
     thus ?thesis by (simp del: cpx_vec_length_inner_prod add: power_mult_distrib)
   qed
-  finally show ?thesis using vnorm_nonneg[of v] vnorm_nonneg[of w]
+  finally show ?thesis using cpx_vec_length_nonneg[of v] cpx_vec_length_nonneg[of w]
     by (meson power2_le_imp_le zero_le_mult_iff)
 qed
 
@@ -123,7 +120,7 @@ proof (cases "\<parallel>v\<parallel> = 0")
   thus ?thesis using mult_zero_vec'[OF A] True by (simp add: cpx_vec_length_def)
 next
   case False
-  hence pos: "\<parallel>v\<parallel> > 0" using vnorm_nonneg[of v] by simp
+  hence pos: "\<parallel>v\<parallel> > 0" using cpx_vec_length_nonneg[of v] by simp
   let ?u = "complex_of_real (1 / \<parallel>v\<parallel>) \<cdot>\<^sub>v v"
   have u: "dim_vec ?u = n" "\<parallel>?u\<parallel> \<le> 1" using v pos by (simp_all add: cpx_vec_length_smult norm_divide)
   have "A *\<^sub>v ?u = complex_of_real (1 / \<parallel>v\<parallel>) \<cdot>\<^sub>v (A *\<^sub>v v)"
@@ -176,7 +173,7 @@ proof (rule eq_matI)
   fix i j assume "i < dim_row (0\<^sub>m n n :: complex Matrix.mat)" "j < dim_col (0\<^sub>m n n :: complex Matrix.mat)"
   hence i: "i < n" and j: "j < n" by simp_all
   have "\<parallel>A *\<^sub>v unit_vec n j\<parallel> \<le> 0" using op_norm_mult[OF A, of "unit_vec n j"] z by simp
-  hence "A *\<^sub>v unit_vec n j = 0\<^sub>v n" using vnorm_zero_iff[of "A *\<^sub>v unit_vec n j" n] vnorm_nonneg A
+  hence "A *\<^sub>v unit_vec n j = 0\<^sub>v n" using vnorm_zero_iff[of "A *\<^sub>v unit_vec n j" n] cpx_vec_length_nonneg A
     by (simp add: dual_order.antisym)
   hence "(A *\<^sub>v unit_vec n j) $ i = 0" using i by simp
   thus "A $$ (i,j) = 0\<^sub>m n n $$ (i,j)" using A i j by simp
@@ -285,7 +282,7 @@ next
   have zb: "cmod \<langle>x|Y *\<^sub>v x\<rangle> \<le> ?r * \<parallel>x\<parallel>\<^sup>2" if x: "dim_vec x = n" for x
   proof -
     have "cmod \<langle>x|Y *\<^sub>v x\<rangle> \<le> \<parallel>x\<parallel> * \<parallel>Y *\<^sub>v x\<parallel>" by (rule cauchy_schwarz_norm) (use Yc x in simp)
-    also have "\<dots> \<le> \<parallel>x\<parallel> * (?r * \<parallel>x\<parallel>)" by (intro mult_left_mono Ynorm[OF x] vnorm_nonneg)
+    also have "\<dots> \<le> \<parallel>x\<parallel> * (?r * \<parallel>x\<parallel>)" by (intro mult_left_mono Ynorm[OF x] cpx_vec_length_nonneg)
     finally show ?thesis by (simp add: power2_eq_square mult_ac)
   qed
   define Hm where "Hm = (1/2) \<cdot>\<^sub>m Y + (1/2) \<cdot>\<^sub>m (Y\<^sup>\<dagger>)"
@@ -356,7 +353,7 @@ proof -
   have "Re \<langle>?Q *\<^sub>v x|P *\<^sub>v (?Q *\<^sub>v x)\<rangle> \<le> cmod \<langle>?Q *\<^sub>v x|P *\<^sub>v (?Q *\<^sub>v x)\<rangle>" by (rule complex_Re_le_cmod)
   also have "\<dots> \<le> \<parallel>?Q *\<^sub>v x\<parallel> * \<parallel>P *\<^sub>v (?Q *\<^sub>v x)\<parallel>" by (rule cauchy_schwarz_norm) (use P(1) qx in simp)
   also have "\<dots> \<le> \<parallel>?Q *\<^sub>v x\<parallel> * (op_norm n P * \<parallel>?Q *\<^sub>v x\<parallel>)"
-    by (intro mult_left_mono op_norm_mult[OF P(1) qx] vnorm_nonneg)
+    by (intro mult_left_mono op_norm_mult[OF P(1) qx] cpx_vec_length_nonneg)
   also have "\<dots> = op_norm n P * \<parallel>?Q *\<^sub>v x\<parallel>\<^sup>2" by (simp add: power2_eq_square)
   also have "\<parallel>?Q *\<^sub>v x\<parallel>\<^sup>2 = Re \<langle>x|P *\<^sub>v x\<rangle>"
   proof -
@@ -417,7 +414,7 @@ proof (intro ballI impI)
       also have "\<dots> \<le> (s\<^sup>2 + t\<^sup>2) * \<parallel>x\<parallel>\<^sup>2" using sq_le_norm_quad[OF Pc ps x] unfolding s_def q_def by simp
       finally have "\<parallel>M *\<^sub>v x\<parallel>\<^sup>2 \<le> (sqrt (s\<^sup>2 + t\<^sup>2) * \<parallel>x\<parallel>)\<^sup>2" by (simp add: power_mult_distrib)
       thus ?thesis
-        by (rule power2_le_imp_le) (intro mult_nonneg_nonneg real_sqrt_ge_zero add_nonneg_nonneg zero_le_power2 vnorm_nonneg)
+        by (rule power2_le_imp_le) (intro mult_nonneg_nonneg real_sqrt_ge_zero add_nonneg_nonneg zero_le_power2 cpx_vec_length_nonneg)
     qed
     have "op_norm n M \<le> sqrt (s\<^sup>2 + t\<^sup>2)" by (rule op_norm_le[OF Mc _ Mx]) simp_all
     hence "cmod (f P + ?z) \<le> sqrt (s\<^sup>2 + t\<^sup>2)" using b M fM by force

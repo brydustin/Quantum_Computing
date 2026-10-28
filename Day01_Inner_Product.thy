@@ -69,8 +69,8 @@ proof
   qed
 next
   assume v_zero: "v = 0\<^sub>v (dim_vec v)"
-  have index_zero: "\<And>i. i < dim_vec v \<Longrightarrow> v $ i = 0"
-    using v_zero by (metis index_zero_vec(1))
+  have index_zero: "v $ i = 0" if "i < dim_vec v" for i
+    using arg_cong[OF v_zero, of "\<lambda>w. w $ i"] that by simp
   have sum_zero: "(\<Sum>i<dim_vec v. (cmod (v $ i))\<^sup>2) = 0"
     using index_zero by (simp add: sum.neutral)
   show "\<parallel>v\<parallel> = 0"
@@ -82,6 +82,22 @@ lemma cpx_vec_length_pos:
   assumes "v \<noteq> 0\<^sub>v (dim_vec v)"
   shows "0 < \<parallel>v\<parallel>"
   using cpx_vec_length_zero_iff[of v] assms unfolding less_le by (simp add: cpx_vec_length_def sum_nonneg)
+
+lemma cpx_vec_length_nonneg: "\<parallel>v\<parallel> \<ge> 0"
+  unfolding cpx_vec_length_def by (simp add: sum_nonneg)
+
+text \<open>$\|v\|=1$ iff $\braket vv=1$.\<close>
+
+lemma cpx_vec_length_one_iff: "\<parallel>v\<parallel> = 1 \<longleftrightarrow> \<langle>v|v\<rangle> = 1"
+  using cpx_vec_length_nonneg[of v]
+  unfolding cpx_vec_length_inner_prod[symmetric] of_real_power[symmetric] of_real_eq_1_iff
+  by (auto simp: power2_eq_1_iff)
+
+lemma cmod_sq_sum: "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. f k * cnj (f k))"
+  by (simp only: of_real_sum complex_norm_square)
+
+lemma cmod_sq_sum': "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. cnj (f k) * f k)"
+  unfolding cmod_sq_sum by (simp add: mult.commute)
 
 text \<open>$\braket vv=0$ iff $v=0$.\<close>
 
@@ -269,7 +285,7 @@ proof -
   also have "\<dots> = cnj (\<langle>\<langle> B | A1 \<rangle>\<rangle>) + cnj (\<langle>\<langle> B | A2 \<rangle>\<rangle>)"
     by simp
   also have "\<dots> = \<langle>\<langle> A1 | B \<rangle>\<rangle> + \<langle>\<langle> A2 | B \<rangle>\<rangle>"
-    by (metis assms(1,2,3,4) hs_inner_prod_cnj)    
+    unfolding hs_inner_prod_cnj[OF assms(1,2)] hs_inner_prod_cnj[OF assms(3,4)] ..
   finally show ?thesis.
 qed
 
@@ -290,29 +306,11 @@ and $0$ only if every entry is $0$.\<close>
 
 lemma hs_inner_prod_self_real:
   shows "\<langle>\<langle> x | x \<rangle>\<rangle> \<in> \<real>"
-proof -
-  have "\<langle>\<langle> x | x \<rangle>\<rangle> = (\<Sum> i \<in> {0 ..< dim_row x}. \<Sum> j \<in> {0 ..< dim_col x}. 
-                              cnj (x $$ (i,j)) * (x $$ (i,j)))"
-    by (simp add: hs_inner_prod_def)
-  also have "\<dots> = (\<Sum> i \<in> {0 ..< dim_row x}. \<Sum> j \<in> {0 ..< dim_col x}. 
-                    (cmod (x $$ (i,j)))^2)"
-    by (metis (lifting) ext complex_norm_square mult.commute of_real_hom.hom_sum)
-  also have "\<dots> \<in> \<real>"
-    by simp
-  finally show ?thesis.
-qed
+  unfolding hs_inner_prod_def cmod_sq_sum'[symmetric] of_real_sum[symmetric] by simp
 
 lemma hs_inner_prod_self_nonneg:
   shows "Re (\<langle>\<langle> x | x \<rangle>\<rangle>) \<ge> 0"
-proof -
-  have "Re (\<langle>\<langle> x | x \<rangle>\<rangle>) = (\<Sum> i \<in> {0 ..< dim_row x}. \<Sum> j \<in> {0 ..< dim_col x}. 
-                                   (cmod (x $$ (i,j)))^2)"
-    unfolding hs_inner_prod_def 
-    by(simp, metis (lifting) ext cmod_power2 power2_eq_square)
-  also have "\<dots> \<ge> 0"
-    by (intro sum_nonneg, simp)
-  finally show ?thesis.
-qed
+  unfolding hs_inner_prod_def cmod_sq_sum'[symmetric] of_real_sum[symmetric] by (simp add: sum_nonneg)
 
 lemma hs_inner_prod_eq_zero_imp:
   assumes "\<langle>\<langle> x | x \<rangle>\<rangle> = 0"
