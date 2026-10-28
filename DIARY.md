@@ -1458,3 +1458,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   forms of `(M * N) $$ (i,j)` and `(M *v v) $ i` differ once dims are known, so entry steps go
   through `simp only:` with instantiated column lemmas; a chk.sh timeout prints `EXIT 124`, not
   `FAILED`.  Plan: `tools/deps/plans/day15c.py`; scratch `wip/d23/D15d.thy`.
+- **Audit tick 41: Day 25's functional norm without metis** (2026-10-28).  The matrix–vector algebra
+  of $cI+eA$ and $aY+bY^*$ is `unfolding` of the distributive and scaling rules, the Hermitian
+  combination is `hermitian_plus`/`hermitian_real_scale`, realness of $\langle x|Px\rangle$ is
+  `hermitian_iff_real_quad_form` + `complex_is_Real_iff`, the `of_real` conversions are
+  `of_real_eq_iff` and the new two-line bundle lemma `Re_of_real_eq` ($\overline{r}=z\Rightarrow
+  r=\Re z$), the square-root bound is `power_mono`.  Day 25_UFN metis/smt 10 → 0 (507 → 509 lines);
+  statement check: `Re_of_real_eq` added, nothing changed.  Plan: `tools/deps/plans/day25b.py`, whose
+  `--scratch` mode copies the theory's anonymous context (all its helpers) and makes the primed copies
+  cite each other — exported context lemmas carry the context assumptions as premises, so `foo[OF …]`
+  against the installed export has no unifier.  `by (drule …)` never sees chained facts.

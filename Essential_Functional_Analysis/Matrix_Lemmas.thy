@@ -559,6 +559,9 @@ proof -
   ultimately show ?thesis by blast
 qed
 
+lemma Re_of_real_eq: "complex_of_real r = z \<Longrightarrow> r = Re z"
+  by (drule arg_cong[where f = Re]) simp
+
 text \<open>Concatenating rows of equal length, and the reindexing
 $\kappa=ik+j$.\<close>
 

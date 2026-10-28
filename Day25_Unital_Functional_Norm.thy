@@ -178,8 +178,7 @@ proof (rule eq_matI)
   have "\<parallel>A *\<^sub>v unit_vec n j\<parallel> \<le> 0" using op_norm_mult[OF A, of "unit_vec n j"] z by simp
   hence "A *\<^sub>v unit_vec n j = 0\<^sub>v n" using vnorm_zero_iff[of "A *\<^sub>v unit_vec n j" n] vnorm_nonneg A
     by (simp add: dual_order.antisym)
-  moreover have "A *\<^sub>v unit_vec n j = Matrix.col A j" by (rule eq_vecI) (use A j in auto)
-  ultimately have "Matrix.col A j $ i = 0" by (metis i index_zero_vec(1))
+  hence "(A *\<^sub>v unit_vec n j) $ i = 0" using i by simp
   thus "A $$ (i,j) = 0\<^sub>m n n $$ (i,j)" using A i j by simp
 qed (use A in auto)
 
@@ -218,19 +217,21 @@ proof -
   have ps: "psd (complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A)" if e: "e = 1 \<or> e = -1" for e :: complex
     unfolding psd_def
   proof (intro conjI allI impI)
+    have eA: "hermitian (e \<cdot>\<^sub>m A)"
+      using e hermitian_real_scale[OF A(2) Ac, of 1] hermitian_real_scale[OF A(2) Ac, of "-1"] by auto
     show "hermitian (complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A)"
-      by (metis Ac assms(3) hermitian_identity hermitian_plus hermitian_real_scale of_real_1 
-          of_real_minus one_carrier_mat smult_carrier_mat that)
+      by (rule hermitian_plus[OF hermitian_real_scale[OF hermitian_identity one_carrier_mat] eA])
+         (rule smult_carrier_mat one_carrier_mat Ac)+
     fix x :: "complex Matrix.vec" assume "dim_vec x = dim_row (complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A)"
     hence x: "dim_vec x = n"
       using Ac by auto 
     have xc: "x \<in> carrier_vec n" by (rule carrier_vecI[OF x])
-    have "(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v x + e \<cdot>\<^sub>v (A *\<^sub>v x)"
-      by (metis (no_types, lifting) ext Ac I TSc add_mult_distrib_mat_vec assms(3) 
-          carrier_matD(2) carrier_mat_triv hermitian_square
-          index_one_mat(2) index_smult_mat(2,3) one_mult_mat_vec smult_mat_mult_vec x xc)     
-    hence "\<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> = complex_of_real c * \<langle>x|x\<rangle> + e * \<langle>x|A *\<^sub>v x\<rangle>"
-      by (metis Ac carrier_matD(1) dim_mult_mat_vec index_smult_vec(2) inner_prod_right_add' inner_prod_right_smult' x)
+    have Mx: "(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x = complex_of_real c \<cdot>\<^sub>v x + e \<cdot>\<^sub>v (A *\<^sub>v x)"
+      unfolding add_mult_distrib_mat_vec[OF smult_carrier_mat[OF one_carrier_mat] smult_carrier_mat[OF Ac] xc]
+                smult_mat_mult_vec[OF one_carrier_mat xc] smult_mat_mult_vec[OF Ac xc] one_mult_mat_vec[OF xc] ..
+    have dd: "dim_vec (complex_of_real c \<cdot>\<^sub>v x) = dim_vec (e \<cdot>\<^sub>v (A *\<^sub>v x))" using Ac x by simp
+    have "\<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> = complex_of_real c * \<langle>x|x\<rangle> + e * \<langle>x|A *\<^sub>v x\<rangle>"
+      unfolding Mx inner_prod_right_add'[OF dd] inner_prod_right_smult' ..
     hence "Re \<langle>x|(complex_of_real c \<cdot>\<^sub>m 1\<^sub>m n + e \<cdot>\<^sub>m A) *\<^sub>v x\<rangle> = c * \<parallel>x\<parallel>\<^sup>2 + Re e * Re \<langle>x|A *\<^sub>v x\<rangle> - Im e * Im \<langle>x|A *\<^sub>v x\<rangle>"
       unfolding cpx_vec_length_inner_prod[symmetric] by (simp del: cpx_vec_length_inner_prod)
     also have "\<dots> = c * \<parallel>x\<parallel>\<^sup>2 + Re e * Re \<langle>x|A *\<^sub>v x\<rangle>" using e by auto
@@ -295,12 +296,13 @@ next
     if x: "dim_vec x = n" for a b x
   proof -
     have xc: "x \<in> carrier_vec n" by (rule carrier_vecI[OF x])
-    have "(a \<cdot>\<^sub>m Y + b \<cdot>\<^sub>m (Y\<^sup>\<dagger>)) *\<^sub>v x = a \<cdot>\<^sub>v (Y *\<^sub>v x) + b \<cdot>\<^sub>v (Y\<^sup>\<dagger> *\<^sub>v x)"
-      using add_mult_distrib_mat_vec[OF smult_carrier_mat[OF Yc] smult_carrier_mat[OF Ydc] xc]
-      by (simp add: smult_mat_mult_vec[OF Yc xc] smult_mat_mult_vec[OF Ydc xc])
-    thus ?thesis using Yc Ydc x
-      by (metis (no_types, lifting) carrier_matD(1) dim_mult_mat_vec index_smult_vec(2) 
-          inner_prod_adjoint_swap inner_prod_cnj  inner_prod_right_add' inner_prod_right_smult')
+    have Yx: "(a \<cdot>\<^sub>m Y + b \<cdot>\<^sub>m (Y\<^sup>\<dagger>)) *\<^sub>v x = a \<cdot>\<^sub>v (Y *\<^sub>v x) + b \<cdot>\<^sub>v (Y\<^sup>\<dagger> *\<^sub>v x)"
+      unfolding add_mult_distrib_mat_vec[OF smult_carrier_mat[OF Yc] smult_carrier_mat[OF Ydc] xc]
+                smult_mat_mult_vec[OF Yc xc] smult_mat_mult_vec[OF Ydc xc] ..
+    have sw: "\<langle>x|Y\<^sup>\<dagger> *\<^sub>v x\<rangle> = cnj \<langle>x|Y *\<^sub>v x\<rangle>"
+      unfolding inner_prod_adjoint_swap[OF Yc x x] by (rule inner_prod_cnj) (use Yc x in simp)
+    have dd: "dim_vec (a \<cdot>\<^sub>v (Y *\<^sub>v x)) = dim_vec (b \<cdot>\<^sub>v (Y\<^sup>\<dagger> *\<^sub>v x))" using Yc Ydc by simp
+    show ?thesis unfolding Yx inner_prod_right_add'[OF dd] inner_prod_right_smult' sw ..
   qed
   have Hh: "hermitian Hm" unfolding hermitian_def Hm_def
     using Yc by (auto intro!: eq_matI simp: dagger_def)
@@ -350,7 +352,7 @@ proof -
   also have "\<dots> = \<langle>?Q *\<^sub>v x|?Q *\<^sub>v (P *\<^sub>v x)\<rangle>"
     unfolding Px[symmetric, THEN sym] using swap[OF qx, of "P *\<^sub>v x"] P(1) Px qx by auto
   also have "\<dots> = \<langle>?Q *\<^sub>v x|P *\<^sub>v (?Q *\<^sub>v x)\<rangle>" unfolding PQ ..
-  finally have e1: "\<parallel>P *\<^sub>v x\<parallel>\<^sup>2 = Re \<langle>?Q *\<^sub>v x|P *\<^sub>v (?Q *\<^sub>v x)\<rangle>" by (metis Re_complex_of_real)
+  finally have e1: "\<parallel>P *\<^sub>v x\<parallel>\<^sup>2 = Re \<langle>?Q *\<^sub>v x|P *\<^sub>v (?Q *\<^sub>v x)\<rangle>" by (rule Re_of_real_eq)
   have "Re \<langle>?Q *\<^sub>v x|P *\<^sub>v (?Q *\<^sub>v x)\<rangle> \<le> cmod \<langle>?Q *\<^sub>v x|P *\<^sub>v (?Q *\<^sub>v x)\<rangle>" by (rule complex_Re_le_cmod)
   also have "\<dots> \<le> \<parallel>?Q *\<^sub>v x\<parallel> * \<parallel>P *\<^sub>v (?Q *\<^sub>v x)\<parallel>" by (rule cauchy_schwarz_norm) (use P(1) qx in simp)
   also have "\<dots> \<le> \<parallel>?Q *\<^sub>v x\<parallel> * (op_norm n P * \<parallel>?Q *\<^sub>v x\<parallel>)"
@@ -360,7 +362,7 @@ proof -
   proof -
     have "complex_of_real (\<parallel>?Q *\<^sub>v x\<parallel>\<^sup>2) = \<langle>?Q *\<^sub>v x|?Q *\<^sub>v x\<rangle>" by (rule cpx_vec_length_inner_prod)
     also have "\<dots> = \<langle>x|?Q *\<^sub>v (?Q *\<^sub>v x)\<rangle>" by (rule swap[OF x qx])
-    finally show ?thesis unfolding Px[symmetric] by (metis Re_complex_of_real)
+    finally show ?thesis unfolding Px[symmetric] by (rule Re_of_real_eq)
   qed
   finally show ?thesis using e1 by simp
 qed
@@ -378,9 +380,9 @@ proof (intro ballI impI)
   have s0: "0 \<le> s" unfolding s_def using op_norm_nonneg[OF Pc] by simp
   have real: "Im \<langle>x|P *\<^sub>v x\<rangle> = 0" if x: "dim_vec x = n" for x
   proof -
-    have "\<langle>x|P *\<^sub>v x\<rangle> = cnj \<langle>x|P *\<^sub>v x\<rangle>"
-      using Pc Reals_cnj_iff hermitian_iff_real_quad_form ps psd_def x by auto   
-    thus ?thesis by (metis cnj.simps(2) complex_cnj_cancel_iff neg_equal_zero)
+    have "\<langle>x|P *\<^sub>v x\<rangle> \<in> \<real>"
+      using hermitian_iff_real_quad_form[OF Pc] ps x unfolding psd_def by blast
+    thus ?thesis unfolding complex_is_Real_iff .
   qed
   have key: "(Re (f P) - s)\<^sup>2 + (Im (f P) + t)\<^sup>2 \<le> s\<^sup>2 + t\<^sup>2" for t :: real
   proof -
@@ -411,7 +413,7 @@ proof (intro ballI impI)
                    + complex_of_real (s\<^sup>2 + t\<^sup>2) * complex_of_real (\<parallel>x\<parallel>\<^sup>2)
                  = complex_of_real (\<parallel>P *\<^sub>v x\<parallel>\<^sup>2 - 2 * s * q + (s\<^sup>2 + t\<^sup>2) * \<parallel>x\<parallel>\<^sup>2)"
         by (simp only: of_real_add of_real_mult of_real_diff of_real_minus) (simp del: cpx_vec_length_inner_prod)
-      finally have "\<parallel>M *\<^sub>v x\<parallel>\<^sup>2 = \<parallel>P *\<^sub>v x\<parallel>\<^sup>2 - 2 * s * q + (s\<^sup>2 + t\<^sup>2) * \<parallel>x\<parallel>\<^sup>2" by (metis of_real_eq_iff)
+      finally have "\<parallel>M *\<^sub>v x\<parallel>\<^sup>2 = \<parallel>P *\<^sub>v x\<parallel>\<^sup>2 - 2 * s * q + (s\<^sup>2 + t\<^sup>2) * \<parallel>x\<parallel>\<^sup>2" unfolding of_real_eq_iff .
       also have "\<dots> \<le> (s\<^sup>2 + t\<^sup>2) * \<parallel>x\<parallel>\<^sup>2" using sq_le_norm_quad[OF Pc ps x] unfolding s_def q_def by simp
       finally have "\<parallel>M *\<^sub>v x\<parallel>\<^sup>2 \<le> (sqrt (s\<^sup>2 + t\<^sup>2) * \<parallel>x\<parallel>)\<^sup>2" by (simp add: power_mult_distrib)
       thus ?thesis
@@ -419,7 +421,7 @@ proof (intro ballI impI)
     qed
     have "op_norm n M \<le> sqrt (s\<^sup>2 + t\<^sup>2)" by (rule op_norm_le[OF Mc _ Mx]) simp_all
     hence "cmod (f P + ?z) \<le> sqrt (s\<^sup>2 + t\<^sup>2)" using b M fM by force
-    hence "(cmod (f P + ?z))\<^sup>2 \<le> s\<^sup>2 + t\<^sup>2" by (metis norm_ge_zero power_mono real_sqrt_pow2 add_nonneg_nonneg zero_le_power2)
+    hence "(cmod (f P + ?z))\<^sup>2 \<le> s\<^sup>2 + t\<^sup>2" using power_mono[of "cmod (f P + ?z)" "sqrt (s\<^sup>2 + t\<^sup>2)" 2] by simp
     moreover have "(cmod (f P + ?z))\<^sup>2 = (Re (f P) - s)\<^sup>2 + (Im (f P) + t)\<^sup>2"
       by (simp only: cmod_power2) simp
     ultimately show ?thesis by simp
