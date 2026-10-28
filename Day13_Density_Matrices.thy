@@ -323,59 +323,10 @@ lemma Tr_psd_Re_nonneg:
   assumes P: "psd P" and Pc: "P \<in> carrier_mat n n"
   shows "0 \<le> Re (Tr P)"
 proof -
-  have dr: "dim_row P = n" and dc: "dim_col P = n" using Pc by auto
-
-  \<comment> \<open>Diagonal entries are inner products with unit vectors.\<close>
-  have diag_entry:
-    "\<And>i. i < n \<Longrightarrow> P $$ (i, i) = \<langle>unit_vec n i | P *\<^sub>v unit_vec n i\<rangle>"
-  proof -
-    fix i assume i: "i < n"
-    let ?e = "unit_vec n i"
-    have de: "dim_vec ?e = n" by simp
-    have Pe_idx: "\<And>k. k < n \<Longrightarrow> (P *\<^sub>v ?e) $ k = P $$ (k, i)"
-    proof -
-      fix k assume k: "k < n"
-      have "(P *\<^sub>v ?e) $ k = Matrix.row P k \<bullet> ?e"
-        using k Pc by auto
-      also have "\<dots> = (\<Sum>m = 0..<n. Matrix.row P k $ m * ?e $ m)"
-        using k Pc by (simp add: scalar_prod_def)
-      also have "\<dots> = (\<Sum>m = 0..<n. if m = i then Matrix.row P k $ m else 0)"
-        using i by (intro sum.cong refl) simp
-      also have "\<dots> = Matrix.row P k $ i"
-        using i by simp
-      also have "\<dots> = P $$ (k, i)"
-        using k i Pc by auto
-      finally show "(P *\<^sub>v ?e) $ k = P $$ (k, i)".
-    qed
-    have "\<langle>?e | P *\<^sub>v ?e\<rangle> = (\<Sum>k = 0..<n. cnj (?e $ k) * (P *\<^sub>v ?e) $ k)"
-      using Pc by (simp add: inner_prod_def)
-    also have "\<dots> = (\<Sum>k = 0..<n. if k = i then (P *\<^sub>v ?e) $ k else 0)"
-      using i by (intro sum.cong refl) simp
-    also have "\<dots> = (P *\<^sub>v ?e) $ i"
-      using i by simp
-    also have "\<dots> = P $$ (i, i)"
-      using Pe_idx[OF i] by simp
-    finally show "P $$ (i, i) = \<langle>?e | P *\<^sub>v ?e\<rangle>" by simp
-  qed
-
-  \<comment> \<open>Each diagonal entry has non-negative real part, so the trace does.\<close>
-  have Re_diag_nn: "\<And>i. i < n \<Longrightarrow> 0 \<le> Re (P $$ (i, i))"
-  proof -
-    fix i assume i: "i < n"
-    have "Re (P $$ (i, i)) = Re (\<langle>unit_vec n i | P *\<^sub>v unit_vec n i\<rangle>)"
-      using diag_entry[OF i] by simp
-    moreover have "0 \<le> Re (\<langle>unit_vec n i | P *\<^sub>v unit_vec n i\<rangle>)"
-      using P Pc by (simp add: psd_def)
-    ultimately show "0 \<le> Re (P $$ (i, i))" by simp
-  qed
-
-  have "Re (Tr P) = Re (\<Sum>r<n. if r < n then P $$ (r, r) else 0)"
-    using dr dc by (simp add: Tr_def)
-  also have "\<dots> = (\<Sum>r<n. Re (P $$ (r, r)))" by simp
-  finally have "Re (Tr P) = (\<Sum>r<n. Re (P $$ (r, r)))".
-  moreover have "0 \<le> (\<Sum>r<n. Re (P $$ (r, r)))"
-    using Re_diag_nn by (intro sum_nonneg) auto
-  ultimately show ?thesis by simp
+  have Pii: "0 \<le> Re (P $$ (i, i))" if "i < n" for i
+    using P[unfolded psd_iff_quad_form_nonneg[OF Pc], rule_format, of "unit_vec n i"]
+    unfolding inner_unit_T_unit[OF Pc that that] by simp
+  show ?thesis unfolding Tr_carrier[OF Pc] Re_sum by (rule sum_nonneg) (simp add: Pii)
 qed
 
 lemma ensemble_prob_trace:
@@ -385,70 +336,15 @@ lemma ensemble_prob_trace:
       and Min: "M \<in> set Ms"
   shows "Re (Tr ((M\<^sup>\<dagger>) * M * \<rho>)) \<ge> 0"
 proof -
-  have M_carr: "M \<in> carrier_mat n n"
-    using ms Min by (auto simp: measurement_system_def)
-  have rho_carr: "\<rho> \<in> carrier_mat n n" using dm by (auto simp: density_matrix_def)
-  have rho_psd: "psd \<rho>" using dm by (auto simp: density_matrix_def)
-
-  \<comment> \<open>Take a PSD square root of \<open>\<rho>\<close>.\<close>
-  obtain Q where Qc: "Q \<in> carrier_mat n n" and Qpsd: "psd Q" and QQ: "Q * Q = \<rho>"
-    using psd_sqrt_exists[OF rho_carr rho_psd] by blast
-  have Qdag: "(Q\<^sup>\<dagger>) = Q" using Qpsd by (simp add: psd_def hermitian_def)
-  have Md_c: "(M\<^sup>\<dagger>) \<in> carrier_mat n n" using M_carr by auto
-  have MdM_c: "(M\<^sup>\<dagger>) * M \<in> carrier_mat n n" using Md_c M_carr by auto
-  have MQ_c: "M * Q \<in> carrier_mat n n" using M_carr Qc by auto
-  have MQd_c: "((M * Q)\<^sup>\<dagger>) \<in> carrier_mat n n"
-  proof -
-    have dr: "dim_row ((M * Q)\<^sup>\<dagger>) = dim_col (M * Q)" by simp
-    have dc: "dim_col ((M * Q)\<^sup>\<dagger>) = dim_row (M * Q)" by simp
-    have "dim_col (M * Q) = n" using MQ_c by auto
-    moreover have "dim_row (M * Q) = n" using MQ_c by auto
-    ultimately show ?thesis using dr dc by auto
-  qed
-
-  \<comment> \<open>Key identity: \<open>(M*Q)\<^sup>\<dagger> * (M*Q) = Q * (M\<^sup>\<dagger>) * M * Q\<close>.\<close>
-  have expand: "((M * Q)\<^sup>\<dagger>) * (M * Q) = Q * ((M\<^sup>\<dagger>) * M) * Q"
-  proof -
-    have "((M * Q)\<^sup>\<dagger>) * (M * Q) = ((Q\<^sup>\<dagger>) * (M\<^sup>\<dagger>)) * (M * Q)"
-      using M_carr Qc by (simp add: dagger_of_prod)
-    also have "\<dots> = (Q * (M\<^sup>\<dagger>)) * (M * Q)" using Qdag by simp
-    also have "\<dots> = Q * ((M\<^sup>\<dagger>) * (M * Q))"
-      using assoc_mult_mat[OF Qc Md_c MQ_c] by simp
-    also have "\<dots> = Q * (((M\<^sup>\<dagger>) * M) * Q)"
-      using assoc_mult_mat[OF Md_c M_carr Qc, symmetric] by simp
-    also have "\<dots> = (Q * ((M\<^sup>\<dagger>) * M)) * Q"
-      using assoc_mult_mat[OF Qc MdM_c Qc, symmetric] by simp
-    finally show ?thesis by simp
-  qed
-
-  \<comment> \<open>Key identity 2: \<open>Tr (A*Q*Q) = Tr (Q * A * Q)\<close> for \<open>A = M\<^sup>\<dagger>*M\<close>.\<close>
-  have Tr_eq: "Tr ((M\<^sup>\<dagger>) * M * \<rho>) = Tr (((M * Q)\<^sup>\<dagger>) * (M * Q))"
-  proof -
-    have "Tr ((M\<^sup>\<dagger>) * M * \<rho>) = Tr ((M\<^sup>\<dagger>) * M * (Q * Q))"
-      using QQ by simp
-    also have "\<dots> = Tr (((M\<^sup>\<dagger>) * M * Q) * Q)"
-      using MdM_c Qc by simp
-    also have "\<dots> = Tr (Q * ((M\<^sup>\<dagger>) * M * Q))"
-    proof (rule Tr_cyclic)
-      show "dim_col ((M\<^sup>\<dagger>) * M * Q) = dim_row Q" using MdM_c Qc by auto
-      show "dim_row ((M\<^sup>\<dagger>) * M * Q) = dim_col Q" using MdM_c Qc by auto
-    qed
-    also have "\<dots> = Tr (Q * ((M\<^sup>\<dagger>) * M) * Q)"
-      using Qc MdM_c by simp
-    also have "\<dots> = Tr (((M * Q)\<^sup>\<dagger>) * (M * Q))"
-      using expand by simp
-    finally show ?thesis.
-  qed
-
-  \<comment> \<open>\<open>(MQ)\<^sup>\<dagger>(MQ)\<close> is PSD, so its trace has non-negative real part.\<close>
-  have MQd_MQ_psd: "psd (((M * Q)\<^sup>\<dagger>) * (M * Q))"
-    using psd_MdagM[OF MQ_c] by simp
-  have MQd_MQ_c: "((M * Q)\<^sup>\<dagger>) * (M * Q) \<in> carrier_mat n n"
-    using MQ_c MQd_c by auto
-
-  have "0 \<le> Re (Tr (((M * Q)\<^sup>\<dagger>) * (M * Q)))"
-    using Tr_psd_Re_nonneg[OF MQd_MQ_psd MQd_MQ_c].
-  thus ?thesis using Tr_eq by simp
+  have M: "M \<in> carrier_mat n n" using ms Min by (auto simp: measurement_system_def)
+  have \<rho>: "\<rho> \<in> carrier_mat n n" "psd \<rho>" using dm by (auto simp: density_matrix_def)
+  have Md: "M\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF M])
+  have "Tr ((M\<^sup>\<dagger>) * M * \<rho>) = Tr ((M * \<rho>) * (M\<^sup>\<dagger>))"
+    unfolding assoc_mult_mat[OF Md M \<rho>(1)] by (rule Tr_cyclic) (use M \<rho>(1) in simp_all)
+  moreover have "psd (M * \<rho> * (M\<^sup>\<dagger>))"
+    using psd_conjugate[OF \<rho> Md] by (simp add: dagger_of_dagger_is_id)
+  ultimately show ?thesis
+    using Tr_psd_Re_nonneg[OF _ mult_carrier_mat[OF mult_carrier_mat[OF M \<rho>(1)] Md]] by simp
 qed
 
 text \<open>Day 13: $\ketbra{e^{i\theta}\psi}{e^{i\theta}\psi}=\ketbra\psi\psi$; the density matrix forgets the phase.\<close>

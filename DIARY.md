@@ -1532,3 +1532,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `hermitian_plus` with the premises permuted — invisible to the DUP check, which compares whole
   statements — and goes.  Plan: `tools/deps/plans/sweep10.py`.  JNF's `add_carrier_mat` has ONE
   premise (`B ∈ carrier_mat nr nc ⟹ A + B ∈ carrier_mat nr nc`).
+- **Audit tick 51: Day 13's trace positivity** (2026-10-28).  $\Re\Tr P\ge0$ for $P\ge0$: each
+  $P_{ii}=\braket{e_i}{Pe_i}$ (Day 4 `inner_unit_T_unit`) has non-negative real part (59 lines → 8);
+  $\Re\Tr(M^*M\rho)\ge0$: $\Tr(M^*M\rho)=\Tr(M\rho M^*)$ (Day 2 `Tr_cyclic`) and $M\rho M^*\ge0$ (Day 4
+  `psd_conjugate`) — the square root of $\rho$ is no longer needed (73 → 13).  Plan:
+  `tools/deps/plans/sweep11.py`.  `simp add: sum_nonneg` does not use a `?i < n ⟹ …` fact; name it and
+  `rule sum_nonneg`.
