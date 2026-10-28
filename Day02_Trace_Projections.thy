@@ -585,6 +585,23 @@ lemma outer_prod_carrier:
   shows "v \<oslash> w \<in> carrier_mat n m"
   using assms by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def carrier_matI)
 
+text \<open>$(vw^*)^*=wv^*$.\<close>
+
+lemma outer_prod_dagger:
+  fixes v w :: "complex Matrix.vec"
+  shows "(v \<oslash> w)\<^sup>\<dagger> = w \<oslash> v"
+proof -
+  have "(v \<oslash> w)\<^sup>\<dagger> = ((bra_vec w)\<^sup>\<dagger>) * (( |v\<rangle> )\<^sup>\<dagger>)"
+    by (rule dagger_of_prod) (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def)
+  also have "(bra_vec w)\<^sup>\<dagger> = |w\<rangle>"
+  proof -
+    have "bra_vec w = ( |w\<rangle> )\<^sup>\<dagger>" by (simp add: dagger_of_ket_is_bra)
+    thus ?thesis by (simp add: dagger_of_dagger_is_id)
+  qed
+  also have "( |v\<rangle> )\<^sup>\<dagger> = bra_vec v" by (simp add: dagger_of_ket_is_bra)
+  finally show ?thesis .
+qed
+
 text \<open>$\Tr(A\,\ketbra vv)=\braket v{Av}$.\<close>
 
 lemma Tr_mult_outer:
@@ -630,6 +647,28 @@ proof (rule eq_matI)
   finally show "((w \<oslash> w) * (w \<oslash> w)) $$ (i, j) = (w \<oslash> w) $$ (i, j)"
     using one i j by (simp add: outer_prod_index)
 qed (use outer_prod_carrier[of w "dim_vec w" w "dim_vec w"] in auto)
+
+text \<open>$I-P$ is again a projection when $P$ is.\<close>
+
+lemma complement_projection:
+  fixes P :: "complex Matrix.mat"
+  assumes P: "P \<in> carrier_mat n n" and PP: "P * P = P"
+  shows "(1\<^sub>m n - P) * (1\<^sub>m n - P) = 1\<^sub>m n - P"
+proof -
+  have Q: "1\<^sub>m n - P \<in> carrier_mat n n" by (rule minus_carrier_mat[OF P])
+  have "(1\<^sub>m n - P) * (1\<^sub>m n - P) = (1\<^sub>m n - P) - (1\<^sub>m n - P) * P"
+    by (simp only: mult_minus_distrib_mat[OF Q one_carrier_mat P] right_mult_one_mat[OF Q])
+  also have "(1\<^sub>m n - P) * P = 0\<^sub>m n n"
+    by (simp only: minus_mult_distrib_mat[OF one_carrier_mat P P] left_mult_one_mat[OF P] PP
+                   minus_r_inv_mat[OF P])
+  finally show ?thesis using P Q by (intro eq_matI) auto
+qed
+
+lemma complement_dagger:
+  fixes P :: "complex Matrix.mat"
+  assumes "P \<in> carrier_mat n n"
+  shows "(1\<^sub>m n - P)\<^sup>\<dagger> = 1\<^sub>m n - (P\<^sup>\<dagger>)"
+  using assms by (intro eq_matI) (auto simp: dagger_def)
 
 text \<open>Conjugating a rank-one matrix: $W|\varphi\rangle\langle\varphi|W^*=|W\varphi\rangle\langle W\varphi|$.\<close>
 

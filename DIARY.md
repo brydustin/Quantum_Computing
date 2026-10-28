@@ -1286,3 +1286,14 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   foldr_add_mat_carrier` also needs `mult_carrier_mat dagger_carrier` as intro rules.  Scans: the HHL
   scan now covers the whole `HHL_Algorithm` heap (30 theories; before, the 15 that Channels imports),
   with separate Channels/Demo/Search scans.  Plan: `tools/deps/plans/day7.py`; scratch `wip/d23/D07.thy`.
+- **Audit tick 21: Day 8's projections and the orthogonal-states theorem** (2026-10-28).  The four
+  `outer_proj_*` facts (157 lines of entry sums) are corollaries of Day 2's `outer_prod_mult_vec`,
+  `outer_prod_idempotent` and `outer_prod_dagger` (which moves from Day 8 to Day 2): 30 lines.
+  `orthogonal_states_distinguishable` (200 lines, `eq_matI` blocks of 30 and 57 lines for Q = I − P) uses
+  the new Day 2 lemmas `complement_projection` ((I−P)² = I−P by the distributive laws) and
+  `complement_dagger`: 38 lines.  Day 8 1034 → 730.  Traps: a lemma whose statement is `(1⇩m n − P) * …`
+  must `fixes P :: "complex Matrix.mat"`, or `P` is `semiring_0`-polymorphic and `mult_minus_distrib_mat`
+  (a `ring` lemma) has no unifier; `dim_row (ψ ⊘ ψ)` simp-normalises to `dim_row |ψ⟩`, which a carrier
+  fact for `ψ ⊘ ψ` no longer rewrites — `define P where "P = ψ ⊘ ψ"` and work with `P`; `using d by auto`
+  for `ψ ∈ carrier_vec n` from `dim_vec ψ = n` fails (auto orients `n = dim_vec ψ`), use
+  `carrier_vecI[OF d]`.  Plan: `tools/deps/plans/day8.py`; scratch `wip/d23/D08.thy`.
