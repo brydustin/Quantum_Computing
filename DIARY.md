@@ -1560,3 +1560,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `inner_lmat_axis_axis` against the orthonormal Basis (109 lines → 21).  Plan:
   `tools/deps/plans/sweep15.py`.  After `rule inj_onI` destructure the tuples with `obtain … by (cases x,
   cases y)`, and give `card_image[OF inj]` explicitly (simp re-eta-expands the image function).
+- **Audit tick 56: Day 15's operator-tensor isomorphism** (2026-10-28).  Given the index bounds, `simp`
+  recombines the div/mod coordinates itself; the eight hand-stated identities per direction go (126
+  lines → 59).  Plan: `tools/deps/plans/sweep16.py`.
+- **Audit loop closed** (2026-10-28, ticks 1–56).  Notes and bundle are metis/smt-free; every proof over
+  100 lines left is genuine mathematics (triaged: Day 26 positive_functional_extension, Day 34
+  Knill–Laflamme, Day 21 average-conjecture constructions and wide_factor (an SVD), Day 21 unitary
+  freedom, Day 28 cone hull, Day 23 dominated outer sum / pseudo-inverse, Day 32 recovery, Day 18
+  density-preserving characterisation, Day 8 unambiguous discrimination, Days 3/5 Schur and Cholesky).

@@ -311,115 +311,48 @@ proof -
   let ?W = "bipartite_operator_space m p"
   let ?F = "operator_tensor_iso_map m p"
   let ?G = "operator_tensor_iso_inv m p"
-
   have F_linear: "linear_structure_map ?V ?W ?F"
     unfolding linear_structure_map_def operator_tensor_coordinate_space_def
       bipartite_operator_space_def mat_linear_structure_def
     by (auto intro: operator_tensor_iso_map_zero[OF p_pos]
                operator_tensor_iso_map_add[OF p_pos]
                operator_tensor_iso_map_smult[OF p_pos])
-
   have G_linear: "linear_structure_map ?W ?V ?G"
     unfolding linear_structure_map_def operator_tensor_coordinate_space_def
       bipartite_operator_space_def mat_linear_structure_def
     by (auto intro: operator_tensor_iso_inv_zero[OF m_pos p_pos]
                operator_tensor_iso_inv_add[OF m_pos p_pos]
                operator_tensor_iso_inv_smult[OF m_pos p_pos])
-
-  have GF: "\<And>x. x \<in> ls_carrier ?V \<Longrightarrow> ?G (?F x) = x"
+  have GF: "?G (?F x) = x" if "x \<in> ls_carrier ?V" for x
   proof -
-    fix x
-    assume x: "x \<in> ls_carrier ?V"
-    then have xc: "x \<in> carrier_mat (m*m) (p*p)"
-      by (simp add: operator_tensor_coordinate_space_def mat_linear_structure_def)
-    show "?G (?F x) = x"
+    have xc: "x \<in> carrier_mat (m*m) (p*p)"
+      using that by (simp add: operator_tensor_coordinate_space_def mat_linear_structure_def)
+    show ?thesis
     proof (rule eq_matI)
-      show "dim_row (?G (?F x)) = dim_row x"
-        using xc by (simp add: operator_tensor_iso_inv_def)
-      show "dim_col (?G (?F x)) = dim_col x"
-        using xc by (simp add: operator_tensor_iso_inv_def)
-    next
-      fix a b
-      assume ab: "a < dim_row x" "b < dim_col x"
-      then have a: "a < m*m" and b: "b < p*p"
-        using xc by auto
-      have adiv: "a div m < m"
-        using a m_pos by (simp add: div_less_iff_less_mult)
-      have amod: "a mod m < m"
-        using m_pos by simp
-      have bdiv: "b div p < p"
-        using b p_pos by (simp add: div_less_iff_less_mult)
-      have bmod: "b mod p < p"
-        using p_pos by simp
-      have row: "(a div m) * p + (b div p) < m * p"
-        using operator_tensor_iso_inv_row_bound[OF m_pos p_pos a b] .
-      have col: "(a mod m) * p + (b mod p) < m * p"
-        using operator_tensor_iso_inv_col_bound[OF m_pos p_pos, of a b] .
-      have div_row: "((a div m) * p + (b div p)) div p = a div m"
-        using bdiv by simp
-      have div_col: "((a mod m) * p + (b mod p)) div p = a mod m"
-        using bmod by simp
-      have mod_row: "((a div m) * p + (b div p)) mod p = b div p"
-        using bdiv by simp
-      have mod_col: "((a mod m) * p + (b mod p)) mod p = b mod p"
-        using bmod by simp
-      have recomb_a: "(a div m) * m + (a mod m) = a"
-        by simp
-      have recomb_b: "(b div p) * p + (b mod p) = b"
-        by simp
-      show "?G (?F x) $$ (a,b) = x $$ (a,b)"
-        using a b row col div_row div_col mod_row mod_col recomb_a recomb_b
+      fix a b assume "a < dim_row x" "b < dim_col x"
+      hence a: "a < m*m" and b: "b < p*p" using xc by auto
+      have "b div p < p" using b p_pos by (simp add: div_less_iff_less_mult)
+      thus "?G (?F x) $$ (a,b) = x $$ (a,b)"
+        using a b p_pos operator_tensor_iso_inv_row_bound[OF m_pos p_pos a b]
+              operator_tensor_iso_inv_col_bound[OF m_pos p_pos, of a b]
         by (simp add: operator_tensor_iso_inv_def operator_tensor_iso_map_def)
-    qed
+    qed (use xc in \<open>simp_all add: operator_tensor_iso_inv_def\<close>)
   qed
-
-  have FG: "\<And>y. y \<in> ls_carrier ?W \<Longrightarrow> ?F (?G y) = y"
+  have FG: "?F (?G y) = y" if "y \<in> ls_carrier ?W" for y
   proof -
-    fix y
-    assume y: "y \<in> ls_carrier ?W"
-    then have yc: "y \<in> carrier_mat (m*p) (m*p)"
-      by (simp add: bipartite_operator_space_def mat_linear_structure_def)
-    show "?F (?G y) = y"
+    have yc: "y \<in> carrier_mat (m*p) (m*p)"
+      using that by (simp add: bipartite_operator_space_def mat_linear_structure_def)
+    show ?thesis
     proof (rule eq_matI)
-      show "dim_row (?F (?G y)) = dim_row y"
-        using yc by (simp add: operator_tensor_iso_map_def)
-      show "dim_col (?F (?G y)) = dim_col y"
-        using yc by (simp add: operator_tensor_iso_map_def)
-    next
-      fix r s
-      assume rs: "r < dim_row y" "s < dim_col y"
-      then have r: "r < m*p" and s: "s < m*p"
-        using yc by auto
-      have rdiv: "r div p < m"
-        using r p_pos by (simp add: div_less_iff_less_mult)
-      have sdiv: "s div p < m"
-        using s p_pos by (simp add: div_less_iff_less_mult)
-      have rmod: "r mod p < p"
-        using p_pos by simp
-      have smod: "s mod p < p"
-        using p_pos by simp
-      have row: "(r div p) * m + (s div p) < m * m"
-        using operator_tensor_iso_map_row_bound[OF p_pos r s] .
-      have col: "(r mod p) * p + (s mod p) < p * p"
-        using operator_tensor_iso_map_col_bound[OF p_pos, of r s] .
-      have div_row: "((r div p) * m + (s div p)) div m = r div p"
-        using sdiv by simp
-      have mod_row: "((r div p) * m + (s div p)) mod m = s div p"
-        using sdiv by simp
-      have div_col: "((r mod p) * p + (s mod p)) div p = r mod p"
-        using smod by simp
-      have mod_col: "((r mod p) * p + (s mod p)) mod p = s mod p"
-        using smod by simp
-      have recomb_r: "(r div p) * p + (r mod p) = r"
-        by simp
-      have recomb_s: "(s div p) * p + (s mod p) = s"
-        by simp
-      show "?F (?G y) $$ (r,s) = y $$ (r,s)"
-        using r s row col div_row mod_row div_col mod_col recomb_r recomb_s
+      fix r s assume "r < dim_row y" "s < dim_col y"
+      hence r: "r < m*p" and s: "s < m*p" using yc by auto
+      have "s div p < m" using s p_pos by (simp add: div_less_iff_less_mult)
+      thus "?F (?G y) $$ (r,s) = y $$ (r,s)"
+        using r s p_pos operator_tensor_iso_map_row_bound[OF p_pos r s]
+              operator_tensor_iso_map_col_bound[OF p_pos, of r s]
         by (simp add: operator_tensor_iso_inv_def operator_tensor_iso_map_def)
-    qed
+    qed (use yc in \<open>simp_all add: operator_tensor_iso_map_def\<close>)
   qed
-
   show ?thesis
     unfolding is_isomorphism_between_def
     using F_linear G_linear GF FG by blast
