@@ -113,10 +113,8 @@ proof (rule eq_matI)
     "c < dim_col (if a = b then 1\<^sub>m n else 0\<^sub>m n n :: complex Matrix.mat)"
   hence r: "r < n" and c: "c < n" by (simp_all split: if_splits)
   have i: "a * n + r < p * n" "b * n + c < p * n" using mult_index_lt[OF assms(1) r] mult_index_lt[OF assms(2) c] by simp_all
-  have "a * n + r = b * n + c \<longleftrightarrow> a = b \<and> r = c"
-    using mult_index_div_mod[OF r] mult_index_div_mod[OF c] by metis
-  thus "block_of_mat n (1\<^sub>m (p * n)) a b $$ (r,c) = (if a = b then 1\<^sub>m n else 0\<^sub>m n n :: complex Matrix.mat) $$ (r,c)"
-    using i r c by (simp add: block_of_mat_index)
+  show "block_of_mat n (1\<^sub>m (p * n)) a b $$ (r,c) = (if a = b then 1\<^sub>m n else 0\<^sub>m n n :: complex Matrix.mat) $$ (r,c)"
+    using i r c by (simp add: block_of_mat_index mult_index_eq_iff[OF r c])
 qed (simp_all split: if_splits)
 
 text \<open>The note of Day 24: $M_p(S)$ is again an operator system.\<close>

@@ -630,13 +630,13 @@ lemma tensor_lmat_zero_left:
   fixes \<tau> :: "(complex, 'p :: finite, 'p) lmat"
   shows "(tensor_lmat (0 :: (complex, 'm :: finite, 'm) lmat) \<tau>
             :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 0"
-  by (metis real_vector.scale_zero_left tensor_lmat_scaleR_left)
+  using tensor_lmat_scaleR_left[where a = 0 and \<sigma> = "0 :: (complex, 'm, 'm) lmat" and \<tau> = \<tau>] by simp
 
 lemma tensor_lmat_zero_right:
   fixes \<sigma> :: "(complex, 'm :: finite, 'm) lmat"
   shows "(tensor_lmat \<sigma> (0 :: (complex, 'p :: finite, 'p) lmat)
             :: (complex, 'm \<times> 'p, 'm \<times> 'p) lmat) = 0"
-  by (metis real_vector.scale_zero_left tensor_lmat_scaleR_right)
+  using tensor_lmat_scaleR_right[where a = 0 and \<sigma> = \<sigma> and \<tau> = "0 :: (complex, 'p, 'p) lmat"] by simp
 
 lemma convex_cone_hull_separable_eq_Sprime:
   "(convex_cone hull
@@ -1082,71 +1082,20 @@ lemma hermitian_tensor_mat:
       and Pherm: "hermitian P" and Qherm: "hermitian Q"
   shows "hermitian (P \<Otimes> Q)"
 proof -
-  let ?T = "P \<Otimes> Q"
-  have T_dr: "dim_row ?T = m * p" using Pcar Qcar by simp
-  have T_dc: "dim_col ?T = m * p" using Pcar Qcar by simp
-  have T_car: "?T \<in> carrier_mat (m * p) (m * p)"
-    using T_dr T_dc by (intro carrier_matI) auto
-  have Pdag: "P\<^sup>\<dagger> = P" using Pherm by (simp add: hermitian_def)
-  have Qdag: "Q\<^sup>\<dagger> = Q" using Qherm by (simp add: hermitian_def)
-  have P_dr: "dim_row P = m" using Pcar by simp
-  have P_dc: "dim_col P = m" using Pcar by simp
-  have Q_dr: "dim_row Q = p" using Qcar by simp
-  have Q_dc: "dim_col Q = p" using Qcar by simp
-  have "?T\<^sup>\<dagger> = ?T"
+  have T: "\<And>a b. a < m * p \<Longrightarrow> b < m * p \<Longrightarrow>
+             (P \<Otimes> Q) $$ (a, b) = P $$ (a div p, b div p) * Q $$ (a mod p, b mod p)"
+    using index_tensor_mat[OF carrier_matD[OF Pcar] carrier_matD[OF Qcar] _ _ m_pos p_pos] .
+  have "(P \<Otimes> Q)\<^sup>\<dagger> = P \<Otimes> Q"
   proof (rule eq_matI)
-    show "dim_row (?T\<^sup>\<dagger>) = dim_row ?T"
-      using T_dr T_dc Pcar Qcar by (simp add: dim_row_of_dagger)
-    show "dim_col (?T\<^sup>\<dagger>) = dim_col ?T"
-      using T_dr T_dc Pcar Qcar by (simp add: dim_col_of_dagger)
-  next
-    fix i j
-    assume i: "i < dim_row ?T" and j: "j < dim_col ?T"
-    hence ij_lt: "i < m * p" "j < m * p"
-      using T_dr T_dc Pcar Qcar by simp_all
-    have iP_lt: "i div p < m" using ij_lt(1) p_pos
-      by (blast intro: less_mult_imp_div_less)
-    have jP_lt: "j div p < m" using ij_lt(2) p_pos
-      by (blast intro: less_mult_imp_div_less)
-    have iQ_lt: "i mod p < p" using p_pos by simp
-    have jQ_lt: "j mod p < p" using p_pos by simp
-    have T_entry: "?T $$ (i, j)
-        = P $$ (i div p, j div p) * Q $$ (i mod p, j mod p)"
-      using index_tensor_mat [OF P_dr P_dc Q_dr Q_dc ij_lt(1) ij_lt(2)
-                                m_pos p_pos] .
-    have Tji_entry: "?T $$ (j, i)
-        = P $$ (j div p, i div p) * Q $$ (j mod p, i mod p)"
-      using index_tensor_mat [OF P_dr P_dc Q_dr Q_dc ij_lt(2) ij_lt(1)
-                                m_pos p_pos] .
-    have P_herm_entry: "P $$ (j div p, i div p)
-                      = cnj (P $$ (i div p, j div p))"
-    proof -
-      have "P\<^sup>\<dagger> $$ (i div p, j div p) = cnj (P $$ (j div p, i div p))"
-        unfolding dagger_def using iP_lt jP_lt P_dr P_dc by simp
-      hence "P $$ (i div p, j div p) = cnj (P $$ (j div p, i div p))"
-        using Pdag by simp
-      thus ?thesis by (metis complex_cnj_cnj)
-    qed
-    have Q_herm_entry: "Q $$ (j mod p, i mod p)
-                      = cnj (Q $$ (i mod p, j mod p))"
-    proof -
-      have "Q\<^sup>\<dagger> $$ (i mod p, j mod p) = cnj (Q $$ (j mod p, i mod p))"
-        unfolding dagger_def using iQ_lt jQ_lt Q_dr Q_dc by simp
-      hence "Q $$ (i mod p, j mod p) = cnj (Q $$ (j mod p, i mod p))"
-        using Qdag by simp
-      thus ?thesis by (metis complex_cnj_cnj)
-    qed
-    have "?T\<^sup>\<dagger> $$ (i, j) = cnj (?T $$ (j, i))"
-      unfolding dagger_def using ij_lt T_dr T_dc Pcar Qcar by simp
-    also have "\<dots> = cnj (P $$ (j div p, i div p) * Q $$ (j mod p, i mod p))"
-      using Tji_entry by simp
-    also have "\<dots> = cnj (P $$ (j div p, i div p))
-                  * cnj (Q $$ (j mod p, i mod p))" by simp
-    also have "\<dots> = P $$ (i div p, j div p) * Q $$ (i mod p, j mod p)"
-      using P_herm_entry Q_herm_entry by (metis complex_cnj_cnj)
-    also have "\<dots> = ?T $$ (i, j)" using T_entry by simp
-    finally show "?T\<^sup>\<dagger> $$ (i, j) = ?T $$ (i, j)" .
-  qed
+    fix i j assume "i < dim_row (P \<Otimes> Q)" "j < dim_col (P \<Otimes> Q)"
+    hence ij: "i < m * p" "j < m * p" using Pcar Qcar by simp_all
+    hence d: "i div p < m" "j div p < m" by (auto intro: less_mult_imp_div_less)
+    have e: "i mod p < p" "j mod p < p" using p_pos by simp_all
+    show "(P \<Otimes> Q)\<^sup>\<dagger> $$ (i, j) = (P \<Otimes> Q) $$ (i, j)"
+      using ij Pcar Qcar
+      by (simp add: dagger_def T hermitian_index[OF Pherm, of "j div p" "i div p"]
+                    hermitian_index[OF Qherm, of "j mod p" "i mod p"] d e)
+  qed (use Pcar Qcar in simp_all)
   thus ?thesis by (simp add: hermitian_def)
 qed
 
@@ -1559,7 +1508,7 @@ next
   finally have c_eq: "(complex_of_real c :: complex) = 1"
     using \<rho>_tr by simp
   have c_one: "c = 1"
-    using c_eq by (metis Re_complex_of_real one_complex.simps(1))
+    using c_eq by simp
   have "\<rho> = 1 *\<^sub>R x" using rho_eq c_one by simp
   hence "\<rho> = x" by simp
   thus "\<rho> \<in> convex hull Sprime" using x_in by simp
@@ -1740,7 +1689,8 @@ next
         using Qc Pc by (simp_all add: wrap_lm_inverse)
       have "tensor_lmat \<sigma> \<tau> \<in> separable_lmat_gen" unfolding separable_lmat_gen_def using us ut Qp Pp by auto
       hence "tensor_lmat \<sigma> \<tau> \<in> separable_cone_lmat" unfolding separable_cone_lmat_def by (rule hull_inc)
-      hence re: "0 \<le> Re (f (Tensor.tensor_mat Q P))" using Wsep unfolding f_def by (metis unwrap_lm_tensor_lmat us ut)
+      hence "0 \<le> Re (Tr (W * unwrap_lm (tensor_lmat \<sigma> \<tau>)))" by (rule Wsep[rule_format])
+      hence re: "0 \<le> Re (f (Tensor.tensor_mat Q P))" unfolding f_def by (simp add: us ut)
       have tc: "Tensor.tensor_mat Q P \<in> carrier_mat (?r * ?n) (?r * ?n)" using Qc Pc by simp
       have "hermitian (Tensor.tensor_mat Q P)" by (rule psd_hermitian[OF psd_tensor[OF Qc Pc Qp Pp]])
       hence "f (Tensor.tensor_mat Q P) \<in> \<real>" unfolding f_def by (rule Tr_herm_mult_real[OF Wc' tc Wh])

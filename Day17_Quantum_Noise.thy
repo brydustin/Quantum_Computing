@@ -111,19 +111,10 @@ next
 
   have term_eq: "M * \<rho> * (M\<^sup>\<dagger>) = (M * Q) * ((M * Q)\<^sup>\<dagger>)"
   proof -
-    have dagprod: "((M * Q)\<^sup>\<dagger>) = (Q\<^sup>\<dagger>) * (M\<^sup>\<dagger>)"
-      using M_c Qc by (simp add: dagger_of_prod)
-    have dagprod': "((M * Q)\<^sup>\<dagger>) = Q * (M\<^sup>\<dagger>)"
-      using dagprod Qdag by simp
-    have a1: "(M * Q) * ((M * Q)\<^sup>\<dagger>) = (M * Q) * (Q * (M\<^sup>\<dagger>))"
-      using dagprod' by simp
-    have a2: "(M * Q) * (Q * (M\<^sup>\<dagger>)) = M * Q * Q * (M\<^sup>\<dagger>)"
-      using M_c Qc Mdag_c
-      by (metis assoc_mult_mat mult_carrier_mat)
-    have a3: "M * Q * Q * (M\<^sup>\<dagger>) = M * (Q * Q) * (M\<^sup>\<dagger>)"
-      using M_c Qc by (metis assoc_mult_mat)
-    have a4: "M * (Q * Q) * (M\<^sup>\<dagger>) = M * \<rho> * (M\<^sup>\<dagger>)" using QQ by simp
-    show ?thesis using a1 a2 a3 a4 by simp
+    have "((M * Q)\<^sup>\<dagger>) = Q * (M\<^sup>\<dagger>)" using M_c Qc Qdag by (simp add: dagger_of_prod)
+    then show ?thesis unfolding QQ[symmetric]
+      by (simp add: assoc_mult_mat[OF M_c mult_carrier_mat[OF Qc Qc] Mdag_c] assoc_mult_mat[OF Qc Qc Mdag_c]
+                    assoc_mult_mat[OF M_c Qc mult_carrier_mat[OF Qc Mdag_c]])
   qed
 
   have term_psd: "psd (M * \<rho> * (M\<^sup>\<dagger>))"
@@ -205,7 +196,7 @@ next
     have "Tr (M * \<rho> * (M\<^sup>\<dagger>)) = Tr ((M\<^sup>\<dagger>) * (M * \<rho>))"
       using M_c \<rho>_c Mdag_c by (intro Tr_cyclic) auto
     also have "\<dots> = Tr ((M\<^sup>\<dagger>) * M * \<rho>)"
-      using Mdag_c M_c \<rho>_c by (metis assoc_mult_mat)
+      by (simp only: assoc_mult_mat[OF Mdag_c M_c \<rho>_c])
     finally show ?thesis .
   qed
 
@@ -755,13 +746,7 @@ lemma Tr_kraus_map_dim_as_wdagw:
   using Ws_c
 proof (induction Ws)
   case Nil
-  have "kraus_map_dim d [] \<rho> = 0\<^sub>m d d" by simp
-  hence lhs: "Tr (kraus_map_dim d [] \<rho>) = 0" by simp
-  have "sum_wdag_w n [] * \<rho> = 0\<^sub>m n n * \<rho>" by simp
-  also have "\<dots> = 0\<^sub>m n n"
-    using X_c by (metis left_mult_zero_mat)
-  finally have "Tr (sum_wdag_w n [] * \<rho>) = 0" by simp
-  thus ?case using lhs by simp
+  show ?case by (simp add: left_mult_zero_mat[OF X_c])
 next
   case (Cons W Ws)
   hence Wc: "W \<in> carrier_mat d n"
@@ -800,8 +785,7 @@ next
   also have "\<dots> = Tr ((W\<^sup>\<dagger>) * W * \<rho>) + Tr (sum_wdag_w n Ws * \<rho>)"
     using tr_cyc IH by simp
   also have "\<dots> = Tr ((W\<^sup>\<dagger>) * W * \<rho> + sum_wdag_w n Ws * \<rho>)"
-    using WdWX_c sum_X_c
-    by (metis Tr_add carrier_matD(1) carrier_matD(2))
+    by (intro Tr_add[symmetric]) (simp_all only: carrier_matD[OF WdWX_c] carrier_matD[OF sum_X_c])
   also have "(W\<^sup>\<dagger>) * W * \<rho> + sum_wdag_w n Ws * \<rho>
            = ((W\<^sup>\<dagger>) * W + sum_wdag_w n Ws) * \<rho>"
     using WdW_c sum_c X_c by (simp add: add_mult_distrib_mat)
@@ -1024,11 +1008,7 @@ proof -
         unfolding mat_mult_entry[OF dagger_carrier[OF U] U mult_index_lt[OF c k] mult_index_lt[OF d l]]
         by (rule sum.cong[OF refl]) (use U mult_index_lt[OF c k] in \<open>simp add: dagger_def\<close>)
       also have "\<dots> = (if c = d \<and> k = l then 1 else 0)"
-      proof -
-        have "c * p + k = d * p + l \<longleftrightarrow> c = d \<and> k = l"
-          using mult_index_div_mod[OF k] mult_index_div_mod[OF l] by metis
-        thus ?thesis unfolding UU using mult_index_lt[OF c k] mult_index_lt[OF d l] by simp
-      qed
+        unfolding UU using mult_index_lt[OF c k] mult_index_lt[OF d l] by (simp add: mult_index_eq_iff[OF k l])
       finally show "cnj (\<phi> $ k) * \<phi> $ l * (\<Sum>x < m * p. cnj (U $$ (x, c * p + k)) * U $$ (x, d * p + l))
                     = cnj (\<phi> $ k) * \<phi> $ l * (if c = d \<and> k = l then 1 else 0)" by simp
     qed

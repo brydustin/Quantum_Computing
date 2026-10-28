@@ -443,6 +443,17 @@ lemma mult_index_div_mod:
   shows "(i * m + l) div m = i" "(i * m + l) mod m = l"
   using assms by simp_all
 
+lemma mult_index_eq_iff:
+  fixes i j k l m :: nat
+  assumes "k < m" and "l < m"
+  shows "i * m + k = j * m + l \<longleftrightarrow> i = j \<and> k = l"
+proof
+  assume "i * m + k = j * m + l"
+  hence "(i * m + k) div m = (j * m + l) div m" "(i * m + k) mod m = (j * m + l) mod m" by simp_all
+  thus "i = j \<and> k = l"
+    unfolding mult_index_div_mod[OF assms(1)] mult_index_div_mod[OF assms(2)] by simp
+qed simp
+
 subsection \<open>Tensor products of matrices\<close>
 
 lemma tensor_index_c:

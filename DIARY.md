@@ -1438,3 +1438,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   added, `vec_normalize_unit` changed as intended.  The strict check caught a first version's Day 1
   helper `inner_prod_left_smult'` as a duplicate of IMD's `No_Cloning.inner_prod_distrib_left`
   (grep all of IMD, not one file).  Plan: `tools/deps/plans/day3c.py`; scratch `wip/d23/D03e.thy`.
+- **Audit tick 39: the one-line glue of Days 17, 24 and 28** (2026-10-28).  Associativity steps are
+  instances of `assoc_mult_mat`, `Tr_add` is applied backwards, the two index-equation sites
+  ($cp+k=dp+l\iff c=d\wedge k=l$, Days 17 and 24) take the new bundle lemma `mult_index_eq_iff`
+  (Unitary_Tensor_Algebra, from `mult_index_div_mod`), the `tensor_lmat` zero lemmas are
+  `tensor_lmat_scaleR_*` at $a=0$, and Day 28's `hermitian_tensor_mat` reads the entries through
+  `hermitian_index` (75 → 24 lines).  Days 17/24/28 metis/smt 6+1+7 → 0 (Day 17 1049 → 1029, Day 28
+  2013 → 1963 lines); statement check: `mult_index_eq_iff` added, nothing changed.  Plan:
+  `tools/deps/plans/day17_28.py`; its `--scratch` mode writes `wip/d23/D28b.thy` with primed copies
+  of every touched lemma and the replacements applied, so textual replacements inside long proofs
+  are checked before the strict build.
