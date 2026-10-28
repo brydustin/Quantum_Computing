@@ -1233,3 +1233,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `?A * ?M + ?A† * ?M` are ambiguous parses (parenthesise every dagger); JNF's `add_carrier_mat` has a
   single premise (`[OF B]`, not `[OF A B]`).  Plan: `tools/deps/plans/day26_28.py`; scratch
   `wip/d23/D28.thy`.
+- **Audit tick 15: matrix units are delta sums** (2026-10-27).  Day 2's `hs_inner_prod_mat_unit_left`
+  (⟨⟨E_ij|X⟩⟩ = X_ij), `mat_unit_expansion` (X = ∑ X_ij E_ij) and `Tr_mat_unit_mult` (Tr(M E_sr) =
+  M_rs) were 60 lines each of hand-unrolled double sums; each is now one `sum.cong` step that puts the
+  summand into the shape `if k = a then … else 0` followed by `sum.delta` (≈12 lines).  Trap: `sum.delta`
+  does not see an `if` inside a product (`x * (if c = j then 1 else 0)`); the `(intro sum.cong refl)
+  auto` step is the standard bridge.  Plan: `tools/deps/plans/day2.py`; scratch `wip/d23/D02.thy`.

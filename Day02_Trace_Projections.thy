@@ -52,60 +52,15 @@ lemma hs_inner_prod_mat_unit_left:
   assumes "i < dim_row x" and "j < dim_col x"
   shows "\<langle>\<langle> E\<lbrakk>i,j ; (dim_row x), (dim_col x)\<rbrakk> | x \<rangle>\<rangle> = x $$ (i,j)"
 proof -
-  let ?m = "dim_row x"
-  let ?n = "dim_col x"
-
-  have "\<langle>\<langle> E\<lbrakk>i,j ; ?m,?n\<rbrakk> | x \<rangle>\<rangle> =
-        (\<Sum>r \<in> {0..<?m}. \<Sum>c \<in> {0..<?n}.
-          cnj (E\<lbrakk>i,j ; ?m,?n\<rbrakk> $$ (r,c)) * x $$ (r,c))"
-    by (simp add: hs_inner_prod_def)
-  also have "\<dots> = (\<Sum>r \<in> {0..<?m}. \<Sum>c \<in> {0..<?n}.
-          cnj (if r = i \<and> c = j then 1 else 0) * x $$ (r,c))"
-    by (intro sum.cong refl) auto
-  also have "\<dots> = (\<Sum>r \<in> {0..<?m}. \<Sum>c \<in> {0..<?n}.
-          (if r = i \<and> c = j then x $$ (r,c) else 0))"
-    by (intro sum.cong refl) simp
-  also have "\<dots> = (\<Sum>r \<in> {0..<?m}. if r = i then x $$ (i,j) else 0)"
-  proof (intro sum.cong refl)
-    fix r
-    assume hr: "r \<in> {0..<?m}"
-    show "(\<Sum>c \<in> {0..<?n}. if r = i \<and> c = j then x $$ (r,c) else 0) =
-          (if r = i then x $$ (i,j) else 0)"
-    proof (cases "r = i")
-      case True
-      then have "(\<Sum>c \<in> {0..<?n}. if r = i \<and> c = j then x $$ (r,c) else 0) =
-                 (\<Sum>c \<in> {0..<?n}. if c = j then x $$ (i,j) else 0)"
-        by (intro sum.cong) auto
-      also have "\<dots> = x $$ (i,j)"
-      proof -
-        have "(\<Sum>c \<in> {0..<?n}. if c = j then x $$ (i,j) else 0) =
-              (\<Sum>c \<in> {0..<?n}. (if c = j then 1 else 0) * x $$ (i,j))"
-          by (intro sum.cong) auto
-        also have "\<dots> = (\<Sum>c \<in> {0..<?n}. if c = j then 1 else 0) * x $$ (i,j)"
-          by (metis sum_distrib_right)
-        also have "(\<Sum>c \<in> {0..<?n}. if c = j then 1 else (0::complex)) = 1"
-          using assms(2) by simp
-        finally show ?thesis by simp
-      qed
-      finally show ?thesis
-        using True by simp
-    next
-      case False
-      then show ?thesis by simp
-    qed
-  qed
-  also have "\<dots> = x $$ (i,j)"
+  have "(\<Sum>c \<in> {0..<dim_col x}. cnj (E\<lbrakk>i,j ; (dim_row x), (dim_col x)\<rbrakk> $$ (r,c)) * x $$ (r,c))
+        = (if r = i then x $$ (i,j) else 0)" if "r < dim_row x" for r
   proof -
-    have "(\<Sum>r \<in> {0..<?m}. if r = i then x $$ (i,j) else 0) =
-          (\<Sum>r \<in> {0..<?m}. (if r = i then 1 else 0) * x $$ (i,j))"
-      by (intro sum.cong) auto
-    also have "\<dots> = (\<Sum>r \<in> {0..<?m}. if r = i then 1 else 0) * x $$ (i,j)"
-      by (metis sum_distrib_right)
-    also have "(\<Sum>r \<in> {0..<?m}. if r = i then 1 else (0::complex)) = 1"
-      using assms(1) by simp
-    finally show ?thesis by simp
+    have "(\<Sum>c \<in> {0..<dim_col x}. cnj (E\<lbrakk>i,j ; (dim_row x), (dim_col x)\<rbrakk> $$ (r,c)) * x $$ (r,c))
+          = (\<Sum>c \<in> {0..<dim_col x}. if c = j then (if r = i then x $$ (i,j) else 0) else 0)"
+      using assms that by (intro sum.cong refl) auto
+    thus ?thesis using assms by (simp add: sum.delta)
   qed
-  finally show ?thesis.
+  thus ?thesis using assms unfolding hs_inner_prod_def by (simp add: sum.delta)
 qed
 
 lemma mat_unit_orthonormal:
@@ -126,58 +81,15 @@ lemma mat_unit_expansion:
          (\<Sum>i \<in> {0..<dim_row x}. \<Sum>j \<in> {0..<dim_col x}.
             x $$ (i,j) * (mat_unit i j (dim_row x) (dim_col x)) $$ (r,c))"
 proof -
-  let ?m = "dim_row x"
-  let ?n = "dim_col x"
-
-  have "(\<Sum>i \<in> {0..<?m}. \<Sum>j \<in> {0..<?n}.
-          x $$ (i,j) * (E\<lbrakk>i,j ; ?m,?n\<rbrakk>) $$ (r,c)) =
-        (\<Sum>i \<in> {0..<?m}. \<Sum>j \<in> {0..<?n}.
-          x $$ (i,j) * (if i = r \<and> j = c then 1 else 0))"
-    using assms by (intro sum.cong refl) simp
-  also have "\<dots> = (\<Sum>i \<in> {0..<?m}. \<Sum>j \<in> {0..<?n}.
-                    (if i = r \<and> j = c then x $$ (i,j) else 0))"
-    by (intro sum.cong refl) auto
-  also have "\<dots> = (\<Sum>i \<in> {0..<?m}. if i = r then x $$ (r,c) else 0)"
-  proof (intro sum.cong refl)
-    fix i
-    assume hi: "i \<in> {0..<?m}"
-    show "(\<Sum>j \<in> {0..<?n}. if i = r \<and> j = c then x $$ (i,j) else 0) =
-          (if i = r then x $$ (r,c) else 0)"
-    proof (cases "i = r")
-      case True
-      then have "(\<Sum>j \<in> {0..<?n}. if i = r \<and> j = c then x $$ (i,j) else 0) =
-                 (\<Sum>j \<in> {0..<?n}. if j = c then x $$ (r,j) else 0)"
-        by (intro sum.cong) auto
-      also have "\<dots> = x $$ (r,c)"
-      proof -
-        have "(\<Sum>j \<in> {0..<?n}. if j = c then x $$ (r,j) else 0) =
-              (\<Sum>j \<in> {0..<?n}. (if j = c then 1 else 0) * x $$ (r,c))"
-          by (intro sum.cong) auto
-        also have "\<dots> = (\<Sum>j \<in> {0..<?n}. if j = c then 1 else 0) * x $$ (r,c)"
-          by (metis sum_distrib_right)
-        also have "(\<Sum>j \<in> {0..<?n}. if j = c then 1 else (0::complex)) = 1"
-          using assms(2) by simp
-        finally show ?thesis by simp
-      qed
-      finally show ?thesis
-        using True by simp
-    next
-      case False
-      then show ?thesis by simp
-    qed
-  qed
-  also have "\<dots> = x $$ (r,c)"
+  have "(\<Sum>j \<in> {0..<dim_col x}. x $$ (i,j) * (mat_unit i j (dim_row x) (dim_col x)) $$ (r,c))
+        = (if i = r then x $$ (r,c) else 0)" if "i < dim_row x" for i
   proof -
-    have "(\<Sum>i \<in> {0..<?m}. if i = r then x $$ (r,c) else 0) =
-          (\<Sum>i \<in> {0..<?m}. (if i = r then 1 else 0) * x $$ (r,c))"
-      by (intro sum.cong) auto
-    also have "\<dots> = (\<Sum>i \<in> {0..<?m}. if i = r then 1 else 0) * x $$ (r,c)"
-      by (metis sum_distrib_right)
-    also have "(\<Sum>i \<in> {0..<?m}. if i = r then 1 else (0::complex)) = 1"
-      using assms(1) by simp
-    finally show ?thesis by simp
+    have "(\<Sum>j \<in> {0..<dim_col x}. x $$ (i,j) * (mat_unit i j (dim_row x) (dim_col x)) $$ (r,c))
+          = (\<Sum>j \<in> {0..<dim_col x}. if j = c then (if i = r then x $$ (r,c) else 0) else 0)"
+      using assms that by (intro sum.cong refl) auto
+    thus ?thesis using assms by (simp add: sum.delta)
   qed
-  finally show ?thesis by simp
+  thus ?thesis using assms by (simp add: sum.delta)
 qed
 
 lemma mat_unit_hs_expansion:
@@ -517,58 +429,15 @@ lemma Tr_mat_unit_mult:
       and r_lt: "r < n" and s_lt: "s < n"
   shows "Tr (M * mat_unit s r n n) = M $$ (r, s)"
 proof -
-  let ?E = "mat_unit s r n n"
-  have E_c: "?E \<in> carrier_mat n n" by (simp add: mat_unit_def)
-  have ME_c: "M * ?E \<in> carrier_mat n n" using M_c E_c by auto
-  \<comment> \<open>Per-entry: \<open>(M * E)$$(i, j) = M$$(i, s)\<close> if \<open>j = r\<close>, else \<open>0\<close>.\<close>
-  have ME_idx: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow>
-                    (M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)"
+  have "(M * mat_unit s r n n) $$ (k, k) = (if k = r then M $$ (r, s) else 0)" if "k < n" for k
   proof -
-    fix i j assume i_lt: "i < n" and j_lt: "j < n"
-    have "(M * ?E) $$ (i, j) = (\<Sum>k = 0..<n. M $$ (i, k) * ?E $$ (k, j))"
-      by (rule mat_mult_index_sum[OF M_c E_c i_lt j_lt])
-    also have "\<dots> = (\<Sum>k = 0..<n.
-                       M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))"
-    proof (rule sum.cong[OF refl])
-      fix k assume "k \<in> {0..<n}" hence k_lt: "k < n" by simp
-      show "M $$ (i, k) * ?E $$ (k, j)
-              = M $$ (i, k) * (if k = s \<and> j = r then 1 else 0)"
-        using mat_unit_index[OF k_lt j_lt, of s r] by simp
-    qed
-    also have "\<dots> = (if j = r then M $$ (i, s) else 0)"
-    proof (cases "j = r")
-      case True
-      have "(\<Sum>k = 0..<n.
-              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
-              = (\<Sum>k = 0..<n. if k = s then M $$ (i, k) else 0)"
-        using True by (intro sum.cong refl) (auto)
-      also have "\<dots> = (if s \<in> {0..<n} then M $$ (i, s) else 0)"
-        by (rule sum.delta) simp
-      also have "\<dots> = M $$ (i, s)" using s_lt by simp
-      finally show ?thesis using True by simp
-    next
-      case False
-      have "(\<Sum>k = 0..<n.
-              M $$ (i, k) * (if k = s \<and> j = r then 1 else 0))
-              = (\<Sum>k = 0..<n. (0::complex))"
-        using False by (intro sum.cong refl) (auto)
-      thus ?thesis using False by simp
-    qed
-    finally show "(M * ?E) $$ (i, j) = (if j = r then M $$ (i, s) else 0)" .
+    have "(M * mat_unit s r n n) $$ (k, k) = (\<Sum>l<n. M $$ (k, l) * mat_unit s r n n $$ (l, k))"
+      using M_c that by (simp add: scalar_prod_def)
+    also have "\<dots> = (\<Sum>l<n. if l = s then (if k = r then M $$ (r, s) else 0) else 0)"
+      using that r_lt s_lt by (intro sum.cong refl) auto
+    finally show ?thesis using s_lt by (simp add: sum.delta)
   qed
-  \<comment> \<open>\<open>Tr (M * E) = \<Sum>\<^sub>i (M * E)[i, i] = M[r, s]\<close>.\<close>
-  have ME_dr: "dim_row (M * ?E) = n" using ME_c by auto
-  have ME_dc: "dim_col (M * ?E) = n" using ME_c by auto
-  have "Tr (M * ?E) = (\<Sum>i < n. if i < n then (M * ?E) $$ (i, i) else 0)"
-    unfolding Tr_def using ME_dr ME_dc by simp
-  also have "\<dots> = (\<Sum>i = 0..<n. (M * ?E) $$ (i, i))"
-    by (simp add: lessThan_atLeast0)
-  also have "\<dots> = (\<Sum>i = 0..<n. if i = r then M $$ (i, s) else 0)"
-    by (rule sum.cong[OF refl]) (auto simp: ME_idx)
-  also have "\<dots> = (if r \<in> {0..<n} then M $$ (r, s) else 0)"
-    by (rule sum.delta) simp
-  also have "\<dots> = M $$ (r, s)" using r_lt by simp
-  finally show ?thesis .
+  thus ?thesis using M_c r_lt unfolding Tr_def by (simp add: sum.delta)
 qed
 
 lemma mat_trace_pairing_unique:
