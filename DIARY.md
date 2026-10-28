@@ -1541,3 +1541,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
 - **Audit tick 52: Day 22's norm bound as one chain** (2026-10-28).  For $M\ge0$ with $\Tr M=1$:
   $\|M\|^2=\sum_{ij}|M_{ij}|^2\le\sum_{ij}\Re M_{ii}\,\Re M_{jj}=(\Re\Tr M)^2=1$, one `also` per step on top
   of tick 48's entry bound (90 lines → 17).  Plan: `tools/deps/plans/sweep12.py`.
+- **Audit tick 53: Day 22's topology through HOL-Analysis** (2026-10-28).  Every closed set in the
+  compactness argument is `closed_Collect_eq`/`closed_Collect_le` of continuous maps
+  (`continuous_intros` + the bundle's `continuous_on_unwrap_lm_index`); Hermitian-ness is the entrywise
+  condition proved once; the quadratic form is a double sum of entries; the lmat trace is linear by
+  unfolding.  Eight lemmas, 274 lines deleted, 31 added; statements unchanged.  Plan:
+  `tools/deps/plans/sweep13.py`.  Lesson: the hypothesis $\forall ij.\,M_{ij}=\overline{M_{ji}}$ is a looping
+  rewrite rule — instantiate it once.
