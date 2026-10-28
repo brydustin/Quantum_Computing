@@ -35,6 +35,10 @@ algorithm also writes $P$ as a sum of rank-one matrices.  The formal theorem add
 hypothesis $p_{11}>0$, which the notes leave implicit (for $p_{11}=0$ the quotient is
 undefined).\<close>
 
+text \<open>Completing the square: for $P=\begin{pmatrix}a&b^*\\b&C\end{pmatrix}$ with $a>0$ and
+$S=C-\frac1a\,bb^*$, $\braket{(z,y)}{P(z,y)}=a\,|z+\braket{b}{y}/a|^2+\braket{y}{Sy}$; so $P\ge0$
+iff $S\ge0$ (take $z=-\braket{b}{y}/a$ for the direction $\Rightarrow$).\<close>
+
 theorem cholesky_reduction:
   fixes P :: "complex Matrix.mat"
   assumes sq: "P \<in> carrier_mat n n"
@@ -46,462 +50,100 @@ theorem cholesky_reduction:
               (\<lambda>(i,j). P $$ (i+1, j+1) -
                        P $$ (i+1, 0) * cnj (P $$ (j+1, 0)) / P $$ (0,0)))"
 proof -
+  obtain m where n: "n = Suc m" using n_pos gr0_implies_Suc by blast
+  let ?a = "P $$ (0,0)"
   let ?S = "Matrix.mat (n-1) (n-1)
-              (\<lambda>(i,j). P $$ (i+1, j+1) -
-                       P $$ (i+1, 0) * cnj (P $$ (j+1, 0)) / P $$ (0,0))"
-  let ?tail = "\<lambda>x :: complex Matrix.vec. Matrix.vec (n-1) (\<lambda>i. x $ (i+1))"
-  let ?lift = "\<lambda>z y. Matrix.vec n (\<lambda>i. if i = 0 then z else y $ (i-1))"
-  let ?cross = "\<lambda>y :: complex Matrix.vec. \<Sum>i = 0..<(n-1). cnj (P $$ (i+1, 0)) * y $ i"
-
-  have S_car: "?S \<in> carrier_mat (n-1) (n-1)"
-    by simp
-  have P00_nonzero: "P $$ (0,0) \<noteq> 0"
-    using p11_pos by auto
-  have P00_real: "P $$ (0,0) \<in> \<real>"
-    using herm sq n_pos
-    by (simp add: nonnegative_complex_is_real order_less_imp_le p11_pos) 
-  have P00_Re_pos: "0 < Re (P $$ (0,0))"
-    using p11_pos P00_real
-    by (simp add: less_complex_def)
-
+              (\<lambda>(i,j). P $$ (i+1, j+1) - P $$ (i+1, 0) * cnj (P $$ (j+1, 0)) / P $$ (0,0))"
+  define b where "b = Matrix.vec m (\<lambda>i. P $$ (Suc i, 0))"
+  define C where "C = Matrix.mat m m (\<lambda>(i,j). P $$ (Suc i, Suc j))"
+  have sq': "P \<in> carrier_mat (Suc m) (Suc m)" using sq n by simp
+  have a_nz: "?a \<noteq> 0" using p11_pos by auto
+  have Re_a: "0 < Re ?a" and Im_a: "Im ?a = 0" using p11_pos by (simp_all add: less_complex_def)
+  have cnj_a: "cnj ?a = ?a" using Im_a by (simp add: complex_eq_iff)
+  have entry: "cnj (P $$ (j, i)) = P $$ (i, j)" if "i < Suc m" "j < Suc m" for i j
+    using hermitian_index[OF herm, of i j] that sq' by simp
+  have bc: "b \<in> carrier_vec m" and Cc: "C \<in> carrier_mat m m" unfolding b_def C_def by simp_all
+  have kb: "dim_row |b\<rangle> = m" "dim_col (bra_vec b) = m"
+    using bc by (simp_all add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def)
+  have b_index: "b $ k = P $$ (k + 1, 0)" if "k < m" for k unfolding b_def using that by simp
+  have C_index: "C $$ (k, j) = P $$ (k + 1, j + 1)" if "k < m" "j < m" for k j
+    unfolding C_def using that by simp
+  have S_eq: "?S = C - (1 / ?a) \<cdot>\<^sub>m (b \<oslash> b)"
+  proof (rule eq_matI)
+    fix i j assume "i < dim_row (C - (1 / ?a) \<cdot>\<^sub>m (b \<oslash> b))" "j < dim_col (C - (1 / ?a) \<cdot>\<^sub>m (b \<oslash> b))"
+    hence ij: "i < m" "j < m" using kb by simp_all
+    have ib: "i < dim_vec b" "j < dim_vec b" using ij bc by simp_all
+    have o: "(b \<oslash> b) $$ (i, j) = P $$ (i + 1, 0) * cnj (P $$ (j + 1, 0))"
+      unfolding outer_prod_index[OF ib] using ij by (simp add: b_index)
+    have "?S $$ (i, j) = P $$ (i + 1, j + 1) - (1 / ?a) * (P $$ (i + 1, 0) * cnj (P $$ (j + 1, 0)))"
+      using ij n by (simp add: mult_ac)
+    also have "\<dots> = C $$ (i, j) - (1 / ?a) * (b \<oslash> b) $$ (i, j)" unfolding o C_index[OF ij] ..
+    also have "\<dots> = (C - (1 / ?a) \<cdot>\<^sub>m (b \<oslash> b)) $$ (i, j)" using ij Cc kb by simp
+    finally show "?S $$ (i, j) = (C - (1 / ?a) \<cdot>\<^sub>m (b \<oslash> b)) $$ (i, j)" .
+  qed (use Cc n kb in simp_all)
+  have Vc: "P *\<^sub>v vCons z y = vCons (?a * z + \<langle>b|y\<rangle>) (z \<cdot>\<^sub>v b + C *\<^sub>v y)"
+    if y: "y \<in> carrier_vec m" for z y
+  proof (rule eq_vecI)
+    have xc: "vCons z y \<in> carrier_vec (Suc m)" using y by simp
+    fix i assume "i < dim_vec (vCons (?a * z + \<langle>b|y\<rangle>) (z \<cdot>\<^sub>v b + C *\<^sub>v y))"
+    hence i: "i < Suc m" using Cc by simp
+    have "(P *\<^sub>v vCons z y) $ i = P $$ (i, 0) * z + (\<Sum>j = 0..<m. P $$ (i, Suc j) * y $ j)"
+      unfolding mult_mat_vec_index[OF sq' xc i] sum.atLeast0_lessThan_Suc_shift by (simp add: comp_def)
+    thus "(P *\<^sub>v vCons z y) $ i = vCons (?a * z + \<langle>b|y\<rangle>) (z \<cdot>\<^sub>v b + C *\<^sub>v y) $ i"
+      using y bc Cc entry i
+      by (cases i) (auto simp: inner_prod_def scalar_prod_def b_index C_index mult.commute)
+  qed (use y sq' bc Cc in simp)
+  have K: "\<langle>vCons z y | P *\<^sub>v vCons z y\<rangle> =
+           ?a * (cnj (z + \<langle>b|y\<rangle> / ?a) * (z + \<langle>b|y\<rangle> / ?a)) + \<langle>y | ?S *\<^sub>v y\<rangle>"
+    if y: "y \<in> carrier_vec m" for z y
+  proof -
+    let ?c = "\<langle>b|y\<rangle>"
+    have yb: "\<langle>y|b\<rangle> = cnj ?c" using inner_prod_cnj[of b y] y bc by simp
+    have d1: "dim_vec (z \<cdot>\<^sub>v b) = dim_vec (C *\<^sub>v y)" using bc Cc by simp
+    have L: "\<langle>vCons z y | P *\<^sub>v vCons z y\<rangle> = cnj z * (?a * z + ?c) + (z * cnj ?c + \<langle>y | C *\<^sub>v y\<rangle>)"
+      unfolding Vc[OF y] inner_prod_vCons inner_prod_right_add'[OF d1] inner_prod_right_smult' yb ..
+    have Sy: "?S *\<^sub>v y = C *\<^sub>v y - (1 / ?a) \<cdot>\<^sub>v (?c \<cdot>\<^sub>v b)"
+      unfolding S_eq using y bc Cc outer_prod_carrier[of b m b m]
+      by (simp add: minus_mult_distrib_mat_vec smult_mat_mult_vec outer_prod_mult_vec)
+    have d2: "dim_vec (C *\<^sub>v y) = dim_vec ((1 / ?a) \<cdot>\<^sub>v (?c \<cdot>\<^sub>v b))" using bc Cc by simp
+    have R: "\<langle>y | ?S *\<^sub>v y\<rangle> = \<langle>y | C *\<^sub>v y\<rangle> - (1 / ?a) * (?c * cnj ?c)"
+      unfolding Sy inner_prod_right_minus'[OF d2] inner_prod_right_smult' yb ..
+    show ?thesis unfolding L R using a_nz by (simp add: cnj_a field_simps)
+  qed
   have S_herm: "hermitian ?S"
-  proof -
-    have S_dagger_entries:
-      "\<And>i j. i < n-1 \<Longrightarrow> j < n-1 \<Longrightarrow>
-        (?S\<^sup>\<dagger>) $$ (i,j) = ?S $$ (i,j)"
-    proof -
-      fix i j
-      assume i: "i < n-1" and j: "j < n-1"
-      have ip: "i + 1 < n" and jp: "j + 1 < n"
-        using i j by linarith+
-      have irow: "i + 1 < dim_row P" and icol: "i + 1 < dim_col P"
-        using sq ip by simp_all
-      have jrow: "j + 1 < dim_row P" and jcol: "j + 1 < dim_col P"
-        using sq jp by simp_all
-      have zrow: "0 < dim_row P" and zcol: "0 < dim_col P"
-        using sq n_pos by simp_all
-      have Pji: "P $$ (j+1, i+1) = cnj (P $$ (i+1, j+1))"
-        using hermitian_index[OF herm jrow icol] by simp
-      have Pj0: "P $$ (j+1, 0) = cnj (P $$ (0, j+1))"
-        using hermitian_index[OF herm jrow zcol] by simp
-      have Pi0: "P $$ (i+1, 0) = cnj (P $$ (0, i+1))"
-        using hermitian_index[OF herm irow zcol] by simp
-      have cnj_P00: "cnj (P $$ (0,0)) = P $$ (0,0)"
-        using P00_real by (simp add: Reals_cnj_iff)
-      have "(?S\<^sup>\<dagger>) $$ (i,j) = cnj (?S $$ (j,i))"
-        using i j by (simp add: dagger_def)
-      also have "\<dots> = ?S $$ (i,j)"
-        using i j Pji Pj0 Pi0 cnj_P00 P00_nonzero
-        by (simp add: field_simps)
-      finally show "(?S\<^sup>\<dagger>) $$ (i,j) = ?S $$ (i,j)" .
-    qed
-    show ?thesis
-      unfolding hermitian_def
-      using S_dagger_entries by (intro eq_matI, auto)
-  qed
-
-  have lift_dim: "\<And>z y. dim_vec y = n-1 \<Longrightarrow> dim_vec (?lift z y) = n"
-    by simp
-  have tail_dim: "\<And>x. dim_vec x = n \<Longrightarrow> dim_vec (?tail x) = n-1"
-    by simp
-  have lift_tail_head: "\<And>x. dim_vec x = n \<Longrightarrow> ?lift (x $ 0) (?tail x) = x"
-  proof -
-    fix x :: "complex Matrix.vec"
-    assume xdim: "dim_vec x = n"
-    show "?lift (x $ 0) (?tail x) = x"
-    proof (rule eq_vecI)
-      show "dim_vec (?lift (x $ 0) (?tail x)) = dim_vec x"
-        using xdim by simp
-    next
-      fix i
-      assume i: "i < dim_vec x"
-      show "(?lift (x $ 0) (?tail x)) $ i = x $ i"
-        using xdim i n_pos by (cases i) simp_all
-    qed
-  qed
-
-  have Schur_quadratic_lift:
-    "\<And>z y. dim_vec y = n-1 \<Longrightarrow>
-      \<langle>?lift z y | P *\<^sub>v (?lift z y)\<rangle> =
-        cnj (z + ?cross y / P $$ (0,0)) * (P $$ (0,0)) * (z + ?cross y / P $$ (0,0)) +
-        \<langle>y | ?S *\<^sub>v y\<rangle>"
-  proof -
-    fix z :: complex and y :: "complex Matrix.vec"
-    assume ydim: "dim_vec y = n-1"
-    let ?x = "?lift z y"
-    let ?a = "P $$ (0,0)"
-    let ?c = "?cross y"
-    let ?tail_quad = "(\<Sum>i = 0..<(n-1). \<Sum>j = 0..<(n-1).
-                         cnj (y $ i) * P $$ (i+1,j+1) * y $ j)"
-
-    have xdim: "dim_vec ?x = n"
-      using ydim by simp
-    have x0: "?x $ 0 = z"
-      using n_pos by simp
-    have xSuc: "\<And>i. i < n-1 \<Longrightarrow> ?x $ (i+1) = y $ i"
-      by simp
-    have cnj_a: "cnj ?a = ?a"
-      using P00_real by (simp add: Reals_cnj_iff)
-    have P0_suc:
-      "\<And>i. i < n-1 \<Longrightarrow> P $$ (0, i+1) = cnj (P $$ (i+1, 0))"
-    proof -
-      fix i
-      assume i: "i < n-1"
-      then have ip: "i + 1 < n"
-        by linarith
-      have zrow: "0 < dim_row P"
-        using sq n_pos by simp
-      have ipcol: "i + 1 < dim_col P"
-        using sq ip by simp
-      show "P $$ (0, i+1) = cnj (P $$ (i+1, 0))"
-        using hermitian_index[OF herm zrow ipcol] by simp
-    qed
-    have c_alt: "?c = (\<Sum>i = 0..<(n-1). P $$ (0, i+1) * y $ i)"
-      using P0_suc by (intro sum.cong refl) simp
-    have cnj_c: "cnj ?c = (\<Sum>i = 0..<(n-1). cnj (y $ i) * P $$ (i+1, 0))"
-    proof -
-      have "cnj ?c = (\<Sum>i = 0..<(n-1). cnj (cnj (P $$ (i+1, 0)) * y $ i))"
-        by simp
-      also have "\<dots> = (\<Sum>i = 0..<(n-1). cnj (cnj (P $$ (i+1, 0))) * cnj (y $ i))"
-        by (intro sum.cong refl) simp
-      also have "\<dots> = (\<Sum>i = 0..<(n-1). P $$ (i+1, 0) * cnj (y $ i))"
-        by (intro sum.cong refl) simp
-      also have "\<dots> = (\<Sum>i = 0..<(n-1). cnj (y $ i) * P $$ (i+1, 0))"
-        by (intro sum.cong refl) (simp add: mult.commute)
-      finally show ?thesis .
-    qed
-
-    have Px0:
-      "(P *\<^sub>v ?x) $ 0 = ?a * z + ?c"
-    proof -
-      have zrow: "0 < dim_row P"
-        using sq n_pos by simp
-      have colP: "dim_col P = n"
-        using sq by simp
-      have step1: "(P *\<^sub>v ?x) $ 0 = (\<Sum>j = 0..<n. P $$ (0,j) * ?x $ j)"
-      proof -
-        have "(P *\<^sub>v ?x) $ 0 = Matrix.row P 0 \<bullet> ?x"
-          using zrow by simp
-        also have "\<dots> = (\<Sum>j = 0..<dim_vec ?x. (Matrix.row P 0) $ j * ?x $ j)"
-          unfolding scalar_prod_def by simp
-        also have "\<dots> = (\<Sum>j = 0..<n. (Matrix.row P 0) $ j * ?x $ j)"
-          using xdim by simp
-        also have "\<dots> = (\<Sum>j = 0..<n. P $$ (0,j) * ?x $ j)"
-        proof (intro sum.cong refl)
-          fix j
-          assume "j \<in> {0..<n}"
-          then have jlt: "j < n" by simp
-          have jcol: "j < dim_col P" using colP jlt by simp
-          show "(Matrix.row P 0) $ j * ?x $ j = P $$ (0,j) * ?x $ j"
-            using zrow jcol by simp
-        qed
-        finally show ?thesis .
-      qed
-      have reindex: "(\<Sum>j = Suc 0..<n. P $$ (0,j) * ?x $ j)
-                   = (\<Sum>j = 0..<n-1. P $$ (0, j+1) * ?x $ (j+1))"
-      proof -
-        have Sucn: "Suc (n-1) = n" using n_pos by simp
-        have "(\<Sum>j = Suc 0..<Suc (n-1). P $$ (0,j) * ?x $ j)
-            = (\<Sum>j = 0..<n-1. P $$ (0, Suc j) * ?x $ (Suc j))"
-          by (rule sum.shift_bounds_Suc_ivl)
-        then show ?thesis using Sucn by simp
-      qed
-      have step2: "(\<Sum>j = 0..<n. P $$ (0,j) * ?x $ j)
-                 = P $$ (0,0) * z + (\<Sum>j = 0..<(n-1). P $$ (0,j+1) * y $ j)"
-      proof -
-        have "(\<Sum>j = 0..<n. P $$ (0,j) * ?x $ j)
-            = P $$ (0,0) * ?x $ 0 + (\<Sum>j = Suc 0..<n. P $$ (0,j) * ?x $ j)"
-          using n_pos by (simp add: sum.atLeast_Suc_lessThan)
-        also have "\<dots> = P $$ (0,0) * z + (\<Sum>j = Suc 0..<n. P $$ (0,j) * ?x $ j)"
-          using x0 by simp
-        also have "\<dots> = P $$ (0,0) * z + (\<Sum>j = 0..<n-1. P $$ (0, j+1) * ?x $ (j+1))"
-          using reindex by simp
-        also have "\<dots> = P $$ (0,0) * z + (\<Sum>j = 0..<(n-1). P $$ (0, j+1) * y $ j)"
-          by (intro arg_cong2[where f="(+)"] refl sum.cong refl, simp add: xSuc)
-        finally show ?thesis .
-      qed
-      from step1 step2 show ?thesis
-        using c_alt by simp
-    qed
-
-    have PxSuc:
-      "\<And>i. i < n-1 \<Longrightarrow>
-        (P *\<^sub>v ?x) $ (i+1) =
-          P $$ (i+1,0) * z + (\<Sum>j = 0..<(n-1). P $$ (i+1,j+1) * y $ j)"
-    proof -
-      fix i
-      assume i: "i < n-1"
-      then have ip: "i + 1 < n"
-        by linarith
-      have iprow: "i + 1 < dim_row P"
-        using sq ip by simp
-      have colP: "dim_col P = n"
-        using sq by simp
-      have step1: "(P *\<^sub>v ?x) $ (i+1) = (\<Sum>j = 0..<n. P $$ (i+1,j) * ?x $ j)"
-      proof -
-        have "(P *\<^sub>v ?x) $ (i+1) = Matrix.row P (i+1) \<bullet> ?x"
-          using iprow by simp
-        also have "\<dots> = (\<Sum>j = 0..<dim_vec ?x. (Matrix.row P (i+1)) $ j * ?x $ j)"
-          unfolding scalar_prod_def by simp
-        also have "\<dots> = (\<Sum>j = 0..<n. (Matrix.row P (i+1)) $ j * ?x $ j)"
-          using xdim by simp
-        also have "\<dots> = (\<Sum>j = 0..<n. P $$ (i+1,j) * ?x $ j)"
-        proof (intro sum.cong refl)
-          fix j
-          assume "j \<in> {0..<n}"
-          then have jlt: "j < n" by simp
-          have jcol: "j < dim_col P" using colP jlt by simp
-          show "(Matrix.row P (i+1)) $ j * ?x $ j = P $$ (i+1,j) * ?x $ j"
-            using iprow jcol by simp
-        qed
-        finally show ?thesis .
-      qed
-      have reindex: "(\<Sum>j = Suc 0..<n. P $$ (i+1,j) * ?x $ j)
-                   = (\<Sum>j = 0..<n-1. P $$ (i+1, j+1) * ?x $ (j+1))"
-      proof -
-        have Sucn: "Suc (n-1) = n" using n_pos by simp
-        have "(\<Sum>j = Suc 0..<Suc (n-1). P $$ (i+1,j) * ?x $ j)
-            = (\<Sum>j = 0..<n-1. P $$ (i+1, Suc j) * ?x $ (Suc j))"
-          by (rule sum.shift_bounds_Suc_ivl)
-        then show ?thesis using Sucn by simp
-      qed
-      have step2: "(\<Sum>j = 0..<n. P $$ (i+1,j) * ?x $ j)
-                 = P $$ (i+1,0) * z + (\<Sum>j = 0..<(n-1). P $$ (i+1,j+1) * y $ j)"
-      proof -
-        have "(\<Sum>j = 0..<n. P $$ (i+1,j) * ?x $ j)
-            = P $$ (i+1,0) * ?x $ 0 + (\<Sum>j = Suc 0..<n. P $$ (i+1,j) * ?x $ j)"
-          using n_pos by (simp add: sum.atLeast_Suc_lessThan)
-        also have "\<dots> = P $$ (i+1,0) * z + (\<Sum>j = Suc 0..<n. P $$ (i+1,j) * ?x $ j)"
-          using x0 by simp
-        also have "\<dots> = P $$ (i+1,0) * z + (\<Sum>j = 0..<n-1. P $$ (i+1, j+1) * ?x $ (j+1))"
-          using reindex by simp
-        also have "\<dots> = P $$ (i+1,0) * z + (\<Sum>j = 0..<(n-1). P $$ (i+1, j+1) * y $ j)"
-          by (intro arg_cong2[where f="(+)"] refl sum.cong refl, simp add: xSuc)
-        finally show ?thesis .
-      qed
-      from step1 step2 show "(P *\<^sub>v ?x) $ (i+1) =
-          P $$ (i+1,0) * z + (\<Sum>j = 0..<(n-1). P $$ (i+1,j+1) * y $ j)"
-        by simp
-    qed
-
-    have full_quad:
-      "\<langle>?x | P *\<^sub>v ?x\<rangle> =
-        cnj z * ?a * z + cnj z * ?c + cnj ?c * z + ?tail_quad"
-    proof -
-      have Pxdim: "dim_vec (P *\<^sub>v ?x) = n"
-        using sq xdim by simp
-      have "\<langle>?x | P *\<^sub>v ?x\<rangle> =
-          (\<Sum>i = 0..<n. cnj (?x $ i) * (P *\<^sub>v ?x) $ i)"
-      using xdim Pxdim by (simp add: inner_prod_def)
-          also have "\<dots> = cnj z * (P *\<^sub>v ?x) $ 0 +
-        (\<Sum>i = 0..<(n - 1). cnj (y $ i) * (P *\<^sub>v ?x) $ (i + 1))"
-      proof -
-        have "(\<Sum>i = 0..<n. cnj (?x $ i) * (P *\<^sub>v ?x) $ i)
-            = cnj (?x $ 0) * (P *\<^sub>v ?x) $ 0
-            + (\<Sum>i = Suc 0..<n. cnj (?x $ i) * (P *\<^sub>v ?x) $ i)"
-          using xdim n_pos sum.atLeast_Suc_lessThan by blast
-        also have "\<dots> =
-            cnj z * (P *\<^sub>v ?x) $ 0
-            + (\<Sum>i = 0..<(n - 1). cnj (?x $ (i + 1)) * (P *\<^sub>v ?x) $ (i + 1))"
-        proof -
-          have Sucn: "Suc (n-1) = n" using n_pos by simp
-          have "(\<Sum>i = Suc 0..<Suc (n-1). cnj (?x $ i) * (P *\<^sub>v ?x) $ i)
-              = (\<Sum>i = 0..<n-1. cnj (?x $ (Suc i)) * (P *\<^sub>v ?x) $ (Suc i))"
-            by (rule sum.shift_bounds_Suc_ivl)
-          then have reindex:
-            "(\<Sum>i = Suc 0..<n. cnj (?x $ i) * (P *\<^sub>v ?x) $ i)
-           = (\<Sum>i = 0..<(n - 1). cnj (?x $ (i + 1)) * (P *\<^sub>v ?x) $ (i + 1))"
-            using Sucn by simp
-          show "cnj (?x $ 0) * (P *\<^sub>v ?x) $ 0
-                + (\<Sum>i = Suc 0..<n. cnj (?x $ i) * (P *\<^sub>v ?x) $ i)
-              = cnj z * (P *\<^sub>v ?x) $ 0
-                + (\<Sum>i = 0..<(n - 1). cnj (?x $ (i + 1)) * (P *\<^sub>v ?x) $ (i + 1))"
-            using reindex x0 by simp
-        qed
-        also have "\<dots> =
-            cnj z * (P *\<^sub>v ?x) $ 0
-            + (\<Sum>i = 0..<(n - 1). cnj (y $ i) * (P *\<^sub>v ?x) $ (i + 1))"
-          by simp
-        finally show ?thesis.
-      qed
-      also have "\<dots> =
-          cnj z * (?a * z + ?c) +
-          (\<Sum>i = 0..<(n-1).
-             cnj (y $ i) * (P $$ (i+1,0) * z +
-               (\<Sum>j = 0..<(n-1). P $$ (i+1,j+1) * y $ j)))"
-        using Px0 PxSuc by (intro arg_cong2[where f="(+)"] refl sum.cong, simp_all)
-      also have "\<dots> =
-          cnj z * ?a * z + cnj z * ?c +
-          (\<Sum>i = 0..<(n-1). cnj (y $ i) * P $$ (i+1,0)) * z +
-          ?tail_quad"
-        by (simp add: algebra_simps sum_distrib_left sum_distrib_right sum.distrib)
-      also have "\<dots> = cnj z * ?a * z + cnj z * ?c + cnj ?c * z + ?tail_quad"
-        using cnj_c by simp
-      finally show ?thesis.
-    qed
-
-    have Schur_quad:
-      "\<langle>y | ?S *\<^sub>v y\<rangle> = ?tail_quad - cnj ?c * ?c / ?a"
-    proof -
-      have Sydim: "dim_vec (?S *\<^sub>v y) = n-1"
-        using ydim by simp
-      have "\<langle>y | ?S *\<^sub>v y\<rangle> =
-          (\<Sum>i = 0..<(n-1). cnj (y $ i) * (?S *\<^sub>v y) $ i)"
-        using ydim Sydim by (simp add: inner_prod_def)
-      also have "\<dots> =
-          (\<Sum>i = 0..<(n-1). cnj (y $ i) *
-            (\<Sum>j = 0..<(n-1).
-              (P $$ (i+1,j+1) - P $$ (i+1,0) * cnj (P $$ (j+1,0)) / ?a) * y $ j))"
-      proof (intro sum.cong refl)
-        fix i
-        assume "i \<in> {0..<n-1}"
-        then have ilt: "i < n-1" by simp
-        have irow: "i < dim_row ?S" using ilt by simp
-        have colS: "dim_col ?S = n-1" by simp
-        have "(?S *\<^sub>v y) $ i = Matrix.row ?S i \<bullet> y"
-          using irow by simp
-        also have "\<dots> = (\<Sum>j = 0..<dim_vec y. (Matrix.row ?S i) $ j * y $ j)"
-          unfolding scalar_prod_def by simp
-        also have "\<dots> = (\<Sum>j = 0..<n-1. (Matrix.row ?S i) $ j * y $ j)"
-          using ydim by simp
-        also have "\<dots> = (\<Sum>j = 0..<n-1. ?S $$ (i,j) * y $ j)"
-        proof (intro sum.cong refl)
-          fix j
-          assume "j \<in> {0..<n-1}"
-          then have jlt: "j < n-1" by simp
-          have jcol: "j < dim_col ?S" using colS jlt by simp
-          show "(Matrix.row ?S i) $ j * y $ j = ?S $$ (i,j) * y $ j"
-            using irow jcol by simp
-        qed
-        also have "\<dots> = (\<Sum>j = 0..<n-1.
-                  (P $$ (i+1,j+1) - P $$ (i+1,0) * cnj (P $$ (j+1,0)) / ?a) * y $ j)"
-        proof (intro sum.cong refl)
-          fix j
-          assume "j \<in> {0..<n-1}"
-          then have jlt: "j < n-1" by simp
-          have Sij: "?S $$ (i,j) =
-              P $$ (i+1,j+1) - P $$ (i+1,0) * cnj (P $$ (j+1,0)) / ?a"
-            using ilt jlt by simp
-          show "?S $$ (i,j) * y $ j =
-              (P $$ (i+1,j+1) - P $$ (i+1,0) * cnj (P $$ (j+1,0)) / ?a) * y $ j"
-            using Sij by simp
-        qed
-        finally have Sy_i:
-          "(?S *\<^sub>v y) $ i = (\<Sum>j = 0..<n-1.
-              (P $$ (i+1,j+1) - P $$ (i+1,0) * cnj (P $$ (j+1,0)) / ?a) * y $ j)" .
-        show "cnj (y $ i) * (?S *\<^sub>v y) $ i =
-            cnj (y $ i) * (\<Sum>j = 0..<(n-1).
-              (P $$ (i+1,j+1) - P $$ (i+1,0) * cnj (P $$ (j+1,0)) / ?a) * y $ j)"
-          using Sy_i by simp
-      qed
-      also have "\<dots> =
-          ?tail_quad -
-          ((\<Sum>i = 0..<(n-1). cnj (y $ i) * P $$ (i+1,0)) *
-           (\<Sum>j = 0..<(n-1). cnj (P $$ (j+1,0)) * y $ j)) / ?a"
-        by (simp add: algebra_simps sum_distrib_left sum_distrib_right sum_subtractf sum_divide_distrib)
-      also have "\<dots> = ?tail_quad - cnj ?c * ?c / ?a"
-        using cnj_c by simp
-      finally show ?thesis .
-    qed
-
-    have square_expand:
-      "cnj (z + ?c / ?a) * ?a * (z + ?c / ?a) =
-       cnj z * ?a * z + cnj z * ?c + cnj ?c * z + cnj ?c * ?c / ?a"
-      using P00_nonzero cnj_a by (simp add: algebra_simps)
-
-    show "\<langle>?lift z y | P *\<^sub>v (?lift z y)\<rangle> =
-        cnj (z + ?cross y / P $$ (0,0)) * (P $$ (0,0)) * (z + ?cross y / P $$ (0,0)) + \<langle>y | ?S *\<^sub>v y\<rangle>"
-      using full_quad Schur_quad square_expand by simp
-  qed
-
-  have Schur_quadratic_tail:
-    "\<And>x. dim_vec x = n \<Longrightarrow>
-      \<langle>x | P *\<^sub>v x\<rangle> =
-        cnj (x $ 0 + ?cross (?tail x) / P $$ (0,0)) * (P $$ (0,0)) *
-          (x $ 0 + ?cross (?tail x) / P $$ (0,0)) +
-        \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>"
-  proof -
-    fix x :: "complex Matrix.vec"
-    assume xdim: "dim_vec x = n"
-    have "\<langle>x | P *\<^sub>v x\<rangle> = \<langle>?lift (x $ 0) (?tail x) | P *\<^sub>v (?lift (x $ 0) (?tail x))\<rangle>"
-      using lift_tail_head[OF xdim] by simp
-    also have "\<dots> =
-        cnj (x $ 0 + ?cross (?tail x) / P $$ (0,0)) * (P $$ (0,0)) *
-          (x $ 0 + ?cross (?tail x) / P $$ (0,0)) +
-        \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>"
-      using Schur_quadratic_lift[OF tail_dim[OF xdim], of "x $ 0"] .
-    finally show "\<langle>x | P *\<^sub>v x\<rangle> =
-        cnj (x $ 0 + ?cross (?tail x) / P $$ (0,0)) * (P $$ (0,0)) *
-          (x $ 0 + ?cross (?tail x) / P $$ (0,0)) +
-        \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>".
-  qed
-
-  have completed_square_nonneg: "\<And>w. 0 \<le> Re (cnj w * (P $$ (0,0)) * w)"
-    using P00_Re_pos P00_real
-    by (metis Re_complex_div_gt_0 mult.left_commute mult.right_neutral mult_zero_right 
-        nonzero_mult_div_cancel_right order_le_less times_complex.simps(1) zero_complex.simps(1)) 
-  have completed_square_zero_choice:
-    "\<And>y. cnj ((- ?cross y / P $$ (0,0)) + ?cross y / P $$ (0,0)) *
-          (P $$ (0,0)) *
-          ((- ?cross y / P $$ (0,0)) + ?cross y / P $$ (0,0)) = 0"
-    using P00_nonzero by simp
-
-  have forward: "psd P \<Longrightarrow> psd ?S"
-  proof -
-    assume P_psd: "psd P"
-    have S_nonneg: "\<forall>y :: complex Matrix.vec. dim_vec y = dim_row ?S \<longrightarrow> 0 \<le> Re \<langle>y | ?S *\<^sub>v y\<rangle>"
-    proof (intro allI impI)
-      fix y :: "complex Matrix.vec"
-      assume ydimS: "dim_vec y = dim_row ?S"
-      then have ydim: "dim_vec y = n-1"
-        by simp
-      let ?z = "- ?cross y / P $$ (0,0)"
-      let ?x = "?lift ?z y"
-      have xdim: "dim_vec ?x = n"
-        using ydim by simp
-      have P_nonneg: "0 \<le> Re \<langle>?x | P *\<^sub>v ?x\<rangle>"
-        using P_psd xdim sq unfolding psd_def by auto
-      have q_eq: "\<langle>?x | P *\<^sub>v ?x\<rangle> = \<langle>y | ?S *\<^sub>v y\<rangle>"
-        using Schur_quadratic_lift[OF ydim] completed_square_zero_choice[of y] by simp
-      show "0 \<le> Re \<langle>y | ?S *\<^sub>v y\<rangle>"
-        using P_nonneg q_eq by simp
-    qed
-    show "psd ?S"
-      unfolding psd_def using S_herm S_nonneg by simp
-  qed
-
-  have backward: "psd ?S \<Longrightarrow> psd P"
-  proof -
-    assume S_psd: "psd ?S"
-    have P_nonneg:
-      "\<forall>x :: complex Matrix.vec. dim_vec x = dim_row P \<longrightarrow>
-        0 \<le> Re \<langle>x | P *\<^sub>v x\<rangle>"
-    proof (intro allI impI)
-      fix x :: "complex Matrix.vec"
-      assume xdimP: "dim_vec x = dim_row P"
-      then have xdim: "dim_vec x = n"
-        using sq by simp
-      have taildim: "dim_vec (?tail x) = n-1"
-        using xdim by simp
-      have S_nonneg: "0 \<le> Re \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>"
-        using S_psd taildim unfolding psd_def by simp
-      have square_nonneg:
-        "0 \<le> Re (cnj (x $ 0 + ?cross (?tail x) / P $$ (0,0)) * (P $$ (0,0)) *
-          (x $ 0 + ?cross (?tail x) / P $$ (0,0)))"
-        using completed_square_nonneg by blast
-      have q_decomp: "\<langle>x | P *\<^sub>v x\<rangle> =
-        cnj (x $ 0 + ?cross (?tail x) / P $$ (0,0)) * (P $$ (0,0)) *
-          (x $ 0 + ?cross (?tail x) / P $$ (0,0)) +
-        \<langle>?tail x | ?S *\<^sub>v (?tail x)\<rangle>"
-        using Schur_quadratic_tail[OF xdim].
-      show "0 \<le> Re \<langle>x | P *\<^sub>v x\<rangle>"
-        using square_nonneg S_nonneg q_decomp by simp
-    qed
-    show "psd P"
-      unfolding psd_def using herm P_nonneg by simp
-  qed
+    unfolding hermitian_def using entry cnj_a n
+    by (intro eq_matI) (auto simp: dagger_def mult.commute)
   show ?thesis
-    using forward backward by blast
+  proof
+    assume Ppsd: "psd P"
+    show "psd ?S" unfolding psd_def
+    proof (intro conjI allI impI)
+      fix y :: "complex Matrix.vec" assume "dim_vec y = dim_row ?S"
+      hence y: "y \<in> carrier_vec m" using n by (intro carrier_vecI) simp
+      let ?z = "- \<langle>b|y\<rangle> / ?a"
+      have "dim_vec (vCons ?z y) = dim_row P" using y sq' by simp
+      hence "0 \<le> Re \<langle>vCons ?z y | P *\<^sub>v vCons ?z y\<rangle>" using Ppsd unfolding psd_def by blast
+      thus "0 \<le> Re \<langle>y | ?S *\<^sub>v y\<rangle>" using K[OF y, of ?z] by simp
+    qed (rule S_herm)
+  next
+    assume Spsd: "psd ?S"
+    show "psd P" unfolding psd_def
+    proof (intro conjI allI impI)
+      fix x :: "complex Matrix.vec" assume "dim_vec x = dim_row P"
+      hence x: "dim_vec x = Suc m" using sq' by simp
+      let ?y = "Matrix.vec m (\<lambda>i. x $ Suc i)"
+      let ?w = "x $ 0 + \<langle>b|?y\<rangle> / ?a"
+      have xv: "vCons (x $ 0) ?y = x" using x by (intro eq_vecI) (auto simp: vec_index_vCons)
+      have Kx: "\<langle>x | P *\<^sub>v x\<rangle> = ?a * (cnj ?w * ?w) + \<langle>?y | ?S *\<^sub>v ?y\<rangle>"
+        using K[of ?y "x $ 0"] unfolding xv by simp
+      have "0 \<le> Re (?a * (cnj ?w * ?w))"
+        unfolding mult.commute[of "cnj ?w"] complex_mult_cnj using less_imp_le[OF Re_a] Im_a
+        by (simp add: mult_nonneg_nonneg)
+      moreover have "dim_vec ?y = dim_row ?S" using n by simp
+      hence "0 \<le> Re \<langle>?y | ?S *\<^sub>v ?y\<rangle>" using Spsd unfolding psd_def by blast
+      ultimately show "0 \<le> Re \<langle>x | P *\<^sub>v x\<rangle>" unfolding Kx by simp
+    qed (rule herm)
+  qed
 qed
 
 subsection \<open>Cholesky's algorithm on the notes' two examples (D5-3)\<close>
@@ -518,15 +160,6 @@ definition chol_R :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
 definition chol_next :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "chol_next P = Matrix.mat (dim_row P - 1) (dim_row P - 1) (\<lambda>(i, j). (P - chol_R P) $$ (i + 1, j + 1))"
 
-lemma hermitian_entry:
-  assumes "hermitian P" "P \<in> carrier_mat n n" "i < n" "j < n"
-  shows "P $$ (i, j) = cnj (P $$ (j, i))"
-proof -
-  have "P $$ (i, j) = P\<^sup>\<dagger> $$ (i, j)" using assms(1) by (simp add: hermitian_def)
-  also have "\<dots> = cnj (P $$ (j, i))" using assms(2-4) by (simp add: dagger_def)
-  finally show ?thesis .
-qed
-
 text \<open>The test: for $P=P^*$ with $p_{11}>0$, $P\ge0$ iff the next matrix is $\ge0$
 (from @{thm [source] cholesky_reduction}).\<close>
 
@@ -542,7 +175,7 @@ proof -
       "j < dim_col (Matrix.mat (n - 1) (n - 1)
           (\<lambda>(i, j). P $$ (i + 1, j + 1) - P $$ (i + 1, 0) * cnj (P $$ (j + 1, 0)) / P $$ (0, 0)))"
     hence i: "i + 1 < n" and j: "j + 1 < n" by simp_all
-    have "P $$ (0, j + 1) = cnj (P $$ (j + 1, 0))" by (rule hermitian_entry[OF h P n j])
+    have "P $$ (0, j + 1) = cnj (P $$ (j + 1, 0))" using hermitian_index[OF h, of 0 "j + 1"] P n j by simp
     thus "chol_next P $$ (i, j) = Matrix.mat (n - 1) (n - 1)
           (\<lambda>(i, j). P $$ (i + 1, j + 1) - P $$ (i + 1, 0) * cnj (P $$ (j + 1, 0)) / P $$ (0, 0)) $$ (i, j)"
       using i j P by (simp add: chol_next_def chol_R_def)

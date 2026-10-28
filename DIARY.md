@@ -1154,3 +1154,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `auto` with `mat_diag_diag` + `of_real_mult[symmetric]` loops; a plan's
   `open(q,"w").write(open(q).read())` truncated Day 4 (read first).  Plan: `tools/deps/plans/day4.py`;
   scratch `wip/d23/D04.thy`.
+- **Audit tick 8: Cholesky's reduction by completing the square** (2026-10-27).  Day 5's
+  `cholesky_reduction` (P ≥ 0 iff the Schur complement C − bb*/a ≥ 0; 453 nonblank lines of index sums
+  over lifted and truncated vectors) is now 106 lines of vector algebra on JNF's `vCons`: for x = (z, y),
+  P x = (a z + ⟨b|y⟩, z b + C y) (one `eq_vecI`, `Vc`), S = C − (1/a)(b ⊘ b) (one `eq_matI`, `S_eq`), and
+  ⟨x|Px⟩ = a|z + ⟨b|y⟩/a|² + ⟨y|Sy⟩ (`K`, from `inner_prod_vCons`, Day 1's linearity lemmas and
+  `outer_prod_mult_vec`); the two directions are then five lines each (z = −⟨b|y⟩/a for ⇒).
+  `inner_prod_vCons` (⟨vCons z y|vCons w v⟩ = cnj z w + ⟨y|v⟩, two lines) went to Day 1; Day 5's
+  `hermitian_entry` was Day 4's `hermitian_index` and is gone.  Day 5: 976 → 608 lines.  Lessons: simp's
+  default `sum.atLeast0_lessThan_Suc` (tail split) beats the head shift, so apply
+  `sum.atLeast0_lessThan_Suc_shift` by `unfolding` (+ `comp_def`); `b ⊘ b` is an abbreviation for
+  |b⟩·⟨b|, so simp rewrites its dims/entries through `index_mult_mat` first — state `dim_row |b⟩ = m`
+  and apply `outer_prod_index` by `unfolding`; JNF's `v + w` takes its dimension from `w`; `field_simps`
+  inside an entrywise `auto` ran away (5 min) while the same algebra on the assembled scalar identity is
+  instant.  Plan: `tools/deps/plans/day5.py`; scratch `wip/d23/D05.thy`.

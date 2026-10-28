@@ -47,6 +47,11 @@ lemma inner_prod_sum:
   shows "\<langle>u|v\<rangle> = (\<Sum> i \<in> {0..< n}. cnj(u $ i) * (v $ i))"
   using assms by (simp add: inner_prod_def)
 
+text \<open>The inner product of two vectors with a prepended coordinate.\<close>
+
+lemma inner_prod_vCons: "\<langle>vCons z y | vCons w v\<rangle> = cnj z * w + \<langle>y | v\<rangle>"
+  unfolding inner_prod_def dim_vec_vCons sum.atLeast0_lessThan_Suc_shift by (simp add: comp_def)
+
 lemma cpx_vec_length_zero_iff:
   fixes v :: "complex Matrix.vec"
   shows "\<parallel>v\<parallel> = 0 \<longleftrightarrow> v = 0\<^sub>v (dim_vec v)"
@@ -191,15 +196,11 @@ definition hs_inner_prod :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat
 
 notation hs_inner_prod ("\<langle>\<langle> _ | _ \<rangle>\<rangle>")
 
-
-
 lemma hs_inner_prod_expand:
   assumes "dim_row x = m" and "dim_col x = n"
   shows "\<langle>\<langle> y | x \<rangle>\<rangle> = 
          (\<Sum> i \<in> {0 ..< m}. \<Sum> j \<in> {0 ..< n}. cnj (y $$ (i,j)) * (x $$ (i,j)))"
   using assms by (simp add: hs_inner_prod_def)
-
-
 
 lemma hs_inner_prod_square:
   assumes "dim_row x = n" and "dim_col x = n"
@@ -207,13 +208,11 @@ lemma hs_inner_prod_square:
          (\<Sum> i \<in> {0 ..< n}. \<Sum> j \<in> {0 ..< n}. cnj (y $$ (i,j)) * (x $$ (i,j)))"
   using assms by (simp add: hs_inner_prod_def)
 
-
 subsection \<open>Properties of the inner product\<close>
 
 text \<open>The properties listed in the notes, verified for the matrix inner product:
 conjugate symmetry, linearity in the right-hand slot, conjugate linearity in the left-hand
 slot, and positive definiteness.\<close>
-
 
 lemma hs_inner_prod_cnj:
   assumes "dim_row x = dim_row y" and "dim_col x = dim_col y"
@@ -232,8 +231,6 @@ proof -
     using assms(1,2) hs_inner_prod_expand by presburger
   finally show ?thesis.
 qed
-
-
 
 text \<open>Linear in the right slot, conjugate-linear in the left:
 \[ \langle Y|X_1+X_2\rangle=\langle Y|X_1\rangle+\langle Y|X_2\rangle,\qquad
@@ -276,14 +273,11 @@ lemma hs_inner_prod_right_smult:
   unfolding hs_inner_prod_def using assms
   by (auto simp: mult.assoc sum_distrib_left intro!: sum.cong)
 
-
 lemma hs_inner_prod_left_smult:
   assumes "dim_row x = dim_row y" and "dim_col x = dim_col y"
   shows "\<langle>\<langle> c \<cdot>\<^sub>m y | x \<rangle>\<rangle> = cnj c * \<langle>\<langle> y | x \<rangle>\<rangle>"
   unfolding hs_inner_prod_def using assms 
   by (auto simp: mult.assoc sum_distrib_left intro!: sum.cong)
-
-
 
 text \<open>Positive definiteness: $\langle X|X\rangle=\sum_{i,j}|x_{ij}|^2$ is real, non-negative,
 and $0$ only if every entry is $0$.\<close>
@@ -302,8 +296,6 @@ proof -
   finally show ?thesis.
 qed
 
-
-
 lemma hs_inner_prod_self_nonneg:
   shows "Re (\<langle>\<langle> x | x \<rangle>\<rangle>) \<ge> 0"
 proof -
@@ -315,8 +307,6 @@ proof -
     by (intro sum_nonneg, simp)
   finally show ?thesis.
 qed
-
-
 
 lemma hs_inner_prod_eq_zero_imp:
   assumes "\<langle>\<langle> x | x \<rangle>\<rangle> = 0"
