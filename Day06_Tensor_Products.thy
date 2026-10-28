@@ -94,118 +94,28 @@ Each entry is a product of one coordinate of each factor, so $\otimes$ is biline
 lemma tensor_vec_bilinear_left:
   assumes vd: "dim_vec v1 = n" "dim_vec v2 = n" "dim_vec w = m"
   shows "tensor_vec (v1 + v2) w = tensor_vec v1 w + tensor_vec v2 w"
-proof -
-  have v1_carrier: "v1 \<in> carrier_vec n"
-    using vd(1) by (rule carrier_vecI)
-  have v2_carrier: "v2 \<in> carrier_vec n"
-    using vd(2) by (rule carrier_vecI)
-  have w_carrier: "w \<in> carrier_vec m"
-    using vd(3) by (rule carrier_vecI)
-
-  have dim_lhs: "dim_vec (tensor_vec (v1 + v2) w) = n * m"
-    using vd by (simp add: tensor_vec_dim)
-  have dim_rhs: "dim_vec (tensor_vec v1 w + tensor_vec v2 w) = n * m"
-    using vd by (simp add: tensor_vec_dim)
-
-  show ?thesis
-  proof
-    show "dim_vec (tensor_vec (v1 + v2) w) =
-          dim_vec (tensor_vec v1 w + tensor_vec v2 w)"
-      using dim_lhs dim_rhs by simp
-  next
-    fix i
-    assume i: "i < dim_vec (tensor_vec v1 w + tensor_vec v2 w)"
-    then have i_bound: "i < n * m"
-      using dim_rhs by simp
-    let ?a = "i div m"
-    let ?b = "i mod m"
-    have split_index: "i = ?a * m + ?b"
-      by presburger
-    have a_bound: "?a < n"
-      using i_bound less_mult_imp_div_less by blast
-    have b_bound: "?b < m"
-      by (metis gr0I i_bound less_zeroE mod_less_divisor mult_not_zero)
-
-    have dim_v12: "dim_vec (v1 + v2) = n" using vd by simp
-    have lhs_i:  "tensor_vec (v1 + v2) w $ i = ((v1 + v2) $ ?a) * (w $ ?b)"
-      using tensor_vec_index[OF dim_v12 vd(3) i_bound] .
-    also have "\<dots> = (v1 $ ?a * w $ ?b) + (v2 $ ?a * w $ ?b)"
-      using vd a_bound b_bound by (simp add: algebra_simps)
-    also have "\<dots> = (tensor_vec v1 w + tensor_vec v2 w) $ i"
-    proof -
-      have t1: "tensor_vec v1 w $ i = v1 $ ?a * w $ ?b"
-        using tensor_vec_index[OF vd(1) vd(3) i_bound] .
-      have t2: "tensor_vec v2 w $ i = v2 $ ?a * w $ ?b"
-        using tensor_vec_index[OF vd(2) vd(3) i_bound] .
-      have di_rhs: "i < dim_vec (tensor_vec v1 w + tensor_vec v2 w)"
-        using dim_rhs i_bound by simp
-      have dt1: "dim_vec (tensor_vec v1 w) = n * m" using vd by (simp add: tensor_vec_dim)
-      have dt2: "dim_vec (tensor_vec v2 w) = n * m" using vd by (simp add: tensor_vec_dim)
-      have "(tensor_vec v1 w + tensor_vec v2 w) $ i = tensor_vec v1 w $ i + tensor_vec v2 w $ i"
-        using dt1 dt2 i_bound by simp
-      with t1 t2 show ?thesis by simp
-    qed
-    finally show "tensor_vec (v1 + v2) w $ i =
-                  (tensor_vec v1 w + tensor_vec v2 w) $ i" .
-  qed
-qed
+proof (rule eq_vecI)
+  have d: "dim_vec (v1 + v2) = n" using vd by simp
+  fix i assume "i < dim_vec (tensor_vec v1 w + tensor_vec v2 w)"
+  hence i: "i < n * m" by (simp add: tensor_vec_dim[OF vd(1,3)] tensor_vec_dim[OF vd(2,3)])
+  have "i div m < n" using i less_mult_imp_div_less by blast
+  thus "tensor_vec (v1 + v2) w $ i = (tensor_vec v1 w + tensor_vec v2 w) $ i"
+    using i vd by (simp add: tensor_vec_index[OF d vd(3)] tensor_vec_index[OF vd(1,3)] tensor_vec_index[OF vd(2,3)]
+                             tensor_vec_dim distrib_right)
+qed (simp add: tensor_vec_dim vd)
 
 lemma tensor_vec_bilinear_right:
   assumes vd: "dim_vec v = n" "dim_vec w1 = m" "dim_vec w2 = m"
   shows "tensor_vec v (w1 + w2) = tensor_vec v w1 + tensor_vec v w2"
-proof -
-  have v_carrier: "v \<in> carrier_vec n"
-    using vd(1) by (rule carrier_vecI)
-  have w1_carrier: "w1 \<in> carrier_vec m"
-    using vd(2) by (rule carrier_vecI)
-  have w2_carrier: "w2 \<in> carrier_vec m"
-    using vd(3) by (rule carrier_vecI)
-
-  have dim_lhs: "dim_vec (tensor_vec v (w1 + w2)) = n * m"
-    using vd by (simp add: tensor_vec_dim)
-  have dim_rhs: "dim_vec (tensor_vec v w1 + tensor_vec v w2) = n * m"
-    using vd by (simp add: tensor_vec_dim)
-
-  show ?thesis
-  proof
-    show "dim_vec (tensor_vec v (w1 + w2)) =
-          dim_vec (tensor_vec v w1 + tensor_vec v w2)"
-      using dim_lhs dim_rhs by simp
-  next
-    fix i
-    assume i: "i < dim_vec (tensor_vec v w1 + tensor_vec v w2)"
-    then have i_bound: "i < n * m"
-      using dim_rhs by simp
-    let ?a = "i div m"
-    let ?b = "i mod m"
-    have split_index: "i = ?a * m + ?b"
-      by presburger
-    have a_bound: "?a < n"
-      using i_bound less_mult_imp_div_less by blast
-    have b_bound: "?b < m"
-      by (metis i_bound mod_by_0 mod_less_divisor mod_mult_self2_is_0 not_gr0)
-    have dim_w12: "dim_vec (w1 + w2) = m" using vd by simp
-    have lhs_i:
-      "tensor_vec v (w1 + w2) $ i = (v $ ?a) * ((w1 + w2) $ ?b)"
-      using tensor_vec_index[OF vd(1) dim_w12 i_bound] .
-    also have "\<dots> = (v $ ?a * w1 $ ?b) + (v $ ?a * w2 $ ?b)"
-      using vd a_bound b_bound by (simp add: algebra_simps)
-    also have "\<dots> = (tensor_vec v w1 + tensor_vec v w2) $ i"
-    proof -
-      have t1: "tensor_vec v w1 $ i = v $ ?a * w1 $ ?b"
-        using tensor_vec_index[OF vd(1) vd(2) i_bound] .
-      have t2: "tensor_vec v w2 $ i = v $ ?a * w2 $ ?b"
-        using tensor_vec_index[OF vd(1) vd(3) i_bound] .
-      have dt1: "dim_vec (tensor_vec v w1) = n * m" using vd by (simp add: tensor_vec_dim)
-      have dt2: "dim_vec (tensor_vec v w2) = n * m" using vd by (simp add: tensor_vec_dim)
-      have "(tensor_vec v w1 + tensor_vec v w2) $ i = tensor_vec v w1 $ i + tensor_vec v w2 $ i"
-        using dt1 dt2 i_bound by simp
-      with t1 t2 show ?thesis by simp
-    qed
-    finally show "tensor_vec v (w1 + w2) $ i =
-                  (tensor_vec v w1 + tensor_vec v w2) $ i" .
-  qed
-qed
+proof (rule eq_vecI)
+  have d: "dim_vec (w1 + w2) = m" using vd by simp
+  fix i assume "i < dim_vec (tensor_vec v w1 + tensor_vec v w2)"
+  hence i: "i < n * m" by (simp add: tensor_vec_dim[OF vd(1,2)] tensor_vec_dim[OF vd(1,3)])
+  have "i mod m < m" using i by (cases m) simp_all
+  thus "tensor_vec v (w1 + w2) $ i = (tensor_vec v w1 + tensor_vec v w2) $ i"
+    using i vd by (simp add: tensor_vec_index[OF vd(1) d] tensor_vec_index[OF vd(1,2)] tensor_vec_index[OF vd(1,3)]
+                             tensor_vec_dim distrib_left)
+qed (simp add: tensor_vec_dim vd)
 
 lemma tensor_vec_smult_left:
   assumes vd: "dim_vec v = n" "dim_vec w = m"

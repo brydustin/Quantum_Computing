@@ -369,62 +369,12 @@ lemma kraus_map_dim_psd:
   shows "psd (kraus_map_dim d Ws \<rho>)"
   using Ws_c
 proof (induction Ws)
-  case Nil
-  show ?case by simp
-next
   case (Cons W Ws)
-  hence W_c: "W \<in> carrier_mat d n"
-    and Ws_c': "\<forall>X \<in> set Ws. X \<in> carrier_mat d n"
-    by auto
-  have Wdag_c: "W\<^sup>\<dagger> \<in> carrier_mat n d"
-    using W_c by (rule dagger_carrier)
-  obtain Q where Qc: "Q \<in> carrier_mat n n" and Qpsd: "psd Q" and QQ: "Q * Q = \<rho>"
-    using psd_sqrt_exists[OF \<rho>_c \<rho>_psd] by blast
-  have Qdag: "Q\<^sup>\<dagger> = Q"
-    using Qpsd by (simp add: psd_def hermitian_def)
-  have WQ_c: "W * Q \<in> carrier_mat d n"
-    using W_c Qc by (intro mult_carrier_mat) auto
-  have WQdag_c: "(W * Q)\<^sup>\<dagger> \<in> carrier_mat n d"
-    using WQ_c by (rule dagger_carrier)
-
-  have term_eq: "W * \<rho> * (W\<^sup>\<dagger>) = (W * Q) * ((W * Q)\<^sup>\<dagger>)"
-  proof -
-    have dagprod: "(W * Q)\<^sup>\<dagger> = (Q\<^sup>\<dagger>) * (W\<^sup>\<dagger>)"
-      using W_c Qc by (simp add: dagger_of_prod)
-    have dagprod': "(W * Q)\<^sup>\<dagger> = Q * (W\<^sup>\<dagger>)"
-      using dagprod Qdag by simp
-    have "(W * Q) * ((W * Q)\<^sup>\<dagger>) = (W * Q) * (Q * (W\<^sup>\<dagger>))"
-      using dagprod' by simp
-    also have "\<dots> = W * Q * Q * (W\<^sup>\<dagger>)"
-      using W_c Qc Wdag_c by (metis assoc_mult_mat mult_carrier_mat)
-    also have "\<dots> = W * (Q * Q) * (W\<^sup>\<dagger>)"
-      using W_c Qc by (metis assoc_mult_mat)
-    also have "\<dots> = W * \<rho> * (W\<^sup>\<dagger>)"
-      using QQ by simp
-    finally show ?thesis by simp
-  qed
-
-  have term_psd: "psd (W * \<rho> * (W\<^sup>\<dagger>))"
-  proof -
-    have psd_dd: "psd (((W * Q)\<^sup>\<dagger>\<^sup>\<dagger>) * ((W * Q)\<^sup>\<dagger>))"
-      using psd_MdagM[OF WQdag_c] .
-    have dd_eq: "((W * Q)\<^sup>\<dagger>\<^sup>\<dagger>) = W * Q"
-      using WQ_c by (simp add: dagger_of_dagger_is_id)
-    from psd_dd dd_eq have "psd ((W * Q) * ((W * Q)\<^sup>\<dagger>))"
-      by simp
-    thus ?thesis
-      using term_eq by simp
-  qed
-  have term_c: "W * \<rho> * (W\<^sup>\<dagger>) \<in> carrier_mat d d"
-    using W_c \<rho>_c Wdag_c by (intro mult_carrier_mat) auto
-  have IH_c: "kraus_map_dim d Ws \<rho> \<in> carrier_mat d d"
-    using kraus_map_dim_carrier[OF Ws_c' \<rho>_c] .
-  have IH_psd: "psd (kraus_map_dim d Ws \<rho>)"
-    using Cons.IH Ws_c' by blast
-  have "psd (W * \<rho> * (W\<^sup>\<dagger>) + kraus_map_dim d Ws \<rho>)"
-    using term_psd IH_psd term_c IH_c by (rule psd_add_psd)
-  thus ?case by simp
-qed
+  have "psd (W * \<rho> * (W\<^sup>\<dagger>))"
+    using psd_conjugate[OF \<rho>_c \<rho>_psd dagger_carrier[of W d n]] Cons.prems by (simp add: dagger_of_dagger_is_id)
+  with Cons \<rho>_c show ?case
+    by (auto intro!: psd_add_psd kraus_map_dim_carrier[OF _ \<rho>_c] mult_carrier_mat dagger_carrier)
+qed simp
 
 definition positive_map :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> bool" where
   "positive_map n d \<Phi> \<equiv>

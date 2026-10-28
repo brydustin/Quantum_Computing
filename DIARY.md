@@ -1376,3 +1376,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `algebra` diverges on complex entry equations with `cnj 𝗂`; `subst` ignores chained facts; apply the
   sesquilinearity rules by `unfolding`/`subst`/`simp only:` before `simp` unfolds ⟨u|v⟩.  Plan:
   `tools/deps/plans/day4d.py`; scratch `wip/d23/D04d.thy`.
+- **Audit tick 30: bilinearity of ⊗ and positivity of Kraus maps** (2026-10-28).  Day 6's
+  `tensor_vec_bilinear_left`/`_right` (64 + 57 lines of index splitting) are `eq_vecI` + `tensor_vec_index`
+  + `distrib_right`/`distrib_left`: 12 lines each.  Day 17's `kraus_map_dim_psd` (64) is an induction
+  over the Kraus list with `psd_conjugate` (W ρ W* = (W*)* ρ W*) and `psd_add_psd`: 14 lines.  Day 6
+  993 → 903, Day 17 1100 → 1049, every statement unchanged.  Plan: `tools/deps/plans/day6b.py`;
+  scratch `wip/d23/D06.thy`.
