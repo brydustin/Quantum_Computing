@@ -1468,3 +1468,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `--scratch` mode copies the theory's anonymous context (all its helpers) and makes the primed copies
   cite each other — exported context lemmas carry the context assumptions as premises, so `foo[OF …]`
   against the installed export has no unifier.  `by (drule …)` never sees chained facts.
+- **Audit tick 42: Day 21's average conjecture without metis** (2026-10-28).  `cmod_sq_sum` moves to
+  the top of the theory with its companion `cmod_sq_sum'` ($\sum\overline{f_k}f_k$ form), so the four
+  sum-of-squares sites are one `unfolding` each; the eigenvalue sign is `Re_of_real_eq`, the cosine
+  step is `cis.sel`, the split congruence is `simp`, the idempotent-eigenvalue dichotomy is `auto`.
+  Day 21_AC metis/smt 9 → 0; statement check: `cmod_sq_sum'` added, nothing changed.  Plan:
+  `tools/deps/plans/day21c.py` (scratch mode as in tick 39).  Lesson: a conjunction in a `using`
+  fact is not split by `simp`; use `auto`.

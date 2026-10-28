@@ -79,7 +79,8 @@ next
   have z1: "?z \<noteq> 1"
   proof
     assume "?z = 1"
-    hence "cos (2 * pi * (real m - real m') / real n) = 1" by (metis cis.sel(1) one_complex.sel(1))
+    hence "cos (2 * pi * (real m - real m') / real n) = 1"
+      using cis.sel(1)[of "2 * pi * (real m - real m') / real n"] by simp
     then obtain j :: int where "2 * pi * (real m - real m') / real n = of_int j * 2 * pi"
       unfolding cos_one_2pi_int by auto
     hence j: "2 * pi * (real m - real m') / real n = 2 * pi * of_int j" by simp
@@ -103,6 +104,12 @@ next
   also have "\<dots> = 0" using z1 zn by (simp add: geometric_sum)
   finally show ?thesis using False by simp
 qed
+
+lemma cmod_sq_sum: "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. f k * cnj (f k))"
+  by (simp only: of_real_sum complex_norm_square)
+
+lemma cmod_sq_sum': "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. cnj (f k) * f k)"
+  unfolding cmod_sq_sum by (simp add: mult.commute)
 
 lemma omega_pow_mix:
   "(\<Sum>l<n. (\<Sum>m<n. omega_pow n l m * x m) * cnj (\<Sum>m<n. omega_pow n l m * y m)) = of_nat n * (\<Sum>m<n. x m * cnj (y m))"
@@ -294,9 +301,8 @@ proof -
     qed
     also have "\<dots> = \<langle>?u | Q *\<^sub>v ?u\<rangle>"
       using Uc Q(1) k by (simp add: inner_prod_def scalar_prod_def atLeast0LessThan Matrix.row_def)
-    finally have "complex_of_real (D ! k) = \<langle>?u | Q *\<^sub>v ?u\<rangle>" .
-    moreover have "Re \<langle>?u | Q *\<^sub>v ?u\<rangle> \<ge> 0" using Q du unfolding psd_def by auto
-    ultimately show ?thesis by (metis Re_complex_of_real)
+    finally have "D ! k = Re \<langle>?u | Q *\<^sub>v ?u\<rangle>" by (rule Re_of_real_eq)
+    thus ?thesis using Q du unfolding psd_def by auto
   qed
   have UU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m d" using Uu Uc unfolding unitary_def by auto
   have "\<forall>a<d. \<forall>b<d. Q $$ (a, b) = (\<Sum>k<d. U $$ (a, k) * complex_of_real (D ! k) * cnj (U $$ (b, k)))"
@@ -326,7 +332,7 @@ proof -
 qed
 
 lemma ucp_average_split_cong: "(\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<Phi> X = \<Psi> X) \<Longrightarrow> ucp_average_split n d \<Psi> \<Longrightarrow> ucp_average_split n d \<Phi>"
-  unfolding ucp_average_split_def by metis
+  unfolding ucp_average_split_def by simp
 
 lemma delta_sum2:
   fixes n i :: nat
@@ -468,9 +474,7 @@ proof -
     qed
     also have "\<dots> = 1" using trD by simp
     finally have e: "(\<Sum>a<n. \<phi> l $ a * cnj (\<phi> l $ a)) = 1" .
-    have "complex_of_real (\<Sum>a<n. (cmod (\<phi> l $ a))\<^sup>2) = (\<Sum>a<n. \<phi> l $ a * cnj (\<phi> l $ a))"
-      by (simp add: complex_mult_cnj cmod_power2 del: of_real_power)
-    hence "(\<Sum>a<n. (cmod (\<phi> l $ a))\<^sup>2) = 1" using e by (metis of_real_eq_1_iff)
+    have "(\<Sum>a<n. (cmod (\<phi> l $ a))\<^sup>2) = 1" using e unfolding cmod_sq_sum[symmetric] of_real_eq_1_iff .
     thus ?thesis by (simp add: cpx_vec_length_def \<phi>_def)
   qed
   show ?thesis using avg nrm by (intro exI[of _ \<phi>]) (simp add: \<phi>_def)
@@ -517,11 +521,9 @@ proof -
     unfolding conj_entry[OF Bc X c c'] using c c' by (auto simp: B_def)
   have sq: "(\<Sum>p<n. cnj (\<phi> a l $ p) * \<phi> a l $ p) = 1" if a: "a < d" and l: "l < n" for a l
   proof -
-    have "complex_of_real (\<Sum>p<n. (cmod (\<phi> a l $ p))\<^sup>2) = (\<Sum>p<n. cnj (\<phi> a l $ p) * \<phi> a l $ p)"
-      by (simp add: complex_mult_cnj cmod_power2 Groups.mult.commute[of "cnj _"] del: of_real_power)
-    moreover have "(\<Sum>p<n. (cmod (\<phi> a l $ p))\<^sup>2) = 1"
-      using \<phi>n[OF a l] unfolding cpx_vec_length_def by (metis (no_types, lifting) real_sqrt_eq_1_iff)
-    ultimately show ?thesis by simp
+    have "(\<Sum>p<n. (cmod (\<phi> a l $ p))\<^sup>2) = 1"
+      using \<phi>n[OF a l] unfolding cpx_vec_length_def by (auto simp: real_sqrt_eq_1_iff)
+    thus ?thesis unfolding cmod_sq_sum'[symmetric] of_real_eq_1_iff .
   qed
   have unit: "kraus_map_dim d (Bs ! l) (1\<^sub>m n) = 1\<^sub>m d" if l: "l < n" for l
   proof (rule eq_matI)
@@ -700,7 +702,7 @@ proof -
       finally show ?thesis using i by simp
     qed
     ultimately have "\<mu> ! i * \<mu> ! i = \<mu> ! i" using i \<mu>l by (simp del: of_real_mult)
-    thus ?thesis by (metis mult_cancel_right1 mult_eq_0_iff)
+    thus ?thesis by auto
   qed
   have orth: "(\<Sum>a<d. cnj (w k a) * U $$ (a, i)) = 0" if k: "k \<in> J" and i: "i < d" and m1: "\<mu> ! i = 1" for k i
   proof -
@@ -897,9 +899,8 @@ proof -
   define \<sigma> where "\<sigma> k = sqrt (\<Sum>c<d. (cmod ((Km * V) $$ (c, k)))\<^sup>2)" for k
   have \<sigma>D: "\<sigma> k = sqrt (D ! k)" if k: "k < d" for k
   proof -
-    have "complex_of_real (\<Sum>c<d. (cmod ((Km * V) $$ (c, k)))\<^sup>2) = (\<Sum>c<d. cnj ((Km * V) $$ (c, k)) * (Km * V) $$ (c, k))"
-      by (simp add: complex_mult_cnj cmod_power2 Groups.mult.commute[of "cnj _"] del: of_real_power)
-    hence "(\<Sum>c<d. (cmod ((Km * V) $$ (c, k)))\<^sup>2) = D ! k" using gram_e[OF k k] by (metis of_real_eq_iff)
+    have "(\<Sum>c<d. (cmod ((Km * V) $$ (c, k)))\<^sup>2) = D ! k"
+      using gram_e[OF k k] unfolding cmod_sq_sum'[symmetric] if_P[OF refl] of_real_eq_iff .
     thus ?thesis by (simp add: \<sigma>_def)
   qed
   define J where "J = {k. k < d \<and> 0 < D ! k}"
@@ -1027,9 +1028,7 @@ proof -
       have "(V\<^sup>\<dagger> * V) $$ (k, k) = (\<Sum>a<d. cnj (V $$ (a, k)) * V $$ (a, k))"
         using Vc k by (simp add: scalar_prod_def dagger_def atLeast0LessThan Matrix.row_def)
       hence "(\<Sum>a<d. cnj (V $$ (a, k)) * V $$ (a, k)) = 1" using VV k by simp
-      moreover have "complex_of_real (\<Sum>a<d. (cmod (V $$ (a, k)))\<^sup>2) = (\<Sum>a<d. cnj (V $$ (a, k)) * V $$ (a, k))"
-        by (simp add: complex_mult_cnj cmod_power2 Groups.mult.commute[of "cnj _"] del: of_real_power)
-      ultimately have "(\<Sum>a<d. (cmod (V $$ (a, k)))\<^sup>2) = 1" by (metis of_real_eq_1_iff)
+      hence "(\<Sum>a<d. (cmod (V $$ (a, k)))\<^sup>2) = 1" unfolding cmod_sq_sum'[symmetric] of_real_eq_1_iff .
       thus ?thesis using Vc k by (simp add: cpx_vec_length_def)
     qed
     ultimately show ?thesis using ct[OF dv] by (simp add: \<sigma>_def cpx_vec_length_def sum_nonneg)
@@ -1060,9 +1059,6 @@ proof -
 qed
 
 subsubsection \<open>Bessel's inequality for rows that are orthonormal or zero\<close>
-
-lemma cmod_sq_sum: "complex_of_real (\<Sum>k\<in>A. (cmod (f k))\<^sup>2) = (\<Sum>k\<in>A. f k * cnj (f k))"
-  by (simp only: of_real_sum complex_norm_square)
 
 lemma bessel_rows:
   fixes s :: "nat \<Rightarrow> nat \<Rightarrow> complex" and y :: "nat \<Rightarrow> complex" and d K :: nat
@@ -1127,7 +1123,7 @@ proof -
     also have "\<dots> = (\<Sum>k<K. y k * cnj (y k)) - (\<Sum>j<d. c j * cnj (c j))"
     proof -
       have rc: "cnj (\<Sum>j<d. c j * cnj (c j)) = (\<Sum>j<d. c j * cnj (c j))"
-        using cmod_sq_sum[of c "{..<d}"] by (metis complex_cnj_complex_of_real)
+        unfolding cmod_sq_sum[symmetric] by simp
       show ?thesis unfolding cross quad rc by simp
     qed
     finally show ?thesis unfolding cmod_sq_sum .
