@@ -1262,3 +1262,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `Tr_mult_outer` (Tr(A|v⟩⟨v|) = ⟨v|Av⟩) lived in Day 26 although it uses only Day 2 facts; it now
   sits in Day 2 after `outer_prod_carrier`, where Days 13 and 26 both find it.  Plan:
   `tools/deps/plans/day13.py`; scratch `wip/d23/D13.thy`.
+- **Audit tick 19: second dead-helper sweep** (2026-10-27).  After eighteen rewrites the fact-level scan
+  lists seven helpers that nothing uses any more: `mat_unit_mult_entry` and `orthonormal_listD_carrier`
+  (Day 2), `householder_mult_vec_index` (Day 3, orphaned by the Schur rewrite), `block_of_mat_single`
+  (Day 17), `syndrome_proj_two` (Day 30), `orthogonal_projections_carrier_left/right` (Day 32); gone
+  (≈75 lines).  Kept on purpose although unused: the bundle's library facts (`DIM_lmat`, the
+  `is_isomorphism_betweenD` rules), Day 1's Hilbert–Schmidt inner-product properties, Day 25's
+  `unit_block_tensor` (it says what `unit_block` is), the Day 23/32 example computations and the whole
+  of the `Quantum_Channels` appendix — those are results, not scaffolding.  Plan:
+  `tools/deps/plans/sweep2.py`.

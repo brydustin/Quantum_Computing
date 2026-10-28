@@ -298,14 +298,6 @@ proof -
   finally show ?thesis using x by (simp add: smult_smult_assoc)
 qed
 
-lemma householder_mult_vec_index:
-  fixes w x :: "complex Matrix.vec"
-  assumes xdim: "dim_vec x = dim_vec w"
-      and i: "i < dim_vec w"
-  shows "(householder w *\<^sub>v x) $ i =
-         x $ i - 2 * (w $ i) * \<langle>w | x\<rangle>"
-  using i xdim by (simp add: householder_mult_vec mult_ac)
-
 text \<open>For a unit vector $w$, $U_H=I-2\ketbra ww$ is the reflection in the hyperplane $w^\perp$:
 $U_Hx=x-2\braket wx\,w$ fixes $w^\perp$ and sends $w$ to $-w$.  It is Hermitian, and
 \[ U_H^2=I-4\ketbra ww+4\,\ketbra ww\ketbra ww=I-4\ketbra ww+4\braket ww\ketbra ww=I, \]

@@ -315,11 +315,6 @@ proof -
   finally show ?thesis using i by simp
 qed
 
-lemma mat_unit_mult_entry:
-  assumes r_lt: "r < m" and c_lt: "c < p" and j_lt: "j < n"
-  shows "(E\<lbrakk>i,j ; m,n\<rbrakk> * E\<lbrakk>k,l ; n,p\<rbrakk>) $$ (r,c) = (if j = k \<and> r = i \<and> c = l then 1 else 0)"
-  using unit_mult_left_entry[OF mat_unit_carrier r_lt c_lt j_lt, of i k l] j_lt c_lt by simp
-
 lemma sandwich_mat_unit_entry:
   assumes V: "V \<in> carrier_mat d n" and W: "W \<in> carrier_mat d n"
       and a: "a < n" and b: "b < n" and i: "i < d" and j: "j < d"
@@ -711,11 +706,6 @@ lemma orthonormal_listD_inner:
   assumes "orthonormal_list n vs" and "i < length vs" and "j < length vs"
   shows "\<langle>vs ! i | vs ! j\<rangle> = (if i = j then 1 else 0)"
   using assms by (simp add: orthonormal_list_def, force)
-
-lemma orthonormal_listD_carrier:
-  assumes "orthonormal_list n vs"
-  shows "set vs \<subseteq> carrier_vec n"
-  using assms orthonormal_list_def by auto
 
 definition outer_sum :: "nat \<Rightarrow> complex Matrix.vec list \<Rightarrow> complex Matrix.mat" where
   "outer_sum n vs = mat_of_cols n vs * ((mat_of_cols n vs)\<^sup>\<dagger>)"

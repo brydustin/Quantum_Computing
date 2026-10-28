@@ -204,27 +204,6 @@ lemma syndrome_proj_index:
   shows "syndrome_proj K $$ (i,j) = (if i = j \<and> i \<in> K then 1 else 0)"
   using assms by (simp add: syndrome_proj_def)
 
-lemma syndrome_proj_two:
-  assumes a: "a < 8" and b: "b < 8" and ab: "a \<noteq> b"
-  shows "syndrome_proj {a, b} = unit_vec 8 a \<oslash> unit_vec 8 a + unit_vec 8 b \<oslash> unit_vec 8 b"
-proof (rule eq_matI)
-  have ca: "unit_vec 8 a \<oslash> unit_vec 8 a \<in> carrier_mat 8 8" and cb: "unit_vec 8 b \<oslash> unit_vec 8 b \<in> carrier_mat 8 8"
-    by (rule outer_prod_carrier; simp)+
-  fix i j assume "i < dim_row (unit_vec 8 a \<oslash> unit_vec 8 a + unit_vec 8 b \<oslash> unit_vec 8 b)"
-             "j < dim_col (unit_vec 8 a \<oslash> unit_vec 8 a + unit_vec 8 b \<oslash> unit_vec 8 b)"
-  hence i: "i < 8" and j: "j < 8" using carrier_matD[OF ca] carrier_matD[OF cb] by auto
-  have "(unit_vec 8 a \<oslash> unit_vec 8 a + unit_vec 8 b \<oslash> unit_vec 8 b) $$ (i,j)
-        = (unit_vec 8 a \<oslash> unit_vec 8 a) $$ (i,j) + (unit_vec 8 b \<oslash> unit_vec 8 b) $$ (i,j)"
-    using i j carrier_matD[OF cb] by simp
-  also have "\<dots> = unit_vec 8 a $ i * cnj (unit_vec 8 a $ j) + unit_vec 8 b $ i * cnj (unit_vec 8 b $ j)"
-    using i j by (simp add: outer_prod_index)
-  also have "\<dots> = syndrome_proj {a, b} $$ (i,j)"
-    using i j a b ab by (auto simp: syndrome_proj_def)
-  finally show "syndrome_proj {a, b} $$ (i,j) = (unit_vec 8 a \<oslash> unit_vec 8 a + unit_vec 8 b \<oslash> unit_vec 8 b) $$ (i,j)" ..
-qed (use carrier_matD[OF outer_prod_carrier[of "unit_vec 8 a" 8 "unit_vec 8 a" 8]]
-          carrier_matD[OF outer_prod_carrier[of "unit_vec 8 b" 8 "unit_vec 8 b" 8]]
-     in \<open>auto simp: syndrome_proj_def\<close>)
-
 text \<open>The flips are the notes' tensors.\<close>
 
 lemma tensor3_index:

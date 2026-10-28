@@ -289,14 +289,6 @@ definition orthogonal_projections ::
      projection n P \<and> projection n Q \<and>
      P * Q = 0\<^sub>m n n \<and> Q * P = 0\<^sub>m n n"
 
-lemma orthogonal_projections_carrier_left:
-  "orthogonal_projections n P Q \<Longrightarrow> P \<in> carrier_mat n n"
-  by (simp add: orthogonal_projections_def projection_def)
-
-lemma orthogonal_projections_carrier_right:
-  "orthogonal_projections n P Q \<Longrightarrow> Q \<in> carrier_mat n n"
-  by (simp add: orthogonal_projections_def projection_def)
-
 subsection \<open>Pauli magic (D32-6)\<close>
 
 text \<open>\begin{notesprop}

@@ -468,23 +468,6 @@ lemma block_of_mat_index:
   shows "block_of_mat n X a b $$ (r,c) = X $$ (a*n + r, b*n + c)"
   using assms by (simp add: block_of_mat_def)
 
-lemma block_of_mat_single:
-  assumes X: "X \<in> carrier_mat n n"
-  shows "block_of_mat n X 0 0 = X"
-proof (rule eq_matI)
-  show "dim_row (block_of_mat n X 0 0) = dim_row X"
-    using X by (simp add: block_of_mat_def)
-  show "dim_col (block_of_mat n X 0 0) = dim_col X"
-    using X by (simp add: block_of_mat_def)
-next
-  fix i j
-  assume "i < dim_row X" and "j < dim_col X"
-  then have "i < n" and "j < n"
-    using X by auto
-  thus "block_of_mat n X 0 0 $$ (i,j) = X $$ (i,j)"
-    by (simp add: block_of_mat_index)
-qed
-
 text \<open>A $pn\times pn$ matrix is the sum of its blocks in place: $x=\sum_{a,b}E_{ab}\otimes x_{ab}$.\<close>
 
 lemma block_of_mat_decomposition:
