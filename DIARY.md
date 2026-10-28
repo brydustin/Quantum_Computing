@@ -1222,3 +1222,14 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   multiple unifiers" because the map is a higher-order argument — instantiate `where F = … and c = …`
   first; `psd_add_psd` needs its carrier premises instantiated (`smult_carrier_mat[OF C]`), `simp_all`
   cannot invent the dimension.  Plan: `tools/deps/plans/day22.py`; scratch `wip/d23/D22.thy`.
+- **Audit tick 14: the Hermitian witness, once** (2026-10-27).  Day 28's
+  `entanglement_witness_hermitian` (284 lines) rebuilt, entry by entry, the matrix
+  W = ½(A + A*) with Re Tr(WM) = ⟨a, M⟩ for Hermitian M — which is exactly Day 26's
+  `hermitian_witness_from_lmat`, imported by Day 28 and already used elsewhere in it.  The theorem is now
+  the separating hyperplane plus that lemma: twelve lines.  The Day 26 lemma itself (229 lines of double
+  sums) is now trace algebra: W = ½(A + A*) as a matrix, Tr(WM) = ½(Tr(AM) + Tr(A*M)),
+  Tr(A*M) = Tr((M*A)*) = conj Tr(M*A) = conj Tr(AM) by `Tr_dagger`, M* = M and `Tr_cyclic`, and
+  ⟨a, M⟩ = Re ⟨⟨A|M⟩⟩ = Re Tr(A*M) by `hs_inner_prod_as_trace` — about 35 lines.  Traps: `?A + ?A†` and
+  `?A * ?M + ?A† * ?M` are ambiguous parses (parenthesise every dagger); JNF's `add_carrier_mat` has a
+  single premise (`[OF B]`, not `[OF A B]`).  Plan: `tools/deps/plans/day26_28.py`; scratch
+  `wip/d23/D28.thy`.
