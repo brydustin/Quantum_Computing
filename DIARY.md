@@ -1333,3 +1333,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   index sets produces an unprovable `{..<p} = {..<m}` — use `rule sum.cong[OF refl]` per level; a chain
   `by (simp …, intro …, simp …)` loses the `using` facts after the first method.  Plan:
   `tools/deps/plans/day15.py`; scratch `wip/d23/D15.thy`.
+- **Audit tick 25: the rest of Day 15's partial-trace algebra; projection complements** (2026-10-28).
+  `partial_trace_B_tensor` (72 lines), `partial_trace_B_trace` (59) and `partial_trace_B_hermitian` (79)
+  are entrywise facts: `index_tensor_mat` with the bundle's bound `mult_index_lt` (i·p+k < m·p), the
+  trace by `sum_div_mod` read backwards, Hermiticity by `hermitian_index` + `cnj_sum`: 14, 11 and 15
+  lines.  Day 4's `projection_complement_idempotent` (30) and Day 32's `projection_complement` (46) are
+  three-line corollaries of Day 2's `complement_projection`/`complement_dagger`.  Day 15 1416 → 1250.
+  Trap: I first added a bound lemma `times_add_less` to Day 6; the strict check's INNER detector found
+  it duplicating `mult_index_lt` (Unitary_Tensor_Algebra, 38 existing uses) after a full build — grep
+  the bundle before adding any helper.  Plan: `tools/deps/plans/day15b.py`; scratch `wip/d23/D15b.thy`
+  (imports Days 15 and 32: Day 32 imports only Day 10).

@@ -847,71 +847,15 @@ lemma partial_trace_B_tensor:
       and m_pos: "0 < m" and p_pos: "0 < p"
   shows "partial_trace_B m p (R \<Otimes> T) = Tr T \<cdot>\<^sub>m R"
 proof (rule eq_matI)
-  show "dim_row (partial_trace_B m p (R \<Otimes> T)) = dim_row (Tr T \<cdot>\<^sub>m R)"
-    using Rsq by simp
-  show "dim_col (partial_trace_B m p (R \<Otimes> T)) = dim_col (Tr T \<cdot>\<^sub>m R)"
-    using Rsq by simp
-next
-  fix i j
-  assume ij: "i < dim_row (Tr T \<cdot>\<^sub>m R)" "j < dim_col (Tr T \<cdot>\<^sub>m R)"
-  from ij Rsq have i_lt: "i < m" and j_lt: "j < m" by auto
-
-  have drR: "dim_row R = m" using Rsq by auto
-  have dcR: "dim_col R = m" using Rsq by auto
-  have drT: "dim_row T = p" using Tsq by auto
-  have dcT: "dim_col T = p" using Tsq by auto
-
-  have ent_eq: "\<And>k. k < p \<Longrightarrow>
-                (R \<Otimes> T) $$ (i * p + k, j * p + k) = R $$ (i, j) * T $$ (k, k)"
-  proof -
-    fix k assume k_lt: "k < p"
-    have rb: "i * p + k < m * p"
-    proof -
-      have "i * p + k < (i + 1) * p" using k_lt by simp
-      moreover have "(i + 1) * p \<le> m * p"
-      proof -
-        have "i + 1 \<le> m" using i_lt by simp
-        thus "(i + 1) * p \<le> m * p" by (rule mult_le_mono1)
-      qed
-      ultimately show ?thesis by linarith
-    qed
-    have cb: "j * p + k < m * p"
-    proof -
-      have "j * p + k < (j + 1) * p" using k_lt by simp
-      moreover have "(j + 1) * p \<le> m * p"
-      proof -
-        have "j + 1 \<le> m" using j_lt by simp
-        thus "(j + 1) * p \<le> m * p" by (rule mult_le_mono1)
-      qed
-      ultimately show ?thesis by linarith
-    qed
-    have dv1: "(i * p + k) div p = i" using k_lt by simp
-    have dv2: "(j * p + k) div p = j" using k_lt by simp
-    have md1: "(i * p + k) mod p = k" using k_lt by simp
-    have md2: "(j * p + k) mod p = k" using k_lt by simp
-    have "(R \<Otimes> T) $$ (i * p + k, j * p + k)
-          = R $$ ((i*p+k) div p, (j*p+k) div p) * T $$ ((i*p+k) mod p, (j*p+k) mod p)"
-      using index_tensor_mat[OF drR dcR drT dcT rb cb m_pos p_pos] .
-    also have "\<dots> = R $$ (i, j) * T $$ (k, k)"
-      using dv1 dv2 md1 md2 by simp
-    finally show "(R \<Otimes> T) $$ (i * p + k, j * p + k) = R $$ (i, j) * T $$ (k, k)" .
-  qed
-
-  have "partial_trace_B m p (R \<Otimes> T) $$ (i, j)
-        = (\<Sum>k<p. (R \<Otimes> T) $$ (i * p + k, j * p + k))"
-    using i_lt j_lt by (simp add: partial_trace_B_def)
-  also have "\<dots> = (\<Sum>k<p. R $$ (i, j) * T $$ (k, k))"
-    using ent_eq by (intro sum.cong refl) simp
-  also have "\<dots> = R $$ (i, j) * (\<Sum>k<p. T $$ (k, k))"
-    by (simp add: sum_distrib_left)
-  also have "\<dots> = R $$ (i, j) * Tr T"
-    using Tsq by (simp add: Tr_def)
-  also have "\<dots> = Tr T * R $$ (i, j)"
-    by (simp add: mult.commute)
-  also have "\<dots> = (Tr T \<cdot>\<^sub>m R) $$ (i, j)"
-    using i_lt j_lt Rsq by simp
-  finally show "partial_trace_B m p (R \<Otimes> T) $$ (i, j) = (Tr T \<cdot>\<^sub>m R) $$ (i, j)" .
-qed
+  fix i j assume "i < dim_row (Tr T \<cdot>\<^sub>m R)" "j < dim_col (Tr T \<cdot>\<^sub>m R)"
+  hence ij: "i < m" "j < m" using Rsq by auto
+  have "(R \<Otimes> T) $$ (i * p + k, j * p + k) = R $$ (i, j) * T $$ (k, k)" if k: "k < p" for k
+    unfolding index_tensor_mat[OF carrier_matD(1)[OF Rsq] carrier_matD(2)[OF Rsq] carrier_matD(1)[OF Tsq]
+                               carrier_matD(2)[OF Tsq] mult_index_lt[OF ij(1) k] mult_index_lt[OF ij(2) k] m_pos p_pos]
+    using k by simp
+  thus "partial_trace_B m p (R \<Otimes> T) $$ (i, j) = (Tr T \<cdot>\<^sub>m R) $$ (i, j)"
+    using ij Rsq Tsq by (simp add: partial_trace_B_def Tr_def sum_distrib_left mult.commute)
+qed (use Rsq in auto)
 
 lemma partial_trace_A_tensor:
   fixes R T :: "complex Matrix.mat"
@@ -1044,57 +988,11 @@ lemma partial_trace_B_trace:
       and p_pos: "0 < p"
   shows "Tr (partial_trace_B m p X) = Tr X"
 proof -
-  have Xrow: "dim_row X = m * p" and Xcol: "dim_col X = m * p"
-    using Xsq by auto
-
-  have bij: "bij_betw (\<lambda>(i, k). i * p + k) ({..<m} \<times> {..<p}) {..<m*p}"
-  proof (rule bij_betwI[where g = "\<lambda>r. (r div p, r mod p)"])
-    show "(\<lambda>(i, k). i * p + k) \<in> {..<m} \<times> {..<p} \<rightarrow> {..<m*p}"
-    proof
-      fix z assume z_in: "z \<in> {..<m} \<times> {..<p}"
-      then obtain i k where z: "z = (i, k)" and i_lt: "i < m" and k_lt: "k < p"
-        by blast
-      have "i * p + k < (i + 1) * p"
-        using k_lt by simp
-      moreover have "(i + 1) * p \<le> m * p"
-      proof -
-        have "i + 1 \<le> m"
-          using i_lt by simp
-        thus "(i + 1) * p \<le> m * p"
-          by (rule mult_le_mono1)
-      qed
-      ultimately have "i * p + k < m * p"
-        by linarith
-      thus "(case z of (i, k) \<Rightarrow> i * p + k) \<in> {..<m*p}"
-        using z by simp
-    qed
-  next
-    show "(\<lambda>r. (r div p, r mod p)) \<in> {..<m*p} \<rightarrow> {..<m} \<times> {..<p}"
-      using p_pos by (auto simp: less_mult_imp_div_less)
-  next
-    fix z assume z_in: "z \<in> {..<m} \<times> {..<p}"
-    then obtain i k where z: "z = (i, k)" and k_lt: "k < p"
-      by blast
-    show "(\<lambda>r. (r div p, r mod p)) ((\<lambda>(i, k). i * p + k) z) = z"
-      using z k_lt by simp
-  next
-    fix r assume r_in: "r \<in> {..<m*p}"
-    show "(\<lambda>(i, k). i * p + k) ((\<lambda>r. (r div p, r mod p)) r) = r"
-      by simp
-  qed
-
-  have "Tr (partial_trace_B m p X) =
-        (\<Sum>i<m. partial_trace_B m p X $$ (i, i))"
-    by (simp add: Tr_def)
-  also have "\<dots> = (\<Sum>i<m. \<Sum>k<p. X $$ (i * p + k, i * p + k))"
-    by (intro sum.cong refl) (simp add: partial_trace_B_def)
-  also have "\<dots> = (\<Sum>(i, k) \<in> {..<m} \<times> {..<p}. X $$ (i * p + k, i * p + k))"
-    by (simp add: sum.cartesian_product)
-  also have "\<dots> = (\<Sum>r<m*p. X $$ (r, r))"
-    using sum.reindex_bij_betw[OF bij, symmetric, of "\<lambda>r. X $$ (r, r)"]
-    by (simp add: case_prod_beta)
-  also have "\<dots> = Tr X"
-    using Xrow Xcol by (simp add: Tr_def)
+  have "Tr (partial_trace_B m p X) = (\<Sum>i<m. \<Sum>k<p. X $$ (i * p + k, i * p + k))"
+    by (simp add: Tr_def partial_trace_B_def)
+  also have "\<dots> = (\<Sum>r<m * p. X $$ (r div p * p + r mod p, r div p * p + r mod p))"
+    by (rule sum_div_mod[where g = "\<lambda>i k. X $$ (i * p + k, i * p + k)", symmetric])
+  also have "\<dots> = Tr X" using Xsq by (simp add: Tr_def)
   finally show ?thesis .
 qed
 
@@ -1103,80 +1001,16 @@ lemma partial_trace_B_hermitian:
   assumes Xsq: "X \<in> carrier_mat (m * p) (m * p)"
       and herm: "hermitian X"
   shows "hermitian (partial_trace_B m p X)"
-proof -
-  have Xrow: "dim_row X = m * p" and Xcol: "dim_col X = m * p"
-    using Xsq by auto
-  have entry:
-    "\<And>i j. i < m \<Longrightarrow> j < m \<Longrightarrow>
-      partial_trace_B m p X $$ (i, j) =
-      cnj (partial_trace_B m p X $$ (j, i))"
-  proof -
-    fix i j assume i_lt: "i < m" and j_lt: "j < m"
-    have "partial_trace_B m p X $$ (i, j) =
-          (\<Sum>k<p. X $$ (i * p + k, j * p + k))"
-      using i_lt j_lt by (simp add: partial_trace_B_def)
-    also have "\<dots> = (\<Sum>k<p. cnj (X $$ (j * p + k, i * p + k)))"
-    proof (intro sum.cong refl)
-      fix k assume k_mem: "k \<in> {..<p}"
-      then have k_lt: "k < p" by simp
-      have row_lt: "i * p + k < m * p"
-      proof -
-        have "i * p + k < (i + 1) * p" using k_lt by simp
-        moreover have "(i + 1) * p \<le> m * p"
-        proof -
-          have "i + 1 \<le> m" using i_lt by simp
-          thus "(i + 1) * p \<le> m * p" by (rule mult_le_mono1)
-        qed
-        ultimately show ?thesis by linarith
-      qed
-      have col_lt: "j * p + k < m * p"
-      proof -
-        have "j * p + k < (j + 1) * p" using k_lt by simp
-        moreover have "(j + 1) * p \<le> m * p"
-        proof -
-          have "j + 1 \<le> m" using j_lt by simp
-          thus "(j + 1) * p \<le> m * p" by (rule mult_le_mono1)
-        qed
-        ultimately show ?thesis by linarith
-      qed
-      show "X $$ (i * p + k, j * p + k) =
-            cnj (X $$ (j * p + k, i * p + k))"
-      proof -
-        have Xdag: "X\<^sup>\<dagger> = X"
-          using herm by (simp add: hermitian_def)
-        have "X $$ (i * p + k, j * p + k) =
-              (X\<^sup>\<dagger> $$ (i * p + k, j * p + k))"
-          using Xdag by simp
-        also have "\<dots> = cnj (X $$ (j * p + k, i * p + k))"
-          using Xrow Xcol row_lt col_lt by (simp add: dagger_def)
-        finally show ?thesis .
-      qed
-    qed
-    also have "\<dots> = cnj (\<Sum>k<p. X $$ (j * p + k, i * p + k))"
-      by simp
-    also have "\<dots> = cnj (partial_trace_B m p X $$ (j, i))"
-      using i_lt j_lt by (simp add: partial_trace_B_def)
-    finally show "partial_trace_B m p X $$ (i, j) =
-                  cnj (partial_trace_B m p X $$ (j, i))" .
-  qed
-  show ?thesis
-    unfolding hermitian_def
-  proof (rule eq_matI)
-    show "dim_row ((partial_trace_B m p X)\<^sup>\<dagger>) = dim_row (partial_trace_B m p X)"
-      by simp
-    show "dim_col ((partial_trace_B m p X)\<^sup>\<dagger>) = dim_col (partial_trace_B m p X)"
-      by simp
-  next
-    fix i j
-    assume ij: "i < dim_row (partial_trace_B m p X)" "j < dim_col (partial_trace_B m p X)"
-    then have i_lt: "i < m" and j_lt: "j < m"
-      by simp_all
-    show "(partial_trace_B m p X)\<^sup>\<dagger> $$ (i, j) =
-          partial_trace_B m p X $$ (i, j)"
-      using i_lt j_lt entry[OF i_lt j_lt] entry[OF j_lt i_lt]
-      by (simp add: dagger_def)
-  qed
-qed
+  unfolding hermitian_def
+proof (rule eq_matI)
+  fix i j assume "i < dim_row (partial_trace_B m p X)" "j < dim_col (partial_trace_B m p X)"
+  hence ij: "i < m" "j < m" by simp_all
+  have "X $$ (j * p + k, i * p + k) = cnj (X $$ (i * p + k, j * p + k))" if k: "k < p" for k
+    by (rule hermitian_index[OF herm])
+       (simp_all add: carrier_matD[OF Xsq] mult_index_lt[OF ij(2) k] mult_index_lt[OF ij(1) k])
+  thus "(partial_trace_B m p X)\<^sup>\<dagger> $$ (i, j) = partial_trace_B m p X $$ (i, j)"
+    using ij by (simp add: dagger_def partial_trace_B_def cnj_sum)
+qed (simp_all add: dagger_def)
 
 text \<open>$\braket v{\tr_B(X)v}=\sum_a\braket{v\otimes e_a}{X(v\otimes e_a)}\ge0$.\<close>
 

@@ -238,48 +238,8 @@ projections used by the proofs follows.\<close>
 lemma projection_complement:
   assumes "projection n P"
   shows "projection n (1\<^sub>m n - P)"
-proof -
-  have P_c: "P \<in> carrier_mat n n" using assms by (rule projection_carrier)
-  have P_h: "hermitian P" using assms by (rule projection_hermitian)
-  have P_dag: "P\<^sup>\<dagger> = P" using P_h by (simp add: hermitian_def)
-  have I_dag: "(1\<^sub>m n :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m n"
-    by (intro eq_matI) (auto simp: dagger_def)
-  have I_c: "(1\<^sub>m n :: complex Matrix.mat) \<in> carrier_mat n n" by simp
-  have IP_c: "(1\<^sub>m n - P) \<in> carrier_mat n n"
-    using P_c by (rule minus_carrier_mat)
-  have IP_dag: "(1\<^sub>m n - P)\<^sup>\<dagger> = 1\<^sub>m n - P"
-  proof (rule eq_matI)
-    show "dim_row ((1\<^sub>m n - P)\<^sup>\<dagger>) = dim_row (1\<^sub>m n - P)"
-      using P_c by simp
-    show "dim_col ((1\<^sub>m n - P)\<^sup>\<dagger>) = dim_col (1\<^sub>m n - P)"
-      using P_c by simp
-  next
-    fix i j
-    assume i: "i < dim_row (1\<^sub>m n - P)"
-       and j: "j < dim_col (1\<^sub>m n - P)"
-    hence ij: "i < n" "j < n" using P_c by simp_all
-    have P_swap: "P $$ (j, i) = cnj (P $$ (i, j))"
-    proof -
-      have "(P\<^sup>\<dagger>) $$ (i, j) = cnj (P $$ (j, i))"
-        using ij P_c by (simp add: dagger_def)
-      hence "P $$ (i, j) = cnj (P $$ (j, i))"
-        using P_dag by simp
-      thus ?thesis by simp
-    qed
-    have one_entry_self_cnj:
-      "(1\<^sub>m n :: complex Matrix.mat) $$ (j, i)
-        = cnj ((1\<^sub>m n :: complex Matrix.mat) $$ (i, j))"
-      using ij by auto
-    show "((1\<^sub>m n - P)\<^sup>\<dagger>) $$ (i, j) = (1\<^sub>m n - P) $$ (i, j)"
-      using ij P_c P_swap one_entry_self_cnj
-      by (simp add: dagger_def)
-  qed
-  have IP_h: "hermitian (1\<^sub>m n - P)" using IP_dag by (simp add: hermitian_def)
-  have IP_idem: "(1\<^sub>m n - P) * (1\<^sub>m n - P) = 1\<^sub>m n - P"
-    using assms by (rule projection_complement_idempotent)
-  show ?thesis
-    unfolding projection_def using IP_c IP_h IP_idem by blast
-qed
+  using assms unfolding projection_def hermitian_def
+  by (auto simp: complement_dagger complement_projection intro: minus_carrier_mat)
 
 text \<open>Two projections are orthogonal if their products in both orders vanish.\<close>
 

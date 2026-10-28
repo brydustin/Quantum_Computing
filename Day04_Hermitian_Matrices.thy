@@ -2092,35 +2092,6 @@ qed
 lemma projection_complement_idempotent:
   assumes "projection n P"
   shows "(1\<^sub>m n - P) * (1\<^sub>m n - P) = 1\<^sub>m n - P"
-proof -
-  have P_c: "P \<in> carrier_mat n n"
-    using assms by (rule projection_carrier)
-
-  have P_idem: "P * P = P"
-    using assms by (rule projection_idempotent)
-
-  have P_one_l: "1\<^sub>m n * P = P"
-    using P_c by simp
-
-  have P_one_r: "P * 1\<^sub>m n = P"
-    using P_c by simp
-
-  have I_one: "(1\<^sub>m n :: complex Matrix.mat) * 1\<^sub>m n = 1\<^sub>m n"
-    by simp
-
-  have "(1\<^sub>m n - P) * (1\<^sub>m n - P) = (1\<^sub>m n) * (1\<^sub>m n - P) - P * (1\<^sub>m n - P)"
-    by (meson P_c minus_carrier_mat minus_mult_distrib_mat one_carrier_mat)
-  also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * P) - (P * (1\<^sub>m n) - P * P)"
-    by (metis P_c mult_minus_distrib_mat one_carrier_mat)
-  also have "... = ((1\<^sub>m n) * (1\<^sub>m n) - (1\<^sub>m n) * P) - (P * (1\<^sub>m n)) + P * P"
-    using P_c by (simp add: algebra_simps, auto)
-  also have "... = (1\<^sub>m n - P) - P + P * P"
-    by (simp add: P_one_l P_one_r)
-  also have "... = (1\<^sub>m n - P) - P + P"
-    using P_idem by simp
-  also have "... = 1\<^sub>m n - P"
-    by auto
-  finally show ?thesis.
-qed
+  using assms unfolding projection_def by (intro complement_projection) auto
 
 end
