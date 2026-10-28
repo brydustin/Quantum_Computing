@@ -30,8 +30,7 @@ definition hermitian :: "complex Matrix.mat \<Rightarrow> bool" where
 lemma hermitian_square:
   assumes "hermitian A"
   shows "dim_row A = dim_col A"
-  using assms unfolding hermitian_def
-  by (metis dim_row_of_dagger)
+  using arg_cong[OF assms[unfolded hermitian_def], of dim_row] by simp
 
 lemma hermitian_index:
   assumes "hermitian A"
@@ -450,10 +449,7 @@ proof -
     using vcar inner_prod_with_itself_real vdim
     by blast 
   have vv_nonzero: "\<langle>v | v\<rangle> \<noteq> 0"
-    using vcar v_nonzero
-    by (simp add: inner_prod_with_itself_nonneg_reals_non0, 
-        metis comm_scalar_prod conjugate_complex_def 
-        conjugate_square_eq_0_vec conjugate_vec_def vdim vec_carrier)
+    by (rule inner_prod_with_itself_nonneg_reals_non0) (simp add: v_nonzero vdim)
   show "lam \<in> \<real>"
     using qreal q_eq
     using Reals_cnj_iff vv_nonzero vv_real by fastforce 
@@ -741,8 +737,7 @@ proof -
       have  "\<langle>x | outer_sum n vs *\<^sub>v x\<rangle> = \<langle>x | ((?M * (?M\<^sup>\<dagger>)) *\<^sub>v x)\<rangle>"
         using outer_as_MMdag by simp
       also have  "... = \<langle>x | ?M *\<^sub>v ((?M\<^sup>\<dagger>) *\<^sub>v x)\<rangle>"
-        using M_car xcar by (metis assoc_mult_mat_vec carrier_matD(1)
-            carrier_mat_triv dim_col_of_dagger dim_mult_mat_vec ydim)
+        by (simp only: assoc_mult_mat_vec[OF M_car dagger_carrier[OF M_car] xcar])
       also have " ...  = \<langle>?y | ?y\<rangle>"
         using inner_prod_adjoint_swap M_car xcar  by simp
       finally show ?thesis.
@@ -932,9 +927,7 @@ proof -
         \<langle>x | ((?M * (?M\<^sup>\<dagger>)) *\<^sub>v x)\<rangle>"
     using outer_as_MMdag by simp
   also have "... = \<langle>x | ?M *\<^sub>v ((?M\<^sup>\<dagger>) *\<^sub>v x)\<rangle>"
-    using M_car xcar
-    by (metis assoc_mult_mat_vec carrier_matD(1) carrier_mat_triv dim_col_of_dagger
-        dim_mult_mat_vec ydim)
+    by (simp only: assoc_mult_mat_vec[OF M_car dagger_carrier[OF M_car] xcar])
   also have "... = \<langle>?y | ?y\<rangle>"
     using inner_prod_adjoint_swap M_car xcar by simp
   finally show ?thesis .

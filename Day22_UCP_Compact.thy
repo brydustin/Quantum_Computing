@@ -92,7 +92,7 @@ proof -
     have db: "b < dim_col (unwrap_lm x)"
       using b_lt by simp
     show "unwrap_lm x $$ (a, b) = cnj (unwrap_lm x $$ (b, a))"
-      by (metis da db hermitian_index hx)
+      by (rule hermitian_index[OF hx da db])
   next
     fix x :: "(complex, 'k, 'k) lmat"
     assume x_in: "x \<in> (\<Inter>p \<in> ?I. ?S p)"
@@ -133,8 +133,7 @@ proof -
         using entries[OF j_lt i_lt] .
 
       show "((unwrap_lm x)\<^sup>\<dagger>) $$ (i, j) = unwrap_lm x $$ (i, j)"
-        by (metis (no_types) dagger_def entries i_lt ij(2) index_mat(1) 
-            prod.simps(2) unwrap_lm_dim_col unwrap_lm_dim_row)
+        unfolding dagger_def using i_lt j_lt ji by simp
     qed
   qed
 
@@ -191,8 +190,7 @@ proof -
       have "((unwrap_lm M *\<^sub>v x) $ i)
           = (\<Sum>j = 0..<dim_col (unwrap_lm M).
                 unwrap_lm M $$ (i, j) * x $ j)"
-        by (metis (no_types) carrier_vec_dim_vec i_lt mult_mat_vec_index 
-            unwrap_lm_carrier unwrap_lm_dim_col unwrap_lm_dim_row xdim)
+        by (rule mult_mat_vec_index[OF carrier_mat_triv _ i_lt], rule carrier_vecI) (simp add: xdim)
       also have "... =
           (\<Sum>j = 0..<?n. unwrap_lm M $$ (i, j) * x $ j)"
         using colM by simp
@@ -411,12 +409,8 @@ proof -
     "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> Q $$ (b, a) = cnj (Q $$ (a, b))"
   proof -
     fix a b assume a: "a < n" and b: "b < n"
-    have e1: "(Q\<^sup>\<dagger>) $$ (a, b) = cnj (Q $$ (b, a))"
-      unfolding dagger_def using Qdr Qdc a b by simp
-    have qe: "Q $$ (a, b) = cnj (Q $$ (b, a))"
-      using e1 Qherm by (simp add: hermitian_def)
     show "Q $$ (b, a) = cnj (Q $$ (a, b))"
-      using qe by (metis complex_cnj_cnj)
+      using hermitian_index[OF Qherm, of b a] Qdr Qdc a b by simp
   qed
   have Mij_sum:
     "M $$ (i, j) = (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
@@ -589,10 +583,8 @@ proof -
     also have "\<dots> = 1" by simp
     finally show ?thesis .
   qed
-  have nn: "0 \<le> norm M" by (rule norm_ge_zero)
   show "norm M \<le> 1"
-    using norm_sq_le nn
-    by (smt (verit) one_power2 power2_le_imp_le)
+    by (rule power2_le_imp_le) (use norm_sq_le in simp_all)
 qed
 
 lemma compact_unit_trace_psd_lmat:

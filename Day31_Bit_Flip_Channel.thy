@@ -134,17 +134,10 @@ proof -
   qed
 
   have conj_swap: "\<langle>\<psi>' | \<psi>\<rangle> = cnj (\<langle>\<psi> | \<psi>'\<rangle>)"
-    by (metis \<psi>_dim \<psi>'_dim inner_prod_cnj)
+    by (rule inner_prod_cnj) (simp add: \<psi>_dim \<psi>'_dim)
 
-  have sq_real:
-    "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = complex_of_real ((cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2)"
-  proof -
-    have "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = \<langle>\<psi> | \<psi>'\<rangle> * cnj (\<langle>\<psi> | \<psi>'\<rangle>)"
-      using inner_eq conj_swap by simp
-    also have "\<dots> = complex_of_real ((cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2)"
-      by (simp add: complex_norm_square mult.commute, metis complex_norm_square of_real_power)
-    finally show ?thesis.
-  qed
+  have sq_real: "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = complex_of_real ((cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2)"
+    unfolding inner_eq conj_swap complex_norm_square ..
 
   have re_eq: "Re (\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle>) = (cmod (\<langle>\<psi> | \<psi>'\<rangle>))\<^sup>2"
     using sq_real by simp
@@ -165,18 +158,10 @@ lemma fidelity_self:
   assumes \<psi>_qs: "quantum_state n \<psi>"
   shows "fidelity \<psi> ((mat_of_cols n [\<psi>]) * ((mat_of_cols n [\<psi>])\<^sup>\<dagger>)) = 1"
 proof -
-  have norm1: "\<parallel>\<psi>\<parallel> = 1"
-    using \<psi>_qs by (simp add: quantum_state_def)
-  have "fidelity \<psi> ((mat_of_cols n [\<psi>]) * ((mat_of_cols n [\<psi>])\<^sup>\<dagger>))
-          = cmod (\<langle>\<psi> | \<psi>\<rangle>)"
-    using fidelity_pure_states[OF \<psi>_qs \<psi>_qs] .
-  also have "\<dots> = cmod (complex_of_real ((\<parallel>\<psi>\<parallel>)\<^sup>2))"
-    by (metis cpx_vec_length_inner_prod)
-  also have "\<dots> = cmod (complex_of_real (1\<^sup>2))"
-    using norm1 by simp
-  also have "\<dots> = 1"
-    by simp
-  finally show ?thesis .
+  have "\<langle>\<psi> | \<psi>\<rangle> = 1"
+    using quantum_state_norm1[OF \<psi>_qs] unfolding cpx_vec_length_one_iff .
+  thus ?thesis
+    unfolding fidelity_pure_states[OF \<psi>_qs \<psi>_qs] by simp
 qed
 
 lemma fidelity_orthogonal:

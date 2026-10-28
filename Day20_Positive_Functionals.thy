@@ -148,21 +148,20 @@ proof -
     using Y_c AXAd_c by (intro hs_inner_prod_as_trace) auto
 
   have assoc1: "Y\<^sup>\<dagger> * (A * X * (A\<^sup>\<dagger>)) = (Y\<^sup>\<dagger> * A * X) * (A\<^sup>\<dagger>)"
-    using Ydag_c A_c X_c Adag_c
-    by (smt (verit) AX_c assoc_mult_mat mult_carrier_mat)
+    by (simp only: assoc_mult_mat[OF Ydag_c A_c X_c] assoc_mult_mat[OF Ydag_c AX_c Adag_c])
 
   have cyc: "Tr ((Y\<^sup>\<dagger> * A * X) * (A\<^sup>\<dagger>)) = Tr ((A\<^sup>\<dagger>) * (Y\<^sup>\<dagger> * A * X))"
     using YdAX_c Adag_c by (intro Tr_cyclic, blast+)
     
 
   have assoc2: "(A\<^sup>\<dagger>) * ((Y\<^sup>\<dagger>) * A * X) = ((A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A) * X"
-    using Adag_c Ydag_c A_c X_c
-    by (smt (verit) YdA_c assoc_mult_mat mult_carrier_mat)
+    by (simp only: assoc_mult_mat[OF AdYd_c A_c X_c] assoc_mult_mat[OF Adag_c Ydag_c AX_c]
+                   assoc_mult_mat[OF Ydag_c A_c X_c])
 
   have dim1: "dim_col ((A\<^sup>\<dagger>) * Y) = dim_row A"
-    using AdY_c A_c by (metis carrier_matD)
+    unfolding carrier_matD(2)[OF AdY_c] carrier_matD(1)[OF A_c] ..
   have dim2: "dim_col (A\<^sup>\<dagger>) = dim_row Y"
-    using Adag_c Y_c by (metis carrier_matD)
+    unfolding carrier_matD(2)[OF Adag_c] carrier_matD(1)[OF Y_c] ..
   have dag_eq: "((A\<^sup>\<dagger>) * Y * A)\<^sup>\<dagger> = (A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A"
   proof -
     have step1: "((A\<^sup>\<dagger>) * Y * A)\<^sup>\<dagger> = (A\<^sup>\<dagger>) * (((A\<^sup>\<dagger>) * Y)\<^sup>\<dagger>)"
@@ -226,8 +225,7 @@ next
   have left_add: "\<langle>\<langle> A\<^sup>\<dagger> * Y * A + kraus_adjoint_dim n As Y | X \<rangle>\<rangle>
                   = \<langle>\<langle> A\<^sup>\<dagger> * Y * A | X \<rangle>\<rangle>
                     + \<langle>\<langle> kraus_adjoint_dim n As Y | X \<rangle>\<rangle>"
-    using AdYA_c ka_c X_c
-    by (metis carrier_matD(1,2) complex_cnj_add hs_inner_prod_cnj hs_inner_prod_right_add index_add_mat(2,3))
+    by (intro hs_inner_prod_left_add) (use AdYA_c ka_c X_c in auto)
 
   have "\<langle>\<langle> Y | kraus_map_dim d (A # As) X \<rangle>\<rangle>
         = \<langle>\<langle> Y | A * X * (A\<^sup>\<dagger>) + kraus_map_dim d As X \<rangle>\<rangle>"

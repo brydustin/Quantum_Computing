@@ -172,7 +172,7 @@ proof
   hence "\<exists>x \<in> set e. x \<noteq> 0" by (simp add: hamming_weight_pos_iff)
   then obtain x where x_in: "x \<in> set e" and x_nz: "x \<noteq> 0" by blast
   from x_in obtain i where i_lt: "i < length e" and x_eq: "e ! i = x"
-    by (metis in_set_conv_nth)
+    by (auto simp: in_set_conv_nth)
   from x_in bits_e have x_lt: "x < 2" by simp
   from x_nz x_lt x_eq have ei_one: "e ! i = 1" by linarith
 
@@ -254,7 +254,7 @@ proof
   thus "take 7 w \<in> bin_words 7 \<and> w = notes_hamming_encode (take 7 w)" using a w by simp
 next
   assume "take 7 w \<in> bin_words 7 \<and> w = notes_hamming_encode (take 7 w)"
-  thus "w \<in> notes_hamming_code" unfolding notes_hamming_code_def by (metis image_eqI)
+  thus "w \<in> notes_hamming_code" unfolding notes_hamming_code_def by (blast intro: image_eqI)
 qed
 
 lemma bin_words_iff: "w \<in> bin_words n \<longleftrightarrow> length w = n \<and> set w \<subseteq> {0, 1}"
@@ -290,7 +290,7 @@ proof
 qed simp
 
 lemma mod2_eq_iff: "(p::nat) mod 2 = q mod 2 \<longleftrightarrow> (even p \<longleftrightarrow> even q)"
-  by (metis even_iff_mod_2_eq_zero mod2_eq_if)
+  by (auto simp: mod2_eq_if)
 
 text \<open>The encoding is linear over $\mathbb Z_2$.\<close>
 
