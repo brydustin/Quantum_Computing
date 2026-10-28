@@ -948,81 +948,33 @@ theorem pd_iff_spanning:
   shows "pd P \<longleftrightarrow>
          (\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> x \<noteq> 0\<^sub>v n \<longrightarrow>
             (\<exists>v \<in> set vs. \<langle>v | x\<rangle> \<noteq> 0))"
-proof
-  assume pdP: "pd P"
-  show "\<forall>x. dim_vec x = n \<longrightarrow> x \<noteq> 0\<^sub>v n \<longrightarrow> (\<exists>v \<in> set vs. \<langle>v | x\<rangle> \<noteq> 0)"
-  proof (intro allI impI)
-    fix x :: "complex Matrix.vec"
-    assume xdim: "dim_vec x = n" and xne: "x \<noteq> 0\<^sub>v n"
-    show "\<exists>v\<in>set vs. \<langle>v | x\<rangle> \<noteq> 0"
-    proof (rule ccontr)
-      assume nex: "\<not> (\<exists>v\<in>set vs. \<langle>v | x\<rangle> \<noteq> 0)"
-      let ?M = "mat_of_cols n vs"
-      let ?y = "(?M\<^sup>\<dagger>) *\<^sub>v x"
-      have ydim: "dim_vec ?y = length vs"
-        using xdim vs_dim by (simp add: mat_of_cols_def)
-      have yzero: "?y = 0\<^sub>v (length vs)"
-      proof (rule eq_vecI)
-        show "dim_vec ((mat_of_cols n vs)\<^sup>\<dagger> *\<^sub>v x) = dim_vec (0\<^sub>v (length vs))"
-          using ydim by simp
-      next
-        fix i
-        assume i: "i < dim_vec (0\<^sub>v (length vs))"
-        then have ilt: "i < length vs"
-          by simp
-        have "?y $ i = \<langle>vs ! i | x\<rangle>"
-          using mat_of_cols_dagger_mult_vec_index[OF xdim vs_dim ilt] .
-        also have "\<dots> = 0"
-          using nex ilt by auto
-        finally show "((mat_of_cols n vs)\<^sup>\<dagger> *\<^sub>v x) $ i = 0\<^sub>v (length vs) $ i"
-          using ilt by simp
-      qed
-      have qzero: "\<langle>x | P *\<^sub>v x\<rangle> = 0"
-        using inner_prod_outer_sum_general[OF xdim vs_dim] decomp yzero ydim by simp
-      have "Re (\<langle>x | P *\<^sub>v x\<rangle>) > 0"
-        using pdP xdim xne sq unfolding pd_def by auto
-      then show False
-        using qzero by simp
-    qed
+proof -
+  let ?y = "\<lambda>x. (mat_of_cols n vs)\<^sup>\<dagger> *\<^sub>v x"
+  have yd: "dim_vec (?y x) = length vs" for x by (simp add: mat_of_cols_def)
+  have yi: "?y x $ i = \<langle>vs ! i | x\<rangle>" if "dim_vec x = n" "i < length vs" for x i
+    by (rule mat_of_cols_dagger_mult_vec_index[OF that(1) vs_dim that(2)])
+  have y0: "?y x = 0\<^sub>v (length vs) \<longleftrightarrow> (\<forall>v \<in> set vs. \<langle>v | x\<rangle> = 0)" if x: "dim_vec x = n" for x
+    unfolding all_set_conv_all_nth
+  proof (intro iffI allI impI)
+    fix i assume z: "?y x = 0\<^sub>v (length vs)" and i: "i < length vs"
+    from arg_cong[OF z, where f = "\<lambda>z. z $ i"] show "\<langle>vs ! i | x\<rangle> = 0" unfolding yi[OF x i] using i by simp
+  next
+    assume a: "\<forall>i<length vs. \<langle>vs ! i | x\<rangle> = 0"
+    show "?y x = 0\<^sub>v (length vs)"
+    proof (intro eq_vecI)
+      fix i assume "i < dim_vec (0\<^sub>v (length vs))"
+      hence i: "i < length vs" by simp
+      show "?y x $ i = 0\<^sub>v (length vs) $ i" unfolding yi[OF x i] using a i by simp
+    qed (simp add: yd)
   qed
-next
-  assume spanning: "\<forall>x. dim_vec x = n \<longrightarrow> x \<noteq> 0\<^sub>v n \<longrightarrow> (\<exists>v \<in> set vs. \<langle>v | x\<rangle> \<noteq> 0)"
-  have herm: "hermitian P"
-    using decomp outer_sum_hermitian unfolding hermitian_def by simp
-  have pos:
-    "\<forall>x :: complex Matrix.vec. dim_vec x = dim_row P \<longrightarrow>
-       x \<noteq> 0\<^sub>v (dim_row P) \<longrightarrow> 0 < Re \<langle>x | P *\<^sub>v x\<rangle>"
-  proof (intro allI impI)
-    fix x :: "complex Matrix.vec"
-    assume xdimP: "dim_vec x = dim_row P"
-      and xneP: "x \<noteq> 0\<^sub>v (dim_row P)"
-    have Pdim: "dim_row P = n"
-      using sq by simp
-    have xdim: "dim_vec x = n"
-      using xdimP Pdim by simp
-    have xne: "x \<noteq> 0\<^sub>v n"
-      using xneP Pdim by simp
-    let ?M = "mat_of_cols n vs"
-    let ?y = "(?M\<^sup>\<dagger>) *\<^sub>v x"
-    have ydim: "dim_vec ?y = length vs"
-      using xdim vs_dim by (simp add: mat_of_cols_def)
-    obtain v where vset: "v \<in> set vs" and inn_ne: "\<langle>v | x\<rangle> \<noteq> 0"
-      using spanning xdim xne by blast
-    obtain i where ilt: "i < length vs" and vi: "vs ! i = v"
-      using vset by (metis in_set_conv_nth)
-    have yi_ne: "?y $ i \<noteq> 0"
-      using mat_of_cols_dagger_mult_vec_index[OF xdim vs_dim ilt] inn_ne vi by simp
-    have yne: "?y \<noteq> 0\<^sub>v (length vs)"
-      using ilt yi_ne by force
-    have qeq: "\<langle>x | P *\<^sub>v x\<rangle> = \<langle>?y | ?y\<rangle>"
-      using inner_prod_outer_sum_general[OF xdim vs_dim] decomp by simp
-    have "0 < Re \<langle>?y | ?y\<rangle>"
-      using inner_prod_with_itself_Re_non0 ydim yne by presburger
-    thus "0 < Re \<langle>x | P *\<^sub>v x\<rangle>"
-      using qeq by presburger
-  qed
-  show "pd P"
-    unfolding pd_def using herm pos by simp
+  have q: "\<langle>x | P *\<^sub>v x\<rangle> = \<langle>?y x | ?y x\<rangle>" if "dim_vec x = n" for x
+    unfolding decomp by (rule inner_prod_outer_sum_general[OF that vs_dim])
+  have pos_iff: "0 < Re \<langle>?y x | ?y x\<rangle> \<longleftrightarrow> ?y x \<noteq> 0\<^sub>v (length vs)" for x
+    using inner_prod_with_itself_Re_non0[of "?y x"] inner_prod_self_eq_zero_iff[of "?y x"] yd[of x] by auto
+  have herm: "hermitian P" unfolding decomp hermitian_def by (rule outer_sum_hermitian)
+  have key: "0 < Re \<langle>x | P *\<^sub>v x\<rangle> \<longleftrightarrow> (\<exists>v \<in> set vs. \<langle>v | x\<rangle> \<noteq> 0)" if x: "dim_vec x = n" for x
+    unfolding q[OF x] pos_iff y0[OF x] by blast
+  show ?thesis unfolding pd_def carrier_matD(1)[OF sq] using herm key by blast
 qed
 
 subsection \<open>The positive square root\<close>

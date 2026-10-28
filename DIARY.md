@@ -1395,3 +1395,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Day 4 1742 → 1705.  Trap: `unfolding QQ[symmetric]` with `QQ: psd_sqrt P * psd_sqrt P = P` loops
   (the right-hand side contains P) — rewrite the instantiated fact with `QQ` instead.  Plan:
   `tools/deps/plans/day4e.py`; scratch `wip/d23/D04e.thy`.
+- **Audit tick 33: positive definite iff the frame spans** (2026-10-28).  Day 4's `pd_iff_spanning`
+  (85 lines) is three facts about y = M*x (M the columns vᵢ): yᵢ = ⟨vᵢ|x⟩ (`mat_of_cols_dagger_mult_vec_index`),
+  ⟨x|Px⟩ = ⟨y|y⟩ (`inner_prod_outer_sum_general`), and ⟨y|y⟩ has positive real part iff y ≠ 0; the
+  equivalence is then one `blast`: 40 lines, both presburger calls gone.  Day 4 1705 → 1657.  Plan:
+  `tools/deps/plans/day4f.py`; scratch `wip/d23/D04f.thy`.
