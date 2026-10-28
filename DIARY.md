@@ -1485,3 +1485,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `tools/deps/plans/sweep3.py` (scratch mode over five theories; replacements taken from HEAD by line
   range, so an off-by-one swallows a `qed` — check the generated scratch before running it; identical
   lines in two lemmas need deduplicated replacement).
+- **Audit tick 44: sweep of Days 4, 20, 22_UC, 29, 31** (2026-10-28).  Hermitian entries are
+  `hermitian_index`, associativity is instantiated `assoc_mult_mat(_vec)` under `simp only:`,
+  dimension facts are `carrier_matD`, the Hilbert–Schmidt additivity is `hs_inner_prod_left_add`,
+  list and parity facts are `auto`/`blast`, the norm bound is `power2_le_imp_le`; Day 31's
+  $\braket\psi{\rho\psi}=|\braket\psi{\psi'}|^2$ is one `unfolding` and `fidelity_self` is two lines
+  through `cpx_vec_length_one_iff`.  18 metis/smt sites → 0 in the five theories (32 lines shorter);
+  statement check: nothing added, missing or changed.  Plan: `tools/deps/plans/sweep4.py`, whose
+  `--scratch` now writes one check theory per day: a single scratch importing all five days checks
+  Day 4's proofs under Day 31's simp set, where untouched steps fail.
