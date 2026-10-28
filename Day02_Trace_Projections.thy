@@ -590,6 +590,31 @@ lemma outer_prod_carrier:
   shows "v \<oslash> w \<in> carrier_mat n m"
   using assms by (simp add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def carrier_matI)
 
+text \<open>$\Tr(A\,\ketbra vv)=\braket v{Av}$.\<close>
+
+lemma Tr_mult_outer:
+  fixes A :: "complex Matrix.mat" and v :: "complex Matrix.vec"
+  assumes A: "A \<in> carrier_mat n n" and v: "dim_vec v = n"
+  shows "Tr (A * (v \<oslash> v)) = \<langle>v | A *\<^sub>v v\<rangle>"
+proof -
+  define Ov where "Ov = v \<oslash> v"
+  have oc: "Ov \<in> carrier_mat n n" unfolding Ov_def by (rule outer_prod_carrier[OF v v])
+  have Av: "dim_vec (A *\<^sub>v v) = n" using A by simp
+  have "Tr (A * Ov) = (\<Sum>r<n. (A * Ov) $$ (r,r))" using A oc by (simp add: Tr_def)
+  also have "\<dots> = (\<Sum>r<n. \<Sum>k<n. A $$ (r,k) * (v $ k * cnj (v $ r)))"
+  proof (rule sum.cong[OF refl])
+    fix r assume "r \<in> {..<n}"
+    hence r: "r < n" by simp
+    show "(A * Ov) $$ (r,r) = (\<Sum>k<n. A $$ (r,k) * (v $ k * cnj (v $ r)))"
+      unfolding mat_mult_entry[OF A oc r r]
+      by (rule sum.cong[OF refl]) (use r v in \<open>simp add: Ov_def outer_prod_index\<close>)
+  qed
+  also have "\<dots> = (\<Sum>r<n. cnj (v $ r) * (A *\<^sub>v v) $ r)"
+    by (rule sum.cong[OF refl]) (use A v in \<open>auto simp: scalar_prod_def sum_distrib_left mult_ac atLeast0LessThan\<close>)
+  also have "\<dots> = \<langle>v | A *\<^sub>v v\<rangle>" unfolding inner_prod_sum[OF v Av] atLeast0LessThan ..
+  finally show ?thesis unfolding Ov_def .
+qed
+
 text \<open>$\ketbra ww$ is idempotent for a unit vector $w$: $(ww^*)(ww^*)=w(w^*w)w^*$.\<close>
 
 lemma outer_prod_idempotent:

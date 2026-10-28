@@ -1256,3 +1256,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   terminal `by` backtracks out of it) — apply `rule exI[of _ a], rule exI[of _ b], …` in sequence; a final
   `auto` over carrier facts of U*DU* products ran away — give each conjunct as an intro rule.
   Plan: `tools/deps/plans/day18.py`; scratch `wip/d23/D18.thy`.
+- **Audit tick 18: the pure-state probability as a trace** (2026-10-27).  Day 13's
+  `pure_state_prob_trace` (174 lines of entry sums) is three steps: Tr(M*M |ψ⟩⟨ψ|) = ⟨ψ|M*Mψ⟩
+  (`Tr_mult_outer`), = ⟨Mψ|Mψ⟩ (`inner_prod_adjoint_swap`), = ‖Mψ‖² (`cpx_vec_length_inner_prod`).
+  `Tr_mult_outer` (Tr(A|v⟩⟨v|) = ⟨v|Av⟩) lived in Day 26 although it uses only Day 2 facts; it now
+  sits in Day 2 after `outer_prod_carrier`, where Days 13 and 26 both find it.  Plan:
+  `tools/deps/plans/day13.py`; scratch `wip/d23/D13.thy`.
