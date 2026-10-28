@@ -219,27 +219,8 @@ lemma closed_block_sum_eq:
   assumes a: "a < CARD('d :: finite)" and b: "b < CARD('d)"
   shows "closed {M :: (complex, 'n :: finite \<times> 'd, 'n \<times> 'd) lmat.
                   (\<Sum>i<CARD('n). unwrap_lm M $$ (i * CARD('d) + a, i * CARD('d) + b)) = c}"
-proof -
-  have cont: "continuous_on UNIV (\<lambda>M :: (complex, 'n \<times> 'd, 'n \<times> 'd) lmat.
-                 \<Sum>i<CARD('n). unwrap_lm M $$ (i * CARD('d) + a, i * CARD('d) + b))"
-  proof (rule continuous_on_sum)
-    fix i assume "i \<in> {..<CARD('n)}"
-    hence i: "i < CARD('n)" by simp
-    have "i * CARD('d) + a < CARD('n \<times> 'd)" "i * CARD('d) + b < CARD('n \<times> 'd)"
-      using mult_index_lt[OF i a] mult_index_lt[OF i b] by (simp_all add: card_prod)
-    thus "continuous_on UNIV (\<lambda>M :: (complex, 'n \<times> 'd, 'n \<times> 'd) lmat. unwrap_lm M $$ (i * CARD('d) + a, i * CARD('d) + b))"
-      by (rule continuous_on_unwrap_lm_index)
-  qed
-  have eq: "{M :: (complex, 'n \<times> 'd, 'n \<times> 'd) lmat. (\<Sum>i<CARD('n). unwrap_lm M $$ (i * CARD('d) + a, i * CARD('d) + b)) = c}
-          = (\<lambda>M. \<Sum>i<CARD('n). unwrap_lm M $$ (i * CARD('d) + a, i * CARD('d) + b)) -` {c}" by auto
-  show ?thesis unfolding eq
-  proof (rule continuous_closed_vimage)
-    show "closed {c}" by simp
-    fix M show "continuous (at M) (\<lambda>M :: (complex, 'n \<times> 'd, 'n \<times> 'd) lmat.
-                   \<Sum>i<CARD('n). unwrap_lm M $$ (i * CARD('d) + a, i * CARD('d) + b))"
-      using cont continuous_on_eq_continuous_at by blast
-  qed
-qed
+  by (intro closed_Collect_eq continuous_on_const continuous_on_sum continuous_on_unwrap_lm_index)
+     (use mult_index_lt[OF _ a] mult_index_lt[OF _ b] in auto)
 
 lemma closed_ucp_choi_set: "closed (ucp_choi_set :: (complex, 'n :: finite \<times> 'd :: finite, 'n \<times> 'd) lmat set)"
 proof -

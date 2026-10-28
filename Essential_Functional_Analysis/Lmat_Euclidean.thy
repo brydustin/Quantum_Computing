@@ -752,6 +752,26 @@ lemma continuous_on_unwrap_lm_index:
   using isCont_unwrap_lm_index[OF ij]
   by (intro continuous_at_imp_continuous_on) auto
 
+lemma continuous_on_unwrap_lm_index_comp [continuous_intros]:
+  fixes f :: "'b :: topological_space \<Rightarrow> ('a :: real_normed_vector, 'm :: finite, 'n :: finite) lmat"
+  assumes "continuous_on S f" and "i < CARD('m)" and "j < CARD('n)"
+  shows "continuous_on S (\<lambda>x. unwrap_lm (f x) $$ (i, j))"
+  by (rule continuous_on_compose2[OF continuous_on_unwrap_lm_index[where S = UNIV, OF assms(2,3)] assms(1)]) simp
+
+text \<open>Conversely, a map into lmat is continuous when all its entries are.\<close>
+
+lemma continuous_on_lmat_entries:
+  fixes f :: "'b :: t2_space \<Rightarrow> ('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat"
+  assumes "\<And>i j. i < CARD('m) \<Longrightarrow> j < CARD('n) \<Longrightarrow> continuous_on S (\<lambda>x. unwrap_lm (f x) $$ (i, j))"
+  shows "continuous_on S f"
+proof (subst continuous_on_componentwise, intro ballI)
+  fix b :: "('a, 'm, 'n) lmat" assume "b \<in> Basis"
+  then obtain i j u where b: "b = lmat_axis i j u" and ij: "i < CARD('m)" "j < CARD('n)"
+    unfolding Basis_lmat_def Basis_lmat_set_def by auto
+  show "continuous_on S (\<lambda>x. inner (f x) b)"
+    unfolding b inner_lmat_axis[OF ij] by (intro continuous_intros assms ij)
+qed
+
 lemma unwrap_wrap_lm:
   fixes M :: "complex Matrix.mat"
   assumes "M \<in> carrier_mat CARD('k::finite) CARD('k)"

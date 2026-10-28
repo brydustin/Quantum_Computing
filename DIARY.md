@@ -1548,3 +1548,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   unfolding.  Eight lemmas, 274 lines deleted, 31 added; statements unchanged.  Plan:
   `tools/deps/plans/sweep13.py`.  Lesson: the hypothesis $\forall ij.\,M_{ij}=\overline{M_{ji}}$ is a looping
   rewrite rule — instantiate it once.
+- **Audit tick 54: the last hand-built topology** (2026-10-28).  The bundle gains
+  `continuous_on_lmat_entries` (a map into lmat is continuous when its entries are, by
+  `continuous_on_componentwise` + `inner_lmat_axis`; the domain must be `t2_space`) and the
+  `continuous_intros` rule `continuous_on_unwrap_lm_index_comp`; Day 28's continuity of
+  $(\sigma,\tau)\mapsto\sigma\otimes\tau$ is then one entry formula (122 lines → 13) and Day 22's block-sum
+  set is `closed_Collect_eq` (26 → 5).  Statement check: the two bundle lemmas added.  Plan:
+  `tools/deps/plans/sweep14.py`.
