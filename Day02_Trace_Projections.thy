@@ -70,7 +70,8 @@ lemma mat_unit_orthonormal:
       and l_lt: "l < n"
   shows "\<langle>\<langle> E\<lbrakk>i,j ; m,n\<rbrakk> | E\<lbrakk>k,l ; m,n\<rbrakk> \<rangle>\<rangle> =
          (if i = k \<and> j = l then 1 else 0)"
-  by (metis hs_inner_prod_mat_unit_left i_lt j_lt mat_unit_dim_col mat_unit_dim_row mat_unit_index)
+  using hs_inner_prod_mat_unit_left[of i "E\<lbrakk>k,l ; m,n\<rbrakk>" j] assms
+  by (simp add: mat_unit_index mat_unit_dim_row mat_unit_dim_col)
 
 text \<open>Expansion in the basis $\{E_{ij}\}$, stated entrywise because matrices of
 different dimensions cannot be added in the library.\<close>
@@ -139,32 +140,12 @@ lemma Tr_mat_unit:
   assumes i_lt: "i < m"
       and j_lt: "j < n"
   shows "Tr (E\<lbrakk>i,j ; m,n\<rbrakk>) = (if i = j then 1 else 0)"
-proof (cases "i = j")
-  case True
-  have "Tr (E\<lbrakk>i,j ; m,n\<rbrakk>) =
-        (\<Sum>r<m. if r < n then (E\<lbrakk>i,j ; m,n\<rbrakk>) $$ (r,r) else 0)"
-    by (simp add: Tr_def)
-  also have "... =
-        (\<Sum>r<m. if r < n then (if r = i \<and> r = j then 1 else 0) else 0)"
-    by (intro sum.cong refl) simp
-  also have "... = (\<Sum>r<m. if r = i then 1 else 0)"
-    by (metis True j_lt)  
-  also have "... = 1"
-    using i_lt by simp
-  finally show ?thesis
-    using True by simp
-next
-  case False
-  have "Tr (E\<lbrakk>i,j ; m,n\<rbrakk>) =
-        (\<Sum>r<m. if r < n then (E\<lbrakk>i,j ; m,n\<rbrakk>) $$ (r,r) else 0)"
-    by (simp add: Tr_def)
-  also have "... =
-        (\<Sum>r<m. if r < n then (if r = i \<and> r = j then 1 else 0) else 0)"
-    by (intro sum.cong refl) simp
-  also have "... = 0"
-    by (simp add: False sum.neutral)
-  finally show ?thesis
-    using False by simp
+proof -
+  have "Tr (E\<lbrakk>i,j ; m,n\<rbrakk>) = (\<Sum>r<m. if r < n then (if r = i \<and> r = j then 1 else 0) else 0)"
+    unfolding Tr_def by (intro sum.cong refl) auto
+  also have "\<dots> = (\<Sum>r<m. if r = i \<and> i = j then 1 else 0)"
+    using j_lt by (intro sum.cong refl) auto
+  finally show ?thesis using i_lt by simp
 qed
 
 text \<open>So $\Tr E_{ij}=\delta_{ij}$, and since $\langle E_{rr}|X\rangle=x_{rr}$,
@@ -186,19 +167,13 @@ lemma Tr_hs_diagonal_sum:
             if r < dim_col x
             then \<langle>\<langle> E\<lbrakk>r,r ; (dim_row x), (dim_col x)\<rbrakk> | x \<rangle>\<rangle>
             else 0)"
-  by (smt (verit, ccfv_threshold) Tr_def hs_inner_prod_mat_unit_left lessThan_iff sum.cong)
+  unfolding Tr_def by (intro sum.cong refl) (simp add: hs_inner_prod_mat_unit_left cong: if_cong)
 
 corollary Tr_hs_diagonal_sum_square:
   assumes rows: "dim_row x = n"
       and cols: "dim_col x = n"
   shows "Tr x = (\<Sum>r<n. \<langle>\<langle> E\<lbrakk>r,r ; n,n\<rbrakk> | x \<rangle>\<rangle>)"
-proof -
-  have "Tr x = (\<Sum>r<n. x $$ (r,r))"
-    using rows cols by (simp add: Tr_def)
-  also have "... = (\<Sum>r<n. \<langle>\<langle> E\<lbrakk>r,r ; n,n\<rbrakk> | x \<rangle>\<rangle>)"
-    by (intro sum.cong refl, metis cols hs_inner_prod_mat_unit_left lessThan_iff rows)
-  finally show ?thesis.
-qed
+  unfolding Tr_hs_diagonal_sum[of x] rows cols by simp
 
 text \<open>The trace is linear.\<close>
 
@@ -241,23 +216,19 @@ proof -
 qed
 
 corollary Tr_uminus: "Tr (- x) = - Tr x"
-  by (smt (verit, ccfv_threshold) Tr_add add_cancel_right_right add_eq_0_iff carrier_mat_triv 
-      index_uminus_mat(2,3) index_zero_mat(2,3)
-      right_add_zero_mat uminus_l_inv_mat uminus_uminus_mat)
+proof -
+  have "Tr (- x) + Tr x = Tr (0\<^sub>m (dim_row x) (dim_col x))"
+    using Tr_add[of "- x" x] by (simp add: uminus_l_inv_mat[OF carrier_mat_triv, of x])
+  also have "\<dots> = 0" unfolding Tr_def by (intro sum.neutral ballI) simp
+  finally show ?thesis by (simp add: eq_neg_iff_add_eq_0)
+qed
 
 corollary Tr_diff:
   assumes rows: "dim_row x = dim_row y"
       and cols: "dim_col x = dim_col y"
   shows "Tr (x - y) = Tr x - Tr y"
-proof -
-  have "Tr (x - y) = Tr (x + (- y))"
-    by (metis carrier_mat_triv cols minus_add_uminus_mat rows)
-  also have "... = Tr x + Tr (- y)"
-    using rows cols by (intro Tr_add) simp_all
-  also have "... = Tr x - Tr y"
-    by (simp add: Tr_uminus)
-  finally show ?thesis.
-qed
+  unfolding minus_add_uminus_mat[OF carrier_mat_triv carrier_matI[OF rows[symmetric] cols[symmetric]]]
+  using rows cols by (simp add: Tr_add Tr_uminus)
 
 lemma Tr_zero_mat [simp]:
   shows "Tr (Matrix.mat m n (\<lambda>(r,c). 0)) = 0"
@@ -364,39 +335,20 @@ lemma Tr_unitary_conjugation:
   shows "Tr ((U\<^sup>\<dagger>) * A * U) = Tr(A)"
 proof -
   have "Tr ((U\<^sup>\<dagger>) * A * U) = Tr (U * ((U\<^sup>\<dagger>) * A))"
-    by (metis Acol Tr_cyclic dim_row_of_dagger index_mult_mat(2,3))
-  also have "... = Tr (((1\<^sub>m (dim_row U)) * A))"
-    by (smt (verit, ccfv_SIG) Arow Uu assoc_mult_mat carrier_mat_triv dagger_of_dagger_is_id dim_row_of_dagger unitary_def)
-  finally show ?thesis
-    by (metis Arow left_mult_one_mat')
+    by (rule Tr_cyclic) (simp_all add: Arow Acol)
+  also have "U * ((U\<^sup>\<dagger>) * A) = (U * (U\<^sup>\<dagger>)) * A"
+    by (rule assoc_mult_mat[OF carrier_mat_triv dagger_carrier[OF carrier_mat_triv] carrier_matI[OF Arow refl], symmetric])
+  also have "U * (U\<^sup>\<dagger>) = 1\<^sub>m (dim_row U)" using Uu unfolding unitary_def by simp
+  finally show ?thesis using Arow by (simp add: left_mult_one_mat')
 qed
 
 lemma hs_inner_prod_as_trace:
   assumes rows: "dim_row A = dim_row B"
       and cols: "dim_col A = dim_col B"
   shows "\<langle>\<langle> A | B \<rangle>\<rangle> = Tr ((A\<^sup>\<dagger>) * B)"
-proof -
-  let ?m = "dim_row A" and ?n = "dim_col A"
-  have "\<langle>\<langle> A | B \<rangle>\<rangle> = (\<Sum>i<?m. \<Sum>j<?n. cnj (A $$ (i,j)) * B $$ (i,j))"
-    using rows cols by (simp add: hs_inner_prod_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>j<?n. \<Sum>i<?m. cnj (A $$ (i,j)) * B $$ (i,j))"
-    by (rule sum.swap)
-  also have "\<dots> = (\<Sum>j<?n. (A\<^sup>\<dagger> * B) $$ (j,j))"
-  proof (intro sum.cong refl)
-    fix j 
-    assume "j \<in> {..<?n}"
-    then have j_lt: "j < ?n" by simp
-    have "(A\<^sup>\<dagger> * B) $$ (j,j) = (\<Sum>i<?m. (A\<^sup>\<dagger>) $$ (j,i) * B $$ (i,j))"
-      using j_lt rows cols by simp
-    also have "\<dots> = (\<Sum>i<?m. cnj (A $$ (i,j)) * B $$ (i,j))"
-      by (intro sum.cong refl, metis dagger_def index_mat(1) j_lt lessThan_iff old.prod.case)
-    finally show "(\<Sum>i<?m. cnj (A $$ (i,j)) * B $$ (i,j)) = (A\<^sup>\<dagger> * B) $$ (j,j)"
-      by simp
-  qed
-  also have "\<dots> = Tr (A\<^sup>\<dagger> * B)"
-    using rows cols by (simp add: Tr_def)
-  finally show ?thesis.
-qed
+  unfolding Tr_mult_entry[OF dagger_carrier[OF carrier_mat_triv] carrier_matI[OF rows[symmetric] cols[symmetric]]]
+  using rows cols
+  by (simp add: hs_inner_prod_def atLeast0LessThan dagger_def sum.swap[of _ "{..<dim_row B}" "{..<dim_col B}"])
 
 corollary hs_inner_prod_self_as_trace:
   shows "\<langle>\<langle> A | A \<rangle>\<rangle> = Tr ((A\<^sup>\<dagger>) * A)"
@@ -769,16 +721,9 @@ lemma cols_mat_dagger_right:
       and full: "length vs = n"
   shows "(mat_of_cols n vs) * ((mat_of_cols n vs)\<^sup>\<dagger>) = 1\<^sub>m n"
 proof -
-  let ?V = "mat_of_cols n vs"
-  have left: "?V\<^sup>\<dagger> * ?V = 1\<^sub>m n"
-    using cols_mat_dagger_left[OF orth] full by simp
-  then have "inverts_mat (?V\<^sup>\<dagger>) ?V"
-    by (simp add: full inverts_mat_def)
-  then have "inverts_mat ?V (?V\<^sup>\<dagger>)"
-    by (metis dim_col_of_dagger full inverts_mat_sym
-        mat_of_cols_carrier(2,3) square_mat.elims(3))
-  then show ?thesis
-    by (simp add: inverts_mat_def full)
+  have Vc: "mat_of_cols n vs \<in> carrier_mat n n" using mat_of_cols_carrier(1)[of n vs] unfolding full .
+  show ?thesis
+    by (rule mat_mult_left_right_inverse[OF dagger_carrier[OF Vc] Vc cols_mat_dagger_left[OF orth, unfolded full]])
 qed
 
 text \<open>For a full basis ($k=n$) $V$ is square, so $V^*V=I$ forces $VV^*=I$ as well.  Entrywise
@@ -833,26 +778,18 @@ lemma outer_sum_apply:
       and i_lt: "i < n"
   shows "(outer_sum n vs *\<^sub>v x) $ i =  (\<Sum>l < length vs. \<langle>vs ! l | x\<rangle> * (vs ! l) $ i)"
 proof -
-  let ?V = "mat_of_cols n vs"
-  let ?k = "length vs"
-  have "(outer_sum n vs *\<^sub>v x) $ i = Matrix.row (outer_sum n vs) i \<bullet> x"
-    using i_lt xdim by simp
-  also have "\<dots> = (\<Sum>j<n. (outer_sum n vs) $$ (i,j) * x $ j)"
-    using i_lt xdim  lessThan_atLeast0 by (simp add: scalar_prod_def)
-  also have "\<dots> = (\<Sum>j<n. (\<Sum>l<?k. (vs ! l) $ i * cnj ((vs ! l) $ j)) * x $ j)"
-    by (intro sum.cong refl, simp add: outer_sum_index[OF orth i_lt])
-  also have "\<dots> = (\<Sum>j<n. \<Sum>l<?k. (vs ! l) $ i * cnj ((vs ! l) $ j) * x $ j)"
-    by (intro sum.cong refl) (simp add: sum_distrib_right)
-  also have "\<dots> = (\<Sum>l<?k. \<Sum>j<n. (vs ! l) $ i * cnj ((vs ! l) $ j) * x $ j)"
-    by (rule sum.swap)
-  also have "\<dots> = (\<Sum>l<?k. (vs ! l) $ i * (\<Sum>j<n. cnj ((vs ! l) $ j) * x $ j))"
-    by (intro sum.cong refl, 
-        metis (mono_tags, lifting) semigroup_mult_class.mult.assoc sum.cong sum_distrib_left)
-  also have "\<dots> = (\<Sum>l<?k. (vs ! l) $ i * \<langle>vs ! l | x\<rangle>)"
-    using atLeast0LessThan inner_prod_def xdim by (intro sum.cong refl, presburger)   
-  also have "\<dots> = (\<Sum>l<?k. \<langle>vs ! l | x\<rangle> * (vs ! l) $ i)"
-    by (intro sum.cong refl) (simp add: mult.commute)
-  finally show ?thesis.
+  have vd: "dim_vec (vs ! l) = n" if "l < length vs" for l
+    using orth that unfolding orthonormal_list_def by auto
+  have "(outer_sum n vs *\<^sub>v x) $ i = (\<Sum>j<n. (\<Sum>l<length vs. (vs ! l) $ i * cnj ((vs ! l) $ j)) * x $ j)"
+    using i_lt xdim by (simp add: scalar_prod_def atLeast0LessThan outer_sum_index[OF orth i_lt])
+  also have "\<dots> = (\<Sum>j<n. \<Sum>l<length vs. (vs ! l) $ i * (cnj ((vs ! l) $ j) * x $ j))"
+    by (simp add: sum_distrib_right sum_distrib_left algebra_simps)
+  also have "\<dots> = (\<Sum>l<length vs. \<Sum>j<n. (vs ! l) $ i * (cnj ((vs ! l) $ j) * x $ j))" by (rule sum.swap)
+  also have "\<dots> = (\<Sum>l<length vs. (vs ! l) $ i * (\<Sum>j<n. cnj ((vs ! l) $ j) * x $ j))"
+    by (simp add: sum_distrib_left)
+  also have "\<dots> = (\<Sum>l<length vs. \<langle>vs ! l | x\<rangle> * (vs ! l) $ i)"
+    by (intro sum.cong refl) (simp add: inner_prod_sum[OF vd xdim] atLeast0LessThan mult.commute)
+  finally show ?thesis .
 qed
 
 lemma outer_sum_idempotent:
@@ -860,19 +797,14 @@ lemma outer_sum_idempotent:
   shows "outer_sum n vs * outer_sum n vs = outer_sum n vs"
 proof -
   let ?V = "mat_of_cols n vs"
-  let ?k = "length vs"
-
-  have "outer_sum n vs * outer_sum n vs = (?V * (?V\<^sup>\<dagger>)) * (?V * (?V\<^sup>\<dagger>))"
-    by (simp add: outer_sum_def)
-  also have "\<dots> = ?V * ((?V\<^sup>\<dagger>) * ?V) * (?V\<^sup>\<dagger>)"
-    by (metis (no_types, lifting) assoc_mult_mat carrier_mat_triv dim_col_of_dagger 
-        dim_row_of_dagger mat_of_cols_carrier(2) outer_sum_def outer_sum_dim_col)
-  also have "\<dots> = ?V * (1\<^sub>m ?k) * (?V\<^sup>\<dagger>)"
-    using cols_mat_dagger_left[OF orth] by simp
-  also have "\<dots> = ?V * (?V\<^sup>\<dagger>)"
-    by simp
+  have Vc: "?V \<in> carrier_mat n (length vs)" by (rule mat_of_cols_carrier(1))
+  have "outer_sum n vs * outer_sum n vs = ?V * ((?V\<^sup>\<dagger>) * ?V) * (?V\<^sup>\<dagger>)"
+    unfolding outer_sum_def
+              assoc_mult_mat[OF Vc dagger_carrier[OF Vc] mult_carrier_mat[OF Vc dagger_carrier[OF Vc]]]
+              assoc_mult_mat[OF dagger_carrier[OF Vc] Vc dagger_carrier[OF Vc], symmetric]
+              assoc_mult_mat[OF Vc mult_carrier_mat[OF dagger_carrier[OF Vc] Vc] dagger_carrier[OF Vc], symmetric] ..
   also have "\<dots> = outer_sum n vs"
-    by (simp add: outer_sum_def)
+    unfolding cols_mat_dagger_left[OF orth] right_mult_one_mat[OF Vc] outer_sum_def ..
   finally show ?thesis .
 qed
 

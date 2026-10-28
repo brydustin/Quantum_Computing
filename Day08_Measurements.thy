@@ -53,16 +53,6 @@ proof -
   thus ?thesis using q1 unfolding orth by (intro eq_vecI) (auto simp: quantum_state_def)
 qed
 
-lemma outer_proj_idem:
-  assumes q: "quantum_state n \<psi>"
-  shows "(outer_prod \<psi> \<psi>) * (outer_prod \<psi> \<psi>) = outer_prod \<psi> \<psi>"
-  using q by (intro outer_prod_idempotent) (simp add: quantum_state_def)
-
-lemma outer_proj_hermitian:
-  assumes "dim_vec \<psi> = n"
-  shows "(outer_prod \<psi> \<psi>)\<^sup>\<dagger> = outer_prod \<psi> \<psi>"
-  by (rule outer_prod_dagger)
-
 text \<open>Case I: orthogonal states can be distinguished perfectly.\<close>
 
 lemma orthogonal_states_distinguishable:

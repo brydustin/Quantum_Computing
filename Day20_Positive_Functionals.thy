@@ -455,25 +455,6 @@ text \<open>The case $d=1$ of Choi's theorem: for $P=(P_{ij})\in M_r(M_n)^+$ and
 $\braket v{(\phi(P_{ij}))v}=\phi(\sum_{ij}\overline{\alpha_i}\alpha_jP_{ij})=\phi(Y^*PY)\ge0$ with
 $Y$ the block column $(\alpha_iI)_i$.\<close>
 
-lemma phi_entry_double_sum:
-  fixes \<phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
-  assumes f_add: "\<And>X Y. X \<in> carrier_mat n n \<Longrightarrow> Y \<in> carrier_mat n n
-                    \<Longrightarrow> \<phi> (X + Y) = \<phi> X + \<phi> Y"
-      and f_smult: "\<And>c X. X \<in> carrier_mat n n \<Longrightarrow> \<phi> (c \<cdot>\<^sub>m X) = c \<cdot>\<^sub>m \<phi> X"
-      and f_car: "\<And>X. X \<in> carrier_mat n n \<Longrightarrow> \<phi> X \<in> carrier_mat d d"
-      and M_c: "M \<in> carrier_mat n n"
-      and r_lt: "r < d" and c_lt: "c < d"
-      and npos: "0 < n" and dpos: "0 < d"
-  shows "\<phi> M $$ (r, c) =
-         (\<Sum>i<n. \<Sum>j<n. M $$ (i, j) * \<phi> (mat_unit i j n n) $$ (r, c))"
-proof -
-  have L: "lin_on n d (carrier_mat n n) \<phi>" unfolding lin_on_def using f_add f_smult f_car by auto
-  show ?thesis
-    unfolding lin_expansion[OF L M_c]
-    by (subst msum_pairs_index)
-       (use r_lt c_lt in \<open>auto intro!: sum.cong simp: f_car[OF mat_unit_carrier] carrier_matD[OF f_car[OF mat_unit_carrier]]\<close>)
-qed
-
 theorem positive_scalar_is_cp:
   fixes \<phi> :: "complex Matrix.mat \<Rightarrow> complex Matrix.mat"
   assumes linear: "\<And>A B. A \<in> carrier_mat n n \<Longrightarrow> B \<in> carrier_mat n n

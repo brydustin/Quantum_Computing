@@ -1400,3 +1400,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   ⟨x|Px⟩ = ⟨y|y⟩ (`inner_prod_outer_sum_general`), and ⟨y|y⟩ has positive real part iff y ≠ 0; the
   equivalence is then one `blast`: 40 lines, both presburger calls gone.  Day 4 1705 → 1657.  Plan:
   `tools/deps/plans/day4f.py`; scratch `wip/d23/D04f.thy`.
+- **Audit tick 34: Day 2's trace toolkit without metis, and three dead helpers** (2026-10-28).  Eleven
+  Day 2 lemmas (`Tr_mat_unit`, `mat_unit_orthonormal`, `Tr_hs_diagonal_sum(_square)`, `Tr_uminus`,
+  `Tr_diff`, `Tr_unitary_conjugation`, `hs_inner_prod_as_trace`, `cols_mat_dagger_right`, `outer_sum_apply`,
+  `outer_sum_idempotent`) lose their thirteen metis/smt calls: the trace of a product is `Tr_mult_entry`,
+  the right inverse of a square isometry is JNF's `mat_mult_left_right_inverse`, −x cancels against x
+  under `Tr_add`, and the rest is `sum.swap` and `simp`.  Day 2 now has no metis/smt at all
+  (1186 → 1118).  Ticks 21 and 27 had left `outer_proj_idem`, `outer_proj_hermitian` (Day 8) and
+  `phi_entry_double_sum` (Day 20) unused; they are gone.  Plan: `tools/deps/plans/day2c.py`; scratch
+  `wip/d23/D02c.thy`.
