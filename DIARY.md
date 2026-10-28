@@ -1180,3 +1180,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   already explained.  Traps (memory): `[of …]` order follows the premises; `unfolding` is innermost-first;
   `algebra` failed on a ring identity with inner-product atoms; two simp loops on `of_real` products.
   Plan: `tools/deps/plans/schur1.py`; scratch `wip/d23/D03b.thy`.  Next: `schur_induct` (385 lines).
+- **Audit tick 10: Schur's theorem with the library's block matrices** (2026-10-27).  `schur_induct`
+  (385 lines) spent most of itself on `split_block` bookkeeping and two hand-made block products.  Now:
+  the unit eigenvector $v_1$ extends to an orthonormal basis (`unit_vec_extends_to_onb`, kept — Day 22
+  uses it too), $M=U_1^*AU_1$ has first column $\lambda e_1$ (`col_mult2` twice), the block form
+  $M=\begin{pmatrix}\lambda&B\\0&A_3\end{pmatrix}$ is one `eq_matI` with `index_mat_four_block`, and
+  $U^*AU$ for $U=U_1(1\oplus U_2)$ is two applications of JNF's `mult_four_block_mat` (≈95 lines).  The
+  block helpers are now one-liners: `dagger_four_block_mat_complex` (64 → 10, `eq_matI` + `dagger_def`),
+  `block_diag_mult` (65 → 10, `mult_four_block_mat`), `block_diag_unitary` (174 → 16, via the two);
+  `four_block_mat_mult_left_block_diag` (35) is gone.  Day 3: 1569 → ≈1030 lines.  Day 19's Choi
+  sentence trimmed to the display form.  Traps (memory): `X * Y†` is ambiguous (parenthesise the dagger);
+  `mult_four_block_mat` does not fire as a simp rule — apply it by `unfolding` with the eight carrier
+  facts; `right_mult_zero_mat` is not simp; `four_block_carrier_mat` cannot match `Suc n` (use
+  `carrier_matI`); `mat_of_cols` dims reduce to `length vs`, so `len` must be in every such simp set.
+  Plan: `tools/deps/plans/schur2.py`; scratch `wip/d23/D03c.thy`.

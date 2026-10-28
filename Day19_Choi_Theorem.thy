@@ -32,7 +32,7 @@ and \<open>choi_unital_iff\<close> below.\<close>
 subsection \<open>The Choi matrix\<close>
 
 text \<open>$P_\Phi\in M_n(M_d)$ is the block matrix with $(a,b)$ block $\Phi(E_{ab})$.  It is linear in $\Phi$.
-The formal text writes it \<open>choi_matrix n d \<Phi>\<close> (displayed \<open>P\<^sub>\<Phi> n d \<Phi>\<close>), with the dimensions explicit.\<close>
+Formally \<open>choi_matrix n d \<Phi>\<close>, displayed \<open>P\<^sub>\<Phi> n d \<Phi>\<close>.\<close>
 
 definition choi_matrix :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
   "choi_matrix n d \<Phi> \<equiv>

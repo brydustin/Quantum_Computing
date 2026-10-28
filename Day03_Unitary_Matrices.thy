@@ -456,62 +456,7 @@ lemma dagger_four_block_mat_complex:
       and D: "D \<in> carrier_mat nr2 nc2"
   shows "(four_block_mat A B C D)\<^sup>\<dagger> =
          four_block_mat (A\<^sup>\<dagger>) (C\<^sup>\<dagger>) (B\<^sup>\<dagger>) (D\<^sup>\<dagger>)"
-proof (rule eq_matI)
-  show "dim_row ((four_block_mat A B C D)\<^sup>\<dagger>) =
-        dim_row (four_block_mat (A\<^sup>\<dagger>) (C\<^sup>\<dagger>) (B\<^sup>\<dagger>) (D\<^sup>\<dagger>))"
-    using assms
-    by (simp add: dagger_def cpx_mat_cnj_def)
-  show "dim_col ((four_block_mat A B C D)\<^sup>\<dagger>) =
-        dim_col (four_block_mat (A\<^sup>\<dagger>) (C\<^sup>\<dagger>) (B\<^sup>\<dagger>) (D\<^sup>\<dagger>))"
-    using assms
-    by (simp add: dagger_def cpx_mat_cnj_def)
-next
-  fix i j
-  assume i_rhs: "i < dim_row (four_block_mat (A\<^sup>\<dagger>) (C\<^sup>\<dagger>) (B\<^sup>\<dagger>) (D\<^sup>\<dagger>))"
-  assume j_rhs: "j < dim_col (four_block_mat (A\<^sup>\<dagger>) (C\<^sup>\<dagger>) (B\<^sup>\<dagger>) (D\<^sup>\<dagger>))"
-  have i: "i < dim_row ((four_block_mat A B C D)\<^sup>\<dagger>)"
-    using i_rhs assms by (simp add: dagger_def cpx_mat_cnj_def)
-  have j: "j < dim_col ((four_block_mat A B C D)\<^sup>\<dagger>)"
-    using j_rhs assms by (simp add: dagger_def cpx_mat_cnj_def)
-  have i_bound: "i < nc1 + nc2"
-    and j_bound: "j < nr1 + nr2"
-    using assms i j by (simp_all add: dagger_def cpx_mat_cnj_def)
-  consider
-      (UL) "j < nr1" "i < nc1"
-    | (UR) "j < nr1" "\<not> i < nc1"
-    | (LL) "\<not> j < nr1" "i < nc1"
-    | (LR) "\<not> j < nr1" "\<not> i < nc1"
-    by blast
-  then show "((four_block_mat A B C D)\<^sup>\<dagger>) $$ (i,j) =
-             (four_block_mat (A\<^sup>\<dagger>) (C\<^sup>\<dagger>) (B\<^sup>\<dagger>) (D\<^sup>\<dagger>)) $$ (i,j)"
-  proof cases
-    case UL
-    then show ?thesis
-      using assms i_bound j_bound
-      by (simp add: dagger_def cpx_mat_cnj_def)
-  next
-    case UR
-    then have "i - nc1 < nc2"
-      using i_bound by linarith
-    then show ?thesis
-      using assms UR i_bound j_bound
-      by (simp add: dagger_def cpx_mat_cnj_def)
-  next
-    case LL
-    then have "j - nr1 < nr2"
-      using j_bound by linarith
-    then show ?thesis
-      using assms LL i_bound j_bound
-      by (simp add: dagger_def cpx_mat_cnj_def)
-  next
-    case LR
-    then have "j - nr1 < nr2" and "i - nc1 < nc2"
-      using i_bound j_bound by linarith+
-    then show ?thesis
-      using assms LR i_bound j_bound
-      by (simp add: dagger_def cpx_mat_cnj_def)
-  qed
-qed
+  using assms unfolding dagger_def by (intro eq_matI) auto
 
 lemma dagger_zero_mat[simp]:
   "(0\<^sub>m m n :: complex Matrix.mat)\<^sup>\<dagger> = 0\<^sub>m n m"
@@ -526,61 +471,8 @@ lemma block_diag_mult:
   shows "four_block_mat A (0\<^sub>m n m) (0\<^sub>m m n) D *
          four_block_mat B (0\<^sub>m n m) (0\<^sub>m m n) E =
          four_block_mat (A * B) (0\<^sub>m n m) (0\<^sub>m m n) (D * E)"
-proof -
-  have raw:
-    "four_block_mat A (0\<^sub>m n m) (0\<^sub>m m n) D *
-     four_block_mat B (0\<^sub>m n m) (0\<^sub>m m n) E =
-     four_block_mat (A * B + 0\<^sub>m n m * 0\<^sub>m m n)
-       (A * 0\<^sub>m n m + 0\<^sub>m n m * E)
-       (0\<^sub>m m n * B + D * 0\<^sub>m m n)
-       (0\<^sub>m m n * 0\<^sub>m n m + D * E)"
-    by (rule mult_four_block_mat[OF A _ _ D B _ _ E]) auto
-  have z11: "0\<^sub>m n m * (0\<^sub>m m n :: complex Matrix.mat) = 0\<^sub>m n n"
-    by (rule left_mult_zero_mat) simp
-  have z12a: "A * 0\<^sub>m n m = 0\<^sub>m n m"
-    by (rule right_mult_zero_mat[OF A])
-  have z12b: "0\<^sub>m n m * E = 0\<^sub>m n m"
-    by (rule left_mult_zero_mat[OF E])
-  have z21a: "0\<^sub>m m n * B = 0\<^sub>m m n"
-    by (rule left_mult_zero_mat[OF B])
-  have z21b: "D * 0\<^sub>m m n = 0\<^sub>m m n"
-    by (rule right_mult_zero_mat[OF D])
-  have z22: "0\<^sub>m m n * (0\<^sub>m n m :: complex Matrix.mat) = 0\<^sub>m m m"
-    by (rule left_mult_zero_mat) simp
-  have AB: "A * B \<in> carrier_mat n n"
-    using A B by auto
-  have DE: "D * E \<in> carrier_mat m m"
-    using D E by auto
-  have add11: "A * B + 0\<^sub>m n n = A * B"
-    by (rule right_add_zero_mat[OF AB])
-  have add22: "0\<^sub>m m m + D * E = D * E"
-    by (rule left_add_zero_mat[OF DE])
-  have final:
-    "four_block_mat (A * B + 0\<^sub>m n n) (0\<^sub>m n m) (0\<^sub>m m n) (0\<^sub>m m m + D * E) =
-     four_block_mat (A * B) (0\<^sub>m n m) (0\<^sub>m m n) (D * E)"
-    by (subst add11, subst add22, rule refl)
-  have mid11: "A * B + 0\<^sub>m n m * 0\<^sub>m m n = A * B + 0\<^sub>m n n"
-    using arg_cong[OF z11, of "\<lambda>X. A * B + X"] by simp
-  have mid12: "A * 0\<^sub>m n m + 0\<^sub>m n m * E = 0\<^sub>m n m"
-    by (subst z12a, subst z12b, simp)
-  have mid21: "0\<^sub>m m n * B + D * 0\<^sub>m m n = 0\<^sub>m m n"
-    by (subst z21a, subst z21b, simp)
-  have mid22: "0\<^sub>m m n * 0\<^sub>m n m + D * E = 0\<^sub>m m m + D * E"
-    using arg_cong[OF z22, of "\<lambda>X. X + D * E"] by simp
-  have "four_block_mat A (0\<^sub>m n m) (0\<^sub>m m n) D *
-        four_block_mat B (0\<^sub>m n m) (0\<^sub>m m n) E =
-        four_block_mat (A * B + 0\<^sub>m n m * 0\<^sub>m m n)
-          (A * 0\<^sub>m n m + 0\<^sub>m n m * E)
-          (0\<^sub>m m n * B + D * 0\<^sub>m m n)
-          (0\<^sub>m m n * 0\<^sub>m n m + D * E)"
-    by (rule raw)
-  also have "\<dots> =
-        four_block_mat (A * B + 0\<^sub>m n n) (0\<^sub>m n m) (0\<^sub>m m n) (0\<^sub>m m m + D * E)"
-    by (rule cong_four_block_mat[OF mid11 mid12 mid21 mid22])
-  also have "\<dots> = four_block_mat (A * B) (0\<^sub>m n m) (0\<^sub>m m n) (D * E)"
-    by (rule final)
-  finally show ?thesis .
-qed
+  unfolding mult_four_block_mat[OF A zero_carrier_mat zero_carrier_mat D B zero_carrier_mat zero_carrier_mat E]
+  using assms by simp
 
 lemma block_diag_unitary:
   fixes U V :: "complex Matrix.mat"
@@ -591,169 +483,15 @@ lemma block_diag_unitary:
   shows "unitary (four_block_mat U (0\<^sub>m n m) (0\<^sub>m m n) V)"
 proof -
   let ?M = "four_block_mat U (0\<^sub>m n m) (0\<^sub>m m n) V"
-
-  have Ud: "(U\<^sup>\<dagger>) \<in> carrier_mat n n"
-    using U by auto
-
-  have Vd: "(V\<^sup>\<dagger>) \<in> carrier_mat m m"
-    using V by auto
-
-  have dagger_M:
-    "(?M\<^sup>\<dagger>) = four_block_mat (U\<^sup>\<dagger>) (0\<^sub>m n m) (0\<^sub>m m n) (V\<^sup>\<dagger>)"
-    using U V
-    by (smt (verit, best) dagger_four_block_mat_complex dagger_zero_mat zero_carrier_mat)
-
-    have left_mult: "(?M\<^sup>\<dagger>) * ?M = 1\<^sub>m (n + m)"
-  proof -
-    have "(?M\<^sup>\<dagger>) * ?M =
-        four_block_mat
-          (((U\<^sup>\<dagger>) * U) + (0\<^sub>m n m) * (0\<^sub>m m n))
-          (((U\<^sup>\<dagger>) * (0\<^sub>m n m)) + (0\<^sub>m n m) * V)
-          (((0\<^sub>m m n) * U) + ((V\<^sup>\<dagger>) * (0\<^sub>m m n)))
-          (((0\<^sub>m m n) * (0\<^sub>m n m)) + ((V\<^sup>\<dagger>) * V))"
-      using U V Ud Vd by (simp add: block_diag_mult dagger_M)
-    also have "... =
-        four_block_mat
-          ((U\<^sup>\<dagger>) * U)
-          (0\<^sub>m n m)
-          (0\<^sub>m m n)
-          ((V\<^sup>\<dagger>) * V)"
-      using U V Ud Vd by simp
-    also have "... =
-        four_block_mat
-          (1\<^sub>m n)
-          (0\<^sub>m n m)
-          (0\<^sub>m m n)
-          (1\<^sub>m m)"
-      using uU uV U V unitary_def by auto
-    also have "... = 1\<^sub>m (n + m)"
-    proof (rule eq_matI)
-      show "dim_row (four_block_mat (1\<^sub>m n) (0\<^sub>m n m) (0\<^sub>m m n) (1\<^sub>m m)) =
-            dim_row (1\<^sub>m (n + m))"
-        by simp
-      show "dim_col (four_block_mat (1\<^sub>m n) (0\<^sub>m n m) (0\<^sub>m m n) (1\<^sub>m m)) =
-            dim_col (1\<^sub>m (n + m))"
-        by simp
-    next
-      fix i j
-      assume i: "i < dim_row (1\<^sub>m (n + m))"
-      assume j: "j < dim_col (1\<^sub>m (n + m))"
-      then have ib: "i < n + m" and jb: "j < n + m"
-        using i by simp_all
-      show "(four_block_mat (1\<^sub>m n) (0\<^sub>m n m) (0\<^sub>m m n) (1\<^sub>m m)) $$ (i,j) =
-            (1\<^sub>m (n + m)) $$ (i,j)"
-      proof (cases "i < n")
-        case True
-        then show ?thesis
-        proof (cases "j < n")
-          case True
-          then show ?thesis
-            using True by simp
-        next
-          case False
-          then have "j - n < m"
-            using jb by linarith
-          then show ?thesis
-            using True False by simp
-        qed
-      next
-        case False
-        then have "i - n < m"
-          using ib by linarith
-        then show ?thesis
-        proof (cases "j < n")
-          case True
-          then show ?thesis
-            using False by simp
-        next
-          case False
-          then have "j - n < m"
-            using jb by linarith
-          then show ?thesis
-            using False by simp
-        qed
-      qed
-    qed
-    finally show ?thesis.
-  qed
-
-  have right_mult: "?M * (?M\<^sup>\<dagger>) = 1\<^sub>m (n + m)"
-  proof -
-    have "?M * (?M\<^sup>\<dagger>) =
-        four_block_mat
-          ((U * (U\<^sup>\<dagger>)) + (0\<^sub>m n m) * (0\<^sub>m m n))
-          ((U * (0\<^sub>m n m)) + (0\<^sub>m n m) * (V\<^sup>\<dagger>))
-          (((0\<^sub>m m n) * (U\<^sup>\<dagger>)) + (V * (0\<^sub>m m n)))
-          (((0\<^sub>m m n) * (0\<^sub>m n m)) + (V * (V\<^sup>\<dagger>)))"
-      using U V Ud Vd by (simp add: block_diag_mult dagger_M)
-    also have "... =
-        four_block_mat
-          (U * (U\<^sup>\<dagger>))
-          (0\<^sub>m n m)
-          (0\<^sub>m m n)
-          (V * (V\<^sup>\<dagger>))"
-      using U V Ud Vd by simp
-    also have "... =
-        four_block_mat
-          (1\<^sub>m n)
-          (0\<^sub>m n m)
-          (0\<^sub>m m n)
-          (1\<^sub>m m)"
-      using uU uV U V unitary_def by force
-    also have "... = 1\<^sub>m (n + m)"
-    proof (rule eq_matI)
-      show "dim_row (four_block_mat (1\<^sub>m n) (0\<^sub>m n m) (0\<^sub>m m n) (1\<^sub>m m)) =
-            dim_row (1\<^sub>m (n + m))"
-        by simp
-      show "dim_col (four_block_mat (1\<^sub>m n) (0\<^sub>m n m) (0\<^sub>m m n) (1\<^sub>m m)) =
-            dim_col (1\<^sub>m (n + m))"
-        by simp
-    next
-      fix i j
-      assume i: "i < dim_row (1\<^sub>m (n + m))"
-      assume j: "j < dim_col (1\<^sub>m (n + m))"
-      then have ib: "i < n + m" and jb: "j < n + m"
-        using i by simp_all
-      show "(four_block_mat (1\<^sub>m n) (0\<^sub>m n m) (0\<^sub>m m n) (1\<^sub>m m)) $$ (i,j) =
-            (1\<^sub>m (n + m)) $$ (i,j)"
-      proof (cases "i < n")
-        case True
-        then show ?thesis
-        proof (cases "j < n")
-          case True
-          then show ?thesis
-            using True by simp
-        next
-          case False
-          then have "j - n < m"
-            using jb by linarith
-          then show ?thesis
-            using True False by simp
-        qed
-      next
-        case False
-        then have "i - n < m"
-          using ib by linarith
-        then show ?thesis
-        proof (cases "j < n")
-          case True
-          then show ?thesis
-            using False by simp
-        next
-          case False
-          then have "j - n < m"
-            using jb by linarith
-          then show ?thesis
-            using False by simp
-        qed
-      qed
-    qed
-    finally show ?thesis.
-  qed
-
-  show ?thesis
-    unfolding unitary_def
-    using left_mult right_mult U V by auto
+  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U])
+  have Vd: "V\<^sup>\<dagger> \<in> carrier_mat m m" by (rule dagger_carrier[OF V])
+  have Md: "?M\<^sup>\<dagger> = four_block_mat (U\<^sup>\<dagger>) (0\<^sub>m n m) (0\<^sub>m m n) (V\<^sup>\<dagger>)"
+    unfolding dagger_four_block_mat_complex[OF U zero_carrier_mat zero_carrier_mat V] dagger_zero_mat ..
+  have 1: "?M\<^sup>\<dagger> * ?M = 1\<^sub>m (n + m)"
+    unfolding Md block_diag_mult[OF Ud U Vd V] using uU uV U V by (simp add: unitary_def)
+  have 2: "?M * (?M\<^sup>\<dagger>) = 1\<^sub>m (n + m)"
+    unfolding Md block_diag_mult[OF U Ud V Vd] using uU uV U V by (simp add: unitary_def)
+  show ?thesis unfolding unitary_def using 1 2 U V by simp
 qed
 
 text \<open>The inductive step.  Over $\C$ the characteristic polynomial has a root, so $A$ has an
@@ -832,41 +570,6 @@ lemma normalized_vec_norm:
       cpx_vec_length_zero_iff csqrt_of_real_nonneg inner_prod_csqrt inner_prod_with_itself_Im 
       inner_prod_with_itself_Re mult_minus_left nonzero_eq_divide_eq norm_of_real real_sqrt_abs vdim
       vec_normalize_def vne)
-
-lemma four_block_mat_mult_left_block_diag:
-  fixes U   :: "complex Matrix.mat"
-    and A11 :: "complex Matrix.mat"
-    and A12 :: "complex Matrix.mat"
-    and A21 :: "complex Matrix.mat"
-    and A22 :: "complex Matrix.mat"
-  assumes U:   "U \<in> carrier_mat n n"
-      and A11: "A11 \<in> carrier_mat 1 1"
-      and A12: "A12 \<in> carrier_mat 1 n"
-      and A21: "A21 \<in> carrier_mat n 1"
-      and A22: "A22 \<in> carrier_mat n n"
-  shows
-    "(four_block_mat (1\<^sub>m 1 :: complex Matrix.mat)
-       (0\<^sub>m 1 n :: complex Matrix.mat)
-       (0\<^sub>m n 1 :: complex Matrix.mat)
-       U)
-     *
-     (four_block_mat A11 A12 A21 A22)
-     =
-     four_block_mat A11 A12 (U * A21) (U * A22)"
-proof -
-  have f1: "1\<^sub>m 1 * A11 + 0\<^sub>m 1 n * A21 = A11" using A11 A21 by auto
-  have f2: "1\<^sub>m 1 * A12 + 0\<^sub>m 1 n * A22 = A12" using A12 A22 by auto
-  have f3: "0\<^sub>m n 1 * A11 + U * A21 = U * A21" using A11 U A21 by auto
-  have f4: "0\<^sub>m n 1 * A12 + U * A22 = U * A22" using A12 U A22 by auto
-  have "four_block_mat (1\<^sub>m 1 :: complex Matrix.mat) (0\<^sub>m 1 n) (0\<^sub>m n 1) U
-        * four_block_mat A11 A12 A21 A22
-        = four_block_mat (1\<^sub>m 1 * A11 + 0\<^sub>m 1 n * A21)
-                         (1\<^sub>m 1 * A12 + 0\<^sub>m 1 n * A22)
-                         (0\<^sub>m n 1 * A11 + U * A21)
-                         (0\<^sub>m n 1 * A12 + U * A22)"
-    by (meson A11 U assms(3-5) mult_four_block_mat one_carrier_mat zero_carrier_mat)
-  then show ?thesis using f1 f2 f3 f4 by simp
-qed
 
 lemma cscalar_prod_is_inner_prod_swap:
   fixes u v :: "complex Matrix.vec"
@@ -1060,6 +763,11 @@ proof -
   show ?thesis using orth vs_len vs0 by blast
 qed
 
+text \<open>Schur's theorem by induction: a unit eigenvector $v_1$ of $A$ extends to an orthonormal basis,
+the columns of a unitary $U_1$; then $M=U_1^*AU_1$ has first column $\lambda e_1$, so
+$M=\begin{pmatrix}\lambda&B\\0&A_3\end{pmatrix}$, and for $U_2^*A_3U_2=T_3$ by induction,
+$U=U_1\begin{pmatrix}1&0\\0&U_2\end{pmatrix}$ gives $U^*AU=\begin{pmatrix}\lambda&BU_2\\0&T_3\end{pmatrix}$.\<close>
+
 lemma schur_induct:
   "\<forall>A :: complex Matrix.mat.
       A \<in> carrier_mat n n \<longrightarrow>
@@ -1069,379 +777,100 @@ lemma schur_induct:
          unitary U \<and>
          upper_triangular T \<and>
          (((U\<^sup>\<dagger>) * A) * U) = T)"
-proof (induct n)
+proof (induction n)
   case 0
   show ?case
-  proof (intro allI impI, goal_cases)
-    case (1 A)
-    then have "A = 0\<^sub>m 0 0"
-      by auto
-    moreover have "unitary (1\<^sub>m 0 :: complex Matrix.mat)"
-      by (simp add: unitary_def)
-    moreover have "upper_triangular (0\<^sub>m 0 0 :: complex Matrix.mat)"
-      by (simp add: upper_triangular_def)
-    moreover have "(1\<^sub>m 0 :: complex Matrix.mat)\<^sup>\<dagger> * 0\<^sub>m 0 0 * 1\<^sub>m 0 = 0\<^sub>m 0 0"
-      by simp
-    ultimately show ?case
-      by (metis one_carrier_mat zero_carrier_mat)
+  proof (intro allI impI)
+    fix A :: "complex Matrix.mat" assume "A \<in> carrier_mat 0 0"
+    hence "A = 0\<^sub>m 0 0" by auto
+    thus "\<exists>U T :: complex Matrix.mat. U \<in> carrier_mat 0 0 \<and> T \<in> carrier_mat 0 0 \<and> unitary U \<and>
+          upper_triangular T \<and> ((U\<^sup>\<dagger>) * A) * U = T"
+      by (intro exI[of _ "1\<^sub>m 0"] exI[of _ "0\<^sub>m 0 0"] conjI)
+         (auto simp: unitary_def upper_triangular_def dagger_def intro!: eq_matI)
   qed
 next
   case (Suc n)
   show ?case
   proof (intro allI impI)
-    fix A :: "complex Matrix.mat"
-    assume sq: "A \<in> carrier_mat (Suc n) (Suc n)"
-    (* Step 1: get an eigenvector and normalise it. *)
-    obtain e v where ev: "eigenvector A v e"
-      using complex_matrix_has_eigenvector[OF sq] by auto
-    then have vdim: "v \<in> carrier_vec (Suc n)" and vne: "v \<noteq> 0\<^sub>v (Suc n)"
-         and vev: "A *\<^sub>v v = e \<cdot>\<^sub>v v"
-      using sq unfolding eigenvector_def by auto
-    define v\<^sub>1 where "v\<^sub>1 \<equiv> (1 / \<parallel>v\<parallel>) \<cdot>\<^sub>v v"
-    have v1dim: "v\<^sub>1 \<in> carrier_vec (Suc n)"
-      unfolding v\<^sub>1_def using vdim by simp
-    have v1ev: "A *\<^sub>v v\<^sub>1 = e \<cdot>\<^sub>v v\<^sub>1"
-      using eigenvec_normalize(1)[OF sq vdim vne vev] unfolding v\<^sub>1_def .
-    have v1norm: "\<parallel>v\<^sub>1\<parallel> = 1"
-      using eigenvec_normalize(2)[OF sq vdim vne vev] unfolding v\<^sub>1_def .
-    (* Step 2: extend v₁ to a full orthonormal basis. *)
-    obtain vs :: "complex Matrix.vec list"
-      where orth: "orthonormal_list (Suc n) vs"
-        and full: "length vs = Suc n"
-        and hd0: "vs ! 0 = v\<^sub>1"
-      using unit_vec_extends_to_onb[OF v1dim v1norm] by blast
-    (* Step 3: form U₁ and show it is unitary. *)
+    fix A :: "complex Matrix.mat" assume A: "A \<in> carrier_mat (Suc n) (Suc n)"
+    obtain e v where ev: "eigenvector A v e" using complex_matrix_has_eigenvector[OF A] by auto
+    hence vc: "v \<in> carrier_vec (Suc n)" and vne: "v \<noteq> 0\<^sub>v (Suc n)" and Av: "A *\<^sub>v v = e \<cdot>\<^sub>v v"
+      using A unfolding eigenvector_def by auto
+    define v\<^sub>1 where "v\<^sub>1 = (1 / \<parallel>v\<parallel>) \<cdot>\<^sub>v v"
+    have v1c: "v\<^sub>1 \<in> carrier_vec (Suc n)" unfolding v\<^sub>1_def using vc by simp
+    have Av1: "A *\<^sub>v v\<^sub>1 = e \<cdot>\<^sub>v v\<^sub>1" using eigenvec_normalize(1)[OF A vc vne Av] unfolding v\<^sub>1_def .
+    have v1n: "\<parallel>v\<^sub>1\<parallel> = 1" using eigenvec_normalize(2)[OF A vc vne Av] unfolding v\<^sub>1_def .
+    obtain vs where orth: "orthonormal_list (Suc n) vs" and len: "length vs = Suc n" and hd0: "vs ! 0 = v\<^sub>1"
+      using unit_vec_extends_to_onb[OF v1c v1n] by blast
     let ?U\<^sub>1 = "mat_of_cols (Suc n) vs"
-    have U1_carrier: "?U\<^sub>1 \<in> carrier_mat (Suc n) (Suc n)"
-      using mat_of_cols_carrier(1)[of "Suc n" vs] full by simp
-    have U1_unitary: "unitary ?U\<^sub>1"
-      using orthonormal_mat_unitary[OF orth full].
-    (* Step 4: the conjugated matrix has block structure.
-       Column 0 of ?U\<^sub>1\<dagger> * A * ?U\<^sub>1 is [e, 0, ..., 0]ᵀ, yielding four_block form. *)
-    have U1dag_carrier: "?U\<^sub>1\<^sup>\<dagger> \<in> carrier_mat (Suc n) (Suc n)"
-      using U1_carrier by (metis carrier_matD carrier_matI dim_col_of_dagger dim_row_of_dagger)
+    have U1: "?U\<^sub>1 \<in> carrier_mat (Suc n) (Suc n)" using mat_of_cols_carrier(1)[of "Suc n" vs] len by simp
+    have uU1: "unitary ?U\<^sub>1" by (rule orthonormal_mat_unitary[OF orth len])
+    have U1d: "?U\<^sub>1\<^sup>\<dagger> \<in> carrier_mat (Suc n) (Suc n)" by (rule dagger_carrier[OF U1])
+    have col0: "Matrix.col ?U\<^sub>1 0 = v\<^sub>1" using col_mat_of_cols[of 0 vs "Suc n"] len hd0 v1c by simp
     let ?M = "?U\<^sub>1\<^sup>\<dagger> * A * ?U\<^sub>1"
-    have M_carrier: "?M \<in> carrier_mat (Suc n) (Suc n)"
-      using U1_carrier U1dag_carrier sq by auto
-    have U1_col0: "Matrix.col ?U\<^sub>1 0 = v\<^sub>1"
+    have M: "?M \<in> carrier_mat (Suc n) (Suc n)" using U1d A U1 by simp
+    have Mcol0: "Matrix.col ?M 0 = e \<cdot>\<^sub>v unit_vec (Suc n) 0"
     proof -
-      have "vs ! 0 \<in> carrier_vec (Suc n)"
-        using orthonormal_listD_carrier[OF orth] full
-        by (metis in_mono nth_mem zero_less_Suc)
-      then have "Matrix.col ?U\<^sub>1 0 = vs ! 0"
-        using full by simp
-      then show ?thesis using hd0 by simp
+      have "Matrix.col ?M 0 = (?U\<^sub>1\<^sup>\<dagger> * A) *\<^sub>v Matrix.col ?U\<^sub>1 0"
+        by (rule col_mult2[OF mult_carrier_mat[OF U1d A] U1]) simp
+      also have "\<dots> = ?U\<^sub>1\<^sup>\<dagger> *\<^sub>v (A *\<^sub>v v\<^sub>1)" unfolding col0 by (rule assoc_mult_mat_vec[OF U1d A v1c])
+      also have "\<dots> = e \<cdot>\<^sub>v (?U\<^sub>1\<^sup>\<dagger> *\<^sub>v v\<^sub>1)" unfolding Av1 by (rule mult_mat_vec[OF U1d v1c])
+      also have "?U\<^sub>1\<^sup>\<dagger> *\<^sub>v v\<^sub>1 = Matrix.col (?U\<^sub>1\<^sup>\<dagger> * ?U\<^sub>1) 0"
+        unfolding col0[symmetric] by (rule col_mult2[OF U1d U1, symmetric]) simp
+      also have "?U\<^sub>1\<^sup>\<dagger> * ?U\<^sub>1 = 1\<^sub>m (Suc n)" using uU1 U1 len unfolding unitary_def by simp
+      finally show ?thesis by simp
     qed
-    have v1_dim: "dim_vec v\<^sub>1 = Suc n" using v1dim by auto
-    have M_col0: "Matrix.col ?M 0 = e \<cdot>\<^sub>v unit_vec (Suc n) 0"
-    proof -
-      have AU1_col0: "Matrix.col (A * ?U\<^sub>1) 0 = e \<cdot>\<^sub>v v\<^sub>1"
-      proof -
-        have "Matrix.col (A * ?U\<^sub>1) 0 = A *\<^sub>v Matrix.col ?U\<^sub>1 0"
-          using col_mult2[OF sq U1_carrier, of 0] by simp
-        also have "\<dots> = A *\<^sub>v v\<^sub>1" using U1_col0 by simp
-        also have "\<dots> = e \<cdot>\<^sub>v v\<^sub>1" using v1ev.
-        finally show ?thesis.
-      qed
-      have U1dag_U1_eq_one: "?U\<^sub>1\<^sup>\<dagger> * ?U\<^sub>1 = 1\<^sub>m (Suc n)"
-        using U1_unitary U1_carrier unfolding unitary_def by auto
-      have U1dag_v1: "?U\<^sub>1\<^sup>\<dagger> *\<^sub>v v\<^sub>1 = unit_vec (Suc n) 0"
-      proof -
-        have "(?U\<^sub>1\<^sup>\<dagger>) *\<^sub>v v\<^sub>1 = (?U\<^sub>1\<^sup>\<dagger>) *\<^sub>v Matrix.col ?U\<^sub>1 0" using U1_col0 by simp
-        also have "\<dots> = Matrix.col (?U\<^sub>1\<^sup>\<dagger> * ?U\<^sub>1) 0"
-          using col_mult2[OF U1dag_carrier U1_carrier, of 0] by simp
-        also have "\<dots> = Matrix.col (1\<^sub>m (Suc n)) 0" using U1dag_U1_eq_one by simp
-        also have "\<dots> = unit_vec (Suc n) 0" by simp
-        finally show ?thesis.
-      qed
-      have AU1_carrier: "A * ?U\<^sub>1 \<in> carrier_mat (Suc n) (Suc n)"
-        using sq U1_carrier by auto
-      have M_assoc: "?M = (?U\<^sub>1\<^sup>\<dagger>) * (A * ?U\<^sub>1)"
-        using U1dag_carrier sq U1_carrier by simp
-      have "Matrix.col ?M 0 = Matrix.col (?U\<^sub>1\<^sup>\<dagger> * (A * ?U\<^sub>1)) 0" using M_assoc by simp
-      also have "\<dots> = (?U\<^sub>1\<^sup>\<dagger>) *\<^sub>v Matrix.col (A * ?U\<^sub>1) 0"
-        using col_mult2[OF U1dag_carrier AU1_carrier, of 0] by simp
-      also have "\<dots> = (?U\<^sub>1\<^sup>\<dagger>) *\<^sub>v (e \<cdot>\<^sub>v v\<^sub>1)" 
-        using AU1_col0 by simp
-      also have "\<dots> = e \<cdot>\<^sub>v (?U\<^sub>1\<^sup>\<dagger> *\<^sub>v v\<^sub>1)"
-        using U1dag_carrier v1dim by (simp add: mult_mat_vec)
-      also have "\<dots> = e \<cdot>\<^sub>v unit_vec (Suc n) 0" using U1dag_v1 by simp
-      finally show ?thesis.
-    qed
-    obtain M1 M2 M3 M4 where
-      splitM: "split_block ?M 1 1 = (M1, M2, M3, M4)"
-      by (cases "split_block ?M 1 1", auto)
-    have M_dims: "dim_row ?M = 1 + n" "dim_col ?M = 1 + n"
-      using M_carrier by auto
-    from split_block[OF splitM M_dims] have
-      M1_c: "M1 \<in> carrier_mat 1 1"
-      and M2_c: "M2 \<in> carrier_mat 1 n"
-      and M3_c: "M3 \<in> carrier_mat n 1"
-      and M4_c: "M4 \<in> carrier_mat n n"
-      and M_block: "?M = four_block_mat M1 M2 M3 M4" by auto
-    have M00: "?M $$ (0, 0) = e"
-    proof -
-      have "?M $$ (0, 0) = Matrix.col ?M 0 $ 0" using M_carrier by auto
-      also have "\<dots> = (e \<cdot>\<^sub>v unit_vec (Suc n) 0) $ 0" using M_col0 by simp
-      also have "\<dots> = e" by simp
-      finally show ?thesis .
-    qed
-    have M_Suc_i_0: "\<And>i. i < n \<Longrightarrow> ?M $$ (Suc i, 0) = 0"
-    proof -
-      fix i assume i: "i < n"
-      have "?M $$ (Suc i, 0) = Matrix.col ?M 0 $ (Suc i)"
-        using M_carrier i by auto
-      also have "\<dots> = (e \<cdot>\<^sub>v unit_vec (Suc n) 0) $ (Suc i)" using M_col0 by simp
-      also have "\<dots> = 0" using i by simp
-      finally show "?M $$ (Suc i, 0) = 0".
-    qed
-    have M1_eq: "M1 = Matrix.mat 1 1 (\<lambda>_. e)"
+    define B where "B = Matrix.mat 1 n (\<lambda>(i, j). ?M $$ (0, Suc j))"
+    define A\<^sub>3 where "A\<^sub>3 = Matrix.mat n n (\<lambda>(i, j). ?M $$ (Suc i, Suc j))"
+    have Bc: "B \<in> carrier_mat 1 n" and A3c: "A\<^sub>3 \<in> carrier_mat n n" unfolding B_def A\<^sub>3_def by simp_all
+    let ?E = "Matrix.mat 1 1 (\<lambda>_. e) :: complex Matrix.mat"
+    have Ec: "?E \<in> carrier_mat 1 1" by simp
+    have Mblock: "?M = four_block_mat ?E B (0\<^sub>m n 1) A\<^sub>3"
     proof (rule eq_matI)
-      show "dim_row M1 = dim_row (Matrix.mat 1 1 (\<lambda>_. e))"
-        using M1_c by auto
-      show "dim_col M1 = dim_col (Matrix.mat 1 1 (\<lambda>_. e))"
-        using M1_c by auto
-      fix i j assume i: "i < dim_row (Matrix.mat 1 1 (\<lambda>_. e))"
-        and j: "j < dim_col (Matrix.mat 1 1 (\<lambda>_. e))"
-      then have "i = 0" "j = 0" by auto
-      then have "M1 $$ (i, j) = ?M $$ (0, 0)"
-        using splitM unfolding split_block_def Let_def by auto
-      also have "\<dots> = e" using M00 .
-      also have "\<dots> = Matrix.mat 1 1 (\<lambda>_. e) $$ (i, j)"
-        using \<open>i = 0\<close> \<open>j = 0\<close> by simp
-      finally show "M1 $$ (i, j) = Matrix.mat 1 1 (\<lambda>_. e) $$ (i, j)".
-    qed
-    have M3_eq: "M3 = 0\<^sub>m n 1"
-    proof (rule eq_matI)
-      show "dim_row M3 = dim_row (0\<^sub>m n 1)" using M3_c by auto
-      show "dim_col M3 = dim_col (0\<^sub>m n 1)" using M3_c by auto
-      fix i j assume i: "i < dim_row (0\<^sub>m n 1)" and j: "j < dim_col (0\<^sub>m n 1)"
-      then have ia: "i < n" and ja: "j = 0" by auto
-      have M3_index: "\<And>i' j'. i' < n \<Longrightarrow> j' < 1 \<Longrightarrow> M3 $$ (i', j') = ?M $$ (Suc i', j')"
-        using splitM M_dims unfolding split_block_def Let_def by auto
-      have "M3 $$ (i, j) = ?M $$ (Suc i, 0)"
-        using M3_index[OF ia] ja by simp
-      also have "\<dots> = 0" using M_Suc_i_0[OF ia] .
-      also have "\<dots> = (0\<^sub>m n 1) $$ (i, j)" using ia ja by simp
-      finally show "M3 $$ (i, j) = (0\<^sub>m n 1) $$ (i, j)".
-    qed
-    have final_block:
-      "?M = four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) M2 (0\<^sub>m n 1) M4"
-      using M_block M1_eq M3_eq by simp
-    obtain A\<^sub>2 A\<^sub>3 :: "complex Matrix.mat"
-      where A2_carrier: "A\<^sub>2 \<in> carrier_mat 1 n"
-        and A3_carrier: "A\<^sub>3 \<in> carrier_mat n n"
-        and conj_block:
-          "?U\<^sub>1\<^sup>\<dagger> * A * ?U\<^sub>1 =
-           four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) A\<^sub>3"
-      using M2_c M4_c final_block by blast
-    (* Step 5: apply the induction hypothesis to A₃. *)
-    obtain U\<^sub>2 T\<^sub>3 :: "complex Matrix.mat"
-      where U2_carrier: "U\<^sub>2 \<in> carrier_mat n n"
-        and T3_carrier: "T\<^sub>3 \<in> carrier_mat n n"
-        and U2_unitary: "unitary U\<^sub>2"
-        and T3_ut: "upper_triangular T\<^sub>3"
-        and IH_eq: "U\<^sub>2\<^sup>\<dagger> * A\<^sub>3 * U\<^sub>2 = T\<^sub>3"
-      using Suc.hyps[rule_format, OF A3_carrier] by blast
-    (* Step 6: form U = U₁ * block(1, U₂) and T = block([e], T₃). *)
-    let ?U = "(?U\<^sub>1 * four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) U\<^sub>2)"
-    let ?T = "four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) T\<^sub>3"
-    have U_carrier: "?U \<in> carrier_mat (Suc n) (Suc n)"
-      using U1_carrier U2_carrier
-      by (intro mult_carrier_mat) auto
-    have U_unitary: "unitary ?U"
-    proof -
-      have B_carrier:
-        "four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) U\<^sub>2 \<in>
-         carrier_mat (Suc n) (Suc n)"
-        using U2_carrier by auto
-      have bu: "unitary (four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) U\<^sub>2)"
-        using block_diag_unitary[OF one_carrier_mat U2_carrier _ U2_unitary] by simp
-      then show ?thesis
-        using unitary_mult[OF U1_unitary bu U1_carrier B_carrier] by simp
-    qed
-    have T_carrier: "?T \<in> carrier_mat (Suc n) (Suc n)"
-      using A2_carrier U2_carrier T3_carrier by auto
-    have T_ut: "upper_triangular ?T"
-    proof -
-      have ut_e: "upper_triangular (Matrix.mat 1 1 (\<lambda>_. e) :: complex Matrix.mat)"
-        by (simp add: upper_triangular_def)
-      have e_carrier: "(Matrix.mat 1 1 (\<lambda>_. e) :: complex Matrix.mat) \<in> carrier_mat 1 1"
-        by simp
-      then show ?thesis
-        using upper_triangular_four_block[OF e_carrier T3_carrier ut_e T3_ut, of "A\<^sub>2 * U\<^sub>2"]
-        by simp
-    qed
-    have UA_eq: "((?U)\<^sup>\<dagger>) * A * ?U = ?T"
-    proof -
-      let ?B = "four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) U\<^sub>2"   
-      have B_carrier: "?B \<in> carrier_mat (Suc n) (Suc n)"
-        using U2_carrier by auto    
-      have U_def: "?U = (?U\<^sub>1 * ?B)"
-        by simp    
-      have B_dag: "?B\<^sup>\<dagger> = four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger>)"
-        by (smt (verit, ccfv_threshold) U2_carrier carrier_matI dagger_four_block_mat_complex
-            dagger_of_id_is_id dagger_zero_mat index_one_mat(2,3) zero_carrier_mat)    
-      have step1: "((?U)\<^sup>\<dagger>) * A * ?U = ((?B\<^sup>\<dagger>) * (((?U\<^sub>1\<^sup>\<dagger>) * A * ?U\<^sub>1)) * ?B)"
-      proof -
-        have U_dag: "((?U)\<^sup>\<dagger>) = ((?B\<^sup>\<dagger>) * (?U\<^sub>1\<^sup>\<dagger>))"
-          using B_carrier dagger_of_prod full by auto
-        have "((?U)\<^sup>\<dagger>) * A * ?U = ((((?B\<^sup>\<dagger>) * (?U\<^sub>1\<^sup>\<dagger>)) * A) * (?U\<^sub>1 * ?B))"
-          using U_dag by argo
-        also have "... = (((?B\<^sup>\<dagger>) * ((?U\<^sub>1\<^sup>\<dagger>) * A)) * (?U\<^sub>1 * ?B))"
-          using U1_carrier B_carrier sq
-          by (metis assoc_mult_mat carrier_matD(1,2) carrier_matI dagger_of_dagger_is_id dim_row_of_dagger)
-        also have "... = ((?B\<^sup>\<dagger>) * (((?U\<^sub>1\<^sup>\<dagger>) * A * ?U\<^sub>1)) * ?B)"
-          by (smt (verit, best) B_carrier U1_carrier assoc_mult_mat carrier_matD(1,2) 
-              carrier_mat_triv dim_col_of_dagger dim_row_of_dagger mult_carrier_mat sq)
-        finally show ?thesis.
-      qed    
-      have left_block: "((?B\<^sup>\<dagger>) * (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) A\<^sub>3))
-                     =  (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3))"
-      proof -
-        have Bdag: "?B\<^sup>\<dagger> = four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger>)"
-          using B_dag.      
-        show ?thesis
-        proof (rule eq_matI)
-          show "dim_row ((?B\<^sup>\<dagger>) * (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) A\<^sub>3))
-              = dim_row (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3))"
-            using A2_carrier A3_carrier U2_carrier  by (simp add: Bdag)      
-          show "dim_col ((?B\<^sup>\<dagger>) * (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) A\<^sub>3))
-              = dim_col (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3))"
-            using A2_carrier A3_carrier U2_carrier by (simp add: Bdag)      
-          fix i j
-          assume i: "i < dim_row (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3))"
-          assume j: "j < dim_col (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3))"      
-          have ij': "i < Suc n" "j < Suc n"
-            using IH_eq T3_carrier i A3_carrier j by auto
-      
-          show "((?B\<^sup>\<dagger>) * (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) A\<^sub>3)) $$ (i,j)
-              =
-              (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3)) $$ (i,j)"
-            using ij' A2_carrier A3_carrier U2_carrier
-            by (smt (verit, ccfv_threshold) B_dag carrier_matD(1,2) carrier_mat_triv 
-                dim_col_of_dagger dim_row_of_dagger four_block_mat_mult_left_block_diag mat_carrier 
-                right_mult_zero_mat zero_carrier_mat)
-        qed
-      qed    
-      have right_block:  "((four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3)) * ?B)
-                =   (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3) * U\<^sub>2))"
-      proof -
-        show ?thesis
-        proof (rule eq_matI)
-          show "dim_row ((four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3)) * ?B)
-            =   dim_row (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2*U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>)*A\<^sub>3)*U\<^sub>2))"
-            using A2_carrier A3_carrier U2_carrier by simp     
-          show "dim_col ((four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3)) * ?B)  =
-            dim_col (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3) * U\<^sub>2))"
-            using A2_carrier A3_carrier U2_carrier  by simp     
-          fix i j
-          assume i: "i < dim_row
-            (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3) * U\<^sub>2))"
-          assume j: "j < dim_col
-            (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3) * U\<^sub>2))"     
-          have ij': "i < Suc n" "j < Suc n"
-            using IH_eq T3_carrier i A3_carrier j by auto     
-          show "((four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>)*A\<^sub>3))*?B) $$ (i,j)
-              = (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>)*A\<^sub>3)*U\<^sub>2))$$(i,j)"
-          proof -            
-            have right_block: "((four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>) *A\<^sub>3))*?B)
-               = (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3) * U\<^sub>2))"
-            proof -
-              let ?E = "(Matrix.mat 1 1 (\<lambda>_. e) :: complex Matrix.mat)"
-              let ?Z = "(0\<^sub>m n 1 :: complex Matrix.mat)"
-              let ?BR = "((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3)"
-              let ?L = "four_block_mat ?E A\<^sub>2 ?Z ?BR"
-              let ?R = "four_block_mat ?E (A\<^sub>2 * U\<^sub>2) ?Z (?BR * U\<^sub>2)"            
-              have E_carrier: "?E \<in> carrier_mat 1 1"
-                by simp            
-              have Z_carrier: "?Z \<in> carrier_mat n 1"
-                by simp            
-              have BR_carrier: "?BR \<in> carrier_mat n n"
-                using U2_carrier A3_carrier
-                by fastforce
-              have L_carrier: "?L \<in> carrier_mat (Suc n) (Suc n)"
-                using E_carrier A2_carrier Z_carrier BR_carrier
-                using IH_eq T_carrier by fastforce            
-              have R_carrier: "?R \<in> carrier_mat (Suc n) (Suc n)"
-                using E_carrier A2_carrier U2_carrier Z_carrier BR_carrier IH_eq T_carrier by blast
-              have L_dag: "?L\<^sup>\<dagger> = four_block_mat (?E\<^sup>\<dagger>) (?Z\<^sup>\<dagger>) (A\<^sub>2\<^sup>\<dagger>) (?BR\<^sup>\<dagger>)"
-                using dagger_four_block_mat_complex[OF E_carrier A2_carrier Z_carrier BR_carrier]
-                by simp           
-              have R_dag: "?R\<^sup>\<dagger> = four_block_mat (?E\<^sup>\<dagger>) (?Z\<^sup>\<dagger>) ((A\<^sub>2 * U\<^sub>2)\<^sup>\<dagger>) ((?BR * U\<^sub>2)\<^sup>\<dagger>)"
-                using dagger_four_block_mat_complex[OF E_carrier _ Z_carrier _]
-                      A2_carrier U2_carrier BR_carrier
-                by (metis carrier_matD(1) carrier_mat_triv index_mult_mat(2,3))           
-              have R_dag_expand: "(?R\<^sup>\<dagger>) = four_block_mat (?E\<^sup>\<dagger>) (?Z\<^sup>\<dagger>) ((U\<^sub>2\<^sup>\<dagger>) * (A\<^sub>2\<^sup>\<dagger>)) ((U\<^sub>2\<^sup>\<dagger>) * (?BR\<^sup>\<dagger>))"
-                using R_dag A2_carrier U2_carrier BR_carrier
-                by (metis carrier_matD(1,2) dagger_of_prod)
-              have Bdag: "?B\<^sup>\<dagger> = four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger>)"
-                  using B_dag.           
-              have left_mult_on_daggers:
-                "((?B\<^sup>\<dagger>) * (?L\<^sup>\<dagger>)) = four_block_mat (?E\<^sup>\<dagger>) (?Z\<^sup>\<dagger>) ((U\<^sub>2\<^sup>\<dagger>) * (A\<^sub>2\<^sup>\<dagger>)) ((U\<^sub>2\<^sup>\<dagger>) * (?BR\<^sup>\<dagger>))"
-              proof -
-                have "((?B\<^sup>\<dagger>) * (?L\<^sup>\<dagger>)) =
-                  ((four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger>))
-                    * (four_block_mat (?E\<^sup>\<dagger>) (?Z\<^sup>\<dagger>) (A\<^sub>2\<^sup>\<dagger>) (?BR\<^sup>\<dagger>)))"
-                  using Bdag L_dag by simp
-                also have "... =
-                  (four_block_mat (?E\<^sup>\<dagger>) (?Z\<^sup>\<dagger>) ((U\<^sub>2\<^sup>\<dagger>) * (A\<^sub>2\<^sup>\<dagger>)) ((U\<^sub>2\<^sup>\<dagger>) * (?BR\<^sup>\<dagger>)))"
-                  using four_block_mat_mult_left_block_diag[of "U\<^sub>2\<^sup>\<dagger>" n "?E\<^sup>\<dagger>" "?Z\<^sup>\<dagger>" "A\<^sub>2\<^sup>\<dagger>" "?BR\<^sup>\<dagger>"]
-                        U2_carrier E_carrier Z_carrier A2_carrier BR_carrier
-                  by (metis carrier_matD(1,2) carrier_mat_triv dim_col_of_dagger dim_row_of_dagger)
-                finally show ?thesis.
-              qed          
-              have R_dag_as_Bdag_Ldag: "(?R\<^sup>\<dagger>) = ((?B\<^sup>\<dagger>) * (?L\<^sup>\<dagger>))"
-                using R_dag_expand left_mult_on_daggers by simp
-              have "?R = (?L * ?B)"
-              proof -
-                have "?R = ((?R\<^sup>\<dagger>)\<^sup>\<dagger>)"
-                  using R_carrier
-                  using dagger_of_dagger_is_id by presburger 
-                also have "... = ((((?B\<^sup>\<dagger>) * (?L\<^sup>\<dagger>)))\<^sup>\<dagger>)"
-                  using R_dag_as_Bdag_Ldag by simp
-                also have "... = (((?L\<^sup>\<dagger>)\<^sup>\<dagger>) * ((?B\<^sup>\<dagger>)\<^sup>\<dagger>))"
-                  using B_carrier L_carrier
-                  by (metis carrier_matD(1,2) dagger_of_dagger_is_id dagger_of_prod)
-                also have "... = (?L * ?B)"
-                  using B_carrier L_carrier by (simp add: dagger_of_dagger_is_id)
-                finally show ?thesis.
-              qed            
-              then show ?thesis
-                by simp
-            qed
-            also have "(((four_block_mat (Matrix.mat 1 1 (\<lambda>_.e)) A\<^sub>2 (0\<^sub>m n 1) ((U\<^sub>2\<^sup>\<dagger>)*A\<^sub>3))*?B))$$(i,j)
-              = (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (((U\<^sub>2\<^sup>\<dagger>)*A\<^sub>3)*U\<^sub>2))$$(i,j)"
-              using calculation by argo
-            finally show ?thesis
-              using
-              \<open>(four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3) *
-                four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) U\<^sub>2) $$ (i, j) = 
-                four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) (A\<^sub>2 * U\<^sub>2) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3 * U\<^sub>2) $$ (i, j)\<close>
-              by fastforce 
-          qed            
-        qed
-      qed
-    
-      have IH_sub: "(((U\<^sub>2\<^sup>\<dagger>) * A\<^sub>3) * U\<^sub>2) = T\<^sub>3"
-        using IH_eq by simp
-    
-      have "((?U)\<^sup>\<dagger>) * A * ?U = ((?B\<^sup>\<dagger>) * (((?U\<^sub>1\<^sup>\<dagger>) * A * ?U\<^sub>1)) * ?B)"
-        using step1 .
-      also have "... = ((?B\<^sup>\<dagger>) * (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) A\<^sub>3) * ?B)"
-        using conj_block
-        by simp
-      also have "... = (((?B\<^sup>\<dagger>) * (four_block_mat (Matrix.mat 1 1 (\<lambda>_. e)) A\<^sub>2 (0\<^sub>m n 1) A\<^sub>3)) * ?B)"
-        using B_carrier A2_carrier A3_carrier by simp            
-      also have "... = ?T"
-        using IH_sub left_block right_block by argo
-       show ?thesis
-         using IH_sub conj_block left_block right_block step1 by argo 
-    qed
-    show "\<exists>U T :: complex Matrix.mat.
-            U \<in> carrier_mat (Suc n) (Suc n) \<and> T \<in> carrier_mat (Suc n) (Suc n) \<and>
-            unitary U \<and> upper_triangular T \<and> (((U\<^sup>\<dagger>) * A) * U) = T"
-      using U_carrier T_carrier U_unitary T_ut UA_eq by blast
+      fix i j assume "i < dim_row (four_block_mat ?E B (0\<^sub>m n 1) A\<^sub>3)" "j < dim_col (four_block_mat ?E B (0\<^sub>m n 1) A\<^sub>3)"
+      hence ij: "i < Suc n" "j < Suc n" using A3c by simp_all
+      have "?M $$ (i, 0) = (e \<cdot>\<^sub>v unit_vec (Suc n) 0) $ i" unfolding Mcol0[symmetric] using M ij len by simp
+      thus "?M $$ (i, j) = four_block_mat ?E B (0\<^sub>m n 1) A\<^sub>3 $$ (i, j)"
+        using ij Bc A3c by (cases i; cases j) (auto simp: B_def A\<^sub>3_def)
+    qed (use M A3c len in auto)
+    obtain U\<^sub>2 T\<^sub>3 where U2: "U\<^sub>2 \<in> carrier_mat n n" and T3: "T\<^sub>3 \<in> carrier_mat n n" and uU2: "unitary U\<^sub>2"
+      and T3ut: "upper_triangular T\<^sub>3" and IH: "U\<^sub>2\<^sup>\<dagger> * A\<^sub>3 * U\<^sub>2 = T\<^sub>3"
+      using Suc.IH[rule_format, OF A3c] by blast
+    have U2d: "U\<^sub>2\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U2])
+    let ?V = "four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) U\<^sub>2"
+    let ?U = "?U\<^sub>1 * ?V"
+    let ?T = "four_block_mat ?E (B * U\<^sub>2) (0\<^sub>m n 1) T\<^sub>3"
+    have V: "?V \<in> carrier_mat (Suc n) (Suc n)" by (rule carrier_matI) (use U2 in simp_all)
+    have uV: "unitary ?V" by (rule block_diag_unitary[OF one_carrier_mat U2 _ uU2]) simp
+    have one_d: "(1\<^sub>m 1 :: complex Matrix.mat)\<^sup>\<dagger> = 1\<^sub>m 1" by (rule eq_matI) (auto simp: dagger_def)
+    have Vd: "?V\<^sup>\<dagger> = four_block_mat (1\<^sub>m 1) (0\<^sub>m 1 n) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger>)"
+      unfolding dagger_four_block_mat_complex[OF one_carrier_mat zero_carrier_mat zero_carrier_mat U2] dagger_zero_mat one_d ..
+    have U: "?U \<in> carrier_mat (Suc n) (Suc n)" by (rule mult_carrier_mat[OF U1 V])
+    have uU: "unitary ?U" by (rule unitary_mult[OF uU1 uV U1 V])
+    have T: "?T \<in> carrier_mat (Suc n) (Suc n)" by (rule carrier_matI) (use T3 in simp_all)
+    have Tut: "upper_triangular ?T"
+      by (rule upper_triangular_four_block[OF Ec T3 _ T3ut]) (simp add: upper_triangular_def)
+    have dc: "dim_col ?U\<^sub>1 = dim_row ?V" using len U2 by simp
+    have MA: "?U\<^sub>1\<^sup>\<dagger> * A \<in> carrier_mat (Suc n) (Suc n)" using U1d A by simp
+    have step1: "?V\<^sup>\<dagger> * four_block_mat ?E B (0\<^sub>m n 1) A\<^sub>3 = four_block_mat ?E B (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3)"
+      unfolding Vd mult_four_block_mat[OF one_carrier_mat zero_carrier_mat zero_carrier_mat U2d Ec Bc zero_carrier_mat A3c]
+      using U2d Bc A3c Ec by (simp add: right_mult_zero_mat)
+    have step2: "four_block_mat ?E B (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3) * ?V
+                 = four_block_mat ?E (B * U\<^sub>2) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3 * U\<^sub>2)"
+      unfolding mult_four_block_mat[OF Ec Bc zero_carrier_mat mult_carrier_mat[OF U2d A3c] one_carrier_mat zero_carrier_mat zero_carrier_mat U2]
+      using U2 U2d Bc A3c Ec by (simp add: right_mult_zero_mat)
+    have "?U\<^sup>\<dagger> * A * ?U = ((?V\<^sup>\<dagger>) * (?U\<^sub>1\<^sup>\<dagger>)) * A * (?U\<^sub>1 * ?V)" unfolding dagger_of_prod[OF dc] ..
+    also have "\<dots> = ?V\<^sup>\<dagger> * ?M * ?V"
+      unfolding assoc_mult_mat[OF dagger_carrier[OF V] U1d A]
+                assoc_mult_mat[OF dagger_carrier[OF V] MA mult_carrier_mat[OF U1 V]]
+                assoc_mult_mat[OF MA U1 V, symmetric]
+                assoc_mult_mat[OF dagger_carrier[OF V] M V, symmetric] ..
+    also have "\<dots> = four_block_mat ?E (B * U\<^sub>2) (0\<^sub>m n 1) (U\<^sub>2\<^sup>\<dagger> * A\<^sub>3 * U\<^sub>2)"
+      unfolding Mblock step1 step2 ..
+    finally have UAU: "?U\<^sup>\<dagger> * A * ?U = ?T" unfolding IH .
+    show "\<exists>U T :: complex Matrix.mat. U \<in> carrier_mat (Suc n) (Suc n) \<and> T \<in> carrier_mat (Suc n) (Suc n) \<and>
+          unitary U \<and> upper_triangular T \<and> ((U\<^sup>\<dagger>) * A) * U = T"
+      using U T uU Tut UAU by blast
   qed
 qed
 
