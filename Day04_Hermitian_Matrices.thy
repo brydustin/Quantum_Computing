@@ -621,102 +621,34 @@ theorem hermitian_spectral_decomp:
          length D = n \<and>
          (U\<^sup>\<dagger>) * H * U = diag_mat_of_real D"
 proof -
-  (* Step 1: Schur gives U unitary, T = U\<dagger>HU upper triangular. *)
-  obtain U T where Uc: "U \<in> carrier_mat n n" and Tc: "T \<in> carrier_mat n n"
-    and UU: "unitary U" and UT: "upper_triangular T"
-    and schur: "U\<^sup>\<dagger> * H * U = T"
+  obtain U T where U: "U \<in> carrier_mat n n" and T: "T \<in> carrier_mat n n" and uU: "unitary U"
+    and ut: "upper_triangular T" and UHU: "(U\<^sup>\<dagger>) * H * U = T"
     using schur_theorem[OF sq] by blast
-  have Udagcar: "U\<^sup>\<dagger> \<in> carrier_mat n n" using Uc by auto
-  have Hdag: "H\<^sup>\<dagger> = H" using herm by (simp add: hermitian_def)
-
-  (* Step 2: T\<dagger> = T using H Hermitian and (AB)\<dagger> = B\<dagger>A\<dagger>. *)
-  have Tdag: "T\<^sup>\<dagger> = T"
-  proof -
-    have HUcar: "H * U \<in> carrier_mat n n" using sq Uc by auto
-    have UdagHcar: "U\<^sup>\<dagger> * H \<in> carrier_mat n n" using Udagcar sq by auto
-    let ?Ud = "U\<^sup>\<dagger>"
-    let ?A = "?Ud * H"
-    have dcA: "dim_col ?A = dim_row U" using UdagHcar Uc by auto
-    have dcUd: "dim_col ?Ud = dim_row H" using Udagcar sq by auto
-    have step1: "dagger (?A * U) = dagger U * dagger ?A"
-      by (rule dagger_of_prod[OF dcA])
-    have step2: "dagger ?A = (H\<^sup>\<dagger>) * dagger ?Ud"
-      by (rule dagger_of_prod[OF dcUd])
-    have step3: "dagger ?Ud = U" using Uc by (simp add: dagger_of_dagger_is_id)
-    have "T\<^sup>\<dagger> = dagger (?A * U)" using schur by simp
-    also have "\<dots> = dagger U * dagger ?A" using step1 .
-    also have "\<dots> = dagger U * (H\<^sup>\<dagger> * dagger ?Ud)" using step2 by simp
-    also have "\<dots> = dagger U * (H * U)" using step3 Hdag by simp
-    also have "\<dots> = ?Ud * H * U"
-      using Udagcar sq Uc by simp
-    also have "\<dots> = T" using schur by simp
-    finally show ?thesis.
-  qed
-
-  (* Step 3: T upper triangular + T\<dagger> = T \<Longrightarrow> T diagonal. *)
-  have T_off_diag: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> i \<noteq> j \<Longrightarrow> T $$ (i, j) = 0"
-  proof -
-    fix i j assume i: "i < n" and j: "j < n" and ij: "i \<noteq> j"
-    show "T $$ (i, j) = 0"
-    proof (cases "i > j")
-      case True
-      then show ?thesis using upper_triangularD[OF UT True] i Tc by simp
-    next
-      case False
-      then have ji: "j > i" using ij by auto
-      have Tji0: "T $$ (j, i) = 0"
-        using upper_triangularD[OF UT ji] j Tc by simp
-      have "T $$ (i, j) = (T\<^sup>\<dagger>) $$ (i, j)" using Tdag by simp
-      also have "\<dots> = cnj (T $$ (j, i))"
-        using i j Tc by (simp add: dagger_def)
-      also have "\<dots> = 0" using Tji0 by simp
-      finally show ?thesis.
-    qed
-  qed
-
-  (* Step 4: diagonal entries are real. *)
-  have T_diag_real: "\<And>i. i < n \<Longrightarrow> T $$ (i, i) \<in> \<real>"
-  proof -
-    fix i assume i: "i < n"
-    have "cnj (T $$ (i, i)) = (T\<^sup>\<dagger>) $$ (i, i)"
-      using i Tc by (simp add: dagger_def)
-    also have "\<dots> = T $$ (i, i)" using Tdag by simp
-    finally have "cnj (T $$ (i, i)) = T $$ (i, i)".
-    then show "T $$ (i, i) \<in> \<real>" using Reals_cnj_iff by metis
-  qed
-
-  (* Step 5: extract the real diagonal as a list and show T = diag_mat_of_real D. *)
-  let ?D = "map (\<lambda>i. Re (T $$ (i, i))) [0..<n]"
-  have D_len: "length ?D = n" by simp
-  have D_idx: "\<And>i. i < n \<Longrightarrow> ?D ! i = Re (T $$ (i, i))" by simp
-
-  have T_eq_diag: "T = diag_mat_of_real ?D"
-  proof (rule eq_matI)
-    show "dim_row T = dim_row (diag_mat_of_real ?D)" using Tc by auto
-    show "dim_col T = dim_col (diag_mat_of_real ?D)" using Tc by auto
+  have Ud: "U\<^sup>\<dagger> \<in> carrier_mat n n" by (rule dagger_carrier[OF U])
+  have d1: "dim_col (U\<^sup>\<dagger> * H) = dim_row U" using Ud sq U by simp
+  have d2: "dim_col (U\<^sup>\<dagger>) = dim_row H" using U sq by simp
+  have "T\<^sup>\<dagger> = U\<^sup>\<dagger> * (H\<^sup>\<dagger> * U)"
+    unfolding UHU[symmetric] dagger_of_prod[OF d1] dagger_of_prod[OF d2] dagger_of_dagger_is_id ..
+  also have "\<dots> = T" unfolding herm[unfolded hermitian_def] assoc_mult_mat[OF Ud sq U, symmetric] UHU ..
+  finally have hT: "hermitian T" unfolding hermitian_def .
+  have Tij: "T $$ (i, j) = cnj (T $$ (j, i))" if "i < n" "j < n" for i j
+    by (rule hermitian_index[OF hT]) (use that T in simp_all)
+  have off: "T $$ (i, j) = 0" if "i < n" "j < n" "i \<noteq> j" for i j
+  proof (cases "j < i")
+    case True thus ?thesis using ut that T unfolding upper_triangular_def by simp
   next
-    fix i j
-    assume "i < dim_row (diag_mat_of_real ?D)" "j < dim_col (diag_mat_of_real ?D)"
-    then have inb: "i < n" "j < n" by auto
-    show "T $$ (i, j) = diag_mat_of_real ?D $$ (i, j)"
-    proof (cases "i = j")
-      case True
-      have "T $$ (i, i) = complex_of_real (Re (T $$ (i, i)))"
-        using T_diag_real[OF inb(1)]
-        by (metis Reals_cases Re_complex_of_real)
-      then show ?thesis
-        using True inb D_len D_idx[OF inb(1)] by simp
-    next
-      case False
-      have "T $$ (i, j) = 0" using T_off_diag[OF inb(1) inb(2) False].
-      moreover have "diag_mat_of_real ?D $$ (i, j) = 0"
-        using False inb D_len by simp
-      ultimately show ?thesis by simp
-    qed
+    case False
+    hence "T $$ (j, i) = 0" using ut that T unfolding upper_triangular_def by simp
+    thus ?thesis unfolding Tij[OF that(1,2)] by simp
   qed
-
-  show ?thesis
-    using Uc UU D_len schur T_eq_diag by metis
+  have diag: "complex_of_real (Re (T $$ (i, i))) = T $$ (i, i)" if "i < n" for i
+  proof -
+    have "Im (T $$ (i, i)) = 0" using arg_cong[OF Tij[OF that that], of Im] by simp
+    thus ?thesis by (simp add: complex_eq_iff)
+  qed
+  let ?D = "map (\<lambda>i. Re (T $$ (i, i))) [0..<n]"
+  have "T = diag_mat_of_real ?D" using T by (intro eq_matI) (auto simp: off diag)
+  thus ?thesis using U uU UHU by (intro exI[of _ U] exI[of _ ?D]) simp
 qed
 
 corollary hermitian_real_eigenvalues:
@@ -1273,10 +1205,6 @@ theorem pd_iff_spanning:
          (\<forall>x :: complex Matrix.vec. dim_vec x = n \<longrightarrow> x \<noteq> 0\<^sub>v n \<longrightarrow>
             (\<exists>v \<in> set vs. \<langle>v | x\<rangle> \<noteq> 0))"
 proof
-  (* pd P \<longleftrightarrow> \<langle>x|Px\<rangle> > 0 for all x \<noteq> 0
-            \<longleftrightarrow> \<Sum>|\<langle>vᵢ|x\<rangle>|² > 0 for all x \<noteq> 0
-            \<longleftrightarrow> some \<langle>vᵢ|x\<rangle> \<noteq> 0 for all x \<noteq> 0
-            \<longleftrightarrow> {vs} spans \<complex>^n. *)
   assume pdP: "pd P"
   show "\<forall>x. dim_vec x = n \<longrightarrow> x \<noteq> 0\<^sub>v n \<longrightarrow> (\<exists>v \<in> set vs. \<langle>v | x\<rangle> \<noteq> 0)"
   proof (intro allI impI)

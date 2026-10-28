@@ -1205,3 +1205,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `lessThan_atLeast0`; a carrier fact in `2^N * 2` only meets a goal in `2 * 2^N` when passed via `using`
   (premises are normalised, `simp add:` facts are not).  Plan: `tools/deps/plans/day12.py`; scratch
   `wip/d23/D12.thy`.
+- **Audit tick 12: the spectral theorem from the Schur form** (2026-10-27).  Day 4's
+  `hermitian_spectral_decomp` (108 lines) is now the text's own argument: `schur_theorem` gives
+  U*HU = T upper triangular; T* = U*H*U = T (two `dagger_of_prod`); an upper triangular matrix equal to
+  its adjoint is diagonal (the two cases j < i and i < j) with real diagonal (Im z = −Im z), so
+  T = diag_mat_of_real (map (λi. Re T_ii) [0..<n]) by one `eq_matI` — about 35 lines.  The
+  `(* … *)` process comment in `pd_iff_spanning` is gone.  Trap: `hermitian_index` as a simp rule
+  rewrites its own right-hand side (T_ij → cnj T_ji → cnj cnj T_ij …) and loops; apply it by `rule`.
+  Plan: `tools/deps/plans/day4b.py`; scratch `wip/d23/D04b.thy`.
