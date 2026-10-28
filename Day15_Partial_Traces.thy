@@ -259,37 +259,13 @@ lemma operator_tensor_iso_map_row_bound:
   fixes m p r s :: nat
   assumes p_pos: "0 < p" and "r < m*p" and "s < m*p"
   shows "(r div p) * m + (s div p) < m*m"
-proof -
-  have rdiv: "r div p < m"
-    using div_less_iff_less_mult[OF p_pos, of r m] assms(2) by simp
-  have sdiv: "s div p < m"
-    using div_less_iff_less_mult[OF p_pos, of s m] assms(3) by simp
-  have "(r div p) * m + (s div p) < (r div p) * m + m"
-    using sdiv by simp
-  also have "\<dots> = Suc (r div p) * m"
-    by simp
-  also have "\<dots> \<le> m * m"
-    using rdiv by (metis Suc_leI mult.commute mult_le_mono2)
-  finally show ?thesis .
-qed
+  by (rule mult_index_lt[OF less_mult_imp_div_less[OF assms(2)] less_mult_imp_div_less[OF assms(3)]])
 
 lemma operator_tensor_iso_map_col_bound:
   fixes p r s :: nat
   assumes p_pos: "0 < p"
   shows "(r mod p) * p + (s mod p) < p*p"
-proof -
-  have rmod: "r mod p < p"
-    using mod_less_divisor[of p r] p_pos by simp
-  have smod: "s mod p < p"
-    using mod_less_divisor[of p s] p_pos by simp
-  have "(r mod p) * p + (s mod p) < (r mod p) * p + p"
-    using smod by simp
-  also have "\<dots> = Suc (r mod p) * p"
-    by simp
-  also have "\<dots> \<le> p * p"
-    using rmod by (metis Suc_leI mult.commute mult_le_mono2)
-  finally show ?thesis .
-qed
+  by (rule mult_index_lt[OF mod_less_divisor[OF p_pos] mod_less_divisor[OF p_pos]])
 
 definition operator_tensor_iso_inv :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "operator_tensor_iso_inv m p x \<equiv>
@@ -312,37 +288,13 @@ lemma operator_tensor_iso_inv_row_bound:
   fixes m p a b :: nat
   assumes m_pos: "0 < m" and p_pos: "0 < p" and "a < m*m" and "b < p*p"
   shows "(a div m) * p + (b div p) < m*p"
-proof -
-  have adiv: "a div m < m"
-    using div_less_iff_less_mult[OF m_pos, of a m] assms(3) by simp
-  have bdiv: "b div p < p"
-    using div_less_iff_less_mult[OF p_pos, of b p] assms(4) by simp
-  have "(a div m) * p + (b div p) < (a div m) * p + p"
-    using bdiv by simp
-  also have "\<dots> = Suc (a div m) * p"
-    by simp
-  also have "\<dots> \<le> m * p"
-    using adiv by (metis Suc_leI mult_le_mono1)
-  finally show ?thesis .
-qed
+  by (rule mult_index_lt[OF less_mult_imp_div_less[OF assms(3)] less_mult_imp_div_less[OF assms(4)]])
 
 lemma operator_tensor_iso_inv_col_bound:
   fixes m p a b :: nat
   assumes m_pos: "0 < m" and p_pos: "0 < p"
   shows "(a mod m) * p + (b mod p) < m*p"
-proof -
-  have amod: "a mod m < m"
-    using mod_less_divisor[of m a] m_pos by simp
-  have bmod: "b mod p < p"
-    using mod_less_divisor[of p b] p_pos by simp
-  have "(a mod m) * p + (b mod p) < (a mod m) * p + p"
-    using bmod by simp
-  also have "\<dots> = Suc (a mod m) * p"
-    by simp
-  also have "\<dots> \<le> m * p"
-    using amod by (metis Suc_leI mult_le_mono1)
-  finally show ?thesis .
-qed
+  by (rule mult_index_lt[OF mod_less_divisor[OF m_pos] mod_less_divisor[OF p_pos]])
 
 lemma operator_tensor_iso_map_add:
   assumes p_pos: "0 < p"

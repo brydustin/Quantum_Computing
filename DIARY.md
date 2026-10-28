@@ -1409,3 +1409,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   (1186 → 1118).  Ticks 21 and 27 had left `outer_proj_idem`, `outer_proj_hermitian` (Day 8) and
   `phi_entry_double_sum` (Day 20) unused; they are gone.  Plan: `tools/deps/plans/day2c.py`; scratch
   `wip/d23/D02c.thy`.
+- **Audit tick 35: block-index bounds** (2026-10-28).  Day 28's ten `metis div_less_iff_less_mult
+  mult.commute` calls (i div p < m from i < m·p) are `blast intro: less_mult_imp_div_less`; Day 15's four
+  bound lemmas `operator_tensor_iso_{map,inv}_{row,col}_bound` (12 lines each of Suc-arithmetic) are
+  one-line instances of the bundle's `mult_index_lt`.  Day 28 metis/smt 17 → 7, Day 15 9 → 5
+  (1250 → 1202 lines); every statement unchanged.  Plan: `tools/deps/plans/day28.py` (textual
+  replacements validated by the strict build); scratch `wip/d23/D15c.thy`.

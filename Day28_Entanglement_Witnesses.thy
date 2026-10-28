@@ -71,9 +71,9 @@ proof (subst continuous_on_componentwise, intro ballI)
   have rB: "dim_row (unwrap_lm (\<tau> :: (complex, 'p, 'p) lmat)) = ?P" for \<tau> by simp
   have cB: "dim_col (unwrap_lm (\<tau> :: (complex, 'p, 'p) lmat)) = ?P" for \<tau> by simp
   have iI_lt: "I div ?P < ?M" using I_lt' p_pos
-    by (metis div_less_iff_less_mult mult.commute)
+    by (blast intro: less_mult_imp_div_less)
   have iJ_lt: "J div ?P < ?M" using J_lt' p_pos
-    by (metis div_less_iff_less_mult mult.commute)
+    by (blast intro: less_mult_imp_div_less)
   have iImod: "I mod ?P < ?P" using p_pos by simp
   have iJmod: "J mod ?P < ?P" using p_pos by simp
   have inner_eq:
@@ -223,7 +223,7 @@ proof -
       fix k :: nat assume k_in: "k \<in> {0..<n * q}"
       hence k_lt: "k < n * q" by simp
       have div_lt: "k div q < n" using k_lt q_pos
-        by (metis atLeastLessThan_iff div_less_iff_less_mult less_nat_zero_code mult.commute)
+        by (blast intro: less_mult_imp_div_less)
       have mod_lt: "k mod q < q" using q_pos by simp
       show "(\<lambda>k. (k div q, k mod q)) k \<in> {0..<n} \<times> {0..<q}"
         using div_lt mod_lt by auto
@@ -271,7 +271,7 @@ proof -
     fix i assume i_in: "i \<in> {0..<?M * ?P}"
     hence i_lt: "i < ?M * ?P" by simp
     have div_lt: "i div ?P < ?M"
-      using i_lt p_pos div_less_iff_less_mult by (metis mult.commute)
+      using i_lt by (blast intro: less_mult_imp_div_less)
     have mod_lt: "i mod ?P < ?P" using p_pos by simp
     show "(unwrap_lm \<sigma> \<Otimes> unwrap_lm \<tau>) $$ (i, i)
         = unwrap_lm \<sigma> $$ (i div ?P, i div ?P)
@@ -486,9 +486,9 @@ proof (subst lmat_eq_iff_entries, intro allI impI)
   have I_lt: "I < ?M * ?P" using IJ(1) card_eq by simp
   have J_lt: "J < ?M * ?P" using IJ(2) card_eq by simp
   have I_div: "I div ?P < ?M" using I_lt p_pos
-    by (metis div_less_iff_less_mult mult.commute)
+    by (blast intro: less_mult_imp_div_less)
   have J_div: "J div ?P < ?M" using J_lt p_pos
-    by (metis div_less_iff_less_mult mult.commute)
+    by (blast intro: less_mult_imp_div_less)
   have I_mod: "I mod ?P < ?P" using p_pos by simp
   have J_mod: "J mod ?P < ?P" using p_pos by simp
   have rA: "dim_row (unwrap_lm \<sigma>) = ?M" "dim_col (unwrap_lm \<sigma>) = ?M" by simp_all
@@ -565,9 +565,9 @@ proof (subst lmat_eq_iff_entries, intro allI impI)
   have I_lt: "I < ?M * ?P" using IJ(1) card_eq by simp
   have J_lt: "J < ?M * ?P" using IJ(2) card_eq by simp
   have I_div: "I div ?P < ?M" using I_lt p_pos
-    by (metis div_less_iff_less_mult mult.commute)
+    by (blast intro: less_mult_imp_div_less)
   have J_div: "J div ?P < ?M" using J_lt p_pos
-    by (metis div_less_iff_less_mult mult.commute)
+    by (blast intro: less_mult_imp_div_less)
   have I_mod: "I mod ?P < ?P" using p_pos by simp
   have J_mod: "J mod ?P < ?P" using p_pos by simp
   have rA: "dim_row (unwrap_lm \<sigma>) = ?M" "dim_col (unwrap_lm \<sigma>) = ?M" by simp_all
@@ -1105,9 +1105,9 @@ proof -
     hence ij_lt: "i < m * p" "j < m * p"
       using T_dr T_dc Pcar Qcar by simp_all
     have iP_lt: "i div p < m" using ij_lt(1) p_pos
-      by (metis div_less_iff_less_mult mult.commute)
+      by (blast intro: less_mult_imp_div_less)
     have jP_lt: "j div p < m" using ij_lt(2) p_pos
-      by (metis div_less_iff_less_mult mult.commute)
+      by (blast intro: less_mult_imp_div_less)
     have iQ_lt: "i mod p < p" using p_pos by simp
     have jQ_lt: "j mod p < p" using p_pos by simp
     have T_entry: "?T $$ (i, j)
