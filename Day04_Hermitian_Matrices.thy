@@ -825,7 +825,8 @@ $\operatorname{span}\{v_1,\dots,v_m\}=\C^n$.
 The notes' form of the definition is \<open>psd_iff_quad_form_nonneg\<close>; the corollary on positive
 definite matrices is \<open>pd_iff_pos_eigenvalues\<close> (proved after the square root); the last
 theorem is formalised with ``the $v_i$ span $\C^n$'' phrased as ``no nonzero $x$ is
-orthogonal to every $v_i$''.\<close>
+orthogonal to every $v_i$''.  Formally $P\ge0$ and $P>0$ are \<open>psd P\<close> and \<open>pd P\<close>,
+displayed \<open>P \<ge>\<^sub>M 0\<close> and \<open>P >\<^sub>M 0\<close>.\<close>
 
 definition psd :: "complex Matrix.mat \<Rightarrow> bool" where
   "psd P \<equiv> hermitian P \<and>

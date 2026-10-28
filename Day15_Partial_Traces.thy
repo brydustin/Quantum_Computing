@@ -773,7 +773,10 @@ The formal definitions use the block formulas of Day 16: an $mp\times mp$ matrix
 pairs $(i,k)$, $i<m$, $k<p$, with flat index $ip+k$ ($\Hil_A$ is the major factor, matching
 $(A\otimes B)_{(r,c)}=A_{(r\div p,\,c\div p)}B_{(r\bmod p,\,c\bmod p)}$), and
 $(\tr_BX)_{ij}=\sum_{k<p}X_{ip+k,\,jp+k}$, $(\tr_AX)_{ij}=\sum_{k<m}X_{kp+i,\,kp+j}$.  The
-defining property on elementary tensors is proved below.\<close>
+defining property on elementary tensors is proved below.  The formal text writes $\tr_BX$ and
+$\tr_AX$ for $X\in M_m\otimes M_p$ as \<open>partial_trace_B m p X\<close> and \<open>partial_trace_A m p X\<close>, and
+\<open>partial_trace_on S AB X\<close> (displayed \<open>tr\<^bsub>S\<^esub>\<^bsup>AB\<^esup> X\<close>) traces out the factor $S$ of the
+bipartite space $AB$.\<close>
 
 record 'lab qspace =
   qdim :: nat

@@ -621,7 +621,7 @@ of the decomposition.  Independence of $P$ from the basis is \<open>outer_sum_ba
 characterisation of Hermitian idempotents as orthogonal projections needs Hermitian matrices and
 is \<open>projection_annihilates_orthogonal\<close> on Day 4.\<close>
 
-text \<open>The outer product $\ketbra vw=v\,w^*$ of Dirac's notation.\<close>
+text \<open>The outer product $\ketbra vw=v\,w^*$ of Dirac's notation; the formal text writes it \<open>v \<oslash> w\<close>.\<close>
 
 abbreviation outer_prod :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.mat"
     (infixr "\<oslash>" 75)

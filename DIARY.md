@@ -1168,3 +1168,15 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   and apply `outer_prod_index` by `unfolding`; JNF's `v + w` takes its dimension from `w`; `field_simps`
   inside an entrywise `auto` ran away (5 min) while the same algebra on the assembled scalar identity is
   instant.  Plan: `tools/deps/plans/day5.py`; scratch `wip/d23/D05.thy`.
+- **Audit tick 9: Schur's lemma by a phase choice; notation bridges** (2026-10-27).  The notes' Lemma
+  (Schur) — U_w x = e^{iθ} y for ‖x‖ = ‖y‖ — was 366 lines plus a 72-line zero case.  Choosing the phase
+  α = −cis(Arg⟨y|x⟩) makes ⟨αy|x⟩ = −|⟨y|x⟩| ≤ 0, so d = x − αy ≠ 0 whenever x ≠ 0 and no case split on
+  x = αy is needed; with w = d/‖d‖ the Householder identity of tick 6 gives U_w x = x − d = αy because
+  ⟨d|d⟩ = 2⟨d|x⟩.  One lemma, 98 lines, zero case included (my two-line scaling helper was caught by the
+  strict check as IMD's `inner_prod_distrib_left`, which Day 3 sees through the bundle).  Following the user's rule of the day, the texts now say how the formal development writes the
+  notes' symbols: v ⊘ w for |v⟩⟨w| (Day 2), `householder w` for U_w (Day 3), `psd P`/`pd P` displayed
+  P ≥_M 0 / P >_M 0 (Day 4), `choi_matrix n d Φ` for P_Φ (Day 19), `partial_trace_B m p X` and
+  `partial_trace_on S AB X` for tr_B X (Day 15); the matrix units E⟦i,j;m,n⟧, ⟨⟨y|x⟩⟩ and v ⊕ᵥ w were
+  already explained.  Traps (memory): `[of …]` order follows the premises; `unfolding` is innermost-first;
+  `algebra` failed on a ring identity with inner-product atoms; two simp loops on `of_real` products.
+  Plan: `tools/deps/plans/schur1.py`; scratch `wip/d23/D03b.thy`.  Next: `schur_induct` (385 lines).

@@ -208,6 +208,8 @@ lemma smult_dagger_mult:
   by (simp only: dagger_of_smult mult_smult_assoc_mat[OF dagger_carrier[OF A] smult_carrier_mat[OF A]]
                  mult_smult_distrib[OF dagger_carrier[OF A] A] smult_smult_mat)
 
+text \<open>The Householder reflection $U_w=I-2\ketbra ww$ of the notes is \<open>householder w\<close> in the formal text (displayed \<open>U\<^sub>H w\<close>).\<close>
+
 definition householder :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
   "householder w \<equiv>
      Matrix.mat (dim_vec w) (dim_vec w)
@@ -313,80 +315,10 @@ text \<open>\begin{noteslemma}[Schur]
 Given $x,y\in\C^n$ with $\norm{x}=\norm{y}$ there are $w\in\C^n$ with $\norm{w}=1$ and
 $\theta$ such that $U_w x=e^{i\theta}y$.
 \end{noteslemma}
-The formal statement writes $e^{i\theta}$ as \<^term>\<open>Complex (cos \<theta>) (sin \<theta>)\<close>; the case
-$x=0$ is treated separately.\<close>
-
-lemma schur_lemma_zero_case:
-  fixes x y :: "complex Matrix.vec"
-  assumes n_pos: "n > 0"
-      and xdim: "dim_vec x = n"
-      and ydim: "dim_vec y = n"
-      and norm_eq: "\<parallel>x\<parallel> = \<parallel>y\<parallel>"
-      and x_zero_norm: "\<parallel>x\<parallel> = 0"
-  shows "\<exists>w :: complex Matrix.vec. \<exists>\<theta> :: real.
-         dim_vec w = n \<and> \<parallel>w\<parallel> = 1 \<and>
-         householder w *\<^sub>v x = Complex (cos \<theta>) (sin \<theta>) \<cdot>\<^sub>v y"
-proof -
-  let ?w = "unit_vec n 0 :: complex Matrix.vec"
-  have zero_lt_n: "0 < n"
-    using n_pos by simp
-  have wdim: "dim_vec ?w = n"
-    by simp
-  have wnorm: "\<parallel>?w\<parallel> = 1"
-    using unit_cpx_vec_length[OF zero_lt_n] .
-
-  have x_zero_dim: "x = 0\<^sub>v (dim_vec x)"
-    using cpx_vec_length_zero_iff[of x] x_zero_norm by simp
-  have x_zero_n: "x = 0\<^sub>v n"
-    using x_zero_dim xdim by simp
-  have y_zero_norm: "\<parallel>y\<parallel> = 0"
-    using norm_eq x_zero_norm by simp
-  have y_zero_dim: "y = 0\<^sub>v (dim_vec y)"
-    using cpx_vec_length_zero_iff[of y] y_zero_norm by simp
-  have y_zero_n: "y = 0\<^sub>v n"
-    using y_zero_dim ydim by simp
-
-  have action_zero: "householder ?w *\<^sub>v x = 0\<^sub>v n"
-  proof (rule eq_vecI)
-    show "dim_vec (householder ?w *\<^sub>v x) = dim_vec (0\<^sub>v n)"
-      using xdim wdim by (simp add: householder_def)
-  next
-    fix i
-    assume i: "i < dim_vec (0\<^sub>v n)"
-    then have i_n: "i < n"
-      by simp
-    have "(householder ?w *\<^sub>v x) $ i =
-          x $ i - 2 * (?w $ i) * \<langle>?w | x\<rangle>"
-      using householder_mult_vec_index[of x ?w i] xdim wdim i_n by simp
-    also have "\<dots> = 0"
-      using x_zero_n i_n by simp
-    also have "\<dots> = (0\<^sub>v n) $ i"
-      using i_n by simp
-    finally show "(householder ?w *\<^sub>v x) $ i = (0\<^sub>v n) $ i" .
-  qed
-
-  have rhs_zero: "Complex (cos 0) (sin 0) \<cdot>\<^sub>v y = 0\<^sub>v n"
-  proof (rule eq_vecI)
-    show "dim_vec (Complex (cos 0) (sin 0) \<cdot>\<^sub>v y) = dim_vec (0\<^sub>v n)"
-      using ydim by simp
-  next
-    fix i
-    assume i: "i < dim_vec (0\<^sub>v n)"
-    then have i_n: "i < n"
-      by simp
-    have "(Complex (cos 0) (sin 0) \<cdot>\<^sub>v y) $ i = y $ i"
-      using ydim i_n by (simp add: complex_eq_iff)
-    also have "\<dots> = 0"
-      using y_zero_n i_n by simp
-    also have "\<dots> = (0\<^sub>v n) $ i"
-      using i_n by simp
-    finally show "(Complex (cos 0) (sin 0) \<cdot>\<^sub>v y) $ i = (0\<^sub>v n) $ i" .
-  qed
-  have "householder ?w *\<^sub>v x = Complex (cos 0) (sin 0) \<cdot>\<^sub>v y"
-    using action_zero rhs_zero by simp
-  then show ?thesis
-    using wdim wnorm by blast
-qed
+The formal statement writes $e^{i\theta}$ as \<^term>\<open>Complex (cos \<theta>) (sin \<theta>)\<close>.
+For $x\ne0$ choose the phase $\alpha=e^{i\theta}$ with $\braket{\alpha y}{x}=-|\braket yx|\le0$; then
+$d=x-\alpha y\ne0$, and for $w=d/\|d\|$ the reflection $U_wx=x-2\braket wx\,w=x-d=\alpha y$ because
+$\braket dd=2\braket dx$.  For $x=0$ also $y=0$ and any unit $w$ serves.\<close>
 
 lemma schur_lemma:
   fixes x y :: "complex Matrix.vec"
@@ -397,361 +329,94 @@ lemma schur_lemma:
   shows "\<exists>w :: complex Matrix.vec. \<exists>\<theta> :: real.
          dim_vec w = n \<and> \<parallel>w\<parallel> = 1 \<and>
          householder w *\<^sub>v x = Complex (cos \<theta>) (sin \<theta>) \<cdot>\<^sub>v y"
-proof (cases "\<parallel>x\<parallel> = 0")
+proof (cases "x = 0\<^sub>v n")
   case True
-  then show ?thesis
-    using schur_lemma_zero_case[OF n_pos xdim ydim norm_eq] by simp
+  have "\<parallel>x\<parallel> = 0" using True xdim cpx_vec_length_zero_iff[of x] by simp
+  hence y0: "y = 0\<^sub>v n" using norm_eq ydim cpx_vec_length_zero_iff[of y] by simp
+  have dim0: "dim_vec (0\<^sub>v n :: complex Matrix.vec) = dim_vec (unit_vec n 0)" by simp
+  show ?thesis
+  proof (intro exI[of _ "unit_vec n 0"] exI[of _ 0] conjI)
+    show "dim_vec (unit_vec n 0) = n" by simp
+    show "\<parallel>unit_vec n 0\<parallel> = 1" using n_pos by simp
+    show "householder (unit_vec n 0) *\<^sub>v x = Complex (cos 0) (sin 0) \<cdot>\<^sub>v y"
+      unfolding True y0 householder_mult_vec[OF dim0] by (intro eq_vecI) (auto simp: inner_prod_def)
+  qed
 next
   case False
-  have x_nonzero: "\<parallel>x\<parallel> \<noteq> 0" using False by simp
-
-  (* --- Phase: alpha = sgn(<y|x>), making <z|x> a nonneg real --- *)
-
-  define alpha :: complex where
-    "alpha \<equiv> if \<langle>y | x\<rangle> = 0 then 1
-              else \<langle>y | x\<rangle> / of_real (cmod (\<langle>y | x\<rangle>))"
-
-  have alpha_cmod: "cmod alpha = 1"
-    by (cases "\<langle>y | x\<rangle> = 0", 
-        simp add: alpha_def, 
-        simp add: alpha_def norm_divide)
-
-  define z :: "complex Matrix.vec" where "z \<equiv> alpha \<cdot>\<^sub>v y"
-
-  have zdim: "dim_vec z = n" using ydim by (simp add: z_def)
-
-  have "\<parallel>z\<parallel> = cmod alpha * \<parallel>y\<parallel>"
-      by (simp add: z_def cpx_vec_length_smult)
-  then have znorm: "\<parallel>z\<parallel> = \<parallel>x\<parallel>"
-    using alpha_cmod norm_eq by simp
-
-  have zx_inner: "\<langle>z | x\<rangle> = cnj alpha * \<langle>y | x\<rangle>"
-  proof -
-    have "dim_vec y = dim_vec x" using xdim ydim by simp
-    then show ?thesis
-      unfolding z_def
-      using No_Cloning.inner_prod_distrib_left by blast
-  qed
-
-  have zx_real: "\<langle>z | x\<rangle> \<in> \<real>"
-  proof (cases "\<langle>y | x\<rangle> = 0")
-    case True thus ?thesis using zx_inner by simp
+  define c where "c = \<langle>y|x\<rangle>"
+  define \<theta> where "\<theta> = Arg c + pi"
+  define \<alpha> where "\<alpha> = cis \<theta>"
+  have \<alpha>_cis: "\<alpha> = - cis (Arg c)" unfolding \<alpha>_def \<theta>_def cis_mult[symmetric] by simp
+  have c\<alpha>: "cmod \<alpha> = 1" unfolding \<alpha>_def by simp
+  let ?r = "- complex_of_real (cmod c)"
+  have r: "cnj \<alpha> * c = ?r"
+  proof (cases "c = 0")
+    case True thus ?thesis by simp
   next
     case False
-    have cmod_ne: "cmod (\<langle>y | x\<rangle>) \<noteq> 0" using False by simp
-    have aeq: "alpha = \<langle>y | x\<rangle> / of_real (cmod (\<langle>y | x\<rangle>))"
-      using False alpha_def by simp
-    have step1: "\<langle>z | x\<rangle> = cnj (\<langle>y | x\<rangle>) * \<langle>y | x\<rangle> / of_real (cmod (\<langle>y | x\<rangle>))"
-      by (simp add: zx_inner aeq field_simps)
-    have step2: "cnj (\<langle>y | x\<rangle>) * \<langle>y | x\<rangle> = of_real (cmod (\<langle>y | x\<rangle>) ^ 2)"
-    proof -
-      have "cnj (\<langle>y | x\<rangle>) * \<langle>y | x\<rangle> = \<langle>y | x\<rangle> * cnj (\<langle>y | x\<rangle>)"
-        by (simp add: mult.commute)
-      also have "\<dots> = of_real (Re (\<langle>y | x\<rangle>) ^ 2 + Im (\<langle>y | x\<rangle>) ^ 2)"
-        by (rule complex_mult_cnj)
-      also have "\<dots> = of_real (cmod (\<langle>y | x\<rangle>) ^ 2)"
-      proof -
-        have "cmod (\<langle>y | x\<rangle>) ^ 2 = Re (\<langle>y | x\<rangle>) ^ 2 + Im (\<langle>y | x\<rangle>) ^ 2"
-        proof -
-          have "0 \<le> Re (\<langle>y | x\<rangle>) ^ 2 + Im (\<langle>y | x\<rangle>) ^ 2"
-            by (intro add_nonneg_nonneg zero_le_power2)
-          thus ?thesis
-            by (simp add: norm_complex_def)
-        qed
-        thus ?thesis by simp
-      qed
-      finally show ?thesis.
-    qed
-    have step3: "((of_real (cmod (\<langle>y | x\<rangle>) ^ 2) / of_real (cmod (\<langle>y | x\<rangle>))) :: complex)
-       = of_real (cmod (\<langle>y | x\<rangle>))"
-    proof -
-      have nz: "cmod (\<langle>y | x\<rangle>) \<noteq> 0"
-        using cmod_ne by simp
-      have "((of_real (cmod (\<langle>y | x\<rangle>) ^ 2) / of_real (cmod (\<langle>y | x\<rangle>))) :: complex)
-          = of_real ((cmod (\<langle>y | x\<rangle>) ^ 2) / cmod (\<langle>y | x\<rangle>))"
-        by (rule of_real_divide[where 'a = complex
-             and x = "cmod (\<langle>y | x\<rangle>) ^ 2"
-             and y = "cmod (\<langle>y | x\<rangle>)", symmetric])
-      also have "... = of_real (cmod (\<langle>y | x\<rangle>))"
-        using nz by (simp add: power2_eq_square)
-      finally show ?thesis.
-    qed
-    show ?thesis using step1 step2 step3 by simp
+    have "cnj (cis (Arg c)) * c = (c * cnj c) / complex_of_real (cmod c)"
+      unfolding cis_Arg[OF False] sgn_eq by (simp add: mult.commute)
+    also have "\<dots> = complex_of_real (cmod c)"
+      unfolding complex_norm_square[symmetric] using False by (simp add: power2_eq_square)
+    finally show ?thesis unfolding \<alpha>_cis by simp
   qed
-  have "\<langle>x | z\<rangle> = cnj (\<langle>z | x\<rangle>)"
-      using inner_prod_cnj[of z x] zdim xdim by simp
-  then have xz_eq_zx: "\<langle>x | z\<rangle> = \<langle>z | x\<rangle>"
-    using Reals_cnj_iff zx_real by presburger
-  have xz_inner_sq: "\<langle>x - z | x - z\<rangle> = 2 * \<langle>x - z | x\<rangle>"
+  define z where "z = \<alpha> \<cdot>\<^sub>v y"
+  have zdim: "dim_vec z = n" unfolding z_def using ydim by simp
+  have yx: "dim_vec y = dim_vec x" by (simp add: xdim ydim)
+  have zx: "\<langle>z|x\<rangle> = ?r" unfolding z_def inner_prod_distrib_left[OF yx] c_def[symmetric] r ..
+  have zxd: "dim_vec z = dim_vec x" by (simp add: xdim zdim)
+  have xz: "\<langle>x|z\<rangle> = ?r" unfolding inner_prod_cnj[of z x, OF zxd] zx by simp
+  have yy: "\<langle>y|y\<rangle> = \<langle>x|x\<rangle>" unfolding cpx_vec_length_inner_prod[symmetric] norm_eq ..
+  have zz: "\<langle>z|z\<rangle> = \<langle>x|x\<rangle>"
   proof -
-    have "\<langle>x - z | x - z\<rangle> = \<langle>x | x\<rangle> - \<langle>z | x\<rangle> - \<langle>x | z\<rangle> + \<langle>z | z\<rangle>"
-      by (metis diff_add_eq diff_diff_eq2 inner_prod_left_minus' inner_prod_right_minus' xdim zdim)
-    also have "... = \<langle>x | x\<rangle> - \<langle>z | x\<rangle> - \<langle>z | x\<rangle> + \<langle>z | z\<rangle>"
-      using xz_eq_zx by simp
-    also have "... = \<langle>x | x\<rangle> - \<langle>z | x\<rangle> - \<langle>z | x\<rangle> + \<langle>x | x\<rangle>"
-      using znorm by (simp add: cpx_vec_length_inner_prod[symmetric])
-    also have "... = 2 * (\<langle>x | x\<rangle> - \<langle>z | x\<rangle>)"
-      by (simp add: algebra_simps)
-    also have "... = 2 * \<langle>x - z | x\<rangle>"
-      using inner_prod_left_minus'[of x z x] xdim zdim by simp
-    finally show ?thesis.
+    have "\<langle>z|z\<rangle> = \<alpha> * (cnj \<alpha> * \<langle>y|y\<rangle>)"
+      unfolding z_def inner_prod_right_smult' inner_prod_distrib_left[OF refl] ..
+    also have "\<dots> = \<langle>y|y\<rangle>"
+      using c\<alpha> by (simp add: mult.assoc[symmetric] complex_norm_square[symmetric])
+    finally show ?thesis unfolding yy .
   qed
-
+  define d where "d = x - z"
+  have ddim: "dim_vec d = n" unfolding d_def using xdim zdim by simp
+  have A: "\<langle>d|d\<rangle> = \<langle>d|x\<rangle> - \<langle>d|z\<rangle>"
+    using inner_prod_right_minus'[of x z d, OF zxd[symmetric]] unfolding d_def[symmetric] .
+  have B: "\<langle>d|z\<rangle> = ?r - \<langle>x|x\<rangle>"
+    using inner_prod_left_minus'[of x z z, OF zxd[symmetric] zxd[symmetric]] unfolding d_def[symmetric] xz zz .
+  have C: "\<langle>d|x\<rangle> = \<langle>x|x\<rangle> - ?r"
+    using inner_prod_left_minus'[of x z x, OF zxd[symmetric] refl] unfolding d_def[symmetric] zx .
+  have dd: "\<langle>d|d\<rangle> = \<langle>d|x\<rangle> + \<langle>d|x\<rangle>" unfolding A B C by (simp add: algebra_simps)
+  have d_nz: "d \<noteq> 0\<^sub>v n"
+  proof
+    assume d0: "d = 0\<^sub>v n"
+    have xx: "\<langle>x|x\<rangle> = complex_of_real ((\<parallel>x\<parallel>)\<^sup>2)" by (simp only: cpx_vec_length_inner_prod)
+    have "\<langle>d|x\<rangle> = 0" unfolding d0 inner_prod_def using xdim by simp
+    hence e0: "0 = complex_of_real ((\<parallel>x\<parallel>)\<^sup>2) - ?r" using C unfolding xx by simp
+    have "(\<parallel>x\<parallel>)\<^sup>2 + cmod c = 0" using arg_cong[OF e0, of Re] by simp
+    hence "(\<parallel>x\<parallel>)\<^sup>2 \<le> 0" using norm_ge_zero[of c] by linarith
+    hence "(\<parallel>x\<parallel>)\<^sup>2 = 0" using zero_le_power2[of "\<parallel>x\<parallel>"] by (rule antisym)
+    thus False using False xdim cpx_vec_length_zero_iff[of x] by simp
+  qed
+  have dn: "\<parallel>d\<parallel> \<noteq> 0" using d_nz ddim cpx_vec_length_zero_iff[of d] by simp
+  have dge: "0 \<le> \<parallel>d\<parallel>" by (simp add: cpx_vec_length_def sum_nonneg)
+  let ?s = "complex_of_real (1 / \<parallel>d\<parallel>)"
+  define w where "w = ?s \<cdot>\<^sub>v d"
+  have wdim: "dim_vec w = n" unfolding w_def using ddim by simp
+  have wnorm: "\<parallel>w\<parallel> = 1" unfolding w_def cpx_vec_length_smult using dn dge by (simp add: norm_divide abs_of_nonneg)
+  have dx_dim: "dim_vec d = dim_vec x" by (simp add: ddim xdim)
+  have dd': "\<langle>d|d\<rangle> = complex_of_real ((\<parallel>d\<parallel>)\<^sup>2)" by (simp only: cpx_vec_length_inner_prod)
+  have "2 * (?s * \<langle>d|x\<rangle>) * ?s = ?s * ?s * (\<langle>d|x\<rangle> + \<langle>d|x\<rangle>)"
+    unfolding mult_2 by (simp only: distrib_right distrib_left mult_ac)
+  also have "\<dots> = ?s * ?s * complex_of_real ((\<parallel>d\<parallel>)\<^sup>2)" unfolding dd[symmetric] dd' ..
+  also have "\<dots> = complex_of_real (1 / \<parallel>d\<parallel> * (1 / \<parallel>d\<parallel>) * (\<parallel>d\<parallel>)\<^sup>2)" unfolding of_real_mult ..
+  also have "\<dots> = 1" using dn by (simp add: power2_eq_square)
+  finally have scal: "2 * (?s * \<langle>d|x\<rangle>) * ?s = 1" .
+  have cs: "cnj ?s = ?s" by simp
+  have "householder w *\<^sub>v x = x - (2 * \<langle>w|x\<rangle>) \<cdot>\<^sub>v w" by (rule householder_mult_vec) (simp add: xdim wdim)
+  also have "(2 * \<langle>w|x\<rangle>) \<cdot>\<^sub>v w = d"
+    unfolding w_def inner_prod_distrib_left[OF dx_dim] cs smult_smult_assoc scal by simp
+  finally have Hx: "householder w *\<^sub>v x = z" unfolding d_def using xdim zdim by (intro eq_vecI) auto
+  have cis\<theta>: "Complex (cos \<theta>) (sin \<theta>) = cis \<theta>" by (simp add: complex_eq_iff)
   show ?thesis
-  proof (cases "x = z")
-
-    (* ---- Case x = z: Householder of normalised x sends x to -x = (-alpha) y ---- *)
-    case True
-    define w :: "complex Matrix.vec" where
-      "w \<equiv> (1 / of_real (\<parallel>x\<parallel>)) \<cdot>\<^sub>v x"
-
-    have wdim: "dim_vec w = n"
-      using xdim by (simp add: w_def)
-
-    have wnorm: "\<parallel>w\<parallel> = 1"
-    proof -
-      have "\<parallel>w\<parallel> = cmod (1 / of_real (\<parallel>x\<parallel>)) * \<parallel>x\<parallel>"
-        by (simp add: w_def cpx_vec_length_smult)
-      also have "... = (1 / \<parallel>x\<parallel>) * \<parallel>x\<parallel>"
-        by (simp add: norm_divide,
-            metis (full_types) Re_complex_of_real abs_abs cpx_vec_length_inner_prod csqrt_of_real' 
-            inner_prod_csqrt mult.right_neutral real_sqrt_abs' zero_compare_simps(12))   
-      also have "... = 1"
-        using x_nonzero by simp
-      finally show ?thesis.
-    qed
-
-    have inner_wx: "\<langle>w | x\<rangle> = of_real (\<parallel>x\<parallel>)"
-    proof -
-      have "\<langle>w | x\<rangle> = cnj (1 / of_real (\<parallel>x\<parallel>)) * \<langle>x | x\<rangle>"
-        unfolding w_def
-        by (rule No_Cloning.inner_prod_distrib_left) simp
-      also have "cnj (1 / of_real (\<parallel>x\<parallel>)) = 1 / of_real (\<parallel>x\<parallel>)"
-        by simp
-      also have "(1 / of_real (\<parallel>x\<parallel>)) * \<langle>x | x\<rangle> = of_real (\<parallel>x\<parallel>)"
-      proof -
-        have "\<langle>x | x\<rangle> = of_real (\<parallel>x\<parallel> ^ 2)"
-          using cpx_vec_length_inner_prod by simp
-        thus ?thesis using x_nonzero
-          by (simp add: power2_eq_square)
-      qed
-      finally show ?thesis.
-    qed
-
-    have hw_action: "householder w *\<^sub>v x = - x"
-    proof -
-      have step: "(2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w = (2 :: complex) \<cdot>\<^sub>v x"
-      proof -
-        have "(2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w
-            = (2 * of_real (\<parallel>x\<parallel>)) \<cdot>\<^sub>v ((1 / of_real (\<parallel>x\<parallel>)) \<cdot>\<^sub>v x)"
-          using inner_wx w_def by simp
-        also have "\<dots> = (2 * of_real (\<parallel>x\<parallel>) * (1 / of_real (\<parallel>x\<parallel>))) \<cdot>\<^sub>v x"
-          by (simp add: smult_smult_assoc)
-        also have "2 * of_real (\<parallel>x\<parallel>) * (1 / of_real (\<parallel>x\<parallel>)) = (2 :: complex)"
-          using x_nonzero by (simp add: field_simps)
-        finally show ?thesis .
-      qed
-      have "householder w *\<^sub>v x = x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w"
-        using householder_mult_vec[of x w] xdim wdim by simp
-      also have "\<dots> = x - (2 :: complex) \<cdot>\<^sub>v x"
-        using step by simp
-      also have "\<dots> = - x"
-      proof (rule eq_vecI)
-        show "dim_vec (x - (2 :: complex) \<cdot>\<^sub>v x) = dim_vec (- x)"
-          using xdim by simp
-      next
-        fix i assume "i < dim_vec (- x)"
-        then have hi: "i < n" using xdim by simp
-        show "(x - (2 :: complex) \<cdot>\<^sub>v x) $ i = (- x) $ i"
-          using hi xdim by simp
-      qed
-      finally show ?thesis.
-    qed
-
-    have neg_smult: "- (alpha \<cdot>\<^sub>v y) = (- alpha) \<cdot>\<^sub>v y"
-    proof (rule eq_vecI)
-      show "dim_vec (- (alpha \<cdot>\<^sub>v y)) = dim_vec ((- alpha) \<cdot>\<^sub>v y)" by simp
-    next
-      fix i assume "i < dim_vec ((- alpha) \<cdot>\<^sub>v y)"
-      then have "i < n" using ydim by simp
-      then show "(- (alpha \<cdot>\<^sub>v y)) $ i = ((- alpha) \<cdot>\<^sub>v y) $ i"
-        by (simp add: ydim)
-    qed
-
-    have hw_eq: "householder w *\<^sub>v x = (- alpha) \<cdot>\<^sub>v y"
-    proof -
-      have "- x = (- alpha) \<cdot>\<^sub>v y"
-        using True z_def neg_smult by simp
-      thus ?thesis using hw_action by simp
-    qed
-
-    have neg_alpha_unit: "\<exists>\<theta> :: real. (- alpha) = Complex (cos \<theta>) (sin \<theta>)"
-    proof -
-      have cm: "cmod (- alpha) = 1" by (simp add: alpha_cmod)
-      have "- alpha = rcis (cmod (- alpha)) (Arg (- alpha))"
-        using rcis_cmod_Arg by presburger
-      also have "\<dots> = cis (Arg (- alpha))"
-        using cm by (simp add: rcis_def)
-      also have "\<dots> = Complex (cos (Arg (- alpha))) (sin (Arg (- alpha)))"
-        by (simp add: complex_eq_iff)
-      finally show ?thesis by blast
-    qed
-
-    obtain \<theta> where htheta: "(- alpha) = Complex (cos \<theta>) (sin \<theta>)"
-      using neg_alpha_unit by blast
-    have hw_final: "householder w *\<^sub>v x = Complex (cos \<theta>) (sin \<theta>) \<cdot>\<^sub>v y"
-      using hw_eq htheta by simp
-    show ?thesis using wdim wnorm hw_final by blast
-
-  next
-    (* ---- Case x \<noteq> z: Householder of normalised (x - z) sends x to z ---- *)
-    case False
-
-    have x_ne_z: "x \<noteq> z" using False .
-
-    have xz_ne_zero: "x - z \<noteq> 0\<^sub>v n"
-    proof
-      assume h: "x - z = 0\<^sub>v n"
-      have "\<forall>i < n. x $ i = z $ i"
-      proof clarify
-        fix i assume hi: "i < n"
-        have "(x - z) $ i = 0"
-          using h hi by simp
-        thus "x $ i = z $ i"
-          using hi xdim zdim by simp
-      qed
-      then have "x = z"
-        by (metis eq_vecI xdim zdim)
-      thus False using x_ne_z by simp
-    qed
-
-    have xz_nonzero: "\<parallel>x - z\<parallel> \<noteq> 0"
-    proof -
-      have "x - z \<noteq> 0\<^sub>v (dim_vec (x - z))"
-        using xz_ne_zero xdim zdim by simp
-      thus ?thesis using cpx_vec_length_zero_iff by blast
-    qed
-
-    define c :: complex where "c \<equiv> 1 / of_real (\<parallel>x - z\<parallel>)"
-
-    define w :: "complex Matrix.vec" where "w \<equiv> c \<cdot>\<^sub>v (x - z)"
-
-    have wdim: "dim_vec w = n"
-      using xdim zdim by (simp add: w_def)
-
-    have wnorm: "\<parallel>w\<parallel> = 1"
-    proof -
-      have "\<parallel>w\<parallel> = cmod (1 / of_real (\<parallel>x\<parallel>)) * \<parallel>x\<parallel>"
-        by (metis Re_complex_of_real c_def cpx_vec_length_inner_prod cpx_vec_length_smult 
-            csqrt_of_real_nonneg divide_eq_eq_1 inner_prod_csqrt inner_prod_with_itself_Im 
-            inner_prod_with_itself_Re norm_divide norm_of_real real_sqrt_abs times_divide_eq_left 
-            times_divide_eq_right w_def x_nonzero xz_nonzero)
-      also have "... = (1 / \<parallel>x\<parallel>) * \<parallel>x\<parallel>"
-        by (simp add: norm_divide,
-            metis (full_types) Re_complex_of_real abs_abs cpx_vec_length_inner_prod csqrt_of_real' 
-            inner_prod_csqrt mult.right_neutral real_sqrt_abs' zero_compare_simps(12))   
-      also have "... = 1"
-        using x_nonzero by simp
-      finally show ?thesis.
-    qed
-
-    have inner_wx: "\<langle>w | x\<rangle> = c * \<langle>x - z | x\<rangle>"
-    proof -
-      have "dim_vec (x - z) = dim_vec x" using xdim zdim by simp
-      have "\<langle>w | x\<rangle> = cnj c * \<langle>x - z | x\<rangle>"
-        unfolding w_def
-        by (rule No_Cloning.inner_prod_distrib_left) (use xdim zdim in simp)
-      also have "cnj c = c"
-        by (simp add: c_def)
-      finally show ?thesis .
-    qed
-
-    have coeff_one: "2 * c * \<langle>x - z | x\<rangle> * c = 1"
-    proof -
-      have h1: "\<langle>x - z | x - z\<rangle> = 2 * \<langle>x - z | x\<rangle>"
-        using xz_inner_sq .
-      have h2: "c ^ 2 * of_real (\<parallel>x - z\<parallel> ^ 2) = 1"
-      proof -
-        have hne: "(of_real (\<parallel>x - z\<parallel>) :: complex) \<noteq> 0"
-          using xz_nonzero by simp
-        have "c ^ 2 = (1 / of_real (\<parallel>x - z\<parallel>)) ^ 2"
-          by (simp add: c_def)
-        also have "\<dots> = 1 / of_real (\<parallel>x - z\<parallel> ^ 2)"
-          by (simp add: power2_eq_square)
-        finally have ceq: "c ^ 2 = 1 / of_real (\<parallel>x - z\<parallel> ^ 2)" .
-        have hne2: "(of_real (\<parallel>x - z\<parallel> ^ 2) :: complex) \<noteq> 0"
-          using hne by (simp add: power2_eq_square)
-        show ?thesis using ceq hne2 by (simp add: field_simps)
-      qed
-      have h3: "\<langle>x - z | x - z\<rangle> = of_real (\<parallel>x - z\<parallel> ^ 2)"
-        using cpx_vec_length_inner_prod by simp
-      have "2 * c * \<langle>x - z | x\<rangle> * c = c ^ 2 * (2 * \<langle>x - z | x\<rangle>)"
-        by (simp add: power2_eq_square)
-      also have "\<dots> = c ^ 2 * \<langle>x - z | x - z\<rangle>"
-        using h1 by simp
-      also have "\<dots> = c ^ 2 * of_real (\<parallel>x - z\<parallel> ^ 2)"
-        using h3 by simp
-      also have "\<dots> = 1"
-        using h2.
-      finally show ?thesis.
-    qed
-
-    have hw_action: "householder w *\<^sub>v x = z"
-    proof -
-      have smult_step: "(2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w = x - z"
-      proof -
-        have "(2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w
-            = (2 * c * \<langle>x - z | x\<rangle>) \<cdot>\<^sub>v (c \<cdot>\<^sub>v (x - z))"
-          using inner_wx w_def by (simp add: algebra_simps)
-        also have "\<dots> = (2 * c * \<langle>x - z | x\<rangle> * c) \<cdot>\<^sub>v (x - z)"
-          by (simp add: smult_smult_assoc algebra_simps)
-        also have "\<dots> = 1 \<cdot>\<^sub>v (x - z)"
-          using coeff_one by simp
-        also have "\<dots> = x - z" by simp
-        finally show ?thesis.
-      qed
-      have "householder w *\<^sub>v x = x - (2 * \<langle>w | x\<rangle>) \<cdot>\<^sub>v w"
-        using householder_mult_vec[of x w] xdim wdim by simp
-      also have "\<dots> = x - (x - z)"
-        using smult_step by simp
-      also have "\<dots> = z"
-      proof (rule eq_vecI)
-        show "dim_vec (x - (x - z)) = dim_vec z"
-          using xdim zdim by simp
-      next
-        fix i assume "i < dim_vec z"
-        then have hi: "i < n" using zdim by simp
-        show "(x - (x - z)) $ i = z $ i"
-          using hi xdim zdim by simp
-      qed
-      finally show ?thesis .
-    qed
-
-    have alpha_unit: "\<exists>\<theta> :: real. alpha = Complex (cos \<theta>) (sin \<theta>)"
-    proof -
-      have "alpha = rcis (cmod alpha) (Arg alpha)"
-        using rcis_cmod_Arg by simp
-      also have "\<dots> = cis (Arg alpha)"
-        using alpha_cmod by (simp add: rcis_def)
-      also have "\<dots> = Complex (cos (Arg alpha)) (sin (Arg alpha))"
-        by (simp add: complex_eq_iff)
-      finally show ?thesis by blast
-    qed
-
-    obtain \<theta> where htheta: "alpha = Complex (cos \<theta>) (sin \<theta>)"
-      using alpha_unit by blast
-
-    have hw_final: "householder w *\<^sub>v x = Complex (cos \<theta>) (sin \<theta>) \<cdot>\<^sub>v y"
-    proof -
-      have "householder w *\<^sub>v x = z" using hw_action .
-      also have "z = alpha \<cdot>\<^sub>v y" by (simp add: z_def)
-      also have "\<dots> = Complex (cos \<theta>) (sin \<theta>) \<cdot>\<^sub>v y"
-        using htheta by simp
-      finally show ?thesis.
-    qed
-
-    show ?thesis using wdim wnorm hw_final by blast
-  qed
+    by (intro exI[of _ w] exI[of _ \<theta>] conjI wdim wnorm) (unfold Hx z_def \<alpha>_def cis\<theta>, rule refl)
 qed
 
 text \<open>\begin{notestheorem}[Schur]
