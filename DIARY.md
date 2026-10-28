@@ -1538,3 +1538,6 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `psd_conjugate`) — the square root of $\rho$ is no longer needed (73 → 13).  Plan:
   `tools/deps/plans/sweep11.py`.  `simp add: sum_nonneg` does not use a `?i < n ⟹ …` fact; name it and
   `rule sum_nonneg`.
+- **Audit tick 52: Day 22's norm bound as one chain** (2026-10-28).  For $M\ge0$ with $\Tr M=1$:
+  $\|M\|^2=\sum_{ij}|M_{ij}|^2\le\sum_{ij}\Re M_{ii}\,\Re M_{jj}=(\Re\Tr M)^2=1$, one `also` per step on top
+  of tick 48's entry bound (90 lines → 17).  Plan: `tools/deps/plans/sweep12.py`.

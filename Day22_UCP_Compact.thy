@@ -410,91 +410,22 @@ lemma norm_lmat_le_of_psd_unit_trace:
   fixes M :: "(complex, 'k :: finite, 'k) lmat"
   assumes psd: "psd_lmat M" and tr: "Tr_lmat M = 1"
   shows "norm M \<le> 1"
-proof -
-  let ?n = "CARD('k)"
-  have psd_unwrap: "psd (unwrap_lm M)" using psd by simp
-  have unwrap_carr: "unwrap_lm M \<in> carrier_mat ?n ?n" by simp
-  have Tr_lmat_unwrap: "Tr_lmat M = Tr (unwrap_lm M)"
-    unfolding Tr_lmat_def Tr_def by (simp add: atLeast0LessThan)
-  have norm_sq_eq:
-    "(norm M)\<^sup>2 = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
-                    (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
-  proof -
-    have "(norm M)\<^sup>2 = inner M M" by (simp add: power2_norm_eq_inner)
-    also have "\<dots> = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
-                      (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
-      unfolding inner_lmat_def
-      by (intro sum.cong refl)
-         (auto simp: power2_norm_eq_inner [symmetric] split: prod.split)
-    finally show ?thesis .
-  qed
-  have entry_bound:
-    "\<And>i j. i < ?n \<Longrightarrow> j < ?n \<Longrightarrow>
-       (norm (unwrap_lm M $$ (i, j)))\<^sup>2 \<le>
-       Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j))"
-    using psd_entry_bound_by_diag [OF unwrap_carr psd_unwrap] .
-  have sum_bound:
-    "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}. (norm (unwrap_lm M $$ (i, j)))\<^sup>2)
-     \<le> (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
-          Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
-  proof (rule sum_mono)
-    fix x :: "nat \<times> nat"
-    assume x_in: "x \<in> {0..<?n} \<times> {0..<?n}"
-    obtain a b where x_eq: "x = (a, b)" by (cases x)
-    from x_in x_eq have ab: "a < ?n" "b < ?n" by auto
-    show "(case x of (i, j) \<Rightarrow> (norm (unwrap_lm M $$ (i, j)))\<^sup>2)
-          \<le> (case x of (i, j) \<Rightarrow>
-                Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
-      using entry_bound [OF ab(1) ab(2)] by (simp add: x_eq)
-  qed
-  have prod_eq:
-    "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
-        Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))
-     = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
-       * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
-  proof -
-    have "(\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
-            Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))
-        = (\<Sum>i = 0..<?n. \<Sum>j = 0..<?n.
-            Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
-      by (rule sum.cartesian_product [symmetric])
-    also have "\<dots> = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
-                  * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
-      by (rule sum_product [symmetric])
-    finally show ?thesis .
-  qed
-  have Re_tr_one:
-    "(\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i))) = 1"
-  proof -
-    have "(\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
-        = Re (\<Sum>i = 0..<?n. unwrap_lm M $$ (i, i))"
-      by (rule Re_sum [symmetric])
-    also have "\<dots> = Re (Tr (unwrap_lm M))"
-      unfolding Tr_def by (simp add: atLeast0LessThan)
-    also have "\<dots> = Re (Tr_lmat M)" using Tr_lmat_unwrap by simp
-    also have "\<dots> = Re (1 :: complex)" using tr by simp
-    also have "\<dots> = 1" by simp
-    finally show ?thesis .
-  qed
-  have norm_sq_le: "(norm M)\<^sup>2 \<le> 1"
-  proof -
-    have "(norm M)\<^sup>2
-        = (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
-            (norm (unwrap_lm M $$ (i, j)))\<^sup>2)"
-      by (rule norm_sq_eq)
-    also have "\<dots> \<le> (\<Sum>(i, j) \<in> {0..<?n} \<times> {0..<?n}.
-                      Re (unwrap_lm M $$ (i, i)) * Re (unwrap_lm M $$ (j, j)))"
-      using sum_bound .
-    also have "\<dots> = (\<Sum>i = 0..<?n. Re (unwrap_lm M $$ (i, i)))
-                  * (\<Sum>j = 0..<?n. Re (unwrap_lm M $$ (j, j)))"
-      by (rule prod_eq)
-    also have "\<dots> = 1 * 1" using Re_tr_one by simp
-    also have "\<dots> = 1" by simp
-    finally show ?thesis .
-  qed
-  show "norm M \<le> 1"
-    by (rule power2_le_imp_le) (use norm_sq_le in simp_all)
-qed
+proof (rule power2_le_imp_le)
+  let ?M = "unwrap_lm M" and ?I = "{0..<CARD('k)}"
+  have "?M \<in> carrier_mat CARD('k) CARD('k)" "psd ?M" using psd by simp_all
+  note bound = psd_entry_bound_by_diag[OF this]
+  have "(norm M)\<^sup>2 = inner M M" by (simp add: power2_norm_eq_inner)
+  also have "\<dots> = (\<Sum>(i, j) \<in> ?I \<times> ?I. (norm (?M $$ (i, j)))\<^sup>2)"
+    unfolding inner_lmat_def
+    by (intro sum.cong refl) (auto simp: power2_norm_eq_inner [symmetric] split: prod.split)
+  also have "\<dots> \<le> (\<Sum>(i, j) \<in> ?I \<times> ?I. Re (?M $$ (i, i)) * Re (?M $$ (j, j)))"
+    using bound by (intro sum_mono) (auto split: prod.split)
+  also have "\<dots> = (\<Sum>i \<in> ?I. Re (?M $$ (i, i))) * (\<Sum>j \<in> ?I. Re (?M $$ (j, j)))"
+    unfolding sum_product sum.cartesian_product ..
+  also have "\<dots> = 1"
+    using tr unfolding Tr_lmat_def Re_sum[symmetric] by simp
+  finally show "(norm M)\<^sup>2 \<le> 1\<^sup>2" by simp
+qed simp
 
 lemma compact_unit_trace_psd_lmat:
   "compact {M :: (complex, 'k :: finite, 'k) lmat. psd_lmat M \<and> Tr_lmat M = 1}"
