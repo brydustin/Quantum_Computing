@@ -97,7 +97,7 @@ next
               \<longrightarrow> unwrap_lm M $$ (i, j) = unwrap_lm N $$ (i, j)"
   have "unwrap_lm M = unwrap_lm N"
     by (rule eq_matI) (use * in auto)
-  thus "M = N" by (metis unwrap_lm_inverse)
+  thus "M = N" unfolding unwrap_lm_inject .
 qed
 
 section \<open>Distance, uniformity, open: \<open>metric_space\<close> instance\<close>
@@ -523,7 +523,7 @@ lemma zero_inner_Basis_lmat:
 lemma Basis_lmat_perp_zero:
   fixes x :: "('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat"
   shows "(\<forall>u \<in> Basis_lmat_set. inner x u = 0) \<longleftrightarrow> x = 0"
-  using Basis_lmat_perp_imp_zero zero_inner_Basis_lmat by metis
+  using Basis_lmat_perp_imp_zero zero_inner_Basis_lmat by blast
 
 section \<open>Euclidean space instance\<close>
 

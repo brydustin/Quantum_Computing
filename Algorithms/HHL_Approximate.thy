@@ -953,11 +953,6 @@ qed
 
 subsection \<open>From eigenvectors to every right-hand side\<close>
 
-lemma dagger_mult_entry:
-  assumes P: "P \<in> carrier_mat K m" and i: "i < m" and j: "j < m"
-  shows "(P\<^sup>\<dagger> * P) $$ (i, j) = \<langle>Matrix.col P i|Matrix.col P j\<rangle>"
-  using P i j by (simp add: dagger_def scalar_prod_def inner_prod_def atLeast0LessThan)
-
 lemma inner_as_sum: "dim_vec y = n \<Longrightarrow> \<langle>x|y\<rangle> = (\<Sum>i<n. cnj (x $ i) * y $ i)"
   by (simp add: Quantum.inner_prod_def atLeast0LessThan)
 
@@ -986,7 +981,7 @@ proof -
   proof (rule eq_matI)
     fix i j assume "i < dim_row D" "j < dim_col D"
     hence i: "i < n" and j: "j < n" by (simp_all add: D_def)
-    have "(?MU\<^sup>\<dagger> * ?MU) $$ (i, j) = \<langle>Matrix.col ?MU i|Matrix.col ?MU j\<rangle>" by (rule dagger_mult_entry[OF MU i j])
+    have "(?MU\<^sup>\<dagger> * ?MU) $$ (i, j) = \<langle>Matrix.col ?MU i|Matrix.col ?MU j\<rangle>" by (rule dagger_mult_inner[OF MU i j])
     also have "\<dots> = \<langle>M *\<^sub>v Matrix.col U i|M *\<^sub>v Matrix.col U j\<rangle>" unfolding col_mult2[OF M U(1) i] col_mult2[OF M U(1) j] ..
     also have "\<dots> = D $$ (i, j)"
     proof (cases "i = j")

@@ -1506,3 +1506,17 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   lecture theories are now metis/smt-free.  Plans: `tools/deps/plans/sweep5.py`, `sweep6.py`.
   Lessons: `thm[of …]` instantiates in order of first occurrence, not `fixes` order; the HHL theories
   sit directly in `Algorithms/`, so helper greps must include `Algorithms/*.thy`.
+- **Audit ticks 47–48: the bundle without metis; Day 22's entry bound by Cauchy–Schwarz**
+  (2026-10-28).  Unitary_Tensor_Algebra: a unitary is square because
+  $\sum_c(A^*A)_{cc}=\sum_{r,c}|a_{rc}|^2=\sum_r(AA^*)_{rr}$ (85 lines → 17); $(AB)^*(AB)=B^*(A^*A)B$
+  with instantiated `assoc_mult_mat`; `tensor_mat_id` by `nat_eq_iff_div_mod`; the mixed-product
+  property is IMD's `mult_distr_tensor` plus the zero-width cases, whose entries are empty sums
+  (121 → 21); unitarity of $A\otimes B$ is one unfolding through `hermite_cnj_of_tensor` (67 → 13);
+  an empty subsection and a process note removed.  Day 22's $|Q_{ab}|^2\le Q_{aa}Q_{bb}$ is IMD's
+  `cauchy_schwarz_ineq` for the columns of a square root $W$ ($Q=W^*W$, $Q_{ab}=\braket{w_a}{w_b}$;
+  107 → 15); the bundle's diagonal Gram-entry lemma becomes `dagger_mult_inner` with the one-line
+  proof of HHL_Approximate's `dagger_mult_entry`, which it replaces (the strict DUP check again).  Notes
+  and bundle are now metis/smt-free; 422 lines deleted, 68 added.  Plans: `tools/deps/plans/sweep7.py`,
+  `sweep8.py`.  Lessons: `A * A\<^sup>\<dagger>` is ambiguous (parenthesise the dagger); conditional
+  `simp add: assoc_mult_mat` cannot discharge `A * B ∈ carrier_mat …` (instantiate the rules); a
+  shape grep containing `$$` must be `grep -F`.

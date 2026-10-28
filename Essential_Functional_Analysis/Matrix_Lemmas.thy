@@ -15,7 +15,7 @@ hide_const (open) Quantum.X Quantum.Y Quantum.Z Quantum.H Quantum.S Quantum.T
 section \<open>Complex numbers and scalar multiples\<close>
 
 lemma cnj_mult_self_cmod: "cnj z * z = complex_of_real ((cmod z)\<^sup>2)"
-  by (metis complex_norm_square mult.commute)
+  unfolding complex_norm_square by (rule mult.commute)
 
 lemma smult_smult_mat:
   fixes A :: "complex Matrix.mat"
@@ -38,19 +38,11 @@ lemma dagger_carrier:
   using assms
   by (simp add: dagger_def)
 
-lemma dagger_mult_diag_inner:
+lemma dagger_mult_inner:
   fixes Y :: "complex Matrix.mat"
-  assumes Yc: "Y \<in> carrier_mat p q" and j: "j < q"
-  shows "((Y\<^sup>\<dagger>) * Y) $$ (j,j) = \<langle>Matrix.col Y j | Matrix.col Y j\<rangle>"
-proof -
-  have "((Y\<^sup>\<dagger>) * Y) $$ (j,j) = (\<Sum>i<p. cnj (Y $$ (i,j)) * Y $$ (i,j))"
-    using carrier_matD[OF Yc] j by (simp add: scalar_prod_def dagger_def atLeast0LessThan)
-  also have "\<dots> = (\<Sum>i<p. cnj (Matrix.col Y j $ i) * Matrix.col Y j $ i)"
-    using carrier_matD[OF Yc] by (intro sum.cong refl) (simp add: Matrix.col_def)
-  also have "\<dots> = \<langle>Matrix.col Y j | Matrix.col Y j\<rangle>"
-    unfolding inner_prod_def using carrier_matD[OF Yc] by (simp add: atLeast0LessThan)
-  finally show ?thesis .
-qed
+  assumes Yc: "Y \<in> carrier_mat p q" and i: "i < q" and j: "j < q"
+  shows "((Y\<^sup>\<dagger>) * Y) $$ (i,j) = \<langle>Matrix.col Y i | Matrix.col Y j\<rangle>"
+  using Yc i j by (simp add: dagger_def scalar_prod_def inner_prod_def atLeast0LessThan)
 
 section \<open>Sums of vectors\<close>
 

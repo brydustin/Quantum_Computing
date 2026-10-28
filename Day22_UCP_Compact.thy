@@ -397,104 +397,13 @@ lemma psd_entry_bound_by_diag:
       and i: "i < n" and j: "j < n"
   shows "(norm (M $$ (i, j)))\<^sup>2 \<le> Re (M $$ (i, i)) * Re (M $$ (j, j))"
 proof -
-  obtain Q :: "complex Matrix.mat"
-    where Qcar: "Q \<in> carrier_mat n n"
-      and Qpsd: "psd Q"
-      and QQ: "Q * Q = M"
-    using psd_sqrt_exists [OF Mcar Mpsd] by blast
-  have Qherm: "hermitian Q" using Qpsd by (rule psd_hermitian)
-  have Qdr: "dim_row Q = n" using Qcar by simp
-  have Qdc: "dim_col Q = n" using Qcar by simp
-  have Qcnj:
-    "\<And>a b. a < n \<Longrightarrow> b < n \<Longrightarrow> Q $$ (b, a) = cnj (Q $$ (a, b))"
-  proof -
-    fix a b assume a: "a < n" and b: "b < n"
-    show "Q $$ (b, a) = cnj (Q $$ (a, b))"
-      using hermitian_index[OF Qherm, of b a] Qdr Qdc a b by simp
-  qed
-  have Mij_sum:
-    "M $$ (i, j) = (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
-  proof -
-    have "M $$ (i, j) = (Q * Q) $$ (i, j)" using QQ by simp
-    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (i, k) * Q $$ (k, j))"
-      using Qcar i j by (simp add: scalar_prod_def Matrix.row_def
-                                     Matrix.col_def lessThan_atLeast0)
-    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
-    proof (rule sum.cong [OF refl])
-      fix k assume k_in: "k \<in> {0..<n}"
-      hence k_lt: "k < n" by simp
-      have "Q $$ (k, j) = cnj (Q $$ (j, k))" using Qcnj [OF j k_lt] .
-      thus "Q $$ (i, k) * Q $$ (k, j) = Q $$ (i, k) * cnj (Q $$ (j, k))"
-        by simp
-    qed
-    finally show ?thesis .
-  qed
-  have diag_entry_sum:
-    "\<And>l. l < n
-       \<Longrightarrow> Re (M $$ (l, l)) = (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)"
-  proof -
-    fix l assume l: "l < n"
-    have "M $$ (l, l) = (Q * Q) $$ (l, l)" using QQ by simp
-    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (l, k) * Q $$ (k, l))"
-      using Qcar l by (simp add: scalar_prod_def Matrix.row_def
-                                   Matrix.col_def lessThan_atLeast0)
-    also have "\<dots> = (\<Sum>k = 0..<n. Q $$ (l, k) * cnj (Q $$ (l, k)))"
-    proof (rule sum.cong [OF refl])
-      fix k assume k_in: "k \<in> {0..<n}"
-      hence k_lt: "k < n" by simp
-      have "Q $$ (k, l) = cnj (Q $$ (l, k))" using Qcnj [OF l k_lt] .
-      thus "Q $$ (l, k) * Q $$ (k, l) = Q $$ (l, k) * cnj (Q $$ (l, k))"
-        by simp
-    qed
-    also have "\<dots> = (\<Sum>k = 0..<n. complex_of_real ((norm (Q $$ (l, k)))\<^sup>2))"
-    proof (rule sum.cong [OF refl])
-      fix k assume "k \<in> {0..<n}"
-      show "Q $$ (l, k) * cnj (Q $$ (l, k))
-          = complex_of_real ((norm (Q $$ (l, k)))\<^sup>2)"
-        by (simp add: complex_mult_cnj power2_eq_square norm_complex_def)
-    qed
-    also have "\<dots> = complex_of_real (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)"
-      by simp
-    finally have entry_eq:
-      "M $$ (l, l) = complex_of_real (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)" .
-    thus "Re (M $$ (l, l)) = (\<Sum>k = 0..<n. (norm (Q $$ (l, k)))\<^sup>2)" by simp
-  qed
-  have Mii_real:
-    "Re (M $$ (i, i)) = (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)"
-    using diag_entry_sum [OF i] .
-  have Mjj_real:
-    "Re (M $$ (j, j)) = (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
-    using diag_entry_sum [OF j] .
-  have triangle:
-    "norm (M $$ (i, j))
-       \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
-  proof -
-    have "norm (M $$ (i, j))
-        = norm (\<Sum>k = 0..<n. Q $$ (i, k) * cnj (Q $$ (j, k)))"
-      using Mij_sum by simp
-    also have "\<dots> \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k) * cnj (Q $$ (j, k))))"
-      by (rule norm_sum)
-    also have "\<dots> = (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
-      by (simp add: norm_mult)
-    finally show ?thesis .
-  qed
-  have CS:
-    "(\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))\<^sup>2
-       \<le> (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)
-        * (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
-    by (rule Cauchy_Schwarz_ineq_sum)
-  have nn: "0 \<le> norm (M $$ (i, j))" by simp
-  have sn: "0 \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))"
-    by (intro sum_nonneg) auto
-  have sq_mono:
-    "(norm (M $$ (i, j)))\<^sup>2
-       \<le> (\<Sum>k = 0..<n. norm (Q $$ (i, k)) * norm (Q $$ (j, k)))\<^sup>2"
-    using triangle nn sn by (simp add: power_mono)
-  have "(norm (M $$ (i, j)))\<^sup>2
-       \<le> (\<Sum>k = 0..<n. (norm (Q $$ (i, k)))\<^sup>2)
-        * (\<Sum>k = 0..<n. (norm (Q $$ (j, k)))\<^sup>2)"
-    using sq_mono CS by linarith
-  thus ?thesis using Mii_real Mjj_real by simp
+  obtain W where Wc: "W \<in> carrier_mat n n" and Wpsd: "psd W" and WW: "W * W = M"
+    using psd_sqrt_exists[OF Mcar Mpsd] by blast
+  have M: "M $$ (a, b) = \<langle>Matrix.col W a | Matrix.col W b\<rangle>" if "a < n" "b < n" for a b
+    using dagger_mult_inner[OF Wc that] psd_hermitian[OF Wpsd] WW unfolding hermitian_def by simp
+  show ?thesis
+    using cauchy_schwarz_ineq[of "Matrix.col W i" "Matrix.col W j"] Wc
+    unfolding M[OF i j] M[OF i i] M[OF j j] times_complex.sel(1) inner_prod_with_itself_Im by simp
 qed
 
 lemma norm_lmat_le_of_psd_unit_trace:

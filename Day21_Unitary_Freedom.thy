@@ -512,7 +512,7 @@ proof (rule eq_matI)
   fix i j assume "i < dim_row (0\<^sub>m p q :: complex Matrix.mat)" "j < dim_col (0\<^sub>m p q :: complex Matrix.mat)"
   hence i: "i < p" and j: "j < q" by simp_all
   have "\<langle>Matrix.col Y j | Matrix.col Y j\<rangle> = ((Y\<^sup>\<dagger>) * Y) $$ (j,j)"
-    by (rule dagger_mult_diag_inner[OF Yc j, symmetric])
+    by (rule dagger_mult_inner[OF Yc j j, symmetric])
   also have "\<dots> = 0" unfolding YY using j by simp
   finally have z: "Matrix.col Y j = 0\<^sub>v p"
     using inner_prod_self_eq_zero_iff[of "Matrix.col Y j"] carrier_matD(1)[OF Yc] by simp
