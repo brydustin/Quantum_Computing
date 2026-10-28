@@ -33,14 +33,8 @@ text \<open>(b) $U$ is invertible with inverse $U^*$:\<close>
 lemma unitary_invertible:
   assumes "unitary U"
   shows "invertible_mat U"
-proof -
-  have "inverts_mat U (U\<^sup>\<dagger>)"
-    using assms by (rule mat_unitary_mat)
-  moreover have "inverts_mat (U\<^sup>\<dagger>) U"
-    using assms by (rule unitary_mat_mat)
-  ultimately show ?thesis
-    by (metis assms invertible_mat_def square_mat.elims(3) unitary_square_dim)
-qed
+  using mat_unitary_mat[OF assms] unitary_mat_mat[OF assms] unitary_square_dim[OF assms]
+  unfolding invertible_mat_def by auto
 
 text \<open>(d) $U^*$ is unitary:\<close>
 
@@ -51,31 +45,33 @@ lemma unitary_cols_orthonormal:
       and i: "i < dim_col U"
       and j: "j < dim_col U"
   shows "\<langle>Matrix.col U i | Matrix.col U j\<rangle> = (if i = j then 1 else 0 :: complex)"
-  by (cases "i = j",
-      metis U cpx_vec_length_inner_prod j of_real_power power_0 power_one unitary_unit_col,
-      smt U i j orthogonal_col_of_unitary)
+proof (cases "i = j")
+  case True
+  thus ?thesis using unitary_unit_col[OF U refl i] by (simp flip: cpx_vec_length_inner_prod)
+next
+  case False
+  thus ?thesis using orthogonal_col_of_unitary[OF U refl i j False] by simp
+qed
 
 lemma unitary_rows_orthonormal:
   assumes U: "unitary U"
       and i: "i < dim_row U"
       and j: "j < dim_row U"
   shows "\<langle>Matrix.row U i | Matrix.row U j\<rangle> = (if i = j then 1 else 0 :: complex)"
-  by (cases "i = j",
-      metis U cpx_vec_length_inner_prod j of_real_power power_0 power_one unitary_unit_row,
-      smt U i j orthogonal_row_of_unitary)
+proof (cases "i = j")
+  case True
+  thus ?thesis using unitary_unit_row[OF U refl i] by (simp flip: cpx_vec_length_inner_prod)
+next
+  case False
+  thus ?thesis using orthogonal_row_of_unitary[OF U refl i j False] by simp
+qed
 
 text \<open>(g), (h) $U$ is an isometry and preserves inner products:\<close>
 
 lemma unitary_isometry:
   assumes "unitary U" and "dim_vec v = dim_col U"
   shows "\<parallel>U *\<^sub>v v\<parallel> = \<parallel>v\<parallel>"
-proof -
-  have "\<parallel>U * |v\<rangle>\<parallel> = \<parallel>v\<parallel>"
-    using unitary_is_length_preserving[OF assms] .
-  thus ?thesis
-    by (metis assms(2) carrier_mat_triv col_fst_is_col col_mult2 dim_col dim_col_mat(1) ket_vec_col ket_vec_def
-        less_numeral_extra(1))
-qed
+  using unitary_is_length_preserving[OF assms] unfolding mat_mult_ket[OF carrier_mat_triv assms(2)] by simp
 
 lemma unitary_preserves_inner_prod:
   assumes U: "unitary U"
@@ -83,8 +79,7 @@ lemma unitary_preserves_inner_prod:
       and v: "dim_vec v = dim_col U"
   shows "\<langle>U *\<^sub>v u | U *\<^sub>v v\<rangle> = \<langle>u | v\<rangle>"
   using inner_prod_with_unitary_mat[OF U u v]
-  by (metis carrier_mat_triv col_fst_is_col col_mult2 dim_col dim_col_mat(1) 
-      ket_vec_col ket_vec_def less_numeral_extra(1) u v) 
+  unfolding mat_mult_ket[OF carrier_mat_triv u] mat_mult_ket[OF carrier_mat_triv v] by simp
 
 text \<open>Conjugation by a unitary is multiplicative.\<close>
 
@@ -534,21 +529,11 @@ lemma eigenvec_normalize:
   defines "v\<^sub>1 \<equiv> (1 / \<parallel>v\<parallel>) \<cdot>\<^sub>v v"
   shows "A *\<^sub>v v\<^sub>1 = e \<cdot>\<^sub>v v\<^sub>1" and "\<parallel>v\<^sub>1\<parallel> = 1"
 proof -
-  have nv_pos: "\<parallel>v\<parallel> > 0"
-    using cpx_vec_length_zero_iff vne vdim
-    by (smt (verit) Re_complex_of_real carrier_vecD cpx_vec_length_inner_prod csqrt_of_real_nonneg inner_prod_csqrt
-        inner_prod_with_itself_Im inner_prod_with_itself_Re real_sqrt_abs)
+  have nv_pos: "\<parallel>v\<parallel> > 0" using cpx_vec_length_pos[of v] vne vdim by simp
   show "A *\<^sub>v v\<^sub>1 = e \<cdot>\<^sub>v v\<^sub>1"
-    unfolding v\<^sub>1_def
-    using sq vdim
-    by (simp add: mult_mat_vec ev smult_smult_assoc)
-  have "\<parallel>v\<^sub>1\<parallel> = cmod (1 / of_real \<parallel>v\<parallel>) * \<parallel>v\<parallel>"
-    unfolding v\<^sub>1_def using cpx_vec_length_smult[of "(1 / \<parallel>v\<parallel>)" v] by simp
-  also have "\<dots> = (1 / \<parallel>v\<parallel>) * \<parallel>v\<parallel>"
-    by (simp add: norm_divide nv_pos less_eq_real_def)
-  also have "\<dots> = 1"
-    using nv_pos by simp
-  finally show "\<parallel>v\<^sub>1\<parallel> = 1".
+    unfolding v\<^sub>1_def using sq vdim by (simp add: mult_mat_vec ev smult_smult_assoc)
+  show "\<parallel>v\<^sub>1\<parallel> = 1"
+    unfolding v\<^sub>1_def using nv_pos by (simp add: cpx_vec_length_smult norm_divide)
 qed
 
 definition vec_normalize :: "complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
@@ -558,10 +543,10 @@ lemma normalized_vec_norm:
   assumes vdim: "v \<in> carrier_vec n"
       and vne:  "v \<noteq> 0\<^sub>v n"
   shows "\<parallel>vec_normalize v\<parallel> = 1"
-  by (smt (verit) Re_complex_of_real carrier_vecD cpx_vec_length_inner_prod cpx_vec_length_smult 
-      cpx_vec_length_zero_iff csqrt_of_real_nonneg inner_prod_csqrt inner_prod_with_itself_Im 
-      inner_prod_with_itself_Re mult_minus_left nonzero_eq_divide_eq norm_of_real real_sqrt_abs vdim
-      vec_normalize_def vne)
+proof -
+  have "\<parallel>v\<parallel> > 0" using cpx_vec_length_pos[of v] vne vdim by simp
+  thus ?thesis using vne vdim unfolding vec_normalize_def by (simp add: cpx_vec_length_smult norm_divide)
+qed
 
 lemma cscalar_prod_is_inner_prod_swap:
   fixes u v :: "complex Matrix.vec"

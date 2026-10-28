@@ -77,6 +77,12 @@ next
     using sum_zero by (simp add: cpx_vec_length_def)
 qed
 
+lemma cpx_vec_length_pos:
+  fixes v :: "complex Matrix.vec"
+  assumes "v \<noteq> 0\<^sub>v (dim_vec v)"
+  shows "0 < \<parallel>v\<parallel>"
+  using cpx_vec_length_zero_iff[of v] assms unfolding less_le by (simp add: cpx_vec_length_def sum_nonneg)
+
 text \<open>$\braket vv=0$ iff $v=0$.\<close>
 
 lemma inner_prod_self_eq_zero_iff:

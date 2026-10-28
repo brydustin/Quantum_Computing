@@ -1415,3 +1415,11 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   one-line instances of the bundle's `mult_index_lt`.  Day 28 metis/smt 17 → 7, Day 15 9 → 5
   (1250 → 1202 lines); every statement unchanged.  Plan: `tools/deps/plans/day28.py` (textual
   replacements validated by the strict build); scratch `wip/d23/D15c.thy`.
+- **Audit tick 36: Day 3's unitary facts without metis** (2026-10-28).  IMD states its unitary facts
+  about the column matrix U|v⟩ (with `col_fst` as a coercion); Day 2's `mat_mult_ket` (U|v⟩ = |Uv⟩, tick
+  31) turns them into facts about U·v by one `unfolding`, so `unitary_isometry` and
+  `unitary_preserves_inner_prod` lose their nine-fact metis calls; orthonormality of columns and rows is
+  `unitary_unit_col`/`orthogonal_col_of_unitary` by cases; `unitary_invertible` is `invertible_mat_def` +
+  `auto`; the two smt calls about ∥v∥ > 0 are the new Day 1 `cpx_vec_length_pos`.  Day 3 metis/smt
+  15 → 6, 950 → 934 lines, every statement unchanged.  Plan: `tools/deps/plans/day3b.py`; scratch
+  `wip/d23/D03d.thy`.
