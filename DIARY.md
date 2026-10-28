@@ -1555,3 +1555,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   $(\sigma,\tau)\mapsto\sigma\otimes\tau$ is then one entry formula (122 lines → 13) and Day 22's block-sum
   set is `closed_Collect_eq` (26 → 5).  Statement check: the two bundle lemmas added.  Plan:
   `tools/deps/plans/sweep14.py`.
+- **Audit tick 55: the dimension of lmat by counting** (2026-10-28).  `DIM_lmat` is the card of the
+  injective image $((i,j),u)\mapsto$ `lmat_axis i j u` of $\{..<m\}\times\{..<n\}\times$ Basis, injectivity from
+  `inner_lmat_axis_axis` against the orthonormal Basis (109 lines → 21).  Plan:
+  `tools/deps/plans/sweep15.py`.  After `rule inj_onI` destructure the tuples with `obtain … by (cases x,
+  cases y)`, and give `card_image[OF inj]` explicitly (simp re-eta-expands the image function).

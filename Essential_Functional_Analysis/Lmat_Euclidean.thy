@@ -578,109 +578,24 @@ lemma DIM_lmat:
   "DIM(('a :: euclidean_space, 'm :: finite, 'n :: finite) lmat)
      = CARD('m) * CARD('n) * DIM('a)"
 proof -
-  let ?B = "Basis :: ('a, 'm, 'n) lmat set"
-  let ?inner = "\<lambda>i j. (\<Union>u \<in> Basis. {lmat_axis i j u :: ('a, 'm, 'n) lmat})"
-  let ?mid = "\<lambda>i. (\<Union>j \<in> {0..<CARD('n)}. ?inner i j)"
-  have B_eq: "?B = (\<Union>i \<in> {0..<CARD('m)}. ?mid i)"
-    unfolding Basis_lmat_def Basis_lmat_set_def by simp
-  have inner_card: "\<And>i j. i < CARD('m) \<Longrightarrow> j < CARD('n) \<Longrightarrow> card (?inner i j) = DIM('a)"
-  proof -
-    fix i j assume ij: "i < CARD('m)" "j < CARD('n)"
-    have inj: "inj_on (\<lambda>u. lmat_axis i j u :: ('a, 'm, 'n) lmat) (Basis :: 'a set)"
-    proof (rule inj_onI)
-      fix u v :: 'a assume uB: "u \<in> Basis" and vB: "v \<in> Basis"
-      assume eq: "(lmat_axis i j u :: ('a, 'm, 'n) lmat) = lmat_axis i j v"
-      from lmat_axis_inj_on_Basis_indices[OF ij ij uB vB] eq
-      show "u = v" by simp
-    qed
-    have eq1: "?inner i j = (\<lambda>u. lmat_axis i j u :: ('a, 'm, 'n) lmat) ` (Basis :: 'a set)"
-      by auto
-    have eq2: "card ((\<lambda>u. lmat_axis i j u :: ('a, 'm, 'n) lmat) ` Basis) = card (Basis :: 'a set)"
-      using inj by (rule card_image)
-    show "card (?inner i j) = DIM('a)" using eq1 eq2 by simp
+  let ?f = "\<lambda>((i, j), u). lmat_axis i j u :: ('a, 'm, 'n) lmat"
+  let ?A = "({0..<CARD('m)} \<times> {0..<CARD('n)}) \<times> (Basis :: 'a set)"
+  have inj: "inj_on ?f ?A"
+  proof (rule inj_onI)
+    fix x y assume x: "x \<in> ?A" and y: "y \<in> ?A" and eq: "?f x = ?f y"
+    obtain i j u i' j' u' where xy: "x = ((i, j), u)" "y = ((i', j'), u')" by (cases x, cases y) auto
+    from x y have ij: "i < CARD('m)" "j < CARD('n)" "i' < CARD('m)" "j' < CARD('n)"
+      and u: "u \<in> Basis" "u' \<in> Basis" unfolding xy by auto
+    have "lmat_axis i j u = (lmat_axis i' j' u' :: ('a, 'm, 'n) lmat)" using eq unfolding xy by simp
+    hence "1 = inner (lmat_axis i j u :: ('a, 'm, 'n) lmat) (lmat_axis i' j' u')"
+      using u(2) by (simp add: inner_lmat_axis_axis[OF ij(3,4) ij(3,4)] inner_Basis)
+    thus "x = y"
+      unfolding xy inner_lmat_axis_axis[OF ij] using u by (auto simp: inner_Basis split: if_splits)
   qed
-  have mid_card: "\<And>i. i < CARD('m) \<Longrightarrow> card (?mid i) = CARD('n) * DIM('a)"
-  proof -
-    fix i assume i_lt: "i < CARD('m)"
-    have disj: "\<And>j j'. j \<in> {0..<CARD('n)} \<Longrightarrow> j' \<in> {0..<CARD('n)} \<Longrightarrow> j \<noteq> j'
-                \<Longrightarrow> ?inner i j \<inter> ?inner i j' = {}"
-    proof -
-      fix j j'
-      assume j_in: "j \<in> {0..<CARD('n)}"
-      assume j'_in: "j' \<in> {0..<CARD('n)}"
-      assume jne: "j \<noteq> j'"
-      from j_in have j_lt: "j < CARD('n)" by simp
-      from j'_in have j'_lt: "j' < CARD('n)" by simp
-      show "?inner i j \<inter> ?inner i j' = {}"
-      proof (rule ccontr)
-        assume "?inner i j \<inter> ?inner i j' \<noteq> {}"
-        then obtain x where x1: "x \<in> ?inner i j" and x2: "x \<in> ?inner i j'" by auto
-        from x1 obtain u where u_eq: "x = lmat_axis i j u" and uB: "u \<in> Basis" by auto
-        from x2 obtain v where v_eq: "x = lmat_axis i j' v" and vB: "v \<in> Basis" by auto
-        from u_eq v_eq have eq: "(lmat_axis i j u :: ('a, 'm, 'n) lmat) = lmat_axis i j' v" by simp
-        from lmat_axis_inj_on_Basis_indices[OF i_lt j_lt i_lt j'_lt uB vB] eq
-        have "j = j'" by simp
-        with jne show False by simp
-      qed
-    qed
-    have "card (?mid i) = (\<Sum>j \<in> {0..<CARD('n)}. card (?inner i j))"
-    proof (rule card_UN_disjoint)
-      show "finite {0..<CARD('n)}" by simp
-    next
-      show "\<forall>j \<in> {0..<CARD('n)}. finite (?inner i j)" by simp
-    next
-      show "\<forall>j \<in> {0..<CARD('n)}. \<forall>j' \<in> {0..<CARD('n)}.
-              j \<noteq> j' \<longrightarrow> ?inner i j \<inter> ?inner i j' = {}"
-        using disj by blast
-    qed
-    also have "\<dots> = (\<Sum>j \<in> {0..<CARD('n)}. DIM('a))"
-      by (rule sum.cong) (auto simp: inner_card i_lt)
-    also have "\<dots> = CARD('n) * DIM('a)" by simp
-    finally show "card (?mid i) = CARD('n) * DIM('a)" .
-  qed
-  have B_card: "card ?B = CARD('m) * CARD('n) * DIM('a)"
-  proof -
-    have disj: "\<And>i i'. i \<in> {0..<CARD('m)} \<Longrightarrow> i' \<in> {0..<CARD('m)} \<Longrightarrow> i \<noteq> i'
-                \<Longrightarrow> ?mid i \<inter> ?mid i' = {}"
-    proof -
-      fix i i'
-      assume i_in: "i \<in> {0..<CARD('m)}"
-      assume i'_in: "i' \<in> {0..<CARD('m)}"
-      assume ine: "i \<noteq> i'"
-      from i_in have i_lt: "i < CARD('m)" by simp
-      from i'_in have i'_lt: "i' < CARD('m)" by simp
-      show "?mid i \<inter> ?mid i' = {}"
-      proof (rule ccontr)
-        assume "?mid i \<inter> ?mid i' \<noteq> {}"
-        then obtain x where x1: "x \<in> ?mid i" and x2: "x \<in> ?mid i'" by auto
-        from x1 obtain j u where j_lt: "j < CARD('n)" and uB: "u \<in> Basis"
-                            and u_eq: "x = lmat_axis i j u" by auto
-        from x2 obtain j' v where j'_lt: "j' < CARD('n)" and vB: "v \<in> Basis"
-                             and v_eq: "x = lmat_axis i' j' v" by auto
-        from u_eq v_eq have eq: "(lmat_axis i j u :: ('a, 'm, 'n) lmat) = lmat_axis i' j' v" by simp
-        from lmat_axis_inj_on_Basis_indices[OF i_lt j_lt i'_lt j'_lt uB vB] eq
-        have "i = i'" by simp
-        with ine show False by simp
-      qed
-    qed
-    have "card ?B = card (\<Union>i \<in> {0..<CARD('m)}. ?mid i)"
-      using B_eq by simp
-    also have "\<dots> = (\<Sum>i \<in> {0..<CARD('m)}. card (?mid i))"
-    proof (rule card_UN_disjoint)
-      show "finite {0..<CARD('m)}" by simp
-    next
-      show "\<forall>i \<in> {0..<CARD('m)}. finite (?mid i)" by simp
-    next
-      show "\<forall>i \<in> {0..<CARD('m)}. \<forall>i' \<in> {0..<CARD('m)}.
-              i \<noteq> i' \<longrightarrow> ?mid i \<inter> ?mid i' = {}"
-        using disj by blast
-    qed
-    also have "\<dots> = (\<Sum>i \<in> {0..<CARD('m)}. CARD('n) * DIM('a))"
-      by (rule sum.cong) (auto simp: mid_card)
-    also have "\<dots> = CARD('m) * (CARD('n) * DIM('a))" by simp
-    finally show ?thesis by (simp add: mult.assoc)
-  qed
-  show ?thesis using B_card by simp
+  have "lmat_axis i j u \<in> ?f ` ?A" if "i < CARD('m)" "j < CARD('n)" "u \<in> Basis" for i j u
+    by (rule rev_image_eqI[of "((i, j), u)"]) (use that in simp_all)
+  hence "Basis = ?f ` ?A" unfolding Basis_lmat_def Basis_lmat_set_def by auto
+  thus ?thesis using card_image[OF inj] by (simp add: card_cartesian_product)
 qed
 
 section \<open>Component-wise bounds via the L2 norm\<close>
