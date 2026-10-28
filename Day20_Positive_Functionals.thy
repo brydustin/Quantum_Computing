@@ -144,26 +144,21 @@ proof -
   have AdYdA_c: "(A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A \<in> carrier_mat n n"
     using AdYd_c A_c by (rule mult_carrier_mat)
 
-  (* LHS as trace *)
   have lhs: "\<langle>\<langle> Y | A * X * (A\<^sup>\<dagger>) \<rangle>\<rangle> = Tr (Y\<^sup>\<dagger> * (A * X * (A\<^sup>\<dagger>)))"
     using Y_c AXAd_c by (intro hs_inner_prod_as_trace) auto
 
-  (* Re-bracket: Y\<^sup>\<dagger> * (A X * A\<^sup>\<dagger>) = (Y\<^sup>\<dagger> * A * X) * A\<^sup>\<dagger> *)
   have assoc1: "Y\<^sup>\<dagger> * (A * X * (A\<^sup>\<dagger>)) = (Y\<^sup>\<dagger> * A * X) * (A\<^sup>\<dagger>)"
     using Ydag_c A_c X_c Adag_c
     by (smt (verit) AX_c assoc_mult_mat mult_carrier_mat)
 
-  (* Trace cyclicity: Tr ((Y\<^sup>\<dagger> A X) A\<^sup>\<dagger>) = Tr (A\<^sup>\<dagger> (Y\<^sup>\<dagger> A X)) *)
   have cyc: "Tr ((Y\<^sup>\<dagger> * A * X) * (A\<^sup>\<dagger>)) = Tr ((A\<^sup>\<dagger>) * (Y\<^sup>\<dagger> * A * X))"
     using YdAX_c Adag_c by (intro Tr_cyclic, blast+)
     
 
-  (* Re-bracket: A\<^sup>\<dagger> * (Y\<^sup>\<dagger> * A * X) = (A\<^sup>\<dagger> * Y\<^sup>\<dagger> * A) * X *)
   have assoc2: "(A\<^sup>\<dagger>) * ((Y\<^sup>\<dagger>) * A * X) = ((A\<^sup>\<dagger>) * (Y\<^sup>\<dagger>) * A) * X"
     using Adag_c Ydag_c A_c X_c
     by (smt (verit) YdA_c assoc_mult_mat mult_carrier_mat)
 
-  (* Dagger identity: (A\<^sup>\<dagger> * Y * A)\<^sup>\<dagger> = A\<^sup>\<dagger> * Y\<^sup>\<dagger> * A *)
   have dim1: "dim_col ((A\<^sup>\<dagger>) * Y) = dim_row A"
     using AdY_c A_c by (metis carrier_matD)
   have dim2: "dim_col (A\<^sup>\<dagger>) = dim_row Y"
@@ -182,7 +177,6 @@ proof -
       using step1 step2 step3 step4 by simp
   qed
 
-  (* RHS as trace *)
   have rhs: "\<langle>\<langle> (A\<^sup>\<dagger>) * Y * A | X \<rangle>\<rangle> = Tr (((A\<^sup>\<dagger>) * Y * A)\<^sup>\<dagger> * X)"
     using AdYA_c X_c by (intro hs_inner_prod_as_trace) auto
 
@@ -274,9 +268,6 @@ proof -
        and X_c: "X \<in> carrier_mat (p*d) (p*d)"
        and X_psd: "psd X"
 
-    (* Amplification of kraus_adjoint_dim n As agrees with that of
-       kraus_map_dim n Bs because the two functions agree on M_{d,d}
-       (kraus_adjoint_dim_as_kraus_map_dim). *)
     have amp_eq:
       "amplification d n p (kraus_adjoint_dim n As) X =
        amplification d n p (kraus_map_dim n Bs) X"
@@ -317,7 +308,6 @@ proof -
         using lhs_index rhs_index eq by simp
     qed
 
-    (* Reduce to PSD-ness of an amplified Kraus map (no TP needed). *)
     have lifted_c:
       "\<forall>L \<in> set (map (\<lambda>B. 1\<^sub>m p \<Otimes> B) Bs). L \<in> carrier_mat (p*n) (p*d)"
       using tensor_id_kraus_list_carrier[OF Bs_c].
@@ -382,7 +372,6 @@ proof -
   have M_c: "?M \<in> carrier_mat d d"
     using sum_wdag_w_carrier[OF Bs_c].
 
-  (* Unital: \<Phi>(I_n) = \<Sum> A A\<^sup>\<dagger> = ?M, so unital iff ?M = I_d *)
   have unital_iff:
     "unital_map n d (kraus_map_dim d As) \<longleftrightarrow> ?M = 1\<^sub>m d"
   proof -
@@ -392,7 +381,6 @@ proof -
     show ?thesis unfolding unital_map_def using eq by simp
   qed
 
-  (* TP: Tr(\<Phi>\<^sup>*(Y)) = Tr(?M * Y), so TP iff \<forall>Y. Tr(?M * Y) = Tr Y *)
   have Tr_adj:
     "\<And>Y. Y \<in> carrier_mat d d
        \<Longrightarrow> Tr (kraus_adjoint_dim n As Y) = Tr (?M * Y)"
@@ -506,8 +494,6 @@ proof -
   have range': "\<And>A. A \<in> carrier_mat n n \<Longrightarrow> \<phi> A \<in> carrier_mat 1 1"
     using range by blast
 
-  (* For arbitrary x \<in> \<complex>\<^sup>n, express \<langle>x | P x\<rangle> as \<phi>(\<rho>\<^sub>x) $$ (0,0)
-     where \<rho>\<^sub>x is rank-one psd. *)
   have quad_real_nonneg:
     "\<And>x :: complex Matrix.vec. dim_vec x = n \<Longrightarrow>
        \<langle>x | ?P *\<^sub>v x\<rangle> \<in> \<real> \<and> Re (\<langle>x | ?P *\<^sub>v x\<rangle>) \<ge> 0"
@@ -539,7 +525,6 @@ proof -
     have phiXx_psd: "psd (\<phi> ?Xx)"
       using pos Xx_psd Xx_c by (auto simp: positive_map_def)
 
-    (* psd in M\<^sub>1: hermitian gives realness of (0,0) entry *)
     have phiXx_real: "\<phi> ?Xx $$ (0, 0) \<in> \<real>"
     proof -
       have herm: "(\<phi> ?Xx)\<^sup>\<dagger> = \<phi> ?Xx"
@@ -550,7 +535,6 @@ proof -
       thus ?thesis using Reals_cnj_iff by metis
     qed
 
-    (* psd: \<langle>(1) | (\<phi> X\<^sub>x) (1)\<rangle> \<ge> 0 gives Re of (0,0) entry \<ge> 0 *)
     have phiXx_nonneg: "Re (\<phi> ?Xx $$ (0, 0)) \<ge> 0"
     proof -
       let ?one = "Matrix.vec 1 (\<lambda>i. (1 :: complex))"
@@ -560,7 +544,6 @@ proof -
       have nn_quad: "Re (\<langle>?one | (\<phi> ?Xx) *\<^sub>v ?one\<rangle>) \<ge> 0"
         using phiXx_psd one_eq_dr by (auto simp: psd_def)
 
-      (* \<langle>?one | M *_v ?one\<rangle> = M $$ (0,0) for M \<in> M\<^sub>1 *)
       have prod_dim: "dim_vec ((\<phi> ?Xx) *\<^sub>v ?one) = 1"
         using phiXx_c by simp
       have prod_entry: "((\<phi> ?Xx) *\<^sub>v ?one) $ 0 = \<phi> ?Xx $$ (0, 0)"
@@ -591,8 +574,6 @@ proof -
       show ?thesis using nn_quad inner_eq by simp
     qed
 
-    (* \<langle>x | P *\<^sub>v x\<rangle> equals \<phi>(\<rho>\<^sub>x) $$ (0,0) by linearity over the
-       matrix-unit basis. *)
     have inner_lhs:
       "\<langle>x | ?P *\<^sub>v x\<rangle>
          = (\<Sum>i<n. \<Sum>j<n. cnj (x $ i) * x $ j * ?P $$ (i, j))"

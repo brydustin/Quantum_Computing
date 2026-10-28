@@ -37,8 +37,6 @@ lemma hermitian_decomp_psd:
          psd P1 \<and> psd P2 \<and>
          H = P1 - P2"
 proof -
-  (* Spectral decomp: H = U D (U\<^sup>\<dagger>), D real diagonal.  Split D into D+ (\<lambda>i \<ge> 0)
-     and D- (-\<lambda>i for \<lambda>i < 0).  Then P1 = U D+ (U\<^sup>\<dagger>), P2 = U D- (U\<^sup>\<dagger>). *)
   obtain U D where Uc: "U \<in> carrier_mat n n" and UU: "unitary U"
     and Dlen: "length D = n"
     and spec: "(U\<^sup>\<dagger>) * H * U = diag_mat_of_real D"
@@ -65,7 +63,6 @@ proof -
   have p2: "psd ?P2"
     using psd_U_diag_Udag[OF Uc Dneg_len Dneg_nn].
 
-  (* H = U * diag D * U\<^sup>\<dagger> *)
   have UdagU: "(U\<^sup>\<dagger>) * U = 1\<^sub>m n" using Uc UU unfolding unitary_def by auto
   have UUdag: "U * (U\<^sup>\<dagger>) = 1\<^sub>m n" using Uc UU unfolding unitary_def by auto
   have D_c: "diag_mat_of_real D \<in> carrier_mat n n"
@@ -82,7 +79,6 @@ proof -
     finally show ?thesis by simp
   qed
 
-  (* diag_mat_of_real D = diag ?Dpos - diag ?Dneg *)
   have diag_split: "diag_mat_of_real D
                   = diag_mat_of_real ?Dpos - diag_mat_of_real ?Dneg"
   proof (rule eq_matI)
@@ -161,7 +157,6 @@ proof -
 
   show ?thesis using c1 c2 p1 p2 eq by blast
 qed
-
 
 lemma matrix_decomp_psd:
   fixes X :: "complex Matrix.mat"
@@ -482,8 +477,6 @@ next
   qed
   show "positive_map n d \<Phi> \<and> trace_preserving n \<Phi>" using pos tp by simp
 qed
-
-
 
 subsection \<open>The transpose is positive but not 2-positive (D18-4)\<close>
 

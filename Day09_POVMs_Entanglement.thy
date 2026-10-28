@@ -23,7 +23,6 @@ definition povm :: "nat \<Rightarrow> complex Matrix.mat list \<Rightarrow> bool
      (\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P) \<and>
      foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
 
-
 text \<open>Every measurement gives a POVM: $P_i=M_i^*M_i$ is positive because
 $\braket x{M_i^*M_ix}=\norm{M_ix}^2\ge0$, and $\sum_iP_i=I$.\<close>
 
@@ -32,14 +31,11 @@ lemma measurement_induces_povm:
   shows "povm n (map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms)"
 proof -
   let ?Ps = "map (\<lambda>M. (M\<^sup>\<dagger>) * M) Ms"
-  (* All M \<in> Ms are in carrier_mat n n by ms. *)
   have all_carrier: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
     using ms by (simp add: measurement_system_def)
   have P_carrier: "\<forall>P \<in> set ?Ps. P \<in> carrier_mat n n"
     by (metis (no_types, lifting) all_carrier carrier_matD(2) carrier_matI dagger_of_dagger_is_id 
         dagger_of_prod dim_col_of_dagger imageE index_mult_mat(3) list.set_map)
-  (* Each M\<^sup>\<dagger> * M is psd: hermitian (M\<^sup>\<dagger>M)\<^sup>\<dagger> = M\<^sup>\<dagger>M\<^sup>\<dagger>\<^sup>\<dagger> = M\<^sup>\<dagger>M, and
-     \<langle>x | M\<^sup>\<dagger>M x\<rangle> = \<langle>Mx | Mx\<rangle> = \<parallel>Mx\<parallel>\<^sup>2 \<ge> 0. *)
   have P_psd: "\<forall>P \<in> set ?Ps. psd P"
   proof clarify
     fix P
@@ -56,7 +52,6 @@ proof -
       unfolding P_def hermitian_def
       using M_car
       by (simp add: dagger_of_dagger_is_id dagger_of_prod)
-
 
     have quad_nonneg: "\<forall>x. dim_vec x = n \<longrightarrow> 0 \<le> Re \<langle>x | P *\<^sub>v x\<rangle>"
     proof (intro allI impI)
@@ -90,7 +85,6 @@ proof -
       unfolding psd_def
       using P_car P_herm quad_nonneg by blast
   qed
-  (* The sum equals I by definition of measurement_system. *)
   have "foldr (\<lambda>P acc. P + acc) ?Ps (0\<^sub>m n n)  = foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n)"
     by (induction Ms) simp_all
   also have "... = 1\<^sub>m n"
@@ -99,7 +93,6 @@ proof -
   show ?thesis
     unfolding povm_def using P_carrier P_psd id_sum by auto
 qed
-
 
 text \<open>Conversely, every POVM comes from a measurement: $P_i\ge0$ has the positive square root
 $M_i=P_i^{1/2}$, with $M_i^*M_i=P_i$, and $\sum_iP_i=I$ is the measurement condition.\<close>
@@ -154,13 +147,10 @@ lemma povm_from_sqrt:
   shows "\<exists>Ms. measurement_system n Ms \<and>
               map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
 proof -
-  (* For each P\<in>Ps, psd_sqrt_exists gives a Q with Q\<^sup>2 = P, Q psd, Q hermitian.
-     Take M = Q.  Then M\<^sup>\<dagger>M = Q\<^sup>\<dagger>Q = Q\<^sup>2 = P. *)
   have psd_each: "\<forall>P \<in> set Ps. P \<in> carrier_mat n n \<and> psd P"
     using pv by (simp add: povm_def)
   have sum_id: "foldr (\<lambda>P acc. P + acc) Ps (0\<^sub>m n n) = 1\<^sub>m n"
     using pv by (simp add: povm_def)
-  (* Construct the list of square roots. *)
   obtain Ms where Mcar: "\<forall>M \<in> set Ms. M \<in> carrier_mat n n"
     and Ms_factor: "map (\<lambda>M. M\<^sup>\<dagger> * M) Ms = Ps"
     using psd_sqrt_measurement_factors[OF psd_each] by blast
@@ -178,7 +168,6 @@ proof -
     using Ms_factor by blast
 qed
 
-
 lemma povm_prob:
   assumes pv: "povm n Ps" and st: "quantum_state n \<psi>"
       and Pin: "P \<in> set Ps"
@@ -190,7 +179,6 @@ proof -
   show ?thesis
     using Ppsd Pcar psi_dim unfolding psd_def by simp
 qed
-
 
 subsection \<open>Composite systems\<close>
 
@@ -227,7 +215,6 @@ proof -
     using assms by (auto simp: quantum_state_def)
   have dim: "dim_vec (tensor_vec \<psi>1 \<psi>2) = n * m"
     using d1 d2 by (rule tensor_vec_dim)
-  (* From tensor_inner_prod: \<langle>\<psi>1\<otimes>\<psi>2 | \<psi>1\<otimes>\<psi>2\<rangle> = \<langle>\<psi>1|\<psi>1\<rangle>\<sqdot>\<langle>\<psi>2|\<psi>2\<rangle> = 1\<sqdot>1 = 1. *)
   have norm_tensor: "\<parallel>tensor_vec \<psi>1 \<psi>2\<parallel> = 1"
     by (smt (verit) cpx_vec_length_inner_prod inner_prod_csqrt norm1 norm2 of_real_eq_1_iff 
         one_power2 power2_eq_square tensor_inner_prod)
@@ -364,7 +351,6 @@ next
       finally show ?thesis .
     qed
 
-
     have div_lt: "i div mr < nr"
       using i_lt mr_pos by (simp add: less_mult_imp_div_less)
     have mod_lt: "i mod mr < mr"
@@ -405,7 +391,6 @@ proof -
   finally show ?thesis .
 qed
 
-
 lemma composite_measurement_prob:
   fixes M :: "complex Matrix.mat" and \<psi> :: "complex Matrix.vec" and \<phi> :: "complex Matrix.vec"
   assumes psi_st: "quantum_state n \<psi>" and phi_st: "quantum_state m \<phi>"
@@ -415,10 +400,8 @@ proof -
   have psi_dim: "dim_vec \<psi> = n" using psi_st by (auto simp: quantum_state_def)
   have phi_dim: "dim_vec \<phi> = m" using phi_st by (auto simp: quantum_state_def)
   have phi_norm: "\<parallel>\<phi>\<parallel> = 1" using phi_st by (auto simp: quantum_state_def)
-  (* Step 1: (M \<otimes> I_m)(\<psi> \<otimes> \<phi>) = (M\<psi>) \<otimes> \<phi> -- mixed product property *)
   have mix: "(M \<Otimes> 1\<^sub>m m) *\<^sub>v (tensor_vec \<psi> \<phi>) = tensor_vec (M *\<^sub>v \<psi>) \<phi>"
     using tensor_mat_vec_mult_right_id[OF M_sq psi_dim phi_dim] .
-  (* Step 2: \<parallel>(M\<psi>)\<otimes>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> \<parallel>\<phi>\<parallel>² = \<parallel>M\<psi>\<parallel>² \<sqdot> 1 *)
   have norm_prod: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2 * \<parallel>\<phi>\<parallel>^2"
     by (smt (verit) Re_complex_of_real cpx_vec_length_inner_prod of_real_mult tensor_inner_prod)
   have eq: "\<parallel>tensor_vec (M *\<^sub>v \<psi>) \<phi>\<parallel>^2 = \<parallel>M *\<^sub>v \<psi>\<parallel>^2"
@@ -507,13 +490,11 @@ lemma bell_state_is_quantum_state:
 proof -
   let ?u = "tensor_vec (unit_vec 2 0) (unit_vec 2 0)"
   let ?v = "tensor_vec (unit_vec 2 1) (unit_vec 2 1)"
-  (* Step 1: each tensor has dim 4. *)
   have du: "dim_vec ?u = 4" using tensor_vec_dim by simp
   have dv: "dim_vec ?v = 4" using tensor_vec_dim by simp
   have dim_sum: "dim_vec (?u + ?v) = 4" using du dv by simp
   then have dim_bell: "dim_vec bell_state = 4"
     unfolding bell_state_def by simp
-  (* Step 2: \<parallel>(1/\<surd>2)(?u + ?v)\<parallel>\<^sup>2 = (1/2)(\<langle>?u+?v|?u+?v\<rangle>) = (1/2)(1+0+0+1) = 1 *)
   have norm_bell: "\<parallel>bell_state\<parallel> = 1"
     by (rule bell_state_norm)
   show ?thesis

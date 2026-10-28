@@ -121,11 +121,9 @@ proof -
   have rho_eq: "?\<rho> = outer_sum n [\<psi>']"
     by (simp add: outer_sum_def)
 
-  (* ?\<rho> *_v \<psi> = \<langle>\<psi>'|\<psi>\<rangle> \<cdot>\<^sub>v \<psi>' *)
   have \<rho>\<psi>: "?\<rho> *\<^sub>v \<psi> = \<langle>\<psi>' | \<psi>\<rangle> \<cdot>\<^sub>v \<psi>'"
     using outer_sum_singleton_mult_vec[OF \<psi>'_dim \<psi>_dim] rho_eq by simp
 
-  (* \<langle>\<psi> | ?\<rho> *_v \<psi>\<rangle> = \<langle>\<psi>|\<psi>'\<rangle> * \<langle>\<psi>'|\<psi>\<rangle> = (cmod \<langle>\<psi>|\<psi>'\<rangle>)^2 *)
   have inner_eq: "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = \<langle>\<psi> | \<psi>'\<rangle> * \<langle>\<psi>' | \<psi>\<rangle>"
   proof -
     have "\<langle>\<psi> | ?\<rho> *\<^sub>v \<psi>\<rangle> = \<langle>\<psi> | \<langle>\<psi>'|\<psi>\<rangle> \<cdot>\<^sub>v \<psi>'\<rangle>"

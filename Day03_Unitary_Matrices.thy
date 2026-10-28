@@ -655,7 +655,6 @@ proof -
     by (auto simp: b_len)
   from gram_schmidt_hd[OF vdim, of bs, folded b_eq]
   have ws_hd: "hd ws = v" unfolding ws_def .
-  (* key facts about ws *)
   have ws_carrier: "\<And>i. i < n \<Longrightarrow> ws ! i \<in> carrier_vec n"
     using ws_sub ws_len by (simp add: subset_iff)
   have ws_self_ne0: "\<And>i. i < n \<Longrightarrow> ws ! i \<bullet>c ws ! i \<noteq> 0"
@@ -671,7 +670,6 @@ proof -
       then show False using ws_self_ne0[OF i] by simp
     qed
   qed
-  (* ws ! 0 = v since hd ws = v *)
   have ws0: "ws ! 0 = v"
     using ws_hd ws_len n_pos
     by (metis hd_conv_nth length_greater_0_conv)
@@ -681,10 +679,8 @@ proof -
     using ws_len by (simp add: vs_def)
   have vs_nth_carrier: "\<And>i. i < n \<Longrightarrow> vs ! i \<in> carrier_vec n"
     using vs_nth ws_carrier vec_normalize_carrier by simp
-  (* vs ! 0 = v since v has norm 1 *)
   have vs0: "vs ! 0 = v"
     using vs_nth[OF n_pos] ws0 vec_normalize_unit[OF vdim vnorm] by simp
-  (* vs ! i has unit norm *)
   have vs_nth_unit: "\<And>i. i < n \<Longrightarrow> \<parallel>vs ! i\<parallel> = 1"
   proof -
     fix i assume i: "i < n"
@@ -704,7 +700,6 @@ proof -
       by (simp add: vec_normalize_def)
     finally show "vs ! i = (1 / \<parallel>ws ! i\<parallel>) \<cdot>\<^sub>v (ws ! i)" .
   qed
-  (* orthonormality for i \<noteq> j *)
   have cross_zero: "\<And>i j. i < n \<Longrightarrow> j < n \<Longrightarrow> i \<noteq> j \<Longrightarrow> \<langle>vs ! i | vs ! j\<rangle> = 0"
   proof -
     fix i j assume i: "i < n" and j: "j < n" and ij: "i \<noteq> j"
@@ -736,7 +731,6 @@ proof -
     also have "\<dots> = 0" using wji_inner .
     finally show "\<langle>vs ! i | vs ! j\<rangle> = 0" by simp
   qed
-  (* orthonormality for i = j *)
   have diag_one: "\<And>i. i < n \<Longrightarrow> \<langle>vs ! i | vs ! i\<rangle> = 1"
   proof -
     fix i assume i: "i < n"

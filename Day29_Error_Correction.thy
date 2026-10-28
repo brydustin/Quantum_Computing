@@ -168,7 +168,6 @@ proof
 
   have len_c: "length ?c = length v + 1" by simp
 
-  (* The error is binary with exactly one nonzero entry, hence e ! i = 1 there. *)
   have "0 < hamming_weight e" using weight by simp
   hence "\<exists>x \<in> set e. x \<noteq> 0" by (simp add: hamming_weight_pos_iff)
   then obtain x where x_in: "x \<in> set e" and x_nz: "x \<noteq> 0" by blast
@@ -179,7 +178,6 @@ proof
 
   have i_lt_c: "i < length ?c" using i_lt lenE by simp
 
-  (* The codeword is binary, so its i-th entry is in {0,1}. *)
   have ci_bin: "?c ! i < 2"
   proof -
     have "?c ! i \<in> set ?c"
@@ -188,7 +186,6 @@ proof
       using parity_check_encode_binary[OF bits_v] by blast
   qed
 
-  (* The XOR'ed word at index i is (?c ! i + e ! i) mod 2. *)
   have d_at_i: "?d ! i = (?c ! i + e ! i) mod 2"
     using i_lt i_lt_c lenE by simp
 

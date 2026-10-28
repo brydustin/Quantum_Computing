@@ -412,7 +412,6 @@ proof -
   have psi_car: "\<psi> \<in> carrier_vec n" using psi_dim
     by fastforce 
 
-  (* Step 1: \<parallel>M\<psi>\<parallel>² = \<langle>\<psi> | M\<dagger>M \<psi>\<rangle> for each M *)
   have step1: "\<And>M. M \<in> set Ms \<Longrightarrow> meas_prob M \<psi> = Re (\<langle>\<psi> | ((M\<^sup>\<dagger>) * M) *\<^sub>v \<psi>\<rangle>)"
     by (metis (lifting) Re_complex_of_real assoc_mult_mat_vec carrier_matD(2) carrier_mat_triv 
         cpx_vec_length_inner_prod dagger_of_dagger_is_id dim_mult_mat_vec dim_row_of_dagger 
@@ -538,7 +537,6 @@ proof -
     show ?thesis
       using sum_eq_aux[of Ms] by simp
   qed
-  (* Step 3: replace \<Sum>M\<dagger>M with I and use \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>² = 1 *)
   have id_eq: "foldr (\<lambda>M acc. (M\<^sup>\<dagger>) * M + acc) Ms (0\<^sub>m n n) = 1\<^sub>m n"
     using ms by (simp add: measurement_system_def)
   have inner_one: "\<langle>\<psi> | (1\<^sub>m n) *\<^sub>v \<psi>\<rangle> = 1"

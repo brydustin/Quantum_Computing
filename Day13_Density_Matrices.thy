@@ -45,7 +45,6 @@ Formally \<open>pure_density \<psi>\<close> is $\ketbra\psi\psi$, \<open>ensembl
 definition density_matrix :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> bool" where
   "density_matrix n \<rho> \<equiv> \<rho> \<in> carrier_mat n n \<and> psd \<rho> \<and> Tr \<rho> = 1"
 
-
 definition pure_density :: "complex Matrix.vec \<Rightarrow> complex Matrix.mat" where
   "pure_density \<psi> \<equiv>
      let n = dim_vec \<psi> in
@@ -72,8 +71,6 @@ lemma pure_density_is_density_matrix:
   assumes "quantum_state n \<psi>"
   shows "density_matrix n (pure_density \<psi>)"
 proof -
-  (* pure_density \<psi> = |\<psi>\<rangle>\<langle>\<psi>|.  Hermitian: outer_sum_hermitian.
-     PSD: outer_sum_psd.  Tr = \<langle>\<psi>|\<psi>\<rangle> = \<parallel>\<psi>\<parallel>\<^sup>2 = 1. *)
   have dim: "dim_vec \<psi> = n" using assms by (auto simp: quantum_state_def)
   have norm: "\<parallel>\<psi>\<parallel> = 1" using assms by (auto simp: quantum_state_def)
   have psd: "psd (outer_sum n [\<psi>])"
@@ -91,7 +88,6 @@ proof -
     using dim psd tr by fastforce
 qed
 
-
 text \<open>An ensemble $\{p_i,\psi_i\}$ has $\rho=\sum_ip_i\ketbra{\psi_i}{\psi_i}$.  It is positive, as a
 non-negative combination of the positive $\ketbra{\psi_i}{\psi_i}$, and
 $\Tr\rho=\sum_ip_i\norm{\psi_i}^2=\sum_ip_i=1$.\<close>
@@ -100,7 +96,6 @@ definition ensemble_density :: "nat \<Rightarrow> (real \<times> complex Matrix.
   "ensemble_density n E \<equiv>
      foldr (\<lambda>(p,\<psi>) acc. complex_of_real p \<cdot>\<^sub>m outer_sum n [\<psi>] + acc)
            E (0\<^sub>m n n)"
-
 
 lemma psd_zero_mat [simp]:
   "psd (0\<^sub>m n n)"
@@ -186,7 +181,6 @@ proof -
     unfolding psd_def hermitian_def
     using herm_AB quad by blast
 qed
-
 
 lemma ensemble_density_Nil [simp]:
   "ensemble_density n [] = 0\<^sub>m n n"
@@ -304,7 +298,6 @@ next
     by simp
   finally show ?case unfolding a_eq .
 qed
-
 
 theorem ensemble_density_is_dm:
   assumes E: "ensemble n E"
@@ -506,7 +499,6 @@ proof -
   also have "\<dots> = Re (Tr (?A * outer_sum n [\<psi>]))" using Tr_id by simp
   finally show ?thesis.
 qed
-
 
 text \<open>For an ensemble: $p_\alpha(\{p_i,\psi_i\})=\sum_ip_i\norm{M_\alpha\psi_i}^2=\Tr(M_\alpha^*M_\alpha\rho)$.\<close>
 

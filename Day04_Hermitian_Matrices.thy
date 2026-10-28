@@ -228,8 +228,6 @@ next
   have q_isum_zero: "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle> = 0"
     using zero[rule_format, of "?ei + \<i> \<cdot>\<^sub>v ?ej"] eiiej_dim by simp
 
-  (* Real polarization: scalars (1,1,1,1).  Note 1\<cdot>v = v, so
-     \<langle>?ei + ?ej | T (?ei + ?ej)\<rangle> = \<langle>1\<cdot>?ei + 1\<cdot>?ej | T (1\<cdot>?ei + 1\<cdot>?ej)\<rangle>. *)
   have sum_expand: "\<langle>?ei + ?ej | T *\<^sub>v (?ei + ?ej)\<rangle>
                   = T $$ (i, i) + T $$ (i, j) + T $$ (j, i) + T $$ (j, j)"
     using polarization_helper[OF sq inb(1) inb(2), of 1 1 1 1] by simp
@@ -237,7 +235,6 @@ next
   have sum_eq: "T $$ (i, j) + T $$ (j, i) = 0"
     using q_sum_zero sum_expand diag_i diag_j by simp
 
-  (* Imaginary polarization: scalars (1, \<i>, 1, \<i>). *)
   have isum_expand: "\<langle>?ei + \<i> \<cdot>\<^sub>v ?ej | T *\<^sub>v (?ei + \<i> \<cdot>\<^sub>v ?ej)\<rangle>
                    = T $$ (i, i) + \<i> * T $$ (i, j) - \<i> * T $$ (j, i) + T $$ (j, j)"
     using polarization_helper[OF sq inb(1) inb(2), of 1 \<i> 1 \<i>] by simp
@@ -662,8 +659,6 @@ corollary hermitian_real_eigenvalues:
 proof -
   have vcar: "v \<in> carrier_vec n"
     by (simp add: carrier_dim_vec vdim)
-  (* From hermitian: \<langle>v|Hv\<rangle> is real.  And \<langle>v|Hv\<rangle> = lam * \<langle>v|v\<rangle>.
-     Since \<langle>v|v\<rangle> = \<parallel>v\<parallel>² is a positive real (v \<noteq> 0), lam is real. *)
   have qreal: "\<langle>v | H *\<^sub>v v\<rangle> \<in> \<real>"
     using hermitian_iff_real_quad_form[OF sq] herm vdim by blast
   have q_eq: "\<langle>v | H *\<^sub>v v\<rangle> = lam * \<langle>v | v\<rangle>"

@@ -193,8 +193,6 @@ lemma flip_proj_carrier [simp]: "flip_bit_mat b * syndrome_proj K \<in> carrier_
 
 lemma b3_cases: "b < (3::nat) \<Longrightarrow> b = 0 \<or> b = 1 \<or> b = 2" by auto
 
-(* Entry of an 8x8 product as an abstract sum: unrolling the sum and splitting every if does not terminate. *)
-
 lemma mat_mult_entry_8:
   fixes A B :: "complex Matrix.mat"
   assumes "A \<in> carrier_mat 8 8" "B \<in> carrier_mat 8 8" "i < 8" "j < 8"

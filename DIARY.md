@@ -1239,3 +1239,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   summand into the shape `if k = a then … else 0` followed by `sum.delta` (≈12 lines).  Trap: `sum.delta`
   does not see an `if` inside a product (`x * (if c = j then 1 else 0)`); the `(intro sum.cong refl)
   auto` step is the standard bridge.  Plan: `tools/deps/plans/day2.py`; scratch `wip/d23/D02.thy`.
+- **Audit tick 16: process comments out** (2026-10-27).  The 53 remaining `(* … *)` comments inside
+  proofs ("Step 1 …", "Re-bracket", "Peel apart the outer sum", "LHS as trace", "key facts about ws", …)
+  are gone from twelve theories (Days 1, 3, 4, 5, 7, 9, 13, 18, 20, 29, 30, 31; 83 lines).  Kept: the
+  title headers, the `(*<*)`/`(*>*)` document markup, Day 1's note on why `No_Cloning` is imported, and
+  Day 9's mathematical remark after `entangled_bell_state`.  The `\<comment>` lines that remain are
+  short mathematical signposts in long proofs.  Plan: `tools/deps/plans/comments.py`
+  (`strip_block_comments`, skips `(*)` the operator).

@@ -314,12 +314,9 @@ lemma hs_inner_prod_eq_zero_imp:
   shows "x $$ (i,j) = 0"
 proof -
   define f where "f \<equiv> \<lambda>a b. Re (cnj (x$$(a,b)) * x$$(a,b))"
-  (* Each f a b is non-negative *)
   have f_nonneg: "\<And>a b. f a b \<ge> 0"
     by (simp add: f_def)
 
-  (* The double sum of f equals 0.
-     We go: sum of f = sum of Re(...) = Re(sum of ...) = Re(0) = 0 *)
   have sum_zero: "(\<Sum>a\<in>{0..<dim_row x}. \<Sum>b\<in>{0..<dim_col x}. f a b) = 0"
   proof -
     have "(\<Sum>a\<in>{0..<dim_row x}. \<Sum>b\<in>{0..<dim_col x}. f a b) =
@@ -329,21 +326,17 @@ proof -
     finally show ?thesis .
   qed
 
-  (* Each inner sum is non-negative *)
   have inner_nonneg: "\<And>a. 0 \<le> (\<Sum>b\<in>{0..<dim_col x}. f a b)"
     by (intro sum_nonneg) (use f_nonneg in auto)
 
-  (* Peel apart the outer sum — the i-th inner sum must be 0 *)
   have inner_zero: "(\<Sum>b\<in>{0..<dim_col x}. f i b) = 0"
     using sum_nonneg_0[of "{0..<dim_row x}" "\<lambda>a. \<Sum>b\<in>{0..<dim_col x}. f a b" i]
           sum_zero inner_nonneg assms(2) by auto
 
-  (* Peel apart the inner sum — the j-th term must be 0 *)
   have "f i j = 0"
     using sum_nonneg_0[of "{0..<dim_col x}" "\<lambda>b. f i b" j]
           inner_zero f_nonneg assms(3) by auto
 
-  (* f i j = 0 means (cmod(x$$(i,j)))^2 = 0, so x$$(i,j) = 0 *)
   then have "Re (cnj (x$$(i,j)) * x$$(i,j)) = 0" unfolding f_def by simp
   moreover have "cnj (x$$(i,j)) * x$$(i,j) = complex_of_real ((cmod (x$$(i,j)))\<^sup>2)"
     by (simp add: cmod_power2 complex_mult_cnj mult.commute)

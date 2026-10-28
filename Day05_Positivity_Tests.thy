@@ -405,9 +405,6 @@ lemma direct_sum_inner_prod:
       and wd1: "dim_vec w1 = p" and wd2: "dim_vec w2 = p"
   shows "\<langle>v1 \<oplus>\<^sub>v w1 | v2 \<oplus>\<^sub>v w2\<rangle> = \<langle>v1 | v2\<rangle> + \<langle>w1 | w2\<rangle>"
 proof -
-  (* Split at i = m using sum.atLeastLessThan_concat:
-       (\<Sum>i = 0..<m+p. f i) = (\<Sum>i = 0..<m. f i) + (\<Sum>i = m..<m+p. f i),
-     then reindex i \<mapsto> m + j to match the second range. *)
   have "\<langle>v1 \<oplus>\<^sub>v w1 | v2 \<oplus>\<^sub>v w2\<rangle> =
         (\<Sum>i = 0..<m+p. cnj ((v1 \<oplus>\<^sub>v w1) $ i) * (v2 \<oplus>\<^sub>v w2) $ i)"
     using assms by (simp add: inner_prod_def)
