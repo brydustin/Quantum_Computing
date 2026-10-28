@@ -1194,3 +1194,14 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   facts; `right_mult_zero_mat` is not simp; `four_block_carrier_mat` cannot match `Suc n` (use
   `carrier_matI`); `mat_of_cols` dims reduce to `length vs`, so `len` must be in every such simp set.
   Plan: `tools/deps/plans/schur2.py`; scratch `wip/d23/D03c.thy`.
+- **Audit tick 11: the oracle as a permutation matrix** (2026-10-27).  Day 12's `oracle_exists`
+  (332 lines, with "Column l has a unique 1 …" comments) built U_f entry by entry.  Now: σ(2J+i) =
+  2J + (i ⊕ f J) is an involution on [0, 2^{N+1}) (two div/mod facts), U is its permutation matrix,
+  U e_l = e_{σ l} is one `eq_vecI`, U² = I is one `sum.delta`, U = U* is the symmetry l = σ k ⟺ k = σ l,
+  and the oracle action is `tensor_unit_vec` (e_J ⊗ e_i = e_{2J+i}, Day 6) plus σ(2J+i) = 2J+(i+f J) mod 2.
+  About 50 lines.  Traps (memory): `define U where …` without a type is polymorphic and breaks later
+  statements ("Variable 'a not of sort semiring_0"); `mod_less_divisor[of 2 x]` keeps a `0 < 2`
+  premise, so it cannot feed `unfolding`; scalar-product sums come out over `{..<d}`, add
+  `lessThan_atLeast0`; a carrier fact in `2^N * 2` only meets a goal in `2 * 2^N` when passed via `using`
+  (premises are normalised, `simp add:` facts are not).  Plan: `tools/deps/plans/day12.py`; scratch
+  `wip/d23/D12.thy`.
