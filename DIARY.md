@@ -1576,3 +1576,8 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   drops the NOTES_AUDIT sentence, words the prerequisite session plainly and corrects "two companion
   entries" to the one that builds on it (HHL).  The AFP abstract gains a sentence on the reusable
   prerequisite session.
+- **Document polish** (2026-10-28).  An appendix "What is not formalised" (left-out narrative and
+  remarks; results formalised in a different form) replaces the pointer to NOTES_AUDIT.md; the
+  conventions say "the theories use the dagger" for the adjoint, explain the doubled brackets of the
+  Hilbert–Schmidt inner product (terms in `\mbox` so they never break across lines) and name the Kraus
+  list; the verification-status paragraph goes; Day 1's opening is plain sentences.

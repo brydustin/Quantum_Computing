@@ -66,7 +66,7 @@ result that the notes state before the tools of its proof are available is prove
 day that has them, and its statement says where: Choi's rank theorem, stated on
 Day 20, is proved on Day 22 from the independence of minimal Kraus representations, and
 Day 2's characterisation of orthogonal projections waits for the Hermitian matrices of Day 4.
-The unformalised items are listed in \texttt{NOTES\_AUDIT.md}.
+What the formalisation leaves out, or proves in a different form, is listed in the appendix.
 
 \begin{center}
 \begin{tabular}{rp{0.85\linewidth}}
@@ -129,23 +129,22 @@ text \<open>
   $M_{m,n}$ are \<^typ>\<open>complex Matrix.mat\<close> with \<^term>\<open>A \<in> carrier_mat m n\<close>
   (the Jordan-Normal-Form library).  Dimensions are hypotheses, not types, except
   in the typed wrapper \<open>lmat\<close> used for the topological arguments of Part~IV.
-\<^item> The physicists' adjoint $X^\dagger = X^*$ is \<^term>\<open>A\<^sup>\<dagger>\<close>; $\braket{y}{x}$ is
-  \<^term>\<open>\<langle>y|x\<rangle>\<close> (conjugate-linear in the first slot, as in the notes);
-  $\ketbra{v}{w}$ is \<^term>\<open>v \<oslash> w\<close>; the Hilbert--Schmidt inner product
-  $\langle Y|X\rangle = \Tr(Y^*X)$ is \<^term>\<open>\<langle>\<langle>Y|X\<rangle>\<rangle>\<close>; the matrix unit
-  $E_{ij}\in M_{m,n}$ is \<^term>\<open>E\<lbrakk>i,j ; m,n\<rbrakk>\<close>.
+\<^item> The notes write the adjoint of $X$ as $X^*$ or, like physicists, $X^\dagger$; the
+  theories use the dagger, \mbox{\<^term>\<open>X\<^sup>\<dagger>\<close>}.
+\<^item> Brackets keep the notes' shape: the inner product $\braket{y}{x}$ of vectors is
+  \mbox{\<^term>\<open>\<langle>y|x\<rangle>\<close>}, conjugate-linear in the first slot as in the notes, and its
+  matrix analogue, the Hilbert--Schmidt inner product $\Tr(Y^*X)$, doubles them:
+  \mbox{\<^term>\<open>\<langle>\<langle>Y|X\<rangle>\<rangle>\<close>}.
+\<^item> The outer product $\ketbra{v}{w}$ is \mbox{\<^term>\<open>v \<oslash> w\<close>}, and the matrix
+  unit $E_{ij}\in M_{m,n}$ is \mbox{\<^term>\<open>E\<lbrakk>i,j ; m,n\<rbrakk>\<close>}.
 \<^item> Indices start at $0$, as the physicists in the notes prefer: the canonical basis
   of $\C^n$ is $\ket{0},\dots,\ket{n-1}$, formally \<^term>\<open>unit_vec n i\<close>.
 \<^item> $\sum_i \ketbra{v_i}{v_i}$ for a list of vectors is \<^term>\<open>outer_sum n vs\<close>
   $= V V^\dagger$ with $V$ the matrix whose columns are the $v_i$.
 \<^item> Tensor products are Kronecker products: \<^term>\<open>tensor_vec v w\<close> and
   \<^term>\<open>A \<Otimes> B\<close>, with the first factor as the major index.
-\<^item> Kraus sums $\sum_i W_i X W_i^\dagger$ over a list are \<^term>\<open>kraus_map_dim d Ws X\<close>.
-\<close>
-
-text \<open>
-Verification status.  All theories build with \<open>quick_and_dirty = false\<close>; there are
-no \<open>sorry\<close>s and no axioms beyond those of Isabelle/HOL and the imported libraries.
+\<^item> A Kraus sum $\sum_i W_i X W_i^\dagger$ over Kraus operators $W_1,\dots,W_k\in M_{d,n}$, given as
+  the list \mbox{\<^term>\<open>Ws\<close>}, is \mbox{\<^term>\<open>kraus_map_dim d Ws X\<close>}.
 \<close>
 
 end

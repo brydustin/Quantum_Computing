@@ -121,4 +121,51 @@ a separate prerequisite session, \emph{Essential Functional Analysis}, with its 
 \part{Beyond the notes}
 \input{Quantum_Channels}
 
+\appendix
+\section{What is not formalised}
+
+Every definition, theorem and worked example of the notes is formalised, with the following
+exceptions.
+
+\subsection*{Left out}
+\begin{itemize}
+\item \emph{Narrative and asides.}  The course overview, history and references (Day~1); the
+  classical gates AND, OR, XOR, NAND, NOR and the Peirce/Sheffer remarks (Day~10); the
+  Bernoulli-trial remark (Day~12); stochastic matrices and Markov chains (Day~17); left inverses
+  and cyclic codes (Day~29).
+\item \emph{Abstract Hilbert spaces} (Day~1).  Every space in the notes is $\C^n$ or
+  $M_{n,k}$, so the abstract definition is never needed.  The identification
+  $M_{n,k}\cong\C^{nk}$ is used but not stated as a theorem.
+\item \emph{Motivation for density matrices} (Day~13): that a vector in
+  $\mathcal H_A\otimes\mathcal H_E$ behaves like an ensemble.  Its rigorous form is the
+  partial-trace theorem of Day~15, which is formalised.
+\item \emph{Remarks.}  That a density matrix has many factorisations $\rho=XX^*$ (Day~14); that
+  the lemma ``$\langle x|Tx\rangle=0$ for all $x$ implies $T=0$'' fails over $\mathbb R$ (Day~4);
+  the rank-one lemma for $(E_{ij})$ (Day~20) and ``$T$ injective implies $T^*$ onto''
+  (Day~21), which the formal proofs do not need.
+\item \emph{The Krein--Milman theorem} (Day~22), which the notes only state; it is available
+  in HOL-Analysis and is not restated.
+\end{itemize}
+
+\subsection*{Formalised in a different form}
+\begin{itemize}
+\item \emph{Cholesky reduction} (Day~5) carries the hypothesis $p_{11}>0$, which the notes leave
+  implicit; without it the statement is false.
+\item \emph{Hadamard gate} (Day~10): the notes state $H^2=X$ and correct it on Day~11; the
+  formalisation proves $H^2=I$.
+\item \emph{The converse of Choi's Theorem~3} (Day~23) is proved through a CP
+  Radon--Nikodym theorem instead of Choi's second theorem.
+\item \emph{The example $\tfrac12(U_1^*XU_1+U_2^*XU_2)$} (Day~23) is not extreme only when
+  $U_1,U_2$ are linearly independent; for proportional $U_1,U_2$ the map is extreme, and both
+  cases are proved.
+\item \emph{Arveson's extension theorem} (Day~26) is proved by extending the associated
+  functional to a positive functional on $M_d(M_n)$ directly, by separating the positive
+  definite cone from its kernel.  The norm proposition of Day~25 and the reduction to the
+  unital case of Day~26 are therefore not needed.
+\item \emph{Images of the one-qubit Pauli errors} (Day~32): the notes' claim that they are
+  mutually orthogonal is false as stated ($Z_1\neq Z_2$ have the same image of the code word);
+  the notes correct it on Day~33, and the formalisation proves the counterexample and the
+  corrected statement.
+\end{itemize}
+
 \end{document}

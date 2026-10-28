@@ -24,11 +24,12 @@ declare cauchy_schwarz_eq [simp del] cauchy_schwarz_col [simp del] eq_from_inner
 
 section \<open>Day 1 (22 August 2011): the inner product\<close>
 
-text \<open>Paulsen opens with the dictionary between classical and quantum computing: a bit
-is an element of $\Z_2$, a qubit a unit vector in $\C^2$; $N$ bits form $\Z_2^N$, $N$ qubits
-a unit vector in $\C^{2^N}\cong\C^2\otimes\cdots\otimes\C^2$; operations are Boolean gates
-versus completely positive maps on $M_{2^N}$; information is a probability vector versus a
-positive semidefinite matrix of trace one.  He then fixes the physicists' notation.
+text \<open>Paulsen opens with a dictionary between classical and quantum computing.  A bit is
+an element of $\Z_2$.  A qubit is a unit vector in $\C^2$.  The state of $N$ bits lies in
+$\Z_2^N$.  The state of $N$ qubits is a unit vector in $\C^{2^N}\cong\C^2\otimes\cdots\otimes\C^2$.
+Classical operations are Boolean gates.  Quantum operations are completely positive maps on
+$M_{2^N}$.  Classical information is a probability vector.  Quantum information is a positive
+semidefinite matrix of trace one.  He then fixes the physicists' notation.
 
 \begin{notesdef}
 $\C^n$ is the space of complex $n$-tuples with the inner product
