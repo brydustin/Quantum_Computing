@@ -1246,3 +1246,13 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Day 9's mathematical remark after `entangled_bell_state`.  The `\<comment>` lines that remain are
   short mathematical signposts in long proofs.  Plan: `tools/deps/plans/comments.py`
   (`strip_block_comments`, skips `(*)` the operator).
+- **Audit tick 17: a Hermitian matrix is a difference of positives** (2026-10-27).  Day 18's
+  `hermitian_decomp_psd` (130 lines) and `matrix_decomp_psd` (184) are now 30 lines each: with
+  U*HU = diag D, split D = D⁺ − D⁻ (one `eq_matI` with max x 0 − max (−x) 0 = x), so
+  H = U D⁺ U* − U D⁻ U* with both terms positive by `psd_U_diag_Udag`; and X = ½(X + X*) + i·(1/2i)(X − X*)
+  with both parts Hermitian (`eq_matI` + `dagger_def`), decomposed by the first lemma.  Traps:
+  `auto simp: … flip: …` is not accepted (use `rule[symmetric]` + `simp del: rule`); a structured
+  `proof (intro exI[of _ a] exI[of _ b] …)` instantiates EVERY existential with the first witness (only a
+  terminal `by` backtracks out of it) — apply `rule exI[of _ a], rule exI[of _ b], …` in sequence; a final
+  `auto` over carrier facts of U*DU* products ran away — give each conjunct as an intro rule.
+  Plan: `tools/deps/plans/day18.py`; scratch `wip/d23/D18.thy`.
