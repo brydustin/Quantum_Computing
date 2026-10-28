@@ -1213,3 +1213,12 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `(* … *)` process comment in `pd_iff_spanning` is gone.  Trap: `hermitian_index` as a simp rule
   rewrites its own right-hand side (T_ij → cnj T_ji → cnj cnj T_ij …) and loops; apply it by `rule`.
   Plan: `tools/deps/plans/day4b.py`; scratch `wip/d23/D04b.thy`.
+- **Audit tick 13: convexity of UCP and CPTP once** (2026-10-27).  Day 22 proved the complete
+  positivity of $t\Phi_1+(1-t)\Phi_2$ twice, once inside `UCP_convex` and once inside `CPTP_convex`
+  (the source even said "copy of UCP_convex's CP half").  Now `completely_positive_convex` (≈30 lines:
+  `amplification_add`/`amplification_smult` move the combination through the amplification,
+  `psd_smult_nonneg` + `psd_add_psd` finish) is shared, and each theorem adds its five-line unital or
+  trace-preserving part (282 → ≈85 lines).  Trap: `amplification_smult[OF dpos b1]` fails with "OF:
+  multiple unifiers" because the map is a higher-order argument — instantiate `where F = … and c = …`
+  first; `psd_add_psd` needs its carrier premises instantiated (`smult_carrier_mat[OF C]`), `simp_all`
+  cannot invent the dimension.  Plan: `tools/deps/plans/day22.py`; scratch `wip/d23/D22.thy`.
