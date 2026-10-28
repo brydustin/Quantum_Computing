@@ -672,53 +672,25 @@ lemma complement_dagger:
 
 text \<open>Conjugating a rank-one matrix: $W|\varphi\rangle\langle\varphi|W^*=|W\varphi\rangle\langle W\varphi|$.\<close>
 
+lemma mat_mult_ket:
+  fixes W :: "complex Matrix.mat" and \<phi> :: "complex Matrix.vec"
+  assumes Wc: "W \<in> carrier_mat m n" and \<phi>d: "dim_vec \<phi> = n"
+  shows "W * |\<phi>\<rangle> = |W *\<^sub>v \<phi>\<rangle>"
+  using Wc \<phi>d by (intro eq_matI) (auto simp: ket_vec_def scalar_prod_def atLeast0LessThan)
+
 lemma conj_outer_prod:
   fixes W :: "complex Matrix.mat" and \<phi> :: "complex Matrix.vec"
   assumes Wc: "W \<in> carrier_mat m n" and \<phi>d: "dim_vec \<phi> = n"
   shows "W * (\<phi> \<oslash> \<phi>) * (W\<^sup>\<dagger>) = (W *\<^sub>v \<phi>) \<oslash> (W *\<^sub>v \<phi>)"
 proof -
-  define M where "M = \<phi> \<oslash> \<phi>"
-  define R where "R = (W *\<^sub>v \<phi>) \<oslash> (W *\<^sub>v \<phi>)"
-  have Mc: "M \<in> carrier_mat n n" unfolding M_def by (rule outer_prod_carrier[OF \<phi>d \<phi>d])
-  have Me: "\<And>k l. k < n \<Longrightarrow> l < n \<Longrightarrow> M $$ (k,l) = \<phi> $ k * cnj (\<phi> $ l)"
-    unfolding M_def using \<phi>d by (intro outer_prod_index) auto
-  have Wdc: "W\<^sup>\<dagger> \<in> carrier_mat n m" by (rule dagger_carrier[OF Wc])
-  have W\<phi>d: "dim_vec (W *\<^sub>v \<phi>) = m" using Wc by simp
-  have Rc: "R \<in> carrier_mat m m" unfolding R_def by (rule outer_prod_carrier[OF W\<phi>d W\<phi>d])
-  have Re: "\<And>i j. i < m \<Longrightarrow> j < m \<Longrightarrow> R $$ (i,j) = (W *\<^sub>v \<phi>) $ i * cnj ((W *\<^sub>v \<phi>) $ j)"
-    unfolding R_def using W\<phi>d by (intro outer_prod_index) auto
-  have WMc: "W * M \<in> carrier_mat m n" using Wc Mc by simp
-  have "W * M * (W\<^sup>\<dagger>) = R"
-  proof (rule eq_matI)
-    fix i j assume "i < dim_row R" "j < dim_col R"
-    hence i: "i < m" and j: "j < m" using carrier_matD[OF Rc] by auto
-    have inner: "\<And>l. l < n \<Longrightarrow> (W * M) $$ (i,l) = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * cnj (\<phi> $ l)"
-    proof -
-      fix l assume l: "l < n"
-      have "(W * M) $$ (i,l) = (\<Sum>k<n. W $$ (i,k) * M $$ (k,l))"
-        using i l carrier_matD[OF Wc] carrier_matD[OF Mc] by (simp add: scalar_prod_def atLeast0LessThan)
-      also have "\<dots> = (\<Sum>k<n. W $$ (i,k) * (\<phi> $ k * cnj (\<phi> $ l)))"
-        using l by (intro sum.cong refl) (simp add: Me)
-      also have "\<dots> = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * cnj (\<phi> $ l)"
-        by (simp add: sum_distrib_right mult_ac(1))
-      finally show "(W * M) $$ (i,l) = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * cnj (\<phi> $ l)" .
-    qed
-    have "(W * M * (W\<^sup>\<dagger>)) $$ (i,j) = (\<Sum>l<n. (W * M) $$ (i,l) * cnj (W $$ (j,l)))"
-      using i j carrier_matD[OF WMc] carrier_matD[OF Wdc] carrier_matD[OF Wc]
-      by (simp add: scalar_prod_def dagger_def atLeast0LessThan)
-    also have "\<dots> = (\<Sum>l<n. (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * (cnj (\<phi> $ l) * cnj (W $$ (j,l))))"
-      by (intro sum.cong refl) (simp add: inner mult_ac(1))
-    also have "\<dots> = (\<Sum>k<n. W $$ (i,k) * \<phi> $ k) * (\<Sum>l<n. cnj (W $$ (j,l) * \<phi> $ l))"
-      by (simp add: sum_distrib_left mult.commute)
-    also have "\<dots> = (W *\<^sub>v \<phi>) $ i * cnj ((W *\<^sub>v \<phi>) $ j)"
-      using i j carrier_matD[OF Wc] \<phi>d by (simp add: scalar_prod_def atLeast0LessThan)
-    also have "\<dots> = R $$ (i,j)" by (rule Re[OF i j, symmetric])
-    finally show "(W * M * (W\<^sup>\<dagger>)) $$ (i,j) = R $$ (i,j)" .
-  next
-    show "dim_row (W * M * (W\<^sup>\<dagger>)) = dim_row R" using carrier_matD[OF Wc] carrier_matD[OF Rc] by simp
-    show "dim_col (W * M * (W\<^sup>\<dagger>)) = dim_col R" using carrier_matD[OF Wdc] carrier_matD[OF Rc] by simp
-  qed
-  thus ?thesis unfolding M_def R_def .
+  have k: "|\<phi>\<rangle> \<in> carrier_mat n 1" and b: "bra_vec \<phi> \<in> carrier_mat 1 n"
+    using \<phi>d by (simp_all add: ket_vec_def bra_vec_def cpx_mat_cnj_def row_vec_def carrier_matI)
+  have bW: "bra_vec \<phi> * (W\<^sup>\<dagger>) = bra_vec (W *\<^sub>v \<phi>)"
+    using dagger_of_mat_on_ket[of W \<phi>] Wc \<phi>d
+    by (simp add: mat_mult_ket[OF Wc \<phi>d] dagger_of_ket_is_bra)
+  have "W * (\<phi> \<oslash> \<phi>) * (W\<^sup>\<dagger>) = (W * |\<phi>\<rangle>) * (bra_vec \<phi> * (W\<^sup>\<dagger>))"
+    unfolding assoc_mult_mat[OF Wc k b, symmetric] assoc_mult_mat[OF mult_carrier_mat[OF Wc k] b dagger_carrier[OF Wc]] ..
+  thus ?thesis unfolding mat_mult_ket[OF Wc \<phi>d] bW .
 qed
 
 lemma outer_prod_zero_vec: "(0\<^sub>v n :: complex Matrix.vec) \<oslash> (0\<^sub>v n) = 0\<^sub>m n n"

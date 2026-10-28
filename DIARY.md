@@ -1382,3 +1382,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   over the Kraus list with `psd_conjugate` (W ρ W* = (W*)* ρ W*) and `psd_add_psd`: 14 lines.  Day 6
   993 → 903, Day 17 1100 → 1049, every statement unchanged.  Plan: `tools/deps/plans/day6b.py`;
   scratch `wip/d23/D06.thy`.
+- **Audit tick 31: conjugating a rank-one matrix** (2026-10-28).  Day 2's `conj_outer_prod`
+  (W|φ⟩⟨φ|W* = |Wφ⟩⟨Wφ|, 49 lines of entry sums) is associativity: W(|φ⟩⟨φ|)W* = (W|φ⟩)(⟨φ|W*) with
+  the new two-line fact `mat_mult_ket` (W|φ⟩ = |Wφ⟩) and IMD's `dagger_of_mat_on_ket`: 14 lines.
+  Day 2 1214 → 1186.  Trap: `unfolding` applies all its equations to normal form at once, so a rewrite
+  that consumes `W * |φ⟩` must come in a later `unfolding` than the associativity instance that
+  mentions it.  Plan: `tools/deps/plans/day2b.py`; scratch `wip/d23/D02b.thy`.
