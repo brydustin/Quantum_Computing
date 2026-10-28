@@ -1031,47 +1031,6 @@ proof -
   thus ?thesis by (simp add: hermitian_def)
 qed
 
-lemma hermitian_add_mat:
-  fixes P Q :: "complex Matrix.mat"
-  assumes Pcar: "P \<in> carrier_mat n n" and Qcar: "Q \<in> carrier_mat n n"
-      and Pherm: "hermitian P" and Qherm: "hermitian Q"
-  shows "hermitian (P + Q)"
-proof -
-  have PQcar: "P + Q \<in> carrier_mat n n" using Pcar Qcar by simp
-  have Pdag: "P\<^sup>\<dagger> = P" using Pherm by (simp add: hermitian_def)
-  have Qdag: "Q\<^sup>\<dagger> = Q" using Qherm by (simp add: hermitian_def)
-  have "(P + Q)\<^sup>\<dagger> = P + Q"
-  proof (rule eq_matI)
-    show "dim_row ((P + Q)\<^sup>\<dagger>) = dim_row (P + Q)"
-      using PQcar Qcar by (simp add: dim_row_of_dagger)
-    show "dim_col ((P + Q)\<^sup>\<dagger>) = dim_col (P + Q)"
-      using PQcar Qcar by (simp add: dim_col_of_dagger)
-  next
-    fix i j
-    assume i: "i < dim_row (P + Q)" and j: "j < dim_col (P + Q)"
-    hence ij: "i < n" "j < n" using PQcar Qcar by simp_all
-    have eq1: "(P + Q)\<^sup>\<dagger> $$ (i, j) = cnj ((P + Q) $$ (j, i))"
-      unfolding dagger_def using ij PQcar Qcar by simp
-    have eq2: "(P + Q) $$ (j, i) = P $$ (j, i) + Q $$ (j, i)"
-      using ij Qcar by simp
-    have eq3: "cnj (P $$ (j, i)) = P\<^sup>\<dagger> $$ (i, j)"
-      unfolding dagger_def using ij Pcar by simp
-    have eq4: "cnj (Q $$ (j, i)) = Q\<^sup>\<dagger> $$ (i, j)"
-      unfolding dagger_def using ij Qcar by simp
-    have "(P + Q)\<^sup>\<dagger> $$ (i, j)
-        = cnj (P $$ (j, i)) + cnj (Q $$ (j, i))"
-      using eq1 eq2 by simp
-    also have "\<dots> = P\<^sup>\<dagger> $$ (i, j) + Q\<^sup>\<dagger> $$ (i, j)"
-      using eq3 eq4 by simp
-    also have "\<dots> = P $$ (i, j) + Q $$ (i, j)"
-      using Pdag Qdag by simp
-    also have "\<dots> = (P + Q) $$ (i, j)"
-      using ij Qcar by simp
-    finally show "(P + Q)\<^sup>\<dagger> $$ (i, j) = (P + Q) $$ (i, j)" .
-  qed
-  thus ?thesis by (simp add: hermitian_def)
-qed
-
 text \<open>Tensor product of hermitians is hermitian (entrywise via
 \<open>index_tensor_mat\<close>).\<close>
 
@@ -1156,7 +1115,7 @@ proof -
         using ij Mcar Ncar by (simp add: index_add_mat)
     qed (use Mcar Ncar in auto)
     have "hermitian (unwrap_lm M + unwrap_lm N)"
-      using hermitian_add_mat [OF Mcar Ncar Mherm Nherm] .
+      using hermitian_plus[OF Mherm Nherm Mcar Ncar] .
     hence "hermitian (unwrap_lm (M + N))" using MN_eq by simp
     thus "M + N \<in> ?H" by simp
   qed

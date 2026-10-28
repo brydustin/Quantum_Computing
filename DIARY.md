@@ -1526,3 +1526,9 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   `outer_sum_singleton_eq`, Day 2 `outer_prod_mult_vec`, JNF `smult_smult_assoc`), then
   sesquilinearity under `simp only:` (117 lines → 24); `outer_sum_singleton_mult_vec` is a corollary of
   the Day 2/4 outer-product facts (26 → 4).  Statement check clean.  Plan: `tools/deps/plans/sweep9.py`.
+- **Audit tick 50: the positive cone in one place** (2026-10-28).  `psd_add_psd` moves from Day 13 to
+  Day 4 next to `psd_smult_nonneg`, with the same quadratic-form proof through
+  `psd_iff_quad_form_nonneg` (65 lines → 13); Day 28's `hermitian_add_mat` was Day 4's
+  `hermitian_plus` with the premises permuted — invisible to the DUP check, which compares whole
+  statements — and goes.  Plan: `tools/deps/plans/sweep10.py`.  JNF's `add_carrier_mat` has ONE
+  premise (`B ∈ carrier_mat nr nc ⟹ A + B ∈ carrier_mat nr nc`).

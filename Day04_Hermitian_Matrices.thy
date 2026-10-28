@@ -1289,6 +1289,21 @@ proof (intro allI impI)
     using A[unfolded psd_iff_quad_form_nonneg[OF Ac], rule_format, OF x] c by auto
 qed
 
+lemma psd_add_psd:
+  assumes A: "psd A" and B: "psd B"
+      and Ac: "A \<in> carrier_mat n n" and Bc: "B \<in> carrier_mat n n"
+  shows "psd (A + B)"
+  unfolding psd_iff_quad_form_nonneg[OF add_carrier_mat[OF Bc]]
+proof (intro allI impI)
+  fix x :: "complex Matrix.vec" assume x: "dim_vec x = n"
+  have "\<langle>x | (A + B) *\<^sub>v x\<rangle> = \<langle>x | A *\<^sub>v x\<rangle> + \<langle>x | B *\<^sub>v x\<rangle>"
+    unfolding add_mult_distrib_mat_vec[OF Ac Bc carrier_vecI[OF x]]
+    by (rule inner_prod_right_add') (use Ac Bc in simp)
+  thus "\<langle>x | (A + B) *\<^sub>v x\<rangle> \<in> \<real> \<and> 0 \<le> Re \<langle>x | (A + B) *\<^sub>v x\<rangle>"
+    using A[unfolded psd_iff_quad_form_nonneg[OF Ac], rule_format, OF x]
+          B[unfolded psd_iff_quad_form_nonneg[OF Bc], rule_format, OF x] by (auto intro: Reals_add)
+qed
+
 subsection \<open>The converse directions for Hermitian matrices (D4-1)\<close>
 
 lemma unitary_real_diag_imp_hermitian:
