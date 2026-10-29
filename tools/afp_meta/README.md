@@ -1,26 +1,20 @@
-# Three AFP submissions
+# AFP submissions
 
 Prepared from the repository https://github.com/brydustin/Quantum_Computing by
 `tools/afp_package.sh`: each entry was exported from the tracked sources and built from the
-export alone (fresh build, Isabelle2026, AFP 2026-10-29, `-o document=pdf`), with no `sorry`
-and no oracles except the one noted for Quantum_Search_Bound.
+export alone (Isabelle2026, AFP 2026-10-29, `-o document=pdf`), with no `sorry` and no oracles
+except the one noted for Quantum_Search_Bound.
 
-| Folder | Entry | Depends on (new) | Contents |
+| Folder | Entry | Status | Sessions |
 |---|---|---|---|
-| `1_Hermitian_Functional_Calculus` | Hermitian_Functional_Calculus | – | functional calculus of Hermitian matrices, Lie–Trotter and Suzuki product formulas |
-| `2_Quantum_Computing_CP_Maps` | Quantum_Computing_CP_Maps | – | Vern Paulsen's 2011 lecture notes on quantum computing and completely positive maps |
-| `3_HHL_Algorithm` | HHL_Algorithm | entries 1 and 2 | quantum phase estimation and the HHL algorithm |
+| `1_Hermitian_Functional_Calculus` | Hermitian_Functional_Calculus | submitted 2026-10-24, under review; builds unchanged with Isabelle2026 | 1 |
+| `2_Quantum_Computing_CP_Maps` | Quantum_Computing_CP_Maps | to submit | Matrix_Analysis_Prerequisites, Quantum_Computing_CP_Maps |
+| `3_HHL_Algorithm` | HHL_Algorithm | to submit (needs entries 1 and 2) | HHL_Algorithm, HHL_Gates, HHL_Explicit_Demo, Quantum_Hoare_Logic_Channels, Quantum_Search_Bound |
 
 Each folder holds the archive to upload (`<Entry>.tar.gz`), the same entry unpacked, the PDF of
-every session with a document (the AFP's full variant, with proofs: 80, 882 and 388 pages for the
-three main sessions), and `SUBMISSION.md` with the fields of the submission form
-(title, short name, topics, license, abstract) and a comment for the editors.
+every session (the AFP's full variant, with proofs), and `SUBMISSION.md` with the fields of the
+submission form (title, short name, topics, license, abstract) and the comment for the editors.
 
-Submitting: https://isa-afp.org/submission/ — entries 1 and 2 are independent and can go first
-(or together with 3); entry 3 needs both, so mention in its comment that they were submitted at
-the same time.  Before submitting, decide the open points:
-
-- entry 2 is fixed: short name `Quantum_Computing_CP_Maps`, title "Lectures on Quantum Computing and
-  Completely Positive Maps"; the names and titles of entries 1 and 3 are suggestions;
-- the topics are suggestions from the AFP's topic list;
-- the license is BSD in all three (the AFP's default; LGPL is the other option).
+Submitting entries 2 and 3 at https://isa-afp.org/submission/ — one form per entry, entry 2
+first; copy each field from its `SUBMISSION.md` and upload its `.tar.gz`.  The license is BSD
+(the AFP's default); the topics are suggestions from the AFP's topic list.
