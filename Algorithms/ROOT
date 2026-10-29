@@ -85,3 +85,54 @@ session HHL_Algorithm_Search in "Search" = Compressed_Oracles +
     HHL_Search_Bound
   document_files
     "root.tex"
+
+session HHL_Algorithm_Gates in "Gates" = HHL_Algorithm +
+  description "
+    The black boxes of HHL in elementary gates: a reversible comparator, the sparse simulation
+    from oracles, state preparation from an angle oracle and from a sparse list, and the whole
+    algorithm for the shifted cycle Laplacian with an explicit gate count."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  theories
+    Reversible_Gates
+    Bit_Compare
+    Comparator_Scan
+    Bennett_Uncompute
+    Comparator_Registers
+    Register_Swap
+    Two_Comparisons
+    Sort_Flag
+    Comparator_Clean
+    Comparator_Permutation
+    Toffoli_Gates
+    Gate_Routing
+    Reversible_Compile
+    Comparator_Gates
+    Clean_Ancillas
+    Simulation_Comparator
+    Entry_Rotation
+    Entry_Oracle
+    Distant_Diagonals
+    Rotation_Stage_Gates
+    Entry_Gates
+    Diagonal_Oracle
+    Simulation_Rounded
+    Simulation_Oracles
+    Prep_Rounded
+    Prep_Angle_Oracle
+    Multi_Controlled_NOT
+    Prep_Sparse
+    Incrementer
+    Cycle_Laplacian
+    Wire_Gates
+    Wire_Placement
+    Shifted_Laplacian
+    Controlled_Laplacian
+    Phase_Estimation_Gates
+    Gate_List_Placement
+    HHL_Stage_Counts
+    HHL_Laplacian
+    HHL_Laplacian_Sparse
+  document_files
+    "root.tex"
