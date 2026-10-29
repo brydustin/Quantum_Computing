@@ -20,13 +20,13 @@ lemma cnj_mult_self_cmod: "cnj z * z = complex_of_real ((cmod z)\<^sup>2)"
 lemma smult_smult_mat:
   fixes A :: "complex Matrix.mat"
   shows "a \<cdot>\<^sub>m (b \<cdot>\<^sub>m A) = (a * b) \<cdot>\<^sub>m A"
-  by (rule eq_matI) (simp_all add: mult.assoc)
+  by (rule eq_matI, simp_all add: mult.assoc)
 
 lemma zero_smult_mat_carrier:
   fixes A :: "complex Matrix.mat"
   assumes "A \<in> carrier_mat m k"
   shows "0 \<cdot>\<^sub>m A = 0\<^sub>m m k"
-  using assms by (intro eq_matI) auto
+  using assms by (intro eq_matI, auto) 
 
 section \<open>The adjoint\<close>
 
@@ -35,8 +35,7 @@ text \<open>The adjoint of an $m\times n$ matrix is $n\times m$.\<close>
 lemma dagger_carrier:
   assumes "M \<in> carrier_mat m n"
   shows "(M\<^sup>\<dagger>) \<in> carrier_mat n m"
-  using assms
-  by (simp add: dagger_def)
+  using assms by (simp add: dagger_def)
 
 lemma dagger_mult_inner:
   fixes Y :: "complex Matrix.mat"
@@ -60,7 +59,8 @@ lemma vec_sum_index [simp]: "i < n \<Longrightarrow> vec_sum n Js w $ i = sum (\
 lemma vec_sum_cong:
   assumes "\<And>J. J \<in> Js \<Longrightarrow> w J = w' J"
   shows "vec_sum n Js w = vec_sum n Js w'"
-  unfolding vec_sum_def using assms by (intro arg_cong[where f = "Matrix.vec n"] ext sum.cong refl) simp
+  unfolding vec_sum_def 
+  using assms by (intro arg_cong[where f = "Matrix.vec n"] ext sum.cong refl, simp)
 
 lemma mult_mat_vec_vec_sum:
   assumes Ac: "A \<in> carrier_mat m n" and fin: "finite Js"
@@ -99,7 +99,7 @@ proof (rule eq_vecI)
     using i Ac vd by (simp add: scalar_prod_def)
   also have "\<dots> = (\<Sum>k = 0..<n. c * (A $$ (i,k) * v $ k))"
     by (intro sum.cong refl) (simp only: mult.left_commute[of _ c])
-  also have "\<dots> = c * (\<Sum>k = 0..<n. A $$ (i,k) * v $ k)" by (simp add: sum_distrib_left)
+  also have "\<dots> = c * (\<Sum>k = 0..<n. A $$ (i,k) * v $ k)" by (simp only: sum_distrib_left)
   also have "\<dots> = (c \<cdot>\<^sub>v (A *\<^sub>v v)) $ i" using i Ac vd by (simp add: scalar_prod_def)
   finally show "(A *\<^sub>v (c \<cdot>\<^sub>v v)) $ i = (c \<cdot>\<^sub>v (A *\<^sub>v v)) $ i" .
 qed (use Ac in simp)
@@ -193,14 +193,14 @@ proof -
   have "A = A * ((M\<^sup>\<dagger> * M) * B)" using GB A by simp
   also have "\<dots> = A * (M\<^sup>\<dagger> * M) * B" by (simp only: assoc_mult_mat[OF A G B])
   also have "\<dots> = 0\<^sub>m k k" using AG B by simp
-  finally show ?thesis .
+  finally show ?thesis.
 qed
 
 lemma foldr_add_mat_carrier:
   fixes f :: "'a \<Rightarrow> complex Matrix.mat"
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat n n"
   shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n n) \<in> carrier_mat n n"
-  using assms by (induction xs) auto
+  using assms by (induction xs, auto)
 
 lemma foldr_add_mat_index:
   fixes f :: "'a \<Rightarrow> complex Matrix.mat"
@@ -219,7 +219,7 @@ qed
 lemma foldr_add_mat_carrier_rect:
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat p q"
   shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m p q) \<in> carrier_mat p q"
-  using assms by (induction xs) auto
+  using assms by (induction xs, auto)
 
 lemma foldr_add_mat_index_rect:
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat p q" and "i < p" and "j < q"
@@ -235,7 +235,7 @@ next
         = f x $$ (i,j) + foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m p q) $$ (i,j)"
     using Cons.prems(2,3) carrier_matD[OF c] by simp
   also have "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m p q) $$ (i,j) = (\<Sum>x\<leftarrow>xs. f x $$ (i,j))"
-    by (rule Cons.IH) (use Cons.prems in simp_all)
+    by (rule Cons.IH, use Cons.prems in simp_all)
   finally show ?case by simp
 qed
 
@@ -245,13 +245,13 @@ lemma foldr_add_carrier_dn:
   fixes f :: "'a \<Rightarrow> complex Matrix.mat"
   assumes "\<forall>x \<in> set xs. f x \<in> carrier_mat d n"
   shows "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m d n) \<in> carrier_mat d n"
-  using assms by (induction xs) (auto intro!: add_carrier_mat)
+  using assms by (induction xs, auto intro!: add_carrier_mat)
 
 lemma foldr_add_mat_cong:
   fixes f g :: "'a \<Rightarrow> complex Matrix.mat"
   assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x = g x"
   shows "foldr (\<lambda>x acc. f x + acc) xs z = foldr (\<lambda>x acc. g x + acc) xs z"
-  using assms by (induction xs) auto
+  using assms by (induction xs, auto)
 
 text \<open>Sums over $[0..<N]$, and their entries.\<close>
 
@@ -335,9 +335,10 @@ proof (induction xs)
   case Nil show ?case using Ac by simp
 next
   case (Cons x xs)
-  have fx: "f x \<in> carrier_mat n p" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat n p" using Cons.prems by auto
+  have fx: "f x \<in> carrier_mat n p" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat n p" 
+    using Cons.prems by auto
   have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m n p) \<in> carrier_mat n p"
-    using rest by (induction xs) auto
+    using rest by (induction xs, auto)
   show ?case using Ac fx rc Cons.IH[OF rest] by (simp add: mult_add_distrib_mat)
 qed
 
@@ -350,9 +351,10 @@ proof (induction xs)
   case Nil show ?case using Bc by simp
 next
   case (Cons x xs)
-  have fx: "f x \<in> carrier_mat m n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat m n" using Cons.prems by auto
+  have fx: "f x \<in> carrier_mat m n" and rest: "\<forall>y \<in> set xs. f y \<in> carrier_mat m n" 
+    using Cons.prems by auto
   have rc: "foldr (\<lambda>x acc. f x + acc) xs (0\<^sub>m m n) \<in> carrier_mat m n"
-    using rest by (induction xs) auto
+    using rest by (induction xs, auto)
   show ?case using Bc fx rc Cons.IH[OF rest] by (simp add: add_mult_distrib_mat)
 qed
 
