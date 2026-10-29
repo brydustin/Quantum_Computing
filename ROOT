@@ -17,6 +17,7 @@ session Essential_Functional_Analysis in "Essential_Functional_Analysis" = Two_H
     Unitary_Tensor_Algebra
     Matrix_Typed
     Lmat_Euclidean
+    Essential_Functional_Analysis
   document_files
     "root.tex"
 
