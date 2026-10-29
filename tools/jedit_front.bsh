@@ -1,0 +1,27 @@
+// jedit -R focuses the session ROOT once the session is up; when that happens, bring the
+// file of property qc.front back to the front (watches for at most 15 minutes).
+import org.gjt.sp.util.Log;
+qcFront = System.getProperty("qc.front");
+
+qcOpen(v) {
+  run() { jEdit.openFile(v, qcFront); }
+  return this;
+}
+
+qcWatch() {
+  run() {
+    for (int i = 0; i < 900; i++) {
+      Thread.sleep(1000);
+      v = jEdit.getActiveView();
+      if (v != null && v.getBuffer() != null && "ROOT".equals(v.getBuffer().getName())) {
+        Log.log(Log.NOTICE, null, "jedit_front: ROOT in front, reopening " + qcFront);
+        javax.swing.SwingUtilities.invokeLater(qcOpen(v));
+        return;
+      }
+    }
+  }
+  return this;
+}
+
+new Thread(qcWatch()).start();
+Log.log(Log.NOTICE, null, "jedit_front: watching for ROOT");
