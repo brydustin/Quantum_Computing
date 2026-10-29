@@ -23,6 +23,27 @@ definition pangle :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> n
   "pangle k a j c = (if pnorm k a j c = 0 then 0 else arcsin (pnorm k a (Suc j) (2 * c + 1) / pnorm k a j c))"
 
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[level distance=1.5cm, level 1/.style={sibling distance=5.6cm}, level 2/.style={sibling distance=2.8cm},
+  nd/.style={draw, rounded corners, inner sep=3pt, font=\small}, lf/.style={font=\small},
+  el/.style={font=\footnotesize, fill=white, inner sep=1pt}]
+\node[nd] {$1$}
+  child {node[nd] {$r_0=\sqrt{a_0^2+a_1^2}$}
+    child {node[lf] {$a_0$} edge from parent node[el, left=2pt] {$\cos\theta_0$}}
+    child {node[lf] {$a_1$} edge from parent node[el, right=2pt] {$\sin\theta_0$}}
+    edge from parent node[el, left=4pt] {$\cos\theta$}}
+  child {node[nd] {$r_1=\sqrt{a_2^2+a_3^2}$}
+    child {node[lf] {$a_2$} edge from parent node[el, left=2pt] {$\cos\theta_1$}}
+    child {node[lf] {$a_3$} edge from parent node[el, right=2pt] {$\sin\theta_1$}}
+    edge from parent node[el, right=4pt] {$\sin\theta$}};
+\end{tikzpicture}\\[0.4em]
+{\small The norms for $k=2$.  Node $c$ on level $j$ holds \isa{pnorm k a j c}, the norm of the amplitudes
+whose first $j$ qubits read $c$; the edges to its children carry $\cos\theta_c$ and $\sin\theta_c$ with
+$\theta_c=$ \isa{pangle k a j c}, so each child is its parent times the edge (\isa{pangle\_cos\_sin}).}
+\end{center}
+\<close>
+
 lemma pnorm_split:
   assumes j: "j < k"
   shows "(pnorm k a j c)\<^sup>2 = (pnorm k a (Suc j) (2 * c))\<^sup>2 + (pnorm k a (Suc j) (2 * c + 1))\<^sup>2"
@@ -77,6 +98,20 @@ definition pvec :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> nat
 
 definition lev :: "nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "lev k a j = ctrl_blocks (2 ^ j) (2 * 2 ^ (k - Suc j)) (\<lambda>c. Rot (pangle k a j c) \<Otimes> 1\<^sub>m (2 ^ (k - Suc j)))"
+
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.45cm]
+\lstick{$q_0=\ket0$} & \slice[style={gray}]{$j=0$} \qw & \gate{R(\theta)} & \slice[style={gray}]{$j=1$} \qw & \control[style={rectangle, minimum size=5pt, inner sep=0pt}]{} \vqw{1} & \slice[style={gray}]{$j=2$} \qw & \control[style={rectangle, minimum size=5pt, inner sep=0pt}]{} \vqw{2} & \slice[style={gray}]{$j=3$} \qw & \qw \rstick[3]{$\displaystyle\sum_x a_x\ket x$}\\
+\lstick{$q_1=\ket0$} & \qw & \qw & \qw & \gate{R(\theta_{q_0})} & \qw & \control[style={rectangle, minimum size=5pt, inner sep=0pt}]{} & \qw & \qw\\
+\lstick{$q_2=\ket0$} & \qw & \qw & \qw & \qw & \qw & \gate{R(\theta_{q_0q_1})} & \qw & \qw
+\end{quantikz}\\[0.4em]
+{\small The cascade for $k=3$, with $R=$ \isa{Rot} and $R(\theta)\ket0=\cos\theta\ket0+\sin\theta\ket1$.  A square
+control means \emph{uniformly} controlled: the angle is chosen by the value of the control qubits.  Level $j$
+is \isa{lev k a j}, and after it the state is \isa{pvec k a (j+1)}: the first $j+1$ qubits carry the norms of
+the tree above, the rest are $\ket0$ (\isa{lev\_step}, \isa{cascade}).}
+\end{center}
+\<close>
 
 lemma lev_dim: "j < k \<Longrightarrow> 2 ^ j * (2 * 2 ^ (k - Suc j)) = (2::nat) ^ k"
 proof -

@@ -321,6 +321,23 @@ qed
 
 text \<open>A level: query the rounded angle, rotate, query again.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep={0.7cm,between origins}, column sep=0.4cm]
+\lstick{$r_2=\ket0$} & \gate[5]{O_j} & \qw & \qw & \qw & \ctrl{4} & \qw & \gate[5]{O_j} & \qw\\
+\lstick{$r_1=\ket0$} & & \qw & \qw & \ctrl{3} & \qw & \qw & & \qw\\
+\lstick{$r_0=\ket0$} & & \qw & \ctrl{2} & \qw & \qw & \qw & & \qw\\
+\lstick{$c$ ($j$ wires)} & & \qw & \qw & \qw & \qw & \qw & & \qw\\
+\lstick{$q_j$} & & \gate{Q^\dagger} & \gate{D(\varphi_0)} & \gate{D(\varphi_1)} & \gate{D(\varphi_2)} & \gate{Q} & & \qw
+\end{quantikz}\\[0.4em]
+{\small One level for $b=3$ (\isa{lev\_qgates}).  The oracle $O_j$ XORs the $b$-bit code of the rounded angle
+$\theta_c$ into the register $r$ (\isa{lev\_oracle}); since $R(\vartheta)=Q\,D(\vartheta)\,Q^\dagger$ with
+$D(\vartheta)=\mathrm{diag}(e^{-i\vartheta},e^{i\vartheta})$, register bit $r_i$ controls $D(\varphi_i)$ with
+$\varphi_i=2\pi\,2^i/2^b$, and the phases add up to the coded angle (\isa{lev\_phase}).  The second query
+returns the register to $\ket0$.}
+\end{center}
+\<close>
+
 definition lev_oracle :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "lev_oracle b k a j = oracle_m b (2 ^ j) (2 * 2 ^ (k - Suc j)) (prep_code b k a j)"
 

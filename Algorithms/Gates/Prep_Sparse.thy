@@ -205,6 +205,22 @@ text \<open>Controls: the top $j$ data wires; targets: the register; ancillas: a
 definition lev_table :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> real) \<Rightarrow> nat list \<Rightarrow> nat \<Rightarrow> rgate list" where
   "lev_table b k a xs j = lookup (\<lambda>l. k - j + l) (\<lambda>i. b + k + i) j (pref_list k xs j) (\<lambda>c. code_wires k b (prep_code b k a j c))"
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep={0.65cm,between origins}, column sep=0.6cm]
+\lstick{$q_0$} & \octrl{1} & \ctrl{1} & \ctrl{1} & \qw\\
+\lstick{$q_1$} & \ctrl{3} & \octrl{3} & \ctrl{2} & \qw\\
+\lstick{$r_2$} & \qw & \targ{} & \qw & \qw\\
+\lstick{$r_1$} & \targ{} & \qw & \targ{} & \qw\\
+\lstick{$r_0$} & \targ{} & \targ{} & \qw & \qw
+\end{quantikz}\\[0.4em]
+{\small The table for level $j=2$ when the support has the prefixes $01$, $10$, $11$ with codes $011$, $101$,
+$010$ (\isa{lev\_table}).  Each column is one multi-controlled NOT (\isa{lk\_step}): open controls are NOTs before and
+after, and the AND of the controls is computed by the Toffoli ladder of \isa{mcx} on clean ancillas.  Prefixes outside the support have
+weight $0$ and need no row (\isa{prep\_code\_off}).}
+\end{center}
+\<close>
+
 lemma lev_table_wires:
   assumes j: "j < k"
   shows "ladder_ok (k + (b + k)) (\<lambda>l. k - j + l) (\<lambda>i. b + k + i) j" "inj_on (\<lambda>l. k - j + l) {..<j}"
