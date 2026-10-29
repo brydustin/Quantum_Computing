@@ -28,8 +28,11 @@ results. The algorithm is a program of the quantum while-language of QHLProver, 
 partial and total correctness (the repeat-until-success loop terminates with probability one),
 and compiled to elementary gates. Extra sessions run the circuit on a $2\times2$ example with
 exact arithmetic in $\mathbb{Q}(\sqrt2)$, show that loop-free programs denote completely positive
-trace-preserving maps, and import the quantum search lower bound behind the optimality theorem
-from Compressed_Oracles.
+trace-preserving maps, import the quantum search lower bound behind the optimality theorem
+from Compressed_Oracles, and compile the black boxes to elementary gates: a reversible comparator
+gives the sparse simulation from oracles, state preparation is built from an angle oracle and,
+without oracles, for sparse right-hand sides, and for the shifted cycle Laplacian the whole
+algorithm runs on polynomially many elementary gates with an explicit count.
 
 ## Comment for the editors
 
@@ -40,7 +43,8 @@ from Compressed_Oracles.
   same time; please review those first.
 - Sessions: HHL_Algorithm (main, with document), HHL_Algorithm_Demo (needs Real_Impl, which
   replaces the code setup of the reals), HHL_Algorithm_Channels (loads the notes' channel
-  theory), HHL_Algorithm_Search (needs Compressed_Oracles, built on Complex_Bounded_Operators).
+  theory), HHL_Algorithm_Search (needs Compressed_Oracles, built on Complex_Bounded_Operators),
+  HHL_Algorithm_Gates (the black boxes in elementary gates; about 5 minutes).
 - Names: the entry uses QHLProver's `hermitian` (as Hermitian_Functional_Calculus does) and the
   notes'/IMD's `unitary`, inner and outer products; the first theory hides QHLProver's clashing
   names and bridges the notes' `hermitian` (`hermitian_notes`).
