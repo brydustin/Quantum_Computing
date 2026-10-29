@@ -8,6 +8,22 @@ text \<open>The cascade of \<open>state_prep\<close> rotates qubit $j$ by an ang
 qubits.  With every angle rounded to $b$ bits, each level moves by at most $2\pi/2^b$, so the
 prepared state is $k\cdot 2\pi/2^b$-close to the target.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[level distance=1.0cm, level 1/.style={sibling distance=4.2cm}, level 2/.style={sibling distance=2.1cm}, level 3/.style={sibling distance=1.05cm}, every node/.style={font=\small}]
+\node[draw, circle, inner sep=1pt] {$\theta$}
+  child {node[draw, circle, inner sep=1pt] {$\theta_0$}
+    child {node[draw, circle, inner sep=1pt] {$\theta_{00}$} child {node {$a_0$}} child {node {$a_1$}}}
+    child {node[draw, circle, inner sep=1pt] {$\theta_{01}$} child {node {$a_2$}} child {node {$a_3$}}}}
+  child {node[draw, circle, inner sep=1pt] {$\theta_1$}
+    child {node[draw, circle, inner sep=1pt] {$\theta_{10}$} child {node {$a_4$}} child {node {$a_5$}}}
+    child {node[draw, circle, inner sep=1pt] {$\theta_{11}$} child {node {$a_6$}} child {node {$a_7$}}}};
+\end{tikzpicture}\\[0.2em]
+{\small The cascade for $k=3$: level $j$ rotates qubit $j$ by an angle chosen by the first $j$ qubits;
+the leaves are the amplitudes.}
+\end{center}
+\<close>
+
 subsection \<open>Closeness tools\<close>
 
 lemma Rot_dmat: "Rot s = Qm * dmat 2 (\<lambda>a. if a = 0 then - s else s) * (Qm\<^sup>\<dagger>)"

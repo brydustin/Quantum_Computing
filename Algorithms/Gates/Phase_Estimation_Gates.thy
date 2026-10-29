@@ -35,6 +35,19 @@ subsection \<open>The controlled powers\<close>
 text \<open>Given gate lists \<open>Cs j\<close> for the singly controlled calls $\mathrm{C}_jV$, phase estimation runs
 \<open>Cs j\<close> $2^j$ times for each clock qubit $j$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.35cm]
+\lstick{clock bit $0$} & \ctrl{3} & \qw & \qw & \qw\\
+\lstick{clock bit $1$} & \qw & \ctrl{2} & \qw & \qw\\
+\lstick{clock bit $2$} & \qw & \qw & \ctrl{1} & \qw\\
+\lstick{system} & \gate{V}\qwbundle{} & \gate{V^{2}} & \gate{V^{4}} & \qw
+\end{quantikz}
+\quad$=\ \sum_c \ket{c}\!\bra{c}\otimes V^{c}$\\[0.2em]
+{\small Each $V^{2^j}$ is $2^j$ copies of the controlled call, $2^k-1$ calls in all.}
+\end{center}
+\<close>
+
 definition pe_list :: "(nat \<Rightarrow> complex Matrix.mat list) \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list" where
   "pe_list Cs k = concat (concat (map (\<lambda>j. replicate (2 ^ j) (Cs j)) [0..<k]))"
 

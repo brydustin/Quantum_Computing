@@ -170,6 +170,23 @@ qed simp
 
 subsection \<open>A wire gate is a conjugated low gate\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.4cm]
+\lstick{$w_1$} & \gate{Q}\vqw{2} & \qw \\
+\lstick{} & \qw & \qw \\
+\lstick{$w_0$} & \gate{\phantom{Q}} & \qw
+\end{quantikz}
+\;=\;
+\begin{quantikz}[row sep=0.3cm, column sep=0.4cm]
+\lstick{$w_1$} & \gate[3]{\text{swaps}} & \qw & \gate[3]{\text{swaps}^{-1}} & \qw\\
+\lstick{} & & \gate[2]{Q} & & \qw\\
+\lstick{$w_0$} & & & & \qw
+\end{quantikz}\\[0.2em]
+{\small A gate on any wires is a gate on the low wires, conjugated by chains of adjacent swaps (\texttt{wg\_conj}).}
+\end{center}
+\<close>
+
 lemma pmat_conj_index:
   assumes M: "M \<in> carrier_mat N N" and f: "\<And>x. x < N \<Longrightarrow> f x < N" and g: "\<And>x. x < N \<Longrightarrow> g x < N"
     and gf: "\<And>x. x < N \<Longrightarrow> g (f x) = x" and fg: "\<And>x. x < N \<Longrightarrow> f (g x) = x"

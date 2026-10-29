@@ -122,6 +122,22 @@ lemma pm_rev: "pm (rev js) (pm js i) = i" "pm js (pm (rev js) i) = i"
 
 text \<open>\<open>dn x y\<close> carries the bit at $x$ down to $y$ and shifts the bits in between up by one.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep={0.75cm,between origins}, column sep=0.6cm]
+\lstick{$0$} & \qw & \qw & \swap{1} & \targ{} & \swap{1} & \qw & \qw & \qw\\
+\lstick{$1$} & \qw & \swap{1} & \targX{} & \qw & \targX{} & \swap{1} & \qw & \qw\\
+\lstick{$2$} & \swap{1} & \targX{} & \qw & \qw & \qw & \targX{} & \swap{1} & \qw\\
+\lstick{$3$} & \targX{} & \qw & \qw & \qw & \qw & \qw & \targX{} & \qw
+\end{quantikz}
+\;=\;
+\begin{quantikz}[row sep={0.75cm,between origins}, column sep=0.6cm]
+\lstick{$0$} & \qw & \qw\\ \lstick{$1$} & \qw & \qw\\ \lstick{$2$} & \qw & \qw\\ \lstick{$3$} & \targ{} & \qw
+\end{quantikz}\\[0.2em]
+{\small \texttt{dn 3 0}: the bit on wire $3$ is carried down to wire $0$ by adjacent swaps, the gate acts there, and the swaps are undone.}
+\end{center}
+\<close>
+
 definition dn :: "nat \<Rightarrow> nat \<Rightarrow> nat list" where "dn x y = rev [y..<x]"
 
 lemma length_dn [simp]: "length (dn x y) = x - y" by (simp add: dn_def)

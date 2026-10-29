@@ -8,6 +8,14 @@ text \<open>With $\theta = d|a|$ and $\varphi = \arg a$ the entry block is
 $P(\varphi)\,H\,Z(\theta)\,H\,P(-\varphi)$ with $P(\varphi) = \mathrm{diag}(e^{i\varphi},1)$ and
 $Z(\theta) = \mathrm{diag}(e^{i\theta},e^{-i\theta})$: diagonal phases and two Hadamards.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.35cm]
+\lstick{ancilla} & \gate{P(-\varphi)} & \gate{H} & \gate{Z(\theta)} & \gate{H} & \gate{P(\varphi)} & \qw
+\end{quantikz}
+\end{center}
+\<close>
+
 definition zp :: "real \<Rightarrow> complex Matrix.mat" where "zp \<theta> = dmat 2 (\<lambda>b. if b = 0 then \<theta> else - \<theta>)"
 definition pp :: "real \<Rightarrow> complex Matrix.mat" where "pp \<phi> = dmat 2 (\<lambda>b. if b = 0 then \<phi> else 0)"
 

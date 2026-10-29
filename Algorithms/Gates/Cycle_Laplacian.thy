@@ -18,6 +18,19 @@ definition lap :: "nat \<Rightarrow> complex Matrix.mat" where
 
 text \<open>Colour $0$ pairs $2k$ with $2k+1$; colour $1$ pairs $2k+1$ with $2k+2$, cyclically.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[scale=1.3]
+  \foreach \i in {0,...,7} { \node[circle,draw,fill=white,inner sep=1.5pt,minimum size=17pt] (v\i) at ({90-45*\i}:1.4) {\small $\i$}; }
+  \foreach \i/\j in {0/1,2/3,4/5,6/7} { \draw[very thick, blue!70!black] (v\i) -- (v\j); }
+  \foreach \i/\j in {1/2,3/4,5/6,7/0} { \draw[very thick, orange!85!black, dashed] (v\i) -- (v\j); }
+  \node[anchor=west] at (2.0,0.45) {\textcolor{blue!70!black}{\rule[0.5ex]{1.2em}{1.2pt}}\; colour $0$: $2k \leftrightarrow 2k+1$};
+  \node[anchor=west] at (2.0,-0.05) {\textcolor{orange!85!black}{- - -}\; colour $1$: $2k+1 \leftrightarrow 2k+2$};
+  \node[anchor=west] at (2.0,-0.55) {$L = 2I - \text{adjacency}$, here $n = 8$};
+\end{tikzpicture}
+\end{center}
+\<close>
+
 definition lp :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat" where
   "lp n c x = (if n \<le> x then x else if c = 0 then (if even x then x + 1 else x - 1)
      else if even x then (if x = 0 then n - 1 else x - 1) else (if x + 1 = n then 0 else x + 1))"

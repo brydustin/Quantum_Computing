@@ -363,6 +363,19 @@ subsection \<open>The step as gates\<close>
 text \<open>Decrement, controlled rotation of system wire $1$, increment, controlled rotation, controlled
 phase; the control is clock wire $m+1+j$.  The phase $(2+\mu)d$ is the diagonal of $L+\mu I$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.35cm]
+\lstick{clock wire $m+1+j$} & \qw & \ctrl{2} & \qw & \ctrl{2} & \gate{\mathrm{diag}(1, e^{i(2+\mu)d})} & \qw \\
+\lstick{system $2,\dots,m$} & \gate[3]{\mathrm{Dec}}\qwbundle{} & \qw & \gate[3]{\mathrm{Inc}} & \qw & \qw & \qw \\
+\lstick{system $1$} & & \gate{e^{-idX}} & & \gate{e^{-idX}} & \qw & \qw \\
+\lstick{ancillas $\ket{0}^m$} & \qwbundle{} & \qw & & \qw & \qw & \qw
+\end{quantikz} \\[0.3em]
+{\small One controlled Trotter step: colour $1$ is colour $0$ conjugated by the incrementer, so only
+the rotations and the phase need the control.}
+\end{center}
+\<close>
+
 definition clap_step :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> real \<Rightarrow> complex Matrix.mat list" where
   "clap_step m k a j \<mu> d = concat
      [compile (Suc (m + k) + a) (map (rename ((!) (lap_vs m k))) (rev (incr_gates m m))),

@@ -41,6 +41,22 @@ subsection \<open>The Toffoli ladder\<close>
 text \<open>Ancilla $a_0$ is set to $1$, then $a_{l+1} = a_l \wedge c_l$: on clean ancillas, $a_i$ ends up
 holding the AND of the first $i$ controls.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.25cm, column sep=0.35cm]
+\lstick{$c_0$} & \qw & \ctrl{4} & \qw & \qw & \qw & \qw & \qw & \ctrl{4} & \qw & \qw\\
+\lstick{$c_1$} & \qw & \qw & \ctrl{4} & \qw & \qw & \qw & \ctrl{4} & \qw & \qw & \qw\\
+\lstick{$c_2$} & \qw & \qw & \qw & \ctrl{4} & \qw & \ctrl{4} & \qw & \qw & \qw & \qw\\
+\lstick{target} & \qw & \qw & \qw & \qw & \targ{} & \qw & \qw & \qw & \qw & \qw\\
+\lstick{$a_0=\ket0$} & \targ{} & \ctrl{1} & \qw & \qw & \qw & \qw & \qw & \ctrl{1} & \targ{} & \qw\\
+\lstick{$a_1=\ket0$} & \qw & \targ{} & \ctrl{1} & \qw & \qw & \qw & \ctrl{1} & \targ{} & \qw & \qw\\
+\lstick{$a_2=\ket0$} & \qw & \qw & \targ{} & \ctrl{1} & \qw & \ctrl{1} & \targ{} & \qw & \qw & \qw\\
+\lstick{$a_3=\ket0$} & \qw & \qw & \qw & \targ{} & \ctrl{-4} & \targ{} & \qw & \qw & \qw & \qw
+\end{quantikz}\\[0.2em]
+{\small The ladder computes $a_3 = c_0 \wedge c_1 \wedge c_2$, the target flips, and the ladder is undone.}
+\end{center}
+\<close>
+
 definition ladder :: "(nat \<Rightarrow> nat) \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> rgate list" where
   "ladder cw aw n = NOT (aw 0) # map (\<lambda>l. TOF (cw l) (aw l) (aw (Suc l))) [0..<n]"
 

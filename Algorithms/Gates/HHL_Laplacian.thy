@@ -71,6 +71,19 @@ proof -
   show "length (lift_a a Us) = length Us" by (simp add: lift_a_def)
 qed
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.35cm, column sep=0.3cm]
+\lstick{clock $\ket{0}^k$} & \gate{W}\qwbundle{} & \ctrl{1} & \gate{F^\dagger} & \ctrl{2} & \gate{F} & \ctrl{1} & \qw \\
+\lstick{system $\ket{0}^m$} & \gate{U_b}\qwbundle{} & \gate{V^{c}} & \qw & \qw & \qw & \gate{V^{-c}} & \qw \\
+\lstick{flag $\ket{0}$} & \qw & \qw & \qw & \gate{R_c} & \qw & \qw & \meter{}
+\end{quantikz} \\[0.3em]
+{\small The seven blocks of \texttt{hhl\_lap\_gates}: window $W$, preparation $U_b$, phase estimation
+(each $V^{2^j}$ controlled by clock bit $j$), inverse Fourier transform, rotation of the flag by the
+clock value $c$, and the inverses.  Ancillas are not drawn.}
+\end{center}
+\<close>
+
 definition hhl_angles :: "real \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real" where
   "hhl_angles t0 k C c = arcsin (clamp (C / reg_eig t0 (2 ^ k) c))"
 

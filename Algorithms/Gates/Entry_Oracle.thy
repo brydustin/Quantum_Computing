@@ -8,6 +8,16 @@ text \<open>The entry oracle XORs a $2p$-bit value $f(k)$ into a register above 
 the low $p$ bits encode the angle $d|a|$, the high $p$ bits the phase $\arg a$, both in units of
 $2\pi/2^p$.  Query, rotate the ancilla by the encoded angles, query again.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.35cm]
+\lstick{register $\ket{0}^{2p}$} & \gate[2]{O_f}\qwbundle{} & \ctrl{1} & \gate[2]{O_f} & \qw \rstick{$\ket{0}^{2p}$}\\
+\lstick{data $\ket{k}\ket{b}$} & & \gate{\mathrm{Rot}} & & \qw
+\end{quantikz}\\[0.2em]
+{\small Query, rotate by the angles written into the register, query again to clear it.}
+\end{center}
+\<close>
+
 definition ang :: "nat \<Rightarrow> nat \<Rightarrow> real" where "ang p u = 2 * pi * real u / 2 ^ p"
 
 lemma xor_lt: "a < 2 ^ n \<Longrightarrow> b < 2 ^ n \<Longrightarrow> xor a b < (2::nat) ^ n"

@@ -7,6 +7,21 @@ section \<open>The comparator scan\<close>
 text \<open>Layout for $m$-bit numbers: $y_i$ at bit $i+1$, $x_i$ at bit $m+1+i$, the flags
 $e_i$ (``equal above $i$'') at $2m+1+i$, temporaries $t_i$ at $3m+2+i$, the result $r$ at $4m+2$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=0.82cm,y=0.9cm, blk/.style={draw, minimum height=0.7cm, anchor=west, font=\small}]
+\node[blk, fill=gray!20, minimum width=0.82cm] at (0,0) {$b$};
+\node[blk, fill=blue!15, minimum width=2.3cm] at (0.82,0) {$y_0\,\cdots\,y_{m-1}$};
+\node[blk, fill=blue!30, minimum width=2.3cm] at (3.62,0) {$x_0\,\cdots\,x_{m-1}$};
+\node[blk, fill=green!20, minimum width=2.3cm] at (6.42,0) {$e_0\,\cdots\,e_{m}$};
+\node[blk, fill=orange!25, minimum width=2.3cm] at (9.22,0) {$t_0\,\cdots\,t_{m-1}$};
+\node[blk, fill=red!25, minimum width=0.82cm] at (12.02,0) {$r$};
+\foreach \x/\l in {0.41/0, 1.0/1, 3.8/m{+}1, 6.6/2m{+}1, 9.4/3m{+}2, 12.43/4m{+}2} {\node[font=\scriptsize] at (\x,-0.6) {$\l$};}
+\end{tikzpicture}\\[0.2em]
+{\small Wires of the comparator, low to high.}
+\end{center}
+\<close>
+
 
 definition yw :: "nat \<Rightarrow> nat" where "yw i = Suc i"
 definition xw :: "nat \<Rightarrow> nat \<Rightarrow> nat" where "xw m i = m + 1 + i"

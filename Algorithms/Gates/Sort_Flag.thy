@@ -35,12 +35,37 @@ proof (induction i arbitrary: q)
 next
   case (Suc i)
   let ?w = "rcirc (cswp m i) w"
-  have dD: "bit ?w (dw m) \<longleftrightarrow> bit w (dw m)" using Suc.IH[of "dw m"] Suc.prems by (auto simp: pos_defs dw_def)
-  have "bit (rcirc (fred m i) ?w) q \<longleftrightarrow>
+  have im: "i \<le> m" "i < m" using Suc.prems by simp_all
+  note IH = Suc.IH[OF im(1)]
+  have dD: "bit ?w (dw m) \<longleftrightarrow> bit w (dw m)" using IH[of "dw m"] im by (auto simp: pos_defs dw_def)
+  have step: "bit (rcirc (fred m i) ?w) q \<longleftrightarrow>
         (if bit ?w (dw m) \<and> q = xw m i then bit ?w (yw i) else if bit ?w (dw m) \<and> q = yw i then bit ?w (xw m i) else bit ?w q)"
     using Suc.prems by (auto simp: fred_def bit_flip_bit_iff pos_defs dw_def)
-  thus ?case using Suc.IH[of q] Suc.IH[of "yw i"] Suc.IH[of "xw m i"] Suc.prems dD
-    by (auto simp: rcirc_append less_Suc_eq pos_defs)
+  text \<open>Bits $i$ of the two registers are untouched by the first $i$ Fredkin gates.\<close>
+  have cy: "(\<exists>j<i. yw i = xw m j) = False" "(\<exists>j<i. yw i = yw j) = False" using im by (auto simp: yw_def xw_def)
+  have cx: "(\<exists>j<i. xw m i = xw m j) = False" "(\<exists>j<i. xw m i = yw j) = False" using im by (auto simp: yw_def xw_def)
+  have Iy: "bit ?w (yw i) \<longleftrightarrow> bit w (yw i)" using IH[of "yw i"] unfolding cy by simp
+  have Ix: "bit ?w (xw m i) \<longleftrightarrow> bit w (xw m i)" using IH[of "xw m i"] unfolding cx by simp
+  have ex: "(\<exists>j<Suc i. q = xw m j) \<longleftrightarrow> (\<exists>j<i. q = xw m j) \<or> q = xw m i"
+    "(\<exists>j<Suc i. q = yw j) \<longleftrightarrow> (\<exists>j<i. q = yw j) \<or> q = yw i" by (auto simp: less_Suc_eq)
+  have xy: "xw m i \<noteq> yw i" "xw m i - m = yw i" "m + yw i = xw m i" using im by (simp_all add: xw_def yw_def)
+  have e: "rcirc (cswp m (Suc i)) w = rcirc (fred m i) ?w" by (simp add: rcirc_append)
+  show ?case
+  proof (cases "q = xw m i")
+    case qx: True
+    show ?thesis unfolding e step ex unfolding qx cx using dD Ix Iy xy by simp
+  next
+    case qx: False
+    show ?thesis
+    proof (cases "q = yw i")
+      case qy: True
+      show ?thesis unfolding e step ex unfolding qy cy using dD Ix Iy xy by simp
+    next
+      case False
+      have f: "(q = xw m i) = False" "(q = yw i) = False" using qx False by simp_all
+      show ?thesis unfolding e step ex f dD IH[of q] by (simp only: simp_thms if_False)
+    qed
+  qed
 qed
 
 lemma cswp_swp: "rcirc (cswp m m) w = (if bit w (dw m) then rcirc (swp m m) w else w)"

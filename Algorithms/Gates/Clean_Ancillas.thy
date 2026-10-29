@@ -7,6 +7,20 @@ section \<open>Gates on clean ancillas\<close>
 text \<open>\<open>anc A N\<close> embeds $\ket v$ as $\ket 0\ket v$ (ancillas in the high wires).  A gate $U$ on
 the large space stands for $G$ when $U\ket0\ket v = \ket0\,G\ket v$, i.e.\ $U \cdot \mathrm{anc} = \mathrm{anc} \cdot G$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzcd}[column sep=large, row sep=large]
+\mathbb{C}^N \arrow[r, "G"] \arrow[d, "\mathrm{anc}"'] & \mathbb{C}^N \arrow[d, "\mathrm{anc}"] \\
+\mathbb{C}^{A}\otimes\mathbb{C}^N \arrow[r, "U"'] & \mathbb{C}^{A}\otimes\mathbb{C}^N
+\end{tikzcd}
+\qquad
+\begin{minipage}{0.4\textwidth}\small
+$U$ stands for $G$ when the square commutes: on states whose ancillas are clean, $U$ acts as $G$
+and returns the ancillas clean.
+\end{minipage}
+\end{center}
+\<close>
+
 definition anc :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat" where
   "anc A N = Matrix.mat (A * N) N (\<lambda>(r, c). if r = c then 1 else 0)"
 

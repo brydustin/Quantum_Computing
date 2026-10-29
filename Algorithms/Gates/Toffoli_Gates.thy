@@ -10,6 +10,24 @@ On three wires write $c = 2a + b$ for the two controls and keep the target as th
 Every factor is block diagonal over $c$, up to a permutation of $c$, so the identity reduces
 to products of $2 \times 2$ blocks.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.35cm, column sep=0.4cm]
+\lstick{$a$} & \ctrl{2} & \qw \\
+\lstick{$b$} & \ctrl{1} & \qw \\
+\lstick{$t$} & \targ{} & \qw
+\end{quantikz}
+\;=\;
+\begin{quantikz}[row sep=0.35cm, column sep=0.4cm]
+\lstick{$a$} & \ctrl{2} & \ctrl{1} & \qw & \ctrl{1} & \qw & \qw \\
+\lstick{$b$} & \qw & \targ{} & \ctrl{1} & \targ{} & \ctrl{1} & \qw \\
+\lstick{$t$} & \gate{V} & \qw & \gate{V^\dagger} & \qw & \gate{V} & \qw
+\end{quantikz}
+\qquad $V^2 = X$ \\[0.3em]
+{\small Time runs left to right: the product above, read from the right.}
+\end{center}
+\<close>
+
 definition sqx :: "complex Matrix.mat" where
   "sqx = Matrix.mat 2 2 (\<lambda>(r, c). if r = c then (1 + \<i>) / 2 else (1 - \<i>) / 2)"
 

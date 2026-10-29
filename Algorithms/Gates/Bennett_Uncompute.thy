@@ -16,6 +16,17 @@ lemma rcirc_flip_other: "\<forall>g \<in> set gs. ob \<notin> wires g \<Longrigh
 text \<open>Bennett's trick: the result bit $r$ of $C$ is copied into an untouched bit $ob$, then $C$ is
 undone.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.45cm]
+\lstick{input} & \gate[3]{C}\qwbundle{} & \qw & \gate[3]{C^{-1}} & \qw \rstick{input}\\
+\lstick{scratch $\ket{0}$} & \qwbundle{} & \qw & & \qw \rstick{$\ket{0}$}\\
+\lstick{result $r$} & & \ctrl{1} & & \qw \\
+\lstick{$ob$} & \qw & \targ{} & \qw & \qw \rstick{$ob \oplus r$}
+\end{quantikz}
+\end{center}
+\<close>
+
 lemma compute_copy_uncompute:
   assumes ok: "\<forall>g \<in> set C. rg_ok M g" and ob: "\<forall>g \<in> set C. ob \<notin> wires g" and ro: "r \<noteq> ob"
   shows "rcirc (C @ [CNOT r ob] @ rev C) z = (if bit (rcirc C z) r then flip_bit ob z else z)"

@@ -109,6 +109,20 @@ subsection \<open>The spectrum\<close>
 text \<open>Gershgorin: an eigenvalue lies within $2$ of the diagonal $2+\mu$, since each row has at most
 two off-diagonal entries $-1$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=1.4cm]
+\draw[->] (-0.6,0) -- (6.4,0);
+\draw[very thick, blue!70!black, fill=blue!10] (1.5,-0.12) rectangle (5.5,0.12);
+\foreach \x/\l in {0/0, 1.5/\mu, 3.5/2+\mu, 5.5/4+\mu} {\draw (\x,0.18) -- (\x,-0.18) node[below] {$\l$};}
+\fill (3.5,0) circle (2pt);
+\draw[<->] (3.5,0.45) -- node[above] {$2$} (5.5,0.45);
+\draw[dashed] (0.9,0.4) -- (0.9,-0.18) node[below] {$\lambda_{\min}$};
+\end{tikzpicture}\\[0.2em]
+{\small Every eigenvalue lies in $[\mu, 4+\mu]$, so $\lambda_{\min} \le \mu$ bounds the spectrum below.}
+\end{center}
+\<close>
+
 lemma cyc_nbrs: "{j. j < n \<and> j \<noteq> i \<and> cyc_adj n i j} \<subseteq> {if i + 1 < n then i + 1 else 0, if 0 < i then i - 1 else n - 1}"
   by (auto simp: cyc_adj_def)
 
