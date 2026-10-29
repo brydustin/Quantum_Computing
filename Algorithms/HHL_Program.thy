@@ -550,6 +550,20 @@ measure; or repeat while the outcome is $0$.  HHL measures the ancilla.\<close>
 definition prog_meas :: "nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
   "prog_meas K M Us = init_com K ;; utrans_seq Us ;; Measure 2 M [SKIP, SKIP]"
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[node distance=0.6cm, bx/.style={draw, rounded corners, fill=blue!6, minimum height=0.8cm, font=\small, align=center}, ar/.style={-{Stealth}, thick}]
+\node[bx] (p) {initialise\\$\ket{0\cdots0}$};
+\node[bx, right=of p] (c) {gates\\$U_b$, PE, $R$, PE$^{-1}$};
+\node[bx, diamond, aspect=2, inner sep=1pt, right=of c] (m) {flag?};
+\node[bx, right=of m] (d) {output $\propto A^{-1}\ket b$};
+\draw[ar] (p) -- (c); \draw[ar] (c) -- (m); \draw[ar] (m) -- node[above, font=\scriptsize] {$1$} (d);
+\draw[ar] (m.south) -- ++(0,-0.6) -| node[near start, below, font=\scriptsize] {$0$} (p.south);
+\end{tikzpicture}\\[0.2em]
+{\small \texttt{rus\_meas}: initialise, run the gates, and repeat while the flag reads $0$.  Each round succeeds with the same positive probability, so the loop terminates with probability one.}
+\end{center}
+\<close>
+
 definition rus_meas :: "nat \<Rightarrow> (nat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat list \<Rightarrow> com" where
   "rus_meas K M Us = init_com K ;; utrans_seq Us ;; While (\<lambda>j. M (1 - j)) (init_com K ;; utrans_seq Us)"
 

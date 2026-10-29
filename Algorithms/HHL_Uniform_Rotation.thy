@@ -598,6 +598,18 @@ qed
 
 subsection \<open>The uniformly controlled rotation\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep={0.7cm,between origins}, column sep=0.45cm]
+\lstick{clock bit $2$} & \ctrl{2} & \qw & \ctrl{2} & \qw\\
+\lstick{clock bit $1$} & \qw & \qw & \qw & \qw\\
+\lstick{clock bit $0$} & \targ{} & \ctrl{1} & \targ{} & \qw\\
+\lstick{flag} & \qw & \gate{\mathrm{Rot}(\vartheta_{101})} & \qw & \qw
+\end{quantikz}\\[0.2em]
+{\small One factor of the uniformly controlled rotation, for the mask $101$: the parity of the masked clock bits is gathered in the last clock qubit, which controls a rotation by a Walsh angle, and is then restored.  The product over all masks rotates the flag by $\theta_c$ when the clock holds $c$.}
+\end{center}
+\<close>
+
 definition anc_rot :: "nat \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat" where
   "anc_rot k n a = 1\<^sub>m (2 ^ k * n) \<Otimes> Rot a"
 

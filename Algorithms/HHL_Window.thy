@@ -201,6 +201,20 @@ qed
 
 subsection \<open>The sine window\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}
+\begin{axis}[width=9.5cm, height=4.2cm, ybar, bar width=3pt, xmin=-0.8, xmax=15.8, ymin=0, ymax=0.4, xlabel={$\tau$}, axis lines=left, xtick={0,5,10,15},
+  legend style={draw=none, font=\small, at={(1.03,1)}, anchor=north west}, legend cell align=left]
+\addplot[fill=blue!50, draw=blue!70!black] coordinates {(0,0.0347)(1,0.1026)(2,0.1667)(3,0.2243)(4,0.2733)(5,0.3118)(6,0.3383)(7,0.3519)(8,0.3519)(9,0.3383)(10,0.3118)(11,0.2733)(12,0.2243)(13,0.1667)(14,0.1026)(15,0.0347)};
+\addplot[fill=gray!30, draw=gray] coordinates {(0,0.25)(1,0.25)(2,0.25)(3,0.25)(4,0.25)(5,0.25)(6,0.25)(7,0.25)(8,0.25)(9,0.25)(10,0.25)(11,0.25)(12,0.25)(13,0.25)(14,0.25)(15,0.25)};
+\legend{sine window, uniform}
+\end{axis}
+\end{tikzpicture}\\[0.2em]
+{\small Clock amplitudes for $N=16$: $\sqrt{2/N}\,\sin(\pi(\tau+\frac12)/N)$ against $1/\sqrt N$.  The window's smooth ends suppress the far tails of phase estimation.}
+\end{center}
+\<close>
+
 definition win_coef :: "nat \<Rightarrow> nat \<Rightarrow> real" where
   "win_coef N \<tau> = sqrt (2 / real N) * sin (pi * (real \<tau> + 1 / 2) / real N)"
 

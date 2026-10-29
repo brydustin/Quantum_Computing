@@ -214,6 +214,18 @@ qed
 
 subsection \<open>The phase estimation circuit\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.35cm]
+\lstick{$\ket0$} & \gate{H} & \ctrl{3} & \qw & \qw & \gate[3]{F_N^\dagger} & \meter{}\\
+\lstick{$\ket0$} & \gate{H} & \qw & \ctrl{2} & \qw & & \meter{}\\
+\lstick{$\ket0$} & \gate{H} & \qw & \qw & \ctrl{1} & & \meter{}\\
+\lstick{$\ket u$} & \qwbundle{} & \gate{U} & \gate{U^2} & \gate{U^4} & \qw & \qw \rstick{$\ket u$}
+\end{quantikz}\\[0.2em]
+{\small $N = 8$.  With $U\ket u = e^{2\pi i\varphi}\ket u$ the controlled powers write $e^{2\pi i k\varphi}$ onto $\ket k$ (phase kickback), and $F_N^\dagger$ concentrates the register near $N\varphi$.}
+\end{center}
+\<close>
+
 text \<open>The register starts in the uniform state $\frac1{\sqrt N}\sum_k\ket k$ ($=H^{\otimes t}\ket{0}$
 for $N=2^t$).\<close>
 
@@ -327,6 +339,20 @@ proof -
 qed
 
 subsection \<open>The success probability\<close>
+
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}
+\begin{axis}[width=10cm, height=4.6cm, xmin=-3.2, xmax=3.2, ymin=0, ymax=1.08, samples=400, domain=-3.2:3.2,
+  xlabel={$N\varphi - j$}, ylabel={$|\alpha_j|^2$}, axis lines=left, xtick={-3,-2,-1,0,1,2,3},
+  ytick={0,0.405,1}, yticklabels={$0$,$4/\pi^2$,$1$}, every axis plot/.style={thick}]
+\addplot[blue!70!black] {(abs(x)<0.001) ? 1 : (sin(deg(pi*x))^2/(16^2*sin(deg(pi*x/16))^2))};
+\draw[dashed, gray] (axis cs:-0.5,0) -- (axis cs:-0.5,0.405) -- (axis cs:0.5,0.405) -- (axis cs:0.5,0);
+\end{axis}
+\end{tikzpicture}\\[0.2em]
+{\small $N=16$: the probability of outcome $j$ against the offset of $N\varphi$; the nearest $j$ is within $\frac12$, where the curve stays above $4/\pi^2$.}
+\end{center}
+\<close>
 
 text \<open>Jordan's inequality $\sin x\ge 2x/\pi$ on $[0,\pi/2]$, by concavity (as in
 \<open>Gauss_Sums.Polya_Vinogradov\<close>).\<close>

@@ -30,6 +30,22 @@ definition filt_s :: "real \<Rightarrow> real \<Rightarrow> real" where
 
 text \<open>The flag state $\ket{h(\lambda)}=s\ket{\mathrm{nothing}}+f\ket{\mathrm{well}}+g\ket{\mathrm{ill}}$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}
+\begin{axis}[width=9.5cm, height=4.6cm, xmin=0, xmax=3, ymin=0, ymax=1.05, samples=300, domain=0:3, axis lines=left,
+  xlabel={$\kappa\lambda$}, xtick={0,0.5,1,2,3}, xticklabels={$0$,$\tfrac12$,$1$,$2$,$3$}, ytick={0,0.5,1},
+  legend style={draw=none, font=\small, at={(1.03,0.6)}, anchor=west}, legend cell align=left, every axis plot/.style={thick}]
+\addplot[blue!70!black] {(x>=1) ? 1/(2*x) : ((x>=0.5) ? sin(deg(pi/2*(2*x-1)))/2 : 0)};
+\addplot[orange!85!black, dashed] {(x>=1) ? 0 : ((x>=0.5) ? cos(deg(pi/2*(2*x-1)))/2 : 0.5)};
+\addplot[gray] {sqrt(max(0, 1 - ((x>=1) ? 1/(2*x) : ((x>=0.5) ? sin(deg(pi/2*(2*x-1)))/2 : 0))^2 - ((x>=1) ? 0 : ((x>=0.5) ? cos(deg(pi/2*(2*x-1)))/2 : 0.5))^2))};
+\legend{$f$ (well), $g$ (ill), $s$ (nothing)}
+\end{axis}
+\end{tikzpicture}\\[0.2em]
+{\small The three amplitudes of the flag state, against $\kappa\lambda$; $f=1/(2\kappa\lambda)$ on the well-conditioned part.}
+\end{center}
+\<close>
+
 definition hflag :: "real \<Rightarrow> real \<Rightarrow> complex Matrix.vec" where
   "hflag \<kappa> x = Matrix.vec 3 (\<lambda>c. complex_of_real (if c = 0 then filt_s \<kappa> x else if c = 1 then filt_f \<kappa> x else filt_g \<kappa> x))"
 

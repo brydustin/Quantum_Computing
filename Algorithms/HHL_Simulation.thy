@@ -462,6 +462,20 @@ subsection \<open>Controlled powers with $N-1$ calls\<close>
 text \<open>\<^term>\<open>pchain K j\<close> applies the oracle once on each block $k\ge i$, for $i=1,\dots,j$, so
 block $k$ receives $O^{\min(k,j)}$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=0.55cm, y=0.45cm]
+\foreach \k in {0,...,7} { \node[font=\scriptsize, anchor=east] at (-0.2,-\k) {$k=\k$};
+  \foreach \i in {1,...,7} { \pgfmathparse{\i<=\k ? "blue!45" : "white"} \edef\c{\pgfmathresult}
+    \fill[\c] (\i-1,-\k-0.4) rectangle (\i-0.1,-\k+0.4); \draw[gray!60] (\i-1,-\k-0.4) rectangle (\i-0.1,-\k+0.4);} }
+\foreach \i in {1,...,7} { \node[font=\scriptsize] at (\i-0.55,0.9) {$\i$}; }
+\node[font=\small, anchor=west] at (7.4,0.9) {call $i$};
+\node[font=\small, anchor=west, align=left] at (7.4,-3.5) {call $i$ applies $V$\\ to the blocks $k \ge i$};
+\end{tikzpicture}\\[0.2em]
+{\small After calls $1,\dots,j$ block $k$ has received $V^{\min(k,j)}$; with $j = N-1$ this is $\sum_k\ket k\bra k\otimes V^k$ (here $N = 8$).}
+\end{center}
+\<close>
+
 primrec pchain :: "nat \<Rightarrow> nat \<Rightarrow> qcirc" where
   "pchain K 0 = Gate (1\<^sub>m K)"
 | "pchain K (Suc j) = QSeq (Call (\<lambda>k. Suc j \<le> k) False) (pchain K j)"

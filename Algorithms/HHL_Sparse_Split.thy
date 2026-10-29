@@ -268,6 +268,22 @@ qed
 
 subsection \<open>The parts\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=0.42cm, y=0.42cm]
+\foreach \r in {0,...,7} { \foreach \c in {0,...,7} {
+  \pgfmathtruncatemacro{\d}{\c-\r}
+  \pgfmathparse{(\r==\c) ? "gray!50" : ((abs(\d)==1 && min(\r,\c)/2==floor(min(\r,\c)/2)) ? "blue!55" : ((abs(\d)==1 || abs(\d)==7) ? "orange!70" : "white"))}
+  \edef\col{\pgfmathresult}
+  \fill[\col] (\c,-\r) rectangle (\c+0.9,-\r-0.9); \draw[gray!50] (\c,-\r) rectangle (\c+0.9,-\r-0.9); } }
+\node[anchor=west, font=\small] at (9,-1.5) {\textcolor{gray}{$\blacksquare$} diagonal part};
+\node[anchor=west, font=\small] at (9,-3) {\textcolor{blue!55}{$\blacksquare$} colour $0$, a 1-sparse part};
+\node[anchor=west, font=\small] at (9,-4.5) {\textcolor{orange!70}{$\blacksquare$} colour $1$, a 1-sparse part};
+\end{tikzpicture}\\[0.2em]
+{\small The nonzero entries of the $8$-cycle split by an edge colouring: each colour is an involution $q$, and its part has one entry per row, at $(i, q\,i)$.}
+\end{center}
+\<close>
+
 definition colour_part :: "nat \<Rightarrow> complex Matrix.mat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat" where
   "colour_part n A q = one_sparse n q (\<lambda>i. if q i = i then 0 else A $$ (i, q i))"
 

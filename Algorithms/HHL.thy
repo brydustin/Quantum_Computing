@@ -310,6 +310,23 @@ qed
 
 subsection \<open>The circuit on an eigenvector\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[node distance=0.5cm and 1.1cm, st/.style={draw, rounded corners, fill=blue!6, inner sep=4pt, font=\small}, ar/.style={-{Stealth}, thick}]
+\node[st] (a) {$\ket{0}\ket{u}\ket{0}$};
+\node[st, right=of a] (b) {$\ket{\tilde\lambda}\ket{u}\ket{0}$};
+\node[st, right=of b] (c) {$\ket{\tilde\lambda}\ket{u}\bigl(\sqrt{1-C^2/\tilde\lambda^2}\,\ket0 + \tfrac{C}{\tilde\lambda}\ket1\bigr)$};
+\node[st, below=1.0cm of c] (d) {$\ket{0}\ket{u}\bigl(\sqrt{1-C^2/\lambda^2}\,\ket0 + \tfrac{C}{\lambda}\ket1\bigr)$};
+\node[st, left=1.6cm of d] (e) {flag $1$:\ $\tfrac{C}{\lambda}\ket u$};
+\draw[ar] (a) -- node[above=2pt, font=\scriptsize] {PE} (b);
+\draw[ar] (b) -- node[above=2pt, font=\scriptsize] {$R(C/\tilde\lambda)$} (c);
+\draw[ar] (c) -- node[right, font=\scriptsize] {$\mathrm{PE}^{-1}$} (d);
+\draw[ar] (d) -- node[above=2pt, font=\scriptsize] {measure} (e);
+\end{tikzpicture}\\[0.2em]
+{\small Clock, system, flag on an eigenvector $A\ket u=\lambda\ket u$ whose eigenvalue is a register value ($\tilde\lambda = \lambda$).  By linearity $\ket b=\sum_j\beta_j\ket{u_j}$ ends as $C\sum_j\beta_j\lambda_j^{-1}\ket{u_j} = C A^{-1}\ket b$ on flag $1$.}
+\end{center}
+\<close>
+
 theorem fun_circuit_eigen:
   assumes A: "A \<in> carrier_mat n n" "hermitian A" and t0: "0 < t0" and N: "0 < N"
       and k: "k < N" and u: "dim_vec u = n" and ev: "A *\<^sub>v u = complex_of_real (reg_eig t0 N k) \<cdot>\<^sub>v u"
