@@ -43,15 +43,15 @@ theory Check_Notes
     Quantum_Computing_CP_Maps.Day33_Shor_Code
     Quantum_Computing_CP_Maps.Day34_Knill_Laflamme
     Quantum_Computing_CP_Maps.Quantum_Channels
-    Essential_Functional_Analysis.Matrix_Lemmas
-    Essential_Functional_Analysis.Unitary_Tensor_Algebra
-    Essential_Functional_Analysis.Matrix_Typed
-    Essential_Functional_Analysis.Lmat_Euclidean
+    Matrix_Analysis_Prerequisites.Matrix_Lemmas
+    Matrix_Analysis_Prerequisites.Unitary_Tensor_Algebra
+    Matrix_Analysis_Prerequisites.Matrix_Typed
+    Matrix_Analysis_Prerequisites.Lmat_Euclidean
 begin
 
 ML_file "../project_checks.ML"
 
-ML \<open>Project_Checks.run {name = "Notes", audit = ["Essential_Functional_Analysis", "Quantum_Computing_CP_Maps"], allow = [],
-  targets = ["Essential_Functional_Analysis", "Quantum_Computing_CP_Maps"], ignore = [], strict = true} \<^theory>\<close>
+ML \<open>Project_Checks.run {name = "Notes", audit = ["Matrix_Analysis_Prerequisites", "Quantum_Computing_CP_Maps"], allow = [],
+  targets = ["Matrix_Analysis_Prerequisites", "Quantum_Computing_CP_Maps"], ignore = [], strict = true} \<^theory>\<close>
 
 end

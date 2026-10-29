@@ -4,7 +4,7 @@
 
 theory Day22_UCP_Compact
   imports
-    Essential_Functional_Analysis.Lmat_Euclidean
+    Matrix_Analysis_Prerequisites.Lmat_Euclidean
     Day16_Block_Form
     Day22_Minimal_Kraus
     "HOL-Analysis.Convex"

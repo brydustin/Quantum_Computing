@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from planlib import *
 
 S = scratch_blocks("wip/d23/Sweep.thy")
-edit("Essential_Functional_Analysis/Matrix_Lemmas.thy",
+edit("Matrix_Analysis_Prerequisites/Matrix_Lemmas.thy",
      insert_after=[("msum_mult_right", [S["msum_mult_left"]]), ("msum_pairs_mult_right", [S["msum_pairs_mult_left"]])])
 edit("Day17_Quantum_Noise.thy",
      remove=["tensor_id_kraus_index", "sum_block_delta", "sum_block_delta_index", "tensor_id_kraus_left_mult_index",

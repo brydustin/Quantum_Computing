@@ -1,6 +1,6 @@
 chapter AFP
 
-session Essential_Functional_Analysis in "Essential_Functional_Analysis" = Two_Hermitian_Results +
+session Matrix_Analysis_Prerequisites in "Matrix_Analysis_Prerequisites" = Two_Hermitian_Results +
   description "
     Prerequisites for the lectures: general matrix lemmas, unitary and Kronecker-product
     algebra, and matrices of fixed dimension with the Hilbert-Schmidt norm as a normed and
@@ -17,11 +17,11 @@ session Essential_Functional_Analysis in "Essential_Functional_Analysis" = Two_H
     Unitary_Tensor_Algebra
     Matrix_Typed
     Lmat_Euclidean
-    Essential_Functional_Analysis
+    Matrix_Analysis_Prerequisites
   document_files
     "root.tex"
 
-session Quantum_Computing_CP_Maps in "." = Essential_Functional_Analysis +
+session Quantum_Computing_CP_Maps in "." = Matrix_Analysis_Prerequisites +
   description "
     Vern Paulsen's lecture notes on quantum computing and completely positive maps
     (Houston, 2011), formalised lecture by lecture."

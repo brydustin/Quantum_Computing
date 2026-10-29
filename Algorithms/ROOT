@@ -45,7 +45,7 @@ session HHL_Algorithm = Quantum_Computing_CP_Maps +
     "root.bib"
     "root.tex"
 
-session HHL_Algorithm_Demo in "Demo" = HHL_Algorithm +
+session HHL_Explicit_Demo in "Demo" = HHL_Algorithm +
   description "
     The HHL circuit executed on a 2x2 system with exact arithmetic in Q(sqrt 2)
     (separate session: the AFP entry Real_Impl replaces the code setup of the reals)."
@@ -59,7 +59,7 @@ session HHL_Algorithm_Demo in "Demo" = HHL_Algorithm +
   document_files
     "root.tex"
 
-session HHL_Algorithm_Channels in "Channels" = Quantum_Computing_CP_Maps +
+session Quantum_Hoare_Logic_Channels in "Channels" = Quantum_Computing_CP_Maps +
   description "
     Loop-free QHLProver programs are channels: Kraus operators read off the program,
     the meaning is their Kraus map, completely positive and trace preserving (the notes'
@@ -74,7 +74,7 @@ session HHL_Algorithm_Channels in "Channels" = Quantum_Computing_CP_Maps +
   document_files
     "root.tex"
 
-session HHL_Algorithm_Search in "Search" = Compressed_Oracles +
+session Quantum_Search_Bound in "Search" = Compressed_Oracles +
   description "
     H-20: the quantum search lower bound behind HHL's Theorem 4(2), imported from the AFP entry
     Compressed_Oracles (separate session: that entry builds on Complex_Bounded_Operators)."
@@ -86,7 +86,7 @@ session HHL_Algorithm_Search in "Search" = Compressed_Oracles +
   document_files
     "root.tex"
 
-session HHL_Algorithm_Gates in "Gates" = HHL_Algorithm +
+session HHL_Gates in "Gates" = HHL_Algorithm +
   description "
     The black boxes of HHL in elementary gates: a reversible comparator, the sparse simulation
     from oracles, state preparation from an angle oracle and from a sparse list, and the whole

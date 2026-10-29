@@ -1,7 +1,7 @@
-(*  Title:   Essential_Functional_Analysis.thy
+(*  Title:   Matrix_Analysis_Prerequisites.thy
     Author:  Dustin Bryant.  Capstone of the bundle: imports its four theories.
 *)
-theory Essential_Functional_Analysis
+theory Matrix_Analysis_Prerequisites
   imports
     Matrix_Lemmas
     Unitary_Tensor_Algebra

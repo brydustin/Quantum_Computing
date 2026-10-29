@@ -90,6 +90,6 @@ if "--scratch" in sys.argv:
     assert all(v == 1 for v in used.values()), {k[:50]: v for k, v in used.items()}
     open(os.path.join(P, "wip/d23/D25b.thy"), "w").write("\n".join(out)); print("scratch written")
 else:
-    edit("Essential_Functional_Analysis/Matrix_Lemmas.thy", insert_after=[("sum_zero_one_eq_one", [NEWB])])
+    edit("Matrix_Analysis_Prerequisites/Matrix_Lemmas.thy", insert_after=[("sum_zero_one_eq_one", [NEWB])])
     edit(F, replace=REPS)
     print("installed")

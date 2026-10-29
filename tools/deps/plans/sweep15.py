@@ -6,7 +6,7 @@ import os, re, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from planlib import *
 
-LE = "Essential_Functional_Analysis/Lmat_Euclidean.thy"
+LE = "Matrix_Analysis_Prerequisites/Lmat_Euclidean.thy"
 SRC = head(LE)
 BL = {b["name"]: "\n".join(b["lines"]).rstrip("\n") for b in B.split(SRC) if b["name"]}
 NEW = r'''lemma DIM_lmat:
@@ -34,7 +34,7 @@ proof -
 qed'''
 
 if "--scratch" in sys.argv:
-    out = ["theory D55", "  imports Essential_Functional_Analysis.Lmat_Euclidean", "begin", "",
+    out = ["theory D55", "  imports Matrix_Analysis_Prerequisites.Lmat_Euclidean", "begin", "",
            NEW.replace("lemma DIM_lmat:", "lemma DIM_lmat':"), "", "end\n"]
     open(os.path.join(P, "wip/d23/D55.thy"), "w").write("\n".join(out))
     root = os.path.join(P, "wip/d23/ROOT"); r = open(root).read()

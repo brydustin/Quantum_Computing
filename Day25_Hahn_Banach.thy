@@ -3,7 +3,7 @@
 *)
 
 theory Day25_Hahn_Banach
-  imports Essential_Functional_Analysis.Matrix_Typed
+  imports Matrix_Analysis_Prerequisites.Matrix_Typed
 begin
 
 section \<open>Day 25 (26 October 2011): the Hahn--Banach theorem\<close>

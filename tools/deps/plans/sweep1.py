@@ -45,7 +45,7 @@ def edit(path, remove=(), remove_with_text=(), insert_after=(), replace=()):
         s = s.replace(old, new)
     open(os.path.join(P, path), "w").write(s)
 
-ML = "Essential_Functional_Analysis/"
+ML = "Matrix_Analysis_Prerequisites/"
 edit(ML + "Matrix_Lemmas.thy", remove=["Re_cnj_mult_self", "foldr_upt_add_carrier", "foldr_upt_add_acc_index_dn",
                                        "foldr_smult_nth_index"])
 edit(ML + "Unitary_Tensor_Algebra.thy", remove=["unitary_inv_l_dimrow", "unitary_inv_r_dimcol", "unitary_mult2"])

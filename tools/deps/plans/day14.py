@@ -10,7 +10,7 @@ edit("Day03_Unitary_Matrices.thy", insert_after=[("unitary_conj_mult",
      [txt(r"Conjugation by a unitary is injective: $U^*(UXU^*)U=X$."), S["unitary_conj_cancel"]])])
 edit("Day04_Hermitian_Matrices.thy", insert_after=[("psd_U_diag_Udag",
      [txt(r"$\Tr(UDU^*)=\sum_iD_i$."), S["Tr_unitary_diag"]])])
-edit("Essential_Functional_Analysis/Matrix_Lemmas.thy", insert_after=[("sum_delta2",
+edit("Matrix_Analysis_Prerequisites/Matrix_Lemmas.thy", insert_after=[("sum_delta2",
      [txt(r"A list of $0$s and $1$s summing to $1$ has exactly one $1$."), S["sum_zero_one_eq_one"]])])
 src = head("Day14_Pure_States.thy")
 # drop the process comments inside the two proofs that stay

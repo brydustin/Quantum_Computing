@@ -276,7 +276,7 @@ def splice(text, inserts):
 def splice_file(path, inserts):
     open(os.path.join(P, path), "w").write(splice(head(path), inserts))
 
-splice_file("Essential_Functional_Analysis/Matrix_Lemmas.thy", [
+splice_file("Matrix_Analysis_Prerequisites/Matrix_Lemmas.thy", [
     ("mat_mult_entry", [txt(r"""The same with the sum over $\{0..<q\}$; square matrices that agree on
 every vector are equal; a non-zero matrix has a non-zero entry.""")] + to_ML_products),
     ("foldr_add_mat_cong", [txt(r"Sums over $[0..<N]$, and their entries.")] + to_ML_folds),
@@ -299,7 +299,7 @@ s = head("Day25_Arveson_Correspondence.thy")
 s = sub(s, "imports Day23_Choi_Extreme_Points Day24_Operator_Systems", "imports Day24_Operator_Systems")
 open(os.path.join(P, "Day25_Arveson_Correspondence.thy"), "w").write(s)
 s = head("Day26_Arveson_Extension.thy")
-s = sub(s, "    Essential_Functional_Analysis.Lmat_Euclidean\n    Day25_Arveson_Correspondence\n",
-        "    Essential_Functional_Analysis.Lmat_Euclidean\n    Day22_Minimal_Kraus\n    Day25_Arveson_Correspondence\n")
+s = sub(s, "    Matrix_Analysis_Prerequisites.Lmat_Euclidean\n    Day25_Arveson_Correspondence\n",
+        "    Matrix_Analysis_Prerequisites.Lmat_Euclidean\n    Day22_Minimal_Kraus\n    Day25_Arveson_Correspondence\n")
 open(os.path.join(P, "Day26_Arveson_Extension.thy"), "w").write(s)
 print("written")

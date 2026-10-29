@@ -1581,3 +1581,10 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   conventions say "the theories use the dagger" for the adjoint, explain the doubled brackets of the
   Hilbert–Schmidt inner product (terms in `\mbox` so they never break across lines) and name the Kraus
   list; the verification-status paragraph goes; Day 1's opening is plain sentences.
+- **Renames and Isabelle2026** (2026-10-29).  Sessions renamed: Essential_Functional_Analysis →
+  Matrix_Analysis_Prerequisites (finite-dimensional matrices, not functional analysis; folder and
+  capstone renamed too), HHL_Algorithm_Gates → HHL_Gates, HHL_Algorithm_Demo → HHL_Explicit_Demo,
+  HHL_Algorithm_Channels → Quantum_Hoare_Logic_Channels, HHL_Algorithm_Search → Quantum_Search_Bound.
+  Entries above keep the old names.  The AFP takes submissions for the current release only, so the
+  tools now use Isabelle2026 and afp-2026-10-29; all sessions built there unchanged (44 min including
+  the AFP ancestors).

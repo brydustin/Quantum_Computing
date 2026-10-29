@@ -14,12 +14,12 @@ own = {}
 for scan in sys.argv[1:]:
     for l in open(scan):
         thy, fact, kind, owner, name = l.rstrip("\n").split("\t")
-        if kind == "dep": used.add(name.split(".")[-1] if owner.startswith(("Quantum_Computing_CP_Maps", "Essential_Functional_Analysis")) else name)
-        if kind == "const" and owner.startswith(("Quantum_Computing_CP_Maps", "Essential_Functional_Analysis")):
+        if kind == "dep": used.add(name.split(".")[-1] if owner.startswith(("Quantum_Computing_CP_Maps", "Matrix_Analysis_Prerequisites")) else name)
+        if kind == "const" and owner.startswith(("Quantum_Computing_CP_Maps", "Matrix_Analysis_Prerequisites")):
             used.add(name.split(".")[-1])          # a constant used in a statement keeps its definition
         own[fact.split(".", 1)[1]] = thy.split(".")[-1]
 root = open(os.path.join(P, "ROOT")).read()
-thys = [("Essential_Functional_Analysis/" + t, t) for t in ["Matrix_Lemmas", "Unitary_Tensor_Algebra", "Matrix_Typed", "Lmat_Euclidean"]]
+thys = [("Matrix_Analysis_Prerequisites/" + t, t) for t in ["Matrix_Lemmas", "Unitary_Tensor_Algebra", "Matrix_Typed", "Lmat_Euclidean"]]
 thys += [(t, t) for t in re.findall(r"^\s+(Day\d\d_\w+|Quantum_Channels)\s*$", root, re.M)]
 texts = "".join(open(os.path.join(P, f + ".thy")).read() for f, _ in thys)
 texts += open(os.path.join(P, "QC_Notes_Overview.thy")).read() + open(os.path.join(P, "NOTES_AUDIT.md")).read()

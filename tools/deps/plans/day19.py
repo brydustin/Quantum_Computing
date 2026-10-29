@@ -317,7 +317,7 @@ if SCRATCH:
     print("scratch written")
 else:
     open(os.path.join(P, "Day19_Choi_Theorem.thy"), "w").write("\n\n".join(P19) + "\n")
-    edit("Essential_Functional_Analysis/Matrix_Lemmas.thy", insert_after=[("msum_mult_left", ML_NEW)])
+    edit("Matrix_Analysis_Prerequisites/Matrix_Lemmas.thy", insert_after=[("msum_mult_left", ML_NEW)])
     edit("Day17_Quantum_Noise.thy", remove=["kraus_map_dim_append"],
          insert_after=[("kraus_map_dim_single", D17_NEW_K), ("sum_wdag_w_two", D17_NEW_S),
                        ("kraus_map_dim_entry_sum_list", [D17_APPEND])])

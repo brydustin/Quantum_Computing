@@ -4,8 +4,8 @@
 # Usage: [WIP=dir] tools/chk.sh [SESSION] [TIMEOUT_SECONDS]   (WIP: scratch dir, default wip/)
 S=${1:-VP_WIP}; T=${2:-900}
 P=$(cd "$(dirname "$0")/.." && pwd)
-ISA=/home/dusty/Desktop/Isabelle/Isabelle2025-2/bin/isabelle
-AFP=/home/dusty/Desktop/Isabelle/afp-2026-04-09/thys
+ISA=/home/dusty/Desktop/Isabelle/Isabelle2026/bin/isabelle
+AFP=/home/dusty/Desktop/Isabelle/afp-2026-10-29/thys
 W=${WIP:-$P/wip}
 LOG="$W/chk_$S.log"
 # On timeout kill exactly this build's process tree (never a prover started meanwhile by jEdit).

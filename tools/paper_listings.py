@@ -2,7 +2,7 @@ import re,glob,os
 # Check every top-level item of the paper's Isabelle listings against the theory sources.
 # Known non-matches: QHLProver syntax annotations (2) and the ⊗^n symbol (1); "..." marks an abridged item.
 P=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-AFP=os.environ.get('AFP','/home/dusty/Desktop/Isabelle/afp-2026-04-09/thys')
+AFP=os.environ.get('AFP','/home/dusty/Desktop/Isabelle/afp-2026-10-29/thys')
 inv = {
  r'\forall':'\\<forall>', r'\exists':'\\<exists>', r'\bigwedge':'\\<And>', r'\Longrightarrow':'\\<Longrightarrow>',
  r'\longrightarrow':'\\<longrightarrow>', r'\Rightarrow':'\\<Rightarrow>', r'\longleftrightarrow':'\\<longleftrightarrow>',
@@ -35,7 +35,7 @@ def norm(s):
     s=s.replace('Quantum.unitary','unitary').replace('Complex_Matrix.unitary','unitary')
     return re.sub(r'\s+',' ',s).strip()
 srcs={}
-for d in ['Hermitian_Functional_Calculus','Algorithms','Algorithms/Demo','Algorithms/Channels','Essential_Functional_Analysis','.']:
+for d in ['Hermitian_Functional_Calculus','Algorithms','Algorithms/Demo','Algorithms/Channels','Matrix_Analysis_Prerequisites','.']:
     for f in glob.glob(os.path.join(P,d,'*.thy')):
         if os.path.basename(f) in ('Quantum_Computing.thy','Quantum_Computing_OLD.thy'): continue
         srcs[f]=norm(open(f).read())

@@ -21,14 +21,14 @@ session VP_Check_Day05 in "Day05" = Quantum_Computing_CP_Maps +
   options [document = false]
   theories Check_Day05
 
-session VP_Check_Search in "Search" = HHL_Algorithm_Search +
+session VP_Check_Search in "Search" = Quantum_Search_Bound +
   options [document = false]
   theories Check_Search
 
-session VP_Check_Demo in "Demo" = HHL_Algorithm_Demo +
+session VP_Check_Demo in "Demo" = HHL_Explicit_Demo +
   options [document = false]
   theories Check_Demo
 
-session VP_Check_Channels in "Channels" = HHL_Algorithm_Channels +
+session VP_Check_Channels in "Channels" = Quantum_Hoare_Logic_Channels +
   options [document = false]
   theories Check_Channels

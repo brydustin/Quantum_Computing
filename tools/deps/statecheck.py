@@ -5,8 +5,8 @@ differently, e.g. a free variable captured by a constant that became visible.  C
 import collections, os, sys
 old_f, new_f = sys.argv[1], sys.argv[2]
 SESS = tuple(x + "." for x in os.environ.get("CHECK_SESSIONS",
-             "Quantum_Computing_CP_Maps,Essential_Functional_Analysis").split(","))
-LIB = ("Quantum_Computing_CP_Maps.", "Essential_Functional_Analysis.", "HHL_Algorithm")
+             "Quantum_Computing_CP_Maps,Matrix_Analysis_Prerequisites").split(","))
+LIB = ("Quantum_Computing_CP_Maps.", "Matrix_Analysis_Prerequisites.", "HHL_Algorithm")
 REN = dict(x.split("=") for x in os.environ.get("RENAMES", "").split(",") if x)
 def load(f, ren):
     st = collections.defaultdict(collections.Counter)

@@ -8,7 +8,7 @@ import os, re, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from planlib import *
 
-ML, UTA = "Essential_Functional_Analysis/Matrix_Lemmas.thy", "Essential_Functional_Analysis/Unitary_Tensor_Algebra.thy"
+ML, UTA = "Matrix_Analysis_Prerequisites/Matrix_Lemmas.thy", "Matrix_Analysis_Prerequisites/Unitary_Tensor_Algebra.thy"
 D15, D22, D23C = "Day15_Partial_Traces.thy", "Day22_Minimal_Kraus.thy", "Day23_Choi_Extreme_Points.thy"
 D23E, D25, D26 = "Day23_Extremality_Examples.thy", "Day25_Hahn_Banach.thy", "Day26_Arveson_Extension.thy"
 FILES = [ML, UTA, D15, D22, D23C, D23E, D25, D26]
@@ -55,7 +55,7 @@ REPS = {
 
 def blocks(f): return [(b["name"], "\n".join(b["lines"]).rstrip("\n")) for b in B.split(SRC[f]) if b["name"]]
 def prime(t): return re.sub(r"^(lemma|theorem|corollary) (\S+?):", r"\1 \2':", t, count=1)
-SESSION = {ML: "Essential_Functional_Analysis", UTA: "Essential_Functional_Analysis"}
+SESSION = {ML: "Matrix_Analysis_Prerequisites", UTA: "Matrix_Analysis_Prerequisites"}
 
 if "--scratch" in sys.argv:
     used, names = {old: 0 for f in REPS for old, _ in REPS[f]}, []

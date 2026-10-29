@@ -28,7 +28,7 @@ theorem is derived from the Schur decomposition of QHLProver.
 
 ## Comment for the editors
 
-- Builds with Isabelle2025-2 and the AFP of 2026-04-09 in about 30 s; no `sorry`, no oracles
+- Builds with Isabelle2026 and the AFP of 2026-10-29 in about 30 s; no `sorry`, no oracles
   (checked with `Thm_Deps.all_oracles` over all theorems).
 - The entry uses QHLProver's `hermitian` and Schur decomposition and IMD's adjoint $M^\dagger$,
   `unitary` and vector norm; QHLProver's and IMD's names `unitary`, `inner_prod` clash, and the

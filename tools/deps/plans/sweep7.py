@@ -7,7 +7,7 @@ import os, re, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from planlib import *
 
-ML, UTA, LE = ("Essential_Functional_Analysis/" + t + ".thy" for t in ("Matrix_Lemmas", "Unitary_Tensor_Algebra", "Lmat_Euclidean"))
+ML, UTA, LE = ("Matrix_Analysis_Prerequisites/" + t + ".thy" for t in ("Matrix_Lemmas", "Unitary_Tensor_Algebra", "Lmat_Euclidean"))
 FILES = [ML, UTA, LE]
 SRC = {f: head(f) for f in FILES}
 BL = {f: {b["name"]: "\n".join(b["lines"]).rstrip("\n") for b in B.split(SRC[f]) if b["name"]} for f in FILES}
@@ -113,7 +113,7 @@ if "--scratch" in sys.argv:
     names = []
     for f in FILES:
         th = "D47_" + os.path.basename(f)[:-4].split("_")[0]
-        out = ["theory " + th, "  imports Essential_Functional_Analysis." + os.path.basename(f)[:-4], "begin", ""]
+        out = ["theory " + th, "  imports Matrix_Analysis_Prerequisites." + os.path.basename(f)[:-4], "begin", ""]
         for n, t in BL[f].items():
             if not any(old in t for old, _ in REPS[f]): continue
             for old, new in REPS[f]: t = t.replace(old, new)

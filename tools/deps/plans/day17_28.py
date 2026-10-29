@@ -132,7 +132,7 @@ if "--scratch" in sys.argv:
     out.append("end\n")
     open(os.path.join(P, "wip/d23/D28b.thy"), "w").write("\n".join(out)); print("scratch written")
 else:
-    edit("Essential_Functional_Analysis/Unitary_Tensor_Algebra.thy", insert_after=[("mult_index_div_mod", [BUNDLE])])
+    edit("Matrix_Analysis_Prerequisites/Unitary_Tensor_Algebra.thy", insert_after=[("mult_index_div_mod", [BUNDLE])])
     edit("Day17_Quantum_Noise.thy", replace=REPS["Day17_Quantum_Noise.thy"])
     edit("Day24_Operator_Systems.thy", replace=REPS["Day24_Operator_Systems.thy"])
     edit("Day28_Entanglement_Witnesses.thy", remove=["hermitian_tensor_mat"], insert_after=[("hermitian_tensor_mat", [HTM])],

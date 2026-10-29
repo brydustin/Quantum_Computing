@@ -3,7 +3,7 @@
 *)
 
 theory Day29_Error_Correction
-  imports Essential_Functional_Analysis.Matrix_Lemmas
+  imports Matrix_Analysis_Prerequisites.Matrix_Lemmas
 begin
 
 section \<open>Day 29 (7 November 2011): classical error detection and correction\<close>

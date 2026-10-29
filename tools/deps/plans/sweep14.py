@@ -7,7 +7,7 @@ import os, re, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from planlib import *
 
-LE, D22, D28 = "Essential_Functional_Analysis/Lmat_Euclidean.thy", "Day22_UCP_Compact.thy", "Day28_Entanglement_Witnesses.thy"
+LE, D22, D28 = "Matrix_Analysis_Prerequisites/Lmat_Euclidean.thy", "Day22_UCP_Compact.thy", "Day28_Entanglement_Witnesses.thy"
 SRC = {f: head(f) for f in (LE, D22, D28)}
 BL = {f: {b["name"]: "\n".join(b["lines"]).rstrip("\n") for b in B.split(SRC[f]) if b["name"]} for f in SRC}
 

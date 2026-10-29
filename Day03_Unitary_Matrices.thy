@@ -4,7 +4,7 @@
 
 theory Day03_Unitary_Matrices
   imports
-    Essential_Functional_Analysis.Unitary_Tensor_Algebra
+    Matrix_Analysis_Prerequisites.Unitary_Tensor_Algebra
     Day02_Trace_Projections
     Jordan_Normal_Form.Schur_Decomposition
 begin

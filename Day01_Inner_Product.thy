@@ -4,7 +4,7 @@
 
 theory Day01_Inner_Product
   imports
-    Essential_Functional_Analysis.Matrix_Lemmas
+    Matrix_Analysis_Prerequisites.Matrix_Lemmas
     Quantum_Fourier_Transform.QFT
     Isabelle_Marries_Dirac.No_Cloning
 begin

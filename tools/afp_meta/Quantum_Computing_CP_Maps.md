@@ -25,13 +25,13 @@ positive-map criterion, the Horodecki–Peres criterion for two qubits), and qua
 correction (classical codes, the bit-flip, phase-flip and Shor codes, the Knill–Laflamme
 conditions). The document restates the notes' definitions and results before their formal
 statements; the leading principal minors test of Day 5 is imported from Two_Hermitian_Results. A
-prerequisite session, Essential Functional Analysis, collects reusable matrix analysis:
+prerequisite session, Matrix Analysis Prerequisites, collects reusable matrix analysis:
 unitary and Kronecker-product algebra, and matrices of fixed dimension as a Euclidean space.
 
 ## Comment for the editors
 
-- Builds with Isabelle2025-2 and the AFP of 2026-04-09; no `sorry`, no oracles.
-- Two sessions.  Essential_Functional_Analysis (directory `Essential_Functional_Analysis/`, own
+- Builds with Isabelle2026 and the AFP of 2026-10-29; no `sorry`, no oracles.
+- Two sessions.  Matrix_Analysis_Prerequisites (directory `Matrix_Analysis_Prerequisites/`, own
   document): general matrix lemmas, unitary and Kronecker-product algebra, and matrices of fixed
   dimension with the Hilbert-Schmidt norm as a normed and a Euclidean space, independent of the
   lectures; its parent is Two_Hermitian_Results.  Quantum_Computing_CP_Maps, built on it: every

@@ -113,7 +113,7 @@ What the formalisation leaves out, or proves in a different form, is listed in t
 \end{center}
 
 The last part, \texttt{Quantum\_Channels}, collects standard channels beyond the notes.  What the
-lectures build on but do not teach is the parent session \emph{Essential Functional Analysis}:
+lectures build on but do not teach is the parent session \emph{Matrix Analysis Prerequisites}:
 general matrix lemmas (\texttt{Matrix\_Lemmas}), unitary and Kronecker-product algebra
 (\texttt{Unitary\_Tensor\_Algebra}), and matrices of fixed dimension as a type, with the
 Hilbert--Schmidt norm (\texttt{Matrix\_Typed}) and the structure of a Euclidean space

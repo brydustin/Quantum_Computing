@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from planlib import *
 
 S = scratch_blocks("wip/d23/D08b.thy")
-edit("Essential_Functional_Analysis/Matrix_Lemmas.thy",
+edit("Matrix_Analysis_Prerequisites/Matrix_Lemmas.thy",
      insert_after=[("foldr_add_mat_smult_pull", [S["foldr_add_mat_smult"]])])
 edit("Day02_Trace_Projections.thy",
      remove=["outer_prod_idempotent"],

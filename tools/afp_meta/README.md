@@ -2,8 +2,8 @@
 
 Prepared from the repository https://github.com/brydustin/Quantum_Computing by
 `tools/afp_package.sh`: each entry was exported from the tracked sources and built from the
-export alone (fresh build, Isabelle2025-2, AFP 2026-04-09, `-o document=pdf`), with no `sorry`
-and no oracles except the one noted for HHL_Algorithm_Search.
+export alone (fresh build, Isabelle2026, AFP 2026-10-29, `-o document=pdf`), with no `sorry`
+and no oracles except the one noted for Quantum_Search_Bound.
 
 | Folder | Entry | Depends on (new) | Contents |
 |---|---|---|---|

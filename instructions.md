@@ -26,9 +26,9 @@ Consequences: `cp_radon_nikodym_choi`, `cp_radon_nikodym_linear`,
 ## Environment notes
 
 * The AFP is no longer registered as an Isabelle component; pass
-  `-d /home/dusty/Desktop/Isabelle/afp-2026-04-09/thys` to every build /
+  `-d /home/dusty/Desktop/Isabelle/afp-2026-10-29/thys` to every build /
   jedit invocation (or re-register it in
-  `~/.isabelle/Isabelle2025-2/etc/components`).
+  `~/.isabelle/Isabelle2026/etc/components`).
 * The parent heaps (JNF, Isabelle_Marries_Dirac, …) were stale and were
   rebuilt on 2026-10-18; a cold rebuild of the whole chain takes ≈15 min.
 * `.Day23_pre_bisect_backup.thy` (untracked) holds the abandoned
