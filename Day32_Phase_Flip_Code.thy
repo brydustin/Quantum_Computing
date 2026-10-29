@@ -39,6 +39,21 @@ in \<open>Day32_Recovery_Proposition\<close>, together with its linear-combinati
 are \<open>Day33_Shor_Code\<close> (\<open>shor_code_theorem\<close>).  As first stated, the orthogonality claim is false
 ($Z_1\ne Z_2$ but $Z_1\ket{0_L}=Z_2\ket{0_L}$, \<open>shor_notes_Z1_Z2\<close>); Day 33 corrects it.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.3cm, column sep=0.35cm]
+& \gate{H} & \gate{Z} & \gate{H} & \qw
+\end{quantikz}
+$=$
+\begin{quantikz}[row sep=0.3cm, column sep=0.35cm]
+& \gate{X} & \qw
+\end{quantikz}
+\qquad
+$\ket0\mapsto\ket{+++},\ \ket1\mapsto\ket{---}$\\[0.2em]
+{\small In the basis $\ket\pm$ a phase flip is a bit flip, so the bit-flip code protects against it.}
+\end{center}
+\<close>
+
 definition ket_plus :: "complex Matrix.vec" where
   "ket_plus \<equiv> (1 / sqrt 2 :: complex) \<cdot>\<^sub>v (unit_vec 2 0 + unit_vec 2 1)"
 

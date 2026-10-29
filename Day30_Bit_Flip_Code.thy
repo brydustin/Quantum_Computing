@@ -118,6 +118,21 @@ corollary repetition_better_than_parity_notes:
 
 text \<open>Majority rule $0\mapsto000$, $1\mapsto111$: decoding fails with probability $3p^2(1-p)+p^3$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}
+\begin{axis}[width=9cm, height=5cm, xmin=0, xmax=0.5, ymin=0, ymax=0.55, samples=200, domain=0:0.5, axis lines=left, xlabel={$p$},
+  legend style={draw=none, font=\small, at={(1.03,0.5)}, anchor=west}, legend cell align=left, every axis plot/.style={thick}]
+\addplot[blue!70!black] {3*x^2*(1-x)^4+3*x^4*(1-x)^2+x^6};
+\addplot[orange!85!black, dashed] {6*x^2*(1-x)^2+x^4};
+\addplot[gray] {3*x^2*(1-x)+x^3};
+\legend{repetition: undetected, parity: undetected, majority: decoded wrongly}
+\end{axis}
+\end{tikzpicture}\\[0.2em]
+{\small The three error probabilities of the lecture, for $0 \le p \le \frac12$.}
+\end{center}
+\<close>
+
 definition maj_decode :: "nat list \<Rightarrow> nat" where
   "maj_decode w = (if 2 \<le> sum_list w then 1 else 0)"
 

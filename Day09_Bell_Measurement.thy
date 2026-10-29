@@ -42,6 +42,18 @@ $P_0=\ketbra00$, $P_1=\ketbra11$:
 so each outcome has probability $\tfrac12$ and leaves the second qubit in the same basis
 state as the first.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[ar/.style={-{Stealth}, thick}, st/.style={draw, rounded corners, fill=blue!6, inner sep=4pt, font=\small}]
+\node[st] (b) {$\beta=\tfrac1{\sqrt2}(\ket{00}+\ket{11})$};
+\node[st, above right=0.2cm and 1.8cm of b] (o0) {outcome $0$: $\ket{00}$};
+\node[st, below right=0.2cm and 1.8cm of b] (o1) {outcome $1$: $\ket{11}$};
+\draw[ar] (b.east) -- node[above, sloped, font=\scriptsize] {$p=\frac12$} (o0.west);
+\draw[ar] (b.east) -- node[below, sloped, font=\scriptsize] {$p=\frac12$} (o1.west);
+\end{tikzpicture}
+\end{center}
+\<close>
+
 lemma A_meas_bell:
   "(proj0 \<Otimes> 1\<^sub>m 2) *\<^sub>v bell_state = (1 / csqrt 2) \<cdot>\<^sub>v tensor_vec e0 e0"
   "(proj1 \<Otimes> 1\<^sub>m 2) *\<^sub>v bell_state = (1 / csqrt 2) \<cdot>\<^sub>v tensor_vec e1 e1"

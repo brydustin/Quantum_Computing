@@ -550,6 +550,20 @@ $\tr_AX$ for $X\in M_m\otimes M_p$ as \<open>partial_trace_B m p X\<close> and \
 \<open>partial_trace_on S AB X\<close> (displayed \<open>tr\<^bsub>S\<^esub>\<^bsup>AB\<^esup> X\<close>) traces out the factor $S$ of the
 bipartite space $AB$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=1cm,y=1cm]
+\draw[thick, fill=blue!8] (0,0) rectangle (1.2,1.4); \node at (0.6,0.7) {$X$};
+\draw[thick] (-0.8,1.05) -- (0,1.05) node[pos=0, left, font=\small] {$A$};
+\draw[thick] (1.2,1.05) -- (2.0,1.05) node[right, font=\small] {$A$};
+\draw[thick] (-0.3,0.35) -- (0,0.35); \draw[thick] (1.2,0.35) -- (1.5,0.35);
+\draw[thick, orange!85!black] (-0.3,0.35) .. controls (-0.8,0.35) and (-0.8,-0.5) .. (0.6,-0.5) .. controls (2.0,-0.5) and (2.0,0.35) .. (1.5,0.35);
+\node[font=\small, orange!85!black] at (0.6,-0.75) {$B$ traced out};
+\node[font=\small, anchor=west] at (2.8,0.7) {$=\ \tr_B X$, \quad $\tr_B(R\otimes T)=\tr(T)\,R$};
+\end{tikzpicture}
+\end{center}
+\<close>
+
 record 'lab qspace =
   qdim :: nat
   qlabel :: 'lab

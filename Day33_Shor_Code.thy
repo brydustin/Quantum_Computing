@@ -12,6 +12,19 @@ text \<open>The nine-qubit Shor code of Day 32 and its recovery.  The $2^9$-dime
 entrywise: nine qubits are three blocks of three, every single-qubit operator acts inside one
 block, and all inner products factor over the blocks (\<open>tensor_inner_prod\<close>).\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=0.6cm,y=0.6cm]
+\foreach \blk in {0,1,2} {
+  \draw[rounded corners, thick, fill=blue!5] (\blk*4.2-0.3,-0.6) rectangle (\blk*4.2+2.3,0.6);
+  \foreach \q in {0,1,2} { \fill (\blk*4.2+\q,0) circle (3pt); }
+  \node[font=\small] at (\blk*4.2+1,-1.1) {$\ket{000}\pm\ket{111}$};
+}
+\end{tikzpicture}\\[0.2em]
+{\small Nine qubits as three blocks of three; code words $(\ket{000}+\ket{111})^{\otimes3}$ and $(\ket{000}-\ket{111})^{\otimes3}$.  A bit flip changes one block's $\ket{000}\pm\ket{111}$ within its block; a phase flip on any qubit changes that block's sign.}
+\end{center}
+\<close>
+
 subsection \<open>Single-qubit operators on nine qubits, and on a block of three\<close>
 
 text \<open>$\tilde U=I\otimes\cdots\otimes I\otimes U\otimes I\otimes\cdots\otimes I$ with $U$ in

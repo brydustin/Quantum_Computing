@@ -287,6 +287,16 @@ qed
 text \<open>The notes' computation: with $x=H^{\otimes N}|0\cdots0\rangle$ and $\gamma=x\otimes e_0$,
 $p_0(U_f(x\otimes e_0))=(M/2^N)^2$ where $M=\#\{J: f(J)=0\}$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep=0.35cm, column sep=0.45cm]
+\lstick{$\ket{0\cdots0}$} & \gate{H^{\otimes N}}\qwbundle{} & \gate[2]{U_f} & \meter[2]{\gamma\gamma^*} \\
+\lstick{$\ket0$} & \qw & & 
+\end{quantikz}\\[0.2em]
+{\small $U_f\ket J\ket i = \ket J\ket{i\oplus f(J)}$.  Testing whether the state is still $\gamma$ succeeds with probability $(M/2^N)^2$.}
+\end{center}
+\<close>
+
 theorem counting_probability:
   fixes f :: "nat \<Rightarrow> nat" and U :: "complex Matrix.mat"
   assumes f_range: "\<forall>J < 2^N. f J < 2"

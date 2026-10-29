@@ -45,6 +45,20 @@ into positives it uses;
 complete positivity is defined below and the Choi--Kraus theorem is \<open>choi_kraus_cptp\<close> on
 Day 19.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[ar/.style={-{Stealth}, thick}, st/.style={draw, rounded corners, fill=blue!6, inner sep=4pt, font=\small}]
+\node[st] (r) {$\rho$};
+\node[st, right=2.2cm of r, yshift=0.9cm] (a) {$M_1\rho M_1^*$};
+\node[st, right=2.2cm of r] (b) {$M_2\rho M_2^*$};
+\node[st, right=2.2cm of r, yshift=-0.9cm] (c) {$\cdots$};
+\node[st, right=1.6cm of b] (s) {$\sum_\alpha M_\alpha\rho M_\alpha^*$};
+\foreach \n in {a,b,c} {\draw[ar] (r.east) -- (\n.west); \draw[ar] (\n.east) -- (s.west);}
+\end{tikzpicture}\\[0.2em]
+{\small Measure, then forget the outcome: the branches add up to the measurement map.}
+\end{center}
+\<close>
+
 definition meas_map :: "complex Matrix.mat list \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "meas_map Ms \<rho> \<equiv>
      foldr (\<lambda>M acc. M * \<rho> * (M\<^sup>\<dagger>) + acc) Ms (0\<^sub>m (dim_row \<rho>) (dim_col \<rho>))"

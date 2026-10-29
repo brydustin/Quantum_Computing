@@ -34,6 +34,18 @@ subsection \<open>The Choi matrix\<close>
 text \<open>$P_\Phi\in M_n(M_d)$ is the block matrix with $(a,b)$ block $\Phi(E_{ab})$.  It is linear in $\Phi$.
 Formally \<open>choi_matrix n d \<Phi>\<close>, displayed \<open>P\<^sub>\<Phi> n d \<Phi>\<close>.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=1.25cm,y=0.8cm]
+\foreach \a in {0,1,2} { \foreach \b in {0,1,2} {
+  \draw[fill=blue!6] (\b,-\a) rectangle (\b+1,-\a-1); \node[font=\small] at (\b+0.5,-\a-0.5) {$\Phi(E_{\a\b})$}; } }
+\node[font=\small, anchor=east] at (-0.2,-1.5) {$P_\Phi \;=$};
+\node[font=\small, anchor=west, align=left] at (3.3,-1.5) {$\Phi$ is completely positive\\ $\iff\ P_\Phi \ge 0$};
+\end{tikzpicture}\\[0.2em]
+{\small The Choi matrix for $n=3$.}
+\end{center}
+\<close>
+
 definition choi_matrix :: "nat \<Rightarrow> nat \<Rightarrow> (complex Matrix.mat \<Rightarrow> complex Matrix.mat) \<Rightarrow> complex Matrix.mat" where
   "choi_matrix n d \<Phi> \<equiv>
      Matrix.mat (n*d) (n*d)

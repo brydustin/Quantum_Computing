@@ -782,6 +782,21 @@ separated from it by a linear functional $x\mapsto\langle a,x\rangle$ and a cons
 $\langle a,\rho\rangle<b<\langle a,x\rangle$ for $x\in C$.  Since $C$ is a cone, $b<0$ and
 $\langle a,x\rangle\ge0$ on $C$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=1cm,y=1cm]
+\fill[blue!8] (0,0) -- (3.2,1.2) -- (3.2,-1.2) -- cycle;
+\draw[thick, blue!70!black] (0,0) -- (3.2,1.2); \draw[thick, blue!70!black] (0,0) -- (3.2,-1.2);
+\node[font=\small, blue!70!black] at (2.3,0) {$C$};
+\fill (-0.9,1.3) circle (2pt) node[left, font=\small] {$\rho$};
+\draw[thick, orange!85!black] (-1.0,-1.2) -- (0.5,1.7);
+\node[font=\small, orange!85!black, anchor=west] at (0.55,1.65) {$\langle a, x\rangle = b$};
+\node[font=\small, anchor=west, align=left] at (3.6,0) {$\langle a,\rho\rangle<b<\langle a,x\rangle$ for $x\in C$;\\ as $C$ is a cone, $b<0\le\langle a,x\rangle$};
+\end{tikzpicture}\\[0.2em]
+{\small The separable cone $C$ and a state $\rho$ outside it, separated by a hyperplane: $a$ is an entanglement witness.}
+\end{center}
+\<close>
+
 theorem separable_cone_lmat_separating_hyperplane:
   fixes \<rho> :: "(complex, 'm :: finite \<times> 'p :: finite, 'm \<times> 'p) lmat"
   assumes notin: "\<rho> \<notin> separable_cone_lmat"
