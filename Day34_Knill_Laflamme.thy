@@ -569,6 +569,28 @@ $(\alpha_{ij})=u\,\mathrm{diag}(d)\,u^*$; the errors $F_k=\sum_iu_{ik}E_i$ give 
 satisfy $PF_k^*F_lP=\delta_{kl}d_kP$, so the $F_k/\sqrt{d_k}$ with $d_k>0$ satisfy the hypotheses of
 the recovery proposition (\<open>recovery_setting\<close>).\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[font=\small, >=Stealth, sp/.style={draw, rounded corners, minimum width=2.2cm, minimum height=0.8cm, align=center}]
+\draw[rounded corners, gray] (-1.6,-3.3) rectangle (8.6,2.1);
+\node[gray, anchor=north east] at (8.5,2.05) {$\C^n$};
+\node[sp, fill=gray!15] (v) at (0,0) {$V=\mathrm{ran}\,P$};
+\node[sp] (f1) at (6,1.4) {$F_1V$};
+\node[sp] (f2) at (6,0) {$F_2V$};
+\node[sp] (f3) at (6,-1.4) {$F_3V$};
+\draw[->] (v) to[bend left=12] node[above, sloped] {$F_1$} (f1.west);
+\draw[->] (v) -- node[above] {$F_2$} (f2.west);
+\draw[->] (v) to[bend right=12] node[above, sloped] {$F_3$} (f3.west);
+\node[font=\footnotesize, rotate=90] at (7.6,0) {pairwise orthogonal};
+\draw[->, dashed] (f3.south) to[out=-120, in=-70] node[pos=0.5, fill=white, inner sep=2pt] {$\mathcal R$: find $k$, apply $(F_k/\sqrt{d_k})^*$} (v.south);
+\end{tikzpicture}\\[0.4em]
+{\small Why the conditions suffice.  Diagonalising $(\alpha_{ij})=u\,\mathrm{diag}(d)\,u^*$ gives errors
+$F_k=\sum_iu_{ik}E_i$ with the same channel and $PF_k^*F_lP=\delta_{kl}d_kP$: each $F_k/\sqrt{d_k}$ is an
+isometry on $V$, and the images $F_kV$ are pairwise orthogonal.  The recovery measures which image the
+state lies in and maps it back (\isa{recovery\_setting}).}
+\end{center}
+\<close>
+
 lemma smult_cancel_nonzero:
   fixes P :: "complex Matrix.mat"
   assumes Pc: "P \<in> carrier_mat n n" and Pnz: "P \<noteq> 0\<^sub>m n n" and eq: "c \<cdot>\<^sub>m P = d \<cdot>\<^sub>m P"

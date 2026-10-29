@@ -55,6 +55,25 @@ text \<open>The $s$-sparse right-hand side with nonnegative amplitudes \<open>av
 prepared to within $m\cdot 2\pi/2^{b}$ by \<open>sparse_prep_gates\<close>, with $b$ bits per angle; HHL then
 runs on the prepared state $b'$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[font=\small, bx/.style={draw, rounded corners, align=center, inner sep=4pt, text width=4.3cm}, >=Stealth]
+\node[bx, anchor=north] (p) at (0,0) {\textbf{Preparing $\ket b$}\\ angles with $\mathit{bb}$ bits:\\ $\|b'-b\|\le m\cdot2\pi/2^{\mathit{bb}}$};
+\node[bx, anchor=north] (s) at (5,0) {\textbf{Simulation}\\ each Trotter product $V$ is $\eta$-close to $e^{iAt_0}$, $\eta=18(2+\mu)^2t_0^2/r$;\\ the two phase estimations use $2(2^k-1)$ of them};
+\node[bx, anchor=north] (e) at (10,0) {\textbf{Finite clock}\\ $2^k$ clock states with the sine window: error $\epsilon$ (\isa{hhl\_complete})};
+\node[bx, text width=5.6cm] (d) at (7.5,-3.4) {$\delta=\epsilon+2(2^k-1)\,\eta\ \le\ Ct_0/\pi$};
+\node[bx, text width=9.2cm] (o) at (5,-5.2) {flag $\ket1$ with amplitude $\ge Ct_0/\pi$, and then the state is within
+$2\delta/(C\|x\|)$ of $\ket{\mathrm{win}}\otimes x/\|x\|\otimes\ket1$, where $x=A^{-1}b'$};
+\draw[->] (s) -- node[left, font=\footnotesize] {$2(2^k-1)\eta$} (d);
+\draw[->] (e) -- node[right, font=\footnotesize] {$\epsilon$} (d);
+\draw[->] (d) -- (o.north -| d);
+\draw[->] (p) |- node[pos=0.25, left, font=\footnotesize] {HHL solves for $b'$} (o.west);
+\end{tikzpicture}\\[0.4em]
+{\small The error budget of \isa{hhl\_lap\_sparse}.  The rounding of $\ket b$ changes the right-hand side
+rather than the solution, so it is stated separately; the other two errors add up to $\delta$.}
+\end{center}
+\<close>
+
 corollary hhl_lap_sparse:
   fixes av :: "nat \<Rightarrow> real" and xs :: "nat list" and m k a bb r :: nat and \<mu> t0 C \<theta> lmin \<epsilon> :: real
   assumes m: "2 \<le> m" and k: "1 \<le> k" and am: "bb + 2 * m \<le> a" and r: "0 < r" and mu: "0 \<le> \<mu>"

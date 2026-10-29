@@ -249,6 +249,25 @@ text \<open>$\Phi^*$ is the Kraus map of the adjoint operators, hence completely
 $\Phi$ is unital iff $\Phi^*$ is trace preserving: $\sum_iA_iA_i^*=I$ in both cases, using that
 $\tr(BY)=\tr(Y)$ for all $Y$ forces $B=I$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[font=\small, >=Stealth, bx/.style={draw, rounded corners, align=center, inner sep=4pt}]
+\node[bx] (n) at (0,0) {$M_n$};
+\node[bx] (d) at (6,0) {$M_d$};
+\draw[->] (n) to[bend left=18] node[above] {$\Phi(X)=\sum_iA_iXA_i^*$} (d);
+\draw[->] (d) to[bend left=18] node[below] {$\Phi^*(Y)=\sum_iA_i^*YA_i$} (n);
+\node[bx, text width=3.6cm] (u) at (-0.5,-2.4) {$\Phi$ unital\\ $\Phi(I_n)=I_d$};
+\node[bx, text width=3.6cm] (t) at (6.5,-2.4) {$\Phi^*$ trace preserving\\ $\tr\Phi^*(Y)=\tr Y$};
+\node (c) at (3,-2.4) {$\textstyle\sum_iA_iA_i^*=I_d$};
+\draw[<->] (u) -- (c); \draw[<->] (c) -- (t);
+\end{tikzpicture}\\[0.4em]
+{\small The adjoint of a Kraus map is the Kraus map of the adjoint operators (\isa{kraus\_adjoint\_correct}),
+so it is again completely positive (\isa{adjoint\_cp\_from\_kraus}).  Since
+$\tr\Phi^*(Y)=\tr\big((\sum_iA_iA_i^*)\,Y\big)$, both sides of the duality say $\sum_iA_iA_i^*=I_d$
+(\isa{cp\_unital\_iff\_adjoint\_tp}).}
+\end{center}
+\<close>
+
 theorem adjoint_cp_from_kraus:
   assumes As_c: "\<forall>A \<in> set As. A \<in> carrier_mat d n"
       and npos: "0 < n"

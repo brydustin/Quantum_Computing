@@ -305,6 +305,22 @@ text \<open>Query the neighbour, sort the pair, rotate the ancilla, unsort, unqu
 definition colour_circ :: "nat \<Rightarrow> real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "colour_circ n d A Or = Or\<^sup>\<dagger> * (cmp_gate n * (ent_gate n d A * (cmp_gate n * Or)))"
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{quantikz}[row sep={0.9cm,between origins}, column sep=0.45cm]
+\lstick{$\ket x$} & \gate[2]{O_q} & \gate[3]{\mathrm{Cmp}} & \control[style={rectangle, minimum size=5pt, inner sep=0pt}]{} \vqw{1} & \gate[3]{\mathrm{Cmp}} & \gate[2]{O_q^\dagger} & \qw \rstick[3]{$e^{idH_q}\ket x\,\ket0\ket0$}\\
+\lstick{$\ket0$} & & & \control[style={rectangle, minimum size=5pt, inner sep=0pt}]{} \vqw{1} & & & \qw\\
+\lstick{$\ket0$} & \qw & & \gate{E_{xy}} & & \qw & \qw
+\end{quantikz}\\[0.4em]
+{\small One colour (\isa{colour\_circ}).  The oracle writes the neighbour $y=q(x)$, the comparator sorts the
+pair and records the order in the ancilla, the entry gate rotates the ancilla by
+$e^{id\,(\begin{smallmatrix}0&a\\ \bar a&0\end{smallmatrix})}$ with $a=A_{xy}$ (the only gate that reads $A$),
+and the comparator and oracle are undone.  On inputs $\ket x\ket0\ket0$ the circuit is $e^{idH_q}$ for the
+one-sparse part $H_q$ of colour $q$ (\isa{colour\_circ\_intertwine}).  A Trotter step is one such block per
+colour followed by the diagonal gate (\isa{step\_gates}).}
+\end{center}
+\<close>
+
 lemma cmp_gate_carrier [simp]: "cmp_gate n \<in> carrier_mat (n * n * 2) (n * n * 2)"
   by (simp add: cmp_gate_def)
 
