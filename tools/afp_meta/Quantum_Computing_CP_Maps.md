@@ -39,6 +39,4 @@ unitary and Kronecker-product algebra, and matrices of fixed dimension as a Eucl
   test of Two_Hermitian_Results.
 - The notes are by Vern Paulsen (notes taken by Brandon Lee); they are cited, not reproduced:
   the document paraphrases each definition and theorem before its formal statement.
-  **Please confirm with Vern Paulsen before submitting** that he is happy with an entry named
-  after him and his notes.
 - The entry HHL_Algorithm (submitted at the same time) builds on it.
