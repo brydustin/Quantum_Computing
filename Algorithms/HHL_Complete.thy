@@ -207,6 +207,22 @@ $\psi=\sin\theta\,g+\cos\theta\,h$.  The Grover operator $Q=(2\ketbra\psi\psi-I)
 the plane spanned by $g,h$ by $2\theta$, so after $k$ rounds the good amplitude is
 $\sin((2k+1)\theta)$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[scale=2.2, ar/.style={-{Stealth}, thick}]
+\draw[->] (0,0) -- (1.25,0) node[right] {$h$ (bad)};
+\draw[->] (0,0) -- (0,1.25) node[above] {$g$ (good)};
+\draw[gray!50] (1,0) arc (0:90:1);
+\draw[ar, blue!70!black] (0,0) -- ({cos(20)},{sin(20)}) node[right] {$\psi$};
+\draw[ar, orange!85!black] (0,0) -- ({cos(60)},{sin(60)}) node[above right] {$Q\psi$};
+\draw[ar, orange!60!black] (0,0) -- ({cos(100)},{sin(100)}) node[above left] {$Q^2\psi$};
+\draw (0.3,0) arc (0:20:0.3); \node[font=\small] at (0.38,0.06) {$\theta$};
+\draw[orange!85!black] (0.55,{0.55*tan(20)}) arc (20:60:0.58); \node[font=\small, orange!85!black] at (0.62,0.42) {$2\theta$};
+\end{tikzpicture}\\[0.2em]
+{\small Each Grover round turns the state by $2\theta$ in the plane of $g$ and $h$; the good amplitude after $k$ rounds is $\sin((2k+1)\theta)$.}
+\end{center}
+\<close>
+
 text \<open>The outer product $\ketbra vw$ of the notes as an explicit matrix.\<close>
 
 lemma outer_prod_mat: "v \<oslash> w = Matrix.mat (dim_vec v) (dim_vec w) (\<lambda>(i, j). v $ i * cnj (w $ j))"
