@@ -22,6 +22,20 @@ Reformulated postulates.  1$'$: the state of a system is a density matrix $\rho\
 $\sum M_\alpha^*M_\alpha=I$ yields outcome $\alpha$ with probability $\tr(M_\alpha^*M_\alpha\rho)$.
 4$'$: systems with densities $\rho_1,\rho_2$ compose to $\rho_1\otimes\rho_2$ on $\Hil_A\otimes\Hil_B$.\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=0.9cm,y=0.7cm]
+\foreach \i in {1,2,3} { \foreach \j in {1,2,3} {
+  \pgfmathparse{\i==\j ? "orange!25" : "blue!6"} \edef\c{\pgfmathresult}
+  \draw[fill=\c] (\j,-\i) rectangle (\j+0.9,-\i-0.9); \node[font=\small] at (\j+0.45,-\i-0.45) {$X_{\i\j}$}; } }
+\node[font=\small, anchor=east] at (0.9,-2.45) {$X=$};
+\node[font=\small, anchor=west, align=left] at (4.3,-2.0) {$\tr_B X = X_{11}+X_{22}+X_{33}$ \ (\textcolor{orange!85!black}{diagonal blocks})};
+\node[font=\small, anchor=west, align=left] at (4.3,-2.9) {$\tr_A X = (\Tr X_{ij})_{ij}$};
+\end{tikzpicture}\\[0.2em]
+{\small $L(\Hil_A\otimes\Hil_B)\cong M_p(L(\Hil_A))$, here $p=3$.}
+\end{center}
+\<close>
+
 subsection \<open>$H_A\otimes H_B\cong H_A^{(p)}$ and $L(H_A\otimes H_B)\cong M_p(L(H_A))$ (D16-2)\<close>
 
 text \<open>The notes identify $H_A\otimes H_B$ with $p$ copies of $H_A$ through

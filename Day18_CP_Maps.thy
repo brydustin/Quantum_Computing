@@ -230,6 +230,14 @@ qed
 
 subsection \<open>The transpose is positive but not 2-positive (D18-4)\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+$\displaystyle (\mathrm{id}\otimes T)\begin{pmatrix}1&0&0&1\\0&0&0&0\\0&0&0&0\\1&0&0&1\end{pmatrix}
+= \begin{pmatrix}1&0&0&0\\0&0&1&0\\0&1&0&0\\0&0&0&1\end{pmatrix}$\\[0.4em]
+{\small The transpose $T$ applied blockwise to the positive matrix $(E_{ab})_{a,b}$ gives the swap, which has the eigenvector $\ket{01}-\ket{10}$ with eigenvalue $-1$.}
+\end{center}
+\<close>
+
 lemma transpose_positive_map: "positive_map n n (transpose_mat :: complex Matrix.mat \<Rightarrow> complex Matrix.mat)"
 proof (unfold positive_map_def, intro conjI allI impI)
   fix A :: "complex Matrix.mat" assume "A \<in> carrier_mat n n"

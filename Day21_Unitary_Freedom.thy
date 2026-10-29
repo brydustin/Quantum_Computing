@@ -98,6 +98,19 @@ qed
 
 subsection \<open>Unitary freedom of rank-one decompositions and Kraus representations (D21-3, D21-5, D21-6)\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[st/.style={draw, rounded corners, fill=blue!6, inner sep=4pt, font=\small}, ar/.style={-{Stealth}, thick}]
+\node[st] (w) {$\{W_1,\dots,W_r\}$};
+\node[st, right=3.2cm of w] (v) {$\{V_1,\dots,V_r\}$};
+\node[st, below=0.9cm of $(w)!0.5!(v)$] (p) {$\Phi(X)=\sum_iW_iXW_i^* = \sum_jV_jXV_j^*$};
+\draw[ar, <->] (w) -- node[above, font=\small] {$V_j=\sum_iu_{ji}W_i$, \ $(u_{ji})$ unitary} (v);
+\draw[ar] (w) -- (p); \draw[ar] (v) -- (p);
+\end{tikzpicture}\\[0.2em]
+{\small Two Kraus representations of the same map (padded with zeros to the same length) differ by a unitary matrix.}
+\end{center}
+\<close>
+
 subsubsection \<open>The Gram matrix of an independent list is invertible; dual vectors\<close>
 
 lemma gram_det_nonzero:

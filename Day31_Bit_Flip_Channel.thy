@@ -181,6 +181,21 @@ $((1-p)^3+3p(1-p)^2)\ketbra{\tilde\psi}{\tilde\psi}+(3p^2(1-p)+p^3)\ketbra{X_1X_
 The notes state this formula for a general $Y$; it holds for $Y$ supported on the code space
 (for $Y=\ketbra{100}{100}$ and $p=0$ one gets $R(Y)=\ketbra{000}{000}\neq Y$).\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}
+\begin{axis}[width=9cm, height=5cm, xmin=0, xmax=1, ymin=0, ymax=1.02, samples=200, domain=0:1, axis lines=left, xlabel={$p$},
+  ylabel={weight of $\ket{\tilde\psi}$}, legend style={draw=none, font=\small, at={(1.03,0.5)}, anchor=west}, legend cell align=left, every axis plot/.style={thick}]
+\addplot[blue!70!black] {(1-x)^3+3*x*(1-x)^2};
+\addplot[gray, dashed] {1-x};
+\draw[dotted] (axis cs:0.5,0) -- (axis cs:0.5,0.5);
+\legend{three-qubit code, one unprotected qubit}
+\end{axis}
+\end{tikzpicture}\\[0.2em]
+{\small After recovery the encoded state survives with weight $(1-p)^3+3p(1-p)^2$, better than $1-p$ exactly when $p<\frac12$.}
+\end{center}
+\<close>
+
 definition three_bit_channel :: "real \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "three_bit_channel p M =
      complex_of_real ((1 - p)^3) \<cdot>\<^sub>m M

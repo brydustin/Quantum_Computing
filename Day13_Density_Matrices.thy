@@ -30,6 +30,18 @@ definition ensemble :: "nat \<Rightarrow> (real \<times> complex Matrix.vec) lis
 
 subsection \<open>Von Neumann's density matrix\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[st/.style={draw, rounded corners, fill=blue!6, inner sep=4pt, font=\small}, ar/.style={-{Stealth}, thick}]
+\node[st] (e1) {$\{(\tfrac12,\ket0),\ (\tfrac12,\ket1)\}$};
+\node[st, below=0.6cm of e1] (e2) {$\{(\tfrac12,\ket+),\ (\tfrac12,\ket-)\}$};
+\node[st, right=2.2cm of $(e1)!0.5!(e2)$] (r) {$\rho=\sum_ip_i\psi_i\psi_i^* = \tfrac12 I$};
+\draw[ar] (e1.east) -- (r.west); \draw[ar] (e2.east) -- (r.west);
+\end{tikzpicture}\\[0.2em]
+{\small Two ensembles, one density matrix: every measurement gives them the same outcome probabilities $\tr(M_\alpha^*M_\alpha\rho)$.}
+\end{center}
+\<close>
+
 text \<open>Measurements cannot distinguish $\psi$ from $e^{i\theta}\psi$, and
 $\ketbra{e^{i\theta}\psi}{e^{i\theta}\psi}=\ketbra\psi\psi=(\alpha_i\overline{\alpha_j})$: the
 object attached to a state is the projection, not the vector.  For any $\gamma$,

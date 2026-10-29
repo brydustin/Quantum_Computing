@@ -438,6 +438,20 @@ qed
 
 subsection \<open>Coordinates in a tensor product\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=0.75cm,y=0.6cm]
+\foreach \i in {0,1,2} { \foreach \k in {0,1,2,3} {
+  \pgfmathtruncatemacro{\n}{4*\i+\k}
+  \draw[fill=blue!6] (\k,-\i) rectangle (\k+0.9,-\i-0.8); \node[font=\scriptsize] at (\k+0.45,-\i-0.4) {$\n$}; } }
+\foreach \k in {0,1,2,3} {\node[font=\scriptsize] at (\k+0.45,0.35) {$f_\k$};}
+\foreach \i in {0,1,2} {\node[font=\scriptsize, anchor=east] at (-0.1,-\i-0.4) {$e_\i$};}
+\node[font=\small, anchor=west] at (4.4,-1.2) {$e_i\otimes f_k \;\longmapsto\; $ coordinate $ip+k$};
+\end{tikzpicture}\\[0.2em]
+{\small $m=3$, $p=4$: the first factor is the major index, as in \texttt{tensor\_vec}.}
+\end{center}
+\<close>
+
 text \<open>$\sum_j x_j\otimes y_j$ in $\C^N$, written as in \<^const>\<open>schmidt_rank\<close>.\<close>
 
 definition tensor_combination :: "nat \<Rightarrow> complex Matrix.vec list \<Rightarrow> complex Matrix.vec list \<Rightarrow> complex Matrix.vec" where

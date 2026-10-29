@@ -470,6 +470,24 @@ $\tfrac1{\sqrt2}(\ket{10}\pm\ket{01})$, so by sending one qubit A communicates t
 $2m$ shared qubits, $4^m$ messages.  Below: the four Bell states and their
 orthonormality (the action table itself is not formalised).\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[st/.style={draw, rounded corners, fill=blue!6, inner sep=3pt, font=\small}, ar/.style={-{Stealth}, thick}]
+\node[st] (g) {$\gamma=\tfrac1{\sqrt2}(\ket{00}+\ket{11})$};
+\node[st, right=3.0cm of g, yshift=1.65cm] (a) {$\tfrac1{\sqrt2}(\ket{00}+\ket{11})$};
+\node[st, right=3.0cm of g, yshift=0.55cm] (b) {$\tfrac1{\sqrt2}(\ket{00}-\ket{11})$};
+\node[st, right=3.0cm of g, yshift=-0.55cm] (c) {$\tfrac1{\sqrt2}(\ket{10}+\ket{01})$};
+\node[st, right=3.0cm of g, yshift=-1.65cm] (d) {$\tfrac1{\sqrt2}(\ket{10}-\ket{01})$};
+\draw[ar] (g.east) -- node[above, font=\scriptsize, sloped, near end] {$I$} (a.west);
+\draw[ar] (g.east) -- node[above, font=\scriptsize, sloped, near end] {$Z$} (b.west);
+\draw[ar] (g.east) -- node[below, font=\scriptsize, sloped, near end] {$X$} (c.west);
+\draw[ar] (g.east) -- node[below, font=\scriptsize, sloped, near end] {$\left(\begin{smallmatrix}0&1\\-1&0\end{smallmatrix}\right)$} (d.west);
+\node[font=\small, anchor=west, align=left] at ($(b.east)!0.5!(c.east)+(0.3,0)$) {four orthonormal\\ Bell states:\\ two bits};
+\end{tikzpicture}\\[0.2em]
+{\small Superdense coding: A acts on her qubit only, and B can tell the four results apart.}
+\end{center}
+\<close>
+
 definition bell_basis :: "complex Matrix.vec list" where
   "bell_basis \<equiv>
     [ (1/csqrt 2) \<cdot>\<^sub>v (tensor_vec (unit_vec 2 0) (unit_vec 2 0) +

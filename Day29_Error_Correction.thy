@@ -104,6 +104,18 @@ lemma hamming_dist_self [simp]:
 
 subsection \<open>Code distance\<close>
 
+text_raw \<open>
+\begin{center}\normalfont
+\begin{tikzpicture}[x=1.9cm,y=1.9cm, z={(0.95cm,0.65cm)}, v/.style={circle, draw, fill=white, inner sep=1pt, font=\scriptsize}, c/.style={circle, draw, very thick, fill=orange!30, inner sep=1pt, font=\scriptsize}]
+\foreach \a/\b in {000/100,000/010,000/001,100/110,100/101,010/110,010/011,001/101,001/011,110/111,101/111,011/111}{}
+\node[c] (n000) at (0,0,0) {000}; \node[v] (n100) at (1,0,0) {100}; \node[v] (n010) at (0,1,0) {010}; \node[v] (n001) at (0,0,1) {001};
+\node[v] (n110) at (1,1,0) {110}; \node[v] (n101) at (1,0,1) {101}; \node[v] (n011) at (0,1,1) {011}; \node[c] (n111) at (1,1,1) {111};
+\foreach \a/\b in {000/100,000/010,000/001,100/110,100/101,010/110,010/011,001/101,001/011,110/111,101/111,011/111} {\draw (n\a) -- (n\b);}
+\node[font=\small, anchor=west, align=left] at (2.4,0.6) {code $\{000,111\}$: distance $3$;\\ every word is within one flip\\ of exactly one code word};
+\end{tikzpicture}
+\end{center}
+\<close>
+
 text \<open>A code of distance at least $2t+1$ can correct $t$ errors (recorded as the definition
 \<open>corrects_errors\<close>; the decoding theorem itself is not formalised).\<close>
 
