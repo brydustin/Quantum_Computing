@@ -22,6 +22,5 @@ the same time.  Before submitting, decide the open points:
 
 - entry 2 is fixed: short name `Quantum_Computing_CP_Maps`, title "Lectures on Quantum Computing and
   Completely Positive Maps"; the names and titles of entries 1 and 3 are suggestions;
-- ask Vern Paulsen whether he agrees with an entry built on, and named after, his notes;
 - the topics are suggestions from the AFP's topic list;
 - the license is BSD in all three (the AFP's default; LGPL is the other option).
