@@ -23,8 +23,8 @@ this rule a triple is one computation, and a lower bound such as $4/\pi^2$ becom
 exact statement. The loop rule needs an invariant, but for repeat-until-success the invariant is the
 postcondition of a single run.
 
-\paragraph{Termination is a statement about the semantics.} Quantum Hoare logic as formalised has no
-rule for total correctness of loops. HHL's loop is special: its body resets the registers, so the loop
+\paragraph{Termination is a statement about the semantics.} QHLProver formalises only the
+partial-correctness rules, and Ying's total-correctness rule needs a bound function for each loop. HHL's loop is special: its body resets the registers, so the loop
 is a geometric series and Lemma~\ref{lem:reset} gives total correctness, the exit distribution and the
 expected number of rounds at once. The lemma applies to every repeat-until-success protocol with a
 resetting body.
@@ -106,3 +106,24 @@ pause mattered. A human returning to a 35{,}000-line development after five mont
 reload it; the agent needs to read, and reading is fast. The cost was paid in May, by writing the
 hand-off note as if for a stranger. Projects that are formalised with an agent should be documented for
 the next session as a matter of course, because the next session is always a stranger.
+
+\subsection{Limitations and Threats to Validity}\label{sec:limitations}
+
+\paragraph{The verification.} The exact programs assume that the eigenvalues lie on the
+phase-estimation grid and that the rotation constant is at most its smallest point
+(Section~\ref{sec:programs}); the inexact theorems need neither, and give fidelity bounds instead. Hamiltonian simulation is first-order Trotter, not a state-of-the-art
+method, and the oracle-free gate count is for one family of matrices. The optimality theorems are
+formalised up to the complexity-theoretic facts they cite, and the search lower bound is imported with an
+inherited Types-To-Sets oracle. As always, the definitions of Listings~\ref{lst:spec} and~\ref{lst:triples}
+are trusted, and the statements are only as faithful to the paper as their review.
+
+\paragraph{The process study.} It is a single case, by one person, on one kind of mathematics. The
+directions were coded into kinds by the agent, under the author's direction, by a single coder without a
+second rater, so the proportions are indicative only. The spring logs of the main agent were not
+retained, so most statistics cover October only. Model versions are proprietary and change; the same
+prompts would not reproduce the same development. Counts of results weigh a one-line lemma like a major
+theorem. Human time is approximated by the number of distinct hours in which the human gave at least one
+direction, 84 in October, which counts neither reading nor thinking between directions; we report no
+monetary cost. The transcripts are private; the scripts that compute every number from them, and the
+aggregated data, are public.
+

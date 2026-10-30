@@ -2,9 +2,9 @@
 
 \subsection{People, Agents and Tools}
 
-One person, the author, directed the work. He is a mathematician and an experienced Isabelle user who
-inspects the theories in jEdit and the generated documents, but he wrote almost none of the proof text:
-apart from hand edits in April and a pass of proof-style edits in October, every line was written by an
+One person, the author, directed the work: a mathematician and an experienced Isabelle user who
+inspects the theories in jEdit and the generated documents. The author wrote almost none of the proof
+text; apart from hand edits in April and a pass of proof-style edits in October, every line was written by an
 agent. In the spring the main agent was Claude Code~\cite{claudecode} with Claude Opus~4.7 (one
 million tokens of context); 368 of the 374 spring commits carry its co-author line. OpenAI's Codex
 CLI~\cite{codexcli} with GPT-5.4 was also used for focused, lemma-sized tasks in 21 sessions between
@@ -141,7 +141,8 @@ Claude Code were not retained, and the Codex logs of the spring cover only its s
 \begin{table}[t]
 \caption{The development in numbers. Results are top-level \textsf{lemma}, \textsf{theorem},
 \textsf{corollary} and \textsf{proposition} commands; human directions exclude slash commands
-(\texttt{/compact}, \texttt{/model}, \texttt{/effort}: 38 in October).}\label{tab:stats}
+(\texttt{/compact}, \texttt{/model}, \texttt{/effort}: 38 in October). Blank spring cells would need the
+spring logs of the main agent, which were not retained.}\label{tab:stats}
 \centering\scriptsize
 \renewcommand{\arraystretch}{1.08}
 \begin{tabular}{@{}lrr@{}}
@@ -155,10 +156,11 @@ Lines of theory text built at the end & 35.2k & 64.0k\\
 Results at the end & 797 & 3{,}096\\
 Human directions to the main agent & not retained & 258\\
 \quad of which goals for self-paced loops & & 39\\
+Clock hours with at least one direction & & 84\\
 Agent replies / tool calls / shell commands & & 9{,}963 / 9{,}835 / 9{,}202\\
 Output tokens / cached input tokens read & & 14.5M / 4.55G\\
-Context compactions / self-scheduled continuations & & 37 / 277\\
-Side sessions with Codex (GPT-5.4) / their prompts & 21 / 111 & --\\
+Compactions / self-scheduled continuations & & 37 / 277\\
+Codex (GPT-5.4) side sessions / their prompts & 21 / 111 & --\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -207,8 +209,8 @@ best''. Early days are mostly direction; once HHL was in place, taste, questions
 October are the preparation for submission.}\label{fig:directions}
 \end{figure}
 
-The directions changed character over the project (Table~\ref{tab:prompts}). In April, prompts named
-lemmas, and the author still edited proofs himself. In October they named goals and judged results. The
+Over the project, the directions changed character. In April, prompts named lemmas, and the author
+still edited proofs; in October they named goals and judged results (Table~\ref{tab:prompts}). The
 most consequential directions were short and came from outside the formal text: to stop treating the
 black boxes of HHL as given (28~October), to give the paper a theme, and to submit the general functional
 calculus as its own entry. Delegation was explicit and rare (\prompt{Do what you think is most

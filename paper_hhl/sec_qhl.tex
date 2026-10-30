@@ -9,18 +9,8 @@ derived for it, then the programs.
 
 \subsection{The Proof System}\label{sec:qhl-rules}
 
-A program of the while-language of Section~\ref{sec:hhl} denotes a map on partial density operators
-($\rho\ge0$, $\Tr\rho\le1$):
-\begin{gather*}
-\sem{U}\rho=U\rho U^\dagger,\qquad \sem{S_1;S_2}=\sem{S_2}\circ\sem{S_1},\\
-\sem{\mathbf{measure}\ M\ \bar S}\rho=\textstyle\sum_k\sem{S_k}(M_k\rho M_k^\dagger),\\
-\sem{\mathbf{while}\ M\ \mathbf{do}\ S}\rho=\textstyle\sum_{m\ge0}M_0\,\bigl((\sem S\circ\mathcal
-M_1)^m\rho\bigr)\,M_0^\dagger\quad\text{with}\quad\mathcal M_1(\rho)=M_1\rho M_1^\dagger .
-\end{gather*}
-The loop runs $S$ on outcome~$1$ and exits on outcome~$0$; the $m$-th summand is the part of the input
-that exits after $m$ rounds, and the trace that the sum loses is the probability of running forever.
-QHLProver~\cite{liu2019qhl} defines Ying's proof system for partial correctness~\cite{ying2011} as an
-inductive relation $\vdash_p$ (Listing~\ref{lst:rules}). In mathematical notation, with all
+Triples are derived in Ying's proof system for partial correctness~\cite{ying2011}, which
+QHLProver~\cite{liu2019qhl} defines as an inductive relation $\vdash_p$ (Listing~\ref{lst:rules}). In mathematical notation, with all
 predicates between $0$ and $I$ and $\sqsubseteq$ the L\"owner order:
 \begin{gather*}
 \frac{}{\{U^\dagger PU\}\;U\;\{P\}}\qquad\qquad
@@ -29,10 +19,12 @@ predicates between $0$ and $I$ and $\sqsubseteq$ the L\"owner order:
 \frac{\{P_k\}\,S_k\,\{Q\}\ \ (k<n)}{\{\textstyle\sum_kM_k^\dagger P_kM_k\}\;\mathbf{measure}\ M\ \bar S\;\{Q\}}\\[0.5em]
 \frac{\{Q\}\;S\;\{M_0^\dagger PM_0+M_1^\dagger QM_1\}}{\{M_0^\dagger PM_0+M_1^\dagger QM_1\}\;\mathbf{while}\ M\ \mathbf{do}\ S\;\{P\}}
 \end{gather*}
-together with $\{P\}\,\mathbf{skip}\,\{P\}$. The rules compute weakest liberal preconditions backwards
+together with $\{P\}\,\mathbf{skip}\,\{P\}$. With the semantics of Section~\ref{sec:hhl}, the rules compute weakest liberal preconditions backwards
 through a program: a gate conjugates the postcondition, a measurement sums the branches' preconditions
 weighted by its operators, and a loop needs an invariant~$Q$ for its body. QHLProver proves the system
-sound and complete for $\models_p$ (\isa{hoare\_partial\_sound}, \isa{hoare\_partial\_complete}).
+sound and complete for $\models_p$ (\isa{hoare\_partial\_sound}, \isa{hoare\_partial\_complete}). Ying's paper
+also gives a proof system for total correctness, whose loop rule needs a bound function that decreases
+along the loop~\cite{ying2011}; QHLProver formalises only the partial-correctness system.
 Loop-free programs preserve the trace, so for them partial and total correctness coincide
 (\isa{partial\_to\_total}).
 
@@ -58,8 +50,9 @@ inductive hoare_partial :: "complex mat ~$\Rightarrow$~ com ~$\Rightarrow$~ comp
 
 \subsection{Rules for Algorithms}\label{sec:qhl-derived}
 
-Algorithms need statements that the logic does not provide directly. We derived four rules, each
-from the semantics or from the rules above.
+Algorithms need statements that QHLProver does not provide directly. We derived four rules: the first
+three from the rules above, the fourth from the semantics. None is deep; they matter because every
+program of this paper is an instance of them.
 
 \emph{Initialisation.} QHLProver has no statement that prepares a fixed state. We build one,
 \isa{init\_com}, from a measurement in the computational basis followed by a swap that moves each
@@ -71,8 +64,8 @@ outcome $k$ to~$0$. Whatever the input, afterwards the probability of $Q$ is $\b
 with $W$ the product of the gates, $\{W^\dagger QW\}\;U_1;\dots;U_m\;\{Q\}$.
 
 \emph{The shape of an algorithm.} Phase estimation, one run of HHL and the inexact variants all have
-the form $\mathit{init};\ U_1;\dots;U_m;\ \mathbf{measure}\ M$. Composing the three rules gives its
-weakest precondition in closed form: with $\psi=W\ket0$ the state the circuit prepares,
+the form $\mathit{init};\ U_1;\dots;U_m;\ \mathbf{measure}\ M$. Composing the three rules, which is the standard weakest-precondition calculus applied to this shape,
+gives its weakest precondition in closed form: with $\psi=W\ket0$ the state the circuit prepares,
 \[
 \Bigl\{\Bigl(\textstyle\sum_j\langle M_j\psi|\,Q\,|M_j\psi\rangle\Bigr)\cdot I\Bigr\}\;
 \mathit{init};\ U_1;\dots;U_m;\ \mathbf{measure}\ M\;\{Q\}.
@@ -110,8 +103,10 @@ theorem hoare_init_circuit_measure:
       {Q}"
 \end{lstlisting}
 
-\emph{Loops with a resetting body.} The fourth rule concerns termination. The proof system covers partial
-correctness only, and a loop's partial correctness says nothing about whether it stops. Repeat-until-success
+\emph{Loops with a resetting body.} The fourth rule concerns termination. QHLProver formalises partial
+correctness only, and a loop's partial correctness says nothing about whether it stops. Rather than
+formalising Ying's total-correctness rule with its bound functions, we prove termination from the
+semantics for the loops that HHL needs. Repeat-until-success
 loops are special: their body starts with \isa{init}, so it maps every input $\rho$ to $(\Tr\rho)\,\sigma$
 for one fixed state~$\sigma$. The $m$-th summand of the loop's semantics is then $(1-p)^m$ times the exit
 of a single round, and the loop is a geometric series.
@@ -196,6 +191,33 @@ definition rus_meas :: "nat ~$\Rightarrow$~ (nat ~$\Rightarrow$~ complex Matrix.
  Let $p=C^2\norm{A^{-1}b}^2$ and
 $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$.
 
+\paragraph{What is specified.} The triples below are about three definitions that a reader must trust
+(Listing~\ref{lst:spec}): the grid eigenvalues \isa{reg\_eig}, with values $2\pi j/(Nt_0)$ and their
+negative counterparts for $j\ge N/2$; the target state \isa{hhl\_target}, the clock in $\ket0$, the
+normalised solution and the ancilla in $\ket1$; and the gate list \isa{hhl\_gates}, the eight gates of
+Fig.~\ref{fig:hhl}. Its gates are defined in one theory (\isa{HHL\_Trajectory}) from the Fourier matrix,
+the controlled evolution $\sum_c\ketbra cc\otimes e^{ict_0A}$ and the clock-controlled rotation; the
+semantics and triples are QHLProver's.
+
+%%LST Algorithms/HHL.thy reg_eig ; Algorithms/HHL_Program.thy hhl_target ; Algorithms/HHL_Trajectory.thy hhl_gates
+\begin{lstlisting}[float=tp,caption={The specification of the HHL programs: grid eigenvalues, the target state, and the eight gates of Fig.~\ref{fig:hhl}},label={lst:spec}]
+definition reg_eig :: "real ~$\Rightarrow$~ nat ~$\Rightarrow$~ nat ~$\Rightarrow$~ real" where
+  "reg_eig t0 N k = 2 * pi * (if 2 * k < N then real k else real k -
+      real N) / (t0 * real N)"
+definition hhl_target :: "complex Matrix.mat ~$\Rightarrow$~ nat ~$\Rightarrow$~ complex
+    Matrix.vec ~$\Rightarrow$~ complex Matrix.vec" where
+  "hhl_target A k b = tensor_vec (unit_vec (2 ^ k) 0) (tensor_vec
+      (complex_of_real (1 / ~$\|$~herm_inv A *~$_{v}$~ b~$\|$~) ~$\cdot_{v}$~ (herm_inv A *~$_{v}$~ b))
+      (unit_vec 2 1))"
+definition hhl_gates :: "complex Matrix.mat ~$\Rightarrow$~ complex Matrix.mat ~$\Rightarrow$~
+    real ~$\Rightarrow$~ nat ~$\Rightarrow$~ real ~$\Rightarrow$~ complex Matrix.mat list" where
+  "hhl_gates A Ub t0 k C = [prep_gate (2 ^ k) Ub, clock_gate (Hadamard
+      ~$\otimes^{k}$~) (dim_row A), evo_gate A t0 (2 ^ k), clock_gate ((fourier (2 ^
+      k))~$^{\dagger}$~) (dim_row A), rot_gate A t0 (2 ^ k) C, clock_gate (fourier
+      (2 ^ k)) (dim_row A), (evo_gate A t0 (2 ^ k))~$^{\dagger}$~, clock_gate
+      (Hadamard ~$\otimes^{k}$~) (dim_row A)]"
+\end{lstlisting}
+
 \begin{theorem}[exact HHL, one run]\label{thm:prog}
 Let $A$ be as in Theorem~\ref{thm:hhl} with $N=2^k$, let $U_b$ be a unitary with $U_b\ket0=b$, and let
 $|C/\lambda_j|\le1$ for all $j<N$. Then
@@ -203,6 +225,16 @@ $\hoaret{p\cdot I}{\mathit{hhl\_program}}{P_1}$ and
 $\hoaret{I}{\mathit{hhl\_program}}{P_0+\ketbra tt}$: the run succeeds with probability $p$, and
 whenever it succeeds the state is exactly $\ket t$.\isalink{Algorithms/HHL_Program.thy}{1187}
 \end{theorem}
+
+\paragraph{A restriction.} The hypothesis $|C/\lambda_j|\le1$ ranges over \emph{all} clock values, not only
+over the eigenvalues, because the program applies the rotation $R(C/\lambda_j)$ on every branch of the
+clock and a gate of the logic must be unitary. Since the smallest positive grid value is
+$\lambda_1=2\pi/(Nt_0)$, it forces $C\le2\pi/(Nt_0)$, so in the exact programs the success probability
+$p=C^2\norm{A^{-1}b}^2$ can be much smaller than the $1/\kappa^2$ that $C=\lambda_{\min}$ would give, and the
+expected number of rounds $1/p$ grows like $N^2$. The matrix-level Theorem~\ref{thm:hhl} holds for every
+real $C$, and the circuits of the paper's regime (Section~\ref{sec:approx-programs}) clamp the rotation
+to $[-1,1]$ instead, which removes the restriction; the cost is that those theorems are fidelity bounds
+rather than exact statements.
 
 The second triple is derived in the proof system (\isa{hhl\_prog\_correct} is a $\vdash_p$ statement),
 and the derivation is short enough to show in full (Fig.~\ref{fig:outline}). Read from the bottom: the
@@ -246,7 +278,8 @@ $\{I\}\;\mathit{init};W\;\{\ketbra tt+P_0\}$, is the upper half of Fig.~\ref{fig
 $\mathit{init};W$ establishes the invariant from~$I$ by the same argument, so
 $\hoarep{I}{\mathit{hhl\_rus}}{\ketbra tt}$: whenever the loop stops, the state is~$\ket t$.
 
-That leaves termination, which no rule of the system can prove; Lemma~\ref{lem:reset} does.
+That leaves termination, which QHLProver's rules cannot prove; Lemma~\ref{lem:reset}, a semantic
+special case for loops whose body ignores its input, does.
 
 \begin{theorem}[exact HHL, repeat until success]\label{thm:rus}
 Under the hypotheses of Theorem~\ref{thm:prog} and $C\neq0$, the loop terminates with probability one

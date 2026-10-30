@@ -21,7 +21,7 @@ SYM = {
     'lambda_': r'\lambda', 'Lambda': r'\Lambda', 'pi': r'\pi', 'tau': r'\tau', 'omega': r'\omega',
     'Omega': r'\Omega', 'chi': r'\chi', 'gamma': r'\gamma', 'Gamma': r'\Gamma', 'zeta': r'\zeta',
     'circ': r'\circ', 'subseteq': r'\subseteq', 'inter': r'\cap', 'union': r'\cup', 'infinity': r'\infty',
-    'oslash': r'\oslash', 'Sqinter': r'\bigsqcap', 'lbrakk': r'\llbracket', 'rbrakk': r'\rrbracket',
+    'oslash': r'\oslash', 'otimes': r'\otimes', 'Sqinter': r'\bigsqcap', 'lbrakk': r'\llbracket', 'rbrakk': r'\rrbracket',
     'Rightarrow_': r'\Rightarrow', 'rightleftharpoons': r'\rightleftharpoons', 'leftarrow': r'\leftarrow', 'mapsto': r'\mapsto', 'odot': r'\odot',
 }
 
@@ -60,6 +60,7 @@ def conv(text):
             raise SystemExit(f'unknown symbol \\<{k}>')
         return '~$' + ('^' if m.group(1) == 'sup' else '_') + '{' + SYM[k] + '}$~'
     text = re.sub(r'\\<\^(sup|sub)>\\<([A-Za-z]+)>', symsup, text)
+    text = re.sub(r'\\<\^bsup>(.*?)\\<\^esup>', lambda m: '~$^{' + m.group(1) + '}$~', text)
     def sub(m):
         return '~$_{' + m.group(1) + '}$~'
     text = re.sub(r'\\<\^sub>([A-Za-z0-9]+)', sub, text)

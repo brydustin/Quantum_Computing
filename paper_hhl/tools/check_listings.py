@@ -17,6 +17,7 @@ def unesc(t):
     # ~$...$~ blocks
     def rep(m):
         x=m.group(1)
+        x=re.sub(r'\\otimes\^\{(.*?)\}', lambda mm: '\\<otimes>\\<^bsup>'+mm.group(1)+'\\<^esup>', x)
         x=re.sub(r'_\{(.*?)\}', lambda mm: '\\<^sub>'+mm.group(1), x)
         x=re.sub(r'\^\{(.*?)\}', lambda mm: '\\<^sup>'+mm.group(1), x)
         for k in sorted(inv, key=len, reverse=True):

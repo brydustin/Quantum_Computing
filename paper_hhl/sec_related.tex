@@ -9,6 +9,13 @@ Xu~\cite{wu2024local} verify the same exact HHL in a quantum Hoare logic with di
 also in Coq. Our development differs in scope: total correctness with the distribution of the number
 of rounds, the regime of the paper's error analysis, compilation to elementary gates, and the errata.
 
+\paragraph{Total correctness of quantum loops.} Ying's logic has a total-correctness system whose loop
+rule needs a bound function~\cite{ying2011,ying2016book}; QHLProver formalises the partial-correctness
+system only~\cite{liu2019qhl}. Our Lemma~\ref{lem:reset} is a semantic special case for loops whose body
+resets the state, where termination, the distribution of the number of rounds and its expectation
+follow from a geometric series. For a survey of program logics and tools for quantum programs,
+see Lewis, Soudjani and Zuliani~\cite{lewis2023survey}.
+
 \paragraph{Other verified quantum algorithms.} In Coq, SQIR verifies phase estimation, Grover's algorithm
 and others~\cite{hietala2021sqir}, and an end-to-end implementation of Shor's algorithm includes the
 reversible arithmetic of modular exponentiation~\cite{peng2023shor}. QBricks, in Why3, verifies phase
@@ -17,7 +24,7 @@ formalises qubits, gates and several protocols~\cite{bordg2021imd,bordg2020afp},
 Grover's algorithm in the logic we use~\cite{liu2019qhl}, and the AFP contains the quantum Fourier
 transform~\cite{manrique2025qft}. Unruh's libraries develop bounded operators, tensor products of Hilbert
 spaces and Kraus maps in infinite dimension~\cite{caballero2021cbo,unruh2024tensor,unruh2025kraus};
-we connect to the last and import his search lower bound~\cite{unruh2025co}.
+we connect to the last and import Unruh's search lower bound~\cite{unruh2025co}.
 
 \paragraph{Error analyses of HHL.} Li and Phillips~\cite{liphillips2024} re-derive the paper's error
 analysis by hand, with more detail on the amplitudes after phase estimation. Later algorithms improve

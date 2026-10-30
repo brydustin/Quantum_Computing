@@ -94,21 +94,44 @@ $x=(L+\mu I)^{-1}b'$ and $\delta=\epsilon+2(2^k-1)\eta$; and the number of gates
 polynomial in $m$, $k$, $r$, $a$, $\mathit{bb}$, $|xs|$ and the clock size $2^k$.\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77}
 \end{theorem}
 
-\begin{lstlisting}[float=tp,caption={Theorem~\ref{thm:lap} (abridged: hypotheses, definitions and three of the six conclusions are elided)},label={lst:lap}]
+\begin{lstlisting}[float=tp,caption={Theorem~\ref{thm:lap} with its hypotheses (abridged: the definitions of the gate list, the prepared right-hand side, the output and the solution, and four of the six conclusions, are elided)},label={lst:lap}]
 corollary hhl_lap_sparse:
-  ...
+  fixes av :: "nat ~$\Rightarrow$~ real" and xs :: "nat list" and m k a bb r :: nat
+      and ~$\mu$~ t0 C ~$\theta$~ lmin ~$\varepsilon$~ :: real
+  assumes m: "2 ~$\le$~ m" and k: "1 ~$\le$~ k" and am: "bb + 2 * m ~$\le$~ a" and r:
+      "0 < r" and mu: "0 ~$\le$~ ~$\mu$~"
+    and av: "(~$\sum$~x<2 ^ m. (av x)~$^{2}$~) = 1" "~$\bigwedge$~x. x < 2 ^ m ~$\Longrightarrow$~ 0 ~$\le$~ av x"
+        and sp: "supp m av xs"
+    and t0: "0 < t0" and C: "0 < C" and th: "0 < ~$\theta$~" "~$\theta$~ < 1" and lmin:
+        "2 * C / ~$\theta$~ ~$\le$~ lmin" "lmin ~$\le$~ ~$\mu$~"
+    and tb: "t0 * (4 + ~$\mu$~) ~$\le$~ pi / 2" and e: "0 < ~$\varepsilon$~"
+    and NQ: "sqrt (8 * pi~$^{2}$~ * (2 + pi~$^{2}$~) * ~$\theta$~ ^ 4 / (t0~$^{2}$~ * C~$^{2}$~ * (1 -
+        ~$\theta^{2}$~)) + 512 * pi ^ 6 / (t0 ^ 4 * lmin ^ 4)) / ~$\varepsilon$~ ~$\le$~ real (2 ^ k)"
+    and small: "~$\varepsilon$~ + 2 * real (2 ^ k - 1) * (18 * (2 + ~$\mu$~)~$^{2}$~ * t0~$^{2}$~ /
+        real r) ~$\le$~ C * t0 / pi"
+  defines "K ~$\equiv$~ Suc (m + k) + a" and ... (* the gate list, the prepared b', the output, x *)
   shows ...
-    "~$\forall$~U ~$\in$~ set (hhl_lap_gates m k a (bb + m) ~$\mu$~ t0 r C Bs). elementary (2 ^ K) U"
+  "~$\forall$~U ~$\in$~ set (hhl_lap_gates m k a (bb + m) ~$\mu$~ t0 r C Bs). elementary (2
+      ^ K) U"
+  "length (hhl_lap_gates m k a (bb + m) ~$\mu$~ t0 r C Bs) ~$\le$~ k * (1 + 2 ^ k
+      * (2 * k + 1)) + m * (2 * (length xs * (4 * m + 2 + bb) * (6 * (m
+      + (bb + m)) + 7)) + (bb * (2 * (bb + m) + 1) + 2)) * (4 * K + 1) +
+      2 * ((2 ^ k - 1) * (r * (2 * (m * (m + 2) * (6 * K + 7)) + 3 * (4
+      * K + 1)))) + 2 * (k ^ 3 + 2 * k) + (2 * m + 1) * (1 + 2 ^ k * (2
+      * k + 1))"
     ...
-    "length (hhl_lap_gates m k a (bb + m) ~$\mu$~ t0 r C Bs) ~$\le$~ k * (1 + 2 ^ k * (2 * k + 1))
-      + m * (2 * (length xs * (4 * m + 2 + bb) * (6 * (m + (bb + m)) + 7)) + (bb * (2 * (bb + m) + 1) + 2)) * (4 * K + 1)
-      + 2 * ((2 ^ k - 1) * (r * (2 * (m * (m + 2) * (6 * K + 7)) + 3 * (4 * K + 1))))
-      + 2 * (k ^ 3 + 2 * k) + (2 * m + 1) * (1 + 2 ^ k * (2 * k + 1))"
 \end{lstlisting}
 
 The count is dominated by the $2(2^k-1)$ controlled Trotter products of the two phase estimations,
-each with $r$ steps of $O(m^2K)$ gates. Figure~\ref{fig:budget} shows how the three sources of error
-combine. The theorem is the end point of the stack: it starts from a sparse vector of real numbers and
+each with $r$ steps of $O(m^2K)$ gates. The error budget forces $r$ to grow with the clock size: the
+hypothesis $\epsilon+2(2^k-1)\eta\le Ct_0/\pi$ with $\eta=18(2+\mu)^2t_0^2/r$ needs
+$r=\Omega(2^k(2+\mu)^2t_0/C)$. The total is therefore $O\bigl(4^k(2+\mu)^2t_0\,m^2K/C\bigr)$ plus
+lower-order terms: polynomial in the number $m$ of system qubits, that is polylogarithmic in the
+dimension $2^m$, and quadratic in the clock size $2^k$. HHL's analysis charges each call of $e^{iAt_0}$
+the cost of a higher-order simulation and obtains a better dependence on the clock size; with
+first-order Trotter we pay a further factor of it. The oracle-free result is for this one family; for
+general sparse $A$ the oracles of Theorem~\ref{thm:sparse} remain. Figure~\ref{fig:budget} shows how the
+three sources of error combine. The theorem is the end point of the stack: it starts from a sparse vector of real numbers and
 ends with a list of two-qubit gates whose output is provably close to the normalised solution.
 
 \begin{figure}[t]

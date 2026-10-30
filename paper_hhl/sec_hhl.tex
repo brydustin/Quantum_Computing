@@ -51,12 +51,20 @@ QHLProver~\cite{liu2019qhl,liu2019afp}. Dimensions are hypotheses (\isa{A $\in$ 
 rather than types, which is how the physics literature treats them and lets the libraries share
 their definitions. QHLProver formalises Ying's quantum while-language~\cite{ying2011,ying2016book},
 \[
-S \;::=\; \mathbf{skip} \;\mid\; U \;\mid\; S_1;S_2 \;\mid\; \mathbf{measure}\ M\ [S_0,\dots,S_{m-1}]
+S \;::=\; \mathbf{skip} \;\mid\; U \;\mid\; S_1;S_2 \;\mid\; \mathbf{measure}\ M\ [S_0,\dots,S_{n-1}]
 \;\mid\; \mathbf{while}\ M\ \mathbf{do}\ S ,
 \]
-whose programs denote completely positive, trace-non-increasing maps on partial density operators;
-the trace lost by a loop is the probability that it does not terminate. A predicate is an operator
-$0\le P\le I$, and $\Tr(P\rho)$ is the probability that $P$ holds in the state~$\rho$. A triple
+whose programs denote completely positive, trace-non-increasing maps on partial density operators
+($\rho\ge0$, $\Tr\rho\le1$):
+\begin{gather*}
+\sem{U}\rho=U\rho U^\dagger,\qquad \sem{S_1;S_2}=\sem{S_2}\circ\sem{S_1},\\
+\sem{\mathbf{measure}\ M\ \bar S}\rho=\textstyle\sum_k\sem{S_k}(M_k\rho M_k^\dagger),\\
+\sem{\mathbf{while}\ M\ \mathbf{do}\ S}\rho=\textstyle\sum_{m\ge0}M_0\,\bigl((\sem S\circ\mathcal
+M_1)^m\rho\bigr)\,M_0^\dagger\quad\text{with}\quad\mathcal M_1(\rho)=M_1\rho M_1^\dagger .
+\end{gather*}
+The loop runs $S$ on outcome~$1$ and exits on outcome~$0$; the $m$-th summand is the part of the input
+that exits after $m$ rounds, and the trace that the sum loses is the probability that the loop runs
+forever. A predicate is an operator $0\le P\le I$, and $\Tr(P\rho)$ is the probability that $P$ holds in the state~$\rho$. A triple
 compares these probabilities before and after the program (Listing~\ref{lst:triples}).
 
 \begin{lstlisting}[float=tp,caption={Triples in QHLProver (in the locale \isa{state\_sig} of the registers, of
