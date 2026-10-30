@@ -27,5 +27,5 @@ agent wrote almost all of the 64,000 lines, directed by one mathematician.
 
 ## Notes
 
-- No public link: the GitHub repository is private, so the abstract offers the sources on request.
-  If the repository is made public before submitting, a link can be added.
+- Isabelle sources on Zenodo: https://doi.org/10.5281/zenodo.23812498 (cited in the title note).
+  The record must be published before submitting, or the link will not resolve.
