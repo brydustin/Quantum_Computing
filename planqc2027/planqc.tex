@@ -49,7 +49,7 @@ The Isabelle sources (Isabelle2026 with the AFP) are at \url{https://doi.org/10.
 HHL prepares a quantum state proportional to the solution of a linear system. Earlier mechanised
 proofs cover its exact case and treat its subroutines as black boxes. We verify HHL in Isabelle/HOL,
 from the spectral theorem through quantum Hoare logic down to circuits of one- and two-qubit gates.
-Four small rules make the logic work at algorithm scale: in the exact case the repeat-until-success
+Four small rules make the logic work at algorithm scale. In the exact case the repeat-until-success
 program is totally correct, and its number of rounds is geometric with mean $1/p$. Beyond the exact
 case, the paper's error analysis holds with explicit constants, and for the shifted cycle Laplacian the whole algorithm, oracles included, is a
 verified gate list with a closed-form count. Seven statements of the original paper are false. An AI
@@ -67,11 +67,11 @@ register; a rotation controlled by the clock moves the amplitude $C/\lambda$ int
 is uncomputed; and the ancilla is measured (Fig.~\ref{fig:hhl}). On outcome~$1$ the system register
 holds $A^{-1}b$ up to normalisation. This happens with probability $p=C^2\norm{A^{-1}b}^2$, so the run
 is repeated until it succeeds. From a programming-languages perspective, HHL is a probabilistic
-program: a loop guarded by a measurement, whose correctness is a statement about the distribution of
+program, a loop guarded by a measurement, whose correctness is a statement about the distribution of
 its outputs and of its running time.
 
 HHL is hard to verify along every axis at once. Its specification is probabilistic, and the number
-of rounds is random. Every step is approximate: eigenvalues are rarely representable in the clock,
+of rounds is random. Every step is approximate, since eigenvalues are rarely representable in the clock
 and $e^{iAt}$ has to be simulated. Its black boxes, the preparation of $\ket b$ and the controlled
 evolution, are where the cost is. The mechanised proofs we know of, in Coq~\cite{zhou2023coqq,wu2024local}, verify
 the exact case, in which every eigenvalue lies on the grid of the clock, and take the black boxes as given
@@ -113,8 +113,8 @@ table is one theorem, \isa{hhl\_steps}, proved by following a single eigenvector
 in an eigenbasis.}\label{fig:hhl}
 \end{figure}
 
-\paragraph{Contributions} Working in Isabelle/HOL, on QHLProver's formalisation~\cite{liu2019qhl}
-of Ying's quantum while-language~\cite{ying2011}, we verify:
+\paragraph{Contributions} We work in Isabelle/HOL, on QHLProver's formalisation~\cite{liu2019qhl}
+of Ying's quantum while-language~\cite{ying2011}, and contribute the following.
 \begin{enumerate}
 \item \emph{Total correctness.} The repeat-until-success program terminates with probability one in
   the normalised solution, exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p$, and runs
@@ -139,7 +139,7 @@ partial density operators. A predicate is an operator $0\le P\le I$, and $\hoare
 $\Tr(P\rho)\le\Tr(Q\,\sem S\rho)$ for every state $\rho$; so $\hoaret{p\cdot I}{S}{Q}$ says that $S$
 ends in $Q$ with probability at least $p$.
 
-Four rules carry all of our program proofs. Three are derived in Ying's system: \emph{initialisation},
+Four rules carry all of our program proofs. Three are derived in Ying's system, namely \emph{initialisation},
 \emph{gate lists}, and their composition for the shape \emph{initialise, apply gates, measure} shared by
 phase estimation, one run of HHL and all its inexact variants. With $W$ the product of the gates and
 $\psi=W\ket0$ the state they prepare,
@@ -151,15 +151,14 @@ $\psi=W\ket0$ the state they prepare,
 None is deep, but together they turn every probabilistic claim about HHL into one computation. For
 $Q=\ketbra tt$ with $\ket t$ in the success branch, the scalar is the fidelity $|\langle t|\psi\rangle|^2$,
 so every error bound of the analysis becomes a triple. The fourth rule, for \emph{resetting loops}, is
-proved from the semantics: QHLProver formalises partial correctness only, and Ying's
+proved from the semantics, because QHLProver formalises partial correctness only and Ying's
 total-correctness rule needs a bound function~\cite{ying2011}.
 
-\paragraph{Example: the HHL loop} The repeat-until-success program runs the eight gates
-$W=U_8\cdots U_1$ of Fig.~\ref{fig:hhl} until the ancilla reads~$1$:
+\paragraph{The HHL loop} The repeat-until-success program
 \[
-\mathit{hhl\_rus}\;=\;\mathit{init};\,W;\;\mathbf{while}\ \mathit{ancilla}=0\ \mathbf{do}\ (\mathit{init};\,W).
+\mathit{hhl\_rus}\;=\;\mathit{init};\,W;\;\mathbf{while}\ \mathit{ancilla}=0\ \mathbf{do}\ (\mathit{init};\,W)
 \]
-Because the body begins with $\mathit{init}$, it maps every input $\rho$ to $(\Tr\rho)\,\ketbra\psi\psi$ for
+runs the eight gates $W=U_8\cdots U_1$ of Fig.~\ref{fig:hhl} until the ancilla reads~$1$. Because the body begins with $\mathit{init}$, it maps every input $\rho$ to $(\Tr\rho)\,\ketbra\psi\psi$ for
 the one state $\psi=W\ket0=\ket0\otimes w$ of Fig.~\ref{fig:hhl}. A round succeeds with probability
 $p=\norm{P_1\psi}^2=C^2\norm{A^{-1}b}^2$ and then leaves $\ketbra tt$; otherwise the next round starts
 afresh. The loop is the geometric series $\sum_\ell(1-p)^\ell p\,\ketbra tt=\ketbra tt$, and one lemma about
@@ -171,11 +170,11 @@ ones~\cite{chen2026autoq}; here the loop body is a whole algorithm.
 Let $A$ be Hermitian with every eigenvalue on the grid $2\pi j/(Nt_0)$, $-N/2\le j<N/2$, $j\ne0$, of a clock
 with $N=2^k$ values, let $U_b\ket0=b$, and let $0<|C|\le2\pi/(Nt_0)$. Then
 $\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$ for $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$,
-the loop exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p$, and the expected number of
-rounds is $1/p$.
+the loop exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p$, and it runs $1/p$ rounds on
+average.
 \end{theorem}
 
-\begin{lstlisting}[float=b,caption={The theorem in Isabelle, with its context. Registers: clock, system, ancilla. \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible.},label={lst:rus}]
+\begin{lstlisting}[float=b,caption={The theorem in Isabelle, with its context. The registers are clock, system and ancilla. \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible.},label={lst:rus}]
 context
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n
       k :: nat and t0 C :: real
@@ -202,7 +201,7 @@ theorem hhl_rus_expected_rounds:
 \paragraph{The hypotheses are the specification} Listing~\ref{lst:rus}, with the definitions it
 names, is all that a reader has to trust. Measured as in Lean-QuantumAlg~\cite{zhang2026leanquantumalg}, that is 71 lines, 0.35\% of the 20{,}120 lines of our theories that it
 imports, with Isabelle/HOL and the AFP audited once (360 lines, 1.06\%, for the gate-level theorem). Writing it down exposed a restriction that informal accounts
-hide: the bound on $C$ comes from the program, not from the mathematics. The circuit applies
+hide. The bound on $C$ comes from the program, not from the mathematics. The circuit applies
 $R(C/\lambda_j)$ on every clock value, and a gate must be unitary. The bound costs nothing when the
 smallest modulus $\lambda_{\min}$ of an eigenvalue is the first grid point $\lambda_1=2\pi/(Nt_0)$, and
 otherwise lowers the best possible $p$ by the factor $(\lambda_1/\lambda_{\min})^2$. The programs of the paper's regime clamp the rotation instead, trading
@@ -211,7 +210,7 @@ exactness for fidelity triples.
 \section{From Black Boxes to Gates}\label{sec:gates}
 
 The programs above take $U_b$, the controlled evolution and the controlled rotation as unitaries. We
-refine them until every gate is \emph{elementary}: a one- or two-qubit unitary on adjacent wires.
+refine them until every gate is \emph{elementary}, that is, a one- or two-qubit unitary on adjacent wires.
 Every program theorem is stated for all gate lists with a given product, so refinement never reopens
 it. For $s$-sparse
 $A$ with entries bounded by $L$, whose graph is coloured into $2s-1$ matchings given by oracles, $r$
@@ -219,13 +218,13 @@ Trotter steps are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle que
 
 For the Laplacian of the cycle on $2^m$ vertices, shifted by $\mu\ge0$, the oracles themselves are
 compiled, as reversible arithmetic routed to adjacent wires, and so is the preparation of a sparse
-nonnegative $b$. One theorem collects the result: an explicit list of elementary gates on
+nonnegative $b$. One theorem collects the result. It gives an explicit list of elementary gates on
 $K=m+k+1+a$ qubits whose output, post-selected on the flag, is within $2\delta/(C\norm x)$ of $x/\norm x$,
 where $x$ solves the system for the right-hand side that the gates actually prepare. The error budget
 $\delta=\epsilon+2(2^k-1)\eta$ adds the error $\epsilon$ of phase estimation to an error $\eta$ for each
-simulated evolution, and the length is an explicit polynomial, $O(4^k(2+\mu)^2t_0\,m^2K/C)$: quadratic
-in the clock size, because first-order Trotter steps must shrink as the clock grows. Black boxes hide the cost: the
-algorithm and its programs take 19 theories, and the oracles of this one family 39 more. Like the
+simulated evolution, and the length is an explicit polynomial, $O(4^k(2+\mu)^2t_0\,m^2K/C)$, which is quadratic
+in the clock size because first-order Trotter steps must shrink as the clock grows. Black boxes hide the cost. The
+algorithm and its programs take 19 theories, and the oracles of this one family take 39 more. Like the
 end-to-end proof of
 Shor's algorithm in SQIR~\cite{peng2023shor}, the pipeline leaves nothing abstract; unlike verified
 oracle compilers~\cite{amy2017reverc,li2022vqo}, it compiles the oracles of one family only.
@@ -234,11 +233,11 @@ oracle compilers~\cite{amy2017reverc,li2022vqo}, it compiles the oracles of one 
 
 Proving the paper's statements as written, appendix included, refuted seven of them
 (Table~\ref{tab:errata}). The most instructive is Lemma~3, the Lipschitz estimate behind
-Theorem~1: at $\lambda=1/(2\kappa)$ and $\tilde\lambda=1/\kappa$ its left side is $\frac12$ and its right
-side $\pi^2/32$, for every $\kappa$. The constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp.
-None of the errors invalidates a main claim; most sit where a sketch compresses a computation: an
-endpoint value, an index, a number of rounds or samples. A reader checks the argument; a proof
-assistant checks the arithmetic, and the arithmetic is where the sketch was wrong.
+Theorem~1. At $\lambda=1/(2\kappa)$ and $\tilde\lambda=1/\kappa$ its left side is $\frac12$ and its right
+side is $\pi^2/32$, for every $\kappa$. The constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp.
+None of the errors invalidates a main claim. Most sit where a sketch compresses a computation, such as an
+endpoint value, an index, or a number of rounds or samples. A reader checks the argument; a proof
+assistant checks the arithmetic, where the sketch was wrong.
 
 \begin{table}[t]
 \caption{False statements of the HHL paper (arXiv:0811.3171v3~\cite{hhl2008arxiv}), each refuted in
@@ -251,7 +250,7 @@ Where & Claim & What is true\\
 \midrule
 Lemma 3 & constant $c=\pi^2/2$ & false for all $\kappa$; $\pi^2$ holds and is sharp\\
 Proof of Thm.~4 & $\frac2\delta\log(2n)/\log\log n$ rounds & too few; $\frac2\delta\ln(2n_0)$ suffice\\
-(A34) & dilation has $\kappa^{-1}I\le A\le I$ & impossible: its diagonal is zero\\
+(A34) & dilation has $\kappa^{-1}I\le A\le I$ & impossible, as its diagonal is zero\\
 (A37) & first qubit of $\vec y$ decides & top half of $\vec y$ is $0$; permuting the dilation fixes it\\
 Thm.~6(2) & precision $2^{-n-2}$ & cannot separate consecutive counts\\
 App.~A5 & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
@@ -262,15 +261,15 @@ App.~A5 & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
 
 \section{How It Was Built}\label{sec:agent}
 
-The development was written by Claude Code~\cite{claudecode} under the direction of the author, an
-experienced Isabelle user who wrote almost none of the proof text: the foundation, Paulsen's lecture
-course~\cite{paulsen2011notes}, in April and May 2026, and, after a pause of 147 days, HHL in eleven days
+Claude Code~\cite{claudecode} wrote the development under the direction of the author, an
+experienced Isabelle user who wrote almost none of the proof text. The foundation, Paulsen's lecture
+course~\cite{paulsen2011notes}, was written in April and May 2026, and, after a pause of 147 days, HHL in eleven days
 of October, with 258 human directions over 84 distinct hours and 9{,}835 agent tool calls. The agent
 wrote and repaired the proofs, and resumed after the pause from its own hand-off note.
 The human chose what to prove, checked that the statements meant what the paper meant, and asked, on
 28 October, to stop treating the black boxes as given. The kernel rejects wrong proofs, so the agent's
 failures lay elsewhere, as in a confident ``no oracles'' report from an audit that had skipped the gate
-theories, where two theorems depended on \texttt{skip\_proof}. Such failures are now caught by checks in the build. The kernel guarantees that the
+theories, where two theorems depended on \texttt{skip\_proof}. Checks in the build now catch such failures. The kernel guarantees that the
 theorems are true; the human guarantees that they are the right theorems.
 
 \section{Discussion and Future Work}
@@ -279,7 +278,7 @@ We would value the community's view on four questions. Should closed forms like 
 tools for quantum Hoare logic? Could verified gate counts like ours back the cost models of languages
 for quantum linear algebra, such as Cobble~\cite{yuan2026cobble}? What should
 ``verified to the gate'' mean once the gate set is finite, as in Clifford+T~\cite{ross2016gridsynth}, and the oracles general? And as agents write
-more of our proofs, which checks should a verified quantum library require? Next: clamping the rotation, higher-order product
+more of our proofs, which checks should a verified quantum library require? Our next steps are clamping the rotation, higher-order product
 formulas, and a second prover.
 
 \paragraph{Use of AI} AI agents (Claude Code with Claude Opus~4.7, Fable~5.1 and Opus~5.5; Codex with

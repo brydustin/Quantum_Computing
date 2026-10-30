@@ -19,7 +19,7 @@ Dustin Bryant, Independent researcher, USA
 HHL prepares a quantum state proportional to the solution of a linear system. Earlier mechanised
 proofs cover its exact case and treat its subroutines as black boxes. We verify HHL in Isabelle/HOL,
 from the spectral theorem through quantum Hoare logic down to circuits of one- and two-qubit gates.
-Four small rules make the logic work at algorithm scale: in the exact case the repeat-until-success
+Four small rules make the logic work at algorithm scale. In the exact case the repeat-until-success
 program is totally correct, and its number of rounds is geometric with mean 1/p. Beyond the exact
 case, the paper's error analysis holds with explicit constants, and for the shifted cycle Laplacian the whole algorithm, oracles included, is a
 verified gate list with a closed-form count. Seven statements of the original paper are false. An AI
