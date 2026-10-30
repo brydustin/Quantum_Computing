@@ -1588,3 +1588,19 @@ The per-item record is `NOTES_AUDIT.md`; this file keeps the observations behind
   Entries above keep the old names.  The AFP takes submissions for the current release only, so the
   tools now use Isabelle2026 and afp-2026-10-29; all sessions built there unchanged (44 min including
   the AFP ancestors).
+
+## Merged HHL sessions, cleanup, library bridges (2026-10-29)
+
+- HHL entry: sessions HHL_Gates and Quantum_Hoare_Logic_Channels folded into HHL_Algorithm (ROOT
+  `directories Channels Gates`), so they appear in the main PDF; extra sessions only
+  HHL_Explicit_Demo and Quantum_Search_Bound.  Auditing the gate theories for the first time found
+  Quickcheck's skip_proof equations on `rgate` (plugins switched off), 11 duplicate lemmas (removed),
+  `CNOT` constructor shadowing IMD's (now `CX`), and lemmas repeated from the notes:
+  `sum_split_mp`, `pair_index_lt`, `zero_mat_mult_vec`, `perm_conj` moved to Matrix_Lemmas.
+- Notes_Library_Bridge (after Day 13; notes now load QHLProver): the notes' hermitian, psd,
+  density_matrix, Tr, projection, unitary and Paulis equal QHLProver's / IMD's.  Plain `simp` with
+  carrier facts and `define n` looped there; dimension steps are explicit.
+- Session Kraus_Maps_Bridge (notes entry, parent Kraus_Maps): Kraus matrices as Unruh's Kraus
+  family; kf_of_mats_apply, kf_of_mats_trace_preserving, cp_kraus_map, cptp_trace_preserving_kraus_map.
+  Inherits cancel_type_definition.  Write `Matrix.mat` there (`mat` is a list-of-lists type) and
+  bracket `(W\<^sup>\<dagger>)` (dagger is ambiguous next to cblinfun_syntax).

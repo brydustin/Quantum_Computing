@@ -8,8 +8,8 @@ except the one noted for Quantum_Search_Bound.
 | Folder | Entry | Status | Sessions |
 |---|---|---|---|
 | `1_Hermitian_Functional_Calculus` | Hermitian_Functional_Calculus | submitted 2026-10-24, under review; builds unchanged with Isabelle2026 | 1 |
-| `2_Quantum_Computing_CP_Maps` | Quantum_Computing_CP_Maps | to submit | Matrix_Analysis_Prerequisites, Quantum_Computing_CP_Maps |
-| `3_HHL_Algorithm` | HHL_Algorithm | to submit (needs entries 1 and 2) | HHL_Algorithm, HHL_Gates, HHL_Explicit_Demo, Quantum_Hoare_Logic_Channels, Quantum_Search_Bound |
+| `2_Quantum_Computing_CP_Maps` | Quantum_Computing_CP_Maps | to submit | Matrix_Analysis_Prerequisites, Quantum_Computing_CP_Maps, Kraus_Maps_Bridge |
+| `3_HHL_Algorithm` | HHL_Algorithm | to submit (needs entries 1 and 2) | HHL_Algorithm, HHL_Explicit_Demo, Quantum_Search_Bound |
 
 Each folder holds the archive to upload (`<Entry>.tar.gz`), the same entry unpacked, the PDF of
 every session (the AFP's full variant, with proofs), and `SUBMISSION.md` with the fields of the

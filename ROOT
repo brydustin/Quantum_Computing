@@ -33,6 +33,7 @@ session Quantum_Computing_CP_Maps in "." = Matrix_Analysis_Prerequisites +
     Quantum_Fourier_Transform
     "HOL-Hahn_Banach"
     "HOL-Analysis"
+    QHLProver
   theories
     Day01_Inner_Product
     Day02_Trace_Projections
@@ -49,6 +50,7 @@ session Quantum_Computing_CP_Maps in "." = Matrix_Analysis_Prerequisites +
     Day11_Gates_No_Cloning
     Day12_Quantum_Parallelism
     Day13_Density_Matrices
+    Notes_Library_Bridge
     Day14_Pure_States
     Day15_Partial_Traces
     Day16_Block_Form
@@ -79,5 +81,20 @@ session Quantum_Computing_CP_Maps in "." = Matrix_Analysis_Prerequisites +
     Day34_Knill_Laflamme
     Quantum_Channels
     QC_Notes_Overview
+  document_files
+    "root.tex"
+
+session Kraus_Maps_Bridge in "Kraus_Maps_Bridge" = Kraus_Maps +
+  description "
+    The lectures' Kraus maps as Kraus maps of the AFP entry Kraus_Maps: a list of Kraus matrices
+    as a Kraus family, its Kraus map and trace preservation, and every completely positive map of
+    the lectures as a Kraus map (separate session: Kraus_Maps builds on Complex_Bounded_Operators)."
+  options [document = pdf, document_output = "output",
+           document_variants = "document=/proof,/ML",
+           quick_and_dirty = false, timeout = 3600]
+  sessions
+    Quantum_Computing_CP_Maps
+  theories
+    Kraus_Maps_Bridge
   document_files
     "root.tex"

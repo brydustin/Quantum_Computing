@@ -1,0 +1,34 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{isabelle,isabellesym}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=1in]{geometry}
+\usepackage{pdfsetup}
+
+\isabellestyle{it}
+\isadroptag{theory}
+\renewcommand{\isastyletext}{\normalsize\normalfont}
+\renewcommand{\isastyletxt}{\normalfont}
+
+\begin{document}
+
+\title{The Lectures' Kraus Maps as Kraus Maps of the AFP}
+\author{Dustin Bryant}
+\maketitle
+
+\begin{abstract}
+The AFP entry \emph{Kraus Maps} (Unruh) defines Kraus maps on trace-class operators of arbitrary
+Hilbert spaces; the formalised lectures on quantum computing and completely positive maps work
+with matrices.  For finite-dimensional spaces we identify the two: a list of Kraus matrices gives a
+Kraus family whose Kraus map is the lectures' $\rho\mapsto\sum_iW_i\rho W_i^*$, trace preserving
+exactly when $\sum_iW_i^*W_i=I$.  With Choi's theorem of the lectures it follows that every
+completely positive map of matrices, in Paulsen's definition, is a Kraus map of the AFP, and every
+completely positive trace-preserving map a trace-preserving one.
+\end{abstract}
+
+\parindent 0pt\parskip 0.5ex
+
+\input{Kraus_Maps_Bridge}
+
+\end{document}

@@ -14,6 +14,7 @@ theory Check_Notes
     Quantum_Computing_CP_Maps.Day11_Gates_No_Cloning
     Quantum_Computing_CP_Maps.Day12_Quantum_Parallelism
     Quantum_Computing_CP_Maps.Day13_Density_Matrices
+    Quantum_Computing_CP_Maps.Notes_Library_Bridge
     Quantum_Computing_CP_Maps.Day14_Pure_States
     Quantum_Computing_CP_Maps.Day15_Partial_Traces
     Quantum_Computing_CP_Maps.Day16_Block_Form
@@ -52,6 +53,6 @@ begin
 ML_file "../project_checks.ML"
 
 ML \<open>Project_Checks.run {name = "Notes", audit = ["Matrix_Analysis_Prerequisites", "Quantum_Computing_CP_Maps"], allow = [],
-  targets = ["Matrix_Analysis_Prerequisites", "Quantum_Computing_CP_Maps"], ignore = [], strict = true} \<^theory>\<close>
+  targets = ["Matrix_Analysis_Prerequisites", "Quantum_Computing_CP_Maps"], ignore = ["QHLProver"], strict = true} \<^theory>\<close>
 
 end
