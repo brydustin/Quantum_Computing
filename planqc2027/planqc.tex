@@ -72,7 +72,10 @@ and $e^{iAt}$ has to be simulated. Its black boxes, the preparation of $\ket b$ 
 evolution, are where the cost is. The mechanised proofs we know of, in Coq~\cite{zhou2023coqq,wu2024local}, verify
 the exact case, in which every eigenvalue lies on the grid of the clock, and take the black boxes as given
 unitaries; CoqQ proves partial correctness of the repeat-until-success program~\cite{zhou2023coqq},
-following the pen-and-paper proof of Zhou, Yu and Ying~\cite{zhou2019applied}.
+following the pen-and-paper proof of Zhou, Yu and Ying~\cite{zhou2019applied}. In Lean,
+QEDIA~\cite{ren2026qedia} formalises a quantum Hoare logic sound for partial and total correctness,
+with phase estimation, repeat-until-success circuits and Hamiltonian simulation among its case
+studies; HHL is not among them.
 
 \begin{figure}[t]
 \centering
@@ -184,7 +187,7 @@ theorem hhl_rus_expected_rounds:
 \end{lstlisting}
 
 \paragraph{The hypotheses are the specification} Listing~\ref{lst:rus}, with the definitions it
-names, is all that a reader has to trust: 71 lines, 0.35\% of the 20{,}120 lines of our theories that it
+names, is all that a reader has to trust. Measured as in Lean-QuantumAlg~\cite{zhang2026leanquantumalg}, that is 71 lines, 0.35\% of the 20{,}120 lines of our theories that it
 imports, with Isabelle/HOL and the AFP audited once (360 lines, 1.06\%, for the gate-level theorem). Writing it down exposed a restriction that informal accounts
 hide: the bound on $C$ comes from the program, not from the mathematics. The circuit applies
 $R(C/\lambda_j)$ on every clock value, and a gate must be unitary. The bound costs nothing when the
@@ -218,8 +221,8 @@ Approximating the gates over a finite set such as Clifford+T~\cite{ross2016grids
 
 \section{Seven Errata}\label{sec:errata}
 
-Mechanising the paper, appendix included, meant proving its statements as written, and seven of them
-are false (Table~\ref{tab:errata}). The most instructive is Lemma~3, the Lipschitz estimate behind
+Proving the paper's statements as written, appendix included, refuted seven of them
+(Table~\ref{tab:errata}). The most instructive is Lemma~3, the Lipschitz estimate behind
 Theorem~1: at $\lambda=1/(2\kappa)$ and $\tilde\lambda=1/\kappa$ its left side is $\frac12$ and its right
 side $\pi^2/32$, for every $\kappa$. The constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp.
 None of the errors invalidates a main claim; all sit where a sketch compresses a computation: an
@@ -270,9 +273,8 @@ kernel guarantees that the theorems are true. The human guarantees that they are
 
 \section{For Discussion}
 
-We would value the community's view on four questions. Should the closed forms for \emph{initialise,
-apply gates, measure} and for resetting loops be built into tools for quantum Hoare logic? Should
-approximate algorithms be specified by fidelity triples, by distances, or by distributions? What should
+We would value the community's view on three questions. Should the closed forms for \emph{initialise,
+apply gates, measure} and for resetting loops be built into tools for quantum Hoare logic? What should
 ``verified to the gate'' mean once the gate set is finite and the oracles general? And as agents write
 more of our proofs, which checks should a verified quantum library require? The development builds with Isabelle2026
 and the AFP; the sources and a full report are available from the author.
