@@ -1,0 +1,107 @@
+\section{Introduction}\label{sec:intro}
+
+Solving a linear system $Ax=b$ is the workhorse of scientific computing. Harrow, Hassidim and
+Lloyd~\cite{hhl2009} observed that a quantum computer can prepare the state $\ket x\propto A^{-1}\ket
+b$ for a Hermitian $A\in\C^{N\times N}$ in time polynomial in $\log N$, in the condition number
+$\kappa$ and in $1/\varepsilon$, provided that $A$ is sparse and $\ket b$ is easy to prepare. The
+algorithm, now called HHL, started the field of quantum linear algebra, and its fine print (state
+preparation, sparse access, the condition number, and an output that is a quantum state rather than
+a vector of numbers) has become part of how quantum speedups are judged~\cite{aaronson2015}.
+
+HHL is also a demanding target for formal verification. Its specification is probabilistic: it
+speaks about the outcome of a measurement and its probability, and the complete algorithm is a loop
+whose number of rounds is random. Every step is approximate: eigenvalues are not exactly
+representable in the phase-estimation register, $e^{iAt}$ has to be simulated, and the condition
+number enters through rotation angles. The original paper controls these errors in a dense appendix
+whose arguments are sketched rather than carried out, and earlier verifications, in
+Coq~\cite{zhou2023coqq,wu2024local}, treat the exact case, in which every eigenvalue sits on the
+phase-estimation grid, and take the controlled evolution, the state preparation and the rotation as
+given unitaries.
+
+\paragraph{What we verified.} This paper reports a verification of HHL in Isabelle/HOL that covers
+the whole algorithm (Fig.~\ref{fig:stack}). Its headline is a single Hoare triple: in the exact
+case, the repeat-until-success program
+\[
+\hoaret{I}{\ \mathit{hhl\_rus}\ }{\ketbra tt},\qquad \ket t=\ket0\otimes\frac{A^{-1}b}{\norm{A^{-1}b}}\otimes\ket1,
+\]
+terminates with probability one, and the system register then holds the normalised solution
+(Theorem~\ref{thm:rus}). Below it lie the functional calculus of Hermitian matrices, phase
+estimation and the error analysis of the original paper, including its Theorem~1 for arbitrary
+spectra; above it, the programs are refined until every gate is a one- or two-qubit unitary. For
+one concrete family, the shifted cycle Laplacian $L+\mu I$, the complete pipeline (state
+preparation, Hamiltonian simulation by a Trotter product, two phase estimations, the rotation and
+the flag) is a verified list of elementary gates of explicitly bounded, polynomial length
+(Theorem~\ref{thm:lap}). On the way, the formalisation refuted seven statements of the HHL paper,
+among them the constant of its Lemma~3 (Section~\ref{sec:errata}).
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\footnotesize,
+  lay/.style={draw, rounded corners=2pt, text width=6.3cm, align=left, inner sep=3pt},
+  when/.style={font=\scriptsize\itshape, text width=2.05cm, align=left, anchor=west},
+  size/.style={font=\scriptsize, text width=1.75cm, align=right, anchor=east},
+  arr/.style={-{Stealth[length=4pt]}, thick, gray!70}]
+\node[lay, fill=notes!14] (L0) {\textbf{Foundation.} Paulsen's lecture course: spectral theorem, positivity,
+  tensor products, measurement, channels, Choi--Kraus, error correction (\S\ref{sec:foundation})};
+\node[lay, fill=hfc!14, above=0.3cm of L0] (L1) {\textbf{Mathematics.} Functional calculus of Hermitian matrices,
+  Trotter and Suzuki product formulas, phase estimation (\S\ref{sec:math})};
+\node[lay, fill=hhl!7, above=0.3cm of L1] (L2) {\textbf{Algorithm.} Exact HHL as a matrix identity; inexact
+  phase estimation, filter functions, Theorem~1, run time (\S\ref{sec:algorithm})};
+\node[lay, fill=hhl!12, above=0.3cm of L2] (L3) {\textbf{Program.} Quantum Hoare logic: one run, repeat until
+  success, total correctness (\S\ref{sec:programs})};
+\node[lay, fill=gates!12, above=0.3cm of L3] (L4) {\textbf{Circuit.} One- and two-qubit gates; $\ket b$, $e^{iAt}$
+  and the rotation compiled; $L+\mu I$ with a gate count (\S\ref{sec:gates})};
+\foreach \a/\b in {L0/L1, L1/L2, L2/L3, L3/L4} \draw[arr] (\a.north) -- (\b.south);
+\node[when] at ($(L4.east)+(0.15,0)$) {Oct 21, 28--29};
+\node[when] at ($(L3.east)+(0.15,0)$) {Oct 21--22};
+\node[when] at ($(L2.east)+(0.15,0)$) {Oct 19--20};
+\node[when] at ($(L1.east)+(0.15,0)$) {Oct 19--24};
+\node[when] at ($(L0.east)+(0.15,0)$) {Apr 18--May 23,\\ Oct 18--20};
+\node[size] at ($(L4.west)+(-0.12,0)$) {46 theories\\ 12.9k lines};
+\node[size] at ($(L3.west)+(-0.12,0)$) {7 theories\\ 4.0k lines};
+\node[size] at ($(L2.west)+(-0.12,0)$) {13 theories\\ 10.2k lines};
+\node[size] at ($(L1.west)+(-0.12,0)$) {10 theories\\ 4.3k lines};
+\node[size] at ($(L0.west)+(-0.12,0)$) {52 theories\\ 32.3k lines};
+\end{tikzpicture}
+\caption{The verified stack. Each level is proved from the one below; left, the size of each level in
+the final development; right, the days on which it was built. The foundation was written in spring; everything above it was written after a pause of
+almost five months, in eleven days of October 2026.}\label{fig:stack}
+\end{figure}
+
+\paragraph{How it was built.} The second subject of this paper is the process. The development was
+written by an AI coding agent, Claude Code~\cite{claudecode}, under the direction of one
+mathematician, the author, who wrote almost no proof text himself. It was not built in one sprint. A
+formalisation of Vern Paulsen's lecture course on quantum computing and completely positive
+maps~\cite{paulsen2011notes} was written in April and May 2026; then nothing happened for 147 days;
+then, in eleven days of October, the course was completed and HHL was verified on top of it, from
+the first theorem about phase estimation to the gate-level pipeline. Following the example of Ilin's
+report on a Lean formalisation in plasma physics~\cite{ilin2026vml}, we report the timeline, the
+statistics recoverable from the repository and the agent's logs, the role of the human, the ways in
+which the agent failed, and what we learned. Our setting differs from his in three ways: the target
+is a published algorithm whose paper turned out to contain errors, the work is split by a long
+pause, and it builds on an earlier formalisation by the same team, which makes it a case study in
+how an agent-built library ages and is reused.
+
+\paragraph{Contributions.}
+\begin{itemize}
+\item A verification of HHL at four levels: mathematics, algorithm, program and circuit
+(Sections~\ref{sec:hhl}--\ref{sec:results}). It includes total correctness of the repeat-until-success
+loop, which needs a new proof rule for loops with a resetting body, the paper's error analysis with
+explicit constants, and a gate-level pipeline with a closed-form gate count.
+\item Errata to the HHL paper, each backed by a formal counterexample or a corrected theorem
+(Section~\ref{sec:errata}).
+\item A quantitative account of an agent-built formalisation that spans a long pause: 571 commits,
+34 active days, 238 prompts in October, almost ten thousand tool calls, and the evolution of the
+human's role from proving lemmas to judging statements, names and presentation
+(Section~\ref{sec:process}).
+\item Lessons on verifying quantum algorithms and on formalising with an agent, among them
+the failure modes we observed and the checks that caught them (Section~\ref{sec:lessons}).
+\end{itemize}
+
+All results are checked by Isabelle2026 with \texttt{quick\_and\_dirty = false}, so no
+\texttt{sorry} survives. An audit with \isa{Thm\_Deps.all\_oracles} over every theorem finds one
+oracle, the Types-To-Sets rule \isa{cancel\_type\_definition}, and only in two side sessions, which
+inherit it from imported AFP entries (Section~\ref{sec:trust}). The development is organised as
+three entries for the Archive of Formal Proofs (AFP). The sources, the documents and the audits are
+in the project repository;\footnote{\url{https://github.com/brydustin/Quantum_Computing}, commit
+\texttt{1e37476}.} each listing below links to its source line (\isalogo).

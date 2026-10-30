@@ -1,0 +1,97 @@
+\documentclass[runningheads]{llncs}
+\bibliographystyle{splncs04}
+
+% Latin Modern: Type 1 fonts throughout.
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\renewcommand{\ttdefault}{txtt}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{listings}
+\usepackage{isabelle-listings}
+\usepackage{tikz}
+\usetikzlibrary{quantikz2,arrows.meta,positioning,calc,fit,backgrounds,decorations.pathreplacing,shapes.geometric}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{dateplot,fillbetween}
+\usepackage{orcidlink}
+
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator{\Tr}{tr}
+% quantikz defines \ket, \bra and \braket; we use our own.
+\let\ket\relax\let\bra\relax\let\braket\relax\let\ketbra\relax
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle #1|}
+\newcommand{\ketbra}[2]{|#1\rangle\langle #2|}
+\newcommand{\braket}[2]{\langle #1|#2\rangle}
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\closeto}[1]{$\approx_{\mbox{\scriptsize\ttfamily #1}}$}
+\DeclareRobustCommand{\isa}[1]{\textsf{\def\_{\char95\allowbreak}#1}}
+\newcommand{\sem}[1]{\llbracket #1\rrbracket}
+\newcommand{\hoaret}[3]{\models_{t}\{#1\}\;#2\;\{#3\}}
+\newcommand{\hoarep}[3]{\models_{p}\{#1\}\;#2\;\{#3\}}
+\newcommand{\IMD}{Isabelle Marries Dirac}
+\newcommand{\prompt}[1]{\textsf{\small``#1''}}
+
+\definecolor{backcolour}{rgb}{0.96,0.96,0.93}
+\definecolor{notes}{RGB}{120,120,135}
+\definecolor{hfc}{RGB}{214,140,40}
+\definecolor{hhl}{RGB}{40,110,170}
+\definecolor{gates}{RGB}{30,150,120}
+\lstdefinestyle{isabellestyle}{
+    backgroundcolor=\color{backcolour},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=true, breaklines=true, columns=fullflexible,
+    captionpos=b, keepspaces=true,
+    numbers=none, showspaces=false, showstringspaces=false, tabsize=2,
+    aboveskip=6pt, belowskip=6pt,
+    xleftmargin=2pt, xrightmargin=2pt, framexleftmargin=2pt, framexrightmargin=2pt}
+\lstset{language={Isabelle}, style=isabellestyle, mathescape=true, escapeinside=~~}
+\renewcommand{\lstlistingname}{Listing}
+\AtBeginDocument{\renewcommand{\thelstlisting}{\arabic{lstlisting}}}
+\tikzset{slice/.style={thin, gray!80, dash pattern=on 2pt off 1.5pt, align=center}}
+
+% Links to the formal sources at a fixed commit (\isalink{path}{line}).
+\newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/1e37476}
+\newcommand{\isalink}[2]{\hfill\href{\repo/#1\#L#2}{\isalogo}}
+
+\setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{5pt plus 2pt minus 2pt}
+\raggedbottom
+
+\begin{document}
+
+\title{The HHL Algorithm, Verified}
+\subtitle{From Lecture Notes to Elementary Gates in Isabelle/HOL,\\ and How It Was Built}
+\author{Dustin Bryant\orcidlink{0000-0001-9876-3804}}
+\authorrunning{D. Bryant}
+\institute{Independent, USA \email{brydustin@gmail.com}}
+\maketitle
+
+\input{sec_abstract}
+\input{sec_intro}
+\input{sec_hhl}
+\input{sec_results}
+\input{sec_errata}
+\input{sec_process}
+\input{sec_lessons}
+\input{sec_related}
+\input{sec_conclusion}
+
+\bibliography{refs}
+
+\appendix
+\input{sec_appendix}
+
+\end{document}

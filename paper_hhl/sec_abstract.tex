@@ -1,0 +1,22 @@
+\begin{abstract}
+The algorithm of Harrow, Hassidim and Lloyd (HHL) prepares a quantum state proportional to the
+solution of a linear system $Ax=b$, and it is the prototype of quantum linear algebra. We present a
+machine-checked verification of HHL in Isabelle/HOL that spans the whole algorithm: from the
+spectral theorem, through phase estimation and the error analysis of the original paper, to programs
+of quantum Hoare logic and, finally, circuits of one- and two-qubit gates. For eigenvalues on the
+phase-estimation grid we prove total correctness of the repeat-until-success program, which
+terminates with probability one in the normalised solution after $1/p$ rounds on average. For
+arbitrary spectra we prove the paper's Theorem~1 with explicit constants, and for the shifted cycle
+Laplacian we compile the entire algorithm, including state preparation and Hamiltonian simulation, to
+elementary gates with an explicit polynomial gate count. Mechanising the paper's appendix refuted
+seven of its statements, among them the constant of its Lemma~3, which must be $\pi^2$ rather than
+$\pi^2/2$.
+
+The development has 130 theories and 64{,}000 lines. An AI coding agent wrote almost all of it,
+directed by one mathematician, during 34 active days spread over six months that include a pause
+of almost five months. HHL itself, on top of a formalisation of a lecture course on quantum
+computing, took eleven days. We report how the work was organised, what the human did and what the
+agent did, how the agent failed, and what we learned about HHL and about formalising with an agent.
+\keywords{Isabelle/HOL \and HHL algorithm \and Quantum Hoare logic \and Phase estimation \and
+AI-assisted formalisation \and Formal verification}
+\end{abstract}

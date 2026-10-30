@@ -1,0 +1,29 @@
+\section{Method}\label{app:method}
+
+\paragraph{Sources.} All measurements refer to commit \texttt{1e37476} of the repository (29~October
+2026, 20:45 local time, UTC$-5$). The repository gives commits, dates and co-author lines. The agent's
+logs are the two Claude Code session transcripts of October (18--24 and 26--30~October), cut at the time
+of that commit, and the Codex CLI rollout files whose working directory is the project. Claude Code
+transcripts of the spring were not retained.
+
+\paragraph{Size.} For each day with a commit we take the last commit of the day and count the theory
+files that are \emph{built}: those listed in a session file, closed under imports. Lines are newline
+counts plus one. A \emph{result} is a top-level \textsf{lemma}, \textsf{theorem}, \textsf{corollary} or
+\textsf{proposition} outside \textsf{text} blocks. The development is divided into lectures (including the
+prerequisites and the bridges), functional calculus, and HHL (including its side sessions); the levels of
+Fig.~\ref{fig:stack} divide HHL's theories as in the project's own size table.
+
+\paragraph{Human directions.} A direction is a message typed by the human: either a plain prompt, or the
+goal of a \texttt{/loop} command typed by the human (recorded with an \texttt{origin} field, unlike the
+loop's self-scheduled continuations, which carry a \texttt{scheduledTaskId}). Slash commands without a
+goal (\texttt{/compact}, \texttt{/model}, \texttt{/effort}), tool results, notifications and
+continuation summaries are excluded. Each of the 258 directions was assigned one kind by reading it:
+\emph{direction} (scope or a task), \emph{checking a claim}, \emph{taste} (names, organisation,
+presentation), \emph{question} (to understand the formal text or the plan), \emph{operating tools},
+\emph{status}, \emph{correction} of a mistake of the agent, and \emph{delegation}. The coding is ours
+and is one reading among several possible ones; the counts should be read as proportions.
+
+\paragraph{Listings.} Every listing that is not marked as abridged was generated from the theory
+sources by a script that extracts the statement and converts Isabelle symbols, and a second script checks
+each listing against the sources after normalising white space. The scripts and the data behind the
+figures are in the directory \texttt{paper\_hhl} of the repository.

@@ -1,0 +1,202 @@
+\section{How It Was Built}\label{sec:process}
+
+\subsection{People, Agents and Tools}
+
+One person, the author, directed the work. He is a mathematician who reads Isabelle fluently and
+inspects the theories in jEdit and the generated documents, but he wrote almost none of the proof text:
+apart from a few hand edits in April and one proof step in October, every line was written by an
+agent. In the spring the main agent was Claude Code~\cite{claudecode} with Claude Opus~4.7 (one
+million tokens of context); 368 of the 374 spring commits carry its co-author line. OpenAI's Codex
+CLI~\cite{codexcli} with GPT-5.4 was also used for focused, lemma-sized tasks in 21 sessions between
+16 April and 7 May. In October the agent was Claude Code with Claude Opus~5.5, and with Claude Fable~5.1
+on the first day and for parts of five later ones; all 197 October commits carry one of their
+co-author lines.
+
+The agent works through a shell. Almost every action is a command (9{,}202 of 9{,}835 tool calls in
+October): it builds Isabelle sessions, reads the errors, edits theory files with small scripts, checks
+single commands with a command-line toolkit that also exposes Sledgehammer, commits and pushes. Long
+tasks run as \emph{loops}: the human states a goal once (\texttt{/loop go ahead with the HHL work}),
+and the agent schedules its own continuations, 277 times in October, while builds run in the
+background under monitors. Between sessions, the only memory is what is written down: the
+repository's instructions file, project documents such as a diary and an audit, and a directory of
+short notes that the agent maintains about the user and the project. The development used Isabelle2025-2
+until its last day, when it was ported to Isabelle2026 for submission without changing a proof.
+
+\subsection{Timeline}
+
+Figure~\ref{fig:timeline} shows the size of the development over time and Table~\ref{tab:phases}
+divides it into phases. Three features stand out. First, the work is concentrated: 571 commits on 34
+days, and 147 days without a single commit between 23~May and 18~October. Second, HHL was fast once
+started: from the first theorem about phase estimation on 19~October to 22{,}000 lines covering exact
+HHL, the paper's error analysis, the programs and their gate-level refinements took three days.
+Third, the development shrank while it improved: when the lectures were split into one theory
+per lecture and their redundancies removed (26--28~October), the foundation went from 47.9k to 31.6k
+lines while its count of results changed by five percent.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\pgfplotsset{every axis/.append style={font=\scriptsize, scale only axis, height=2.9cm,
+    axis x line*=bottom, axis y line*=left, ymin=0, ymax=98, tick align=outside,
+    date coordinates in=x, xticklabel style={rotate=0}, every axis plot/.append style={line width=0.4pt}},
+  area/.style={stack plots=y, area style}}
+\begin{axis}[name=spring, width=3.85cm, xmin=2026-04-15, xmax=2026-05-27,
+    xtick={2026-04-18,2026-05-01,2026-05-15}, xticklabel=\month/\day, ytick={0,20,40,60,80}, ylabel={thousand lines}, ylabel style={font=\scriptsize},
+    stack plots=y, area style]
+\addplot[fill=notes!45, draw=notes] table[x=date, y=notes, col sep=comma]{data/growth_spring.csv} \closedcycle;
+\end{axis}
+\begin{axis}[name=oct, at={(spring.east)}, anchor=west, xshift=1.15cm, width=5.9cm, xmin=2026-10-17, xmax=2026-10-30,
+    xtick={2026-10-18,2026-10-20,2026-10-22,2026-10-24,2026-10-26,2026-10-28}, xticklabel=\month/\day,
+    yticklabels={}, stack plots=y, area style, legend style={font=\scriptsize, at={(0.5,1.0)}, anchor=north, draw=none, fill=none}, legend columns=3,
+    legend cell align=left, ytick={0,20,40,60,80}]
+\addplot[fill=notes!45, draw=notes] table[x=date, y=notes, col sep=comma]{data/growth_october.csv} \closedcycle;
+\addplot[fill=hfc!55, draw=hfc] table[x=date, y=hfc, col sep=comma]{data/growth_october.csv} \closedcycle;
+\addplot[fill=hhl!55, draw=hhl] table[x=date, y=hhl, col sep=comma]{data/growth_october.csv} \closedcycle;
+\legend{lectures, functional calculus, HHL}
+\end{axis}
+\draw[gray, decorate, decoration={zigzag, amplitude=1.2pt, segment length=3pt}] ($(spring.south east)+(0.12,0)$) -- ($(oct.south west)+(-0.12,0)$);
+\node[font=\scriptsize\itshape, gray, align=center] at ($(spring.east)!0.5!(oct.west)+(0,0.25)$) {147\\days};
+\begin{axis}[name=springc, at={(spring.south)}, anchor=north, yshift=-0.55cm, width=3.85cm, height=1.05cm, scale only axis,
+    font=\scriptsize, axis x line*=bottom, axis y line*=left, xmin=2026-04-15, xmax=2026-05-27, ymin=0, ymax=50,
+    date coordinates in=x, xtick=\empty, ytick={0,40}, ylabel={commits}, ylabel style={font=\scriptsize}, ybar, bar width=1.1pt]
+\addplot[fill=gray!70, draw=none] table[x=date, y=commits, col sep=comma]{data/growth_spring.csv};
+\end{axis}
+\begin{axis}[name=octc, at={(oct.south)}, anchor=north, yshift=-0.55cm, width=5.9cm, height=1.05cm, scale only axis,
+    font=\scriptsize, axis x line*=bottom, axis y line*=left, xmin=2026-10-17, xmax=2026-10-30, ymin=0, ymax=50,
+    date coordinates in=x, xtick=\empty, ytick={0,40}, yticklabels={}, ybar, bar width=3.2pt]
+\addplot[fill=gray!70, draw=none] table[x=date, y=commits, col sep=comma]{data/growth_october.csv};
+\end{axis}
+\end{tikzpicture}
+\caption{Size of the development (theories built by the session files, at the last commit of each day)
+and commits per day. Spring: the lectures. October: completing the lectures, then HHL on top of them.
+The drops on 27--28~October are the reorganisation of the lectures. Until 21~October the repository
+also held an unbuilt single-file copy of the lectures (up to 24.9k lines), which is not counted.}\label{fig:timeline}
+\end{figure}
+
+\begin{table}[t]
+\caption{Phases of the work. Commits and lines as in Fig.~\ref{fig:timeline}.}\label{tab:phases}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\begin{tabular}{@{}L{1.65cm}r L{8.55cm}@{}}
+\toprule
+Dates & Commits & What happened\\
+\midrule
+Apr 18--26 & 101 & A skeleton of the first lectures with 110 \texttt{sorry} is filled in, lemma by lemma; Lectures 1--11.\\
+May 5--23 & 273 & Lectures 12--34: channels, Choi, Arveson, separability, error correction; matrices of fixed
+dimension as a Euclidean space; a hand-off note for the last open theorem (Choi's Theorem~3).\\
+\multicolumn{3}{@{}l}{\textit{May 24 -- October 17: no work on the project (147 days).}}\\
+Oct 18 & 4 & Resumption: the open theorem closed in the first hour; a survey of the AFP; an audit of every
+lecture against the notes.\\
+Oct 19--20 & 43 & The audit's gaps closed. HHL begins: functional calculus, phase estimation, exact HHL (Oct 19);
+the error analysis, filter functions, run time, the reduction behind the optimality theorems (Oct 20).\\
+Oct 21--22 & 34 & Programs and their termination, elementary gates, sparse simulation (Oct 21); Suzuki's
+formulas, the executable demo, programs as channels, the paper rewritten around HHL (Oct 22).\\
+Oct 23--24 & 33 & Packaging as three AFP entries; the functional calculus polished for readability and submitted
+(Oct 24).\\
+Oct 26--27 & 25 & The lectures reorganised into one theory per lecture; a prerequisites session split off; an
+audit loop for elegance begins.\\
+Oct 28--29 & 58 & The audit loop finishes (the foundation has shrunk by a third); the black boxes compiled to
+elementary gates in scratch sessions, then merged; bridges to QHLProver and \emph{Kraus Maps}; port to
+Isabelle2026; packages built from the exported archives.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Statistics}
+
+Table~\ref{tab:stats} collects what can be measured. The repository gives the size and the commits
+for the whole period. The agent's logs give the rest, but only for October: the spring logs of
+Claude Code were not retained, and the Codex logs of the spring cover only its side sessions.
+
+\begin{table}[t]
+\caption{The development in numbers. Results are top-level \textsf{lemma}, \textsf{theorem},
+\textsf{corollary} and \textsf{proposition} commands; human directions exclude slash commands
+(\texttt{/compact}, \texttt{/model}, \texttt{/effort}: 38 in October).}\label{tab:stats}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Spring (Apr 18--May 23) & October (18--29)\\
+\midrule
+Active days (days with a commit) & 23 & 11\\
+Commits & 374 & 197\\
+Claude model (commit co-author lines) & Opus 4.7 & Fable 5.1, Opus 5.5\\
+Lines of theory text built at the end & 35.2k & 64.0k\\
+Results at the end & 797 & 3{,}096\\
+Human directions to the main agent & not retained & 258\\
+\quad of which goals for self-paced loops & & 39\\
+Agent replies / tool calls / shell commands & & 9{,}963 / 9{,}835 / 9{,}202\\
+Output tokens / cached input tokens read & & 14.5M / 4.55G\\
+Context compactions / self-scheduled continuations & & 37 / 277\\
+Side sessions with Codex (GPT-5.4) / their prompts & 21 / 111 & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The final development has three AFP entries. The functional calculus has 6 theories, 3{,}169 lines
+and 201 results; the lectures, with their prerequisites and the bridge to \emph{Kraus Maps}, have 52
+theories, 32{,}288 lines and 1{,}453 results; HHL has 72 theories, 28{,}553 lines and 1{,}442 results.
+Each session builds in under three minutes on a 12-core desktop once its AFP ancestors are built.
+
+\subsection{What the Human Did}
+
+All 258 human directions of October were coded by hand into eight kinds (Fig.~\ref{fig:directions}).
+The largest group, \emph{direction}, sets scope: \prompt{Let's get started on `Part VI: Quantum
+Algorithms'}, \prompt{yes add the sparse case too}, \prompt{Is there a way to connect to Unruh's Kraus
+Maps entry}. The second largest is about \emph{taste}: names, organisation and presentation, from
+\prompt{I think the name choice is terrible} to \prompt{Do you think the way it is organized makes
+sense? Is it beautiful?}. A tenth of the directions \emph{check claims}: \prompt{did we prove that
+the matrix g(A) exists and is unique?}, \prompt{Did we do HHL end-to-end including prep, QPE, HHL,
+then inverse QPE?}, \prompt{are there any oracle calls?}. Questions asked to understand the formal text
+(\prompt{are unitary matrices square?}) and requests to operate the tools (open a theory in jEdit, a
+PDF, stop a build that eats memory) make up a third. Only nine directions \emph{correct} the agent,
+among them \prompt{why the heck did you call it that? I never wanted `Sylvester' in the title} and
+\prompt{you opened the ROOT file, not the capstone}.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar stacked, bar width=7pt, width=11.4cm, height=4.1cm, font=\scriptsize,
+    symbolic x coords={2026-10-18,2026-10-19,2026-10-20,2026-10-21,2026-10-22,2026-10-23,2026-10-24,2026-10-26,2026-10-27,2026-10-28,2026-10-29},
+    xtick=data, xticklabels={18,19,20,21,22,23,24,26,27,28,29}, xlabel={October}, ylabel={directions},
+    ymin=0, ymax=65, axis x line*=bottom, axis y line*=left, enlarge x limits=0.06,
+    legend style={font=\scriptsize, at={(0.5,-0.42)}, anchor=north, draw=none}, legend columns=4, legend cell align=left]
+\addplot[fill=hhl!80, draw=none] table[x=date, y=D, col sep=comma]{data/directives.csv}; \addlegendentry{direction (69)}
+\addplot[fill=gates!70, draw=none] table[x=date, y=V, col sep=comma]{data/directives.csv}; \addlegendentry{checking a claim (21)}
+\addplot[fill=hfc!80, draw=none] table[x=date, y=A, col sep=comma]{data/directives.csv}; \addlegendentry{taste (53)}
+\addplot[fill=violet!45, draw=none] table[x=date, y=Q, col sep=comma]{data/directives.csv}; \addlegendentry{question (37)}
+\addplot[fill=gray!45, draw=none] table[x=date, y=O, col sep=comma]{data/directives.csv}; \addlegendentry{operating tools (37)}
+\addplot[fill=gray!20, draw=none] table[x=date, y=S, col sep=comma]{data/directives.csv}; \addlegendentry{status (29)}
+\addplot[fill=red!65, draw=none] table[x=date, y=C, col sep=comma]{data/directives.csv}; \addlegendentry{correction (9)}
+\addplot[fill=black!80, draw=none] table[x=date, y=T, col sep=comma]{data/directives.csv}; \addlegendentry{delegation (3)}
+\end{axis}
+\end{tikzpicture}
+\caption{The 258 human directions of October by day and kind, coded by hand. \emph{Taste} covers names,
+organisation and presentation; \emph{status} includes ``keep going''; \emph{delegation} is ``do what you think is
+best''. Early days are mostly direction; once HHL was in place, taste, questions and status requests dominate. The peaks on 28--29
+October are the preparation for submission.}\label{fig:directions}
+\end{figure}
+
+The directions changed character over the project. In April, prompts named lemmas: \prompt{Focus on
+proving pd\_iff\_spanning}, \prompt{please fix the proof of inner\_prod\_adjoint\_swap and
+ONLY of that lemma}, and the author edited proofs himself (\prompt{stop.\ I'm making my own edit}). In
+October they named goals and judged results. The most consequential directions were short and came
+from outside the formal text: to stop treating the black boxes of HHL as given
+(\prompt{show that the `black boxes' CAN be built} from a small number of basic gates, 28~October), to give the paper a theme, and to submit the general
+functional calculus as its own entry. Delegation was explicit and rare (\prompt{Do what you think is
+most appropriate for `Decision needed'. I trust you}), and the human retained the decisions that
+others would see: titles, entry names, and what to submit.
+
+\subsection{Resuming After the Pause}
+
+The spring ended with one theorem open, Choi's Theorem~3, and a hand-off note for it, written on 16--17
+May for ``a dedicated session'' and opening with \emph{Read it cold; everything you need to start is
+here.} The next session started 147 days later, at 9:32 on 18~October, with a different model and the
+direction \prompt{please close the remain[ing] gap on the Vern Paulsen quantum computing project
+\dots\ I'm leaving for the day so please work autonomously on this.} At 10:20 the two remaining lemmas
+were proved and the lectures had no \texttt{sorry} left. The same day the agent surveyed the AFP for
+existing functional analysis and wrote a lecture-by-lecture audit of the formalisation against the
+notes, which became the work list for the next two days. Nothing about the pause had to be
+reconstructed from memory: the repository, its instructions file and the hand-off note carried the
+state, and the agent read them as a newcomer would.

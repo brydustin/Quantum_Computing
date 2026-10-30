@@ -1,0 +1,87 @@
+\section{What the Formalisation Found}\label{sec:errata}
+
+The HHL paper is a short letter with a long appendix, and its main claims survive mechanisation; they
+are stated with $O(\cdot)$ and hold with other constants. Its details do not all survive.
+Table~\ref{tab:errata} lists the statements of the arXiv version~\cite{hhl2008arxiv} that are false as
+written, each with the correction and the formal theorem that refutes the claim or proves the
+correction. Most sit in the appendix on optimality, which reduces quantum circuits to matrix
+inversion; each optimality theorem is formalised up to the complexity-theoretic fact it cites.
+
+The most instructive is Lemma~3, the Lipschitz estimate behind the paper's Theorem~1. The filter
+functions mark an eigenvalue $\lambda$ as well-conditioned ($f$), ill-conditioned ($g$) or in between:
+$f(\lambda)=1/(2\kappa\lambda)$ and $g(\lambda)=0$ for $\lambda\ge1/\kappa$, $f=0$ and $g=\frac12$ below
+$1/(2\kappa)$, and on $[\frac1{2\kappa},\frac1\kappa)$ they turn through a quarter circle of radius
+$\frac12$. Lemma~3 claims
+\[
+|f(\lambda)-f(\tilde\lambda)|^2+|g(\lambda)-g(\tilde\lambda)|^2\;\le\;c\,\kappa^2(\lambda-\tilde\lambda)^2\bigl(|f(\lambda)|^2+|g(\lambda)|^2\bigr)
+\]
+with $c=\pi^2/2$. At $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$ the left side is $\frac14+\frac14=\frac12$,
+while $\kappa^2(\lambda-\tilde\lambda)^2=\frac14$ and $f(\lambda)^2+g(\lambda)^2=\frac14$, so the right side is
+$c/16=\pi^2/32<\frac12$, for every~$\kappa$. The constant $c=\pi^2$
+holds, and no smaller constant does (Listing~\ref{lst:lemma3}). The paper uses the lemma only inside an
+$O(\kappa/t)$ bound, so its Theorem~1 is unaffected; with the corrected constant we prove it with
+the explicit constant $12\pi^2\sqrt{4+2\pi^2}$.
+
+%%LST Algorithms/HHL_Filter.thy lemma3_paper_constant lemma3 lemma3_sharp
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Lemma~3 of the HHL paper: the counterexample to the paper's constant, the corrected constant, and its sharpness (for fixed \isa{$\kappa$ > 0}; \isa{filt\_f} and \isa{filt\_g} are the filter functions)},label={lst:lemma3}]
+theorem lemma3_paper_constant:
+  "pi~$^{2}$~ / 2 * ~$\kappa^{2}$~ * (1 / (2 * ~$\kappa$~) - 1 /
+      ~$\kappa$~)~$^{2}$~ * ((filt_f ~$\kappa$~ (1 / (2 *
+      ~$\kappa$~)))~$^{2}$~ + (filt_g ~$\kappa$~ (1 / (2 *
+      ~$\kappa$~)))~$^{2}$~)
+   < (filt_f ~$\kappa$~ (1 / (2 * ~$\kappa$~)) - filt_f ~$\kappa$~ (1 /
+       ~$\kappa$~))~$^{2}$~ + (filt_g ~$\kappa$~ (1 / (2 * ~$\kappa$~)) -
+       filt_g ~$\kappa$~ (1 / ~$\kappa$~))~$^{2}$~"
+theorem lemma3:
+  "(filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ + (filt_g ~$\kappa$~
+      a - filt_g ~$\kappa$~ b)~$^{2}$~
+     ~$\le$~ pi~$^{2}$~ * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f
+         ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)"
+theorem lemma3_sharp:
+  assumes c: "c < pi~$^{2}$~"
+  shows "~$\exists$~a b. c * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f
+      ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)
+                < (filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ +
+                    (filt_g ~$\kappa$~ a - filt_g ~$\kappa$~ b)~$^{2}$~"
+\end{lstlisting}
+\end{minipage}
+
+\begin{table}[t]
+\caption{Errata in the HHL paper (arXiv:0811.3171v3). ``Formal'' names the theorem that refutes the claim
+or proves the correction.}\label{tab:errata}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\begin{tabular}{@{}L{1.3cm}L{2.6cm}L{4.5cm}L{2.75cm}@{}}
+\toprule
+Where & Claim & Correction & Formal\\
+\midrule
+Lemma 3 & $c=\pi^2/2$ & false for every $\kappa$; $c=\pi^2$ holds and is sharp & \isa{lemma3\_paper\_constant}, \isa{lemma3}, \isa{lemma3\_sharp}\\
+Proof of Thm.~4 & $m=\frac2\delta\log(2n)/\log\log n$ rounds suffice & too few: for $n_0=2^{64}$, $\delta=\frac12$ the bound on $T_m$ still exceeds $n_0$; $m\ge\frac2\delta\ln(2n_0)$ suffices & \isa{paper\_rounds\_insufficient}, \isa{corrected\_rounds}\\
+(A34) & the dilation satisfies $\kappa^{-1}I\le A\le I$ & impossible: its diagonal is zero & \isa{herm\_embed\_diag}\\
+(A37) & the first qubit of $\vec y$ decides acceptance & the top half of $\vec y$ is always $0$; permuting the dilation fixes it & \isa{first\_half\_perm}, \isa{red\_first\_qubit}\\
+Thm.~6(2) & precision $\varepsilon=2^{-n-2}$ & cannot separate counts $C$ and $C+1$ once the clock factor ($\le\frac14$) is included & \isa{paper\_precision\_insufficient}\\
+App.~A5 & $1/(3\varepsilon^2)$ samples & too few: $\varepsilon=\frac14$, $p=\frac12$ and $6$ samples fail with probability $\frac{11}{16}$; $3/\varepsilon^2$ suffice & \isa{paper\_sample\_count\_too\_small}, \isa{estimate\_expectation}\\
+\S IV & preconditioned system $(AB)c=Bb$ & neither left nor right preconditioning: in a $2\times2$ example its solution gives no solution of $Ax=b$ & \isa{paper\_precondition\_wrong}\\
+App.~A5 & undo gates $U^\dagger_{3T+1-t}$ & must be $U^\dagger_{T+1-t}$ & construction \isa{red\_U}, \isa{red\_inverse}\\
+App.~A5 & $\kappa\le2T$ & we prove $\kappa\le2T+1$ & \isa{red\_A\_bounds}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The first seven rows are refuted by explicit counterexamples; the last two are corrections built into
+the formal construction. Three observations generalise. First, none of the errors invalidates a main
+claim. Second, the errors sit where a proof sketch compresses a computation: an evaluation of
+$f^2+g^2$ at an endpoint, an index, a number of rounds, a count of samples. A reader checks the
+argument; a proof assistant checks the arithmetic, and the arithmetic is where the sketch was wrong.
+Third, a formal proof settles disagreements between readers. A recent re-derivation of the error
+analysis~\cite{liphillips2024} remarks that the factor $\pi/2$ of the paper's Lemma~2 ``is not correct
+for certain values of~$\kappa$''; with the paper's choice $\kappa'=2\kappa$, our theorem
+\isa{hflag\_lipschitz} shows that $\lambda\mapsto\ket{h(\lambda)}$ is $\frac\pi2\kappa$-Lipschitz for
+every $\kappa>0$, so Lemma~2 is correct as stated.
+
+All of these were found during mechanisation, in the course of proving the paper's statements rather
+than by a separate review. Every row of the table has a formal witness. One further doubt we could only argue
+informally: the paper's bound $\kappa\le2T$ appears to fail when $3T$ is even, where
+$\kappa=\coth\frac1{2T}>2T$. There we prove the weaker $\kappa\le2T+1$ and do not count the claim as refuted.
