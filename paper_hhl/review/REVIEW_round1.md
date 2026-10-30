@@ -130,7 +130,9 @@ All of this is fixable.
   consequence of the wp calculus, and the "three ideas" are introduced as standard facts that keep
   the proofs short ("None of them is new in isolation").
 - **M2.** A new paragraph, *A restriction*, follows Theorem 8. It states that `Cb` ranges over every
-  clock value, so C ≤ 2π/(N t₀), and that 1/p then grows like N². It explains why: the exact circuit
+  clock value, so C ≤ λ₁ = 2π/(N t₀). We correct the reviewer on its cost: it is the factor
+  (λ₁/λ_min)² in p, which is 1 when the smallest eigenvalue sits on the first grid point (then
+  p ≥ 1/κ²); 1/p grows like N² only when the clock is refined for a fixed A and t₀. It explains why: the exact circuit
   applies the rotation on every clock value. It notes that the matrix-level theorem holds for every C
   and that the circuits of the paper's regime clamp the rotation instead. The introduction states the
   exact-case caveat, and the restriction is listed among the limitations.

@@ -229,9 +229,11 @@ whenever it succeeds the state is exactly $\ket t$.\isalink{Algorithms/HHL_Progr
 \paragraph{A restriction.} The hypothesis $|C/\lambda_j|\le1$ ranges over \emph{all} clock values, not only
 over the eigenvalues, because the program applies the rotation $R(C/\lambda_j)$ on every branch of the
 clock and a gate of the logic must be unitary. Since the smallest positive grid value is
-$\lambda_1=2\pi/(Nt_0)$, it forces $C\le2\pi/(Nt_0)$, so in the exact programs the success probability
-$p=C^2\norm{A^{-1}b}^2$ can be much smaller than the $1/\kappa^2$ that $C=\lambda_{\min}$ would give, and the
-expected number of rounds $1/p$ grows like $N^2$. The matrix-level Theorem~\ref{thm:hhl} holds for every
+$\lambda_1=2\pi/(Nt_0)$, it forces $C\le\lambda_1$. This costs nothing when the smallest eigenvalue in
+absolute value is $\lambda_1$ itself: then $C=\lambda_{\min}$ is allowed and the success probability
+$p=C^2\norm{A^{-1}b}^2$ is at least $1/\kappa^2$, as in the paper. Otherwise $p$ loses the factor
+$(\lambda_1/\lambda_{\min})^2$; in particular, refining the clock for a fixed $A$ and $t_0$ makes the
+expected number of rounds $1/p$ grow like $N^2$. The matrix-level Theorem~\ref{thm:hhl} holds for every
 real $C$, and the circuits of the paper's regime (Section~\ref{sec:approx-programs}) clamp the rotation
 to $[-1,1]$ instead, which removes the restriction; the cost is that those theorems are fidelity bounds
 rather than exact statements.
