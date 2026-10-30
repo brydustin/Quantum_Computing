@@ -8,7 +8,7 @@
 
 ## Title
 
-HHL, Verified to the Gate with Quantum Hoare Logic in Isabelle/HOL
+Gate-Level Verification of HHL with Quantum Hoare Logic in Isabelle/HOL
 
 ## Author
 
