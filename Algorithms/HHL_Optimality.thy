@@ -199,6 +199,26 @@ lemma herm_embed_diag:
   shows "herm_embed A $$ (i, i) = 0"
   using A i by (simp add: herm_embed_def four_block_mat_def)
 
+lemma herm_embed_not_lowner_ge:
+  fixes c :: real
+  assumes A: "A \<in> carrier_mat M N" and MN: "0 < M + N" and c: "0 < c"
+  shows "\<not> (of_real c \<cdot>\<^sub>m 1\<^sub>m (M + N) \<le>\<^sub>L herm_embed A)"
+proof
+  let ?P = "herm_embed A - of_real c \<cdot>\<^sub>m 1\<^sub>m (M + N)"
+  assume "of_real c \<cdot>\<^sub>m 1\<^sub>m (M + N) \<le>\<^sub>L herm_embed A"
+  hence pos: "positive ?P" unfolding lowner_le_def by blast
+  have H: "herm_embed A \<in> carrier_mat (M + N) (M + N)" by (rule herm_embed_carrier[OF A])
+  have P: "?P \<in> carrier_mat (M + N) (M + N)" by (rule minus_carrier_mat) simp
+  have dc: "dim_col ?P = M + N" using P by (rule carrier_matD)
+  have all: "\<forall>v. dim_vec v = M + N \<longrightarrow> 0 \<le> Complex_Matrix.inner_prod v (?P *\<^sub>v v)"
+    using pos unfolding positive_def dc by (rule conjunct2)
+  have "0 \<le> Complex_Matrix.inner_prod (unit_vec (M + N) 0) (?P *\<^sub>v unit_vec (M + N) 0)"
+    by (rule all[rule_format]) simp
+  also have "\<dots> = ?P $$ (0, 0)" by (rule unit_vec_bracket[OF P MN])
+  also have "\<dots> = - of_real c" using herm_embed_diag[OF A MN] carrier_matD[OF H] MN by simp
+  finally show False using c by (simp add: less_eq_complex_def)
+qed
+
 
 subsection \<open>(A36)--(A37): measuring the first qubit\<close>
 
@@ -207,6 +227,43 @@ forces the top half of $\vec y$ to vanish, so its first qubit is always $1$.  Th
 permute the whole dilation: a permutation fixing $0$ (so $\vec b=\ket0$ stays) that moves the
 coordinates accepted by $M_0$ into the top half and fills the rest of it with coordinates where
 the solution vanishes.  No padding is needed.\<close>
+
+theorem red_dilation_unique:
+  assumes T0: "0 < T" and Ug: "\<forall>j. 1 \<le> j \<longrightarrow> j \<le> T \<longrightarrow> Ug j \<in> carrier_mat m m \<and> unitary (Ug j)"
+    and \<psi>: "dim_vec \<psi> = m" and y: "dim_vec y = 3 * T * m + 3 * T * m"
+    and Hy: "herm_embed (red_A T m Ug) *\<^sub>v y = ket0 T m \<psi> @\<^sub>v 0\<^sub>v (3 * T * m)"
+  shows "y = 0\<^sub>v (3 * T * m) @\<^sub>v red_x T m Ug \<psi>" and "\<And>i. i < 3 * T * m \<Longrightarrow> y $ i = 0"
+proof -
+  let ?D = "3 * T * m" and ?H = "herm_embed (red_A T m Ug)"
+  let ?y0 = "0\<^sub>v ?D @\<^sub>v red_x T m Ug \<psi>" and ?e = "exp (- 1 / real T)"
+  have dx: "dim_vec (red_x T m Ug \<psi>) = ?D" by (rule dim_red_x[OF T0 Ug])
+  have H: "?H \<in> carrier_mat (?D + ?D) (?D + ?D)" by (rule herm_embed_carrier[OF red_A_carrier])
+  have yc: "y \<in> carrier_vec (?D + ?D)" using y by (rule carrier_vecI)
+  have y0c: "?y0 \<in> carrier_vec (?D + ?D)" using dx by (intro carrier_vecI) simp
+  have dk: "dim_vec (ket0 T m \<psi> @\<^sub>v 0\<^sub>v ?D) = ?D + ?D" using arg_cong[OF Hy, of dim_vec] H by simp
+  have "?H *\<^sub>v (y - ?y0) = ?H *\<^sub>v y - ?H *\<^sub>v ?y0" by (rule mult_minus_distrib_mat_vec[OF H yc y0c])
+  also have "\<dots> = 0\<^sub>v (?D + ?D)"
+    unfolding Hy red_dilation_solution[OF T0 Ug \<psi>] by (rule minus_cancel_vec[OF carrier_vecI[OF dk]])
+  finally have Hz: "?H *\<^sub>v (y - ?y0) = 0\<^sub>v (?D + ?D)" .
+  have dz: "dim_vec (y - ?y0) = ?D + ?D" using dx by simp
+  have "(1 - ?e) * \<parallel>y - ?y0\<parallel> \<le> \<parallel>?H *\<^sub>v (y - ?y0)\<parallel>" by (rule red_dilation(2)[OF T0 Ug dz])
+  hence le: "(1 - ?e) * \<parallel>y - ?y0\<parallel> \<le> 0" unfolding Hz vnorm_zero_vec .
+  have e1: "0 < 1 - ?e" using T0 by simp
+  have z: "y - ?y0 = 0\<^sub>v (?D + ?D)"
+  proof (rule ccontr)
+    assume "y - ?y0 \<noteq> 0\<^sub>v (?D + ?D)"
+    hence "0 < \<parallel>y - ?y0\<parallel>" by (rule vnorm_pos[OF dz])
+    thus False using le e1 by (simp add: mult_le_0_iff)
+  qed
+  show yy: "y = ?y0"
+  proof (rule eq_vecI)
+    fix i assume i: "i < dim_vec ?y0"
+    have "(y - ?y0) $ i = 0" using z i dx by simp
+    thus "y $ i = ?y0 $ i" using i dx by simp
+  qed (use y dx in simp)
+  fix i assume "i < ?D"
+  thus "y $ i = 0" unfolding yy using dx by simp
+qed
 
 definition perm_vec :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
   "perm_vec n \<sigma> y = Matrix.vec n (\<lambda>i. y $ \<sigma> i)"
