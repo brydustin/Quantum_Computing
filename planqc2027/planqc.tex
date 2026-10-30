@@ -36,6 +36,8 @@
 \begin{document}
 
 \title{HHL, Verified to the Gate}
+\titlenote{This extended abstract summarizes a 37-page paper in preparation; the paper and the Isabelle
+sources (Isabelle2026 with the AFP) are available from the author.}
 \subtitle{Quantum Hoare Logic at Algorithm Scale in Isabelle/HOL, Written with an AI Agent}
 \author{Dustin Bryant}
 \orcid{0000-0001-9876-3804}
@@ -64,7 +66,9 @@ $1/\varepsilon$. Phase estimation with $U=e^{iAt_0}$ writes the eigenvalues of $
 register; a rotation controlled by the clock moves the amplitude $C/\lambda$ into an ancilla; the clock
 is uncomputed; and the ancilla is measured (Fig.~\ref{fig:hhl}). On outcome~$1$ the system register
 holds $A^{-1}b$ up to normalisation. This happens with probability $p=C^2\norm{A^{-1}b}^2$, so the run
-is repeated until it succeeds.
+is repeated until it succeeds. From a programming-languages perspective, HHL is a probabilistic
+program: a loop guarded by a measurement, whose correctness is a statement about the distribution of
+its outputs and of its running time.
 
 HHL is hard to verify along every axis at once. Its specification is probabilistic, and the number
 of rounds is random. Every step is approximate: eigenvalues are rarely representable in the clock,
@@ -110,9 +114,9 @@ table is one theorem, \isa{hhl\_steps}, proved by following a single eigenvector
 in an eigenbasis.}\label{fig:hhl}
 \end{figure}
 
-\paragraph{What we verified} Working in Isabelle/HOL, on QHLProver's formalisation~\cite{liu2019qhl}
+\paragraph{Contributions} Working in Isabelle/HOL, on QHLProver's formalisation~\cite{liu2019qhl}
 of Ying's quantum while-language~\cite{ying2011}, we verify:
-\begin{itemize}
+\begin{enumerate}
 \item \emph{Total correctness.} The repeat-until-success program terminates with probability one in
   the normalised solution, exits after exactly $m$ failed rounds with probability $(1-p)^mp$, and runs
   $1/p$ rounds on average (Section~\ref{sec:qhl}).
@@ -127,7 +131,7 @@ of Ying's quantum while-language~\cite{ying2011}, we verify:
 \item \emph{The errata.} Seven statements of the HHL paper are false (Section~\ref{sec:errata}).
 \item \emph{The process.} An AI agent wrote all 130 theories (64{,}010 lines, no \texttt{sorry}), directed
   by one person (Section~\ref{sec:agent}).
-\end{itemize}
+\end{enumerate}
 
 \section{Quantum Hoare Logic at Algorithm Scale}\label{sec:qhl}
 
@@ -148,18 +152,26 @@ $\psi=W\ket0$ the state they prepare,
 None is deep, but together they turn every probabilistic claim about HHL into one computation. For
 $Q=\ketbra tt$ with $\ket t$ in the success branch, the scalar is the fidelity $|\langle t|\psi\rangle|^2$,
 so every error bound of the analysis becomes a triple. The fourth rule, for \emph{resetting loops}, is
-proved from the semantics. QHLProver formalises partial correctness only, and Ying's total-correctness rule needs a bound
-function~\cite{ying2011}. But a repeat-until-success body begins with $\mathit{init}$, so it maps
-every $\rho$ to $(\Tr\rho)\,\sigma$ for one fixed state $\sigma$. The loop's semantics is then a
-geometric series, and termination, the exit distribution and the expected number of rounds follow
-from one lemma.
+proved from the semantics: QHLProver formalises partial correctness only, and Ying's
+total-correctness rule needs a bound function~\cite{ying2011}.
+
+\paragraph{Example: the HHL loop} The repeat-until-success program runs the eight gates
+$W=U_8\cdots U_1$ of Fig.~\ref{fig:hhl} until the ancilla reads~$1$:
+\[
+\mathit{hhl\_rus}\;=\;\mathit{init};\,W;\;\mathbf{while}\ \mathit{ancilla}=0\ \mathbf{do}\ (\mathit{init};\,W).
+\]
+Because the body begins with $\mathit{init}$, it maps every input $\rho$ to $(\Tr\rho)\,\ketbra\psi\psi$ for
+the one state $\psi=W\ket0=\ket0\otimes w$ of Fig.~\ref{fig:hhl}. A round succeeds with probability
+$p=\norm{P_1\psi}^2=C^2\norm{A^{-1}b}^2$ and then leaves $\ketbra tt$; otherwise the next round starts
+afresh. The loop is the geometric series $\sum_m(1-p)^mp\,\ketbra tt=\ketbra tt$, and one lemma about
+such loops gives termination, the exit distribution and the expected number of rounds.
 
 \begin{theorem}[exact HHL, repeat until success]
 Let $A$ be Hermitian with every eigenvalue on the grid $2\pi j/(Nt_0)$, $-N/2\le j<N/2$, $j\ne0$, of a clock
 with $N=2^k$ values, let $U_b\ket0=b$, and let $0<|C|\le2\pi/(Nt_0)$. Then
-$\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$ for $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$:
-the loop terminates with probability one in the normalised solution. It exits after exactly $m$ failed
-rounds with probability $(1-p)^mp$, and the expected number of rounds is $1/p$.
+$\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$ for $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$,
+the loop exits after exactly $m$ failed rounds with probability $(1-p)^mp$, and the expected number of
+rounds is $1/p$.
 \end{theorem}
 
 \begin{lstlisting}[float=b,caption={The theorem as stated in Isabelle, with the hypotheses of its context. The registers are the clock, the system and the ancilla, of dimensions $2^k$, $n$ and $2$. \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps every rotation angle admissible.},label={lst:rus}]
@@ -200,8 +212,7 @@ exactness for fidelity triples.
 The programs above take $U_b$, the controlled evolution and the controlled rotation as unitaries. We
 refine them until every gate is \emph{elementary}: a one- or two-qubit unitary on adjacent wires.
 Every program theorem is stated for all gate lists with a given product, so refinement never reopens
-it. The rotation becomes Walsh--Hadamard angles and parity chains of nearest-neighbour CNOTs, and
-$U_b$ a cascade of uniformly controlled rotations, one per qubit. For $s$-sparse
+it. For $s$-sparse
 $A$ with entries bounded by $L$, whose graph is coloured into $2s-1$ matchings given by oracles, $r$
 Trotter steps are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.
 
@@ -217,7 +228,6 @@ algorithm and its programs take 19 theories, and the oracles of this one family 
 end-to-end proof of
 Shor's algorithm in SQIR~\cite{peng2023shor}, the pipeline leaves nothing abstract; unlike verified
 oracle compilers~\cite{amy2017reverc,li2022vqo}, it compiles the oracles of one family only.
-Approximating the gates over a finite set such as Clifford+T~\cite{ross2016gridsynth} is not covered.
 
 \section{Seven Errata}\label{sec:errata}
 
@@ -251,37 +261,29 @@ App.~A5 & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
 
 \section{How It Was Built}\label{sec:agent}
 
-The development was written by an AI coding agent, Claude Code~\cite{claudecode}, under the direction
-of the author, an experienced Isabelle user who wrote almost none of the proof text. Its foundation, a
-formalisation of Paulsen's lecture course on quantum computing and completely positive
-maps~\cite{paulsen2011notes}, was written in April and May 2026. After a pause of 147 days, HHL was
-verified on top of it in eleven days of October. In October the
-human gave 258 directions, spread over 84 distinct hours, and the agent made 9{,}835 tool calls.
+The development was written by Claude Code~\cite{claudecode} under the direction of the author, an
+experienced Isabelle user who wrote almost none of the proof text: the foundation, Paulsen's lecture
+course~\cite{paulsen2011notes}, in April and May 2026, and, after a pause of 147 days, HHL in eleven days
+of October, with 258 human directions over 84 distinct hours and 9{,}835 agent tool calls. The agent
+wrote and repaired the proofs, and resumed after the pause from a hand-off note written for a stranger.
+The human chose what to prove, checked that the statements meant what the paper meant, and asked, on
+28 October, to stop treating the black boxes as given. The kernel rejects wrong proofs, so the agent's
+failures lay elsewhere: a confident ``no oracles'' report from an audit that had skipped the gate
+theories, where two theorems depended on \texttt{skip\_proof}, and a \textsf{simp} loop that stalled a
+build for 45 minutes. Each is now caught by a check in the build. The kernel guarantees that the
+theorems are true; the human guarantees that they are the right theorems.
 
-\paragraph{Division of labour} The agent wrote the proofs, found its own errors in Isabelle's
-messages, and refactored without fatigue; after the pause it resumed from a hand-off
-note written for a stranger. The human chose what to prove, checked that the statements meant what
-the paper meant, and decided names, structure and what to submit. The most consequential directions
-were short and came from outside the formal text, such as the request, on 28 October, to stop treating
-HHL's black boxes as given, which led to the gate list for the Laplacian.
+\section{Discussion and Future Work}
 
-\paragraph{Failure modes} The kernel rejects wrong proofs, so the agent's failures lay elsewhere: a
-confident ``no oracles'' report from an audit that had skipped the gate theories, where two theorems
-depended on \texttt{skip\_proof}; a \textsf{simp} loop that stalled a build for 45 minutes; and an unbuilt copy of 24{,}900 lines kept for five months.
-Each was caught by a mechanical check or by the human, and each check is now part of the build. The
-kernel guarantees that the theorems are true. The human guarantees that they are the right theorems.
+We would value the community's view on three questions. Should closed forms like ours be built into
+tools for quantum Hoare logic? What should
+``verified to the gate'' mean once the gate set is finite, as in Clifford+T~\cite{ross2016gridsynth}, and the oracles general? And as agents write
+more of our proofs, which checks should a verified quantum library require? Next steps are clamping the rotation in the exact
+program, higher-order product formulas, and a second prover.
 
-\section{For Discussion}
-
-We would value the community's view on three questions. Should the closed forms for \emph{initialise,
-apply gates, measure} and for resetting loops be built into tools for quantum Hoare logic? What should
-``verified to the gate'' mean once the gate set is finite and the oracles general? And as agents write
-more of our proofs, which checks should a verified quantum library require? The development builds with Isabelle2026
-and the AFP; the sources and a full report are available from the author.
-
-\paragraph{Use of AI} The formal development was written by AI agents (Claude Code with Claude
-Opus~4.7, Fable~5.1 and Opus~5.5; OpenAI Codex with GPT-5.4) under the author's direction, and this
-abstract was drafted with Claude Code; the author takes full responsibility for its content.
+\paragraph{Use of AI} AI agents (Claude Code with Claude Opus~4.7, Fable~5.1 and Opus~5.5; Codex with
+GPT-5.4) wrote the development under the author's direction and drafted this abstract; the author takes
+full responsibility for its content.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
