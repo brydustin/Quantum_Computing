@@ -8,7 +8,7 @@
 
 ## Title
 
-HHL, Verified to the Gate: Quantum Hoare Logic at Algorithm Scale in Isabelle/HOL, Written with an AI Agent
+HHL, Verified to the Gate with Quantum Hoare Logic in Isabelle/HOL
 
 ## Author
 
