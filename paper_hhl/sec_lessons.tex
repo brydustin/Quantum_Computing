@@ -15,6 +15,14 @@ simulation errors, filter functions and amplitude amplification, is seven times 
 theories), and it is where all the errata of Section~\ref{sec:errata} are. Verifications that stop at the exact case
 verify the part of the algorithm that was never in doubt.
 
+\paragraph{Quantum Hoare logic is exact bookkeeping.} Once the matrix identity of
+Theorem~\ref{thm:hhl} is known, the program triples are bookkeeping of probabilities, and the logic does
+that bookkeeping exactly. Every algorithm in this paper has the shape \emph{initialise, apply gates,
+measure}, whose weakest precondition is a single number, $\sum_j\langle M_j\psi|Q|M_j\psi\rangle$; with
+this rule a triple is one computation, and a lower bound such as $4/\pi^2$ becomes a corollary of an
+exact statement. The loop rule needs an invariant, but for repeat-until-success the invariant is the
+postcondition of a single run.
+
 \paragraph{Termination is a statement about the semantics.} Quantum Hoare logic as formalised has no
 rule for total correctness of loops. HHL's loop is special: its body resets the registers, so the loop
 is a geometric series and Lemma~\ref{lem:reset} gives total correctness, the exit distribution and the

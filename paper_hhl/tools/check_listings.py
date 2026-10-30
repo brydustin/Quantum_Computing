@@ -31,6 +31,7 @@ def unesc(t):
     t=re.sub(r'~\$(.*?)\$~', rep, t)
     return t
 def norm(s):
+    s=s.replace('\\<open>','"').replace('\\<close>','"')   # cartouches print as quotes
     s=s.replace('Matrix.mat','mat').replace('Matrix.vec','vec').replace('Day04_Hermitian_Matrices.hermitian','hermitian')
     s=s.replace('Quantum.unitary','unitary').replace('Complex_Matrix.unitary','unitary')
     return re.sub(r'\s+',' ',s).strip()

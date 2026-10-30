@@ -82,12 +82,16 @@ is a published algorithm whose paper turned out to contain errors, the work is s
 pause, and it builds on an earlier formalisation by the same team, which makes it a case study in
 how an agent-built library ages and is reused.
 
-\paragraph{Contributions.} The paper makes four contributions.
+\paragraph{Contributions.} The paper makes five contributions.
 \begin{itemize}
 \item A verification of HHL at four levels: mathematics, algorithm, program and circuit
-(Sections~\ref{sec:hhl}--\ref{sec:results}). It includes total correctness of the repeat-until-success
+(Sections~\ref{sec:hhl}--\ref{sec:gates}). It includes total correctness of the repeat-until-success
 loop, which needs a new proof rule for loops with a resetting body, the paper's error analysis with
 explicit constants, and a gate-level pipeline with a closed-form gate count.
+\item A worked application of quantum Hoare logic to a full algorithm (Section~\ref{sec:programs}):
+HHL's triples derived in Ying's proof system, with a proof outline that fits on a page; rules for
+initialisation, gate lists and fidelity; the exact weakest precondition of every program of the shape
+\emph{initialise, apply gates, measure}; and exact weakest preconditions for phase estimation.
 \item Errata to the HHL paper, each backed by a formal counterexample or a corrected theorem
 (Section~\ref{sec:errata}).
 \item A quantitative account of an agent-built formalisation that spans a long pause: 571 commits,

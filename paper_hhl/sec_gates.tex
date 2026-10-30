@@ -1,0 +1,89 @@
+\section{Down to Elementary Gates}\label{sec:gates}
+
+The programs above take $U_b$, $\Lambda(e^{iAt_0})$ and the controlled rotation as unitaries. An
+algorithm whose cost is measured in gates should not. A matrix is \emph{elementary} if it is a one- or
+two-qubit unitary acting on adjacent wires, padded with identities:
+
+%%LST Algorithms/HHL_Gates.thy elementary
+\begin{lstlisting}[float=tp,caption={Elementary gates},label={lst:elem}]
+definition elementary :: "nat ~$\Rightarrow$~ complex Matrix.mat ~$\Rightarrow$~ bool" where
+  "elementary K U ~$\longleftrightarrow$~ (~$\exists$~a b q G. q ~$\in$~ {1, 2} ~$\wedge$~ G ~$\in$~ carrier_mat (2 ^ q)
+      (2 ^ q) ~$\wedge$~ Quantum.unitary G ~$\wedge$~ 0 < a ~$\wedge$~ 0 < b ~$\wedge$~ K = a * (2 ^ q *
+      b) ~$\wedge$~ U = 1~$_{m}$~ a ~$\otimes$~ (G ~$\otimes$~ 1~$_{m}$~ b))"
+\end{lstlisting}
+
+Refining the programs gate by gate, we replace $H^{\otimes k}$ by $k$ Hadamard gates, $F$ by the
+AFP's Fourier circuit, the clock-controlled rotation by a uniformly controlled rotation with
+Walsh--Hadamard angles and parity chains of nearest-neighbour CNOTs, $U_b$ by $k$ levels of
+controlled rotations for an arbitrary unit~$b$, and, for $s$-sparse $A$, $e^{iAt}$ by a Trotter
+circuit over a colouring of the matrix into $2s-1$ one-sparse parts, with error $8(sLt)^2/r$ after
+$r(6s-2)$ oracle queries. What remains are oracles: for the entries of $A$, for the angles of $b$,
+and for the sparsity pattern.
+
+\subsection{Compiling the Oracles}
+
+ The last step removes them for a concrete family. A reversible
+comparator on clean ancillas, built from Toffoli and CNOT gates and routed to adjacent wires, computes
+the colours and entries of a banded matrix; sparse right-hand sides are prepared from a lookup table
+without any angle oracle; and the cycle Laplacian is simulated by a Trotter product whose every gate
+is elementary.
+
+\begin{theorem}[HHL for $L+\mu I$ in elementary gates]\label{thm:lap}
+Let $L$ be the Laplacian of the cycle on $2^m$ vertices, $\mu\ge0$, and $b$ a unit vector with
+nonnegative entries supported on a list $xs$. For clock size $2^k$, $r$ Trotter steps, angles with
+$\mathit{bb}$ bits and $a$ ancillas, an explicit list of gates on $K=m+k+1+a$ qubits satisfies: every
+gate is elementary; applied to $\ket0$ it computes the HHL output for a right-hand side $b'$ with
+$\norm{b'-b}\le m\cdot2\pi/2^{\mathit{bb}}$; the flag reads $1$ with amplitude at least $Ct_0/\pi$;
+the post-selected state is within $2\delta/(C\norm x)$ of $\psi\otimes x/\norm x\otimes\ket1$ for
+$x=(L+\mu I)^{-1}b'$ and $\delta=\epsilon+2(2^k-1)\eta$; and the number of gates is at most an explicit
+polynomial in $m$, $k$, $r$, $a$, $\mathit{bb}$, $|xs|$ and the clock size $2^k$.\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77}
+\end{theorem}
+
+\begin{lstlisting}[float=tp,caption={Theorem~\ref{thm:lap} (abridged: hypotheses, definitions and three of the six conclusions are elided)},label={lst:lap}]
+corollary hhl_lap_sparse:
+  ...
+  shows ...
+    "~$\forall$~U ~$\in$~ set (hhl_lap_gates m k a (bb + m) ~$\mu$~ t0 r C Bs). elementary (2 ^ K) U"
+    ...
+    "length (hhl_lap_gates m k a (bb + m) ~$\mu$~ t0 r C Bs) ~$\le$~ k * (1 + 2 ^ k * (2 * k + 1))
+      + m * (2 * (length xs * (4 * m + 2 + bb) * (6 * (m + (bb + m)) + 7)) + (bb * (2 * (bb + m) + 1) + 2)) * (4 * K + 1)
+      + 2 * ((2 ^ k - 1) * (r * (2 * (m * (m + 2) * (6 * K + 7)) + 3 * (4 * K + 1))))
+      + 2 * (k ^ 3 + 2 * k) + (2 * m + 1) * (1 + 2 ^ k * (2 * k + 1))"
+\end{lstlisting}
+
+The count is dominated by the $2(2^k-1)$ controlled Trotter products of the two phase estimations,
+each with $r$ steps of $O(m^2K)$ gates. Figure~\ref{fig:budget} shows how the three sources of error
+combine. The theorem is the end point of the stack: it starts from a sparse vector of real numbers and
+ends with a list of two-qubit gates whose output is provably close to the normalised solution.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\footnotesize, bx/.style={draw, rounded corners, align=center, inner sep=3pt, text width=3.45cm}, >=Stealth]
+\node[bx, fill=gates!10, anchor=north] (p) at (0,0) {\textbf{Preparing $\ket b$}\\ angles with $\mathit{bb}$ bits:\\ $\norm{b'-b}\le m\cdot2\pi/2^{\mathit{bb}}$};
+\node[bx, fill=hhl!10, anchor=north] (s) at (3.95,0) {\textbf{Simulation}\\ each Trotter product is $\eta$-close to $e^{iAt_0}$, $\eta=18(2+\mu)^2t_0^2/r$; phase estimation uses $2(2^k-1)$ of them};
+\node[bx, fill=hfc!12, anchor=north] (e) at (7.9,0) {\textbf{Finite clock}\\ $2^k$ clock states with the sine window: error $\epsilon$};
+\node[bx, text width=4.6cm] (d) at (5.9,-3.25) {$\delta=\epsilon+2(2^k-1)\,\eta\ \le\ Ct_0/\pi$};
+\node[bx, text width=8.6cm] (o) at (3.95,-4.55) {flag $\ket1$ with amplitude $\ge Ct_0/\pi$; then the state is within
+$2\delta/(C\norm x)$ of $\psi\otimes x/\norm x\otimes\ket1$, where $x=(L+\mu I)^{-1}b'$};
+\draw[->] (s) -- node[left, font=\scriptsize] {$2(2^k-1)\eta$} (d);
+\draw[->] (e) -- node[right, font=\scriptsize] {$\epsilon$} (d);
+\draw[->] (d) -- (o.north -| d);
+\draw[->] (p) -- node[midway, left, font=\scriptsize] {HHL solves for $b'$} (p |- o.north);
+\end{tikzpicture}
+\caption{The error budget of Theorem~\ref{thm:lap}. Rounding the angles of $\ket b$ changes the
+right-hand side rather than the solution, so it is stated separately; the simulation and clock errors
+add up to~$\delta$.}\label{fig:budget}
+\end{figure}
+
+\subsection{What Is Trusted}\label{sec:trust}
+
+Isabelle2026 checks the development with \texttt{quick\_and\_dirty = false} against the AFP release
+of 29~October~2026. Theorems may still depend on oracles, extensions of the logic that Isabelle
+records rather than proves. A check over every theorem with \isa{Thm\_Deps.all\_oracles} finds one
+oracle, \isa{cancel\_type\_definition} of Types-To-Sets, in exactly two side sessions: the search lower
+bound behind the paper's optimality theorem, imported from \emph{Compressed
+Oracles}~\cite{unruh2025co}, and the bridge to \emph{Kraus Maps}, whose trace-class type depends on
+it. The main sessions are oracle-free. The specification is trusted in the usual sense: a reader must
+check that the definitions of Listings~\ref{lst:triples}--\ref{lst:lap} say what the informal theorems
+say. We return to this in Section~\ref{sec:lessons}, because it is the one part of the work that the
+agent could not do for us.

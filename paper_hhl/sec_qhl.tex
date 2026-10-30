@@ -1,0 +1,330 @@
+\section{Quantum Hoare Logic at Work}\label{sec:programs}
+
+The theorems of Section~\ref{sec:results} are identities between matrices. An experimenter sees
+something else: a program that prepares registers, applies gates, measures, and repeats until a
+measurement succeeds. Its specification is a statement about probabilities of outcomes, about
+termination, and about the state that remains. This section shows how quantum Hoare logic states and
+proves these facts for phase estimation and HHL: first the proof system of QHLProver, then the rules we
+derived for it, then the programs.
+
+\subsection{The Proof System}\label{sec:qhl-rules}
+
+A program of the while-language of Section~\ref{sec:hhl} denotes a map on partial density operators
+($\rho\ge0$, $\Tr\rho\le1$):
+\begin{gather*}
+\sem{U}\rho=U\rho U^\dagger,\qquad \sem{S_1;S_2}=\sem{S_2}\circ\sem{S_1},\\
+\sem{\mathbf{measure}\ M\ \bar S}\rho=\textstyle\sum_k\sem{S_k}(M_k\rho M_k^\dagger),\\
+\sem{\mathbf{while}\ M\ \mathbf{do}\ S}\rho=\textstyle\sum_{m\ge0}M_0\,\bigl((\sem S\circ\mathcal
+M_1)^m\rho\bigr)\,M_0^\dagger\quad\text{with}\quad\mathcal M_1(\rho)=M_1\rho M_1^\dagger .
+\end{gather*}
+The loop runs $S$ on outcome~$1$ and exits on outcome~$0$; the $m$-th summand is the part of the input
+that exits after $m$ rounds, and the trace that the sum loses is the probability of running forever.
+QHLProver~\cite{liu2019qhl} defines Ying's proof system for partial correctness~\cite{ying2011} as an
+inductive relation $\vdash_p$ (Listing~\ref{lst:rules}). In mathematical notation, with all
+predicates between $0$ and $I$ and $\sqsubseteq$ the L\"owner order:
+\begin{gather*}
+\frac{}{\{U^\dagger PU\}\;U\;\{P\}}\qquad\qquad
+\frac{\{P\}\,S_1\,\{Q\}\quad\{Q\}\,S_2\,\{R\}}{\{P\}\;S_1;S_2\;\{R\}}\\[0.5em]
+\frac{P\sqsubseteq P'\quad\{P'\}\,S\,\{Q'\}\quad Q'\sqsubseteq Q}{\{P\}\;S\;\{Q\}}\qquad\qquad
+\frac{\{P_k\}\,S_k\,\{Q\}\ \ (k<n)}{\{\textstyle\sum_kM_k^\dagger P_kM_k\}\;\mathbf{measure}\ M\ \bar S\;\{Q\}}\\[0.5em]
+\frac{\{Q\}\;S\;\{M_0^\dagger PM_0+M_1^\dagger QM_1\}}{\{M_0^\dagger PM_0+M_1^\dagger QM_1\}\;\mathbf{while}\ M\ \mathbf{do}\ S\;\{P\}}
+\end{gather*}
+together with $\{P\}\,\mathbf{skip}\,\{P\}$. The rules compute weakest liberal preconditions backwards
+through a program: a gate conjugates the postcondition, a measurement sums the branches' preconditions
+weighted by its operators, and a loop needs an invariant~$Q$ for its body. QHLProver proves the system
+sound and complete for $\models_p$ (\isa{hoare\_partial\_sound}, \isa{hoare\_partial\_complete}).
+Loop-free programs preserve the trace, so for them partial and total correctness coincide
+(\isa{partial\_to\_total}).
+
+%%LST /home/dusty/Desktop/Isabelle/afp-2026-10-29/thys/QHLProver/Quantum_Hoare.thy hoare_partial
+\begin{lstlisting}[float=tp,caption={Ying's proof system for partial correctness, as QHLProver defines it (\isa{matrix\_sum d f n} is $\sum_{k<n}f\,k$ and $\le_L$ the L\"owner order)},label={lst:rules}]
+inductive hoare_partial :: "complex mat ~$\Rightarrow$~ com ~$\Rightarrow$~ complex mat ~$\Rightarrow$~ bool"
+    ("~$\vdash_{p}$~ ({(1_)}/ (_)/ {(1_)})" 50) where
+  "is_quantum_predicate P ~$\Longrightarrow$~ ~$\vdash_{p}$~ {P} SKIP {P}"
+| "is_quantum_predicate P ~$\Longrightarrow$~ ~$\vdash_{p}$~ {adjoint U * P * U} Utrans U {P}"
+| "is_quantum_predicate P ~$\Longrightarrow$~ is_quantum_predicate Q ~$\Longrightarrow$~
+    is_quantum_predicate R ~$\Longrightarrow$~ ~$\vdash_{p}$~ {P} S1 {Q} ~$\Longrightarrow$~ ~$\vdash_{p}$~ {Q} S2 {R} ~$\Longrightarrow$~ ~$\vdash_{p}$~ {P}
+    Seq S1 S2 {R}"
+| "(~$\bigwedge$~k. k < n ~$\Longrightarrow$~ is_quantum_predicate (P k)) ~$\Longrightarrow$~ is_quantum_predicate Q
+    ~$\Longrightarrow$~ (~$\bigwedge$~k. k < n ~$\Longrightarrow$~ ~$\vdash_{p}$~ {P k} S ! k {Q}) ~$\Longrightarrow$~ ~$\vdash_{p}$~ {matrix_sum d (~$\lambda$~k.
+    adjoint (M k) * P k * M k) n} Measure n M S {Q}"
+| "is_quantum_predicate P ~$\Longrightarrow$~ is_quantum_predicate Q ~$\Longrightarrow$~ ~$\vdash_{p}$~ {Q} S {adjoint
+    (M 0) * P * M 0 + adjoint (M 1) * Q * M 1} ~$\Longrightarrow$~ ~$\vdash_{p}$~ {adjoint (M 0) * P
+    * M 0 + adjoint (M 1) * Q * M 1} While M S {P}"
+| "is_quantum_predicate P ~$\Longrightarrow$~ is_quantum_predicate Q ~$\Longrightarrow$~
+    is_quantum_predicate P' ~$\Longrightarrow$~ is_quantum_predicate Q' ~$\Longrightarrow$~ P ~$\le_{L}$~ P' ~$\Longrightarrow$~ ~$\vdash_{p}$~
+    {P'} S {Q'} ~$\Longrightarrow$~ Q' ~$\le_{L}$~ Q ~$\Longrightarrow$~ ~$\vdash_{p}$~ {P} S {Q}"
+\end{lstlisting}
+
+\subsection{Rules for Algorithms}\label{sec:qhl-derived}
+
+Algorithms need statements that the logic does not provide directly. We derived four rules, each
+from the semantics or from the rules above.
+
+\emph{Initialisation.} QHLProver has no statement that prepares a fixed state. We build one,
+\isa{init\_com}, from a measurement in the computational basis followed by a swap that moves each
+outcome $k$ to~$0$. Whatever the input, afterwards the probability of $Q$ is $\bra0Q\ket0$:
+\[
+\{\bra0Q\ket0\cdot I\}\;\mathit{init}\;\{Q\}.
+\]
+\emph{Gate lists.} A circuit $U_1,\dots,U_m$ is the program $U_1;\dots;U_m$ (\isa{utrans\_seq}), and
+with $W$ the product of the gates, $\{W^\dagger QW\}\;U_1;\dots;U_m\;\{Q\}$.
+
+\emph{The shape of an algorithm.} Phase estimation, one run of HHL and the inexact variants all have
+the form $\mathit{init};\ U_1;\dots;U_m;\ \mathbf{measure}\ M$. Composing the three rules gives its
+weakest precondition in closed form: with $\psi=W\ket0$ the state the circuit prepares,
+\[
+\Bigl\{\Bigl(\textstyle\sum_j\langle M_j\psi|\,Q\,|M_j\psi\rangle\Bigr)\cdot I\Bigr\}\;
+\mathit{init};\ U_1;\dots;U_m;\ \mathbf{measure}\ M\;\{Q\}.
+\]
+Every program theorem below is an instance, with a computation of the scalar on the left.
+\emph{Fidelity.} If the target $\ket t$ lies in the success branch, $M_1^\dagger\ket t=\ket t$ and
+$M_0^\dagger\ket t=0$, the scalar for $Q=\ketbra tt$ is $\sum_j|\braket t{M_j\psi}|^2=|\braket t\psi|^2$,
+so one run satisfies $\hoaret{|\braket t\psi|^2\,I}{\mathit{prog}}{\ketbra tt}$, and the
+repeat-until-success loop satisfies the conditional version
+$\hoaret{|\braket t\psi|^2/\norm{M_1\psi}^2\,I}{\mathit{rus}}{\ketbra tt}$
+(\isa{hoare\_prog\_overlap}, \isa{hoare\_rus\_overlap}). If the post-selected state is within $e$ of
+$\ket t$, the fidelity is at least $1-e^2$; this turns the error bounds of the algorithm into triples.
+
+%%LST Algorithms/HHL_Program.thy init_com hoare_init hoare_utrans_seq hoare_init_circuit_measure
+\begin{lstlisting}[float=tp,caption={Initialisation, gate lists, and the weakest precondition of the shape $\mathit{init};\,\mathit{gates};\,\mathbf{measure}$},label={lst:derived}]
+definition init_com :: "nat ~$\Rightarrow$~ com" where
+  "init_com K = Measure K (proj_basis K) (map (~$\lambda$~k. Utrans (swap0 K k))
+      [0..<K])"
+theorem hoare_init:
+  assumes Q: "is_quantum_predicate Q" and d0: "0 < d"
+  shows "~$\vdash_{p}$~ {Q ~\$\$~ (0, 0) ~$\cdot_{m}$~ 1~$_{m}$~ d} init_com d {Q}"
+lemma hoare_utrans_seq:
+  assumes "~$\bigwedge$~U. U ~$\in$~ set Us ~$\Longrightarrow$~ U ~$\in$~ carrier_mat d d ~$\wedge$~
+      Complex_Matrix.unitary U" and Q: "is_quantum_predicate Q"
+  shows "~$\vdash_{p}$~ {adjoint (circuit_mat d Us) * Q * circuit_mat d Us}
+      utrans_seq Us {Q}"
+theorem hoare_init_circuit_measure:
+  assumes Q: "is_quantum_predicate Q" and d0: "0 < d"
+    and Us: "~$\bigwedge$~U. U ~$\in$~ set Us ~$\Longrightarrow$~ U ~$\in$~ carrier_mat d d ~$\wedge$~
+        Complex_Matrix.unitary U"
+    and M: "measurement d 2 M"
+  defines "~$\psi$~ ~$\equiv$~ circuit_mat d Us *~$_{v}$~ unit_vec d 0"
+  shows "~$\vdash_{p}$~ { (~$\sum$~j<2. inner_prod (M j *~$_{v}$~ ~$\psi$~) (Q *~$_{v}$~ (M j *~$_{v}$~ ~$\psi$~))) ~$\cdot_{m}$~
+      1~$_{m}$~ d} init_com d ;; utrans_seq Us ;; Measure 2 M [SKIP, SKIP]
+      {Q}"
+\end{lstlisting}
+
+\emph{Loops with a resetting body.} The fourth rule concerns termination. The proof system covers partial
+correctness only, and a loop's partial correctness says nothing about whether it stops. Repeat-until-success
+loops are special: their body starts with \isa{init}, so it maps every input $\rho$ to $(\Tr\rho)\,\sigma$
+for one fixed state~$\sigma$. The $m$-th summand of the loop's semantics is then $(1-p)^m$ times the exit
+of a single round, and the loop is a geometric series.
+
+\begin{lemma}[loops with a resetting body]\label{lem:reset}
+Let $M$ be a two-outcome measurement and $S$ a body with $\sem S\rho=(\Tr\rho)\,\sigma$ for every
+partial density operator $\rho$, where $\Tr\sigma=1$, $\Tr(M_1\sigma M_1^\dagger)=1-p$ and $0<p\le1$.
+For a predicate $Q$ and $v=\Tr(QM_0\sigma M_0^\dagger)$,
+$\Tr\bigl(Q\,\sem{\mathbf{while}\ M\ \mathbf{do}\ S}(c\sigma)\bigr)\ge cv/p$ for $0\le c\le1$.\isalink{Algorithms/HHL_Termination.thy}{210}
+\end{lemma}
+
+\noindent With $Q=I$ the lemma says that the loop terminates with probability one; with $Q=\ketbra tt$
+it gives the total-correctness triples of Theorem~\ref{thm:rus} and Table~\ref{tab:exact-inexact}.
+
+\subsection{Phase Estimation as a Program}\label{sec:qpe-program}
+
+The program \isa{qpe\_program} initialises a clock of $k$ qubits and a system register, prepares an
+eigenvector $u=U_u\ket0$ of $U$, applies $H^{\otimes k}$, the controlled powers of~$U$ and $F^\dagger$,
+and leaves the clock to be read. For a set $J$ of clock values, let $\Pi_J$ project onto them.
+
+\begin{theorem}[phase estimation as a program]\label{thm:qpe-prog}
+Let $U$ and $U_u$ be unitary, $Uu=e^{2\pi i\varphi}u$ and $N=2^k$. For every set $J$ of clock values
+and every input~$\rho$, the probability of $\Pi_J$ at the end is exactly $\sum_{j\in J}|\alpha_j|^2\Tr\rho$.
+Hence $\hoaret{(\sum_{j\in J}|\alpha_j|^2)\,I}{\mathit{QPE}}{\Pi_J}$, and no larger multiple of $I$ is a
+precondition. In particular:
+\begin{enumerate}
+\item if $\varphi=j_0/N$, then $\hoaret{I}{\mathit{QPE}}{\Pi_{\{j_0\}}}$;
+\item for every $\varphi$, $\hoaret{(4/\pi^2)\,I}{\mathit{QPE}}{\Pi_{\{j^*\}}}$, with $j^*$ the nearest grid value;
+\item with $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits,
+$\hoaret{(1-\varepsilon)\,I}{\mathit{QPE}}{\Pi_{\{j\,:\,d_j\le2^{-n}\}}}$.
+\end{enumerate}
+The same triples hold for the program whose gates are $k$ Hadamard gates, one controlled $U^{2^j}$ per
+clock qubit, and the AFP's Fourier circuit.\isalink{Algorithms/QPE_Program.thy}{177}
+\end{theorem}
+
+%%LST Algorithms/QPE_Program.thy qpe_total qpe_prob qpe_exact_total qpe_nearest_total
+\begin{lstlisting}[float=tp,caption={Phase estimation as a program: the weakest precondition of every clock outcome, its exactness, and two of its instances (in a context with the hypotheses of Theorem~\ref{thm:qpe-prog})},label={lst:qpeprog}]
+theorem qpe_total:
+  "state_sig.hoare_total_correct [2 ^ k, m] (complex_of_real (~$\sum$~j | j <
+      2 ^ k ~$\wedge$~ j ~$\in$~ Js. (cmod (pe_amp (2 ^ k) ~$\varphi$~ j))~$^{2}$~) ~$\cdot_{m}$~ 1~$_{m}$~ (2 ^ k *
+      m)) (qpe_program k U Uu) (clock_proj (2 ^ k) m Js)"
+theorem qpe_prob:
+  assumes r: "~$\rho$~ ~$\in$~ carrier_mat (2 ^ k * m) (2 ^ k * m)"
+  shows "trace (clock_proj (2 ^ k) m Js * state_sig.denote [2 ^ k, m]
+      (qpe_program k U Uu) ~$\rho$~) = complex_of_real (~$\sum$~j | j < 2 ^ k ~$\wedge$~ j
+      ~$\in$~ Js. (cmod (pe_amp (2 ^ k) ~$\varphi$~ j))~$^{2}$~) * trace ~$\rho$~"
+corollary qpe_exact_total:
+  assumes j0: "j0 < 2 ^ k" and ~$\varphi$~: "~$\varphi$~ = real j0 / 2 ^ k"
+  shows "state_sig.hoare_total_correct [2 ^ k, m] (1~$_{m}$~ (2 ^ k * m))
+      (qpe_program k U Uu) (clock_proj (2 ^ k) m {j0})"
+corollary qpe_nearest_total:
+  "state_sig.hoare_total_correct [2 ^ k, m] (complex_of_real (4 / pi~$^{2}$~)
+      ~$\cdot_{m}$~ 1~$_{m}$~ (2 ^ k * m)) (qpe_program k U Uu) (clock_proj (2 ^ k) m
+      {pe_round (2 ^ k) ~$\varphi$~})"
+\end{lstlisting}
+
+The proof is the rule for the shape $\mathit{init};\mathit{gates};\mathbf{measure}$ with
+$Q=\Pi_J$: the scalar is $\norm{\Pi_J\psi}^2=\sum_{j\in J}|\alpha_j|^2$ by Theorem~\ref{thm:qpe}. The
+triple is the weakest one because \isa{qpe\_prob} computes the probability exactly, for every input,
+and a theorem of this form, which says what the clock reads rather than bounding it, is what makes the
+statement reusable: the $4/\pi^2$ bound, the tail bound and the textbook precision bound are each one
+line from it.
+
+\subsection{HHL: One Run}
+
+The program \isa{hhl\_program} initialises the clock, system and ancilla, applies the eight gates of
+Fig.~\ref{fig:hhl} and measures the ancilla with $P_0$, $P_1$; it is an instance of the first of the two
+generic program shapes of Listing~\ref{lst:shapes}, and the repeat-until-success program is an instance of
+the second.
+
+%%LST Algorithms/HHL_Program.thy prog_meas rus_meas
+\begin{lstlisting}[float=tp,caption={The two program shapes: one run, and repeat until outcome~$1$ (the loop's measurement is swapped so that it exits on~$1$); HHL instantiates them with the eight gates and the ancilla projectors},label={lst:shapes}]
+definition prog_meas :: "nat ~$\Rightarrow$~ (nat ~$\Rightarrow$~ complex Matrix.mat) ~$\Rightarrow$~ complex
+    Matrix.mat list ~$\Rightarrow$~ com" where
+  "prog_meas K M Us = init_com K ;; utrans_seq Us ;; Measure 2 M [SKIP,
+      SKIP]"
+definition rus_meas :: "nat ~$\Rightarrow$~ (nat ~$\Rightarrow$~ complex Matrix.mat) ~$\Rightarrow$~ complex
+    Matrix.mat list ~$\Rightarrow$~ com" where
+  "rus_meas K M Us = init_com K ;; utrans_seq Us ;; While (~$\lambda$~j. M (1 -
+      j)) (init_com K ;; utrans_seq Us)"
+\end{lstlisting}
+ Let $p=C^2\norm{A^{-1}b}^2$ and
+$\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$.
+
+\begin{theorem}[exact HHL, one run]\label{thm:prog}
+Let $A$ be as in Theorem~\ref{thm:hhl} with $N=2^k$, let $U_b$ be a unitary with $U_b\ket0=b$, and let
+$|C/\lambda_j|\le1$ for all $j<N$. Then
+$\hoaret{p\cdot I}{\mathit{hhl\_program}}{P_1}$ and
+$\hoaret{I}{\mathit{hhl\_program}}{P_0+\ketbra tt}$: the run succeeds with probability $p$, and
+whenever it succeeds the state is exactly $\ket t$.\isalink{Algorithms/HHL_Program.thy}{1187}
+\end{theorem}
+
+The second triple is derived in the proof system (\isa{hhl\_prog\_correct} is a $\vdash_p$ statement),
+and the derivation is short enough to show in full (Fig.~\ref{fig:outline}). Read from the bottom: the
+measurement rule leaves $P_0+\ketbra tt$ unchanged, because $P_1\ket t=\ket t$; the gate-list rule
+conjugates it by $W$; the initialisation rule turns it into the number
+$\langle\psi|P_0+\ketbra tt|\psi\rangle$ for the output $\psi=\ket0\otimes w$ of the circuit. By
+Theorem~\ref{thm:hhl}, $w=\sqrt{I-C^2A^{-2}}\,b\otimes\ket0+CA^{-1}b\otimes\ket1$, so
+$\langle\psi|P_0|\psi\rangle=1-p$ and $|\braket t\psi|^2=p$, and the precondition is $I$. The same
+derivation with postcondition $P_1$ gives the first triple. All the quantum mechanics is in
+Theorem~\ref{thm:hhl}; the logic contributes the bookkeeping of probabilities, and contributes it
+exactly.
+
+\begin{figure}[t]
+\centering
+\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.9cm}@{\quad}>{\color{gray!85!black}\footnotesize\raggedright\arraybackslash}p{6.4cm}@{}}
+$\{\,I\,\}$ & $=\{\langle\psi|P_0+\ketbra tt|\psi\rangle\cdot I\}$, since $\langle\psi|P_0|\psi\rangle=1-p$ and $|\braket t\psi|^2=p$\\
+\quad$\mathit{init}$ & initialisation: $\{\bra0R\ket0\cdot I\}\;\mathit{init}\;\{R\}$, and $\bra0W^\dagger RW\ket0=\langle\psi|R|\psi\rangle$\\
+$\{\,W^\dagger(P_0+\ketbra tt)\,W\,\}$ & \\
+\quad$U_b;\ H^{\otimes k};\ \Lambda(U);\ F^\dagger;$\newline\quad$R;\ F;\ \Lambda(U)^\dagger;\ H^{\otimes k}$ & gate list: $\{W^\dagger RW\}\;U_1;\dots;U_8\;\{R\}$\\
+$\{\,P_0+\ketbra tt\,\}$ & $=P_0(P_0+\ketbra tt)P_0+P_1(P_0+\ketbra tt)P_1$\\
+\quad$\mathbf{measure}\ P_0,P_1$ & measurement: $\{\sum_kM_k^\dagger RM_k\}\;\mathbf{measure}\ M\;\{R\}$\\
+$\{\,P_0+\ketbra tt\,\}$ & postcondition: if the ancilla reads 1, the state is $\ket t$\\
+\end{tabular}
+\caption{The derivation of $\hoaret{I}{\mathit{hhl\_program}}{P_0+\ketbra tt}$ as a proof outline,
+read from the bottom. $W$ is the product of the eight gates and $\psi=W\ket{0}$ their output; the only
+quantum-mechanical input is the form of $\psi$, which is Theorem~\ref{thm:hhl}.}\label{fig:outline}
+\end{figure}
+
+\subsection{HHL: Repeat Until Success}
+
+A failed run is discarded and the program runs again:
+\[
+\mathit{hhl\_rus}\;=\;\mathit{init};\ W;\ \mathbf{while}\ (P_1,P_0)\ \mathbf{do}\ (\mathit{init};\ W),
+\]
+which exits when the ancilla reads~$1$. Its partial correctness is again a derivation (\isa{hhl\_rus\_correct}). In the loop
+rule, take the postcondition $\ketbra tt$ and the body precondition~$I$. The invariant becomes
+$P_1\ketbra ttP_1+P_0IP_0=\ketbra tt+P_0$, and the premise of the rule,
+$\{I\}\;\mathit{init};W\;\{\ketbra tt+P_0\}$, is the upper half of Fig.~\ref{fig:outline}. The prefix
+$\mathit{init};W$ establishes the invariant from~$I$ by the same argument, so
+$\hoarep{I}{\mathit{hhl\_rus}}{\ketbra tt}$: whenever the loop stops, the state is~$\ket t$.
+
+That leaves termination, which no rule of the system can prove; Lemma~\ref{lem:reset} does.
+
+\begin{theorem}[exact HHL, repeat until success]\label{thm:rus}
+Under the hypotheses of Theorem~\ref{thm:prog} and $C\neq0$, the loop terminates with probability one
+in $\ket t$, that is $\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$; it exits after exactly $m$ failed
+rounds with probability $(1-p)^mp$; and the expected number of rounds is
+$\sum_m(m+1)p(1-p)^m=1/p$.\isalink{Algorithms/HHL_Termination.thy}{463}
+\end{theorem}
+
+%%LST Algorithms/HHL_Termination.thy --lines 250-256 hhl_rus_total hhl_rus_expected_rounds
+\begin{lstlisting}[float=tp,caption={Theorem~\ref{thm:rus}, the headline of the development, with the hypotheses of its context: \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible},label={lst:rus}]
+context
+  fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n
+      k :: nat and t0 C :: real
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and n0: "0 < n" and k:
+      "1 ~$\le$~ k" and t0: "0 < t0"
+    and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ ~$\exists$~j. 0 < j ~$\wedge$~ j < 2 ^ k ~$\wedge$~ l
+        = reg_eig t0 (2 ^ k) j"
+    and Ub: "Ub ~$\in$~ carrier_mat n n" "Quantum.unitary Ub" "Ub *~$_{v}$~
+        unit_vec n 0 = b"
+    and Cb: "~$\bigwedge$~j. j < 2 ^ k ~$\Longrightarrow$~ ~$|$~C / reg_eig t0 (2 ^ k) j~$|$~ ~$\le$~ 1"
+begin
+theorem hhl_rus_total:
+  assumes "C ~$\neq$~ 0"
+  shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (1~$_{m}$~ (2 ^ k * (n *
+      2))) (hhl_rus A Ub t0 k C) (outer_prod (hhl_target A k b)
+      (hhl_target A k b))"
+theorem hhl_rus_expected_rounds:
+  assumes C0: "C ~$\neq$~ 0"
+  defines "p ~$\equiv$~ C~$^{2}$~ * ~$\|$~herm_inv A *~$_{v}$~ b~$\|^{2}$~"
+  shows "(~$\lambda$~m. real (Suc m) * (p * (1 - p) ^ m)) sums (1 / p)" and
+      "(~$\lambda$~m. (1 - p) ^ m) sums (1 / p)"
+\end{lstlisting}
+
+All triples of this section are proved for every gate list whose product equals that of the eight
+gates (the hypothesis \isa{circ} of the underlying theorems), so they transfer verbatim to the gate-level
+refinements of Section~\ref{sec:gates}: \isa{qpe\_elem\_total} and \isa{hhl\_elem\_rus\_total} are the
+same triples for programs in which every gate is elementary. On a $2\times2$ example, Isabelle also
+\emph{runs} the circuit in exact arithmetic over $\mathbb Q(\sqrt2)$~\cite{thiemann2014realimpl}, and a
+theorem identifies each computed state with the corresponding state of
+Fig.~\ref{fig:hhl}.\isalink{Algorithms/Demo/HHL_Demo.thy}{164}
+
+\subsection{The Paper's Regime as Programs}\label{sec:approx-programs}
+
+In the regime of the paper's error analysis, the post-selected state is only close to the target, and
+the exact triples become fidelity triples: the last shape of Table~\ref{tab:readings}, obtained from the
+fidelity rule of Section~\ref{sec:qhl-derived}. The circuits with inexact phase estimation, an oracle
+$V$ that is $\eta$-close to $e^{iAt_0}$, the sine-window clock and the paper's filter functions become
+gate lists with the same semantics and run as programs. Table~\ref{tab:exact-inexact} puts the exact
+and the inexact triples side by side; amplitude amplification is a program too, whose number of rounds
+and oracle calls is part of the theorem.
+
+\begin{table}[t]
+\caption{HHL as programs: the exact triples and their counterparts in the paper's regime. Exact: $p=C^2\norm{A^{-1}b}^2$
+and the clock of $\ket t$ is $\ket0$. Inexact: $e=2(\varepsilon+2(N-1)\eta)/(C\norm{A^{-1}b})$ collects the clock
+and oracle errors, the clock of $\ket t$ is the window state, and $y$ is the post-selected part of one run.}\label{tab:exact-inexact}
+\centering\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{4.45cm}>{\raggedright\arraybackslash}p{5.3cm}@{}}
+\toprule
+& Exact & Inexact\\
+\midrule
+One run & $\{p\,I\}\,S\,\{P_1\}$ and $\{I\}\,S\,\{P_0+\ketbra tt\}$ &
+  $\{(Ct_0/\pi)^2(1-e^2)\,I\}\,S\,\{\ketbra tt\}$\\
+Repeat until success & $\{I\}\,S\,\{\ketbra tt\}$, $1/p$ rounds on average & $\{(1-e^2)\,I\}\,S\,\{\ketbra tt\}$\\
+Amplified & -- & $\{(1-\norm y^2)(1-e^2)\,I\}\,S\,\{\ketbra tt\}$, at most $\pi^2/(4Ct_0)$ rounds\\
+Filter functions & -- & loop $\{(1-\varepsilon^2)\,I\}$; amplified, at most $\pi\kappa$ rounds\\
+\midrule
+Theorems & \mbox{\isa{hhl\_success\_total}}, \mbox{\isa{hhl\_correct\_total}}, \mbox{\isa{hhl\_rus\_total}} &
+  \mbox{\isa{hhl\_apx\_program}}, \mbox{\isa{hhl\_apx\_rus}}, \mbox{\isa{hhl\_apx\_amplified}},
+  \mbox{\isa{hhl\_flag\_rus}}, \mbox{\isa{hhl\_flag\_amplified}}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Programs are channels.} Finally, the logic's semantic objects connect back to the foundation.
+For a loop-free program, a function \isa{kraus\_of} reads off Kraus operators from the program text: a
+gate $U$ gives $U$, a sequence gives the products, and a measurement $\{M_k\}$ gives $BM_k$ for every
+Kraus operator $B$ of branch~$k$. The program's meaning is their Kraus map $\rho\mapsto\sum_iK_i\rho
+K_i^\dagger$ and $\sum_iK_i^\dagger K_i=I$, so by Choi's theorem of the lectures every such program is
+a completely positive, trace-preserving map, and the HHL circuit with its measurement is a quantum
+channel on the three registers (\isa{program\_channel}, \isa{hhl\_program\_channel}).\isalink{Algorithms/Channels/Program_Channels.thy}{171}

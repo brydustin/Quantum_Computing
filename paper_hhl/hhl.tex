@@ -69,6 +69,9 @@
 \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}
 \setlength{\belowdisplayskip}{5pt plus 2pt minus 2pt}
 \raggedbottom
+% floats join text pages unless they fill most of a page
+\renewcommand{\topfraction}{0.85}\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.12}\renewcommand{\floatpagefraction}{0.8}
 
 \begin{document}
 
@@ -83,6 +86,8 @@
 \input{sec_intro}
 \input{sec_hhl}
 \input{sec_results}
+\input{sec_qhl}
+\input{sec_gates}
 \input{sec_errata}
 \input{sec_process}
 \input{sec_lessons}

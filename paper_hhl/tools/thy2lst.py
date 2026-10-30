@@ -27,7 +27,7 @@ SYM = {
 
 def statement(src, name):
     lines = src.split('\n')
-    pat = re.compile(r'^\s*(lemma|theorem|corollary|proposition|definition|fun|abbreviation|lift_definition)\s+' + re.escape(name) + r'\b')
+    pat = re.compile(r'^\s*(lemma|theorem|corollary|proposition|definition|fun|abbreviation|lift_definition|inductive)\s+' + re.escape(name) + r'\b')
     for i, l in enumerate(lines):
         if pat.match(l):
             out = [l]
@@ -52,6 +52,8 @@ def conv(text):
         e = re.sub(r'\\<bar>', '$|$', e)
         return '~\\closeto{' + e + '}~'
     text = re.sub(r'\\<approx>\\<\^bsub>(.*?)\\<\^esub>', close, text)
+    text = text.replace('$$', '~\\$\\$~')          # matrix indexing, not math
+    text = text.replace('\\<open>', '"').replace('\\<close>', '"')
     def symsup(m):
         k = m.group(2)
         if k not in SYM:
@@ -68,7 +70,6 @@ def conv(text):
             raise SystemExit(f'unknown symbol \\<{k}>')
         return '~$' + SYM[k] + '$~'
     text = re.sub(r'\\<([A-Za-z]+)>', sym, text)
-    text = text.replace('\\<open>', '"').replace('\\<close>', '"')
     # merge adjacent escapes: ~$a$~~$b$~ -> ~$a b$~
     text = re.sub(r'\$~~\$', '', text)
     return text
@@ -119,6 +120,8 @@ def reflow(lines):
             out.append('  ' + t)
         elif t.startswith('and '):
             out.append('    ' + t)
+        elif t.startswith('| '):
+            out.append(t)
         else:
             out[-1] += ' ' + t
     return out

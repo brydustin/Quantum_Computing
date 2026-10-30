@@ -94,12 +94,5 @@ $\hoaret{q\cdot I}{S}{\ketbra tt}$ & the output has fidelity at least $q$ with $
 \end{tabular}
 \end{table}
 
-QHLProver proves a proof system for partial correctness sound and complete~\cite{liu2019qhl}. We add
-three things. An \emph{initialisation} statement prepares $\ket0$ from any input, as a measurement
-in the computational basis followed by swaps; its rule says that afterwards the probability of $Q$
-is $\bra0Q\ket0$. \emph{Gate lists} become programs, and every theorem about an HHL program is proved
-for every list of unitaries whose product equals that of the eight gates of Fig.~\ref{fig:hhl}, so a
-refinement of gates into smaller gates inherits all triples; this is how Section~\ref{sec:gates}
-reaches elementary gates without reproving anything. Finally, the logic has no rule for
-\emph{total correctness of loops}; Section~\ref{sec:programs} derives one for loops whose body
-resets the state.
+Section~\ref{sec:programs} presents the proof system with which such triples are derived, the rules
+we added to it for algorithms, and the triples of phase estimation and HHL.
