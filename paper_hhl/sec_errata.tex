@@ -23,29 +23,20 @@ $O(\kappa/t)$ bound, so its Theorem~1 is unaffected; with the corrected constant
 the explicit constant $12\pi^2\sqrt{4+2\pi^2}$.
 
 %%LST Algorithms/HHL_Filter.thy lemma3_paper_constant lemma3 lemma3_sharp
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Lemma~3 of the HHL paper: the counterexample to the paper's constant, the corrected constant, and its sharpness (for fixed \isa{$\kappa$ > 0}; \isa{filt\_f} and \isa{filt\_g} are the filter functions)},label={lst:lemma3}]
+\begin{lstlisting}[float=tp,caption={Lemma~3 of the HHL paper: the counterexample to the paper's constant, the corrected constant, and its sharpness (for fixed \isa{$\kappa$ > 0}; \isa{filt\_f} and \isa{filt\_g} are the filter functions)},label={lst:lemma3}]
 theorem lemma3_paper_constant:
-  "pi~$^{2}$~ / 2 * ~$\kappa^{2}$~ * (1 / (2 * ~$\kappa$~) - 1 /
-      ~$\kappa$~)~$^{2}$~ * ((filt_f ~$\kappa$~ (1 / (2 *
-      ~$\kappa$~)))~$^{2}$~ + (filt_g ~$\kappa$~ (1 / (2 *
-      ~$\kappa$~)))~$^{2}$~)
-   < (filt_f ~$\kappa$~ (1 / (2 * ~$\kappa$~)) - filt_f ~$\kappa$~ (1 /
-       ~$\kappa$~))~$^{2}$~ + (filt_g ~$\kappa$~ (1 / (2 * ~$\kappa$~)) -
-       filt_g ~$\kappa$~ (1 / ~$\kappa$~))~$^{2}$~"
+  "pi~$^{2}$~ / 2 * ~$\kappa^{2}$~ * (1 / (2 * ~$\kappa$~) - 1 / ~$\kappa$~)~$^{2}$~ * ((filt_f ~$\kappa$~ (1 / (2 *
+      ~$\kappa$~)))~$^{2}$~ + (filt_g ~$\kappa$~ (1 / (2 * ~$\kappa$~)))~$^{2}$~) < (filt_f ~$\kappa$~ (1 / (2 *
+      ~$\kappa$~)) - filt_f ~$\kappa$~ (1 / ~$\kappa$~))~$^{2}$~ + (filt_g ~$\kappa$~ (1 / (2 * ~$\kappa$~)) - filt_g
+      ~$\kappa$~ (1 / ~$\kappa$~))~$^{2}$~"
 theorem lemma3:
-  "(filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ + (filt_g ~$\kappa$~
-      a - filt_g ~$\kappa$~ b)~$^{2}$~
-     ~$\le$~ pi~$^{2}$~ * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f
-         ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)"
+  "(filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ + (filt_g ~$\kappa$~ a - filt_g ~$\kappa$~ b)~$^{2}$~ ~$\le$~ pi~$^{2}$~
+      * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)"
 theorem lemma3_sharp:
   assumes c: "c < pi~$^{2}$~"
-  shows "~$\exists$~a b. c * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f
-      ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)
-                < (filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ +
-                    (filt_g ~$\kappa$~ a - filt_g ~$\kappa$~ b)~$^{2}$~"
+  shows "~$\exists$~a b. c * ~$\kappa^{2}$~ * (a - b)~$^{2}$~ * ((filt_f ~$\kappa$~ a)~$^{2}$~ + (filt_g ~$\kappa$~ a)~$^{2}$~)
+      < (filt_f ~$\kappa$~ a - filt_f ~$\kappa$~ b)~$^{2}$~ + (filt_g ~$\kappa$~ a - filt_g ~$\kappa$~ b)~$^{2}$~"
 \end{lstlisting}
-\end{minipage}
 
 \begin{table}[t]
 \caption{Errata in the HHL paper (arXiv:0811.3171v3). ``Formal'' names the theorem that refutes the claim

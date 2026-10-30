@@ -59,8 +59,7 @@ the trace lost by a loop is the probability that it does not terminate. A predic
 $0\le P\le I$, and $\Tr(P\rho)$ is the probability that $P$ holds in the state~$\rho$. A triple
 compares these probabilities before and after the program (Listing~\ref{lst:triples}).
 
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Triples in QHLProver (in the locale \isa{state\_sig} of the registers, of
+\begin{lstlisting}[float=tp,caption={Triples in QHLProver (in the locale \isa{state\_sig} of the registers, of
 total dimension \isa{d}; syntax annotations omitted)},label={lst:triples}]
 definition hoare_total_correct :: "complex mat ~$\Rightarrow$~ com ~$\Rightarrow$~ complex mat
     ~$\Rightarrow$~ bool" where
@@ -72,7 +71,6 @@ definition hoare_partial_correct :: "complex mat ~$\Rightarrow$~ com ~$\Rightarr
       trace (P * ~$\rho$~) ~$\le$~ trace (Q * denote S ~$\rho$~) + (trace ~$\rho$~ - trace
           (denote S ~$\rho$~)))"
 \end{lstlisting}
-\end{minipage}
 
 Every statement about HHL below is a triple of one of four shapes (Table~\ref{tab:readings}). Let
 $P_0$, $P_1$ project onto ancilla value $0$, $1$, and let $\ket t$ be a unit vector with

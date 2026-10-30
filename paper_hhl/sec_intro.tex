@@ -37,8 +37,8 @@ among them the constant of its Lemma~3 (Section~\ref{sec:errata}).
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[font=\footnotesize,
-  lay/.style={draw, rounded corners=2pt, text width=6.3cm, align=left, inner sep=3pt},
-  when/.style={font=\scriptsize\itshape, text width=2.05cm, align=left, anchor=west},
+  lay/.style={draw, rounded corners=2pt, text width=6.7cm, align=left, inner sep=3pt},
+  when/.style={font=\scriptsize\itshape, text width=2.3cm, align=left, anchor=west},
   size/.style={font=\scriptsize, text width=1.75cm, align=right, anchor=east},
   arr/.style={-{Stealth[length=4pt]}, thick, gray!70}]
 \node[lay, fill=notes!14] (L0) {\textbf{Foundation.} Paulsen's lecture course: spectral theorem, positivity,
@@ -56,7 +56,7 @@ among them the constant of its Lemma~3 (Section~\ref{sec:errata}).
 \node[when] at ($(L3.east)+(0.15,0)$) {Oct 21--22};
 \node[when] at ($(L2.east)+(0.15,0)$) {Oct 19--20};
 \node[when] at ($(L1.east)+(0.15,0)$) {Oct 19--24};
-\node[when] at ($(L0.east)+(0.15,0)$) {Apr 18--May 23,\\ Oct 18--20};
+\node[when] at ($(L0.east)+(0.15,0)$) {Apr 18--May 23\\ and Oct 18--20};
 \node[size] at ($(L4.west)+(-0.12,0)$) {46 theories\\ 12.9k lines};
 \node[size] at ($(L3.west)+(-0.12,0)$) {7 theories\\ 4.0k lines};
 \node[size] at ($(L2.west)+(-0.12,0)$) {13 theories\\ 10.2k lines};
@@ -82,7 +82,7 @@ is a published algorithm whose paper turned out to contain errors, the work is s
 pause, and it builds on an earlier formalisation by the same team, which makes it a case study in
 how an agent-built library ages and is reused.
 
-\paragraph{Contributions.}
+\paragraph{Contributions.} The paper makes four contributions.
 \begin{itemize}
 \item A verification of HHL at four levels: mathematics, algorithm, program and circuit
 (Sections~\ref{sec:hhl}--\ref{sec:results}). It includes total correctness of the repeat-until-success

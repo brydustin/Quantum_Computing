@@ -8,8 +8,8 @@ mechanically (Appendix~\ref{app:method}).
 
 Vern Paulsen's course \emph{Lectures on Quantum Computing and Completely Positive
 Maps}~\cite{paulsen2011notes}, given in Houston in 2011, runs over 34 lectures from Hilbert spaces to
-quantum error correction. Its formalisation has one theory per lecture, 46 in all, on top of a
-session of reusable matrix analysis, and every definition and theorem of the notes was audited
+quantum error correction. Its formalisation follows the lectures in order, in 46 theories, on top of
+a session of reusable matrix analysis, and every definition and theorem of the notes was audited
 against the formal text. The audit found false statements in the notes, each witnessed formally:
 the Day~29 ``Hamming $[7,1,3]$'' code has distance~2 and corrects no error
 (\isa{notes\_hamming\_not\_correcting}), and on Day~32 two Pauli errors that the notes call
@@ -31,47 +31,29 @@ matrices becomes a Kraus family whose map is the lectures' $\rho\mapsto\sum_iW_i
 with the lectures' Choi theorem every completely positive map in Paulsen's sense is a Kraus map of the
 library (Listing~\ref{lst:choi}).
 
-%%LST Day19_Choi_Theorem.thy choi_theorem
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Choi's theorem (Lecture 19), and the lectures' completely positive maps as Kraus maps of the AFP entry \emph{Kraus Maps}; \isa{tc\_map} reads a map of matrices as a map of trace-class operators on \isa{'a ell2}},label={lst:choi}]
+%%LST Day19_Choi_Theorem.thy choi_theorem ; Kraus_Maps_Bridge/Kraus_Maps_Bridge.thy cp_kraus_map
+\begin{lstlisting}[float=tp,caption={Choi's theorem (Lecture 19), and the lectures' completely positive maps as Kraus maps of the AFP entry \emph{Kraus Maps}; \isa{tc\_map} reads a map of matrices as a map of trace-class operators on \isa{'a ell2}},label={lst:choi}]
 theorem choi_theorem:
   fixes ~$\Phi$~ :: "complex Matrix.mat ~$\Rightarrow$~ complex Matrix.mat"
-  assumes linear: "~$\bigwedge$~A B. A ~$\in$~ carrier_mat n n
-      ~$\Longrightarrow$~ B ~$\in$~ carrier_mat n n ~$\Longrightarrow$~
-                   ~$\Phi$~ (A + B) = ~$\Phi$~ A + ~$\Phi$~ B"
-      and smult:  "~$\bigwedge$~c A. A ~$\in$~ carrier_mat n n
-          ~$\Longrightarrow$~ ~$\Phi$~ (c ~$\cdot_{m}$~ A) = c ~$\cdot_{m}$~
-          ~$\Phi$~ A"
-      and range:  "~$\forall$~A. A ~$\in$~ carrier_mat n n
-          ~$\longrightarrow$~ ~$\Phi$~ A ~$\in$~ carrier_mat d d"
-      and npos: "n > 0"
-      and dpos: "d > 0"
-  shows "completely_positive n d ~$\Phi$~ ~$\longleftrightarrow$~
-         psd (choi_matrix n d ~$\Phi$~)"
-\end{lstlisting}
-\end{minipage}
-
-\vspace{-0.6em}
-%%LST Kraus_Maps_Bridge/Kraus_Maps_Bridge.thy cp_kraus_map
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[aboveskip=0pt,label={lst:krausbridge}]
+  assumes linear: "~$\bigwedge$~A B. A ~$\in$~ carrier_mat n n ~$\Longrightarrow$~ B ~$\in$~ carrier_mat n n
+      ~$\Longrightarrow$~ ~$\Phi$~ (A + B) = ~$\Phi$~ A + ~$\Phi$~ B"
+    and smult: "~$\bigwedge$~c A. A ~$\in$~ carrier_mat n n ~$\Longrightarrow$~ ~$\Phi$~ (c ~$\cdot_{m}$~ A) = c ~$\cdot_{m}$~ ~$\Phi$~ A"
+    and range: "~$\forall$~A. A ~$\in$~ carrier_mat n n ~$\longrightarrow$~ ~$\Phi$~ A ~$\in$~ carrier_mat d d"
+    and npos: "n > 0"
+    and dpos: "d > 0"
+  shows "completely_positive n d ~$\Phi$~ ~$\longleftrightarrow$~ psd (choi_matrix n d ~$\Phi$~)"
 theorem cp_kraus_map:
   fixes ~$\Phi$~ :: "complex Matrix.mat ~$\Rightarrow$~ complex Matrix.mat"
-  assumes linear: "~$\bigwedge$~A B. A ~$\in$~ carrier_mat CARD('a) CARD('a)
-      ~$\Longrightarrow$~ B ~$\in$~ carrier_mat CARD('a) CARD('a)
-      ~$\Longrightarrow$~
-                   ~$\Phi$~ (A + B) = ~$\Phi$~ A + ~$\Phi$~ B"
-      and smult: "~$\bigwedge$~c A. A ~$\in$~ carrier_mat CARD('a) CARD('a)
-          ~$\Longrightarrow$~ ~$\Phi$~ (c ~$\cdot_{m}$~ A) = c ~$\cdot_{m}$~
-          ~$\Phi$~ A"
-      and range: "~$\forall$~A. A ~$\in$~ carrier_mat CARD('a) CARD('a)
-          ~$\longrightarrow$~ ~$\Phi$~ A ~$\in$~ carrier_mat CARD('b)
-          CARD('b)"
-      and cp: "completely_positive CARD('a) CARD('b) ~$\Phi$~"
+  assumes linear: "~$\bigwedge$~A B. A ~$\in$~ carrier_mat CARD('a) CARD('a) ~$\Longrightarrow$~ B ~$\in$~
+      carrier_mat CARD('a) CARD('a) ~$\Longrightarrow$~ ~$\Phi$~ (A + B) = ~$\Phi$~ A + ~$\Phi$~ B"
+    and smult: "~$\bigwedge$~c A. A ~$\in$~ carrier_mat CARD('a) CARD('a) ~$\Longrightarrow$~ ~$\Phi$~ (c ~$\cdot_{m}$~ A)
+        = c ~$\cdot_{m}$~ ~$\Phi$~ A"
+    and range: "~$\forall$~A. A ~$\in$~ carrier_mat CARD('a) CARD('a) ~$\longrightarrow$~ ~$\Phi$~ A ~$\in$~
+        carrier_mat CARD('b) CARD('b)"
+    and cp: "completely_positive CARD('a) CARD('b) ~$\Phi$~"
   shows "Kraus_Maps.kraus_map (tc_map ~$\Phi$~ :: ('a::enum ell2, 'a ell2)
       trace_class ~$\Rightarrow$~ ('b::enum ell2, 'b ell2) trace_class)"
 \end{lstlisting}
-\end{minipage}
 
 \subsection{Mathematics}\label{sec:math}
 
@@ -86,29 +68,25 @@ U^\dagger$ for every spectral decomposition $U^\dagger AU=\operatorname{diag}(d_
 \end{theorem}
 
 %%LST Hermitian_Functional_Calculus/Hermitian_Functional_Calculus.thy acts_on_eigenvectors mat_fun_unique
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={The functional calculus: \isa{B acts\_as g on\_eigenvectors\_of A} is notation for \isa{acts\_on\_eigenvectors A g B}, and \isa{mat\_fun g A} is the unique such \isa{B}},label={lst:matfun}]
-definition acts_on_eigenvectors :: "complex Matrix.mat ~$\Rightarrow$~ (real
-    ~$\Rightarrow$~ complex) ~$\Rightarrow$~ complex Matrix.mat
-    ~$\Rightarrow$~ bool" where
-  "acts_on_eigenvectors A g B ~$\longleftrightarrow$~ (~$\forall$~v l.
-      dim_vec v = dim_row A ~$\longrightarrow$~
-     A *~$_{v}$~ v = complex_of_real l ~$\cdot_{v}$~ v ~$\longrightarrow$~ B
-         *~$_{v}$~ v = g l ~$\cdot_{v}$~ v)"
+\begin{lstlisting}[float=tp,caption={The functional calculus: \isa{B acts\_as g on\_eigenvectors\_of A} is notation for \isa{acts\_on\_eigenvectors A g B}, and \isa{mat\_fun g A} is the unique such \isa{B}},label={lst:matfun}]
+definition acts_on_eigenvectors :: "complex Matrix.mat ~$\Rightarrow$~ (real ~$\Rightarrow$~
+    complex) ~$\Rightarrow$~ complex Matrix.mat ~$\Rightarrow$~ bool" where
+  "acts_on_eigenvectors A g B ~$\longleftrightarrow$~ (~$\forall$~v l. dim_vec v = dim_row A ~$\longrightarrow$~ A *~$_{v}$~
+      v = complex_of_real l ~$\cdot_{v}$~ v ~$\longrightarrow$~ B *~$_{v}$~ v = g l ~$\cdot_{v}$~ v)"
 corollary mat_fun_unique:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A"
-  shows "~$\exists$~!B. B ~$\in$~ carrier_mat n n ~$\wedge$~ B acts_as g
-      on_eigenvectors_of A"
+  shows "~$\exists$~!B. B ~$\in$~ carrier_mat n n ~$\wedge$~ B acts_as g on_eigenvectors_of A"
 \end{lstlisting}
-\end{minipage}
 
 The definition makes the algebra of the calculus short: two matrices that agree on all
 eigenvectors of~$A$ are equal, because the eigenvectors span, so identities such as
 $g(A)h(A)=(gh)(A)$ and $g(A)^\dagger=\bar g(A)$ need no sums over an eigenbasis. The same principle
 proves HHL itself (Section~\ref{sec:algorithm}). On top of the calculus we verify the Lie--Trotter
-formula with the explicit bound
-$\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le2(mLt)^2/r$ for Hermitian $H_j$ of
-norm at most~$L$, and Suzuki's higher-order formulas with error of order
+formula with an explicit bound,
+\[
+\norm{(e^{itH_1/r}\cdots e^{itH_m/r})^r-e^{it(H_1+\dots+H_m)}}\le2(mLt)^2/r
+\]
+for Hermitian $H_j$ of norm at most~$L$, and Suzuki's higher-order formulas with error of order
 $|t|^{2k+3}/r^{2k+2}$.\isalink{Hermitian_Functional_Calculus/Trotter_Product_Formula.thy}{612}
 
 \paragraph{Phase estimation.} Phase estimation is HHL's engine. With $F_N$ the Fourier matrix and
@@ -121,20 +99,17 @@ $\alpha=\ket{j_0}$. If $|\varphi-j/N|\le1/(2N)$, then $|\alpha_j|^2\ge4/\pi^2$.\
 \end{theorem}
 
 %%LST Algorithms/Phase_Estimation.thy phase_estimation phase_estimation_bound
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Phase estimation and the $4/\pi^2$ bound},label={lst:qpe}]
+\begin{lstlisting}[float=tp,caption={Phase estimation and the $4/\pi^2$ bound},label={lst:qpe}]
 theorem phase_estimation:
   assumes U: "U ~$\in$~ carrier_mat m m" and u: "dim_vec u = m"
-      and ev: "U *~$_{v}$~ u = cis (2 * pi * ~$\varphi$~) ~$\cdot_{v}$~ u"
-  shows "(((fourier N)~$^{\dagger}$~) ~$\otimes$~ 1~$_{m}$~ m) *~$_{v}$~
-      (ctrl_pow N m U *~$_{v}$~ tensor_vec (uniform_state N) u) =
-         tensor_vec (Matrix.vec N (pe_amp N ~$\varphi$~)) u"
+    and ev: "U *~$_{v}$~ u = cis (2 * pi * ~$\varphi$~) ~$\cdot_{v}$~ u"
+  shows "(((fourier N)~$^{\dagger}$~) ~$\otimes$~ 1~$_{m}$~ m) *~$_{v}$~ (ctrl_pow N m U *~$_{v}$~ tensor_vec
+      (uniform_state N) u) = tensor_vec (Matrix.vec N (pe_amp N ~$\varphi$~)) u"
 theorem phase_estimation_bound:
-  assumes N: "0 < N" and close: "~$|\varphi$~ - real j / real N~$|$~ ~$\le$~
-      1 / (2 * real N)"
+  assumes N: "0 < N" and close: "~$|\varphi$~ - real j / real N~$|$~ ~$\le$~ 1 / (2 * real
+      N)"
   shows "4 / pi~$^{2}$~ ~$\le$~ (cmod (pe_amp N ~$\varphi$~ j))~$^{2}$~"
 \end{lstlisting}
-\end{minipage}
 
 We also prove that the Fourier circuit of the AFP entry~\cite{manrique2025qft} computes $F_N$, so
 the theorem holds for an actual circuit, and the textbook precision bound: with
@@ -160,24 +135,19 @@ $b$ and $C=\lambda_{\min}$.\isalink{Algorithms/HHL.thy}{590}
 \end{theorem}
 
 %%LST Algorithms/HHL.thy hhl
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Exact HHL as a matrix identity, for every right-hand side},label={lst:hhl}]
+\begin{lstlisting}[float=tp,caption={Exact HHL as a matrix identity, for every right-hand side},label={lst:hhl}]
 theorem hhl:
   assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and t0: "0 < t0" and
       N: "0 < N"
-      and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A
-          ~$\Longrightarrow$~ ~$\exists$~k. 0 < k ~$\wedge$~ k < N
-          ~$\wedge$~ l = reg_eig t0 N k"
-      and b: "dim_vec b = n"
+    and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ ~$\exists$~k. 0 < k ~$\wedge$~ k < N ~$\wedge$~ l =
+        reg_eig t0 N k"
+    and b: "dim_vec b = n"
   shows "hhl_circuit A t0 N C *~$_{v}$~ tensor_vec (uniform_state N)
-      (tensor_vec b (unit_vec 2 0)) =
-         tensor_vec (uniform_state N)
-           (tensor_vec (mat_fun (~$\lambda$~x. complex_of_real (sqrt (1 - (C
-               / x)~$^{2}$~))) A *~$_{v}$~ b) (unit_vec 2 0) +
-            tensor_vec ((complex_of_real C ~$\cdot_{m}$~ herm_inv A)
-                *~$_{v}$~ b) (unit_vec 2 1))"
+      (tensor_vec b (unit_vec 2 0)) = tensor_vec (uniform_state N)
+      (tensor_vec (mat_fun (~$\lambda$~x. complex_of_real (sqrt (1 - (C / x)~$^{2}$~)))
+      A *~$_{v}$~ b) (unit_vec 2 0) + tensor_vec ((complex_of_real C ~$\cdot_{m}$~
+      herm_inv A) *~$_{v}$~ b) (unit_vec 2 1))"
 \end{lstlisting}
-\end{minipage}
 
 The proof is the eigenvector principle again. On an eigenvector $v$ of $A$ with eigenvalue
 $\lambda_k$, phase estimation writes $\ket k$ exactly, the rotation multiplies by
@@ -239,33 +209,29 @@ $\sum_m(m+1)p(1-p)^m=1/p$.\isalink{Algorithms/HHL_Termination.thy}{463}
 \end{theorem}
 
 %%LST Algorithms/HHL_Termination.thy --lines 250-256 hhl_rus_total hhl_rus_expected_rounds
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Theorem~\ref{thm:rus}, the headline of the development, with the hypotheses of its context: \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible},label={lst:rus}]
+\begin{lstlisting}[float=tp,caption={Theorem~\ref{thm:rus}, the headline of the development, with the hypotheses of its context: \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible},label={lst:rus}]
 context
-  fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n k
-      :: nat and t0 C :: real
-  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and n0: "0 < n" and
-      k: "1 ~$\le$~ k" and t0: "0 < t0"
-    and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~
-        ~$\exists$~j. 0 < j ~$\wedge$~ j < 2 ^ k ~$\wedge$~ l = reg_eig t0
-        (2 ^ k) j"
+  fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n
+      k :: nat and t0 C :: real
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and n0: "0 < n" and k:
+      "1 ~$\le$~ k" and t0: "0 < t0"
+    and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ ~$\exists$~j. 0 < j ~$\wedge$~ j < 2 ^ k ~$\wedge$~ l
+        = reg_eig t0 (2 ^ k) j"
     and Ub: "Ub ~$\in$~ carrier_mat n n" "Quantum.unitary Ub" "Ub *~$_{v}$~
         unit_vec n 0 = b"
-    and Cb: "~$\bigwedge$~j. j < 2 ^ k ~$\Longrightarrow$~ ~$|$~C / reg_eig
-        t0 (2 ^ k) j~$|$~ ~$\le$~ 1"
+    and Cb: "~$\bigwedge$~j. j < 2 ^ k ~$\Longrightarrow$~ ~$|$~C / reg_eig t0 (2 ^ k) j~$|$~ ~$\le$~ 1"
 begin
 theorem hhl_rus_total:
   assumes "C ~$\neq$~ 0"
-  shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (1~$_{m}$~ (2 ^ k * (n
-      * 2))) (hhl_rus A Ub t0 k C)
-     (outer_prod (hhl_target A k b) (hhl_target A k b))"
+  shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (1~$_{m}$~ (2 ^ k * (n *
+      2))) (hhl_rus A Ub t0 k C) (outer_prod (hhl_target A k b)
+      (hhl_target A k b))"
 theorem hhl_rus_expected_rounds:
   assumes C0: "C ~$\neq$~ 0"
   defines "p ~$\equiv$~ C~$^{2}$~ * ~$\|$~herm_inv A *~$_{v}$~ b~$\|^{2}$~"
   shows "(~$\lambda$~m. real (Suc m) * (p * (1 - p) ^ m)) sums (1 / p)" and
       "(~$\lambda$~m. (1 - p) ^ m) sums (1 / p)"
 \end{lstlisting}
-\end{minipage}
 
 The theorems hold for every gate list with the same product as the eight gates, so they transfer to
 the refinements of the next section. In the regime of the paper's error analysis, the same programs
@@ -281,17 +247,12 @@ algorithm whose cost is measured in gates should not. A matrix is \emph{elementa
 two-qubit unitary acting on adjacent wires, padded with identities:
 
 %%LST Algorithms/HHL_Gates.thy elementary
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Elementary gates},label={lst:elem}]
-definition elementary :: "nat ~$\Rightarrow$~ complex Matrix.mat
-    ~$\Rightarrow$~ bool" where
-  "elementary K U ~$\longleftrightarrow$~ (~$\exists$~a b q G. q ~$\in$~ {1,
-      2} ~$\wedge$~ G ~$\in$~ carrier_mat (2 ^ q) (2 ^ q) ~$\wedge$~
-      Quantum.unitary G ~$\wedge$~ 0 < a ~$\wedge$~ 0 < b ~$\wedge$~
-     K = a * (2 ^ q * b) ~$\wedge$~ U = 1~$_{m}$~ a ~$\otimes$~ (G
-         ~$\otimes$~ 1~$_{m}$~ b))"
+\begin{lstlisting}[float=tp,caption={Elementary gates},label={lst:elem}]
+definition elementary :: "nat ~$\Rightarrow$~ complex Matrix.mat ~$\Rightarrow$~ bool" where
+  "elementary K U ~$\longleftrightarrow$~ (~$\exists$~a b q G. q ~$\in$~ {1, 2} ~$\wedge$~ G ~$\in$~ carrier_mat (2 ^ q)
+      (2 ^ q) ~$\wedge$~ Quantum.unitary G ~$\wedge$~ 0 < a ~$\wedge$~ 0 < b ~$\wedge$~ K = a * (2 ^ q *
+      b) ~$\wedge$~ U = 1~$_{m}$~ a ~$\otimes$~ (G ~$\otimes$~ 1~$_{m}$~ b))"
 \end{lstlisting}
-\end{minipage}
 
 Refining the programs gate by gate, we replace $H^{\otimes k}$ by $k$ Hadamard gates, $F$ by the
 AFP's Fourier circuit, the clock-controlled rotation by a uniformly controlled rotation with
@@ -314,13 +275,11 @@ $\mathit{bb}$ bits and $a$ ancillas, an explicit list of gates on $K=m+k+1+a$ qu
 gate is elementary; applied to $\ket0$ it computes the HHL output for a right-hand side $b'$ with
 $\norm{b'-b}\le m\cdot2\pi/2^{\mathit{bb}}$; the flag reads $1$ with amplitude at least $Ct_0/\pi$;
 the post-selected state is within $2\delta/(C\norm x)$ of $\psi\otimes x/\norm x\otimes\ket1$ for
-$x=(L+\mu I)^{-1}b'$ and $\delta=\epsilon+2(2^k-1)\eta$; and the number of gates is at most a
-closed-form polynomial in $m$, $k$, $r$, $a$, $\mathit{bb}$ and $|xs|$ times the clock size
-$2^k$.\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77}
+$x=(L+\mu I)^{-1}b'$ and $\delta=\epsilon+2(2^k-1)\eta$; and the number of gates is at most an explicit
+polynomial in $m$, $k$, $r$, $a$, $\mathit{bb}$, $|xs|$ and the clock size $2^k$.\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77}
 \end{theorem}
 
-\noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Theorem~\ref{thm:lap} (abridged: hypotheses, definitions and three of the six conclusions are elided)},label={lst:lap}]
+\begin{lstlisting}[float=tp,caption={Theorem~\ref{thm:lap} (abridged: hypotheses, definitions and three of the six conclusions are elided)},label={lst:lap}]
 corollary hhl_lap_sparse:
   ...
   shows ...
@@ -331,7 +290,6 @@ corollary hhl_lap_sparse:
       + 2 * ((2 ^ k - 1) * (r * (2 * (m * (m + 2) * (6 * K + 7)) + 3 * (4 * K + 1))))
       + 2 * (k ^ 3 + 2 * k) + (2 * m + 1) * (1 + 2 ^ k * (2 * k + 1))"
 \end{lstlisting}
-\end{minipage}
 
 The count is dominated by the $2(2^k-1)$ controlled Trotter products of the two phase estimations,
 each with $r$ steps of $O(m^2K)$ gates. Figure~\ref{fig:budget} shows how the three sources of error
@@ -344,13 +302,13 @@ ends with a list of two-qubit gates whose output is provably close to the normal
 \node[bx, fill=gates!10, anchor=north] (p) at (0,0) {\textbf{Preparing $\ket b$}\\ angles with $\mathit{bb}$ bits:\\ $\norm{b'-b}\le m\cdot2\pi/2^{\mathit{bb}}$};
 \node[bx, fill=hhl!10, anchor=north] (s) at (3.95,0) {\textbf{Simulation}\\ each Trotter product is $\eta$-close to $e^{iAt_0}$, $\eta=18(2+\mu)^2t_0^2/r$; phase estimation uses $2(2^k-1)$ of them};
 \node[bx, fill=hfc!12, anchor=north] (e) at (7.9,0) {\textbf{Finite clock}\\ $2^k$ clock states with the sine window: error $\epsilon$};
-\node[bx, text width=4.6cm] (d) at (5.9,-2.55) {$\delta=\epsilon+2(2^k-1)\,\eta\ \le\ Ct_0/\pi$};
-\node[bx, text width=8.6cm] (o) at (3.95,-3.95) {flag $\ket1$ with amplitude $\ge Ct_0/\pi$; then the state is within
+\node[bx, text width=4.6cm] (d) at (5.9,-3.25) {$\delta=\epsilon+2(2^k-1)\,\eta\ \le\ Ct_0/\pi$};
+\node[bx, text width=8.6cm] (o) at (3.95,-4.55) {flag $\ket1$ with amplitude $\ge Ct_0/\pi$; then the state is within
 $2\delta/(C\norm x)$ of $\psi\otimes x/\norm x\otimes\ket1$, where $x=(L+\mu I)^{-1}b'$};
 \draw[->] (s) -- node[left, font=\scriptsize] {$2(2^k-1)\eta$} (d);
 \draw[->] (e) -- node[right, font=\scriptsize] {$\epsilon$} (d);
 \draw[->] (d) -- (o.north -| d);
-\draw[->] (p) |- node[pos=0.22, left, font=\scriptsize] {HHL solves for $b'$} (o.west);
+\draw[->] (p) -- node[midway, left, font=\scriptsize] {HHL solves for $b'$} (p |- o.north);
 \end{tikzpicture}
 \caption{The error budget of Theorem~\ref{thm:lap}. Rounding the angles of $\ket b$ changes the
 right-hand side rather than the solution, so it is stated separately; the simulation and clock errors

@@ -73,14 +73,18 @@ def conv(text):
     text = re.sub(r'\$~~\$', '', text)
     return text
 
-def wrap(line, width=76):
-    if len(line) <= width:
+def vis(t):
+    """Printed width: an escape ~$...$~ prints as about one character."""
+    return len(re.sub(r'~\$.*?\$~', 'xx', t))
+
+def wrap(line, width=72):
+    if vis(line) <= width:
         return [line]
     ind = len(line) - len(line.lstrip())
     words, out, cur = line.strip().split(' '), [], ' ' * ind
     for w in words:
         cand = (cur + ' ' + w) if cur.strip() else cur + w
-        if len(cand) > width and cur.strip():
+        if vis(cand) > width and cur.strip():
             out.append(cur)
             cur = ' ' * (ind + 4) + w
         else:
@@ -88,17 +92,48 @@ def wrap(line, width=76):
     out.append(cur)
     return out
 
+def reflow_context(lines):
+    out = []
+    for l in lines:
+        t = ' '.join(l.split())
+        if t in ('context', 'begin') or not out:
+            out.append(t)
+        elif t.split(' ')[0] in HEADS:
+            out.append('  ' + t)
+        elif t.startswith('and '):
+            out.append('    ' + t)
+        else:
+            out[-1] += ' ' + t
+    return out
+
+HEADS = ('fixes', 'assumes', 'shows', 'defines', 'obtains', 'where')
+
+def reflow(lines):
+    """One logical line per clause: keyword lines and quoted lines start a line, others are joined."""
+    out = []
+    for i, l in enumerate(lines):
+        t = ' '.join(l.split())
+        if i == 0:
+            out.append(t)
+        elif t.split(' ')[0] in HEADS or t.startswith('"'):
+            out.append('  ' + t)
+        elif t.startswith('and '):
+            out.append('    ' + t)
+        else:
+            out[-1] += ' ' + t
+    return out
+
 def main():
     f, names = sys.argv[1], sys.argv[2:]
     src = open(os.path.join(ROOT, f)).read()
     if names and names[0] == '--lines':          # verbatim line range a-b (1-based, inclusive)
         a, b = map(int, names[1].split('-'))
-        for l in src.split('\n')[a - 1:b]:
+        for l in reflow_context(src.split('\n')[a - 1:b]):
             for w in wrap(conv(l)):
                 print(w)
         names = names[2:]
     for n in names:
-        for l in statement(src, n):
+        for l in reflow(statement(src, n)):
             for w in wrap(conv(l)):
                 print(w)
 

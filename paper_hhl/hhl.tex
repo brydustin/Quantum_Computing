@@ -41,7 +41,7 @@
 \newcommand{\hoaret}[3]{\models_{t}\{#1\}\;#2\;\{#3\}}
 \newcommand{\hoarep}[3]{\models_{p}\{#1\}\;#2\;\{#3\}}
 \newcommand{\IMD}{Isabelle Marries Dirac}
-\newcommand{\prompt}[1]{\textsf{\small``#1''}}
+\DeclareRobustCommand{\prompt}[1]{\textsf{\small\def\_{\char95\allowbreak}``#1''}}
 
 \definecolor{backcolour}{rgb}{0.96,0.96,0.93}
 \definecolor{notes}{RGB}{120,120,135}

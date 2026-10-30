@@ -4,6 +4,7 @@
 A listing is marked by a comment line directly before it:
     %%LST <file> <name> [<name> ...]          statements of the named facts and definitions
     %%LST <file> --lines a-b [<name> ...]     a verbatim line range first (e.g. a context), then facts
+    %%LST <file> <names> ; <file2> <names>    statements from several files, in order
 The body between \\begin{lstlisting}[...] and \\end{lstlisting} is replaced by the output of
 thy2lst.py.  Unmarked listings (abridged ones) are left alone.  Run from anywhere; edits in place.
 """
@@ -40,7 +41,9 @@ def main():
                 k = j + 1
                 while not L[k].startswith(r'\end{lstlisting}'):
                     k += 1
-                body = gen(m.group(1).split())
+                body = []
+                for part in m.group(1).split(';'):      # several files: 'f1 n1 ; f2 n2'
+                    body += gen(part.split())
                 if L[j + 1:k] != body:
                     changed += 1
                 out.extend(body)

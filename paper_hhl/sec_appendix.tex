@@ -14,8 +14,8 @@ prerequisites and the bridges), functional calculus, and HHL (including its side
 Fig.~\ref{fig:stack} divide HHL's theories as in the project's own size table.
 
 \paragraph{Human directions.} A direction is a message typed by the human: either a plain prompt, or the
-goal of a \texttt{/loop} command typed by the human (recorded with an \texttt{origin} field, unlike the
-loop's self-scheduled continuations, which carry a \texttt{scheduledTaskId}). Slash commands without a
+goal of a \texttt{/loop} command typed by the human (the log marks it as typed, unlike the loop's
+self-scheduled continuations, which carry the identifier of a scheduled task). Slash commands without a
 goal (\texttt{/compact}, \texttt{/model}, \texttt{/effort}), tool results, notifications and
 continuation summaries are excluded. Each of the 258 directions was assigned one kind by reading it:
 \emph{direction} (scope or a task), \emph{checking a claim}, \emph{taste} (names, organisation,
