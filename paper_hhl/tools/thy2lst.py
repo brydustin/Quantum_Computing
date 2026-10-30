@@ -78,11 +78,27 @@ def vis(t):
     """Printed width: an escape ~$...$~ prints as about one character."""
     return len(re.sub(r'~\$.*?\$~', 'xx', t))
 
+def atoms(text):
+    """Split at spaces, keeping each ~...~ escape whole (it must not be broken across lines)."""
+    out, buf = [], None
+    for t in text.split(' '):
+        if buf is not None:
+            buf += ' ' + t
+            if t.count('~') % 2 == 1:
+                out.append(buf); buf = None
+        elif t.count('~') % 2 == 1:
+            buf = t
+        else:
+            out.append(t)
+    if buf is not None:
+        out.append(buf)
+    return out
+
 def wrap(line, width=72):
     if vis(line) <= width:
         return [line]
     ind = len(line) - len(line.lstrip())
-    words, out, cur = line.strip().split(' '), [], ' ' * ind
+    words, out, cur = atoms(line.strip()), [], ' ' * ind
     for w in words:
         cand = (cur + ' ' + w) if cur.strip() else cur + w
         if vis(cand) > width and cur.strip():

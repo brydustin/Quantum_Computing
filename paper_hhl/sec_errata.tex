@@ -18,9 +18,40 @@ $\frac12$. Lemma~3 claims
 with $c=\pi^2/2$. At $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$ the left side is $\frac14+\frac14=\frac12$,
 while $\kappa^2(\lambda-\tilde\lambda)^2=\frac14$ and $f(\lambda)^2+g(\lambda)^2=\frac14$, so the right side is
 $c/16=\pi^2/32<\frac12$, for every~$\kappa$. The constant $c=\pi^2$
-holds, and no smaller constant does (Listing~\ref{lst:lemma3}). The paper uses the lemma only inside an
+holds, and no smaller constant does (Fig.~\ref{fig:filters}, Listing~\ref{lst:lemma3}). The paper uses the lemma only inside an
 $O(\kappa/t)$ bound, so its Theorem~1 is unaffected; with the corrected constant we prove it with
 the explicit constant $12\pi^2\sqrt{4+2\pi^2}$.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=10.8cm, height=5cm, xmin=0, xmax=1, ymin=0, ymax=0.78,
+  axis lines=left, xlabel={$\lambda$}, xtick={0,0.25,0.5,1}, xticklabels={$0$,$\frac1{2\kappa}$,$\frac1\kappa$,$\frac2\kappa$},
+  ytick={0,0.25,0.5}, yticklabels={$0$,$\frac14$,$\frac12$}, legend style={font=\scriptsize, draw=none,
+  at={(0.99,0.99)}, anchor=north east}, legend cell align=left, tick label style={font=\footnotesize}, label style={font=\footnotesize}]
+\addplot[hhl, thick, domain=0:0.25, forget plot] {0};
+\addplot[hhl, thick, domain=0.25:0.5, samples=40, forget plot] {0.5*sin(deg(pi/2*(4*x-1)))};
+\addplot[hhl, thick, domain=0.5:1, samples=40, forget plot] {1/(4*x)};
+\addplot[red!75!black, thick, domain=0:0.25, forget plot] {0.5};
+\addplot[red!75!black, thick, domain=0.25:0.5, samples=40, forget plot] {0.5*cos(deg(pi/2*(4*x-1)))};
+\addplot[red!75!black, thick, domain=0.5:1, forget plot] {0};
+\addplot[black, densely dotted, very thick, domain=0:0.5, forget plot] {0.25};
+\addplot[black, densely dotted, very thick, domain=0.5:1, samples=40, forget plot] {1/(16*x*x)};
+\addlegendimage{hhl, thick}\addlegendentry{$f$ (well-conditioned)}
+\addlegendimage{red!75!black, thick}\addlegendentry{$g$ (ill-conditioned)}
+\addlegendimage{black, densely dotted, very thick}\addlegendentry{$f^2+g^2$}
+\addplot[gray, dashed, domain=0:0.5, forget plot] {0.5};
+\node[font=\scriptsize, gray!80!black, anchor=west] at (axis cs:0.01,0.555) {$f^2+g^2=\frac12$: what the paper's proof uses};
+\addplot[only marks, mark=*, mark size=1.8pt, black] coordinates {(0.25,0) (0.25,0.5) (0.5,0.5) (0.5,0)};
+\draw[->, thick, gray!70!black] (axis cs:0.27,0.62) to[bend left=22] node[midway, above, font=\scriptsize] {counterexample: $\lambda\to\tilde\lambda$} (axis cs:0.48,0.62);
+\end{axis}
+\end{tikzpicture}
+\caption{The filter functions of the HHL paper for $\kappa=2$. On $[\frac1{2\kappa},\frac1\kappa)$ the point
+$(f,g)$ moves on a circle of radius $\frac12$, so $f^2+g^2=\frac14$ there, not the $\frac12$ that the
+paper's proof of Lemma~3 uses. The marked pair $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$ is
+the counterexample to the paper's constant: $(f,g)$ jumps from $(0,\frac12)$ to $(\frac12,0)$, a squared
+distance of $\frac12$, while the claimed bound allows only $\pi^2/32$.}\label{fig:filters}
+\end{figure}
 
 %%LST Algorithms/HHL_Filter.thy lemma3_paper_constant lemma3 lemma3_sharp
 \begin{lstlisting}[float=tp,caption={Lemma~3 of the HHL paper: the counterexample to the paper's constant, the corrected constant, and its sharpness (for fixed \isa{$\kappa$ > 0}; \isa{filt\_f} and \isa{filt\_g} are the filter functions)},label={lst:lemma3}]

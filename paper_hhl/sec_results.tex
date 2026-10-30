@@ -29,7 +29,23 @@ entry~\cite{unruh2025kraus}, which develops Kraus maps on trace-class operators 
 spaces but does not prove Choi's theorem. For finite types the two settings meet: a list of Kraus
 matrices becomes a Kraus family whose map is the lectures' $\rho\mapsto\sum_iW_i\rho W_i^\dagger$, and
 with the lectures' Choi theorem every completely positive map in Paulsen's sense is a Kraus map of the
-library (Listing~\ref{lst:choi}).
+library (Fig.~\ref{fig:krausbridge}, Listing~\ref{lst:choi}).
+
+\begin{figure}[t]
+\centering
+\begin{tikzcd}[column sep=12.5em, row sep=3.6em, cells={font=\small},
+  every label/.append style={font=\footnotesize}]
+\rho\in\C^{n\times n} \arrow[r, "\rho\;\mapsto\;\textstyle\sum_iW_i\rho W_i^\dagger"] \arrow[d, "\mathit{tc\_of\_mat}"']
+  & \C^{d\times d} \\
+T_\rho\in\mathcal T(\ell^2(\alpha)) \arrow[r, "\mathit{kf\_apply}\;(\mathit{kf\_of\_mats}\;\mathit{Ws})"', shorten=4pt]
+  & \mathcal T(\ell^2(\beta)) \arrow[u, "\mathit{mat\_of\_tc}"']
+\end{tikzcd}
+\caption{The bridge to \emph{Kraus Maps} as a commuting square (\isa{kf\_of\_mats\_apply}): for finite types
+$\alpha$, $\beta$ of sizes $n$ and $d$, the lectures' Kraus map on matrices (top) agrees with Unruh's Kraus map
+on trace-class operators (bottom), read through the translation between matrices and operators. With
+Choi's theorem it follows that every completely positive map of the lectures is a Kraus map of the
+library (\isa{cp\_kraus\_map}).}\label{fig:krausbridge}
+\end{figure}
 
 %%LST Day19_Choi_Theorem.thy choi_theorem ; Kraus_Maps_Bridge/Kraus_Maps_Bridge.thy cp_kraus_map
 \begin{lstlisting}[float=tp,caption={Choi's theorem (Lecture 19), and the lectures' completely positive maps as Kraus maps of the AFP entry \emph{Kraus Maps}; \isa{tc\_map} reads a map of matrices as a map of trace-class operators on \isa{'a ell2}},label={lst:choi}]
@@ -118,6 +134,43 @@ at least $1-\varepsilon$~\cite{nielsenchuang}. As a program, phase estimation sa
 $J$ of clock values, the triple $\hoaret{(\sum_{j\in J}|\alpha_j|^2)\,I}{\mathit{QPE}}{\Pi_J}$, whose
 precondition is the weakest possible.
 
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=11.2cm, height=4.6cm, ymode=log, log origin y=infty, ymin=1e-7, ymax=1.5,
+  xmin=-0.6, xmax=15.6, axis lines=left, xtick={0,...,15}, ytick={1e-6,1e-4,1e-2,1},
+  xlabel={clock outcome $j$}, ylabel={$|\alpha_j|^2$}, tick label style={font=\scriptsize},
+  label style={font=\footnotesize}, legend style={font=\scriptsize, draw=none, fill=white, fill opacity=0.85,
+  text opacity=1, at={(0.99,0.99)}, anchor=north east}, legend cell align=left]
+\fill[red!7] (axis cs:-0.6,1e-7) rectangle (axis cs:2.3,1.5);
+\fill[red!7] (axis cs:8.3,1e-7) rectangle (axis cs:15.6,1.5);
+\addplot[ycomb, very thick, hhl!80, mark=*, mark size=1.1pt] coordinates
+  {(0,0.003435) (1,0.004576) (2,0.007018) (3,0.01342) (4,0.0401) (5,0.7377) (6,0.1362) (7,0.02382)
+   (8,0.009999) (9,0.005794) (10,0.004022) (11,0.003158) (12,0.002731) (13,0.002566) (14,0.002606) (15,0.002864)};
+\addlegendentry{uniform clock}
+\addplot[only marks, hfc!90!black, mark=square*, mark size=1.5pt] coordinates
+  {(0,1.228e-05) (1,3.794e-05) (2,0.0001311) (3,0.0006419) (4,0.008282) (5,0.6851) (6,0.3029) (7,0.002423)
+   (8,0.0003187) (9,7.778e-05) (10,2.41e-05) (11,7.718e-06) (12,1.925e-06) (13,9.227e-08) (14,5.157e-07) (15,3.57e-06)};
+\addlegendentry{sine-window clock}
+\addplot[densely dotted, thick, hhl!80, domain=-0.6:4.3, samples=40, forget plot] {1/(4*(5.3-x)^2)};
+\addplot[densely dotted, thick, hhl!80, domain=6.3:13.3, samples=40, forget plot] {1/(4*(x-5.3)^2)};
+\addplot[densely dotted, thick, hhl!80, domain=13.3:15.6, samples=10, forget plot] {1/(4*(21.3-x)^2)};
+\addplot[densely dashed, thick, hfc!90!black, domain=-0.6:4.3, samples=40, forget plot] {pi^2/(2*(5.3-x)^4)};
+\addplot[densely dashed, thick, hfc!90!black, domain=6.3:13.3, samples=40, forget plot] {pi^2/(2*(x-5.3)^4)};
+\addplot[densely dashed, thick, hfc!90!black, domain=13.3:15.6, samples=10, forget plot] {pi^2/(2*(21.3-x)^4)};
+\addplot[gray, domain=-0.6:15.6, samples=2, forget plot] {4/pi^2};
+\node[font=\scriptsize, gray, anchor=south west] at (axis cs:9.2,0.42) {$4/\pi^2$};
+\end{axis}
+\end{tikzpicture}
+\caption{The outcome distribution of phase estimation for $N=16$ and $N\varphi=5.3$ (logarithmic scale),
+computed from the definitions, with the two clock states. The nearest outcome has probability at least
+$4/\pi^2$ (Theorem~\ref{thm:qpe}). Away from it, the uniform clock's amplitudes obey only
+$|\alpha_j|^2\le1/(4N^2\delta_j^2)$ (dotted, \isa{pe\_amp\_tail}), the window's obey
+$|\alpha_j|^2\le\pi^2/(2N^4\delta_j^4)$ (dashed, \isa{win\_amp\_tail}). The outcomes more than three
+steps from $N\varphi$ (shaded) have total probability $0.039$ with the uniform clock and $0.0003$ with
+the window: this is why the window makes $N\sim1/\varepsilon$ enough (Theorem~\ref{thm:window}).}\label{fig:qpe}
+\end{figure}
+
 \subsection{The Algorithm}\label{sec:algorithm}
 
 \paragraph{Exact HHL.} Let $W=(F^\dagger\otimes I)\,\Lambda(U)$ be phase estimation without its
@@ -155,20 +208,52 @@ $R(C/\lambda_k)$, and uncomputation restores the clock; both sides of the identi
 and agree on eigenvectors, so they agree everywhere. No eigenbasis expansion of $b$ appears anywhere
 in the proof, although every textbook account is written as one.
 
-\paragraph{Inexact HHL.} The paper's error analysis drops the grid assumption. We follow it in four
-steps, each with explicit constants. \emph{(i)} With inexact eigenvalues, phase estimation spreads each
-eigenvector over the clock with amplitudes that decay like $1/(N\delta)$; with the paper's
-sine-window initial state they decay like $1/(N\delta)^2$, and for every $b$ the output of the
-clamped circuit is within
-$\bigl(K_1/N^2+K_2/N^3\bigr)^{1/2}\norm b$ of the ideal one, so a clock of size $N\sim1/\varepsilon$
-suffices.\isalink{Algorithms/HHL_Window.thy}{739} \emph{(ii)} An oracle $V$ with
-$\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves the output by at most the number of calls times~$\eta$.
-\emph{(iii)} With the paper's filter functions, which flag ill-conditioned eigenvalues instead of
-inverting them, we prove the paper's Theorem~1 for every right-hand side: the post-selected output is
-within $O(\kappa/t)$ of the ideal state, $t$ the total evolution
-time.\isalink{Algorithms/HHL_Filter_Bounds.thy}{330} \emph{(iv)} With amplitude amplification, at most
-$\pi\kappa$ rounds suffice, which is the paper's run time in its own
-normalisation.\isalink{Algorithms/HHL_Runtime.thy}{302} The rest of the paper is verified too: the
-reduction from circuits to matrix inversion behind its optimality theorems, rectangular and
+\paragraph{Inexact HHL.} The paper's error analysis drops the grid assumption. If $\lambda$ is not a
+grid value, phase estimation spreads each eigenvector over the clock, the rotation acts on every
+branch with its own angle, and uncomputation is inexact. Branches are orthogonal, which gives an exact
+identity for the error on an eigenvector, and the errors of distinct eigenvectors are orthogonal too, so
+the bound extends to every $b$ without a dependence on the dimension. Everything then depends on how fast
+the clock amplitudes decay away from the true phase. With the uniform clock state they decay like
+$1/(N\delta)$, which would need $N\sim1/\varepsilon^2$; the paper prepares the clock in a sine window
+instead, whose amplitudes decay like $1/(N\delta)^2$ (Fig.~\ref{fig:qpe}).
+
+\begin{theorem}[window register]\label{thm:window}
+Let $0<C$ and $0<\theta<1$, and let $A$ be Hermitian with every eigenvalue in the
+interval from $\lambda_{\min}\ge2C/\theta$ to $\pi/(2t_0)$. For every $b$, the circuit with the sine-window clock and the rotation clamped
+to $[-1,1]$ satisfies
+\[
+\norm{\mathrm{out}-\psi\otimes w}^2\le\Bigl(\frac{K_1}{N^2}+\frac{K_2}{N^3}\Bigr)\norm b^2,
+\]
+with $K_1=8\pi^2(2+\pi^2)\theta^4/(t_0^2C^2(1-\theta^2))$ and $K_2=512\pi^6/(t_0^4\lambda_{\min}^4)$,
+where $\psi$ is the window state and $w$ the exact output of Theorem~\ref{thm:hhl}. Hence a clock of size
+$N\sim1/\varepsilon$ gives error at most $\varepsilon\norm b$.\isalink{Algorithms/HHL_Window.thy}{739}
+\end{theorem}
+
+The paper's own analysis also flags ill-conditioned eigenvalues instead of inverting them. Its
+\emph{filter functions} $f$, $g$ (Fig.~\ref{fig:filters}) send an eigenvalue to a flag state
+$\ket{h(\lambda)}=\sqrt{1-f^2-g^2}\ket{\mathit{nothing}}+f\ket{\mathit{well}}+g\ket{\mathit{ill}}$, and the
+paper's Theorem~1 bounds the error of the flagged output in terms of the total evolution time $t=Nt_0$.
+
+\begin{theorem}[Theorem~1 of the HHL paper, with constants]\label{thm:thm1}
+Let $A$ be Hermitian with $|t_0\lambda|\le\pi/2$ on its spectrum, let the flag gates prepare
+$\ket{h(\tilde\lambda_k)}$ for each clock value~$k$, and let $c=\pi^2\sqrt{4+2\pi^2}$. For every $b$, the
+flagged output is within $3c\,\kappa\norm b/t$ of the ideal one, and the states post-selected on
+$\{\mathit{well},\mathit{ill}\}$ (or on $\mathit{well}$, for $b$ in the well-conditioned subspace) are within
+$12c\,\kappa/t$ of the ideal ones.\isalink{Algorithms/HHL_Filter_Bounds.thy}{330}
+\end{theorem}
+
+\begin{theorem}[run time]\label{thm:runtime}
+Let the spectrum of $A$ lie in $[1/\kappa,1]$, let $t_0\le\pi/2$, $\varepsilon\kappa\le1$ and
+$Nt_0\ge12c\,\kappa/\varepsilon$, and let $\norm b=1$. Then the post-selected output is within
+$\varepsilon$ of $\psi\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket{\mathit{well}}$, its amplitude is at least
+$1/(4\kappa)$, and amplitude amplification with $k\le\pi\kappa$ rounds and $(2k+1)\cdot2(N-1)$ calls of the
+evolution succeeds with probability at least $1-\norm y^2$, where $y$ is the post-selected part of
+one run.\isalink{Algorithms/HHL_Runtime.thy}{302}
+\end{theorem}
+
+\noindent An oracle $V$ with $\norm{Vv-e^{iAt_0}v}\le\eta\norm v$ moves every output by at most the number
+of calls times~$\eta$, so the theorems hold for a simulated evolution with an additional error
+$2(N-1)\eta$. The rest of the paper is verified too: the reduction from circuits to matrix inversion
+behind its optimality theorems (with $\kappa\le2T+1$ for a circuit of $T$ gates), rectangular and
 preconditioned systems, and the estimation of $\langle x|M|x\rangle$ from samples. Several of its
 statements turned out to be false (Section~\ref{sec:errata}).

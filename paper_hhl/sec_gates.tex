@@ -20,7 +20,62 @@ circuit over a colouring of the matrix into $2s-1$ one-sparse parts, with error 
 $r(6s-2)$ oracle queries. What remains are oracles: for the entries of $A$, for the angles of $b$,
 and for the sparsity pattern.
 
-\subsection{Compiling the Oracles}
+
+\subsection{Sparse Hamiltonian Simulation}\label{sec:sparse}
+
+The paper assumes an $s$-sparse $A$ and cites simulation results for $e^{iAt}$~\cite{berry2007}. We verify
+the first-order construction in three steps. The Lie--Trotter bound of Section~\ref{sec:math} reduces the
+problem to simulating parts. The graph of $A$ is edge-coloured greedily with $2s-1$ colours; each colour
+class is a matching, given by an involution $q_c$ of the indices, so $A$ is its diagonal plus $2s-1$
+Hermitian one-sparse matrices whose entries are entries of~$A$ (\isa{sparse\_split})~\cite{aharonov2003}.
+Each one-sparse evolution is then implemented exactly on $\ket x\ket y\ket b$ (Fig.~\ref{fig:sparse}): a
+colour oracle $O_c$ writes the partner $q_c(x)$, a comparator sorts the pair, an entry gate rotates the
+sign qubit by $e^{id\left(\begin{smallmatrix}0&a\\\bar a&0\end{smallmatrix}\right)}$ with $a=A_{xy}$, and the
+comparator and $O_c^\dagger$ uncompute.
+
+\begin{theorem}[sparse simulation]\label{thm:sparse}
+Let $A$ be Hermitian with entries bounded by $L$, and let $p$ colour its graph with $2s-1$ matchings,
+given by colour oracles. Then $r$ Trotter steps of the circuit of Fig.~\ref{fig:sparse} act on
+$\ket x\ket0\ket0$ as a unitary $V$ with $\norm{Vv-e^{iAt}v}\le8(sLt)^2\norm v/r$, and they make
+$r(6s-2)$ oracle queries.\isalink{Algorithms/HHL_Sparse_Circuit.thy}{915}
+\end{theorem}
+
+%%LST Algorithms/HHL_Sparse_Circuit.thy sparse_simulation_circuit
+\begin{lstlisting}[float=tp,caption={Theorem~\ref{thm:sparse}: the gate list \isa{sim\_gates} runs as \isa{sim\_mat}, which is $8(sLt)^2/r$-close to the evolution, with $r(6s-2)$ queries},label={lst:sparse}]
+theorem sparse_simulation_circuit:
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and s: "1 ~$\le$~ s"
+    and L: "0 ~$\le$~ L" and Lb: "~$\bigwedge$~i j. i < n ~$\Longrightarrow$~ j < n ~$\Longrightarrow$~ cmod (A ~\$\$~ (i,
+        j)) ~$\le$~ L"
+    and cov: "edge_cover n (2 * s - 1) p (edges n A)"
+    and Os: "~$\bigwedge$~c. c < 2 * s - 1 ~$\Longrightarrow$~ colour_oracle n (p c) (Os c)" and r:
+        "0 < r"
+  shows "sg_run n (t / real r) A Os (sim_gates (2 * s - 1) r) * emb n =
+      emb n * sim_mat n (t / real r) A (2 * s - 1) p r"
+    and "sim_mat n (t / real r) A (2 * s - 1) p r ~$\in$~ carrier_mat n n"
+    and "unitary (sim_mat n (t / real r) A (2 * s - 1) p r)"
+    and "sim_mat n (t / real r) A (2 * s - 1) p r
+        ~\closeto{8 * (real s * L * t)\textsuperscript{2} / real r}~
+        evolution A t"
+    and "length (filter is_query (sim_gates (2 * s - 1) r)) = r * (6 * s
+        - 2)"
+\end{lstlisting}
+
+\begin{figure}[t]
+\centering
+\scalebox{0.85}{%
+\begin{quantikz}[row sep={0.7cm,between origins}, column sep=0.3cm]
+\lstick{$\ket x$} & \qwbundle{} & \gate[2]{O_c} & \gate[3]{\mathrm{CMP}} & \gate[3]{\mathrm{ENT}_d} & \gate[3]{\mathrm{CMP}} & \gate[2]{O_c^\dagger} & \midstick[3,brackets=none]{$\cdots$} & \gate{D_d} & \rstick{$V_d\ket x$}\\
+\lstick{$\ket 0$} & \qwbundle{} & & & & & & & & \rstick{$\ket0$}\\
+\lstick{$\ket 0$} & & & & & & & & & \rstick{$\ket0$}
+\end{quantikz}}
+\caption{One Trotter step for an $s$-sparse $A$ with $d=t/r$. For each of the $2s-1$ colours~$c$, five
+gates implement $e^{idH_c}$ on $\ket x$ and return both ancilla registers to $\ket0$, where $H_c$ is the
+one-sparse part of colour $c$; a diagonal phase gate $D_d$ follows. The step has $5(2s-1)+1$ gates; three per colour and the diagonal gate query
+oracles, $6s-2$ queries per step. In Section~\ref{sec:lap} the oracles themselves become elementary
+gates.}\label{fig:sparse}
+\end{figure}
+
+\subsection{Compiling the Oracles}\label{sec:lap}
 
  The last step removes them for a concrete family. A reversible
 comparator on clean ancillas, built from Toffoli and CNOT gates and routed to adjacent wires, computes

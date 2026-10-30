@@ -12,7 +12,8 @@ CLI~\cite{codexcli} with GPT-5.4 was also used for focused, lemma-sized tasks in
 on the first day and for parts of five later ones; all 197 October commits carry one of their
 co-author lines.
 
-The agent works through a shell. Almost every action is a command (9{,}202 of 9{,}835 tool calls in
+Figure~\ref{fig:workflow} shows how the parts fit together. The agent works through a shell. Almost
+every action is a command (9{,}202 of 9{,}835 tool calls in
 October): it builds Isabelle sessions, reads the errors, edits theory files with small scripts, checks
 single commands with a command-line toolkit that also exposes Sledgehammer, commits and pushes. Long
 tasks run as \emph{loops}: the human states a goal once (\texttt{/loop go ahead with the HHL work}),
@@ -21,6 +22,34 @@ background under monitors. Between sessions, the only memory is what is written 
 repository's instructions file, project documents such as a diary and an audit, and a directory of
 short notes that the agent maintains about the user and the project. The development used Isabelle2025-2
 until its last day, when it was ported to Isabelle2026 for submission without changing a proof.
+
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Stealth,
+  actor/.style={draw, rounded corners=3pt, align=center, inner sep=3.5pt, minimum width=2.4cm, minimum height=1.05cm},
+  store/.style={draw, align=center, inner sep=3pt, text width=3.05cm, font=\scriptsize},
+  lab/.style={font=\scriptsize, align=center, inner sep=1pt}]
+\node[actor, fill=hfc!15] (H) at (0,0) {\textbf{Human}\\ scope, statements,\\ names, taste};
+\node[actor, fill=hhl!14] (A) at (4.25,0) {\textbf{Agent}\\ Claude Code};
+\node[actor, fill=gates!14] (I) at (8.5,0) {\textbf{Isabelle}\\ build, check,\\ Sledgehammer};
+\node[store, fill=notes!12] (W) at (0,-2.7) {\textbf{Written state}\\ instructions file, diary, audit, hand-off notes, memory notes};
+\node[store, fill=notes!12] (R) at (4.25,-2.7) {\textbf{Repository}\\ 130 theories, 571 commits, backups before deletions};
+\node[store, fill=notes!12] (C) at (8.5,-2.7) {\textbf{Checks}\\ oracle audit, duplicates and clashes, listings, export build};
+\draw[->, thick] ([yshift=4pt]H.east) -- node[lab, above] {258 directions} ([yshift=4pt]A.west);
+\draw[->, thick] ([yshift=-4pt]A.west) -- node[lab, below] {reports, questions} ([yshift=-4pt]H.east);
+\draw[->, thick] ([yshift=4pt]A.east) -- node[lab, above] {9{,}202 commands} ([yshift=4pt]I.west);
+\draw[->, thick] ([yshift=-4pt]I.west) -- node[lab, below] {errors, timings} ([yshift=-4pt]A.east);
+\draw[->] ([xshift=-6pt]A.south) -- node[lab, left] {writes} ([xshift=-6pt]R.north);
+\draw[<->] (W.north east) -- node[lab, above left=-1pt, pos=0.55] {re-read after\\ 37 compactions} (A.south west);
+\draw[->] (R.east) -- (C.west);
+\draw[->] (C.north) -- node[lab, right, pos=0.4] {findings} ($(C.north)+(0,0.85)$) -| ([xshift=8pt]A.south);
+\end{tikzpicture}
+\caption{How the work flowed in October. The human gives directions and judges results, reading the
+theories in jEdit and the generated documents; the agent writes the theories and operates Isabelle through
+the shell; mechanical checks report on the repository; and the written state carries the project across
+context compactions and the five-month pause. Numbers are for October~18--29.}\label{fig:workflow}
+\end{figure}
 
 \subsection{Timeline}
 
