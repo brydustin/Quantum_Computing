@@ -23,7 +23,7 @@ Four small rules make the logic work at algorithm scale. In the exact case the r
 program is totally correct, and its number of rounds is geometric with mean 1/p. Beyond the exact
 case, the paper's error analysis holds with explicit constants, and for the shifted cycle Laplacian the whole algorithm, oracles included, is a
 verified gate list with a closed-form count. Seven statements of the original paper are false. An AI
-agent wrote almost all of the 64,000 lines, directed by one mathematician.
+agent wrote almost all of the 64,000 lines, directed by the author.
 
 ## Notes
 

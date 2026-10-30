@@ -52,7 +52,7 @@ Four small rules make the logic work at algorithm scale. In the exact case the r
 program is totally correct, and its number of rounds is geometric with mean $1/p$. Beyond the exact
 case, the paper's error analysis holds with explicit constants, and for the shifted cycle Laplacian the whole algorithm, oracles included, is a
 verified gate list with a closed-form count. Seven statements of the original paper are false. An AI
-agent wrote almost all of the 64{,}000 lines, directed by one mathematician.
+agent wrote almost all of the 64{,}000 lines, directed by the author.
 \end{abstract}
 
 \maketitle
@@ -127,8 +127,8 @@ of Ying's quantum while-language~\cite{ying2011}, and contribute the following.
   to the flag is a list of one- and two-qubit gates with a closed-form count
   (Section~\ref{sec:gates}).
 \item \emph{The errata.} Seven statements of the HHL paper are false (Section~\ref{sec:errata}).
-\item \emph{The process.} An AI agent wrote almost all of the 130 theories (64{,}010 lines, no \texttt{sorry}), directed
-  by one person (Section~\ref{sec:agent}).
+\item \emph{The process.} An AI agent wrote almost all of the 130 theories (64{,}010 lines, no \texttt{sorry})
+  under the author's direction (Section~\ref{sec:agent}).
 \end{enumerate}
 
 \section{Quantum Hoare Logic at Algorithm Scale}\label{sec:qhl}
@@ -260,16 +260,17 @@ App.~A5 & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
 
 \section{How It Was Built}\label{sec:agent}
 
-Claude Code~\cite{claudecode} wrote the development under the direction of the author, an
-experienced Isabelle user who wrote almost none of the proof text. The foundation, Paulsen's lecture
-course~\cite{paulsen2011notes}, was written in April and May 2026, and, after a pause of 147 days, HHL in eleven days
-of October, with 258 human directions over 84 distinct hours and 9{,}835 agent tool calls. The agent
-wrote and repaired the proofs, and resumed after the pause from its own hand-off note.
-The human chose what to prove, checked that the statements meant what the paper meant, and asked, on
-28 October, to stop treating the black boxes as given. The kernel rejects wrong proofs, so the agent's
-failures lay elsewhere, as in a confident ``no oracles'' report from an audit that had skipped the gate
-theories, where two theorems depended on \texttt{skip\_proof}. Checks in the build now catch such failures. The kernel guarantees that the
-theorems are true; the human guarantees that they are the right theorems.
+Claude Code~\cite{claudecode} wrote the development under the author's direction. The author is an
+experienced Isabelle user but wrote almost none of the proof text. The foundation, Paulsen's lecture
+course~\cite{paulsen2011notes}, was formalised in April and May 2026. After a pause of 147 days, HHL
+followed in eleven days of October, with 258 messages from the author over 84 distinct hours and
+9{,}835 tool calls by the agent. The agent wrote and repaired the proofs, and after the pause it
+picked up the work from its own hand-off note. The author chose what to prove, checked that each
+statement meant what the paper meant, and asked on 28 October for the black boxes to be built from
+gates. The kernel rejects wrong proofs, so the agent's mistakes lay elsewhere. Once it confidently
+reported ``no oracles'' from an audit that had skipped the gate theories, where two theorems depended
+on \texttt{skip\_proof}. Checks in the build now catch such mistakes. The kernel guarantees that the
+theorems are true, and the author that they are the right theorems.
 
 \section{Discussion and Future Work}
 
