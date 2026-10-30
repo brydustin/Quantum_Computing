@@ -1,0 +1,290 @@
+\documentclass[acmsmall,nonacm,screen,11pt]{acmart}
+% Libertine when available (Overleaf); Latin Modern otherwise.
+\makeatletter\if@ACM@newfonts\else\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{amssymb}\fi\makeatother
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\usepackage{stmaryrd}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{isabelle-listings}
+\usepackage{tikz}
+\usetikzlibrary{quantikz2,arrows.meta,positioning,calc}
+
+\DeclareMathOperator{\Tr}{tr}
+% quantikz defines \ket, \bra and \braket; we use our own.
+\let\ket\relax\let\bra\relax\let\braket\relax\let\ketbra\relax
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle #1|}
+\newcommand{\ketbra}[2]{|#1\rangle\langle #2|}
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\sem}[1]{\llbracket #1\rrbracket}
+\newcommand{\hoaret}[3]{\models_{t}\{#1\}\;#2\;\{#3\}}
+\DeclareRobustCommand{\isa}[1]{\textsf{\def\_{\char95\allowbreak}#1}}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.93}
+\lstdefinestyle{isabellestyle}{
+    backgroundcolor=\color{backcolour},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=true, breaklines=true, columns=fullflexible,
+    captionpos=b, keepspaces=true,
+    numbers=none, showspaces=false, showstringspaces=false, tabsize=2,
+    aboveskip=6pt, belowskip=6pt,
+    xleftmargin=2pt, xrightmargin=2pt, framexleftmargin=2pt, framexrightmargin=2pt}
+\lstset{language={Isabelle}, style=isabellestyle, mathescape=true, escapeinside=~~}
+\renewcommand{\lstlistingname}{Listing}
+\tikzset{slice/.style={thin, gray!80, dash pattern=on 2pt off 1.5pt, align=center}}
+
+\begin{document}
+
+\title{HHL, Verified to the Gate}
+\subtitle{Quantum Hoare Logic at Algorithm Scale in Isabelle/HOL, Written with an AI Agent}
+\author{Dustin Bryant}
+\orcid{0000-0001-9876-3804}
+\affiliation{\institution{Independent researcher}\country{USA}}
+\email{brydustin@gmail.com}
+\authorsaddresses{}
+
+\begin{abstract}
+HHL prepares a quantum state proportional to the solution of a linear system. Earlier mechanised
+proofs cover its exact case and treat its subroutines as black boxes. We verify HHL in Isabelle/HOL,
+from the spectral theorem through quantum Hoare logic down to circuits of one- and two-qubit gates.
+Four small rules make the logic work at algorithm scale: the repeat-until-success program is totally
+correct, and its number of rounds is geometric with mean $1/p$. The paper's error analysis holds with
+explicit constants, and for the shifted cycle Laplacian the whole algorithm, oracles included, is a
+verified gate list with a closed-form count. Seven statements of the original paper are false. An AI
+agent wrote almost all of the 64{,}000 lines, directed by one mathematician.
+\end{abstract}
+
+\maketitle
+
+\section{HHL, and Why It Is Hard to Verify}
+
+HHL~\cite{hhl2009} started quantum linear algebra. Given a sparse Hermitian $A$ and a state $\ket b$, it
+prepares $\ket x\propto A^{-1}\ket b$ in time polynomial in $\log N$, the condition number $\kappa$ and
+$1/\varepsilon$. Phase estimation with $U=e^{iAt_0}$ writes the eigenvalues of $A$ into a clock
+register; a rotation controlled by the clock moves the amplitude $C/\lambda$ into an ancilla; the clock
+is uncomputed; and the ancilla is measured (Fig.~\ref{fig:hhl}). On outcome~$1$ the system register
+holds $A^{-1}b$ up to normalisation. This happens with probability $p=C^2\norm{A^{-1}b}^2$, so the run
+is repeated until it succeeds.
+
+HHL is hard to verify along every axis at once. Its specification is probabilistic, and the number
+of rounds is random. Every step is approximate: eigenvalues are rarely representable in the clock,
+and $e^{iAt}$ has to be simulated. Its black boxes, the preparation of $\ket b$ and the controlled
+evolution, are where the cost is. The mechanised proofs we know of, in Coq~\cite{zhou2023coqq,wu2024local}, verify
+the exact case, in which every eigenvalue lies on the grid of the clock, and take the black boxes as given
+unitaries; CoqQ proves partial correctness of the repeat-until-success program~\cite{zhou2023coqq},
+following the pen-and-paper proof of Zhou, Yu and Ying~\cite{zhou2019applied}.
+
+\begin{figure}[t]
+\centering
+\scalebox{0.86}{%
+\begin{quantikz}[row sep={0.8cm,between origins}, column sep=0.2cm]
+\lstick{clock $\ket{0}^{\otimes k}$} & \qwbundle{k} &  & \gate{H^{\otimes k}}\slice{$\psi_2$}
+  & \ctrl{1}\slice{$\psi_3$} & \gate{F^\dagger}\slice{$\psi_4$} & \ctrl{2}\slice{$\psi_5$}
+  & \gate{F}\slice{$\psi_6$} & \ctrl{1}\slice{$\psi_7$} & \gate{H^{\otimes k}}\slice{$\psi_8$} & \\
+\lstick{system $\ket{0}^{\otimes m}$} & \qwbundle{m} & \gate{U_b}\slice{$\psi_1$} & & \gate{U^{c}}
+  & & & & \gate{U^{-c}} & & \rstick{$\propto A^{-1}b$ if $1$}\\
+\lstick{ancilla $\ket0$} & & & & & & \gate{R(C/\lambda_c)} & & & & \meter{}
+\end{quantikz}}
+\\[0.5em]
+\renewcommand{\arraystretch}{1.15}\small
+\begin{tabular}{@{}l@{\enspace}l@{\qquad}l@{\enspace}l@{}}
+$\psi_1$ & $\ket0\otimes b\otimes\ket0$ &
+$\psi_5$ & $\sum_j\ket j\otimes\Pi_jb\otimes R(C/\lambda_j)\ket0$\\
+$\psi_2$ & $u\otimes b\otimes\ket0$ &
+$\psi_6$ & $\sum_j\ket j\otimes N^{-1/2}(U^{j}\otimes I)\,w$\\
+$\psi_3$ & $\sum_j\ket j\otimes N^{-1/2}U^{j}b\otimes\ket0$ &
+$\psi_7$ & $u\otimes w$\\
+$\psi_4$ & $\sum_j\ket j\otimes\Pi_jb\otimes\ket0$ &
+$\psi_8$ & $\ket0\otimes w$
+\end{tabular}\\[0.2em]
+{\small $w=\sqrt{I-C^2A^{-2}}\,b\otimes\ket0+CA^{-1}b\otimes\ket1$}
+\caption{The HHL circuit and the state after each of its eight gates, for $N=2^k$, $U=e^{iAt_0}$,
+$u=N^{-1/2}\sum_j\ket j$ and every eigenvalue of $A$ on the grid $\lambda_j=2\pi j/(Nt_0)$ (read as
+$2\pi(j-N)/(Nt_0)$ for $j\ge N/2$). Gate~3
+applies $U^c$ when the clock holds $c$, gate~5 applies $R(C/\lambda_c)$ with
+$R(c)\ket0=\sqrt{1-c^2}\ket0+c\ket1$, and $\Pi_j$ projects onto the eigenspace of~$\lambda_j$. The
+table is one theorem, \isa{hhl\_steps}, proved by following a single eigenvector rather than expanding
+in an eigenbasis.}\label{fig:hhl}
+\end{figure}
+
+\paragraph{What we verified} Working in Isabelle/HOL, on QHLProver's formalisation~\cite{liu2019qhl}
+of Ying's quantum while-language~\cite{ying2011}, we verify:
+\begin{itemize}
+\item \emph{Total correctness.} The repeat-until-success program terminates with probability one in
+  the normalised solution, exits after exactly $m$ failed rounds with probability $(1-p)^mp$, and runs
+  $1/p$ rounds on average (Section~\ref{sec:qhl}).
+\item \emph{The approximations.} The paper's Theorem~1 holds with the constant
+  $c=\pi^2\sqrt{4+2\pi^2}$, and so does its run-time analysis with amplitude amplification.
+\item \emph{The gates.} For the shifted cycle Laplacian, everything from the preparation of $\ket b$
+  to the flag is a list of one- and two-qubit gates with a closed-form count
+  (Section~\ref{sec:gates}).
+\item \emph{The errata.} Seven statements of the HHL paper are false, each refuted by a formal witness
+  (Section~\ref{sec:errata}).
+\item \emph{The process.} An AI agent wrote the development, directed by one person: 130 theories,
+  64{,}010 lines and 3{,}096 results, no \texttt{sorry}, including a formalised lecture course on
+  quantum computing as its foundation (Section~\ref{sec:agent}).
+\end{itemize}
+
+\section{Quantum Hoare Logic at Algorithm Scale}\label{sec:qhl}
+
+Programs of the while-language denote completely positive, trace-non-increasing maps $\sem S$ on
+partial density operators. A predicate is an operator $0\le P\le I$, and $\hoaret{P}{S}{Q}$ holds if
+$\Tr(P\rho)\le\Tr(Q\,\sem S\rho)$ for every state $\rho$; so $\hoaret{p\cdot I}{S}{Q}$ says that $S$
+ends in $Q$ with probability at least $p$. QHLProver proves Ying's partial-correctness system sound and
+complete.
+
+Four rules carry all of our program proofs. Three are derived in Ying's system: \emph{initialisation},
+\emph{gate lists}, and their composition for the shape \emph{initialise, apply gates, measure} shared by
+phase estimation, one run of HHL and all its inexact variants. With $W$ the product of the gates and
+$\psi=W\ket0$ the state they prepare,
+\begin{gather*}
+\{\bra0Q\ket0\cdot I\}\;\mathit{init}\;\{Q\},\qquad\{W^\dagger QW\}\;U_1;\dots;U_m\;\{Q\},\\
+\Bigl\{\Bigl(\textstyle\sum_j\langle M_j\psi|\,Q\,|M_j\psi\rangle\Bigr)\cdot I\Bigr\}\;
+\mathit{init};\,U_1;\dots;U_m;\,\mathbf{measure}\ M\;\{Q\}.
+\end{gather*}
+None is deep, but together they turn every probabilistic claim about HHL into one computation. For
+$Q=\ketbra tt$ with $\ket t$ in the success branch, the scalar is the fidelity $|\langle t|\psi\rangle|^2$,
+so every error bound of the analysis becomes a triple. The fourth rule, for \emph{resetting loops}, is
+proved from the semantics. QHLProver formalises partial correctness only, and Ying's total-correctness rule needs a bound
+function~\cite{ying2011}. But a repeat-until-success body begins with $\mathit{init}$, so it maps
+every $\rho$ to $(\Tr\rho)\,\sigma$ for one fixed state $\sigma$. The loop's semantics is then a
+geometric series, and termination, the exit distribution and the expected number of rounds follow
+from one lemma.
+
+\begin{theorem}[exact HHL, repeat until success]
+Let $A$ be Hermitian with every eigenvalue on the grid $2\pi j/(Nt_0)$, $-N/2\le j<N/2$, $j\ne0$, of a clock
+with $N=2^k$ values, let $U_b\ket0=b$, and let $0<|C|\le2\pi/(Nt_0)$. Then
+$\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$ for $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$:
+the loop terminates with probability one in the normalised solution. It exits after exactly $m$ failed
+rounds with probability $(1-p)^mp$, and the expected number of rounds is $1/p$.
+\end{theorem}
+
+\begin{lstlisting}[float=b,caption={The theorem as stated in Isabelle, with the hypotheses of its context. The registers are the clock, the system and the ancilla, of dimensions $2^k$, $n$ and $2$. \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps every rotation angle admissible.},label={lst:rus}]
+context
+  fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec" and n
+      k :: nat and t0 C :: real
+  assumes A: "A ~$\in$~ carrier_mat n n" "hermitian A" and n0: "0 < n" and k:
+      "1 ~$\le$~ k" and t0: "0 < t0"
+    and spec: "~$\bigwedge$~l. l ~$\in$~ herm_spectrum A ~$\Longrightarrow$~ ~$\exists$~j. 0 < j ~$\wedge$~ j < 2 ^ k ~$\wedge$~ l
+        = reg_eig t0 (2 ^ k) j"
+    and Ub: "Ub ~$\in$~ carrier_mat n n" "Quantum.unitary Ub" "Ub *~$_{v}$~
+        unit_vec n 0 = b"
+    and Cb: "~$\bigwedge$~j. j < 2 ^ k ~$\Longrightarrow$~ ~$|$~C / reg_eig t0 (2 ^ k) j~$|$~ ~$\le$~ 1"
+begin
+theorem hhl_rus_total:
+  assumes "C ~$\neq$~ 0"
+  shows "state_sig.hoare_total_correct [2 ^ k, n, 2] (1~$_{m}$~ (2 ^ k * (n *
+      2))) (hhl_rus A Ub t0 k C) (outer_prod (hhl_target A k b)
+      (hhl_target A k b))"
+theorem hhl_rus_expected_rounds:
+  assumes C0: "C ~$\neq$~ 0"
+  defines "p ~$\equiv$~ C~$^{2}$~ * ~$\|$~herm_inv A *~$_{v}$~ b~$\|^{2}$~"
+  shows "(~$\lambda$~m. real (Suc m) * (p * (1 - p) ^ m)) sums (1 / p)" and
+      "(~$\lambda$~m. (1 - p) ^ m) sums (1 / p)"
+\end{lstlisting}
+
+\paragraph{The hypotheses are the specification} Listing~\ref{lst:rus}, with the definitions it
+names, is all that a reader has to trust. Writing it down exposed a restriction that informal accounts
+hide: the bound on $C$ comes from the program, not from the mathematics. The circuit applies
+$R(C/\lambda_j)$ on every clock value, and a gate must be unitary. The bound costs nothing when the
+smallest modulus $\lambda_{\min}$ of an eigenvalue is the first grid point $\lambda_1=2\pi/(Nt_0)$, and
+otherwise lowers the best possible $p$ by the factor $(\lambda_1/\lambda_{\min})^2$. The programs of the paper's regime clamp the rotation instead, trading
+exactness for fidelity triples.
+
+\section{From Black Boxes to Gates}\label{sec:gates}
+
+The programs above take $U_b$, the controlled evolution and the controlled rotation as unitaries. We
+refine them until every gate is \emph{elementary}: a one- or two-qubit unitary on adjacent wires.
+Every program theorem is stated for all gate lists with a given product, so refinement never reopens
+it. Phase estimation becomes Hadamard gates and the Fourier circuit of the AFP~\cite{manrique2025qft};
+the controlled rotation becomes a uniformly controlled rotation with Walsh--Hadamard angles and parity
+chains of nearest-neighbour CNOTs, and $U_b$, for nonnegative amplitudes, becomes a cascade of uniformly controlled rotations, one per qubit. For $s$-sparse
+$A$ with entries bounded by $L$, whose graph is coloured into $2s-1$ matchings given by oracles, $r$
+Trotter steps are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.
+
+For the Laplacian of the cycle on $2^m$ vertices, shifted by $\mu\ge0$, the oracles themselves are
+compiled, as reversible arithmetic routed to adjacent wires, and so is the preparation of a sparse
+nonnegative $b$. One theorem collects the result: an explicit list of elementary gates on
+$K=m+k+1+a$ qubits whose output, post-selected on the flag, is within $2\delta/(C\norm x)$ of the
+normalised solution $x$ for the right-hand side the gates actually prepare. The error budget
+$\delta=\epsilon+2(2^k-1)\eta$ adds the error $\epsilon$ of phase estimation to an error $\eta$ for each
+simulated evolution, and the length is an explicit polynomial, $O(4^k(2+\mu)^2t_0\,m^2K/C)$: quadratic
+in the clock size, because first-order Trotter steps must shrink as the clock grows. Black boxes hide the cost: the
+algorithm and its programs take 19 theories, and the oracles of this one family 39 more. Like the
+end-to-end proof of
+Shor's algorithm in SQIR~\cite{peng2023shor}, the pipeline leaves nothing abstract; unlike verified
+oracle compilers~\cite{amy2017reverc,li2022vqo}, it compiles the oracles of one family only.
+Approximating the gates over a finite set such as Clifford+T~\cite{ross2016gridsynth} is not covered.
+
+\section{Seven Errata}\label{sec:errata}
+
+Mechanising the paper, appendix included, meant proving its statements as written, and seven of them
+are false (Table~\ref{tab:errata}). The most instructive is Lemma~3, the Lipschitz estimate behind
+Theorem~1: at $\lambda=1/(2\kappa)$ and $\tilde\lambda=1/\kappa$ its left side is $\frac12$ and its right
+side $\pi^2/32$, for every $\kappa$. The constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp.
+None of the errors invalidates a main claim; all sit where a sketch compresses a computation: an
+endpoint value, an index, a number of rounds or samples. A reader checks the argument; a proof
+assistant checks the arithmetic, and the arithmetic is where the sketch was wrong.
+
+\begin{table}[t]
+\caption{False statements of the HHL paper (arXiv:0811.3171v3~\cite{hhl2008arxiv}), each refuted in
+Isabelle.}\label{tab:errata}
+\footnotesize
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{6.3cm}@{}}
+\toprule
+Where & Claim & What is true\\
+\midrule
+Lemma 3 & constant $c=\pi^2/2$ & false for all $\kappa$; $\pi^2$ holds and is sharp\\
+Proof of Thm.~4 & $\frac2\delta\log(2n)/\log\log n$ rounds & too few; $\frac2\delta\ln(2n_0)$ suffice\\
+(A34) & dilation has $\kappa^{-1}I\le A\le I$ & impossible: its diagonal is zero\\
+(A37) & first qubit of $\vec y$ decides & top half of $\vec y$ is $0$; permuting the dilation fixes it\\
+Thm.~6(2) & precision $2^{-n-2}$ & cannot separate the counts $C$ and $C+1$\\
+App.~A5 & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
+\S IV & preconditioning $(AB)c=Bb$ & neither left nor right preconditioning\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{How It Was Built}\label{sec:agent}
+
+The development was written by an AI coding agent, Claude Code~\cite{claudecode}, under the direction
+of the author, an experienced Isabelle user who wrote almost none of the proof text. Its foundation, a
+formalisation of Paulsen's lecture course on quantum computing and completely positive
+maps~\cite{paulsen2011notes}, was written in April and May 2026. After a pause of 147 days, HHL was
+verified on top of it in eleven days of October. In October the
+human gave 258 directions, spread over 84 distinct hours, and the agent made 9{,}835 tool calls.
+
+\paragraph{Division of labour} The agent wrote the proofs, found its own errors by building and
+reading Isabelle's messages, and refactored without fatigue; after the pause it resumed from a hand-off
+note written for a stranger. The human chose what to prove, checked that the statements meant what
+the paper meant, and decided names, structure and what to submit. The most consequential directions
+were short and came from outside the formal text, such as the request, on 28 October, to stop treating
+HHL's black boxes as given, which led to the gate list for the Laplacian.
+
+\paragraph{Failure modes} The kernel rejects wrong proofs, so the agent's failures lay elsewhere: a
+confident ``no oracles'' report from an audit that had skipped the gate theories, where two theorems
+depended on \texttt{skip\_proof}; a \textsf{simp} loop that stalled a build for 45 minutes; clashes of
+names and notation between libraries; and an unbuilt copy of 24{,}900 lines kept for five months.
+Each was caught by a mechanical check or by the human, and each check is now part of the build. The
+kernel guarantees that the theorems are true. The human guarantees that they are the right theorems.
+
+\section{For Discussion}
+
+We would value the community's view on four questions. Should the closed forms for \emph{initialise,
+apply gates, measure} and for resetting loops be built into tools for quantum Hoare logic? Should
+approximate algorithms be specified by fidelity triples, by distances, or by distributions? What should
+``verified to the gate'' mean once the gate set is finite and the oracles general? And as agents write
+more of our proofs, which checks should a verified quantum library require?
+
+The development builds with Isabelle2026 and the Archive of Formal Proofs, for which it is being
+prepared; the sources and a full report are available from the author.
+
+\paragraph{Use of AI} The formal development was written by AI agents (Claude Code with Claude
+Opus~4.7, Fable~5.1 and Opus~5.5; OpenAI Codex with GPT-5.4) under the author's direction, and this
+abstract was drafted with Claude Code; the author takes full responsibility for its content.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}
