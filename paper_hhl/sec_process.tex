@@ -207,15 +207,31 @@ best''. Early days are mostly direction; once HHL was in place, taste, questions
 October are the preparation for submission.}\label{fig:directions}
 \end{figure}
 
-The directions changed character over the project. In April, prompts named lemmas: \prompt{Focus on
-proving pd\_iff\_spanning}, \prompt{please fix the proof of inner\_prod\_adjoint\_swap and
-ONLY of that lemma}, and the author edited proofs himself (\prompt{stop.\ I'm making my own edit}). In
-October they named goals and judged results. The most consequential directions were short and came
-from outside the formal text: to stop treating the black boxes of HHL as given
-(\prompt{show that the `black boxes' CAN be built} from a small number of basic gates, 28~October), to give the paper a theme, and to submit the general
-functional calculus as its own entry. Delegation was explicit and rare (\prompt{Do what you think is
-most appropriate for `Decision needed'. I trust you}), and the human retained the decisions that
-others would see: titles, entry names, and what to submit.
+The directions changed character over the project (Table~\ref{tab:prompts}). In April, prompts named
+lemmas, and the author still edited proofs himself. In October they named goals and judged results. The
+most consequential directions were short and came from outside the formal text: to stop treating the
+black boxes of HHL as given (28~October), to give the paper a theme, and to submit the general functional
+calculus as its own entry. Delegation was explicit and rare (\prompt{Do what you think is most
+appropriate for `Decision needed'. I trust you}), and the human kept the decisions that others would
+see: titles, entry names, and what to submit.
+
+\begin{table}[t]
+\caption{The same person, six months apart: directions verbatim from the logs (April from the Codex
+side sessions, October from Claude Code).}\label{tab:prompts}
+\centering\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{5.55cm}@{\hspace{0.45cm}}>{\raggedright\arraybackslash}p{5.55cm}@{}}
+\toprule
+\textsc{april}: lemmas & \textsc{october}: goals and judgements\\
+\midrule
+\prompt{Now focus on proving schur\_theorem} & \prompt{Let's get started on `Part VI: Quantum Algorithms'\,}\\
+\prompt{Focus on proving pd\_iff\_spanning} & \prompt{show that the `black boxes' CAN be built}\\
+\prompt{please fix the proof of inner\_prod\_adjoint\_swap and ONLY of that lemma} &
+  \prompt{Did we do HHL end-to-end including prep, QPE, HHL, then inverse QPE?}\\
+\prompt{stop.\ I'm making my own edit} & \prompt{Do you think the way it is organized makes sense? Is it beautiful?}\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Resuming After the Pause}
 

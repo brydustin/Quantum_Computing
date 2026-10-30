@@ -34,6 +34,38 @@ the flag) is a verified list of elementary gates of explicitly bounded, polynomi
 (Theorem~\ref{thm:lap}). On the way, the formalisation refuted seven statements of the HHL paper,
 among them the constant of its Lemma~3 (Section~\ref{sec:errata}).
 
+\paragraph{Three ideas.} The proofs are shorter than the algorithm's reputation suggests, for three
+reasons. \emph{First}, we never expand a vector in an eigenbasis: two matrices that agree on every
+eigenvector of a Hermitian matrix are equal, so the functional calculus and HHL itself are proved by
+following a single eigenvector. \emph{Second}, every program in this paper has the shape
+\emph{initialise, apply gates, measure}, and its weakest precondition is one number,
+$\sum_j\langle M_j\psi|Q|M_j\psi\rangle$ for the state $\psi$ the gates prepare; quantum Hoare logic turns each
+probabilistic claim into that single computation. \emph{Third}, a repeat-until-success loop resets its
+state, so its semantics is a geometric series, and total correctness, the distribution of the number of
+rounds and its expectation all follow from one lemma.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\node[draw=gray!45, rounded corners=4pt, fill=backcolour, inner sep=7pt, text width=11.4cm] {%
+\renewcommand{\arraystretch}{1.25}%
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{5.45cm}@{\hspace{0.5cm}}>{\raggedright\arraybackslash}p{5.45cm}@{}}
+\multicolumn{1}{@{}l}{\textsc{the mathematics}} & \multicolumn{1}{l@{}}{\textsc{the process}}\\[2pt]
+{\large\bfseries 130} theories, {\large\bfseries 64{,}010} lines, {\large\bfseries 3{,}096} results; no \texttt{sorry} &
+{\large\bfseries 34} active days in six months, with a pause of {\large\bfseries 147} days\\
+exact HHL: \emph{total} correctness, $1/p$ rounds on average &
+HHL in {\large\bfseries 11} days on a foundation written in spring\\
+inexact HHL: the paper's Theorem~1 with explicit constants &
+{\large\bfseries 258} human directions and {\large\bfseries 9{,}835} agent tool calls in October\\
+$L+\mu I$ in elementary gates, with a closed-form count &
+{\large\bfseries 571} commits; three Claude models and Codex\\
+{\large\bfseries 7} statements of the HHL paper refuted &
+almost no proof text written by the human\\
+\end{tabular}};
+\end{tikzpicture}
+\caption{The paper at a glance.}\label{fig:glance}
+\end{figure}
+
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[font=\footnotesize,

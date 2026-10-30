@@ -4,19 +4,23 @@ HHL is verified in Isabelle/HOL from the spectral theorem to a list of two-qubit
 estimation with its precision, the exact algorithm as a matrix identity and as a totally correct
 program, the paper's error analysis with explicit constants, and, for the shifted cycle Laplacian, a
 complete gate-level pipeline whose output is provably close to the normalised solution and whose length
-is a closed-form polynomial. The formalisation corrected seven statements of the original paper.
+is a closed-form polynomial. Along the way, seven statements of the original paper turned out to be
+false, each in a place where a sketch compressed a computation. Three ideas kept the proofs short:
+follow one eigenvector instead of an eigenbasis, compute the weakest precondition of
+\emph{initialise, apply gates, measure} once and for all, and read a repeat-until-success loop as a
+geometric series.
 
-The development was written by an agent and directed by a person. The division of labour that
+The entries for the lectures and for HHL await the review of the functional calculus at the AFP.
+Beyond them lie the later quantum linear-system algorithms~\cite{childs2017}, gate counts for other
+families of matrices, and a full bridge between the matrix world of the lectures and the operator world
+of Unruh's libraries, of which the commuting square of Fig.~\ref{fig:krausbridge} is the first step.
+
+The development was written by an agent and directed by a person, and the division of labour that
 emerged is sharp. The agent wrote the proofs, refactored without fatigue, and resumed after five months
-by reading what had been written down; the human chose what to prove, checked that the statements meant
+by reading what had been written down. The human chose what to prove, checked that the statements meant
 what the paper meant, decided names, structure and presentation, and insisted on the checks that caught
-the agent's mistakes. The kernel guarantees that the theorems are true; it is the human who
-guarantees that they are the right theorems.
-
-\paragraph{Future work.} The entries for the lectures and HHL await the review of the functional
-calculus at the AFP. Beyond them lie the later quantum linear-system algorithms~\cite{childs2017}, gate
-counts for other families of matrices, and a bridge that removes the remaining distinction between the
-matrix world of the lectures and the operator world of Unruh's libraries.
+the agent's mistakes. The kernel guarantees that the theorems are true. It is the human who guarantees
+that they are the right theorems.
 
 \paragraph{Use of AI.} As described in Section~\ref{sec:process}, the formal development was written
 by AI agents (Claude Code with Claude Opus~4.7, Claude Fable~5.1 and Claude Opus~5.5; OpenAI Codex with
