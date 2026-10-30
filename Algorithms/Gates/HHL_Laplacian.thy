@@ -61,7 +61,7 @@ lemma lift_a_props:
     "\<forall>U \<in> set (lift_a a Us). elementary (2 ^ (Kr + a)) U" "length (lift_a a Us) = length Us"
 proof -
   have KK: "(2::nat) ^ (Kr + a) = 2 ^ a * 2 ^ Kr" by (simp add: power_add)
-  have c: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ Kr) (2 ^ Kr)" using E elementary_carrier by blast
+  have c: "\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ Kr) (2 ^ Kr)" using E elementary_unitary(1) by blast
   have "circuit_mat (2 ^ (Kr + a)) (lift_a a Us) = 1\<^sub>m (2 ^ a) \<Otimes> circuit_mat (2 ^ Kr) Us"
     unfolding lift_a_def KK by (rule circuit_mat_tensor_left[OF c]) simp_all
   thus "stands_for (2 ^ a) (2 ^ Kr) (circuit_mat (2 ^ (Kr + a)) (lift_a a Us)) (circuit_mat (2 ^ Kr) Us)"
@@ -108,18 +108,6 @@ proof -
   finally show ?thesis .
 qed
 
-lemma stands_for_vec:
-  assumes S: "stands_for A N U G" and v: "v \<in> carrier_vec N"
-  shows "U *\<^sub>v (anc A N *\<^sub>v v) = anc A N *\<^sub>v (G *\<^sub>v v)"
-proof -
-  have c: "U \<in> carrier_mat (A * N) (A * N)" "G \<in> carrier_mat N N" and e: "U * anc A N = anc A N * G"
-    using S by (simp_all add: stands_for_def)
-  have "U *\<^sub>v (anc A N *\<^sub>v v) = (U * anc A N) *\<^sub>v v" by (rule assoc_mult_mat_vec[OF c(1) anc_carrier v, symmetric])
-  also have "\<dots> = (anc A N * G) *\<^sub>v v" unfolding e ..
-  also have "\<dots> = anc A N *\<^sub>v (G *\<^sub>v v)" by (rule assoc_mult_mat_vec[OF anc_carrier c(2) v])
-  finally show ?thesis .
-qed
-
 lemma circuit_two:
   assumes "G1 \<in> carrier_mat K K" "G2 \<in> carrier_mat K K" "\<And>U. U \<in> set Gs \<Longrightarrow> U \<in> carrier_mat K K"
   shows "circuit_mat K (G1 # G2 # Gs) = circuit_mat K ((G2 * G1) # Gs)"
@@ -131,7 +119,7 @@ lemma win_prep_split:
 proof -
   let ?K = "2 ^ k * (n * 2)" and ?L = "map (\<lambda>G. G \<Otimes> 1\<^sub>m (n * 2)) (prep_gates k (win_coef (2 ^ k)))"
   have wc: "\<And>G. G \<in> set (prep_gates k (win_coef (2 ^ k))) \<Longrightarrow> G \<in> carrier_mat (2 ^ k) (2 ^ k)"
-    using window_prep(2)[OF k] elementary_carrier by blast
+    using window_prep(2)[OF k] elementary_unitary(1) by blast
   have Lc: "\<And>U. U \<in> set ?L \<Longrightarrow> U \<in> carrier_mat ?K ?K" using wc by auto
   have Pc: "prep_gate (2 ^ k) Ub \<in> carrier_mat ?K ?K" using Ub by (simp add: prep_gate_def)
   have "win_prep_mat k n Ub = circuit_mat ?K [prep_gate (2 ^ k) Ub] * circuit_mat ?K ?L"
@@ -233,9 +221,9 @@ proof -
     using qft_inv_circuit(2)[of k] elementary_right[of "2 ^ k" _ "2 ^ m * 2"] unfolding DR[symmetric] by auto
   have Er0: "\<forall>U \<in> set ?Lr0. elementary (2 ^ ?R) U" using rs_gates_props(2)[OF k] unfolding DR[symmetric] .
   have wc: "\<And>G. G \<in> set (prep_gates k (win_coef (2 ^ k))) \<Longrightarrow> G \<in> carrier_mat (2 ^ k) (2 ^ k)"
-    using window_prep(2)[OF k] elementary_carrier by blast
+    using window_prep(2)[OF k] elementary_unitary(1) by blast
   have fc: "\<And>G. G \<in> set (rev (map dagger (qft_circuit k))) \<Longrightarrow> G \<in> carrier_mat (2 ^ k) (2 ^ k)"
-    using qft_inv_circuit(2)[of k] elementary_carrier by blast
+    using qft_inv_circuit(2)[of k] elementary_unitary(1) by blast
   have cw0: "circuit_mat (2 ^ ?R) ?Lw0 = ?W \<Otimes> 1\<^sub>m (?n * 2)"
     unfolding DR[symmetric] by (rule circuit_mat_tensor_right[OF wc]) simp_all
   have cf0: "circuit_mat (2 ^ ?R) ?Lf0 = ?Fd"
@@ -274,7 +262,7 @@ proof -
   have unr: "G * (G\<^sup>\<dagger>) = 1\<^sub>m (2 ^ ?R)" if "Quantum.unitary G" "G \<in> carrier_mat (2 ^ ?R) (2 ^ ?R)" for G
     using that unfolding Quantum.unitary_def by simp
   have cud: "\<And>Us. \<forall>U \<in> set Us. elementary (2 ^ K) U \<Longrightarrow> circuit_mat (2 ^ K) (rev (map dagger Us)) = (circuit_mat (2 ^ K) Us)\<^sup>\<dagger>"
-    by (rule circuit_mat_dagger) (use elementary_carrier in blast)
+    by (rule circuit_mat_dagger) (use elementary_unitary(1) in blast)
   have S6: "stands_for (2 ^ a) (2 ^ ?R) (circuit_mat (2 ^ K) (rev (map dagger (lift_a a ?Lf0)))) (?Fd\<^sup>\<dagger>)"
     unfolding cud[OF Elf] using stands_for_dagger[OF S4(1)[unfolded cf0] uni unr[OF Fu Fc]]
       circuit_elementary_unitary[of "lift_a a ?Lf0" "2 ^ K"] Elf by auto
@@ -290,7 +278,7 @@ proof -
     using S1(2) RB(2) Elp Elf S5(2) Edag[OF Elf] Edag[OF Elp] by auto
   show "\<forall>U \<in> set (hhl_lap_gates m k a p \<mu> t0 r C Bs). elementary (2 ^ K) U" unfolding G by (rule El)
   have "circuit_mat (2 ^ K) (concat ?Ls) = circuit_mat (2 ^ K) (map (circuit_mat (2 ^ K)) ?Ls)"
-    by (rule circuit_mat_concat) (use El elementary_carrier in fastforce)
+    by (rule circuit_mat_concat) (use El elementary_unitary(1) in fastforce)
   hence circ: "circuit_mat (2 ^ K) (hhl_lap_gates m k a p \<mu> t0 r C Bs) = circuit_mat (2 ^ a * 2 ^ ?R) (map (circuit_mat (2 ^ K)) ?Ls)"
     unfolding G KK[symmetric] .
   have ST: "stands_for (2 ^ a) (2 ^ ?R) (circuit_mat (2 ^ a * 2 ^ ?R) (map (circuit_mat (2 ^ K)) ?Ls))
@@ -314,7 +302,7 @@ proof -
   qed
   have e0: "unit_vec (2 ^ K) 0 = anc (2 ^ a) (2 ^ ?R) *\<^sub>v unit_vec (2 ^ ?R) 0" unfolding KK by (rule anc_unit[symmetric]) simp
   show "circuit_mat (2 ^ K) (hhl_lap_gates m k a p \<mu> t0 r C Bs) *\<^sub>v unit_vec (2 ^ K) 0 = anc (2 ^ a) (2 ^ Suc (m + k)) *\<^sub>v out"
-    unfolding circ e0 stands_for_vec[OF ST unit_vec_carrier] reg unfolding out_def A_def Vr_def DR ..
+    unfolding circ e0 stands_for_apply[OF ST unit_vec_carrier] reg unfolding out_def A_def Vr_def DR ..
   \<comment> \<open>the count\<close>
   have l1: "length (lift_a a ?Lw0) \<le> k * (1 + 2 ^ k * (2 * k + 1))" using S1(3) length_prep_gates[of k] by simp
   have l2: "length ?Lb \<le> length Bs * (4 * K + 1)" by (rule RB(3))

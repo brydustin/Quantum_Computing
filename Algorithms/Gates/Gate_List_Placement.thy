@@ -95,11 +95,11 @@ proof -
       using Cons by auto
     note R = relab1_props[OF EU vs]
     have e: "relab K K' vs (U # Us) = relab1 K K' vs U @ relab K K' vs Us" by (simp add: relab_def)
-    have Uc: "U \<in> carrier_mat (2 ^ length vs) (2 ^ length vs)" using elementary_carrier[OF EU] vs(3) by simp
+    have Uc: "U \<in> carrier_mat (2 ^ length vs) (2 ^ length vs)" using elementary_unitary(1)[OF EU] vs(3) by simp
     have Cc: "circuit_mat (2 ^ K) Us \<in> carrier_mat (2 ^ length vs) (2 ^ length vs)"
-      using circuit_mat_carrier[of Us "2 ^ K"] Cons.prems elementary_carrier vs(3) by auto
+      using circuit_mat_carrier[of Us "2 ^ K"] Cons.prems elementary_unitary(1) vs(3) by auto
     have "circuit_mat (2 ^ K') (relab K K' vs (U # Us)) = circuit_mat (2 ^ K') (relab K K' vs Us) * circuit_mat (2 ^ K') (relab1 K K' vs U)"
-      unfolding e by (rule circuit_mat_append) (use R(2) IH(2) elementary_carrier in auto)
+      unfolding e by (rule circuit_mat_append) (use R(2) IH(2) elementary_unitary(1) in auto)
     also have "\<dots> = wg K' vs (circuit_mat (2 ^ K) Us) * wg K' vs U" by (simp only: IH(1) R(1))
     also have "\<dots> = wg K' vs (circuit_mat (2 ^ K) (U # Us))" using wg_mult[OF vs(1,2) Cc Uc] by simp
     finally show ?case using R(2,3) IH(2,3) e by auto

@@ -159,15 +159,6 @@ lemma ctrl_blocks_index:
 abbreviation ctrl_pow :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
   "ctrl_pow N m U \<equiv> ctrl_blocks N m (\<lambda>k. U ^\<^sub>m k)"
 
-lemma sum_blocks:
-  fixes N m :: nat
-  shows "(\<Sum>c<N * m. f c) = (\<Sum>k<N. \<Sum>i<m. f (k * m + i))"
-proof -
-  have "(\<Sum>c\<in>{k * m..<k * m + m}. f c) = (\<Sum>i<m. f (k * m + i))" for k
-    using sum.shift_bounds_nat_ivl[of f 0 "k * m" m] by (simp add: atLeast0LessThan add.commute)
-  thus ?thesis unfolding sum.nat_group[symmetric] by simp
-qed
-
 text \<open>Phase kickback: if $Uu=zu$ then $\mathrm{C}U(a\otimes u)=(\sum_k z^ka_k\ket k)\otimes u$.\<close>
 
 theorem ctrl_pow_kickback:
@@ -191,7 +182,7 @@ proof -
     have "(ctrl_pow N m U *\<^sub>v tensor_vec a u) $ r = (\<Sum>c<N * m. ctrl_pow N m U $$ (r, c) * tensor_vec a u $ c)"
       using r dt by (simp add: scalar_prod_def atLeast0LessThan)
     also have "\<dots> = (\<Sum>k'<N. \<Sum>i'<m. ctrl_pow N m U $$ (r, k' * m + i') * tensor_vec a u $ (k' * m + i'))"
-      by (rule sum_blocks)
+      by (rule sum_split_mp)
     also have "\<dots> = (\<Sum>k'<N. if k' = k then (\<Sum>i'<m. (U ^\<^sub>m k) $$ (i, i') * (a $ k * u $ i')) else 0)"
     proof (rule sum.cong[OF refl])
       fix k' assume "k' \<in> {..<N}"

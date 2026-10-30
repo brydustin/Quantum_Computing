@@ -66,19 +66,6 @@ proof -
   thus ?thesis using Gv w A by (simp add: anc_norm carrier_vecD)
 qed
 
-lemma elementary_lift:
-  assumes U: "elementary K U" and m: "0 < m"
-  shows "elementary (m * K) (1\<^sub>m m \<Otimes> U)"
-proof -
-  obtain a b q G where q: "q \<in> {1, 2}" and G: "G \<in> carrier_mat (2 ^ q) (2 ^ q)" "Quantum.unitary G"
-    and ab: "0 < a" "0 < b" and K: "K = a * (2 ^ q * b)" and e: "U = 1\<^sub>m a \<Otimes> (G \<Otimes> 1\<^sub>m b)"
-    using U unfolding elementary_def by blast
-  have e2: "1\<^sub>m m \<Otimes> U = 1\<^sub>m (m * a) \<Otimes> (G \<Otimes> 1\<^sub>m b)"
-    unfolding e using tensor_mat_is_assoc[of "1\<^sub>m m" "1\<^sub>m a" "G \<Otimes> 1\<^sub>m b"] tensor_mat_id[of m a] m ab by simp
-  show ?thesis unfolding elementary_def
-    by (rule exI[of _ "m * a"], rule exI[of _ b], rule exI[of _ q], rule exI[of _ G]) (use q in \<open>simp add: e2 G ab m K Groups.mult.assoc\<close>)
-qed
-
 subsection \<open>Permutations\<close>
 
 lemma pmat_high:
@@ -95,13 +82,6 @@ proof (rule eq_matI)
     unfolding i using r c rd b digit_eq[of "c mod b" b r "f (c div b)"] by (simp add: pmat_def)
 qed (simp_all add: pmat_def)
 
-lemma bit_lt_pow: "u < 2 ^ b \<Longrightarrow> b \<le> n \<Longrightarrow> \<not> bit (u :: nat) n"
-proof -
-  assume u: "u < 2 ^ b" and n: "b \<le> n"
-  have "u < 2 ^ n" using less_le_trans[OF u power_increasing[OF n, of "2::nat"]] by simp
-  thus ?thesis by (simp add: bit_iff_odd)
-qed
-
 lemma bits_eq_lt:
   assumes p: "p < 2 ^ n" and c: "c < 2 ^ n"
   shows "(\<forall>l<n. bit p l = bit c l) \<longleftrightarrow> p = (c :: nat)"
@@ -113,7 +93,7 @@ proof
     proof (cases "l < n")
       case True thus ?thesis using h by simp
     next
-      case False thus ?thesis using bit_lt_pow[OF p, of l] bit_lt_pow[OF c, of l] by simp
+      case False thus ?thesis using bit_above[OF p, of l] bit_above[OF c, of l] by simp
     qed
   qed
 qed simp
@@ -136,7 +116,7 @@ proof (rule bit_eqI)
     thus "k \<le> q \<and> bit u (q - k)" by (auto simp: code_wires_def)
   next
     assume h: "k \<le> q \<and> bit u (q - k)"
-    have "q - k < b" using bit_lt_pow[OF u, of "q - k"] h by (cases "b \<le> q - k") auto
+    have "q - k < b" using bit_above[OF u, of "q - k"] h by (cases "b \<le> q - k") auto
     hence "q - k \<in> set (filter (bit u) [0..<b])" using h by simp
     moreover have "q = k + (q - k)" using h by simp
     ultimately show "q \<in> set (code_wires k b u)" unfolding code_wires_def set_map by (rule rev_image_eqI)
@@ -263,7 +243,7 @@ proof -
   let ?cw = "\<lambda>l. k - j + l" and ?cs = "pref_list k xs j"
   let ?ts = "\<lambda>c. code_wires k b (prep_code b k a j c)" and ?p = "z div 2 ^ (k - j) mod 2 ^ j"
   note W = lev_table_wires[OF j]
-  have x: "\<And>i. i \<le> j \<Longrightarrow> \<not> bit z (b + k + i)" using bit_lt_pow[OF z] by simp
+  have x: "\<And>i. i \<le> j \<Longrightarrow> \<not> bit z (b + k + i)" using bit_above[OF z] by simp
   have t: "\<And>c. c \<in> set ?cs \<Longrightarrow> targets_ok (k + (b + k)) ?cw (\<lambda>i. b + k + i) j (?ts c)" by (rule W(3))
   have L: "rcirc (lev_table b k a xs j) z = flips (concat (map (\<lambda>c. if spells ?cw j z c then ?ts c else []) ?cs)) z"
     unfolding lev_table_def by (rule lookup_rcirc[OF W(1) W(2) x t])
@@ -334,8 +314,8 @@ proof -
   note Mi = lev_mid_props[OF j, of b]
   have KL: "(2::nat) ^ ?KL = 2 ^ k * ?N" by (rule power_add)
   have NN: "(2::nat) ^ (b + k) = 2 ^ b * 2 ^ k" by (rule power_add)
-  have Mel: "\<forall>U \<in> set ?M. elementary (2 ^ ?KL) U" unfolding KL using Mi(2) by (auto intro!: elementary_lift)
-  have midc: "\<And>U. U \<in> set (lev_mid b k j) \<Longrightarrow> U \<in> carrier_mat ?N ?N" using Mi(2) elementary_carrier by blast
+  have Mel: "\<forall>U \<in> set ?M. elementary (2 ^ ?KL) U" unfolding KL using Mi(2) by (auto intro!: elementary_left)
+  have midc: "\<And>U. U \<in> set (lev_mid b k j) \<Longrightarrow> U \<in> carrier_mat ?N ?N" using Mi(2) elementary_unitary(1) by blast
   have mc: "circuit_mat ?N (lev_mid b k j) \<in> carrier_mat ?N ?N" by (rule circuit_mat_carrier) (use midc in auto)
   have cM: "circuit_mat (2 ^ ?KL) ?M = 1\<^sub>m (2 ^ k) \<Otimes> circuit_mat ?N (lev_mid b k j)"
     unfolding KL by (rule circuit_mat_tensor_left[OF midc]) simp_all
@@ -352,8 +332,8 @@ proof -
     unfolding cM by (rule stands_for_lift[OF mc]) simp
   have e: "circuit_mat (2 ^ ?KL) (lev_sgates b k a xs j) = circuit_mat (2 ^ ?KL) ?C * (circuit_mat (2 ^ ?KL) ?M * circuit_mat (2 ^ ?KL) ?C)"
   proof -
-    have Cl: "\<And>U. U \<in> set ?C \<Longrightarrow> U \<in> carrier_mat (2 ^ ?KL) (2 ^ ?KL)" using C(2) elementary_carrier by blast
-    have Ml: "\<And>U. U \<in> set ?M \<Longrightarrow> U \<in> carrier_mat (2 ^ ?KL) (2 ^ ?KL)" using Mel elementary_carrier by blast
+    have Cl: "\<And>U. U \<in> set ?C \<Longrightarrow> U \<in> carrier_mat (2 ^ ?KL) (2 ^ ?KL)" using C(2) elementary_unitary(1) by blast
+    have Ml: "\<And>U. U \<in> set ?M \<Longrightarrow> U \<in> carrier_mat (2 ^ ?KL) (2 ^ ?KL)" using Mel elementary_unitary(1) by blast
     have a1: "circuit_mat (2 ^ ?KL) (?C @ ?M @ ?C) = circuit_mat (2 ^ ?KL) (?M @ ?C) * circuit_mat (2 ^ ?KL) ?C"
       by (rule circuit_mat_append) (use Cl Ml in auto)
     have a2: "circuit_mat (2 ^ ?KL) (?M @ ?C) = circuit_mat (2 ^ ?KL) ?C * circuit_mat (2 ^ ?KL) ?M"
@@ -399,7 +379,7 @@ proof -
   have lc: "U \<in> carrier_mat (2 ^ ?KL) (2 ^ ?KL)" if Us: "Us \<in> set (map (lev_sgates b k a xs) [0..<k])" "U \<in> set Us" for Us U
   proof -
     obtain j where j: "j < k" and U: "U \<in> set (lev_sgates b k a xs j)" using Us by auto
-    show ?thesis using lev_sgates_props(2)[OF sp j] U elementary_carrier by blast
+    show ?thesis using lev_sgates_props(2)[OF sp j] U elementary_unitary(1) by blast
   qed
   have cU: "circuit_mat (2 ^ ?KL) (sprep_gates b k a xs)
       = circuit_mat (2 ^ ?KL) (map (\<lambda>j. circuit_mat (2 ^ ?KL) (lev_sgates b k a xs j)) [0..<k])"

@@ -9,7 +9,7 @@ wires $q+1..q+2p$: the angle bits first, then the phase bits.  A register angle
 $\sum_j 2^j u_j \cdot 2\pi/2^p$ is a sum of one phase per bit, so each diagonal stage is $p$
 two-qubit diagonal gates.\<close>
 
-lemma take_bit_sum: "real (take_bit p r) = (\<Sum>j<p. of_bool (bit r j) * 2 ^ j)" for r :: nat
+lemma take_bit_real_sum: "real (take_bit p r) = (\<Sum>j<p. of_bool (bit r j) * 2 ^ j)" for r :: nat
 proof -
   have "take_bit p r = (\<Sum>j = 0..<p. of_bool (bit r j) * 2 ^ j)"
     using horner_sum_bit_eq_take_bit[of r p] by (simp add: horner_sum_eq_sum)
@@ -52,7 +52,7 @@ lemma reg_bits:
 proof -
   have r: "z div 2 div 2 ^ q = drop_bit (q + 1) z" by (simp add: drop_bit_eq_div div_mult2_eq power_add ac_simps)
   show "real (z div 2 div 2 ^ q mod 2 ^ p) = (\<Sum>j<p. of_bool (bit z (q + 1 + j)) * 2 ^ j)"
-    unfolding r take_bit_eq_mod[symmetric] take_bit_sum by (simp add: bit_drop_bit_eq)
+    unfolding r take_bit_eq_mod[symmetric] take_bit_real_sum by (simp add: bit_drop_bit_eq)
   have "drop_bit (q + 1) z div 2 ^ p = drop_bit p (drop_bit (q + 1) z)" by (simp only: drop_bit_eq_div)
   also have "\<dots> = drop_bit (q + 1 + p) z" by (simp add: ac_simps)
   finally have u: "z div 2 div 2 ^ q div 2 ^ p = drop_bit (q + 1 + p) z" unfolding r .
@@ -65,7 +65,7 @@ proof -
   qed
   hence "take_bit p (drop_bit (q + 1 + p) z) = drop_bit (q + 1 + p) z" by (rule take_bit_nat_eq_self)
   thus "real (z div 2 div 2 ^ q div 2 ^ p) = (\<Sum>j<p. of_bool (bit z (q + 1 + p + j)) * 2 ^ j)"
-    unfolding u using take_bit_sum[of p "drop_bit (q + 1 + p) z"] by (simp add: bit_drop_bit_eq ac_simps)
+    unfolding u using take_bit_real_sum[of p "drop_bit (q + 1 + p) z"] by (simp add: bit_drop_bit_eq ac_simps)
 qed
 
 subsection \<open>Phase layers\<close>
@@ -82,7 +82,7 @@ proof -
       \<and> (\<forall>U \<in> set (dgate_gates K (w + j) (\<psi> j)). elementary (2 ^ K) U) \<and> length (dgate_gates K (w + j) (\<psi> j)) \<le> 2 * K + 1" for j
     using dgate_gates_props[of "w + j" K "\<psi> j"] w by simp
   have car: "\<And>Us U. Us \<in> set (map (\<lambda>j. dgate_gates K (w + j) (\<psi> j)) [0..<p]) \<Longrightarrow> U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K)"
-    using D elementary_carrier by auto
+    using D elementary_unitary(1) by auto
   have "circuit_mat (2 ^ K) (phase_gates K w \<psi> p)
       = circuit_mat (2 ^ K) (map (circuit_mat (2 ^ K)) (map (\<lambda>j. dgate_gates K (w + j) (\<psi> j)) [0..<p]))"
     unfolding phase_gates_def by (rule circuit_mat_concat) (rule car)
@@ -146,7 +146,7 @@ definition mid_gates :: "nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat 
 lemma ang_bits: "u < 2 ^ p \<Longrightarrow> ang p u = (\<Sum>j<p. if bit u j then ang p (2 ^ j) else 0)"
 proof -
   assume u: "u < 2 ^ p"
-  have "real u = (\<Sum>j<p. of_bool (bit u j) * 2 ^ j)" using take_bit_sum[of p u] take_bit_nat_eq_self[OF u] by simp
+  have "real u = (\<Sum>j<p. of_bool (bit u j) * 2 ^ j)" using take_bit_real_sum[of p u] take_bit_nat_eq_self[OF u] by simp
   hence "ang p u = (\<Sum>j<p. of_bool (bit u j) * 2 ^ j) * (2 * pi / 2 ^ p)" unfolding ang_def by simp
   also have "\<dots> = (\<Sum>j<p. if bit u j then ang p (2 ^ j) else 0)" unfolding sum_distrib_right by (intro sum.cong) (auto simp: ang_def)
   finally show ?thesis .
@@ -203,9 +203,9 @@ proof -
     have "gate 1 Hadamard" using H_is_gate by (simp add: Hadamard_def)
     from elementary_left[OF elementary_gate[OF this], of "2 ^ (K - 1)"] show ?thesis unfolding hw_def K1 by simp
   qed
-  have hc: "hw K \<in> carrier_mat (2 ^ K) (2 ^ K)" by (rule elementary_carrier[OF eh])
+  have hc: "hw K \<in> carrier_mat (2 ^ K) (2 ^ K)" by (rule elementary_unitary(1)[OF eh])
   have car: "\<And>Us. \<forall>U \<in> set Us. elementary (2 ^ K) U \<Longrightarrow> (\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K))"
-    using elementary_carrier by blast
+    using elementary_unitary(1) by blast
   have elall: "\<forall>U \<in> set (mid_gates p q). elementary (2 ^ K) U"
     using Pm(2) Z(2) Pp(2) eh unfolding K_def by (auto simp: mid_gates_def Let_def)
   thus "\<forall>U \<in> set (mid_gates p q). elementary (2 ^ K) U" .

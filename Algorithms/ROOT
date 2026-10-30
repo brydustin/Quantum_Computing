@@ -3,13 +3,18 @@ chapter AFP
 session HHL_Algorithm = Quantum_Computing_CP_Maps +
   description "
     Quantum phase estimation and the HHL algorithm for linear systems: exact and inexact
-    analysis, approximate Hamiltonian simulation, programs of quantum Hoare logic, circuits."
+    analysis, approximate Hamiltonian simulation, programs of quantum Hoare logic and their
+    channels, circuits, and the black boxes compiled to elementary gates with an explicit count
+    for the shifted cycle Laplacian."
   options [document = pdf, document_output = "output",
            document_variants = "document=/proof,/ML",
            quick_and_dirty = false, timeout = 3600]
   sessions
     QHLProver
     Hermitian_Functional_Calculus
+  directories
+    Channels
+    Gates
   theories
     Phase_Estimation
     QFT_Fourier
@@ -41,6 +46,46 @@ session HHL_Algorithm = Quantum_Computing_CP_Maps +
     HHL_Suzuki
     QPE_Precision
     QPE_Program
+    "Channels/Program_Channels"
+    "Gates/Reversible_Gates"
+    "Gates/Bit_Compare"
+    "Gates/Comparator_Scan"
+    "Gates/Bennett_Uncompute"
+    "Gates/Comparator_Registers"
+    "Gates/Register_Swap"
+    "Gates/Two_Comparisons"
+    "Gates/Sort_Flag"
+    "Gates/Comparator_Clean"
+    "Gates/Comparator_Permutation"
+    "Gates/Toffoli_Gates"
+    "Gates/Gate_Routing"
+    "Gates/Reversible_Compile"
+    "Gates/Comparator_Gates"
+    "Gates/Clean_Ancillas"
+    "Gates/Simulation_Comparator"
+    "Gates/Entry_Rotation"
+    "Gates/Entry_Oracle"
+    "Gates/Distant_Diagonals"
+    "Gates/Rotation_Stage_Gates"
+    "Gates/Entry_Gates"
+    "Gates/Diagonal_Oracle"
+    "Gates/Simulation_Rounded"
+    "Gates/Simulation_Oracles"
+    "Gates/Prep_Rounded"
+    "Gates/Prep_Angle_Oracle"
+    "Gates/Multi_Controlled_NOT"
+    "Gates/Prep_Sparse"
+    "Gates/Incrementer"
+    "Gates/Cycle_Laplacian"
+    "Gates/Wire_Gates"
+    "Gates/Wire_Placement"
+    "Gates/Shifted_Laplacian"
+    "Gates/Controlled_Laplacian"
+    "Gates/Phase_Estimation_Gates"
+    "Gates/Gate_List_Placement"
+    "Gates/HHL_Stage_Counts"
+    "Gates/HHL_Laplacian"
+    "Gates/HHL_Laplacian_Sparse"
   document_files
     "root.bib"
     "root.tex"
@@ -59,21 +104,6 @@ session HHL_Explicit_Demo in "Demo" = HHL_Algorithm +
   document_files
     "root.tex"
 
-session Quantum_Hoare_Logic_Channels in "Channels" = Quantum_Computing_CP_Maps +
-  description "
-    Loop-free QHLProver programs are channels: Kraus operators read off the program,
-    the meaning is their Kraus map, completely positive and trace preserving (the notes'
-    Lectures 19-33 applied to the programs of Part VI)."
-  options [document = pdf, document_output = "output",
-           document_variants = "document=/proof,/ML",
-           quick_and_dirty = false, timeout = 3600]
-  sessions
-    HHL_Algorithm
-  theories
-    Program_Channels
-  document_files
-    "root.tex"
-
 session Quantum_Search_Bound in "Search" = Compressed_Oracles +
   description "
     H-20: the quantum search lower bound behind HHL's Theorem 4(2), imported from the AFP entry
@@ -83,56 +113,5 @@ session Quantum_Search_Bound in "Search" = Compressed_Oracles +
            quick_and_dirty = false, timeout = 3600]
   theories
     HHL_Search_Bound
-  document_files
-    "root.tex"
-
-session HHL_Gates in "Gates" = HHL_Algorithm +
-  description "
-    The black boxes of HHL in elementary gates: a reversible comparator, the sparse simulation
-    from oracles, state preparation from an angle oracle and from a sparse list, and the whole
-    algorithm for the shifted cycle Laplacian with an explicit gate count."
-  options [document = pdf, document_output = "output",
-           document_variants = "document=/proof,/ML",
-           quick_and_dirty = false, timeout = 3600]
-  theories
-    Reversible_Gates
-    Bit_Compare
-    Comparator_Scan
-    Bennett_Uncompute
-    Comparator_Registers
-    Register_Swap
-    Two_Comparisons
-    Sort_Flag
-    Comparator_Clean
-    Comparator_Permutation
-    Toffoli_Gates
-    Gate_Routing
-    Reversible_Compile
-    Comparator_Gates
-    Clean_Ancillas
-    Simulation_Comparator
-    Entry_Rotation
-    Entry_Oracle
-    Distant_Diagonals
-    Rotation_Stage_Gates
-    Entry_Gates
-    Diagonal_Oracle
-    Simulation_Rounded
-    Simulation_Oracles
-    Prep_Rounded
-    Prep_Angle_Oracle
-    Multi_Controlled_NOT
-    Prep_Sparse
-    Incrementer
-    Cycle_Laplacian
-    Wire_Gates
-    Wire_Placement
-    Shifted_Laplacian
-    Controlled_Laplacian
-    Phase_Estimation_Gates
-    Gate_List_Placement
-    HHL_Stage_Counts
-    HHL_Laplacian
-    HHL_Laplacian_Sparse
   document_files
     "root.tex"

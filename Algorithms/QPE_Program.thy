@@ -41,7 +41,7 @@ proof -
   have "inner_prod ?\<psi> (clock_proj N m Js *\<^sub>v ?\<psi>) = (\<Sum>r<N * m. (if r div m \<in> Js then ?\<psi> $ r else 0) * cnj (?\<psi> $ r))"
     unfolding proj_set_mult_vec[OF d\<psi>] using d\<psi> by (simp add: scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>k<N. \<Sum>i<m. (if k \<in> Js then complex_of_real ((cmod (a $ k))\<^sup>2) else 0) * complex_of_real ((cmod (u $ i))\<^sup>2))"
-    unfolding sum_blocks
+    unfolding sum_split_mp
   proof (rule sum.cong[OF refl], rule sum.cong[OF refl])
     fix k i assume "k \<in> {..<N}" "i \<in> {..<m}"
     hence k: "k < N" and i: "i < m" by simp_all

@@ -81,20 +81,6 @@ text \<open>The controlled call $\mathrm{C}_jV$ with $V$ the $r$-step Trotter pr
 definition cvl :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.mat list" where
   "cvl m k a \<mu> t r j = concat (replicate r (clap_step m k a j \<mu> (t / real r)))"
 
-lemma tensor_pow_one:
-  assumes E: "E \<in> carrier_mat n n" and n: "0 < n"
-  shows "(E \<Otimes> 1\<^sub>m 2) ^\<^sub>m r = E ^\<^sub>m r \<Otimes> 1\<^sub>m 2"
-proof (induction r)
-  case 0
-  show ?case using E by (simp add: tensor_mat_id)
-next
-  case (Suc r)
-  have "(E \<Otimes> 1\<^sub>m 2) ^\<^sub>m Suc r = (E ^\<^sub>m r \<Otimes> 1\<^sub>m 2) * (E \<Otimes> 1\<^sub>m 2)" using Suc by simp
-  also have "\<dots> = (E ^\<^sub>m r * E) \<Otimes> (1\<^sub>m 2 * 1\<^sub>m 2)"
-    by (rule mult_distr_tensor[symmetric]) (use E n in simp_all)
-  finally show ?case by simp
-qed
-
 theorem cvl_props:
   fixes t :: real and r :: nat
   assumes m: "2 \<le> m" and a: "m \<le> a" and j: "j < k" and mu: "0 \<le> \<mu>"
@@ -106,7 +92,7 @@ theorem cvl_props:
 proof -
   let ?K = "Suc (m + k) + a" and ?S = "clap_step m k a j \<mu> (t / real r)"
   note S = clap_step_props[OF m a j mu, of "t / real r", folded E_def]
-  have Sc: "\<And>U. U \<in> set ?S \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using S(2) elementary_carrier by blast
+  have Sc: "\<And>U. U \<in> set ?S \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using S(2) elementary_unitary(1) by blast
   have Ec: "E \<in> carrier_mat (2 ^ m) (2 ^ m)" unfolding E_def slap_factors[OF m mu]
     by (rule mult_carrier_mat[OF qw_carrier[OF gph_carrier] mult_carrier_mat[OF qw_carrier[OF xrot_carrier]
         mult_carrier_mat[OF mult_carrier_mat[OF pmat_carrier qw_carrier[OF xrot_carrier]] pmat_carrier]]]) (use m in simp_all)
@@ -116,7 +102,7 @@ proof -
   moreover have "stands_for (2 ^ a) (2 ^ Suc (m + k)) (circuit_mat (2 ^ ?K) ?S ^\<^sub>m r) (ctrl_bit (2 ^ k) (2 ^ m * 2) j (E \<Otimes> 1\<^sub>m 2) ^\<^sub>m r)"
     by (rule stands_for_pow[OF S(1)])
   moreover have "ctrl_bit (2 ^ k) (2 ^ m * 2) j (E \<Otimes> 1\<^sub>m 2) ^\<^sub>m r = ctrl_bit (2 ^ k) (2 ^ m * 2) j (E ^\<^sub>m r \<Otimes> 1\<^sub>m 2)"
-    using ctrl_bit_pow[OF Gc, of "2 ^ k" j r] tensor_pow_one[OF Ec, of r] by simp
+    using ctrl_bit_pow[OF Gc, of "2 ^ k" j r] pow_tensor_one[OF Ec, of r] by simp
   ultimately show "stands_for (2 ^ a) (2 ^ Suc (m + k)) (circuit_mat (2 ^ ?K) (cvl m k a \<mu> t r j))
       (ctrl_bit (2 ^ k) (2 ^ m * 2) j (E ^\<^sub>m r \<Otimes> 1\<^sub>m 2))" by simp
   show "\<forall>U \<in> set (cvl m k a \<mu> t r j). elementary (2 ^ ?K) U" using S(2) by (auto simp: cvl_def)
@@ -156,7 +142,7 @@ proof -
       unfolding KK by (rule C1)
   next
     fix j U assume "j < k" "U \<in> set (cvl m k a \<mu> t r j)"
-    thus "U \<in> carrier_mat (2 ^ a * (2 ^ k * ?M)) (2 ^ a * (2 ^ k * ?M))" using C2 elementary_carrier unfolding KK by blast
+    thus "U \<in> carrier_mat (2 ^ a * (2 ^ k * ?M)) (2 ^ a * (2 ^ k * ?M))" using C2 elementary_unitary(1) unfolding KK by blast
   qed
   thus "stands_for (2 ^ a) (2 ^ Suc (m + k)) (circuit_mat (2 ^ ?K) (lap_pe m k a \<mu> t r)) (ctrl_pow (2 ^ k) ?M (E ^\<^sub>m r \<Otimes> 1\<^sub>m 2))"
     unfolding lap_pe_def KK .

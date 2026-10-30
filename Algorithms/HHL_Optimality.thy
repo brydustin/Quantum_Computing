@@ -208,15 +208,10 @@ permute the whole dilation: a permutation fixing $0$ (so $\vec b=\ket0$ stays) t
 coordinates accepted by $M_0$ into the top half and fills the rest of it with coordinates where
 the solution vanishes.  No padding is needed.\<close>
 
-definition perm_conj :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "perm_conj n \<sigma> G = Matrix.mat n n (\<lambda>(i, j). G $$ (\<sigma> i, \<sigma> j))"
-
 definition perm_vec :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.vec \<Rightarrow> complex Matrix.vec" where
   "perm_vec n \<sigma> y = Matrix.vec n (\<lambda>i. y $ \<sigma> i)"
 
 lemma dim_perm_vec [simp]: "dim_vec (perm_vec n \<sigma> y) = n" by (simp add: perm_vec_def)
-lemma perm_conj_carrier: "perm_conj n \<sigma> G \<in> carrier_mat n n" by (simp add: perm_conj_def)
-
 context
   fixes n :: nat and \<sigma> :: "nat \<Rightarrow> nat"
   assumes \<sigma>: "bij_betw \<sigma> {..<n} {..<n}"
@@ -244,7 +239,7 @@ qed (simp add: perm_conj_def)
 lemma perm_vec_norm: "dim_vec y = n \<Longrightarrow> \<parallel>perm_vec n \<sigma> y\<parallel> = \<parallel>y\<parallel>"
   using perm_index_sum[of "\<lambda>j. (cmod (y $ j))\<^sup>2"] by (simp add: cpx_vec_length_def perm_vec_def)
 
-lemma perm_conj_hermitian:
+lemma perm_conj_hermitian_qhl:
   assumes G: "G \<in> carrier_mat n n" "hermitian G"
   shows "hermitian (perm_conj n \<sigma> G)"
 proof -
@@ -434,7 +429,7 @@ proof -
   proof
     show "bij_betw \<sigma> {..<Dm + Dm} {..<Dm + Dm}" by (rule bij)
     show "\<sigma> 0 = 0" by (rule \<sigma>(2))
-    show "hermitian ?C" by (rule perm_conj_hermitian[OF bij Hc herm_embed_hermitian[OF red_A_carrier]])
+    show "hermitian ?C" by (rule perm_conj_hermitian_qhl[OF bij Hc herm_embed_hermitian[OF red_A_carrier]])
     fix w :: "complex Matrix.vec" assume w: "dim_vec w = Dm + Dm"
     obtain y where y: "dim_vec y = Dm + Dm" "w = perm_vec (Dm + Dm) \<sigma> y" by (rule perm_vec_surj[OF bij w])
     have Cw: "?C *\<^sub>v w = perm_vec (Dm + Dm) \<sigma> (?H *\<^sub>v y)" unfolding y(2) by (rule perm_conj_mult[OF bij Hc y(1)])

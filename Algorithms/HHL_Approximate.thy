@@ -112,7 +112,7 @@ proof (rule eq_vecI)
   have "(ctrl_blocks N m B *\<^sub>v reg_sum N m f) $ r = (\<Sum>c<N * m. ctrl_blocks N m B $$ (r, c) * reg_sum N m f $ c)"
     using r by (simp add: scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>k'<N. \<Sum>i'<m. ctrl_blocks N m B $$ (r, k' * m + i') * reg_sum N m f $ (k' * m + i'))"
-    by (rule sum_blocks)
+    by (rule sum_split_mp)
   also have "\<dots> = (\<Sum>k'<N. if k' = k then (\<Sum>i'<m. B k $$ (i, i') * f k $ i') else 0)"
   proof (rule sum.cong[OF refl])
     fix k' assume "k' \<in> {..<N}"
@@ -139,7 +139,7 @@ proof -
   have "\<langle>reg_sum N m f|reg_sum N m g\<rangle> = (\<Sum>r<N * m. cnj (reg_sum N m f $ r) * reg_sum N m g $ r)"
     by (simp add: inner_prod_def scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>k<N. \<Sum>i<m. cnj (reg_sum N m f $ (k * m + i)) * reg_sum N m g $ (k * m + i))"
-    by (rule sum_blocks)
+    by (rule sum_split_mp)
   also have "\<dots> = (\<Sum>k<N. \<langle>f k|g k\<rangle>)"
     by (rule sum.cong[OF refl]) (simp add: reg_sum_index inner_prod_def scalar_prod_def atLeast0LessThan f g)
   finally show ?thesis .

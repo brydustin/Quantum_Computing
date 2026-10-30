@@ -61,15 +61,12 @@ lemma bit_gc:
   shows "bit (gc d) k \<longleftrightarrow> (if k = 0 \<and> bit d 1 then \<not> bit d 0 else bit d k)"
   using four_cases[OF assms(1)] two_cases[OF assms(2)] by (elim disjE) (simp_all add: Transposition.transpose_def bit_iff_odd)
 
-text \<open>The adjacent swap exchanges bits $j$ and $j+1$; the adjacent CNOT is \<open>CNOT (j+1) j\<close>.\<close>
-
-lemma gs_lt: "x < 4 \<Longrightarrow> gs x < 4" and gc_lt: "x < 4 \<Longrightarrow> gc x < 4"
-  by (auto simp: Transposition.transpose_def)
+text \<open>The adjacent swap exchanges bits $j$ and $j+1$; the adjacent CNOT is \<open>CX (j+1) j\<close>.\<close>
 
 lemma bit_swap_op: "bit (opf (False, j) c) i \<longleftrightarrow> bit c (Transposition.transpose j (Suc j) i)"
 proof -
   have "bit (opf (False, j) c) i \<longleftrightarrow> (if j \<le> i \<and> i < j + 2 then bit (gs (c div 2 ^ j mod 4)) (i - j) else bit c i)"
-    unfolding opf_def opg_def using bit_lift2[of gs, OF gs_lt] by simp
+    unfolding opf_def opg_def using bit_lift2[of gs, OF gs_props(1)] by simp
   also have "\<dots> \<longleftrightarrow> bit c (Transposition.transpose j (Suc j) i)"
   proof -
     let ?d = "c div 2 ^ j mod 4"
@@ -83,12 +80,12 @@ proof -
   finally show ?thesis .
 qed
 
-lemma cx_op: "opf (True, j) c = rg (CNOT (Suc j) j) c"
+lemma cx_op: "opf (True, j) c = rg (CX (Suc j) j) c"
 proof (rule bit_eqI)
   fix i
   have "bit (opf (True, j) c) i \<longleftrightarrow> (if j \<le> i \<and> i < j + 2 then bit (gc (c div 2 ^ j mod 4)) (i - j) else bit c i)"
-    unfolding opf_def opg_def using bit_lift2[of gc, OF gc_lt] by simp
-  also have "\<dots> \<longleftrightarrow> bit (rg (CNOT (Suc j) j) c) i"
+    unfolding opf_def opg_def using bit_lift2[of gc, OF gc_props(1)] by simp
+  also have "\<dots> \<longleftrightarrow> bit (rg (CX (Suc j) j) c) i"
   proof -
     let ?d = "c div 2 ^ j mod 4"
     have d0: "bit ?d 0 \<longleftrightarrow> bit c j" and d1: "bit ?d 1 \<longleftrightarrow> bit c (Suc j)"
@@ -98,7 +95,7 @@ proof (rule bit_eqI)
     consider "i = j" | "i = Suc j" | "i < j" | "Suc (Suc j) \<le> i" by linarith
     thus ?thesis using d0 d1 g0 g1 by cases (simp_all add: bit_rg del: rg.simps)
   qed
-  finally show "bit (opf (True, j) c) i \<longleftrightarrow> bit (rg (CNOT (Suc j) j) c) i" .
+  finally show "bit (opf (True, j) c) i \<longleftrightarrow> bit (rg (CX (Suc j) j) c) i" .
 qed
 
 subsection \<open>Chains of adjacent swaps\<close>
@@ -177,7 +174,7 @@ subsection \<open>Conjugating a gate by swaps\<close>
 
 fun rename :: "(nat \<Rightarrow> nat) \<Rightarrow> rgate \<Rightarrow> rgate" where
   "rename f (NOT p) = NOT (f p)"
-| "rename f (CNOT c p) = CNOT (f c) (f p)"
+| "rename f (CX c p) = CX (f c) (f p)"
 | "rename f (TOF a b p) = TOF (f a) (f b) (f p)"
 
 lemma conj_swops:
@@ -198,15 +195,15 @@ text \<open>The target goes to wire 0, the controls to wires 1 and 2.\<close>
 
 fun gate_route :: "rgate \<Rightarrow> nat list \<times> rgate" where
   "gate_route (NOT p) = (dn p 0, NOT 0)"
-| "gate_route (CNOT c p) = (dn p 0 @ dn (np p 0 c) 1, CNOT 1 0)"
-| "gate_route (TOF a b p) = (if a = b then (dn p 0 @ dn (np p 0 a) 1, CNOT 1 0) else
+| "gate_route (CX c p) = (dn p 0 @ dn (np p 0 c) 1, CX 1 0)"
+| "gate_route (TOF a b p) = (if a = b then (dn p 0 @ dn (np p 0 a) 1, CX 1 0) else
      (dn p 0 @ dn (np p 0 b) 1 @ dn (np (np p 0 b) 1 (np p 0 a)) 2, TOF 2 1 0))"
 
 lemma np_ge1: "i \<noteq> p \<Longrightarrow> 1 \<le> np p 0 i" by (auto simp: np_def)
 
 lemma route_cnot:
   assumes cp: "c \<noteq> p"
-  shows "rename (pm (dn p 0 @ dn (np p 0 c) 1)) (CNOT 1 0) = CNOT c p"
+  shows "rename (pm (dn p 0 @ dn (np p 0 c) 1)) (CX 1 0) = CX c p"
 proof -
   have c1: "1 \<le> np p 0 c" by (rule np_ge1[OF cp])
   have "pm (dn (np p 0 c) 1) 0 = 0" "pm (dn (np p 0 c) 1) 1 = np p 0 c" using c1 by (simp_all add: pm_dn)
@@ -240,7 +237,7 @@ proof -
     case (NOT p)
     thus ?thesis using r by (auto simp: pm_dn)
   next
-    case (CNOT c' p)
+    case (CX c' p)
     thus ?thesis using r ok route_cnot[of c' p] by auto
   next
     case (TOF a b p)
@@ -272,7 +269,7 @@ lemma route_length:
   shows "length js \<le> 3 * K"
   using ok r by (cases g) (auto simp: np_def split: if_splits)
 
-lemma route_core: "snd (gate_route g) \<in> {NOT 0, CNOT 1 0, TOF 2 1 0}"
+lemma route_core: "snd (gate_route g) \<in> {NOT 0, CX 1 0, TOF 2 1 0}"
   by (cases g) auto
 
 end

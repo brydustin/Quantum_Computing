@@ -29,6 +29,6 @@ session VP_Check_Demo in "Demo" = HHL_Explicit_Demo +
   options [document = false]
   theories Check_Demo
 
-session VP_Check_Channels in "Channels" = Quantum_Hoare_Logic_Channels +
+session VP_Check_Kraus in "Kraus" = Kraus_Maps_Bridge +
   options [document = false]
-  theories Check_Channels
+  theories Check_Kraus

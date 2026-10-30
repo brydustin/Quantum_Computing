@@ -549,16 +549,6 @@ proof -
   finally show ?thesis .
 qed
 
-lemma pair_index_lt:
-  fixes i j k :: nat
-  assumes "i < k" "j < k"
-  shows "i * k + j < k * k" "(i * k + j) div k = i" "(i * k + j) mod k = j"
-proof -
-  have "i * k + j < Suc i * k" using assms by simp
-  also have "\<dots> \<le> k * k" using assms by (intro mult_le_mono1) simp
-  finally show "i * k + j < k * k" .
-qed (use assms in simp_all)
-
 lemma kraus_pair_sum_products:
   assumes Vs: "\<forall>V \<in> set Vs. V \<in> carrier_mat d n"
   shows "kraus_pair_sum n Vs A

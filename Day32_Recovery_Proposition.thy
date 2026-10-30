@@ -16,16 +16,6 @@ subsubsection \<open>Matrix sums acting on vectors\<close>
 lemma smult_zero_vec [simp]: "(c :: complex) \<cdot>\<^sub>v 0\<^sub>v n = 0\<^sub>v n"
   by (intro eq_vecI) auto
 
-lemma zero_mat_mult_vec:
-  assumes "dim_vec w = n" shows "(0\<^sub>m m n :: complex Matrix.mat) *\<^sub>v w = 0\<^sub>v m"
-proof (rule eq_vecI)
-  fix i assume "i < dim_vec (0\<^sub>v m :: complex Matrix.vec)"
-  hence i: "i < m" by simp
-  have "((0\<^sub>m m n :: complex Matrix.mat) *\<^sub>v w) $ i = (0\<^sub>v n :: complex Matrix.vec) \<bullet> w" using i by simp
-  also have "\<dots> = 0" by (rule scalar_prod_left_zero[OF carrier_vecI[OF assms]])
-  finally show "((0\<^sub>m m n :: complex Matrix.mat) *\<^sub>v w) $ i = (0\<^sub>v m :: complex Matrix.vec) $ i" using i by simp
-qed simp
-
 lemma mult_mat_vec_zero_vec:
   assumes Ac: "A \<in> carrier_mat m n" shows "A *\<^sub>v (0\<^sub>v n :: complex Matrix.vec) = 0\<^sub>v m"
 proof (rule eq_vecI)

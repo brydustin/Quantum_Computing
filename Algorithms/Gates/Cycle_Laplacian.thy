@@ -470,8 +470,8 @@ proof -
     unfolding qw0_lift[OF n(3)] by (rule stands_for_lift[OF qw_carrier[OF gph_carrier n(3)]]) simp
   have Xc: "?X \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" and Yc: "?Y \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)"
     by (rule qw_carrier, simp, use n(3) in simp)+
-  have Cl: "\<And>U. U \<in> set (compile ?K ?g) \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using CI(2) elementary_carrier by blast
-  have Dl: "\<And>U. U \<in> set (compile ?K (rev ?g)) \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using CD(2) elementary_carrier by blast
+  have Cl: "\<And>U. U \<in> set (compile ?K ?g) \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using CI(2) elementary_unitary(1) by blast
+  have Dl: "\<And>U. U \<in> set (compile ?K (rev ?g)) \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using CD(2) elementary_unitary(1) by blast
   have a1: "circuit_mat (2 ^ ?K) (lap_step m d)
       = circuit_mat (2 ^ ?K) ([?X] @ compile ?K ?g @ [?X, ?Y]) * circuit_mat (2 ^ ?K) (compile ?K (rev ?g))"
     unfolding lap_step_def by (rule circuit_mat_append) (use Cl Dl Xc Yc in auto)
@@ -529,7 +529,7 @@ proof -
   note S = lap_step_props[OF m, where d = ?d]
   note n = pow_facts[OF m]
   have stepc: "\<And>U. U \<in> set (lap_step m ?d) \<Longrightarrow> U \<in> carrier_mat (2 ^ (2 * m)) (2 ^ (2 * m))"
-    using S(2) elementary_carrier by blast
+    using S(2) elementary_unitary(1) by blast
   have C: "circuit_mat (2 ^ (2 * m)) (lap_gates m t r) = circuit_mat (2 ^ (2 * m)) (lap_step m ?d) ^\<^sub>m r"
     unfolding lap_gates_def by (rule circuit_mat_concat_replicate[OF stepc])
   have SP: "stands_for ?n ?n (circuit_mat (2 ^ (2 * m)) (lap_gates m t r)) (?E ^\<^sub>m r)"

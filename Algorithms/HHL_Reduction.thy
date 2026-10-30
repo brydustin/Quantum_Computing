@@ -186,7 +186,7 @@ proof (rule eq_vecI)
         = (\<Sum>s<D * m. (if ?c = Suc (s div m) mod D then V (s div m) $$ (?i, s mod m) else 0) * f (s div m) $ (s mod m))"
     using r by (simp add: red_U_def scalar_prod_def atLeast0LessThan reg_sum_def)
   also have "\<dots> = (\<Sum>b<D. \<Sum>j<m. (if ?c = Suc b mod D then V b $$ (?i, j) else 0) * f b $ j)"
-    unfolding sum_blocks by (intro sum.cong refl) (simp add: block_div_mod)
+    unfolding sum_split_mp by (intro sum.cong refl) (simp add: block_div_mod)
   also have "\<dots> = (\<Sum>b<D. if b = prev ?c then (\<Sum>j<m. V b $$ (?i, j) * f b $ j) else 0)"
     by (intro sum.cong refl) (simp add: cond_prev ri(1))
   also have "\<dots> = (\<Sum>j<m. V (prev ?c) $$ (?i, j) * f (prev ?c) $ j)" using prev_lt by simp

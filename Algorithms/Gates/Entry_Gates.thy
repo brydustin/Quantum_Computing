@@ -19,7 +19,7 @@ proof -
   have KN: "(2::nat) ^ K = 2 ^ (2 * p) * 2 ^ q * 2" unfolding K_def by (simp add: power_add ac_simps)
   let ?O = "ent_oracle (2 * p) (2 ^ q) f"
   have Oc: "?O \<in> carrier_mat (2 ^ K) (2 ^ K)" unfolding ent_oracle_def KN by simp
-  have mc: "\<And>U. U \<in> set (mid_gates p q) \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K)" using M(2) elementary_carrier by blast
+  have mc: "\<And>U. U \<in> set (mid_gates p q) \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K)" using M(2) elementary_unitary(1) by blast
   have "circuit_mat (2 ^ K) (ent_gates p q f) = ?O * circuit_mat (2 ^ K) (mid_gates p q) * ?O"
   proof -
     have a1: "circuit_mat (2 ^ K) ([?O] @ mid_gates p q @ [?O]) = circuit_mat (2 ^ K) (mid_gates p q @ [?O]) * ?O"

@@ -95,7 +95,7 @@ proof -
   have KN: "(2::nat) ^ K = 2 ^ p * 2 ^ q * 2" unfolding K_def by (simp add: power_add ac_simps)
   let ?O = "ent_oracle p (2 ^ q) f"
   have Oc: "?O \<in> carrier_mat (2 ^ K) (2 ^ K)" unfolding ent_oracle_def KN by simp
-  have lc: "\<And>U. U \<in> set ?L \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K)" using P(2) elementary_carrier by blast
+  have lc: "\<And>U. U \<in> set ?L \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K)" using P(2) elementary_unitary(1) by blast
   have mid: "circuit_mat (2 ^ K) ?L = ctrl_blocks (2 ^ p * 2 ^ q) 2 (\<lambda>c. dmat 2 (\<lambda>_. ang p (c div 2 ^ q)))"
   proof -
     have "ctrl_blocks (2 ^ p * 2 ^ q) 2 (\<lambda>c. dmat 2 (\<lambda>_. ang p (c div 2 ^ q))) = dmat (2 ^ K) (\<lambda>z. ang p (z div 2 div 2 ^ q))"

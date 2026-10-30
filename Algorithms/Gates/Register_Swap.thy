@@ -6,7 +6,7 @@ begin
 section \<open>Swapping the two registers\<close>
 
 definition sw3 :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where
-  "sw3 m i = [CNOT (xw m i) (yw i), CNOT (yw i) (xw m i), CNOT (xw m i) (yw i)]"
+  "sw3 m i = [CX (xw m i) (yw i), CX (yw i) (xw m i), CX (xw m i) (yw i)]"
 
 fun swp :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where
   "swp m 0 = []"

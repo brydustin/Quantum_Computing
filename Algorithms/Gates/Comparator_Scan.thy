@@ -33,8 +33,8 @@ text \<open>One bit: $y_i \gets x_i\oplus y_i$, $t_i \gets e_{i+1}\wedge d_i$, $
 $e_i \gets e_{i+1}\oplus t_i = e_{i+1}\wedge\neg d_i$.\<close>
 
 definition cstep :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where
-  "cstep m i = [CNOT (xw m i) (yw i), TOF (ew m (Suc i)) (yw i) (tw m i), TOF (tw m i) (xw m i) (rw m),
-             CNOT (ew m (Suc i)) (ew m i), CNOT (tw m i) (ew m i)]"
+  "cstep m i = [CX (xw m i) (yw i), TOF (ew m (Suc i)) (yw i) (tw m i), TOF (tw m i) (xw m i) (rw m),
+             CX (ew m (Suc i)) (ew m i), CX (tw m i) (ew m i)]"
 
 fun cscan :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where
   "cscan m 0 = []"

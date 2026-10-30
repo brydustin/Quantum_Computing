@@ -24,7 +24,7 @@ section \<open>The clean comparator\<close>
 
 text \<open>$q \mathrel{\oplus}= [y<x]$ on a bit $q$ outside the layout, every other bit restored.\<close>
 
-definition cmpq :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where "cmpq m q = cmp_circ m @ [CNOT (rw m) q] @ rev (cmp_circ m)"
+definition cmpq :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where "cmpq m q = cmp_circ m @ [CX (rw m) q] @ rev (cmp_circ m)"
 
 lemma length_cmpq: "length (cmpq m q) = 10 * m + 3" by (simp add: cmpq_def length_comp)
 

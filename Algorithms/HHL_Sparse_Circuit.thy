@@ -20,20 +20,11 @@ definition enc :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<R
 abbreviation (input) bstate :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> complex Matrix.vec" where
   "bstate n x y b \<equiv> unit_vec (n * n * 2) (enc n x y b)"
 
-lemma reg_lt: "(x::nat) < n \<Longrightarrow> y < n \<Longrightarrow> x * n + y < n * n"
-proof -
-  assume x: "x < n" and y: "y < n"
-  have "x * n + y < x * n + n" using y by simp
-  also have "\<dots> = (x + 1) * n" by simp
-  also have "\<dots> \<le> n * n" using x by (intro mult_right_mono) simp_all
-  finally show ?thesis .
-qed
-
 lemma enc_lt:
   assumes "x < n" "y < n" "b < 2"
   shows "enc n x y b < n * n * 2"
 proof -
-  have "Suc (x * n + y) \<le> n * n" using reg_lt[OF assms(1,2)] by simp
+  have "Suc (x * n + y) \<le> n * n" using pair_index_lt(1)[OF assms(1,2)] by simp
   hence "Suc (x * n + y) * 2 \<le> n * n * 2" by (rule mult_le_mono1)
   thus ?thesis unfolding enc_def using assms(3) by simp
 qed

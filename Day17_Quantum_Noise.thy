@@ -868,20 +868,6 @@ lemma env_kraus_dims [simp]: "dim_row (env_kraus m p U \<phi> i) = m" "dim_col (
 lemma env_kraus_index: "a < m \<Longrightarrow> c < m \<Longrightarrow> env_kraus m p U \<phi> i $$ (a,c) = (\<Sum>k<p. U $$ (a * p + i, c * p + k) * \<phi> $ k)"
   by (simp add: env_kraus_def)
 
-lemma sum_split_mp:
-  fixes f :: "nat \<Rightarrow> 'a::comm_monoid_add"
-  shows "(\<Sum>x < m * p. f x) = (\<Sum>c<m. \<Sum>k<p. f (c * p + k))"
-proof -
-  have "(\<Sum>x < m * p. f x) = (\<Sum>c<m. sum f {c * p..<c * p + p})" by (rule sum.nat_group[symmetric])
-  also have "\<dots> = (\<Sum>c<m. \<Sum>k<p. f (c * p + k))"
-  proof (rule sum.cong[OF refl])
-    fix c :: nat
-    show "sum f {c * p..<c * p + p} = (\<Sum>k<p. f (c * p + k))"
-      by (rule sum.reindex_bij_witness[where i="\<lambda>k. c * p + k" and j="\<lambda>x. x - c * p"]) auto
-  qed
-  finally show ?thesis .
-qed
-
 lemma tensor_outer_index:
   fixes \<rho> :: "complex Matrix.mat" and \<phi> :: "complex Matrix.vec"
   assumes \<rho>: "\<rho> \<in> carrier_mat m m" and \<phi>: "dim_vec \<phi> = p"

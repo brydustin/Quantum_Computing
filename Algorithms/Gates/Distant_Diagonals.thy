@@ -105,10 +105,10 @@ proof -
   proof -
     have a1: "circuit_mat (2 ^ K) (map (cgate K 1) (swops ?js) @ [?D] @ map (cgate K 1) (swops (rev ?js)))
         = circuit_mat (2 ^ K) ([?D] @ map (cgate K 1) (swops (rev ?js))) * circuit_mat (2 ^ K) (map (cgate K 1) (swops ?js))"
-      by (rule circuit_mat_append) (use A(2) C(2) Dc elementary_carrier in auto)
+      by (rule circuit_mat_append) (use A(2) C(2) Dc elementary_unitary(1) in auto)
     have a2: "circuit_mat (2 ^ K) ([?D] @ map (cgate K 1) (swops (rev ?js)))
         = circuit_mat (2 ^ K) (map (cgate K 1) (swops (rev ?js))) * circuit_mat (2 ^ K) [?D]"
-      by (rule circuit_mat_append) (use C(2) Dc elementary_carrier in auto)
+      by (rule circuit_mat_append) (use C(2) Dc elementary_unitary(1) in auto)
     show ?thesis unfolding dgate_gates_def a1 a2 circuit_mat_single[OF Dc] ..
   qed
   have e2: "circuit_mat (2 ^ K) (dgate_gates K c \<psi>) = pmat (2 ^ K) ?h * ?D * pmat (2 ^ K) ?f"

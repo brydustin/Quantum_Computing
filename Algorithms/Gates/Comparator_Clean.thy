@@ -39,11 +39,6 @@ lemma bit0_swp: "bit (rcirc (swp m m) w) 0 \<longleftrightarrow> bit w 0"
 
 text \<open>B leaves a clean state with given $c_1,c_2$ bits in a clean state with toggled ones.\<close>
 
-lemma B_fif:
-  assumes "clean m w"
-  shows "rcirc (sortB m) w = fif (xv m w < yv m w) (c2w m) (fif (yv m w < xv m w) (c1w m) w)"
-  by (rule B_correct[OF assms])
-
 theorem S_correct:
   assumes c: "clean m z" and z0: "\<not> bit z (c1w m)" "\<not> bit z (c2w m)" "\<not> bit z (dw m)"
   defines "d \<equiv> (yv m z < xv m z \<and> \<not> bit z 0) \<or> (xv m z < yv m z \<and> bit z 0)"
@@ -58,19 +53,19 @@ proof -
   have h1: "rcirc ((sortB m) @ (flagG m) @ (sortB m)) z = fif d (dw m) z"
   proof -
     let ?z1 = "fif ?c2 (c2w m) (fif ?c1 (c1w m) z)"
-    have z1: "rcirc (sortB m) z = ?z1" by (rule B_fif[OF c])
+    have z1: "rcirc (sortB m) z = ?z1" by (rule B_correct[OF c])
     have g: "rcirc (flagG m) ?z1 = fif d (dw m) ?z1"
       unfolding Gd_correct by (rule arg_cong[where f = "\<lambda>c. fif c (dw m) ?z1"], rule Gd_d)
         (use z0 in \<open>auto simp: bit_fif d_def\<close>)
     have cz: "clean m (fif d (dw m) ?z1)" using c by (simp add: clean_fif)
     have "rcirc (sortB m) (fif d (dw m) ?z1) = fif d (dw m) z"
-      unfolding B_fif[OF cz] xv_fif[OF pos_distinct(12)] yv_fif[OF pos_distinct(12)]
+      unfolding B_correct[OF cz] xv_fif[OF pos_distinct(12)] yv_fif[OF pos_distinct(12)]
         xv_fif[OF pos_distinct(10)] yv_fif[OF pos_distinct(10)] xv_fif[OF pos_distinct(11)] yv_fif[OF pos_distinct(11)]
       by (cases "xv m z < yv m z"; cases "yv m z < xv m z"; cases d) (simp_all add: fif_def flip_bit_commute)
     thus ?thesis unfolding rcirc_append z1 g .
   qed
   \<comment> \<open>middle: swap and flag, controlled on $D$\<close>
-  have h2: "rcirc (cswp m m @ [CNOT (dw m) 0]) (fif d (dw m) z) = fif d (dw m) ?w"
+  have h2: "rcirc (cswp m m @ [CX (dw m) 0]) (fif d (dw m) z) = fif d (dw m) ?w"
   proof (cases d)
     case True
     have sD: "rcirc (swp m m) (flip_bit (dw m) z) = flip_bit (dw m) (rcirc (swp m m) z)"
@@ -93,7 +88,7 @@ proof -
     let ?w1 = "fif (xv m ?w < yv m ?w) (c2w m) (fif (yv m ?w < xv m ?w) (c1w m) ?w)"
     have cD: "clean m (fif d (dw m) ?w)" using cw by (simp add: clean_fif)
     have z1: "rcirc (sortB m) (fif d (dw m) ?w) = fif d (dw m) ?w1"
-      unfolding B_fif[OF cD] by (simp add: xv_fif[OF pos_distinct(12)] yv_fif[OF pos_distinct(12)] xv_flip0 yv_flip0 fif_commute)
+      unfolding B_correct[OF cD] by (simp add: xv_fif[OF pos_distinct(12)] yv_fif[OF pos_distinct(12)] xv_flip0 yv_flip0 fif_commute)
     have g: "rcirc (flagG m) (fif d (dw m) ?w1) = ?w1"
     proof -
       have "rcirc (flagG m) (fif d (dw m) ?w1) = fif d (dw m) (fif d (dw m) ?w1)"
@@ -103,7 +98,7 @@ proof -
     qed
     have cw1: "clean m ?w1" using cw by (simp add: clean_fif)
     have v1: "xv m ?w1 = xv m ?w" "yv m ?w1 = yv m ?w" by (simp_all add: xv_fif yv_fif)
-    have "rcirc (sortB m) ?w1 = ?w" unfolding B_fif[OF cw1] v1 by (rule fif_cancel)
+    have "rcirc (sortB m) ?w1 = ?w" unfolding B_correct[OF cw1] v1 by (rule fif_cancel)
     thus ?thesis unfolding rcirc_append z1 g .
   qed
   have "rcirc (sort_flag m) z = ?w"

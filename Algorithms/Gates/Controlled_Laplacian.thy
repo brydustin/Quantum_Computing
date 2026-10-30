@@ -159,7 +159,7 @@ proof (rule eq_matI)
         show "bit x i = bit y i"
         proof (cases "i < w + k")
           case False
-          thus ?thesis using bit_lt_pow[OF x, of i] bit_lt_pow[OF y, of i] by simp
+          thus ?thesis using bit_above[OF x, of i] bit_above[OF y, of i] by simp
         qed (use h i in simp)
       qed
     qed simp
@@ -423,7 +423,7 @@ proof -
   have el: "\<forall>U \<in> set (concat ?Ls). elementary (2 ^ ?K) U" using CI(2) CD(2) WX(2) WP(2) by auto
   thus "\<forall>U \<in> set (clap_step m k a j \<mu> d). elementary (2 ^ ?K) U" by (simp add: clap_step_def)
   have "circuit_mat (2 ^ ?K) (concat ?Ls) = circuit_mat (2 ^ ?K) (map (circuit_mat (2 ^ ?K)) ?Ls)"
-    by (rule circuit_mat_concat) (use el elementary_carrier in auto)
+    by (rule circuit_mat_concat) (use el elementary_unitary(1) in auto)
   also have "map (circuit_mat (2 ^ ?K)) ?Ls = [wg ?K ?vs (pmat (2 ^ length ?vs) (rcirc (rev ?g))), wg ?K [1, ?c] (ctl (xrot d)),
       wg ?K ?vs (pmat (2 ^ length ?vs) (rcirc ?g)), wg ?K [1, ?c] (ctl (xrot d)), wg ?K [?c] (ctl (gph1 ((2 + \<mu>) * d)))]"
     using CI(1) CD(1) WX(1) WP(1) by simp

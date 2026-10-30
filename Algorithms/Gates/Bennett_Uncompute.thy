@@ -29,7 +29,7 @@ text_raw \<open>
 
 lemma compute_copy_uncompute:
   assumes ok: "\<forall>g \<in> set C. rg_ok M g" and ob: "\<forall>g \<in> set C. ob \<notin> wires g" and ro: "r \<noteq> ob"
-  shows "rcirc (C @ [CNOT r ob] @ rev C) z = (if bit (rcirc C z) r then flip_bit ob z else z)"
+  shows "rcirc (C @ [CX r ob] @ rev C) z = (if bit (rcirc C z) r then flip_bit ob z else z)"
 proof -
   have "\<forall>g \<in> set (rev C). ob \<notin> wires g" using ob by simp
   thus ?thesis

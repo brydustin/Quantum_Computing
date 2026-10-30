@@ -140,7 +140,7 @@ proof -
     let ?L = "compile (4 * m + 6) (sort_flag m)"
     have dc: "(2::nat) ^ (4 * m + 6) = 2 ^ (2 * m + 5) * N" unfolding N_def by (rule anc_size)
     have Lc: "\<And>U. U \<in> set ?L \<Longrightarrow> U \<in> carrier_mat (2 ^ (2 * m + 5) * N) (2 ^ (2 * m + 5) * N)"
-      using sort_flag_gates(1)[of m] elementary_carrier unfolding dc by blast
+      using sort_flag_gates(1)[of m] elementary_unitary(1) unfolding dc by blast
     have s: "stands_for (2 ^ (2 * m + 5)) N (circuit_mat (2 ^ (2 * m + 5) * N) ?L) (cmp_gate (2 ^ m))"
       using cmp_compiled_stands_for[of m] unfolding dc N_def .
     show ?thesis using lift_stands_for[OF s Lc wc N0] lift_car Lc wc True
@@ -164,7 +164,7 @@ proof -
           unfolding ent_oracle_def by simp
         hence "ent_oracle (2 * b) (2 ^ (2 * m)) ?f \<in> carrier_mat (2 ^ (2 * b) * N) (2 ^ (2 * b) * N)"
           unfolding nnN[symmetric] Groups.mult.assoc .
-        thus "U \<in> carrier_mat (2 ^ (2 * b) * N) (2 ^ (2 * b) * N)" using E2[OF U] elementary_carrier unfolding de by blast
+        thus "U \<in> carrier_mat (2 ^ (2 * b) * N) (2 ^ (2 * b) * N)" using E2[OF U] elementary_unitary(1) unfolding de by blast
       qed
       have s0: "stands_for (2 ^ (2 * b)) N (circuit_mat (2 ^ (2 * b) * N) (ent_gates b (2 * m) ?f)) (ent_rounded b (2 ^ (2 * m)) ?f)"
         using E1 unfolding de nnN .
@@ -191,7 +191,7 @@ proof -
             unfolding ent_oracle_def by simp
           hence "ent_oracle b (2 ^ (2 * m)) ?f \<in> carrier_mat (2 ^ b * N) (2 ^ b * N)"
             unfolding nnN[symmetric] Groups.mult.assoc .
-          thus "U \<in> carrier_mat (2 ^ b * N) (2 ^ b * N)" using D2[OF U] elementary_carrier unfolding dd by blast
+          thus "U \<in> carrier_mat (2 ^ b * N) (2 ^ b * N)" using D2[OF U] elementary_unitary(1) unfolding dd by blast
         qed
         have s0: "stands_for (2 ^ b) N (circuit_mat (2 ^ b * N) (dia_gates b (2 * m) ?f)) (dia_rounded b (2 ^ (2 * m)) ?f)"
           using D1 unfolding dd nnN .

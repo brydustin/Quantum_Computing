@@ -6,9 +6,9 @@ cd "$P"
 rc=0
 echo "== build"; tools/build_all.sh || exit 1
 echo "== checks"
-CHECKS="VP_Check_HFC VP_Check_Algorithms VP_Check_Notes VP_Check_Day05 VP_Check_Search VP_Check_Demo VP_Check_Channels"
+CHECKS="VP_Check_HFC VP_Check_Algorithms VP_Check_Notes VP_Check_Day05 VP_Check_Search VP_Check_Demo VP_Check_Kraus"
 "$ISABELLE" build -d "$AFP" -d . -d tools/check $CHECKS > tools/check/output.log 2>&1 || rc=1
-for s in HFC Algorithms HFC_Notes Notes Day05 Search Demo Channels; do
+for s in HFC Algorithms HFC_Notes Notes Day05 Search Demo Kraus; do
   f=tools/check/output/$s.txt
   [ -f "$f" ] && { echo "-- $s"; grep -v "^note:" "$f"; }
 done

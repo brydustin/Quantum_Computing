@@ -858,15 +858,6 @@ subsection \<open>The partial trace over $A$ (D15-6)\<close>
 text \<open>Reordering the basis: for a bijection $\sigma$ of $\{0,\dots,N-1\}$ the matrix
 $(x_{\sigma(r)\sigma(s)})$ has the trace of $X$ and is Hermitian, resp.\ positive, with $X$.\<close>
 
-definition perm_conj :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
-  "perm_conj N \<sigma> X = Matrix.mat N N (\<lambda>(r, s). X $$ (\<sigma> r, \<sigma> s))"
-
-lemma perm_conj_carrier [simp]: "perm_conj N \<sigma> X \<in> carrier_mat N N"
-  by (simp add: perm_conj_def)
-
-lemma perm_conj_dims [simp]: "dim_row (perm_conj N \<sigma> X) = N" "dim_col (perm_conj N \<sigma> X) = N"
-  by (simp_all add: perm_conj_def)
-
 text \<open>Conjugation by a permutation, $X\mapsto(X_{\sigma(r)\sigma(s)})_{r,s}$, preserves the trace, Hermitian
 matrices and positivity.\<close>
 

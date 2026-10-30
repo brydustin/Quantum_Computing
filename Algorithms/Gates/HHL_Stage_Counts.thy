@@ -63,7 +63,7 @@ proof -
   have el: "\<forall>V \<in> set (rs_gates k s \<theta>). elementary ?K V" using each by (auto simp: rs_gates_def)
   thus "\<forall>U \<in> set (rs_gates k s \<theta>). elementary ?K U" .
   have "circuit_mat ?K (rs_gates k s \<theta>) = circuit_mat ?K (map (circuit_mat ?K) (map (rs_ref k s) ?Us))"
-    unfolding rs_gates_def by (rule circuit_mat_concat) (use each elementary_carrier in fastforce)
+    unfolding rs_gates_def by (rule circuit_mat_concat) (use each elementary_unitary(1) in fastforce)
   also have "map (circuit_mat ?K) (map (rs_ref k s) ?Us) = ?Us" by (rule nth_equalityI) (use each in auto)
   finally show "circuit_mat ?K (rs_gates k s \<theta>) = ctrl_blocks (2 ^ k) (2 ^ s * 2) (\<lambda>c. 1\<^sub>m (2 ^ s) \<Otimes> Rot (\<theta> c))"
     using ucr_circuit[OF n0, of k \<theta>] by simp

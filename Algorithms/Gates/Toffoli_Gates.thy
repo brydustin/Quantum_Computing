@@ -83,9 +83,6 @@ proof -
   finally show ?thesis .
 qed
 
-lemma gs_gc_lt: "t < 4 \<Longrightarrow> gs t < 4" "t < 4 \<Longrightarrow> gs (gs t) = t" "t < 4 \<Longrightarrow> gc t < 4" "t < 4 \<Longrightarrow> gc (gc t) = t"
-  by (auto simp: Transposition.transpose_def)
-
 lemma gates8_carrier: "U \<in> set tof_gates \<Longrightarrow> U \<in> carrier_mat 8 8"
 proof -
   have "1\<^sub>m 2 \<Otimes> cv Q \<in> carrier_mat 8 8" if "Q \<in> carrier_mat 2 2" for Q
@@ -170,7 +167,7 @@ proof -
     using pmat_unitary_invol[OF that] by simp
   note v = cv_unitary[OF sqx_carrier sqx_unitary] and v' = cv_unitary[OF sd, unfolded dd, OF sqx_unitary(2,1)]
   show "U \<in> set tof_gates \<Longrightarrow> elementary 8 U"
-    unfolding tof_gates_def using p[of gs] p[of gc] gs_gc_lt
+    unfolding tof_gates_def using p[of gs] p[of gc] gs_props gc_props
     by (auto intro: elementary8_low elementary8_high v v')
 qed
 

@@ -69,10 +69,13 @@ the quantum while-language of the AFP entry \emph{Quantum Hoare Logic} \cite{liu
 for partial and total correctness, and compiled to elementary gates, with the Hamiltonian
 simulation done by Trotter and Suzuki product formulas \cite{berry2007}.  The development builds
 on the AFP entries \emph{Hermitian Functional Calculus} (functional calculus, product formulas) and
-\emph{Vern Paulsen's lecture notes} \cite{paulsen2011notes}; separate sessions run the algorithm on
-a $2\times2$ example with exact arithmetic \cite{thiemann2014realimpl}, show that loop-free programs
-are quantum channels, and import the search lower bound \cite{unruh2025co} behind the optimality
-theorem.
+\emph{Vern Paulsen's lecture notes} \cite{paulsen2011notes}.  Loop-free programs are shown to be
+quantum channels.  The black boxes are compiled to elementary gates: a reversible comparator
+gives the sparse simulation from oracles, state preparation is built from an angle oracle and,
+for sparse right-hand sides, without oracles, and for the shifted cycle Laplacian the whole
+algorithm runs on elementary gates alone with an explicit gate count.  Separate sessions run the
+algorithm on a $2\times2$ example with exact arithmetic \cite{thiemann2014realimpl} and import
+the search lower bound \cite{unruh2025co} behind the optimality theorem.
 \end{abstract}
 
 \tableofcontents
@@ -115,6 +118,8 @@ for $n=2^s$ every gate of HHL elementary or an oracle call; every $\ket b$ prepa
 Suzuki's formula plugged into the HHL error bound; for $s$-sparse $A$ over the one-sparse parts & \texttt{HHL\_Suzuki}\\
 the textbook precision of phase estimation: outcomes more than $e/N$ from $\varphi$ have probability $\le1/(2(e-1))$; $n+\lceil\log_2(2+1/(2\varepsilon))\rceil$ clock qubits give $n$ bits with probability $\ge1-\varepsilon$ & \texttt{QPE\_Precision}\\
 phase estimation as a program of quantum Hoare logic: the exact weakest precondition of every clock outcome; exact phases, the $4/\pi^2$ bound, the tail and the precision as triples; the same in elementary gates & \texttt{QPE\_Program}\\
+loop-free programs are channels: Kraus operators read off the program, its meaning is their Kraus map, completely positive and trace preserving (Lectures 19--33); the HHL program is one & \texttt{Program\_Channels}\\
+the black boxes in elementary gates: reversible comparator, sparse simulation from colour, entry and diagonal oracles, state preparation from an angle oracle and from a sparse list, and the whole algorithm for the shifted cycle Laplacian $L+\mu I$ with an explicit gate count & \texttt{Gates/*} (39 theories)\\
 \end{longtable}}
 
 \input{Phase_Estimation}
@@ -147,6 +152,46 @@ phase estimation as a program of quantum Hoare logic: the exact weakest precondi
 \input{HHL_Sparse_Circuit}
 \input{HHL_All_Elementary}
 \input{HHL_Suzuki}
+\input{Program_Channels}
+\input{Reversible_Gates}
+\input{Bit_Compare}
+\input{Comparator_Scan}
+\input{Bennett_Uncompute}
+\input{Comparator_Registers}
+\input{Register_Swap}
+\input{Two_Comparisons}
+\input{Sort_Flag}
+\input{Comparator_Clean}
+\input{Comparator_Permutation}
+\input{Toffoli_Gates}
+\input{Gate_Routing}
+\input{Reversible_Compile}
+\input{Comparator_Gates}
+\input{Clean_Ancillas}
+\input{Simulation_Comparator}
+\input{Entry_Rotation}
+\input{Entry_Oracle}
+\input{Distant_Diagonals}
+\input{Rotation_Stage_Gates}
+\input{Entry_Gates}
+\input{Diagonal_Oracle}
+\input{Simulation_Rounded}
+\input{Simulation_Oracles}
+\input{Prep_Rounded}
+\input{Prep_Angle_Oracle}
+\input{Multi_Controlled_NOT}
+\input{Prep_Sparse}
+\input{Incrementer}
+\input{Cycle_Laplacian}
+\input{Wire_Gates}
+\input{Wire_Placement}
+\input{Shifted_Laplacian}
+\input{Controlled_Laplacian}
+\input{Phase_Estimation_Gates}
+\input{Gate_List_Placement}
+\input{HHL_Stage_Counts}
+\input{HHL_Laplacian}
+\input{HHL_Laplacian_Sparse}
 
 \bibliographystyle{abbrv}
 \bibliography{root}

@@ -7,22 +7,22 @@ section \<open>Reversible gates on bits\<close>
 text \<open>Basis states of $m$ qubits are the numbers below $2^m$; a reversible gate flips one bit
 of the index, possibly controlled by others.  Bit $p$ is the coefficient of $2^p$.\<close>
 
-datatype rgate = NOT nat | CNOT nat nat | TOF nat nat nat
+datatype (plugins del: quickcheck_full_exhaustive quickcheck_narrowing) rgate = NOT nat | CX nat nat | TOF nat nat nat
 
 fun rg :: "rgate \<Rightarrow> nat \<Rightarrow> nat" where
   "rg (NOT p) x = flip_bit p x"
-| "rg (CNOT c p) x = (if bit x c then flip_bit p x else x)"
+| "rg (CX c p) x = (if bit x c then flip_bit p x else x)"
 | "rg (TOF a b p) x = (if bit x a \<and> bit x b then flip_bit p x else x)"
 
 fun targ :: "rgate \<Rightarrow> nat" where
-  "targ (NOT p) = p" | "targ (CNOT c p) = p" | "targ (TOF a b p) = p"
+  "targ (NOT p) = p" | "targ (CX c p) = p" | "targ (TOF a b p) = p"
 
 fun wires :: "rgate \<Rightarrow> nat set" where
-  "wires (NOT p) = {p}" | "wires (CNOT c p) = {c, p}" | "wires (TOF a b p) = {a, b, p}"
+  "wires (NOT p) = {p}" | "wires (CX c p) = {c, p}" | "wires (TOF a b p) = {a, b, p}"
 
 fun rg_ok :: "nat \<Rightarrow> rgate \<Rightarrow> bool" where
   "rg_ok m (NOT p) \<longleftrightarrow> p < m"
-| "rg_ok m (CNOT c p) \<longleftrightarrow> c < m \<and> p < m \<and> c \<noteq> p"
+| "rg_ok m (CX c p) \<longleftrightarrow> c < m \<and> p < m \<and> c \<noteq> p"
 | "rg_ok m (TOF a b p) \<longleftrightarrow> a < m \<and> b < m \<and> p < m \<and> a \<noteq> p \<and> b \<noteq> p"
 
 lemma flip_bit_twice [simp]: "flip_bit p (flip_bit p x) = (x :: nat)"
@@ -45,7 +45,7 @@ text \<open>A gate is active on $x$ when its controls are set; then it flips its
 
 fun active :: "rgate \<Rightarrow> nat \<Rightarrow> bool" where
   "active (NOT p) x = True"
-| "active (CNOT c p) x = bit x c"
+| "active (CX c p) x = bit x c"
 | "active (TOF a b p) x = (bit x a \<and> bit x b)"
 
 lemma rg_active: "rg g x = (if active g x then flip_bit (targ g) x else x)"

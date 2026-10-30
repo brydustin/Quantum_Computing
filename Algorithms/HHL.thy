@@ -74,7 +74,7 @@ proof -
       using r dt by (simp add: scalar_prod_def atLeast0LessThan)
     also have "\<dots> = (\<Sum>k'<N. \<Sum>i'<m. ctrl_blocks N m B $$ (r, k' * m + i') *
                                        tensor_vec (unit_vec N k) w $ (k' * m + i'))"
-      by (rule sum_blocks)
+      by (rule sum_split_mp)
     also have "\<dots> = (\<Sum>k'<N. if k' = k \<and> k1 = k then (\<Sum>i'<m. B k $$ (i, i') * w $ i') else 0)"
     proof (rule sum.cong[OF refl])
       fix k' assume "k' \<in> {..<N}"
@@ -128,7 +128,7 @@ proof (rule eq_matI)
         (\<Sum>x<N * m. ctrl_blocks N m B1 $$ (r, x) * ctrl_blocks N m B2 $$ (x, c))"
     using r c by (simp add: scalar_prod_def atLeast0LessThan)
   also have "\<dots> = (\<Sum>k'<N. \<Sum>i'<m. ctrl_blocks N m B1 $$ (r, k' * m + i') * ctrl_blocks N m B2 $$ (k' * m + i', c))"
-    by (rule sum_blocks)
+    by (rule sum_split_mp)
   also have "\<dots> = (\<Sum>k'<N. if k' = k \<and> c div m = k then (\<Sum>i'<m. B1 k $$ (i, i') * B2 k $$ (i', j)) else 0)"
   proof (rule sum.cong[OF refl])
     fix k' assume "k' \<in> {..<N}"
@@ -780,9 +780,6 @@ proof -
   also have "\<dots> = herm_embed A" using A by (simp add: herm_embed_def dagger_zero_mat dagger_of_dagger_is_id)
   finally show ?thesis unfolding hermitian_dagger .
 qed
-
-lemma zero_mat_mult_vec: "dim_vec v = n \<Longrightarrow> 0\<^sub>m K n *\<^sub>v v = 0\<^sub>v K"
-  by (rule eq_vecI) (auto simp: scalar_prod_def)
 
 lemma herm_embed_mult:
   assumes A: "A \<in> carrier_mat m n" and a: "dim_vec a = m" and c: "dim_vec c = n"

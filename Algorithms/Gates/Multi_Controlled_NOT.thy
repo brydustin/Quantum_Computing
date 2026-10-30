@@ -33,7 +33,7 @@ lemma rcirc_nots: "rcirc (map NOT ws) x = flips ws x"
 lemma rcirc_flips_other: "\<forall>g \<in> set rs. \<forall>w \<in> set ws. w \<notin> wires g \<Longrightarrow> rcirc rs (flips ws x) = flips ws (rcirc rs x)"
   by (induction ws arbitrary: x) (simp_all add: rcirc_flip_other)
 
-lemma rcirc_cnots: "a \<notin> set ts \<Longrightarrow> rcirc (map (CNOT a) ts) y = (if bit y a then flips ts y else y)"
+lemma rcirc_cnots: "a \<notin> set ts \<Longrightarrow> rcirc (map (CX a) ts) y = (if bit y a then flips ts y else y)"
   by (induction ts arbitrary: y) (auto simp: bit_flip_bit_iff)
 
 subsection \<open>The Toffoli ladder\<close>
@@ -147,7 +147,7 @@ definition targets_ok :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow
   "targets_ok K cw aw n ts \<longleftrightarrow> (\<forall>t \<in> set ts. t < K \<and> t \<notin> aw ` {..n} \<and> (\<forall>l<n. t \<noteq> cw l))"
 
 definition mcx :: "(nat \<Rightarrow> nat) \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> nat \<Rightarrow> nat list \<Rightarrow> rgate list" where
-  "mcx cw aw n ts = ladder cw aw n @ map (CNOT (aw n)) ts @ rev (ladder cw aw n)"
+  "mcx cw aw n ts = ladder cw aw n @ map (CX (aw n)) ts @ rev (ladder cw aw n)"
 
 lemma mcx_rcirc:
   assumes ok: "ladder_ok K cw aw n" and x: "\<And>i. i \<le> n \<Longrightarrow> \<not> bit x (aw i)" and t: "targets_ok K cw aw n ts"

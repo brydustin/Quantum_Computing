@@ -119,7 +119,7 @@ definition lev_rnd :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<Rightarrow> re
 lemma lev_rnd_facts:
   assumes j: "j < k"
   shows "lev_rnd b k a j \<in> carrier_mat (2 ^ k) (2 ^ k)" "Quantum.unitary (lev_rnd b k a j)"
-    "lev k a j \<in> carrier_mat (2 ^ k) (2 ^ k)" "Quantum.unitary (lev k a j)"
+    "Quantum.unitary (lev k a j)"
     "lev k a j \<approx>\<^bsub>2 * pi / 2 ^ b\<^esub> lev_rnd b k a j"
 proof -
   let ?h = "2 ^ (k - Suc j) :: nat"
@@ -127,7 +127,6 @@ proof -
   have bc: "Rot s \<Otimes> 1\<^sub>m ?h \<in> carrier_mat (2 * ?h) (2 * ?h)" for s by simp
   have bu: "Quantum.unitary (Rot s \<Otimes> 1\<^sub>m ?h)" for s by (intro tensor_mat_unitary Rot_unitary id_is_unitary)
   show "lev_rnd b k a j \<in> carrier_mat (2 ^ k) (2 ^ k)" unfolding lev_rnd_def K[symmetric] by (rule ctrl_blocks_carrier)
-  show "lev k a j \<in> carrier_mat (2 ^ k) (2 ^ k)" by (rule lev_carrier[OF j])
   show "Quantum.unitary (lev_rnd b k a j)" unfolding lev_rnd_def by (rule ctrl_blocks_unitary[OF bc bu])
   show "Quantum.unitary (lev k a j)" unfolding lev_def by (rule ctrl_blocks_unitary[OF bc bu])
   have "Rot (pangle k a j c) \<Otimes> 1\<^sub>m ?h \<approx>\<^bsub>2 * pi / 2 ^ b\<^esub> Rot (ang b (prep_code b k a j c)) \<Otimes> 1\<^sub>m ?h" for c
@@ -144,7 +143,7 @@ proof -
   let ?U = "circuit_mat (2 ^ k) (map (lev k a) [0..<k])" and ?V = "circuit_mat (2 ^ k) (map (lev_rnd b k a) [0..<k])"
   have "list_all2 (\<lambda>U V. U \<in> carrier_mat (2 ^ k) (2 ^ k) \<and> V \<in> carrier_mat (2 ^ k) (2 ^ k) \<and> Quantum.unitary U
       \<and> Quantum.unitary V \<and> U \<approx>\<^bsub>2 * pi / 2 ^ b\<^esub> V) (map (lev k a) [0..<k]) (map (lev_rnd b k a) [0..<k])"
-    by (auto simp: list_all2_map1 list_all2_map2 list_all2_same lev_rnd_facts)
+    by (auto simp: list_all2_map1 list_all2_map2 list_all2_same lev_rnd_facts lev_carrier)
   note C = circuit_close[OF this, simplified]
   have Uc: "?U \<in> carrier_mat (2 ^ k) (2 ^ k)" and cl: "?U \<approx>\<^bsub>real k * (2 * pi / 2 ^ b)\<^esub> ?V" using C by auto
   have "\<parallel>?U *\<^sub>v unit_vec (2 ^ k) 0 - ?V *\<^sub>v unit_vec (2 ^ k) 0\<parallel> \<le> real k * (2 * pi / 2 ^ b) * \<parallel>unit_vec (2 ^ k) 0\<parallel>"

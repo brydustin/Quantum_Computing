@@ -51,7 +51,7 @@ proof (rule bit_eqI)
   show "bit x i \<longleftrightarrow> bit y i"
   proof (cases "i < K")
     case False
-    hence "\<not> bit x i" "\<not> bit y i" using assms(1,2) bit_lt_pow[of x K i] bit_lt_pow[of y K i] by auto
+    hence "\<not> bit x i" "\<not> bit y i" using assms(1,2) bit_above[of x K i] bit_above[of y K i] by auto
     thus ?thesis by simp
   qed (use assms(3) in simp)
 qed
@@ -285,7 +285,7 @@ proof -
         next
           case False
           have "\<not> bit (?F x) (?q + n)" "\<not> bit (?F y) (?q + n)"
-            using Flt[OF x] Flt[OF y] False bit_lt_pow by (auto dest: bit_lt_pow)
+            using Flt[OF x] Flt[OF y] False bit_above by (auto dest: bit_above)
           thus ?thesis by (simp add: bit_div_pow)
         qed
       qed
@@ -436,13 +436,13 @@ proof -
   have eM: "elementary (2 ^ K) ?M"
     unfolding elementary_def KK using q Q
     by (intro exI[of _ "2 ^ (K - ?q)"] exI[of _ 1] exI[of _ ?q] exI[of _ Q]) (simp add: right_tensor_id[OF Q(1), unfolded One_nat_def])
-  have Mc: "?M \<in> carrier_mat (2 ^ K) (2 ^ K)" by (rule elementary_carrier[OF eM])
+  have Mc: "?M \<in> carrier_mat (2 ^ K) (2 ^ K)" by (rule elementary_unitary(1)[OF eM])
   show el: "\<forall>U \<in> set (wg_gates K ws Q). elementary (2 ^ K) U" using A(2) C(2) eM by (auto simp: wg_gates_def)
   let ?A = "map (cgate K 1) (swops ?js)" and ?C = "map (cgate K 1) (swops (rev ?js))"
   have e1: "circuit_mat (2 ^ K) (?A @ [?M] @ ?C) = circuit_mat (2 ^ K) ([?M] @ ?C) * circuit_mat (2 ^ K) ?A"
-    by (rule circuit_mat_append) (use A(2) C(2) Mc elementary_carrier in auto)
+    by (rule circuit_mat_append) (use A(2) C(2) Mc elementary_unitary(1) in auto)
   have e2: "circuit_mat (2 ^ K) ([?M] @ ?C) = circuit_mat (2 ^ K) ?C * ?M"
-    using circuit_mat_append[of "[?M]" "2 ^ K" ?C] C(2) Mc elementary_carrier by auto
+    using circuit_mat_append[of "[?M]" "2 ^ K" ?C] C(2) Mc elementary_unitary(1) by auto
   have "circuit_mat (2 ^ K) (wg_gates K ws Q) = circuit_mat (2 ^ K) ?C * ?M * circuit_mat (2 ^ K) ?A"
     unfolding wg_gates_def using e1 e2 by simp
   thus "circuit_mat (2 ^ K) (wg_gates K ws Q) = wg K ws Q" by (simp only: A(1) C(1) wg_route[OF ws Q(1)])
@@ -560,7 +560,7 @@ proof (rule eq_matI)
       show "bit x i = bit y i"
       proof (cases "i < ?K")
         case False
-        thus ?thesis using x y bit_lt_pow[of x ?K i] bit_lt_pow[of y ?K i] by auto
+        thus ?thesis using x y bit_above[of x ?K i] bit_above[of y ?K i] by auto
       qed (use h i in auto)
     qed
     have lo: "\<forall>i<w. bit x i = bit y i" using h by auto

@@ -115,18 +115,18 @@ proof -
 qed
 
 definition core :: "nat \<Rightarrow> rgate \<Rightarrow> complex Matrix.mat list" where
-  "core K h = (if h = NOT 0 then [1\<^sub>m (2 ^ (K - 1)) \<Otimes> notm] else if h = CNOT 1 0 then [cgate K 1 (True, 0)]
+  "core K h = (if h = NOT 0 then [1\<^sub>m (2 ^ (K - 1)) \<Otimes> notm] else if h = CX 1 0 then [cgate K 1 (True, 0)]
      else map (\<lambda>U. 1\<^sub>m (2 ^ (K - 3)) \<Otimes> U) tof_gates)"
 
 lemma notm_unitary: "notm \<in> carrier_mat 2 2" "Quantum.unitary notm"
   unfolding notm_def by (simp, rule pmat_unitary_invol) auto
 
 lemma core_props:
-  assumes h: "h \<in> {NOT 0, CNOT 1 0, TOF 2 1 0}" and ok: "rg_ok K h"
+  assumes h: "h \<in> {NOT 0, CX 1 0, TOF 2 1 0}" and ok: "rg_ok K h"
   shows "circuit_mat (2 ^ K) (core K h) = pmat (2 ^ K) (rg h)"
     "\<forall>U \<in> set (core K h). elementary (2 ^ K) U" "length (core K h) \<le> 7"
 proof -
-  consider "h = NOT 0" | "h = CNOT 1 0" | "h = TOF 2 1 0" using h by blast
+  consider "h = NOT 0" | "h = CX 1 0" | "h = TOF 2 1 0" using h by blast
   hence "circuit_mat (2 ^ K) (core K h) = pmat (2 ^ K) (rg h) \<and> (\<forall>U \<in> set (core K h). elementary (2 ^ K) U)"
   proof cases
     case 1
@@ -182,8 +182,6 @@ definition compile1 :: "nat \<Rightarrow> rgate \<Rightarrow> complex Matrix.mat
 definition compile :: "nat \<Rightarrow> rgate list \<Rightarrow> complex Matrix.mat list" where
   "compile K rs = concat (map (compile1 K) rs)"
 
-lemma elementary_carrier: "elementary K U \<Longrightarrow> U \<in> carrier_mat K K" by (rule elementary_unitary(1))
-
 lemma swops_circuit:
   assumes js: "\<And>j. j \<in> set js \<Longrightarrow> j + 2 \<le> K"
   shows "circuit_mat (2 ^ K) (map (cgate K 1) (swops js)) = pmat (2 ^ K) (apply_ops (swops js))"
@@ -206,13 +204,13 @@ proof -
   have rj: "\<And>j. j \<in> set js \<Longrightarrow> j + 2 \<le> K" using route_range[OF ok r] .
   have rj': "\<And>j. j \<in> set (rev js) \<Longrightarrow> j + 2 \<le> K" using rj by simp
   have hok: "rg_ok K h" using route_ok[OF ok] r by simp
-  have hc: "h \<in> {NOT 0, CNOT 1 0, TOF 2 1 0}" using route_core[of g] r by simp
+  have hc: "h \<in> {NOT 0, CX 1 0, TOF 2 1 0}" using route_core[of g] r by simp
   note A = swops_circuit[OF rj] and C = swops_circuit[OF rj'] and B = core_props[OF hc hok]
   have el: "\<forall>U \<in> set (compile1 K g). elementary (2 ^ K) U"
     using A(2) B(2) C(2) r by (auto simp: compile1_def)
   thus "\<forall>U \<in> set (compile1 K g). elementary (2 ^ K) U" .
   have car: "\<And>Us. \<forall>U \<in> set Us. elementary (2 ^ K) U \<Longrightarrow> (\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K))"
-    using elementary_carrier by blast
+    using elementary_unitary(1) by blast
   have lt1: "\<And>t. t < 2 ^ K \<Longrightarrow> apply_ops (swops js) t < 2 ^ K"
     by (rule apply_ops_lt) (use rj in auto)
   have lt2: "\<And>t. t < 2 ^ K \<Longrightarrow> rg h t < 2 ^ K" by (rule rg_lt[OF hok])
@@ -221,9 +219,9 @@ proof -
   proof -
     let ?A = "map (cgate K 1) (swops js)" and ?B = "core K h" and ?C = "map (cgate K 1) (swops (rev js))"
     have e1: "circuit_mat (2 ^ K) (?A @ ?B @ ?C) = circuit_mat (2 ^ K) (?B @ ?C) * circuit_mat (2 ^ K) ?A"
-      by (rule circuit_mat_append) (use A(2) B(2) C(2) elementary_carrier in auto)
+      by (rule circuit_mat_append) (use A(2) B(2) C(2) elementary_unitary(1) in auto)
     have e2: "circuit_mat (2 ^ K) (?B @ ?C) = circuit_mat (2 ^ K) ?C * circuit_mat (2 ^ K) ?B"
-      by (rule circuit_mat_append) (use B(2) C(2) elementary_carrier in auto)
+      by (rule circuit_mat_append) (use B(2) C(2) elementary_unitary(1) in auto)
     have "circuit_mat (2 ^ K) (compile1 K g) = circuit_mat (2 ^ K) ?C * circuit_mat (2 ^ K) ?B * circuit_mat (2 ^ K) ?A"
       unfolding compile1_def r fst_conv snd_conv e1 e2 ..
     thus ?thesis by (simp only: A(1) B(1) C(1))
@@ -241,7 +239,7 @@ theorem compile_props:
     "\<forall>U \<in> set (compile K rs). elementary (2 ^ K) U" "length (compile K rs) \<le> length rs * (6 * K + 7)"
 proof -
   have car: "\<And>Us. \<forall>U \<in> set Us. elementary (2 ^ K) U \<Longrightarrow> (\<And>U. U \<in> set Us \<Longrightarrow> U \<in> carrier_mat (2 ^ K) (2 ^ K))"
-    using elementary_carrier by blast
+    using elementary_unitary(1) by blast
   have "circuit_mat (2 ^ K) (compile K rs) = pmat (2 ^ K) (rcirc rs) \<and> (\<forall>U \<in> set (compile K rs). elementary (2 ^ K) U)
       \<and> length (compile K rs) \<le> length rs * (6 * K + 7)"
     using ok
@@ -255,7 +253,7 @@ proof -
     have e: "compile K (g # rs) = compile1 K g @ compile K rs" by (simp add: compile_def)
     have rc: "rcirc (g # rs) = (\<lambda>x. rcirc rs (rg g x))" by (rule ext) simp
     have ap: "circuit_mat (2 ^ K) (compile1 K g @ compile K rs) = circuit_mat (2 ^ K) (compile K rs) * circuit_mat (2 ^ K) (compile1 K g)"
-      by (rule circuit_mat_append) (use G(2) IH elementary_carrier in auto)
+      by (rule circuit_mat_append) (use G(2) IH elementary_unitary(1) in auto)
     have "circuit_mat (2 ^ K) (compile K (g # rs)) = pmat (2 ^ K) (rcirc rs) * pmat (2 ^ K) (rg g)"
       unfolding e ap G(1) IH[THEN conjunct1] ..
     also have "\<dots> = pmat (2 ^ K) (rcirc (g # rs))" by (simp add: pmat_mult rg_lt[OF okg] comp_def rc)

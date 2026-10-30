@@ -125,7 +125,7 @@ proof -
   have lowR: "\<forall>l<p. \<not> bit z (vs ! (n + l))" if z: "z < 2 ^ Kr" for z :: nat
   proof (intro allI impI)
     fix l assume "l < p"
-    thus "\<not> bit z (vs ! (n + l))" using hi bit_lt_pow[OF z] by blast
+    thus "\<not> bit z (vs ! (n + l))" using hi bit_above[OF z] by blast
   qed
   have tvs: "\<And>i. i < Kr \<Longrightarrow> i \<in> set vs \<longleftrightarrow> i \<in> set (take n vs)"
   proof -
@@ -167,7 +167,7 @@ proof -
           show "bit r i = bit c i"
           proof (cases "i < Kr")
             case False
-            thus ?thesis using True c bit_lt_pow[of r Kr i] bit_lt_pow[of c Kr i] by auto
+            thus ?thesis using True c bit_above[of r Kr i] bit_above[of c Kr i] by auto
           qed (use h i tvs in auto)
         qed
       qed
@@ -186,11 +186,11 @@ proof -
         moreover have "i < Kr + a"
         proof (rule ccontr)
           assume "\<not> i < Kr + a"
-          thus False using bit_lt_pow[OF r', of i] \<open>bit r i\<close> by simp
+          thus False using bit_above[OF r', of i] \<open>bit r i\<close> by simp
         qed
         ultimately show ?thesis using that by blast
       qed
-      have ci: "\<not> bit c i" using c i(1) bit_lt_pow[of c Kr i] by auto
+      have ci: "\<not> bit c i" using c i(1) bit_above[of c Kr i] by auto
       show ?thesis
       proof (cases "i \<in> set vs")
         case True

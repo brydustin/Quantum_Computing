@@ -10,7 +10,7 @@ Fields of the submission form at https://isa-afp.org/submission/
 - **Archive:** `HHL_Algorithm.tar.gz` (the folder `HHL_Algorithm/`)
 - **Depends on (AFP):** Hermitian_Functional_Calculus (submitted 2026-10-24, under review) and
   Quantum_Computing_CP_Maps (submitted at the same time), QHLProver, Isabelle_Marries_Dirac, Jordan_Normal_Form, Quantum_Fourier_Transform;
-  for the extra sessions Real_Impl (HHL_Explicit_Demo) and Compressed_Oracles (Quantum_Search_Bound)
+  for the two extra sessions Real_Impl (HHL_Explicit_Demo) and Compressed_Oracles (Quantum_Search_Bound)
 
 ## Abstract
 
@@ -26,13 +26,13 @@ $\eta$; sparse matrices simulated by Trotter and Suzuki product formulas), the r
 circuits to matrix inversion, rectangular and preconditioned systems, and the optimality
 results. The algorithm is a program of the quantum while-language of QHLProver, verified for
 partial and total correctness (the repeat-until-success loop terminates with probability one),
-and compiled to elementary gates. Extra sessions run the circuit on a $2\times2$ example with
-exact arithmetic in $\mathbb{Q}(\sqrt2)$, show that loop-free programs denote completely positive
-trace-preserving maps, import the quantum search lower bound behind the optimality theorem
-from Compressed_Oracles, and compile the black boxes to elementary gates: a reversible comparator
-gives the sparse simulation from oracles, state preparation is built from an angle oracle and,
-without oracles, for sparse right-hand sides, and for the shifted cycle Laplacian the whole
-algorithm runs on polynomially many elementary gates with an explicit count.
+and compiled to elementary gates; loop-free programs denote completely positive
+trace-preserving maps. The black boxes are compiled too: a reversible comparator gives the
+sparse simulation from oracles, state preparation is built from an angle oracle and, without
+oracles, for sparse right-hand sides, and for the shifted cycle Laplacian the whole algorithm
+runs on polynomially many elementary gates with an explicit count. Two extra sessions run the
+circuit on a $2\times2$ example with exact arithmetic in $\mathbb{Q}(\sqrt2)$ and import the
+quantum search lower bound behind the optimality theorem from Compressed_Oracles.
 
 ## Comment for the editors
 
@@ -42,10 +42,10 @@ algorithm runs on polynomially many elementary gates with an explicit count.
 - Depends on two entries not yet in the AFP: Hermitian_Functional_Calculus (submitted on
   2026-10-24, under review; it builds unchanged with Isabelle2026) and Quantum_Computing_CP_Maps
   (submitted at the same time as this entry).  Please review those first.
-- Sessions: HHL_Algorithm (main, with document), HHL_Explicit_Demo (needs Real_Impl, which
-  replaces the code setup of the reals), Quantum_Hoare_Logic_Channels (loads the notes' channel
-  theory), Quantum_Search_Bound (needs Compressed_Oracles, built on Complex_Bounded_Operators),
-  HHL_Gates (the black boxes in elementary gates; about 1 minute).
+- Sessions: HHL_Algorithm (main, with document; the subdirectories `Channels/` and `Gates/` hold
+  the channel theory and the black boxes in elementary gates), HHL_Explicit_Demo (needs
+  Real_Impl, which replaces the code setup of the reals), Quantum_Search_Bound (needs
+  Compressed_Oracles, built on Complex_Bounded_Operators).
 - Names: the entry uses QHLProver's `hermitian` (as Hermitian_Functional_Calculus does) and the
   notes'/IMD's `unitary`, inner and outer products; the first theory hides QHLProver's clashing
   names and bridges the notes' `hermitian` (`hermitian_notes`).

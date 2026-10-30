@@ -133,10 +133,10 @@ proof -
   proof -
     have a1: "circuit_mat (2 ^ K) (map (cgate K 1) (swops ?js) @ [?D] @ map (cgate K 1) (swops (rev ?js)))
         = circuit_mat (2 ^ K) ([?D] @ map (cgate K 1) (swops (rev ?js))) * circuit_mat (2 ^ K) (map (cgate K 1) (swops ?js))"
-      by (rule circuit_mat_append) (use A(2) C(2) Dc elementary_carrier in auto)
+      by (rule circuit_mat_append) (use A(2) C(2) Dc elementary_unitary(1) in auto)
     have a2: "circuit_mat (2 ^ K) ([?D] @ map (cgate K 1) (swops (rev ?js)))
         = circuit_mat (2 ^ K) (map (cgate K 1) (swops (rev ?js))) * circuit_mat (2 ^ K) [?D]"
-      by (rule circuit_mat_append) (use C(2) Dc elementary_carrier in auto)
+      by (rule circuit_mat_append) (use C(2) Dc elementary_unitary(1) in auto)
     show ?thesis unfolding dgate2_gates_def a1 a2 circuit_mat_single[OF Dc] ..
   qed
   have e2: "circuit_mat (2 ^ K) (dgate2_gates K c w \<psi>) = pmat (2 ^ K) ?g * ?D * pmat (2 ^ K) ?f"
@@ -219,12 +219,12 @@ proof -
       \<and> (\<forall>U \<in> set (dgate2_gates ?K (k + i) ?w (rot_phase b i)). elementary (2 ^ ?K) U)
       \<and> length (dgate2_gates ?K (k + i) ?w (rot_phase b i)) \<le> 2 * ?K + 1" for i
     using dgate2_gates_props[of ?w "k + i" ?K "rot_phase b i"] j by simp
-  have Lc: "\<And>U. U \<in> set ?L \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using D elementary_carrier by auto
+  have Lc: "\<And>U. U \<in> set ?L \<Longrightarrow> U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" using D elementary_unitary(1) by auto
   have L: "circuit_mat (2 ^ ?K) ?L = dmat (2 ^ ?K) (\<lambda>z. \<Sum>i<b. rot_phase b i (bit z (k + i)) (bit z ?w))"
   proof -
     have "circuit_mat (2 ^ ?K) ?L
         = circuit_mat (2 ^ ?K) (map (circuit_mat (2 ^ ?K)) (map (\<lambda>i. dgate2_gates ?K (k + i) ?w (rot_phase b i)) [0..<b]))"
-      by (rule circuit_mat_concat) (use D elementary_carrier in auto)
+      by (rule circuit_mat_concat) (use D elementary_unitary(1) in auto)
     also have "map (circuit_mat (2 ^ ?K)) (map (\<lambda>i. dgate2_gates ?K (k + i) ?w (rot_phase b i)) [0..<b])
         = map (\<lambda>i. dmat (2 ^ ?K) (\<lambda>z. rot_phase b i (bit z (k + i)) (bit z ?w))) [0..<b]"
       using D by (auto simp: dgate2_def)
@@ -367,7 +367,7 @@ proof -
   note M = lev_mid_props[OF j, of b]
   have Oc: "?O \<in> carrier_mat (2 ^ (b + k)) (2 ^ (b + k))" by (rule lev_oracle_carrier[OF j])
   have lc: "\<And>U. U \<in> set (lev_mid b k j) \<Longrightarrow> U \<in> carrier_mat (2 ^ (b + k)) (2 ^ (b + k))"
-    using M(2) elementary_carrier by blast
+    using M(2) elementary_unitary(1) by blast
   have e: "circuit_mat (2 ^ (b + k)) (lev_qgates b k a j) = ?O * circuit_mat (2 ^ (b + k)) (lev_mid b k j) * ?O"
   proof -
     have a1: "circuit_mat (2 ^ (b + k)) ([?O] @ lev_mid b k j @ [?O]) = circuit_mat (2 ^ (b + k)) (lev_mid b k j @ [?O]) * ?O"
@@ -409,7 +409,7 @@ proof -
   have lc: "U \<in> carrier_mat (2 ^ ?K) (2 ^ ?K)" if Us: "Us \<in> set (map (lev_qgates b k a) [0..<k])" "U \<in> set Us" for Us U
   proof -
     obtain j where j: "j < k" and U: "U \<in> set (lev_qgates b k a j)" using Us by auto
-    show ?thesis using lev_qgates_props(2)[OF j U] elementary_carrier lev_oracle_carrier[OF j] by blast
+    show ?thesis using lev_qgates_props(2)[OF j U] elementary_unitary(1) lev_oracle_carrier[OF j] by blast
   qed
   have cU: "?U = circuit_mat (2 ^ ?K) (map (\<lambda>j. circuit_mat (2 ^ ?K) (lev_qgates b k a j)) [0..<k])"
   proof -

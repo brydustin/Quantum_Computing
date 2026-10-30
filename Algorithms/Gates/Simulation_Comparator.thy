@@ -47,7 +47,7 @@ proof -
       case True
       hence "elementary (2 ^ (4 * m + 6)) U"
         using u Us sort_flag_gates(1)[of m] by (simp add: sgate_gates_def)
-      thus ?thesis by (rule elementary_carrier)
+      thus ?thesis by (rule elementary_unitary(1))
     next
       case False
       have "sgate_mat (2 ^ m) d A Os g \<in> carrier_mat (2 ^ m * 2 ^ m * 2) (2 ^ m * 2 ^ m * 2)"

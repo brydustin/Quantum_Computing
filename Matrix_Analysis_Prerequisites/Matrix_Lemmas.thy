@@ -515,6 +515,20 @@ proof (rule eq_matI)
     using i j by (simp add: msum_index[OF ga i j] msum_index[OF g i j] msum_index[OF g' i j])
 qed auto
 
+lemma zero_mat_mult_vec: "dim_vec v = n \<Longrightarrow> 0\<^sub>m K n *\<^sub>v v = 0\<^sub>v K"
+  by (rule eq_vecI) (auto simp: scalar_prod_def)
+
+text \<open>Conjugation by a reindexing $\sigma$: the matrix $(X_{\sigma(r)\sigma(s)})_{r,s<N}$.\<close>
+
+definition perm_conj :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> complex Matrix.mat \<Rightarrow> complex Matrix.mat" where
+  "perm_conj N \<sigma> X = Matrix.mat N N (\<lambda>(r, s). X $$ (\<sigma> r, \<sigma> s))"
+
+lemma perm_conj_carrier [simp]: "perm_conj N \<sigma> X \<in> carrier_mat N N"
+  by (simp add: perm_conj_def)
+
+lemma perm_conj_dims [simp]: "dim_row (perm_conj N \<sigma> X) = N" "dim_col (perm_conj N \<sigma> X) = N"
+  by (simp_all add: perm_conj_def)
+
 section \<open>Finite sums and index arithmetic\<close>
 
 lemma sum_list_product_upt:
@@ -676,6 +690,30 @@ lemma msum_upt_index:
 
 lemma idx8: "k < (8::nat) \<Longrightarrow> k = 0 \<or> k = 1 \<or> k = 2 \<or> k = 3 \<or> k = 4 \<or> k = 5 \<or> k = 6 \<or> k = 7"
   by auto
+
+lemma sum_split_mp:
+  fixes f :: "nat \<Rightarrow> 'a::comm_monoid_add"
+  shows "(\<Sum>x < m * p. f x) = (\<Sum>c<m. \<Sum>k<p. f (c * p + k))"
+proof -
+  have "(\<Sum>x < m * p. f x) = (\<Sum>c<m. sum f {c * p..<c * p + p})" by (rule sum.nat_group[symmetric])
+  also have "\<dots> = (\<Sum>c<m. \<Sum>k<p. f (c * p + k))"
+  proof (rule sum.cong[OF refl])
+    fix c :: nat
+    show "sum f {c * p..<c * p + p} = (\<Sum>k<p. f (c * p + k))"
+      by (rule sum.reindex_bij_witness[where i="\<lambda>k. c * p + k" and j="\<lambda>x. x - c * p"]) auto
+  qed
+  finally show ?thesis .
+qed
+
+lemma pair_index_lt:
+  fixes i j k :: nat
+  assumes "i < k" "j < k"
+  shows "i * k + j < k * k" "(i * k + j) div k = i" "(i * k + j) mod k = j"
+proof -
+  have "i * k + j < Suc i * k" using assms by simp
+  also have "\<dots> \<le> k * k" using assms by (intro mult_le_mono1) simp
+  finally show "i * k + j < k * k" .
+qed (use assms in simp_all)
 
 section \<open>Linear maps on a set of matrices\<close>
 

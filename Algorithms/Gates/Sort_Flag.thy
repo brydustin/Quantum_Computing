@@ -17,7 +17,7 @@ lemma Gd_correct: "rcirc (flagG m) w = fif ((bit w (c1w m) \<and> \<not> bit w 0
 text \<open>Controlled on $d$, swap the registers (Fredkin gates).\<close>
 
 definition fred :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where
-  "fred m i = [CNOT (yw i) (xw m i), TOF (dw m) (xw m i) (yw i), CNOT (yw i) (xw m i)]"
+  "fred m i = [CX (yw i) (xw m i), TOF (dw m) (xw m i) (yw i), CX (yw i) (xw m i)]"
 
 fun cswp :: "nat \<Rightarrow> nat \<Rightarrow> rgate list" where
   "cswp m 0 = []"
@@ -72,7 +72,7 @@ lemma cswp_swp: "rcirc (cswp m m) w = (if bit w (dw m) then rcirc (swp m m) w el
   by (auto intro!: bit_eqI simp: bit_cswp bit_swp)
 
 definition sort_flag :: "nat \<Rightarrow> rgate list" where
-  "(sort_flag m) = (sortB m) @ (flagG m) @ (sortB m) @ cswp m m @ [CNOT (dw m) 0] @ (sortB m) @ (flagG m) @ (sortB m)"
+  "(sort_flag m) = (sortB m) @ (flagG m) @ (sortB m) @ cswp m m @ [CX (dw m) 0] @ (sortB m) @ (flagG m) @ (sortB m)"
 
 lemma length_S: "length (sort_flag m) = 4 * (26 * m + 6) + 8 + 3 * m + 1"
   by (simp add: sort_flag_def length_B length_cswp flagG_def)

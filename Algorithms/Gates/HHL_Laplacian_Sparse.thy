@@ -28,7 +28,7 @@ proof -
   have lc: "U \<in> carrier_mat (2 ^ ?KL) (2 ^ ?KL)" if Us: "Us \<in> set (map (lev_sgates bb k av xs) [0..<k])" "U \<in> set Us" for Us U
   proof -
     obtain j where j: "j < k" and U: "U \<in> set (lev_sgates bb k av xs j)" using Us by auto
-    show ?thesis using lev_sgates_props(2)[OF sp j] U elementary_carrier by blast
+    show ?thesis using lev_sgates_props(2)[OF sp j] U elementary_unitary(1) by blast
   qed
   have cU: "circuit_mat (2 ^ ?KL) (sprep_gates bb k av xs)
       = circuit_mat (2 ^ ?KL) (map (\<lambda>j. circuit_mat (2 ^ ?KL) (lev_sgates bb k av xs j)) [0..<k])"
@@ -47,7 +47,7 @@ proof -
   ultimately show "stands_for (2 ^ (bb + k)) (2 ^ k) (circuit_mat (2 ^ ?KL) (sprep_gates bb k av xs)) Ub"
     unfolding cU KA by simp
   have "Ub \<in> carrier_mat (2 ^ k) (2 ^ k) \<and> Quantum.unitary Ub"
-    unfolding Ub_def by (rule circuit_qunitary) (auto simp: lev_rnd_facts)
+    unfolding Ub_def by (rule circuit_qunitary) (auto simp: lev_rnd_facts lev_carrier)
   thus "Ub \<in> carrier_mat (2 ^ k) (2 ^ k)" "Quantum.unitary Ub" by simp_all
 qed
 
