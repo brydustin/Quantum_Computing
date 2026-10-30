@@ -115,14 +115,15 @@ of Ying's quantum while-language~\cite{ying2011}, we verify:
   $1/p$ rounds on average (Section~\ref{sec:qhl}).
 \item \emph{The approximations.} The paper's Theorem~1 holds with the constant
   $c=\pi^2\sqrt{4+2\pi^2}$, and so does its run-time analysis with amplitude amplification.
+\item \emph{The subroutines.} Phase estimation, as a matrix identity and as a program; amplitude
+  amplification; Hamiltonian simulation by Trotter products over sparse oracles; state preparation;
+  and the uniformly controlled rotation. The Fourier transform comes from the AFP~\cite{manrique2025qft}.
 \item \emph{The gates.} For the shifted cycle Laplacian, everything from the preparation of $\ket b$
   to the flag is a list of one- and two-qubit gates with a closed-form count
   (Section~\ref{sec:gates}).
-\item \emph{The errata.} Seven statements of the HHL paper are false, each refuted by a formal witness
-  (Section~\ref{sec:errata}).
-\item \emph{The process.} An AI agent wrote the development, directed by one person: 130 theories,
-  64{,}010 lines and 3{,}096 results, no \texttt{sorry}, including a formalised lecture course on
-  quantum computing as its foundation (Section~\ref{sec:agent}).
+\item \emph{The errata.} Seven statements of the HHL paper are false (Section~\ref{sec:errata}).
+\item \emph{The process.} An AI agent wrote all 130 theories (64{,}010 lines, no \texttt{sorry}), directed
+  by one person (Section~\ref{sec:agent}).
 \end{itemize}
 
 \section{Quantum Hoare Logic at Algorithm Scale}\label{sec:qhl}
@@ -130,8 +131,7 @@ of Ying's quantum while-language~\cite{ying2011}, we verify:
 Programs of the while-language denote completely positive, trace-non-increasing maps $\sem S$ on
 partial density operators. A predicate is an operator $0\le P\le I$, and $\hoaret{P}{S}{Q}$ holds if
 $\Tr(P\rho)\le\Tr(Q\,\sem S\rho)$ for every state $\rho$; so $\hoaret{p\cdot I}{S}{Q}$ says that $S$
-ends in $Q$ with probability at least $p$. QHLProver proves Ying's partial-correctness system sound and
-complete.
+ends in $Q$ with probability at least $p$.
 
 Four rules carry all of our program proofs. Three are derived in Ying's system: \emph{initialisation},
 \emph{gate lists}, and their composition for the shape \emph{initialise, apply gates, measure} shared by
@@ -184,7 +184,8 @@ theorem hhl_rus_expected_rounds:
 \end{lstlisting}
 
 \paragraph{The hypotheses are the specification} Listing~\ref{lst:rus}, with the definitions it
-names, is all that a reader has to trust. Writing it down exposed a restriction that informal accounts
+names, is all that a reader has to trust: 71 lines, 0.35\% of the 20{,}120 lines of our theories that it
+imports, with Isabelle/HOL and the AFP audited once (360 lines, 1.06\%, for the gate-level theorem). Writing it down exposed a restriction that informal accounts
 hide: the bound on $C$ comes from the program, not from the mathematics. The circuit applies
 $R(C/\lambda_j)$ on every clock value, and a gate must be unitary. The bound costs nothing when the
 smallest modulus $\lambda_{\min}$ of an eigenvalue is the first grid point $\lambda_1=2\pi/(Nt_0)$, and
@@ -196,9 +197,8 @@ exactness for fidelity triples.
 The programs above take $U_b$, the controlled evolution and the controlled rotation as unitaries. We
 refine them until every gate is \emph{elementary}: a one- or two-qubit unitary on adjacent wires.
 Every program theorem is stated for all gate lists with a given product, so refinement never reopens
-it. Phase estimation becomes Hadamard gates and the Fourier circuit of the AFP~\cite{manrique2025qft};
-the controlled rotation becomes a uniformly controlled rotation with Walsh--Hadamard angles and parity
-chains of nearest-neighbour CNOTs, and $U_b$, for nonnegative amplitudes, becomes a cascade of uniformly controlled rotations, one per qubit. For $s$-sparse
+it. The rotation becomes Walsh--Hadamard angles and parity chains of nearest-neighbour CNOTs, and
+$U_b$ a cascade of uniformly controlled rotations, one per qubit. For $s$-sparse
 $A$ with entries bounded by $L$, whose graph is coloured into $2s-1$ matchings given by oracles, $r$
 Trotter steps are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.
 
@@ -255,8 +255,8 @@ maps~\cite{paulsen2011notes}, was written in April and May 2026. After a pause o
 verified on top of it in eleven days of October. In October the
 human gave 258 directions, spread over 84 distinct hours, and the agent made 9{,}835 tool calls.
 
-\paragraph{Division of labour} The agent wrote the proofs, found its own errors by building and
-reading Isabelle's messages, and refactored without fatigue; after the pause it resumed from a hand-off
+\paragraph{Division of labour} The agent wrote the proofs, found its own errors in Isabelle's
+messages, and refactored without fatigue; after the pause it resumed from a hand-off
 note written for a stranger. The human chose what to prove, checked that the statements meant what
 the paper meant, and decided names, structure and what to submit. The most consequential directions
 were short and came from outside the formal text, such as the request, on 28 October, to stop treating
@@ -264,8 +264,7 @@ HHL's black boxes as given, which led to the gate list for the Laplacian.
 
 \paragraph{Failure modes} The kernel rejects wrong proofs, so the agent's failures lay elsewhere: a
 confident ``no oracles'' report from an audit that had skipped the gate theories, where two theorems
-depended on \texttt{skip\_proof}; a \textsf{simp} loop that stalled a build for 45 minutes; clashes of
-names and notation between libraries; and an unbuilt copy of 24{,}900 lines kept for five months.
+depended on \texttt{skip\_proof}; a \textsf{simp} loop that stalled a build for 45 minutes; and an unbuilt copy of 24{,}900 lines kept for five months.
 Each was caught by a mechanical check or by the human, and each check is now part of the build. The
 kernel guarantees that the theorems are true. The human guarantees that they are the right theorems.
 
@@ -275,10 +274,8 @@ We would value the community's view on four questions. Should the closed forms f
 apply gates, measure} and for resetting loops be built into tools for quantum Hoare logic? Should
 approximate algorithms be specified by fidelity triples, by distances, or by distributions? What should
 ``verified to the gate'' mean once the gate set is finite and the oracles general? And as agents write
-more of our proofs, which checks should a verified quantum library require?
-
-The development builds with Isabelle2026 and the Archive of Formal Proofs, for which it is being
-prepared; the sources and a full report are available from the author.
+more of our proofs, which checks should a verified quantum library require? The development builds with Isabelle2026
+and the AFP; the sources and a full report are available from the author.
 
 \paragraph{Use of AI} The formal development was written by AI agents (Claude Code with Claude
 Opus~4.7, Fable~5.1 and Opus~5.5; OpenAI Codex with GPT-5.4) under the author's direction, and this
