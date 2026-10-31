@@ -28,15 +28,18 @@
 \definecolor{backcolour}{rgb}{0.96,0.96,0.93}
 \lstdefinestyle{isabellestyle}{
     backgroundcolor=\color{backcolour},
-    basicstyle=\ttfamily\footnotesize,
+    basicstyle=\ttfamily\small,
     breakatwhitespace=true, breaklines=true, columns=fullflexible,
     captionpos=b, keepspaces=true,
     numbers=none, showspaces=false, showstringspaces=false, tabsize=2,
-    aboveskip=6pt, belowskip=6pt,
+    aboveskip=0pt, belowskip=0pt,
     xleftmargin=2pt, xrightmargin=2pt, framexleftmargin=2pt, framexrightmargin=2pt}
 \lstset{language={Isabelle}, style=isabellestyle, mathescape=true, escapeinside=~~}
 \renewcommand{\lstlistingname}{Listing}
 \tikzset{slice/.style={thin, gray!80, dash pattern=on 2pt off 1.5pt, align=center}}
+
+% Ragged page bottoms: leftover space goes to the foot of a page, not between a float and the text.
+\raggedbottom
 
 \begin{document}
 
@@ -86,15 +89,14 @@ estimation, repeat-until-success circuits and Hamiltonian simulation as case stu
 
 \begin{figure}[t]
 \centering
-\scalebox{0.86}{%
 \begin{quantikz}[row sep={0.8cm,between origins}, column sep=0.2cm]
-\lstick{clock $\ket{0}^{\otimes k}$} & \qwbundle{k} &  & \gate{H^{\otimes k}}\slice{$\psi_2$}
+\lstick{clock $\ket{0}^{\otimes k}$} & &  & \gate{H^{\otimes k}}\slice{$\psi_2$}
   & \ctrl{1}\slice{$\psi_3$} & \gate{F^\dagger}\slice{$\psi_4$} & \ctrl{2}\slice{$\psi_5$}
   & \gate{F}\slice{$\psi_6$} & \ctrl{1}\slice{$\psi_7$} & \gate{H^{\otimes k}}\slice{$\psi_8$} & \\
-\lstick{system $\ket{0}^{\otimes m}$} & \qwbundle{m} & \gate{U_b}\slice{$\psi_1$} & & \gate{U^{c}}
+\lstick{system $\ket{0}^{\otimes m}$} & & \gate{U_b}\slice{$\psi_1$} & & \gate{U^{c}}
   & & & & \gate{U^{-c}} & & \rstick{$\propto A^{-1}b$ if $1$}\\
 \lstick{ancilla $\ket0$} & & & & & & \gate{R(C/\lambda_c)} & & & & \meter{}
-\end{quantikz}}
+\end{quantikz}
 \\[0.5em]
 \renewcommand{\arraystretch}{1.15}\small
 \begin{tabular}{@{}l@{\enspace}l@{\qquad}l@{\enspace}l@{}}
@@ -124,7 +126,7 @@ of Ying's quantum while-language~\cite{ying2011}, and contribute the following.
   the normalised solution, exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p$, and runs
   $1/p$ rounds on average (Section~\ref{sec:qhl}).\hfill\isalink{Algorithms/HHL_Termination.thy}{463}
 \item \emph{The approximations.} The paper's Theorem~1 holds with the constant
-  $c=\pi^2\sqrt{4+2\pi^2}$\isalink{Algorithms/HHL_Filter_Bounds.thy}{154}, and so does its run-time analysis with amplitude amplification.
+  $c=\pi^2\sqrt{4+2\pi^2}$, and so does its run-time analysis with amplitude amplification.\hfill\isalink{Algorithms/HHL_Filter_Bounds.thy}{154}
 \item \emph{The subroutines.} Phase estimation, as a matrix identity\isalink{Algorithms/Phase_Estimation.thy}{287} and as a program\isalink{Algorithms/QPE_Program.thy}{177}; amplitude
   amplification; Hamiltonian simulation by Trotter products over sparse oracles; state preparation;
   and the uniformly controlled rotation; the Fourier transform is the AFP's~\cite{manrique2025qft}.
@@ -170,15 +172,15 @@ such loops gives termination, the exit distribution and the expected number of r
 two-qubit repeat-until-success circuits automatically and found bugs in published
 ones~\cite{chen2026autoq}; here the loop body is a whole algorithm.
 
-\begin{theorem}[exact HHL, repeat until success\isalink{Algorithms/HHL_Termination.thy}{463}]
+\begin{theorem}[exact HHL, repeat until success]
 Let $A$ be Hermitian with every eigenvalue on the grid $2\pi j/(Nt_0)$, $-N/2\le j<N/2$, $j\ne0$, of a clock
 with $N=2^k$ values, let $U_b\ket0=b$, and let $0<|C|\le2\pi/(Nt_0)$. Then
 $\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$ for $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$,
 the loop exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p$, and it runs $1/p$ rounds on
-average.
+average.\hfill\isalink{Algorithms/HHL_Termination.thy}{463}
 \end{theorem}
 
-\begin{lstlisting}[float=b,caption={The theorem in Isabelle, with its context\isalink{Algorithms/HHL_Termination.thy}{250}. The registers are clock, system and ancilla. \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible.},label={lst:rus}]
+\begin{lstlisting}[float=t,caption={The theorem in Isabelle, with its context\isalink{Algorithms/HHL_Termination.thy}{250}. The registers are clock, system and ancilla. Assumption \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible.},label={lst:rus}]
 context
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec"
     and n k :: nat and t0 C :: real
@@ -235,8 +237,9 @@ oracle compilers~\cite{amy2017reverc,li2022vqo}, it compiles the oracles of one 
 
 \section{Seven Errata}\label{sec:errata}
 
-Proving the paper's statements as written, appendix included, refuted seven of them
-(Table~\ref{tab:errata}). The most instructive is Lemma~3, the Lipschitz estimate behind
+Proving the paper's statements as written, appendix included, refuted seven of them.
+Table~\ref{tab:errata} lists each with its counter-example and its correction, both proved in
+Isabelle. The most instructive is Lemma~3, the Lipschitz estimate behind
 Theorem~1, which fails for every $\kappa$. Its constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp\isalink{Algorithms/HHL_Filter.thy}{567}.
 None of the errors invalidates a main claim. Most sit where a sketch compresses a computation, such as an
 endpoint value, an index, or a number of rounds or samples. A reader checks the argument; a proof
