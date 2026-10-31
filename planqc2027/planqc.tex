@@ -28,7 +28,7 @@
 \definecolor{backcolour}{rgb}{0.96,0.96,0.93}
 \lstdefinestyle{isabellestyle}{
     backgroundcolor=\color{backcolour},
-    basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
     breakatwhitespace=true, breaklines=true, columns=fullflexible,
     captionpos=b, keepspaces=true,
     numbers=none, showspaces=false, showstringspaces=false, tabsize=2,
@@ -72,22 +72,26 @@ An AI agent wrote almost all of the 64{,}000 lines of Isabelle, directed by the 
 
 \section{HHL, and Why It Is Hard to Verify}
 
-HHL~\cite{hhl2009} started quantum linear algebra. Given a sparse Hermitian $A$ and a state $\ket b$, it
-prepares $\ket x\propto A^{-1}\ket b$ in time polynomial in $\log N$, the condition number $\kappa$ and
-$1/\varepsilon$. Phase estimation with $U=e^{iAt_0}$ writes the eigenvalues of $A$ into a clock
-register; a rotation controlled by the clock moves the amplitude $C/\lambda$ into an ancilla; the clock
-is uncomputed; and the ancilla is measured (Fig.~\ref{fig:hhl}). On outcome~$1$ the system register
-holds $A^{-1}b$ up to normalisation. This happens with probability $p=C^2\norm{A^{-1}b}^2$, so the run
-is repeated until it succeeds. From a programming-languages perspective, HHL is a probabilistic
+HHL~\cite{hhl2009} started quantum linear algebra. Given a sparse Hermitian $n\times n$ matrix $A$
+and a vector $b$ stored as a quantum state $\ket b$, it prepares the state $\ket x\propto A^{-1}\ket b$
+in time polynomial in $\log n$, the condition number $\kappa$ and the inverse precision
+$1/\varepsilon$. It works in four steps (Fig.~\ref{fig:hhl}). Phase estimation, a standard quantum
+subroutine, writes the eigenvalues of $A$ into a register of $k$ qubits that we call the clock; a
+rotation controlled by the clock moves the amplitude $C/\lambda$ into one extra qubit, the ancilla;
+the clock is uncomputed, that is, reset by running phase estimation backwards; and the ancilla is
+measured. On outcome~$1$ the register that held $b$ holds $A^{-1}b$ up to normalisation. This happens
+with probability $p=C^2\norm{A^{-1}b}^2$, so the run is repeated until it succeeds, which makes HHL a
+\emph{repeat-until-success} program. From a programming-languages perspective, HHL is a probabilistic
 program, a loop guarded by a measurement, whose correctness is a statement about the distribution of
 its outputs and of its running time.
 
 HHL is hard to verify along every axis at once. Its specification is probabilistic, and the number
-of rounds is random. Every step is approximate, since eigenvalues are rarely representable in the clock
-and $e^{iAt}$ has to be simulated. Its black boxes, the preparation of $\ket b$ and the controlled
+of rounds is random. Every step is approximate, since eigenvalues are rarely representable exactly with $k$
+clock qubits, and the evolution $e^{iAt}$ must itself be approximated by gates (Hamiltonian
+simulation). Its black boxes, the preparation of $\ket b$ and the controlled
 evolution, are where the cost is. The mechanised proofs we know of, in Coq~\cite{zhou2023coqq,wu2024local}, verify
-the exact case, in which every eigenvalue lies on the grid of the clock, and take the black boxes as given
-unitaries; CoqQ proves partial correctness of the repeat-until-success program~\cite{zhou2023coqq},
+the idealised \emph{exact case}, in which every eigenvalue is representable, and take the black boxes
+as given unitaries (the reversible operations of quantum computing); CoqQ proves partial correctness of the repeat-until-success program~\cite{zhou2023coqq},
 following the pen-and-paper proof of Zhou, Yu and Ying~\cite{zhou2019applied}. In Lean,
 QEDIA~\cite{ren2026qedia} proves a quantum Hoare logic sound for total correctness, with phase
 estimation, repeat-until-success circuits and Hamiltonian simulation as case studies, but not HHL.
@@ -120,8 +124,7 @@ $u=N^{-1/2}\sum_j\ket j$ and every eigenvalue of $A$ on the grid $\lambda_j=2\pi
 $2\pi(j-N)/(Nt_0)$ for $j\ge N/2$). Gate~3
 applies $U^c$ when the clock holds $c$, gate~5 applies $R(C/\lambda_c)$ with
 $R(c)\ket0=\sqrt{1-c^2}\ket0+c\ket1$, and $\Pi_j$ projects onto the eigenspace of~$\lambda_j$. The
-table is one theorem, \isa{hhl\_steps}\isalink{Algorithms/HHL_Trajectory.thy}{573}, proved by following a single eigenvector rather than expanding
-in an eigenbasis.}\label{fig:hhl}
+table is one theorem, \isa{hhl\_steps}\isalink{Algorithms/HHL_Trajectory.thy}{573}.}\label{fig:hhl}
 \end{figure}
 
 \paragraph{Contributions} We work in Isabelle/HOL, on QHLProver's formalisation~\cite{liu2019qhl}
@@ -130,17 +133,19 @@ of Ying's quantum while-language~\cite{ying2011}, and contribute the following.
 \item \emph{Total correctness.} The repeat-until-success program terminates with probability one in
   the normalised solution, exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p$, and runs
   $1/p$ rounds on average (Section~\ref{sec:qhl}).\hfill\isalink{Algorithms/HHL_Termination.thy}{463}
-\item \emph{The approximations.} The paper's Theorem~1 holds with the constant
-  $c=\pi^2\sqrt{4+2\pi^2}$, and so does its run-time analysis with amplitude amplification.\hfill\isalink{Algorithms/HHL_Filter_Bounds.thy}{154}
+\item \emph{The approximations.} The paper's Theorem~1, its error bound beyond the exact case, holds
+  with the constant $c=\pi^2\sqrt{4+2\pi^2}$, and so does its run-time analysis, where amplitude
+  amplification cuts the rounds from $1/p$ to about $1/\sqrt p$.\hfill\isalink{Algorithms/HHL_Filter_Bounds.thy}{154}
 \item \emph{The subroutines.} Phase estimation, as a matrix identity\isalink{Algorithms/Phase_Estimation.thy}{287} and as a program\isalink{Algorithms/QPE_Program.thy}{177}; amplitude
-  amplification; Hamiltonian simulation by Trotter products over sparse oracles; state preparation;
-  and the uniformly controlled rotation; the Fourier transform is the AFP's~\cite{manrique2025qft}.
-\item \emph{The gates.} For the shifted cycle Laplacian, everything from the preparation of $\ket b$
-  to the flag is a list of one- and two-qubit gates with a closed-form count
+  amplification; Hamiltonian simulation by Trotter products, from black boxes (oracles) that list the
+  nonzero entries of a sparse matrix; preparation of $\ket b$; and the clock-controlled rotation; the
+  quantum Fourier transform is the AFP's~\cite{manrique2025qft}.
+\item \emph{The gates.} For the shifted Laplacians of cycle graphs, a concrete family of sparse
+  matrices, the whole algorithm is a list of one- and two-qubit gates whose number has an explicit
+  bound
   (Section~\ref{sec:gates}).\hfill\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77}
 \item \emph{The errata.} Seven statements of the HHL paper are false (Section~\ref{sec:errata}).
-\item \emph{The process.} An AI agent wrote almost all of the 130 theories (64{,}010 lines, no \texttt{sorry})
-  under the author's direction (Section~\ref{sec:agent}).
+\item \emph{The process.} An AI agent wrote almost all of the 130 theories, with no \texttt{sorry} (Section~\ref{sec:agent}).
 \end{enumerate}
 
 \section{Quantum Hoare Logic at Algorithm Scale}\label{sec:qhl}
@@ -160,8 +165,8 @@ $\psi=W\ket0$ the state they prepare,
 \mathit{init};\,U_1;\dots;U_m;\,\mathbf{measure}\ M\;\{Q\}.
 \end{gather*}
 None is deep, but together they turn every probabilistic claim about HHL into one computation. For
-$Q=\ketbra tt$ with $\ket t$ in the success branch, the scalar is the fidelity $|\langle t|\psi\rangle|^2$,
-so every error bound of the analysis becomes a triple. The fourth rule, for \emph{resetting loops}, is
+$Q=\ketbra tt$ with $\ket t$ in the success branch, the scalar is the fidelity $|\langle t|\psi\rangle|^2$, the probability of ending in $\ket t$,
+so every error bound of the analysis becomes a triple. The fourth rule, for \emph{resetting loops}, whose body starts by re-initialising the state, is
 proved from the semantics, because QHLProver formalises partial correctness only and Ying's
 total-correctness rule needs a bound function~\cite{ying2011}.\hfill\isalink{Algorithms/HHL_Termination.thy}{210}
 
@@ -170,12 +175,12 @@ total-correctness rule needs a bound function~\cite{ying2011}.\hfill\isalink{Alg
 \mathit{hhl\_rus}\;=\;\mathit{init};\,W;\;\mathbf{while}\ \mathit{ancilla}=0\ \mathbf{do}\ (\mathit{init};\,W)
 \]
 runs the eight gates $W=U_8\cdots U_1$ of Fig.~\ref{fig:hhl} until the ancilla reads~$1$. Because the body begins with $\mathit{init}$, it maps every input $\rho$ to $(\Tr\rho)\,\ketbra\psi\psi$ for
-the one state $\psi=W\ket0=\ket0\otimes w$ of Fig.~\ref{fig:hhl}. A round succeeds with probability
+the one state $\psi=W\ket0=\ket0\otimes w$. A round succeeds with probability
 $p=\norm{P_1\psi}^2=C^2\norm{A^{-1}b}^2$ and then leaves $\ketbra tt$; otherwise the next round starts
 afresh. The loop is the geometric series $\sum_\ell(1-p)^\ell p\,\ketbra tt=\ketbra tt$, and one lemma about
-such loops gives termination, the exit distribution and the expected number of rounds. AutoQ checks
+such loops gives termination, the exit distribution and the mean number of rounds. AutoQ checks
 two-qubit repeat-until-success circuits automatically and found bugs in published
-ones~\cite{chen2026autoq}; here the loop body is a whole algorithm.
+ones~\cite{chen2026autoq}; our loop body is a whole algorithm.
 
 \begin{theorem}[exact HHL, repeat until success]
 Let $A$ be Hermitian with every eigenvalue on the grid $2\pi j/(Nt_0)$, $-N/2\le j<N/2$, $j\ne0$, of a clock
@@ -215,8 +220,7 @@ imports, with Isabelle/HOL and the AFP audited once (360 lines, 1.06\%, for the 
 hide. The bound on $C$ comes from the program, not from the mathematics. The circuit applies
 $R(C/\lambda_j)$ on every clock value, and a gate must be unitary. The bound costs nothing when the
 smallest modulus $\lambda_{\min}$ of an eigenvalue is the first grid point $\lambda_1=2\pi/(Nt_0)$, and
-otherwise lowers the best possible $p$ by the factor $(\lambda_1/\lambda_{\min})^2$. The programs of the paper's regime clamp the rotation instead, trading
-exactness for fidelity triples.
+otherwise lowers the best possible $p$ by the factor $(\lambda_1/\lambda_{\min})^2$.
 
 \section{From Black Boxes to Gates}\label{sec:gates}
 
@@ -224,13 +228,14 @@ The programs above take $U_b$, the controlled evolution and the controlled rotat
 refine them until every gate is \emph{elementary}, that is, a one- or two-qubit unitary on adjacent wires.
 Every program theorem is stated for all gate lists with a given product, so refinement never reopens
 it. For $s$-sparse
-$A$ with entries bounded by $L$, whose graph is coloured into $2s-1$ matchings given by oracles, $r$
+$A$, with at most $s$ nonzero entries per row, all bounded by $L$, whose graph is coloured into $2s-1$
+matchings given by oracles, $r$
 Trotter steps, each applying the evolution of every matching once, are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.\hfill\isalink{Algorithms/HHL_Sparse_Circuit.thy}{915}
 
 For the Laplacian of the cycle on $2^m$ vertices, shifted by $\mu\ge0$, the oracles themselves are
 compiled, as reversible arithmetic routed to adjacent wires, and so is the preparation of a sparse
 nonnegative $b$. One theorem collects the result.\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77} It gives an explicit list of elementary gates on
-$K=m+k+1+a$ qubits whose output, when the flag qubit reads~$1$, is within $2\delta/(C\norm x)$ of $x/\norm x$,
+$K=m+k+1+a$ qubits whose output, when the ancilla reads~$1$, is within $2\delta/(C\norm x)$ of $x/\norm x$,
 where $x$ solves the system for the right-hand side that the gates actually prepare. The error budget
 $\delta=\epsilon+2(2^k-1)\eta$ adds the error $\epsilon$ of phase estimation to an error $\eta$ for each
 simulated evolution, and the length is an explicit polynomial, $O(4^k(2+\mu)^2t_0\,m^2K/C)$, which is quadratic
@@ -273,7 +278,9 @@ App.~A5 & $1/(3\varepsilon^2)$ samples & $\varepsilon=\frac14$, 6 samples fail w
 
 \section{How It Was Built}\label{sec:agent}
 
-Claude Code~\cite{claudecode} wrote the development under the author's direction. The foundation, Paulsen's lecture
+AI agents, Claude Code~\cite{claudecode} with Claude Opus~4.7, Fable~5.1 and Opus~5.5 and Codex with
+GPT-5.4, wrote the development under the author's direction and drafted this abstract; the author takes
+full responsibility for its content. The foundation, Paulsen's lecture
 course~\cite{paulsen2011notes}, was formalised in April and May 2026. After a pause of 147 days, HHL
 followed in eleven days of October, with 258 messages from the author over 84 distinct hours and
 9{,}835 tool calls by the agent. The agent wrote and repaired the proofs, and after the pause it
@@ -292,10 +299,6 @@ for quantum linear algebra, such as Cobble~\cite{yuan2026cobble}? What should
 ``verified to the gate'' mean once the gate set is finite, as in Clifford+T~\cite{ross2016gridsynth}, and the oracles general? And as agents write
 more of our proofs, which checks should a verified quantum library require? Our next steps are clamping the rotation, higher-order product
 formulas, and a second prover.
-
-\paragraph{Use of AI} AI agents (Claude Code with Claude Opus~4.7, Fable~5.1 and Opus~5.5; Codex with
-GPT-5.4) wrote the development under the author's direction and drafted this abstract; the author takes
-full responsibility for its content.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
