@@ -22,7 +22,8 @@
 % Isabelle logo linking to a theorem at a fixed commit (\isalink{path}{line}).
 \newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
 \newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/c3312504b05933b4ae2bcfdadf832a65abff1696}
-\DeclareRobustCommand{\isalink}[2]{\,\href{\repo/#1\#L#2}{\isalogo}}
+\newcommand{\isahref}[2]{\href{\repo/#1\#L#2}{\isalogo}}
+\DeclareRobustCommand{\isalink}[2]{\,\isahref{#1}{#2}}
 \DeclareRobustCommand{\isa}[1]{\textsf{\def\_{\char95\allowbreak}#1}}
 \definecolor{backcolour}{rgb}{0.96,0.96,0.93}
 \lstdefinestyle{isabellestyle}{
@@ -247,17 +248,17 @@ Isabelle.}\label{tab:errata}
 \footnotesize
 \renewcommand{\arraystretch}{1.1}\setlength{\tabcolsep}{3pt}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
-\begin{tabular}{@{}lL{2.6cm}L{5.2cm}L{3.4cm}@{}}
+\begin{tabular}{@{}l@{\hspace{4.5pt}}L{72.5pt}@{\hspace{4.5pt}}L{141.3pt}@{\hspace{2pt}}c@{\hspace{6pt}}L{92.6pt}@{\hspace{2pt}}c@{}}
 \toprule
-Where & Claim & Counter-example & What is true\\
+Where & Claim & Counter-example && Correction &\\
 \midrule
-Lemma 3 & $c=\pi^2/2$ & $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$ give $\frac12>\frac{\pi^2}{32}$\isalink{Algorithms/HHL_Filter.thy}{539} & $c=\pi^2$\isalink{Algorithms/HHL_Filter.thy}{418}, sharp\isalink{Algorithms/HHL_Filter.thy}{567}\\
-Thm.~4 proof & $\frac2\delta\log 2n/\log\log n$ & $\delta=\frac12$, $n=2^{64}$, 44 rounds fail\isalink{Algorithms/HHL_Optimality.thy}{669} & $\frac2\delta\ln(2n_0)$ suffice\isalink{Algorithms/HHL_Optimality.thy}{649}\\
-(A34) & $\kappa^{-1}I\le A\le I$ & $e_1$, since $A_{11}=0<\kappa^{-1}$\isalink{Algorithms/HHL_Optimality.thy}{202} & $\kappa^{-1}\le\lvert A\rvert\le1$\isalink{Algorithms/HHL_Optimality.thy}{135}\\
-(A37) & first qubit decides & every solution $\vec y$ is $(0,\vec x)$\isalink{Algorithms/HHL_Optimality.thy}{231} & permute the dilation\isalink{Algorithms/HHL_Optimality.thy}{457}\\
-Thm.~6(2) & precision $2^{-n-2}$ & clock factor $q\le\frac14$ merges $C$, $C+1$\isalink{Algorithms/HHL_Optimality.thy}{999} & precision $q/2^{n+1}$\isalink{Algorithms/HHL_Optimality.thy}{973}\\
-App.~A5 & $1/(3\varepsilon^2)$ samples & $\varepsilon=\frac14$, 6 samples fail w.p.\ $\frac{11}{16}$\isalink{Algorithms/HHL_Discussion.thy}{524} & $3/\varepsilon^2$ suffice\isalink{Algorithms/HHL_Discussion.thy}{537}\\
-\S IV & $(AB)c=Bb$ & $2\times2$ case with $Ac\ne b$, $ABc\ne b$\isalink{Algorithms/HHL_Discussion.thy}{595} & $BAx=Bb$ or $x=Bc$\isalink{Algorithms/HHL_Discussion.thy}{562}\\
+Lemma 3 & $c=\pi^2/2$ & $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$ give $\frac12>\frac{\pi^2}{32}$ & \isahref{Algorithms/HHL_Filter.thy}{539} & $c=\pi^2$, which is sharp & \isahref{Algorithms/HHL_Filter.thy}{418}\\
+Thm.~4 proof & $\frac2\delta\log 2n/\log\log n$ & $\delta=\frac12$, $n=2^{64}$, 44 rounds fail & \isahref{Algorithms/HHL_Optimality.thy}{669} & $\frac2\delta\ln(2n_0)$ suffice & \isahref{Algorithms/HHL_Optimality.thy}{649}\\
+(A34) & $\kappa^{-1}I\le A\le I$ & $e_1$, since $A_{11}=0<\kappa^{-1}$ & \isahref{Algorithms/HHL_Optimality.thy}{202} & $\kappa^{-1}\le\lvert A\rvert\le1$ & \isahref{Algorithms/HHL_Optimality.thy}{135}\\
+(A37) & first qubit decides & every solution $\vec y$ is $(0,\vec x)$ & \isahref{Algorithms/HHL_Optimality.thy}{231} & permute the dilation & \isahref{Algorithms/HHL_Optimality.thy}{457}\\
+Thm.~6(2) & precision $2^{-n-2}$ & clock factor $q\le\frac14$ merges $C$, $C{+}1$ & \isahref{Algorithms/HHL_Optimality.thy}{999} & precision $q/2^{n+1}$ & \isahref{Algorithms/HHL_Optimality.thy}{973}\\
+App.~A5 & $1/(3\varepsilon^2)$ samples & $\varepsilon=\frac14$, 6 samples fail with prob.\ $\frac{11}{16}$ & \isahref{Algorithms/HHL_Discussion.thy}{524} & $3/\varepsilon^2$ samples suffice & \isahref{Algorithms/HHL_Discussion.thy}{537}\\
+\S IV & $(AB)c=Bb$ & $2\times2$ case with $Ac\ne b$, $ABc\ne b$ & \isahref{Algorithms/HHL_Discussion.thy}{595} & $BAx=Bb$ or $ABc=b$ & \isahref{Algorithms/HHL_Discussion.thy}{562}\\
 \bottomrule
 \end{tabular}
 \end{table}
