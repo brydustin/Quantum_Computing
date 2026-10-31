@@ -141,7 +141,7 @@ of Ying's quantum while-language~\cite{ying2011}, and contribute the following.
 \section{Quantum Hoare Logic at Algorithm Scale}\label{sec:qhl}
 
 Programs of the while-language denote completely positive, trace-non-increasing maps $\sem S$ on
-partial density operators. A predicate is an operator $0\le P\le I$, and $\hoaret{P}{S}{Q}$ holds if
+partial density operators, the quantum analogue of subprobability distributions. A predicate is an operator $0\le P\le I$, and $\hoaret{P}{S}{Q}$ holds if
 $\Tr(P\rho)\le\Tr(Q\,\sem S\rho)$ for every state $\rho$; so $\hoaret{p\cdot I}{S}{Q}$ says that $S$
 ends in $Q$ with probability at least $p$.
 
@@ -220,12 +220,12 @@ refine them until every gate is \emph{elementary}, that is, a one- or two-qubit 
 Every program theorem is stated for all gate lists with a given product, so refinement never reopens
 it. For $s$-sparse
 $A$ with entries bounded by $L$, whose graph is coloured into $2s-1$ matchings given by oracles, $r$
-Trotter steps are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.\hfill\isalink{Algorithms/HHL_Sparse_Circuit.thy}{915}
+Trotter steps, each applying the evolution of every matching once, are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.\hfill\isalink{Algorithms/HHL_Sparse_Circuit.thy}{915}
 
 For the Laplacian of the cycle on $2^m$ vertices, shifted by $\mu\ge0$, the oracles themselves are
 compiled, as reversible arithmetic routed to adjacent wires, and so is the preparation of a sparse
 nonnegative $b$. One theorem collects the result.\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77} It gives an explicit list of elementary gates on
-$K=m+k+1+a$ qubits whose output, post-selected on the flag, is within $2\delta/(C\norm x)$ of $x/\norm x$,
+$K=m+k+1+a$ qubits whose output, when the flag qubit reads~$1$, is within $2\delta/(C\norm x)$ of $x/\norm x$,
 where $x$ solves the system for the right-hand side that the gates actually prepare. The error budget
 $\delta=\epsilon+2(2^k-1)\eta$ adds the error $\epsilon$ of phase estimation to an error $\eta$ for each
 simulated evolution, and the length is an explicit polynomial, $O(4^k(2+\mu)^2t_0\,m^2K/C)$, which is quadratic
