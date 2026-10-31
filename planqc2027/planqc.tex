@@ -19,6 +19,10 @@
 \newcommand{\norm}[1]{\|#1\|}
 \newcommand{\sem}[1]{\llbracket #1\rrbracket}
 \newcommand{\hoaret}[3]{\models_{t}\{#1\}\;#2\;\{#3\}}
+% Isabelle logo linking to a theorem at a fixed commit (\isalink{path}{line}).
+\newcommand{\isalogo}{\includegraphics[width=8pt]{isabelle_transparent.png}}
+\newcommand{\repo}{https://github.com/brydustin/Quantum_Computing/blob/c3312504b05933b4ae2bcfdadf832a65abff1696}
+\DeclareRobustCommand{\isalink}[2]{\,\href{\repo/#1\#L#2}{\isalogo}}
 \DeclareRobustCommand{\isa}[1]{\textsf{\def\_{\char95\allowbreak}#1}}
 \definecolor{backcolour}{rgb}{0.96,0.96,0.93}
 \lstdefinestyle{isabellestyle}{
@@ -37,7 +41,7 @@
 
 \title[Gate-Level Verification of HHL]{Gate-Level Verification of HHL with Quantum Hoare Logic in Isabelle/HOL}
 \titlenote{This extended abstract summarizes a 37-page paper in preparation, available from the author.
-The Isabelle sources (Isabelle2026 with the AFP) are at \url{https://doi.org/10.5281/zenodo.23812498}.}
+The Isabelle sources are at \url{https://doi.org/10.5281/zenodo.23812498}, and each logo~\isalogo{} links to a proof.}
 \author{Dustin Bryant}
 \orcid{0000-0001-9876-3804}
 \affiliation{\institution{Independent researcher}\country{USA}}
@@ -108,7 +112,7 @@ $u=N^{-1/2}\sum_j\ket j$ and every eigenvalue of $A$ on the grid $\lambda_j=2\pi
 $2\pi(j-N)/(Nt_0)$ for $j\ge N/2$). Gate~3
 applies $U^c$ when the clock holds $c$, gate~5 applies $R(C/\lambda_c)$ with
 $R(c)\ket0=\sqrt{1-c^2}\ket0+c\ket1$, and $\Pi_j$ projects onto the eigenspace of~$\lambda_j$. The
-table is one theorem, \isa{hhl\_steps}, proved by following a single eigenvector rather than expanding
+table is one theorem, \isa{hhl\_steps}\isalink{Algorithms/HHL_Trajectory.thy}{573}, proved by following a single eigenvector rather than expanding
 in an eigenbasis.}\label{fig:hhl}
 \end{figure}
 
@@ -117,15 +121,15 @@ of Ying's quantum while-language~\cite{ying2011}, and contribute the following.
 \begin{enumerate}
 \item \emph{Total correctness.} The repeat-until-success program terminates with probability one in
   the normalised solution, exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p$, and runs
-  $1/p$ rounds on average (Section~\ref{sec:qhl}).
+  $1/p$ rounds on average (Section~\ref{sec:qhl}).\hfill\isalink{Algorithms/HHL_Termination.thy}{463}
 \item \emph{The approximations.} The paper's Theorem~1 holds with the constant
-  $c=\pi^2\sqrt{4+2\pi^2}$, and so does its run-time analysis with amplitude amplification.
-\item \emph{The subroutines.} Phase estimation, as a matrix identity and as a program; amplitude
+  $c=\pi^2\sqrt{4+2\pi^2}$\isalink{Algorithms/HHL_Filter_Bounds.thy}{154}, and so does its run-time analysis with amplitude amplification.
+\item \emph{The subroutines.} Phase estimation, as a matrix identity\isalink{Algorithms/Phase_Estimation.thy}{287} and as a program\isalink{Algorithms/QPE_Program.thy}{177}; amplitude
   amplification; Hamiltonian simulation by Trotter products over sparse oracles; state preparation;
   and the uniformly controlled rotation; the Fourier transform is the AFP's~\cite{manrique2025qft}.
 \item \emph{The gates.} For the shifted cycle Laplacian, everything from the preparation of $\ket b$
   to the flag is a list of one- and two-qubit gates with a closed-form count
-  (Section~\ref{sec:gates}).
+  (Section~\ref{sec:gates}).\hfill\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77}
 \item \emph{The errata.} Seven statements of the HHL paper are false (Section~\ref{sec:errata}).
 \item \emph{The process.} An AI agent wrote almost all of the 130 theories (64{,}010 lines, no \texttt{sorry})
   under the author's direction (Section~\ref{sec:agent}).
@@ -140,7 +144,7 @@ ends in $Q$ with probability at least $p$.
 
 Four rules carry all of our program proofs. Three are derived in Ying's system, namely \emph{initialisation},
 \emph{gate lists}, and their composition for the shape \emph{initialise, apply gates, measure} shared by
-phase estimation, one run of HHL and all its inexact variants. With $W$ the product of the gates and
+phase estimation, one run of HHL and all its inexact variants.\isalink{Algorithms/HHL_Program.thy}{378} With $W$ the product of the gates and
 $\psi=W\ket0$ the state they prepare,
 \begin{gather*}
 \{\bra0Q\ket0\cdot I\}\;\mathit{init}\;\{Q\},\qquad\{W^\dagger QW\}\;U_1;\dots;U_m\;\{Q\},\\
@@ -151,7 +155,7 @@ None is deep, but together they turn every probabilistic claim about HHL into on
 $Q=\ketbra tt$ with $\ket t$ in the success branch, the scalar is the fidelity $|\langle t|\psi\rangle|^2$,
 so every error bound of the analysis becomes a triple. The fourth rule, for \emph{resetting loops}, is
 proved from the semantics, because QHLProver formalises partial correctness only and Ying's
-total-correctness rule needs a bound function~\cite{ying2011}.
+total-correctness rule needs a bound function~\cite{ying2011}.\hfill\isalink{Algorithms/HHL_Termination.thy}{210}
 
 \paragraph{The HHL loop} The repeat-until-success program
 \[
@@ -165,7 +169,7 @@ such loops gives termination, the exit distribution and the expected number of r
 two-qubit repeat-until-success circuits automatically and found bugs in published
 ones~\cite{chen2026autoq}; here the loop body is a whole algorithm.
 
-\begin{theorem}[exact HHL, repeat until success]
+\begin{theorem}[exact HHL, repeat until success\isalink{Algorithms/HHL_Termination.thy}{463}]
 Let $A$ be Hermitian with every eigenvalue on the grid $2\pi j/(Nt_0)$, $-N/2\le j<N/2$, $j\ne0$, of a clock
 with $N=2^k$ values, let $U_b\ket0=b$, and let $0<|C|\le2\pi/(Nt_0)$. Then
 $\hoaret{I}{\mathit{hhl\_rus}}{\ketbra tt}$ for $\ket t=\ket0\otimes A^{-1}b/\norm{A^{-1}b}\otimes\ket1$,
@@ -173,7 +177,7 @@ the loop exits after exactly $\ell$ failed rounds with probability $(1-p)^\ell p
 average.
 \end{theorem}
 
-\begin{lstlisting}[float=b,caption={The theorem in Isabelle, with its context. The registers are clock, system and ancilla. \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible.},label={lst:rus}]
+\begin{lstlisting}[float=b,caption={The theorem in Isabelle, with its context\isalink{Algorithms/HHL_Termination.thy}{250}. The registers are clock, system and ancilla. \isa{spec} puts the spectrum on the grid, \isa{Ub} prepares $b$, and \isa{Cb} keeps the rotation angles admissible.},label={lst:rus}]
 context
   fixes A Ub :: "complex Matrix.mat" and b :: "complex Matrix.vec"
     and n k :: nat and t0 C :: real
@@ -213,11 +217,11 @@ refine them until every gate is \emph{elementary}, that is, a one- or two-qubit 
 Every program theorem is stated for all gate lists with a given product, so refinement never reopens
 it. For $s$-sparse
 $A$ with entries bounded by $L$, whose graph is coloured into $2s-1$ matchings given by oracles, $r$
-Trotter steps are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.
+Trotter steps are within $8(sLt)^2/r$ of $e^{iAt}$ and make $r(6s-2)$ oracle queries.\hfill\isalink{Algorithms/HHL_Sparse_Circuit.thy}{915}
 
 For the Laplacian of the cycle on $2^m$ vertices, shifted by $\mu\ge0$, the oracles themselves are
 compiled, as reversible arithmetic routed to adjacent wires, and so is the preparation of a sparse
-nonnegative $b$. One theorem collects the result. It gives an explicit list of elementary gates on
+nonnegative $b$. One theorem collects the result.\isalink{Algorithms/Gates/HHL_Laplacian_Sparse.thy}{77} It gives an explicit list of elementary gates on
 $K=m+k+1+a$ qubits whose output, post-selected on the flag, is within $2\delta/(C\norm x)$ of $x/\norm x$,
 where $x$ solves the system for the right-hand side that the gates actually prepare. The error budget
 $\delta=\epsilon+2(2^k-1)\eta$ adds the error $\epsilon$ of phase estimation to an error $\eta$ for each
@@ -233,7 +237,7 @@ oracle compilers~\cite{amy2017reverc,li2022vqo}, it compiles the oracles of one 
 Proving the paper's statements as written, appendix included, refuted seven of them
 (Table~\ref{tab:errata}). The most instructive is Lemma~3, the Lipschitz estimate behind
 Theorem~1. At $\lambda=1/(2\kappa)$ and $\tilde\lambda=1/\kappa$ its left side is $\frac12$ and its right
-side is $\pi^2/32$, for every $\kappa$. The constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp.
+side is $\pi^2/32$, for every $\kappa$. The constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp\isalink{Algorithms/HHL_Filter.thy}{567}.
 None of the errors invalidates a main claim. Most sit where a sketch compresses a computation, such as an
 endpoint value, an index, or a number of rounds or samples. A reader checks the argument; a proof
 assistant checks the arithmetic, where the sketch was wrong.
@@ -247,13 +251,13 @@ Isabelle.}\label{tab:errata}
 \toprule
 Where & Claim & What is true\\
 \midrule
-Lemma 3 & constant $c=\pi^2/2$ & false for all $\kappa$; $\pi^2$ holds and is sharp\\
-Proof of Thm.~4 & $\frac2\delta\log(2n)/\log\log n$ rounds & too few; $\frac2\delta\ln(2n_0)$ suffice\\
-(A34) & dilation has $\kappa^{-1}I\le A\le I$ & impossible, as its diagonal is zero\\
-(A37) & first qubit of $\vec y$ decides & top half of $\vec y$ is $0$; permuting the dilation fixes it\\
-Thm.~6(2) & precision $2^{-n-2}$ & cannot separate consecutive counts\\
-App.~A5 & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
-\S IV & preconditioning $(AB)c=Bb$ & neither left nor right preconditioning\\
+Lemma 3\isalink{Algorithms/HHL_Filter.thy}{539} & constant $c=\pi^2/2$ & false for all $\kappa$; $\pi^2$ holds and is sharp\\
+Proof of Thm.~4\isalink{Algorithms/HHL_Optimality.thy}{669} & $\frac2\delta\log(2n)/\log\log n$ rounds & too few; $\frac2\delta\ln(2n_0)$ suffice\\
+(A34)\isalink{Algorithms/HHL_Optimality.thy}{202} & dilation has $\kappa^{-1}I\le A\le I$ & impossible, as its diagonal is zero\\
+(A37)\isalink{Algorithms/HHL_Optimality.thy}{231} & first qubit of $\vec y$ decides & top half of $\vec y$ is $0$; permuting the dilation fixes it\\
+Thm.~6(2)\isalink{Algorithms/HHL_Optimality.thy}{999} & precision $2^{-n-2}$ & cannot separate consecutive counts\\
+App.~A5\isalink{Algorithms/HHL_Discussion.thy}{524} & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
+\S IV\isalink{Algorithms/HHL_Discussion.thy}{595} & preconditioning $(AB)c=Bb$ & neither left nor right preconditioning\\
 \bottomrule
 \end{tabular}
 \end{table}
