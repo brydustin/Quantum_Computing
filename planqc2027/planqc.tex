@@ -189,12 +189,12 @@ context
         "Ub *~$_{v}$~ unit_vec n 0 = b"
     and Cb: "~$\bigwedge$~j. j < 2 ^ k ~$\Longrightarrow$~ ~$|$~C / reg_eig t0 (2 ^ k) j~$|$~ ~$\le$~ 1"
 begin
-theorem hhl_rus_total:
+theorem hhl_rus_total:~\hfill\isalink{Algorithms/HHL_Termination.thy}{463}~
   assumes "C ~$\neq$~ 0"
   shows "state_sig.hoare_total_correct [2 ^ k, n, 2]
       (1~$_{m}$~ (2 ^ k * (n * 2))) (hhl_rus A Ub t0 k C)
       (outer_prod (hhl_target A k b) (hhl_target A k b))"
-theorem hhl_rus_expected_rounds:
+theorem hhl_rus_expected_rounds:~\hfill\isalink{Algorithms/HHL_Termination.thy}{456}~
   assumes C0: "C ~$\neq$~ 0"
   defines "p ~$\equiv$~ C~$^{2}$~ * ~$\|$~herm_inv A *~$_{v}$~ b~$\|^{2}$~"
   shows "(~$\lambda$~m. real (Suc m) * (p * (1 - p) ^ m)) sums (1 / p)" and
@@ -236,8 +236,7 @@ oracle compilers~\cite{amy2017reverc,li2022vqo}, it compiles the oracles of one 
 
 Proving the paper's statements as written, appendix included, refuted seven of them
 (Table~\ref{tab:errata}). The most instructive is Lemma~3, the Lipschitz estimate behind
-Theorem~1. At $\lambda=1/(2\kappa)$ and $\tilde\lambda=1/\kappa$ its left side is $\frac12$ and its right
-side is $\pi^2/32$, for every $\kappa$. The constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp\isalink{Algorithms/HHL_Filter.thy}{567}.
+Theorem~1, which fails for every $\kappa$. Its constant must be $\pi^2$, not $\pi^2/2$, and $\pi^2$ is sharp\isalink{Algorithms/HHL_Filter.thy}{567}.
 None of the errors invalidates a main claim. Most sit where a sketch compresses a computation, such as an
 endpoint value, an index, or a number of rounds or samples. A reader checks the argument; a proof
 assistant checks the arithmetic, where the sketch was wrong.
@@ -246,18 +245,19 @@ assistant checks the arithmetic, where the sketch was wrong.
 \caption{False statements of the HHL paper (arXiv:0811.3171v3~\cite{hhl2008arxiv}), each refuted in
 Isabelle.}\label{tab:errata}
 \footnotesize
-\renewcommand{\arraystretch}{1.1}
-\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{6.3cm}@{}}
+\renewcommand{\arraystretch}{1.1}\setlength{\tabcolsep}{3pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\begin{tabular}{@{}lL{3.1cm}L{4.9cm}L{3.1cm}@{}}
 \toprule
-Where & Claim & What is true\\
+Where & Claim & Counter-example & What is true\\
 \midrule
-Lemma 3\isalink{Algorithms/HHL_Filter.thy}{539} & constant $c=\pi^2/2$ & false for all $\kappa$; $\pi^2$ holds and is sharp\\
-Proof of Thm.~4\isalink{Algorithms/HHL_Optimality.thy}{669} & $\frac2\delta\log(2n)/\log\log n$ rounds & too few; $\frac2\delta\ln(2n_0)$ suffice\\
-(A34)\isalink{Algorithms/HHL_Optimality.thy}{202} & dilation has $\kappa^{-1}I\le A\le I$ & impossible, as its diagonal is zero\\
-(A37)\isalink{Algorithms/HHL_Optimality.thy}{231} & first qubit of $\vec y$ decides & top half of $\vec y$ is $0$; permuting the dilation fixes it\\
-Thm.~6(2)\isalink{Algorithms/HHL_Optimality.thy}{999} & precision $2^{-n-2}$ & cannot separate consecutive counts\\
-App.~A5\isalink{Algorithms/HHL_Discussion.thy}{524} & $1/(3\varepsilon^2)$ samples & too few; $3/\varepsilon^2$ suffice\\
-\S IV\isalink{Algorithms/HHL_Discussion.thy}{595} & preconditioning $(AB)c=Bb$ & neither left nor right preconditioning\\
+Lemma 3 & $c=\pi^2/2$ & $\lambda=\frac1{2\kappa}$, $\tilde\lambda=\frac1\kappa$ give $\frac12>\frac{\pi^2}{32}$\isalink{Algorithms/HHL_Filter.thy}{539} & $c=\pi^2$, sharp\\
+Thm.~4 proof & $\frac2\delta\log(2n)/\log\log n$ & $\delta=\frac12$, $n=2^{64}$, 44 rounds fail\isalink{Algorithms/HHL_Optimality.thy}{669} & $\frac2\delta\ln(2n_0)$ suffice\\
+(A34) & $\kappa^{-1}I\le A\le I$ & $e_1$, since $A_{11}=0<\kappa^{-1}$\isalink{Algorithms/HHL_Optimality.thy}{202} & impossible\\
+(A37) & first qubit of $\vec y$ decides & every solution is $(0,\vec x)$\isalink{Algorithms/HHL_Optimality.thy}{231} & permute the dilation\\
+Thm.~6(2) & precision $2^{-n-2}$ & counts $C$, $C+1$ get one estimate\isalink{Algorithms/HHL_Optimality.thy}{999} & too coarse\\
+App.~A5 & $1/(3\varepsilon^2)$ samples & $\varepsilon=\frac14$, 6 samples fail w.p.\ $\frac{11}{16}$\isalink{Algorithms/HHL_Discussion.thy}{524} & $3/\varepsilon^2$ suffice\\
+\S IV & system $(AB)c=Bb$ & $2\times2$ case with $Ac\ne b$, $ABc\ne b$\isalink{Algorithms/HHL_Discussion.thy}{595} & $BAx=Bb$ or $x=Bc$\\
 \bottomrule
 \end{tabular}
 \end{table}
